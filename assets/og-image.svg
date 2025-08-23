@@ -1,0 +1,52 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Open Graph Image - For social media previews (Twitter, LinkedIn, etc.) -->
+  <!-- Recommended size: 1200x630px -->
+  
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E40AF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#064E3B;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="1200" height="630" fill="url(#bg-gradient)"/>
+  
+  <!-- Logo positioned much higher with smaller scale -->
+  <g transform="translate(540, 60) scale(1.5)">
+    <!-- Left bracket -->
+    <path d="M 70 60 L 50 60 L 50 140 L 70 140 L 70 130 L 60 130 L 60 70 L 70 70 Z" fill="white"/>
+    
+    <!-- Data blocks -->
+    <rect x="84" y="84" width="16" height="16" fill="white" rx="2" opacity="0.9"/>
+    <rect x="104" y="84" width="16" height="16" fill="white" rx="2" opacity="0.8"/>
+    <rect x="124" y="84" width="16" height="16" fill="white" rx="2" opacity="0.7"/>
+    
+    <rect x="84" y="104" width="16" height="16" fill="white" rx="2" opacity="0.7"/>
+    <rect x="104" y="104" width="16" height="16" fill="white" rx="2" opacity="0.8"/>
+    <rect x="124" y="104" width="16" height="16" fill="white" rx="2" opacity="0.9"/>
+    
+    <!-- Right bracket -->
+    <path d="M 154 60 L 174 60 L 174 140 L 154 140 L 154 130 L 164 130 L 164 70 L 154 70 Z" fill="white"/>
+  </g>
+  
+  <!-- Title with more space from logo -->
+  <text x="600" y="360" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="72" font-weight="700" text-anchor="middle" fill="white">
+    FoundryData
+  </text>
+  
+  <!-- Tagline -->
+  <text x="600" y="440" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="32" font-weight="400" text-anchor="middle" fill="white" opacity="0.9">
+    Generate test data from JSON Schema
+  </text>
+  
+  <!-- Subtext -->
+  <text x="600" y="490" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="400" text-anchor="middle" fill="white" opacity="0.7">
+    100% compliant or we tell you why
+  </text>
+  
+  <!-- Small footer -->
+  <text x="600" y="570" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="18" font-weight="400" text-anchor="middle" fill="white" opacity="0.5">
+    Open Source • CLI First • 100% Free
+  </text>
+</svg>

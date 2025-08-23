@@ -1,0 +1,12 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- FoundryData Favicon - Ultra simplified for 16x16/32x32 display -->
+  
+  <!-- Simplified brackets -->
+  <path d="M 8 8 L 4 8 L 4 24 L 8 24 L 8 22 L 6 22 L 6 10 L 8 10 Z" fill="#3B82F6"/>
+  
+  <!-- Single data block for clarity at small size -->
+  <rect x="11" y="12" width="10" height="8" fill="#3B82F6" rx="1"/>
+  
+  <!-- Right bracket -->
+  <path d="M 24 8 L 28 8 L 28 24 L 24 24 L 24 22 L 26 22 L 26 10 L 24 10 Z" fill="#3B82F6"/>
+</svg>

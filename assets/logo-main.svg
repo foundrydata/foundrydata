@@ -1,0 +1,21 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- FoundryData Logo - Main Version -->
+  <!-- Concept: JSON brackets { } transforming into structured data blocks -->
+  
+  <!-- Left bracket -->
+  <path d="M 70 60 L 50 60 L 50 140 L 70 140 L 70 130 L 60 130 L 60 70 L 70 70 Z" fill="#3B82F6"/>
+  
+  <!-- Data blocks - perfectly centered -->
+  <!-- Top row - blue gradient -->
+  <rect x="84" y="84" width="16" height="16" fill="#3B82F6" rx="2"/>
+  <rect x="104" y="84" width="16" height="16" fill="#60A5FA" rx="2"/>
+  <rect x="124" y="84" width="16" height="16" fill="#93C5FD" rx="2"/>
+  
+  <!-- Bottom row - green gradient -->
+  <rect x="84" y="104" width="16" height="16" fill="#10B981" rx="2"/>
+  <rect x="104" y="104" width="16" height="16" fill="#34D399" rx="2"/>
+  <rect x="124" y="104" width="16" height="16" fill="#6EE7B7" rx="2"/>
+  
+  <!-- Right bracket -->
+  <path d="M 154 60 L 174 60 L 174 140 L 154 140 L 154 130 L 164 130 L 164 70 L 154 70 Z" fill="#3B82F6"/>
+</svg>
