@@ -1,6 +1,6 @@
 <div align="center">
   <br />
-  <img src="https://raw.githubusercontent.com/foundrydata/foundrydata/main/assets/logo.png" width="180" alt="FoundryData Logo"/>
+  <img src="https://raw.githubusercontent.com/foundrydata/foundrydata/main/assets/banner.svg"  alt="FoundryData Logo"/>
   <br />
   <br />
   
