@@ -212,7 +212,7 @@ foundrydata generate --schema complex.json
 #   - Arrays at: properties.tags
 # 
 # 💡 Workaround: Flatten nested objects or generate them separately
-# 📅 These features are planned for v0.2 (February 2025)
+# 📅 These features are planned for v0.2-v0.3 (2025)
 # 
 # Want them sooner? Vote or contribute:
 # https://github.com/foundrydata/foundrydata/issues

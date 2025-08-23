@@ -109,8 +109,8 @@ curl -X POST https://api.foundrydata.dev/generate \
 
 | Feature | Status | Workaround |
 |---------|--------|------------|
-| Nested objects | Coming v2 | Flatten schema |
-| Arrays of objects | Coming v2 | Generate separately |
+| Nested objects | Coming v0.3 | Flatten schema |
+| Arrays of objects | Coming v0.2 | Generate separately |
 | `pattern` (regex) | Coming v3 | Use formats |
 | `allOf/oneOf` | Coming v3 | Pick one type |
 | `$ref` | Coming v3 | Inline definitions |
@@ -123,7 +123,7 @@ FoundryData gives clear, helpful errors:
 # Unsupported feature
 ❌ Error: Feature 'nested objects' not supported in MVP
 💡 Suggestion: Flatten your schema structure
-📅 Expected in: v2 (based on demand)
+📅 Expected in: v0.3 (based on demand)
 📧 Request priority: github.com/foundrydata/foundrydata/issues
 
 # Invalid schema
