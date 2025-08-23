@@ -1,0 +1,298 @@
+{
+  "examples": {
+    "supported": {
+      "user-simple": {
+        "description": "Basic user profile - FULLY SUPPORTED",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "email": {
+              "type": "string",
+              "format": "email"
+            },
+            "username": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 20
+            },
+            "age": {
+              "type": "integer",
+              "minimum": 18,
+              "maximum": 99
+            },
+            "isActive": {
+              "type": "boolean"
+            }
+          },
+          "required": ["id", "email", "username"]
+        },
+        "cli_command": "foundrydata generate --schema user.json --rows 100",
+        "sample_output": [
+          {
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "email": "john.doe@example.com",
+            "username": "johndoe",
+            "age": 28,
+            "isActive": true
+          }
+        ]
+      },
+      "product-basic": {
+        "description": "Simple product - FULLY SUPPORTED",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "sku": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 8
+            },
+            "name": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 50
+            },
+            "price": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 9999.99
+            },
+            "inStock": {
+              "type": "boolean"
+            },
+            "category": {
+              "type": "string",
+              "enum": ["electronics", "clothing", "food", "books"]
+            }
+          },
+          "required": ["sku", "name", "price"]
+        },
+        "cli_command": "foundrydata generate --schema product.json --rows 50",
+        "sample_output": [
+          {
+            "sku": "PROD1234",
+            "name": "Wireless Mouse",
+            "price": 29.99,
+            "inStock": true,
+            "category": "electronics"
+          }
+        ]
+      },
+      "api-response": {
+        "description": "API response format - FULLY SUPPORTED",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "requestId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "statusCode": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 599
+            }
+          },
+          "required": ["success", "timestamp", "requestId"]
+        },
+        "cli_command": "foundrydata generate --schema api-response.json --rows 10",
+        "sample_output": [
+          {
+            "success": true,
+            "message": "Request processed successfully",
+            "timestamp": "2024-01-15T10:30:00Z",
+            "requestId": "123e4567-e89b-12d3-a456-426614174000",
+            "statusCode": 200
+          }
+        ]
+      }
+    },
+    "not_supported_yet": {
+      "nested-object": {
+        "description": "NESTED OBJECTS - NOT SUPPORTED IN MVP",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "user": {
+              "type": "object",
+              "properties": {
+                "name": {"type": "string"},
+                "email": {"type": "string"}
+              }
+            }
+          }
+        },
+        "error_message": "Feature 'nested objects' not supported in MVP. Coming in v2!",
+        "workaround": "Flatten your schema - use 'userName' and 'userEmail' instead"
+      },
+      "array-field": {
+        "description": "ARRAYS - NOT SUPPORTED IN MVP",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "tags": {
+              "type": "array",
+              "items": {"type": "string"}
+            }
+          }
+        },
+        "error_message": "Feature 'arrays' not supported in MVP. Coming in v2!",
+        "workaround": "Generate array data separately or use comma-separated strings"
+      },
+      "pattern-validation": {
+        "description": "REGEX PATTERNS - NOT SUPPORTED IN MVP",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "phone": {
+              "type": "string",
+              "pattern": "^\\+?[1-9]\\d{1,14}$"
+            }
+          }
+        },
+        "error_message": "Feature 'pattern' not supported in MVP. Coming in v2!",
+        "workaround": "Use format hints or post-process the generated data"
+      },
+      "schema-composition": {
+        "description": "ALLOF/ONEOF - NOT SUPPORTED IN MVP",
+        "schema": {
+          "oneOf": [
+            {"type": "string"},
+            {"type": "number"}
+          ]
+        },
+        "error_message": "Features 'allOf/oneOf/anyOf' not supported in MVP",
+        "workaround": "Use simple type definitions instead"
+      },
+      "references": {
+        "description": "$REF - NOT SUPPORTED IN MVP",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "billing": {"$ref": "#/definitions/address"}
+          },
+          "definitions": {
+            "address": {
+              "type": "object",
+              "properties": {
+                "street": {"type": "string"}
+              }
+            }
+          }
+        },
+        "error_message": "Feature '$ref' not supported in MVP",
+        "workaround": "Inline all definitions directly"
+      }
+    },
+    "cli_usage": {
+      "basic": {
+        "description": "Basic CLI usage",
+        "commands": [
+          {
+            "description": "Generate 100 users",
+            "command": "foundrydata generate --schema user.json --rows 100"
+          },
+          {
+            "description": "Generate with seed for deterministic output",
+            "command": "foundrydata generate --schema user.json --rows 100 --seed 42"
+          },
+          {
+            "description": "Output to file",
+            "command": "foundrydata generate --schema user.json --rows 100 --output users.json"
+          },
+          {
+            "description": "Show help",
+            "command": "foundrydata help"
+          },
+          {
+            "description": "Show version",
+            "command": "foundrydata version"
+          }
+        ]
+      },
+      "installation": {
+        "description": "How to install",
+        "commands": [
+          {
+            "description": "Install globally",
+            "command": "npm install -g foundrydata"
+          },
+          {
+            "description": "Or use npx",
+            "command": "npx foundrydata generate --schema user.json --rows 10"
+          }
+        ]
+      }
+    },
+    "api_usage": {
+      "basic": {
+        "description": "API usage (Pro plan only)",
+        "curl_examples": [
+          {
+            "description": "Generate data via API",
+            "command": "curl -X POST https://api.foundrydata.dev/generate \\\n  -H 'X-API-Key: foundry_live_your_key' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"schema\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"id\": {\"type\": \"string\", \"format\": \"uuid\"},\n        \"email\": {\"type\": \"string\", \"format\": \"email\"}\n      },\n      \"required\": [\"id\", \"email\"]\n    },\n    \"rows\": 10\n  }'"
+          },
+          {
+            "description": "Generate CSV format",
+            "command": "curl -X POST https://api.foundrydata.dev/generate \\\n  -H 'X-API-Key: foundry_live_your_key' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"schema\": {...},\n    \"rows\": 100,\n    \"format\": \"csv\"\n  }'"
+          }
+        ]
+      }
+    },
+    "error_messages": {
+      "clear_errors": {
+        "description": "What errors look like",
+        "examples": [
+          {
+            "input": "Nested object schema",
+            "error": "❌ Error: Feature 'nested objects' not supported in MVP\n💡 Suggestion: Flatten your schema structure\n📅 Expected in: v2 (based on demand)\n📧 Request priority: github.com/foundrydata/foundrydata/issues"
+          },
+          {
+            "input": "Invalid schema",
+            "error": "❌ Error: Schema validation failed\n🔍 Issue: Property 'type' is required at root level\n💡 Fix: Add \"type\": \"object\" to your schema"
+          },
+          {
+            "input": "Unsupported format",
+            "error": "❌ Error: Format 'sql' not supported in MVP\n✅ Supported formats: json, csv\n💡 Suggestion: Use JSON and convert later"
+          }
+        ]
+      }
+    }
+  },
+  "quick_test": {
+    "description": "Copy-paste this to test immediately",
+    "schema_file": "test.json",
+    "schema_content": {
+      "type": "object",
+      "properties": {
+        "id": {"type": "string", "format": "uuid"},
+        "name": {"type": "string", "minLength": 2, "maxLength": 30},
+        "email": {"type": "string", "format": "email"},
+        "age": {"type": "integer", "minimum": 18, "maximum": 65},
+        "premium": {"type": "boolean"}
+      },
+      "required": ["id", "email"]
+    },
+    "test_commands": [
+      "# Save the schema above as test.json",
+      "npm install -g foundrydata",
+      "foundrydata generate --schema test.json --rows 5",
+      "# With deterministic output:",
+      "foundrydata generate --schema test.json --rows 5 --seed 123"
+    ]
+  }
+}
