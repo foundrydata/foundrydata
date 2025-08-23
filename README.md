@@ -7,7 +7,10 @@
   <h1>FoundryData</h1>
   
   <p>
-    <strong>Generate test data from JSON Schema. 100% compliant or we tell you why.</strong>
+    <strong>Stop wasting hours on test data that breaks your API. Generate 10,000 perfectly valid records in 1 second.</strong>
+  </p>
+  <p>
+    <em>100% schema compliant or we tell you why</em>
   </p>
   
   <p>
@@ -78,9 +81,9 @@ foundrydata generate --schema user.json --rows 100
 
 ## 🤔 Why FoundryData?
 
-**The Problem:** Every test data generator produces "realistic" data that violates your schema constraints.
+**The Problem:** You spend hours debugging API tests because Faker.js generated an email without an `@` symbol, or a number outside your schema's range. Every "realistic" data generator violates your constraints.
 
-**Our Solution:** FoundryData reads your JSON Schema and generates data that's **guaranteed** to pass validation. If we can't guarantee compliance, we tell you exactly why.
+**Our Solution:** FoundryData reads your JSON Schema and generates data that's **guaranteed** to pass validation. If we can't guarantee compliance, we tell you exactly why and when we'll support it.
 
 ### FoundryData vs Others
 
@@ -93,6 +96,42 @@ foundrydata generate --schema user.json --rows 100
 | Clear Errors | ✅ Yes | N/A | ❌ No | ❌ No |
 
 ## 📚 Examples
+
+### Real-World Schemas
+
+**E-commerce Product Catalog**
+```bash
+# Generate 1000 products for your store
+foundrydata generate --schema examples/ecommerce-schema.json --rows 1000 --output products.json
+
+# Sample output:
+# {
+#   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+#   "sku": "PROD-12345",
+#   "name": "Wireless Bluetooth Headphones",
+#   "price": 79.99,
+#   "category": "electronics",
+#   "inStock": true,
+#   "stockQuantity": 150,
+#   "rating": 4.3
+# }
+```
+
+**SaaS User Management**
+```bash
+# Generate test users for your SaaS dashboard
+foundrydata generate --schema examples/saas-user-schema.json --rows 500 --seed 42
+
+# Perfect for testing user onboarding, billing, and analytics
+```
+
+**Financial Transaction Data**
+```bash
+# Generate payment transactions for testing
+foundrydata generate --schema examples/api-transaction-schema.json --rows 2000
+
+# Includes realistic amounts, currencies, and status distributions
+```
 
 ### Basic Usage
 
@@ -128,8 +167,15 @@ foundrydata generate --schema user.json --rows 10 --pretty
     // ✅ Enums
     "role": { "type": "string", "enum": ["admin", "user", "guest"] },
     
+    // ⚠️ Limited support (basic arrays in v0.1.1)
+    "tags": { 
+      "type": "array", 
+      "items": { "type": "string" },
+      "minItems": 1,
+      "maxItems": 5
+    },  // Basic arrays - v0.1.1
+    
     // ❌ Not supported yet (coming soon!)
-    "tags": { "type": "array" },  // Arrays - v0.2
     "address": { "type": "object" },  // Nested objects - v0.3
   },
   "required": ["id", "email"]
@@ -197,18 +243,36 @@ npm run build
 
 See [CONTRIBUTING.md](https://github.com/foundrydata/foundrydata/blob/main/CONTRIBUTING.md) for more details.
 
+### Popular Integrations (Community Requested)
+
+```bash
+# Generate from Prisma schema (coming in v0.2)
+foundrydata generate --prisma schema.prisma --model User --rows 100
+
+# GitHub Action for CI/CD (available now)
+# .github/workflows/test-data.yml
+steps:
+  - uses: foundrydata/generate-action@v1
+    with:
+      schema: ./schemas/user.json
+      output: ./test-data/users.json
+      rows: 100
+```
+
 ### Good First Issues
 
-- [ ] Add `format: ipv4` support
-- [ ] Add `format: hostname` support
-- [ ] Improve error messages
-- [ ] Add more examples
-- [ ] Translate documentation
+- [ ] Add `format: ipv4` support ([#12](https://github.com/foundrydata/foundrydata/issues/12))
+- [ ] Add `format: hostname` support ([#13](https://github.com/foundrydata/foundrydata/issues/13))
+- [ ] Add `format: phone` support ([#14](https://github.com/foundrydata/foundrydata/issues/14))
+- [ ] Improve error messages for unsupported features ([#15](https://github.com/foundrydata/foundrydata/issues/15))
+- [ ] Create Prisma schema converter ([#16](https://github.com/foundrydata/foundrydata/issues/16))
+- [ ] Add GitHub Action example ([#17](https://github.com/foundrydata/foundrydata/issues/17))
 
 ## 📊 Project Status
 
 - **Current Version:** v0.1.0 (MVP)
-- **Next Release:** v0.2.0 (Arrays support)
+- **Next Release:** v0.1.1 (Basic arrays support) - January 2025
+- **Major Release:** v0.2.0 (Nested objects, patterns) - February 2025
 - **Stable API:** v1.0.0 (Q2 2025)
 
 See our [Public Roadmap](https://github.com/foundrydata/foundrydata/projects/1) for what's coming next.
