@@ -101,12 +101,16 @@ curl -X POST https://api.foundrydata.dev/generate \
 - `enum` - Pick from list
 - `required` - Required fields
 
+### Arrays (Basic Support)
+- `type: array` with `items` of basic types (string, number, boolean)
+- `minItems/maxItems` - Array length constraints
+
 ## ❌ Not Supported Yet
 
 | Feature | Status | Workaround |
 |---------|--------|------------|
 | Nested objects | Coming v2 | Flatten schema |
-| Arrays | Coming v2 | Generate separately |
+| Arrays of objects | Coming v2 | Generate separately |
 | `pattern` (regex) | Coming v3 | Use formats |
 | `allOf/oneOf` | Coming v3 | Pick one type |
 | `$ref` | Coming v3 | Inline definitions |
@@ -145,7 +149,13 @@ Want to try FoundryData right now? Copy this schema to `test.json`:
     "name": {"type": "string", "minLength": 2, "maxLength": 30},
     "email": {"type": "string", "format": "email"},
     "age": {"type": "integer", "minimum": 18, "maximum": 65},
-    "premium": {"type": "boolean"}
+    "premium": {"type": "boolean"},
+    "tags": {
+      "type": "array",
+      "items": {"type": "string"},
+      "minItems": 1,
+      "maxItems": 3
+    }
   },
   "required": ["id", "email"]
 }
@@ -181,13 +191,14 @@ Generates: Payment transactions, statuses, fees, timestamps
 
 **✅ Will work:**
 - Flat objects with basic types
+- Arrays of basic types (string, number, boolean)
 - String formats (uuid, email, date)
 - Number constraints (min/max)
 - Enums and required fields
 
 **❌ Won't work (yet):**
 - Nested objects
-- Arrays
+- Arrays of objects
 - Complex patterns
 - Schema references
 

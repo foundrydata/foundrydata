@@ -59,7 +59,13 @@ echo '{
   "properties": {
     "id": { "type": "string", "format": "uuid" },
     "email": { "type": "string", "format": "email" },
-    "age": { "type": "integer", "minimum": 18, "maximum": 99 }
+    "age": { "type": "integer", "minimum": 18, "maximum": 99 },
+    "tags": { 
+      "type": "array", 
+      "items": { "type": "string" },
+      "minItems": 1,
+      "maxItems": 3
+    }
   },
   "required": ["id", "email"]
 }' > user.json
@@ -73,7 +79,8 @@ foundrydata generate --schema user.json --rows 100
 #   {
 #     "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
 #     "email": "john.doe@example.com",
-#     "age": 42
+#     "age": 42,
+#     "tags": ["developer", "javascript", "api"]
 #   },
 #   ...
 # ]
@@ -167,16 +174,26 @@ foundrydata generate --schema user.json --rows 10 --pretty
     // ✅ Enums
     "role": { "type": "string", "enum": ["admin", "user", "guest"] },
     
-    // ⚠️ Limited support (basic arrays in v0.1.1)
+    // ✅ Basic arrays (strings, numbers, booleans)
     "tags": { 
       "type": "array", 
       "items": { "type": "string" },
       "minItems": 1,
       "maxItems": 5
-    },  // Basic arrays - v0.1.1
+    },
+    "scores": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0, "maximum": 100 },
+      "minItems": 3,
+      "maxItems": 10
+    },
     
     // ❌ Not supported yet (coming soon!)
     "address": { "type": "object" },  // Nested objects - v0.3
+    "permissions": { 
+      "type": "array",
+      "items": { "type": "object" }  // Arrays of objects - v0.2
+    }
   },
   "required": ["id", "email"]
 }
@@ -270,9 +287,9 @@ steps:
 
 ## 📊 Project Status
 
-- **Current Version:** v0.1.0 (MVP)
-- **Next Release:** v0.1.1 (Basic arrays support) - January 2025
-- **Major Release:** v0.2.0 (Nested objects, patterns) - February 2025
+- **Current Version:** v0.1.0 (MVP with basic arrays)
+- **Next Release:** v0.1.1 (Additional string formats) - January 2025  
+- **Major Release:** v0.2.0 (Arrays of objects, patterns) - February 2025
 - **Stable API:** v1.0.0 (Q2 2025)
 
 See our [Public Roadmap](https://github.com/foundrydata/foundrydata/projects/1) for what's coming next.
