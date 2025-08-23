@@ -1,0 +1,83 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "username": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 30
+    },
+    "firstName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 50
+    },
+    "lastName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 50
+    },
+    "plan": {
+      "type": "string",
+      "enum": ["free", "starter", "pro", "enterprise"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "inactive", "suspended", "trial"]
+    },
+    "isEmailVerified": {
+      "type": "boolean"
+    },
+    "subscriptionStartDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "trialEndsAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "monthlyUsageLimit": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "currentUsage": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "lastLoginAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 50
+    },
+    "language": {
+      "type": "string",
+      "enum": ["en", "fr", "es", "de", "it", "pt", "ja", "zh"]
+    },
+    "companySize": {
+      "type": "string",
+      "enum": ["1", "2-10", "11-50", "51-200", "201-1000", "1000+"]
+    }
+  },
+  "required": ["id", "email", "plan", "status", "isEmailVerified", "createdAt"]
+}

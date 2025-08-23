@@ -1,0 +1,80 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "sku": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 12
+    },
+    "name": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 100
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 500
+    },
+    "price": {
+      "type": "number",
+      "minimum": 0.01,
+      "maximum": 9999.99
+    },
+    "salePrice": {
+      "type": "number",
+      "minimum": 0.01,
+      "maximum": 9999.99
+    },
+    "category": {
+      "type": "string",
+      "enum": ["electronics", "clothing", "books", "home", "sports", "toys"]
+    },
+    "brand": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 50
+    },
+    "inStock": {
+      "type": "boolean"
+    },
+    "stockQuantity": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "weight": {
+      "type": "number",
+      "minimum": 0.01,
+      "maximum": 50.0
+    },
+    "dimensions": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 20
+    },
+    "rating": {
+      "type": "number",
+      "minimum": 1.0,
+      "maximum": 5.0
+    },
+    "reviewCount": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["id", "sku", "name", "price", "category", "inStock", "createdAt"]
+}

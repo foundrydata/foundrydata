@@ -1,0 +1,81 @@
+{
+  "type": "object",
+  "properties": {
+    "transactionId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "userId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "merchantId": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 20
+    },
+    "amount": {
+      "type": "number",
+      "minimum": 0.01,
+      "maximum": 99999.99
+    },
+    "currency": {
+      "type": "string",
+      "enum": ["USD", "EUR", "GBP", "CAD", "AUD", "JPY"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "completed", "failed", "cancelled", "refunded"]
+    },
+    "paymentMethod": {
+      "type": "string",
+      "enum": ["credit_card", "debit_card", "paypal", "stripe", "bank_transfer"]
+    },
+    "description": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 200
+    },
+    "reference": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 50
+    },
+    "processingFee": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 99.99
+    },
+    "isTest": {
+      "type": "boolean"
+    },
+    "ipAddress": {
+      "type": "string",
+      "minLength": 7,
+      "maxLength": 45
+    },
+    "userAgent": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 500
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "riskScore": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    }
+  },
+  "required": ["transactionId", "userId", "merchantId", "amount", "currency", "status", "createdAt"]
+}
