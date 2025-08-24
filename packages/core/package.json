@@ -20,7 +20,7 @@
     "validation"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --build",
     "dev": "tsc --watch",
     "test": "jest",
     "lint": "../../node_modules/.bin/eslint src/**/*.ts"
