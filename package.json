@@ -1,0 +1,46 @@
+{
+  "name": "foundrydata-monorepo",
+  "version": "0.1.0",
+  "description": "Open-source test data generator with 100% JSON Schema compliance",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -ws",
+    "dev": "npm run dev -ws",
+    "test": "npm run test -ws",
+    "lint": "npm run lint -ws",
+    "clean": "rm -rf packages/*/dist",
+    "prepublish": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foundrydata/foundrydata.git"
+  },
+  "keywords": [
+    "test-data",
+    "json-schema",
+    "data-generator",
+    "mock-data",
+    "cli",
+    "testing",
+    "schema-validation",
+    "open-source"
+  ],
+  "author": "fstepho",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/foundrydata/foundrydata/issues"
+  },
+  "homepage": "https://github.com/foundrydata/foundrydata#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0"
+  }
+}

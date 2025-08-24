@@ -1,0 +1,54 @@
+{
+  "name": "@foundrydata/core",
+  "version": "0.1.0",
+  "description": "Core generator for test data from JSON Schema",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "license": "MIT",
+  "author": "fstepho",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/foundrydata/foundrydata",
+    "directory": "packages/core"
+  },
+  "keywords": [
+    "test-data",
+    "json-schema",
+    "mock",
+    "generator",
+    "faker",
+    "validation"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^8.0.0",
+    "ajv": "^8.0.0",
+    "ajv-formats": "^2.0.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/uuid": "^9.0.0",
+    "typescript": "^5.0.0",
+    "jest": "^29.0.0",
+    "@types/jest": "^29.0.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
