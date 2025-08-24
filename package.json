@@ -14,7 +14,9 @@
     "lint": "npm run lint -ws",
     "clean": "rm -rf packages/*/dist",
     "prepublish": "npm run build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "task-ready": "npm run lint && npm run build && npm run test",
+    "task-complete": "npm run task-ready && echo '✅ Task validation passed - ready to mark as complete'"
   },
   "repository": {
     "type": "git",

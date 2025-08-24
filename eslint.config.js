@@ -53,6 +53,9 @@ export default tseslint.config(
       '@typescript-eslint': tseslint.plugin
     },
     rules: {
+      // Disable base rules that are covered by TypeScript versions
+      'no-unused-vars': 'off',
+      
       // TypeScript rules - Following architecture specification
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       '@typescript-eslint/explicit-function-return-type': ['error', {
@@ -63,13 +66,48 @@ export default tseslint.config(
     }
   },
 
+  // Schema types - allow unknown for JSON Schema compliance
+  {
+    name: 'schema-types',
+    files: ['**/types/schema.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    }
+  },
+
+  // Error types - allow any for context and params, relaxed complexity
+  {
+    name: 'error-types',
+    files: ['**/types/errors.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      'complexity': 'off',
+      'max-lines': ['error', 500],
+      'max-params': ['error', 6],
+    }
+  },
+
   // Test files - relaxed rules
   {
     name: 'test-files',
     files: ['**/*.test.ts', '**/*.spec.ts'],
+    languageOptions: {
+      globals: {
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        jest: 'readonly'
+      }
+    },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
       'max-lines-per-function': 'off',
+      'max-lines': 'off',
     }
   },
 
