@@ -42,7 +42,7 @@
 - 🎯 **100% Schema Compliance** - Every generated row is validated against your schema
 - 🚀 **CLI First** - Run locally, no account needed, no data leaves your machine
 - 📦 **Fully Open Source** - MIT licensed, audit the code, contribute features
-- ⚡ **Blazing Fast** - Generate 10,000 rows in under a second
+- ⚡ **Fast Generation** - Generate 1,000 rows in under 200ms
 - 🔧 **Zero Config** - Just point to your schema and go
 - 🎲 **Deterministic** - Same seed = same data, perfect for tests
 - 🛠️ **Developer Friendly** - Clear errors when schemas aren't supported
@@ -85,6 +85,12 @@ foundrydata generate --schema user.json --rows 100
 #   ...
 # ]
 ```
+
+## 🏗️ Built for Scale
+- **Modular Architecture** - Registry pattern for easy extension
+- **Type-Safe** - Full TypeScript with Result<T,E> pattern
+- **Production-Ready** - Comprehensive tests, proper error handling
+- **Extension-Ready** - Architecture supports future extensions
 
 ## 🤔 Why FoundryData?
 
@@ -149,8 +155,8 @@ foundrydata generate --schema user.json --rows 50 --seed 42
 # Output to file
 foundrydata generate --schema user.json --rows 1000 --output users.json
 
-# Pretty print output
-foundrydata generate --schema user.json --rows 10 --pretty
+# Help command
+foundrydata --help
 ```
 
 ### Supported Schema Features
@@ -174,7 +180,7 @@ foundrydata generate --schema user.json --rows 10 --pretty
     // ✅ Enums
     "role": { "type": "string", "enum": ["admin", "user", "guest"] },
     
-    // ✅ Arrays (strings, numbers, booleans, objects)
+    // ✅ Arrays (primitives + flat objects)
     "tags": { 
       "type": "array", 
       "items": { "type": "string" },
@@ -188,12 +194,19 @@ foundrydata generate --schema user.json --rows 10 --pretty
       "maxItems": 10
     },
     
-    // ✅ Arrays of objects supported
+    // ✅ Arrays of flat objects supported  
     "permissions": { 
       "type": "array",
-      "items": { "type": "object" }  
-    },
-    "address": { "type": "object" }  // Nested objects - v0.3
+      "items": { 
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "level": {"type": "integer"}
+        }
+      }
+    }
+    // ❌ Nested objects - Coming in v0.3
+    // "address": { "type": "object" }
   },
   "required": ["id", "email"]
 }
@@ -217,24 +230,15 @@ foundrydata generate --schema complex.json
 # https://github.com/foundrydata/foundrydata/issues
 ```
 
-## ☁️ API Access (Optional)
+## ☁️ API Access (Planned for Future)
 
-Need to generate data in CI/CD pipelines? Don't want to install anything?
+**Current MVP:** CLI only - no API available yet
 
-```bash
-# Cloud API available for teams (€29/month)
-curl -X POST https://api.foundrydata.dev/generate \
-  -H 'X-API-Key: your_api_key' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "schema": { ... },
-    "rows": 100
-  }'
-```
+**Future:** If users request CI/CD integration, we may build a simple API for teams.
 
-The CLI will **always** be free and open source. The API funds continued development.
+The CLI will **always** be free and open source. Any future API would fund continued development.
 
-[Get API Access →](https://foundrydata.dev)
+Want an API? [Let us know in the discussions →](https://github.com/foundrydata/foundrydata/discussions)
 
 ## 🤝 Contributing
 
@@ -259,54 +263,52 @@ npm run build
 
 See [CONTRIBUTING.md](https://github.com/foundrydata/foundrydata/blob/main/CONTRIBUTING.md) for more details.
 
-### Popular Integrations (Community Requested)
+### Planned Integrations (Community Requested)
 
-```bash
-# Generate from Prisma schema (coming in v0.2)
-foundrydata generate --prisma schema.prisma --model User --rows 100
+Future versions may include:
+- Prisma schema support (if requested)
+- GitHub Action for CI/CD (if requested) 
+- VS Code extension (if requested)
 
-# GitHub Action for CI/CD (available now)
-# .github/workflows/test-data.yml
-steps:
-  - uses: foundrydata/generate-action@v1
-    with:
-      schema: ./schemas/user.json
-      output: ./test-data/users.json
-      rows: 100
-```
+Want these features? [Vote on our roadmap →](https://github.com/foundrydata/foundrydata/discussions)
 
 ### Good First Issues
 
-- [ ] Add `format: ipv4` support ([#12](https://github.com/foundrydata/foundrydata/issues/12))
-- [ ] Add `format: hostname` support ([#13](https://github.com/foundrydata/foundrydata/issues/13))
-- [ ] Add `format: phone` support ([#14](https://github.com/foundrydata/foundrydata/issues/14))
-- [ ] Improve error messages for unsupported features ([#15](https://github.com/foundrydata/foundrydata/issues/15))
-- [ ] Create Prisma schema converter ([#16](https://github.com/foundrydata/foundrydata/issues/16))
-- [ ] Add GitHub Action example ([#17](https://github.com/foundrydata/foundrydata/issues/17))
+Looking to contribute? Here are some features the community has requested:
+
+- Add additional string formats (`ipv4`, `hostname`, `phone`)
+- Improve error messages for unsupported features
+- Add more example schemas
+- Improve documentation
+- Create integration examples
+
+[See all issues →](https://github.com/foundrydata/foundrydata/issues)
 
 ## 📊 Project Status
 
-- **Current Version:** v0.1.0 (MVP with full array support)
-- **Next Release:** v0.1.1 (Additional string formats)
-- **Major Release:** v0.2.0 (Patterns, additional formats)
-- **Stable API:** v1.0.0
+- **Current Version:** v0.1.0 (MVP - basic types, arrays of flat objects, core formats)
+- **Next Release:** Based on community feedback and requests
+- **Philosophy:** Ship simple, reliable features. Add complexity only when requested.
 
-See our [Public Roadmap](https://github.com/foundrydata/foundrydata/projects/1) for what's coming next.
+See our [Discussions](https://github.com/foundrydata/foundrydata/discussions) for what's being considered next.
 
 ## 🏗️ Architecture
 
 ```
 foundrydata/
 ├── packages/
-│   ├── @foundrydata/core    # Core generation logic
-│   └── foundrydata          # CLI wrapper
+│   ├── core/                # @foundrydata/core - Generation engine
+│   ├── cli/                 # foundrydata CLI wrapper  
+│   └── shared/              # Shared utilities
 ├── examples/                # Sample schemas
-└── docs/                    # Documentation
+└── docs/                    # Documentation & guides
 ```
+
+**Modular design:** Production-ready architecture with extensible components, registry patterns, and comprehensive error handling.
 
 ## 📈 Stats
 
-![Repobeats](https://repobeats.axiom.co/api/embed/foundrydata.svg "Repobeats analytics")
+*Project statistics will appear here once the project is public and has some usage data.*
 
 ## 🙏 Acknowledgements
 
