@@ -102,8 +102,8 @@ curl -X POST https://api.foundrydata.dev/generate \
 - `enum` - Pick from list (cached for consistency)
 - `required` - Required fields
 
-### Arrays (Basic Support)
-- `type: array` with `items` of basic types (string, number, boolean)
+### Arrays (Full Support)
+- `type: array` with `items` of all supported types (string, number, boolean, objects)
 - `minItems/maxItems` - Array length constraints
 
 ## ❌ Not Supported Yet
@@ -111,7 +111,7 @@ curl -X POST https://api.foundrydata.dev/generate \
 | Feature | Status | Workaround |
 |---------|--------|------------|
 | Nested objects | Coming v0.3 | Flatten schema |
-| Arrays of objects | Coming v0.2 | Generate separately |
+| Arrays of objects | ✅ Yes | Full object support |
 | `pattern` (regex) | Coming v3 | Use formats |
 | `allOf/oneOf` | Coming v3 | Pick one type |
 | `$ref` | Coming v3 | Inline definitions |
@@ -190,16 +190,16 @@ Generates: Payment transactions, statuses, fees, timestamps
 
 ## 🎯 Schema Compatibility Check
 
-**✅ Will work:**
+**✅ Will work (v0.1):**
 - Flat objects with basic types
 - Arrays of basic types (string, number, boolean)
+- ✅ Arrays of objects
 - String formats (uuid, email, date)
 - Number constraints (min/max)
 - Enums and required fields
 
-**❌ Won't work (yet):**
+**❌ Won't work (v0.1):**
 - Nested objects
-- Arrays of objects
 - Complex patterns
 - Schema references
 

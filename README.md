@@ -174,7 +174,7 @@ foundrydata generate --schema user.json --rows 10 --pretty
     // ✅ Enums
     "role": { "type": "string", "enum": ["admin", "user", "guest"] },
     
-    // ✅ Basic arrays (strings, numbers, booleans)
+    // ✅ Arrays (strings, numbers, booleans, objects)
     "tags": { 
       "type": "array", 
       "items": { "type": "string" },
@@ -188,10 +188,10 @@ foundrydata generate --schema user.json --rows 10 --pretty
       "maxItems": 10
     },
     
-    // ❌ Not supported in v0.1 - Critical limitations
+    // ✅ Arrays of objects supported
     "permissions": { 
       "type": "array",
-      "items": { "type": "object" }  // Arrays of objects - v0.2
+      "items": { "type": "object" }  
     },
     "address": { "type": "object" }  // Nested objects - v0.3
   },
@@ -209,10 +209,8 @@ foundrydata generate --schema complex.json
 # 
 # Unsupported features detected:
 #   - Nested objects at: properties.address
-#   - Arrays at: properties.tags
 # 
-# 💡 Workaround: Flatten nested objects or generate them separately
-# 📅 Arrays of objects: v0.2 - PRIORITY
+# 💡 Workaround: Flatten nested objects
 # 📅 Nested objects: v0.3
 # 
 # Want them sooner? Vote or contribute:
@@ -288,9 +286,9 @@ steps:
 
 ## 📊 Project Status
 
-- **Current Version:** v0.1.0 (MVP with basic arrays)
+- **Current Version:** v0.1.0 (MVP with full array support)
 - **Next Release:** v0.1.1 (Additional string formats)
-- **Major Release:** v0.2.0 (Arrays of objects, patterns)
+- **Major Release:** v0.2.0 (Patterns, additional formats)
 - **Stable API:** v1.0.0
 
 See our [Public Roadmap](https://github.com/foundrydata/foundrydata/projects/1) for what's coming next.
