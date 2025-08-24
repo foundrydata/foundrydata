@@ -96,9 +96,10 @@ curl -X POST https://api.foundrydata.dev/generate \
 - `format: date-time` - ISO 8601 with timezone
 
 ### Constraints
-- `minimum/maximum` - Number ranges
+- `minimum/maximum` - Number ranges (inclusive)
+- `exclusiveMinimum/exclusiveMaximum` - Number ranges (exclusive)
 - `minLength/maxLength` - String length
-- `enum` - Pick from list
+- `enum` - Pick from list (cached for consistency)
 - `required` - Required fields
 
 ### Arrays (Basic Support)
