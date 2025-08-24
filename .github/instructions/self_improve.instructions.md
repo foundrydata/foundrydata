@@ -38,9 +38,9 @@ applyTo: "**/*"
     where: { status: 'ACTIVE' }
   });
   
-  // Consider adding to [prisma.instructions.md](.github/instructions/prisma.instructions.md):
-  // - Standard select fields
-  // - Common where conditions
+  // Consider adding to relevant technology-specific instruction files:
+  // - Standard query patterns
+  // - Common filtering conditions
   // - Performance optimization patterns
   ```
 
@@ -68,4 +68,4 @@ applyTo: "**/*"
   - Update references to external docs
   - Maintain links between related rules
   - Document breaking changes
-Follow [vscode_rules.instructions.md](.github/instructions/vscode_rules.instructions.md) for proper rule formatting and structure.
+Follow [vscode_rules.instructions.md](vscode_rules.instructions.md) for proper rule formatting and structure.

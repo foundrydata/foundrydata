@@ -18,7 +18,7 @@ applyTo: ".github/instructions/*.instructions.md"
 
 - **File References:**
   - Use `[filename](mdc:path/to/file)` ([filename](mdc:filename)) to reference files
-  - Example: [prisma.instructions.md](.github/instructions/prisma.instructions.md) for rule references
+  - Example: [taskmaster.instructions.md](taskmaster.instructions.md) for rule references
   - Example: [schema.prisma](mdc:prisma/schema.prisma) for code references
 
 - **Code Examples:**

@@ -554,4 +554,4 @@ Environment variables are used **only** for sensitive API keys related to AI pro
 
 ---
 
-For details on how these commands fit into the development process, see the [dev_workflow.instructions.md](.github/instructions/dev_workflow.instructions.md).
+For details on how these commands fit into the development process, see the [dev_workflow.instructions.md](dev_workflow.instructions.md).
