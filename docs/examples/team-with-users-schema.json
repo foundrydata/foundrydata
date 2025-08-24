@@ -1,0 +1,64 @@
+{
+  "type": "object",
+  "properties": {
+    "teamId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "teamName": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 50
+    },
+    "plan": {
+      "type": "string",
+      "enum": ["startup", "growth", "enterprise"]
+    },
+    "isActive": {
+      "type": "boolean"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "members": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["admin", "member", "viewer"]
+          },
+          "joinedAt": {
+            "type": "string",
+            "format": "date"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": ["userId", "email", "role"]
+      },
+      "minItems": 1,
+      "maxItems": 20
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 0,
+      "maxItems": 5
+    }
+  },
+  "required": ["teamId", "teamName", "plan", "isActive", "createdAt", "members"]
+}

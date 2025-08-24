@@ -11,6 +11,7 @@ This directory contains real-world schema examples and usage patterns for Foundr
 | [`ecommerce-schema.json`](./ecommerce-schema.json) | Complete product catalog | E-commerce product data |
 | [`saas-user-schema.json`](./saas-user-schema.json) | SaaS user management | User profiles, subscriptions |
 | [`api-transaction-schema.json`](./api-transaction-schema.json) | Payment transactions | Financial API responses |
+| [`team-with-users-schema.json`](./team-with-users-schema.json) | Team with member arrays | Arrays of flat objects example |
 | [`quick-test-schema.json`](./quick-test-schema.json) | Simple test schema | Quick testing & demos |
 
 ## 🚀 Basic Usage
@@ -34,6 +35,9 @@ foundrydata generate --schema ecommerce-schema.json --rows 100
 # Deterministic output (same seed = same data)
 foundrydata generate --schema saas-user-schema.json --rows 50 --seed 42
 
+# Arrays of objects example
+foundrydata generate --schema team-with-users-schema.json --rows 10
+
 # Output to file
 foundrydata generate --schema api-transaction-schema.json --rows 200 --output transactions.json
 
@@ -51,16 +55,20 @@ foundrydata generate --schema quick-test-schema.json --rows 5
 | `foundrydata help` | Show help |
 | `foundrydata version` | Show version |
 
-## ☁️ API Usage (Pro Plan)
+## ☁️ API Usage (Coming Month 3+ if requested)
+
+**Note:** API is not yet available in MVP. CLI only for now.
+
+**Note:** API architecture designed but not yet implemented.
 
 ```bash
-# Generate via API
+# Future API usage (when built)
 curl -X POST https://api.foundrydata.dev/generate \
   -H 'X-API-Key: foundry_live_your_key' \
   -H 'Content-Type: application/json' \
   -d '{
     "schema": {
-      "type": "object",
+      "type": "object", 
       "properties": {
         "id": {"type": "string", "format": "uuid"},
         "email": {"type": "string", "format": "email"}
@@ -70,15 +78,8 @@ curl -X POST https://api.foundrydata.dev/generate \
     "rows": 10
   }'
 
-# Generate CSV format
-curl -X POST https://api.foundrydata.dev/generate \
-  -H 'X-API-Key: foundry_live_your_key' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "schema": {...},
-    "rows": 100,
-    "format": "csv"
-  }'
+# CSV format will be API-only feature
+# JSON is the only MVP format
 ```
 
 ## ✅ What's Supported in MVP
@@ -97,24 +98,25 @@ curl -X POST https://api.foundrydata.dev/generate \
 
 ### Constraints
 - `minimum/maximum` - Number ranges (inclusive)
-- `exclusiveMinimum/exclusiveMaximum` - Number ranges (exclusive)
 - `minLength/maxLength` - String length
 - `enum` - Pick from list (cached for consistency)
 - `required` - Required fields
 
-### Arrays (Full Support)
-- `type: array` with `items` of all supported types (string, number, boolean, objects)
+### Arrays
+- `type: array` with `items` of primitives (string, number, boolean)
+- Arrays of flat objects (objects with only primitive properties)
 - `minItems/maxItems` - Array length constraints
 
 ## ❌ Not Supported Yet
 
 | Feature | Status | Workaround |
 |---------|--------|------------|
-| Nested objects | Coming v0.3 | Flatten schema |
-| Arrays of objects | ✅ Yes | Full object support |
-| `pattern` (regex) | Coming v3 | Use formats |
-| `allOf/oneOf` | Coming v3 | Pick one type |
-| `$ref` | Coming v3 | Inline definitions |
+| Nested objects (in properties) | Coming v0.3 | Flatten schema |
+| Objects nested 2+ levels deep | Coming v0.3 | Use arrays of flat objects |
+| `pattern` (regex) | Coming v0.3 | Use formats |
+| `allOf/oneOf` | Coming v0.3 | Pick one type |
+| `$ref` | Coming v0.3 | Inline definitions |
+| `exclusiveMinimum/exclusiveMaximum` | Coming v0.2 | Use inclusive ranges |
 
 ## 💬 Error Messages
 
@@ -182,6 +184,12 @@ foundrydata generate --schema saas-user-schema.json --rows 50
 ```
 Generates: Users, plans, subscriptions, usage limits
 
+### Team with Member Arrays
+```bash
+foundrydata generate --schema team-with-users-schema.json --rows 10
+```
+Generates: Teams with arrays of flat user objects (demonstrates arrays of objects)
+
 ### API Transaction Data
 ```bash
 foundrydata generate --schema api-transaction-schema.json --rows 200
@@ -192,16 +200,19 @@ Generates: Payment transactions, statuses, fees, timestamps
 
 **✅ Will work (v0.1):**
 - Flat objects with basic types
-- Arrays of basic types (string, number, boolean)
-- ✅ Arrays of objects
-- String formats (uuid, email, date)
-- Number constraints (min/max)
+- Arrays of primitives (string, number, boolean)
+- Arrays of flat objects (objects with only primitive properties)
+- String formats (uuid, email, date, date-time)
+- Number constraints (min/max inclusive only)
+- String constraints (minLength/maxLength)
 - Enums and required fields
 
 **❌ Won't work (v0.1):**
-- Nested objects
-- Complex patterns
-- Schema references
+- Nested objects (object properties with object type)
+- Objects nested 2+ levels deep
+- Complex patterns, regex validation
+- Schema references ($ref)
+- Exclusive minimum/maximum ranges
 
 ## 🆘 Need Help?
 
