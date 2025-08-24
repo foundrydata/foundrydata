@@ -7,10 +7,10 @@
   <h1>FoundryData</h1>
   
   <p>
-    <strong>Stop wasting hours on test data that breaks your API. Generate 10,000 perfectly valid records in 1 second.</strong>
+    <strong>Stop wasting hours on test data that breaks your API. Generate perfectly valid records in seconds.</strong>
   </p>
   <p>
-    <em>100% schema compliant for supported features - or we tell you why</em>
+    <em>Simple MVP that does one thing well: 100% schema compliance for basic JSON schemas</em>
   </p>
   
   <p>
@@ -86,11 +86,11 @@ foundrydata generate --schema user.json --rows 100
 # ]
 ```
 
-## 🏗️ Built for Scale
-- **Modular Architecture** - Registry pattern for easy extension
-- **Type-Safe** - Full TypeScript with Result<T,E> pattern
-- **Production-Ready** - Comprehensive tests, proper error handling
-- **Extension-Ready** - Architecture supports future extensions
+## 🏗️ Built Right from Day 1
+- **Clean Architecture** - Simple to extend when needed
+- **Type-Safe** - Full TypeScript, fewer runtime surprises
+- **Well-Tested** - Works reliably, catches edge cases
+- **Future-Proof** - Easy to add features as we grow
 
 ## 🤔 Why FoundryData?
 
@@ -304,7 +304,7 @@ foundrydata/
 └── docs/                    # Documentation & guides
 ```
 
-**Modular design:** Production-ready architecture with extensible components, registry patterns, and comprehensive error handling.
+**Simple but solid:** Clean code that's easy to understand, extend, and debug. Built to last without the bloat.
 
 ## 📈 Stats
 
