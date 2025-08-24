@@ -137,4 +137,32 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
-.claude/
+# Claude Code configuration (kept in repo)
+# .claude/
+
+# Task Master AI (local task tracking)
+.taskmaster/
+*.sh.sh
+
+# System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Local environment and configs that should not be shared
+.mcp.json
+
+# Build and temporary files
+*.tsbuildinfo
+.turbo/
+
+# IDE files (VSCode settings can be shared)
+.idea/
+*.swp
+*.swo
+*~
+.claude/settings.local.json
