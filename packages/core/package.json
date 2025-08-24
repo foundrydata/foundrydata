@@ -23,7 +23,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "jest",
-    "lint": "eslint src/**/*.ts"
+    "lint": "../../node_modules/.bin/eslint src/**/*.ts"
   },
   "dependencies": {
     "@foundrydata/shared": "^0.1.0",
@@ -37,10 +37,7 @@
     "@types/uuid": "^9.0.0",
     "typescript": "^5.0.0",
     "jest": "^29.0.0",
-    "@types/jest": "^29.0.0",
-    "eslint": "^8.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0"
+    "@types/jest": "^29.0.0"
   },
   "files": [
     "dist",

@@ -1,14 +1,16 @@
-// ESLint 9 flat config - Simplified but following architecture principles
-const js = require('@eslint/js');
+// ESLint 9 flat config - Modern ESM with defineConfig for type safety
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
 
-module.exports = [
+export default tseslint.config(
   // Base configuration
   js.configs.recommended,
   
   // Global settings
   {
+    name: 'global-config',
     languageOptions: {
-      ecmaVersion: 2020,
+      ecmaVersion: 2022,
       sourceType: 'module',
       globals: {
         console: 'readonly',
@@ -38,12 +40,17 @@ module.exports = [
 
   // TypeScript files configuration
   {
+    name: 'typescript-config',
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
-      parser: require('@typescript-eslint/parser'),
+      parser: tseslint.parser,
+      parserOptions: {
+        ecmaVersion: 2022,
+        sourceType: 'module'
+      }
     },
     plugins: {
-      '@typescript-eslint': require('@typescript-eslint/eslint-plugin'),
+      '@typescript-eslint': tseslint.plugin
     },
     rules: {
       // TypeScript rules - Following architecture specification
@@ -58,6 +65,7 @@ module.exports = [
 
   // Test files - relaxed rules
   {
+    name: 'test-files',
     files: ['**/*.test.ts', '**/*.spec.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
@@ -67,6 +75,7 @@ module.exports = [
 
   // CLI files - allow console
   {
+    name: 'cli-files',
     files: ['packages/cli/**/*.ts'],
     rules: {
       'no-console': 'off',
@@ -75,12 +84,13 @@ module.exports = [
 
   // Ignore patterns
   {
+    name: 'ignore-patterns',
     ignores: [
-      'dist/',
-      'node_modules/',
-      'coverage/',
-      '*.js',
-      'jest.config.js'
+      '**/dist/**',
+      'node_modules/**',
+      'coverage/**',
+      '**/*.config.js',
+      'eslint.config.js'
     ]
   }
-];
+);

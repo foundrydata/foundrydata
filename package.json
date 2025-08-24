@@ -2,6 +2,7 @@
   "name": "foundrydata-monorepo",
   "version": "0.1.0",
   "description": "Open-source test data generator with 100% JSON Schema compliance",
+  "type": "module",
   "private": true,
   "workspaces": [
     "packages/*"
@@ -66,7 +67,7 @@
     "prettier": "^3.6.2",
     "ts-jest": "^29.4.1",
     "tslib": "^2.8.1",
-    "typescript": "^5.0.0",
+    "typescript": "^5.9.2",
     "typescript-eslint": "^8.40.0"
   }
 }
