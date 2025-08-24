@@ -188,12 +188,12 @@ foundrydata generate --schema user.json --rows 10 --pretty
       "maxItems": 10
     },
     
-    // ❌ Not supported yet (coming soon!)
-    "address": { "type": "object" },  // Nested objects - v0.3
+    // ❌ Not supported in v0.1 - Critical limitations
     "permissions": { 
       "type": "array",
       "items": { "type": "object" }  // Arrays of objects - v0.2
-    }
+    },
+    "address": { "type": "object" }  // Nested objects - v0.3
   },
   "required": ["id", "email"]
 }
@@ -212,7 +212,8 @@ foundrydata generate --schema complex.json
 #   - Arrays at: properties.tags
 # 
 # 💡 Workaround: Flatten nested objects or generate them separately
-# 📅 These features are planned for v0.2-v0.3 (2025)
+# 📅 Arrays of objects: v0.2 - PRIORITY
+# 📅 Nested objects: v0.3
 # 
 # Want them sooner? Vote or contribute:
 # https://github.com/foundrydata/foundrydata/issues
@@ -288,9 +289,9 @@ steps:
 ## 📊 Project Status
 
 - **Current Version:** v0.1.0 (MVP with basic arrays)
-- **Next Release:** v0.1.1 (Additional string formats) - January 2025  
-- **Major Release:** v0.2.0 (Arrays of objects, patterns) - February 2025
-- **Stable API:** v1.0.0 (Q2 2025)
+- **Next Release:** v0.1.1 (Additional string formats)
+- **Major Release:** v0.2.0 (Arrays of objects, patterns)
+- **Stable API:** v1.0.0
 
 See our [Public Roadmap](https://github.com/foundrydata/foundrydata/projects/1) for what's coming next.
 
