@@ -39,7 +39,7 @@ foundrydata/
   
   # FoundryData
   
-  **Generate test data from JSON Schema. 100% compliant or we tell you why.**
+  **Generate test data from JSON Schema. 100% schema compliant for supported features - or we tell you why.**
 </div>
 ```
 

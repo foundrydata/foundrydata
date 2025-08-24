@@ -10,7 +10,7 @@
     <strong>Stop wasting hours on test data that breaks your API. Generate 10,000 perfectly valid records in 1 second.</strong>
   </p>
   <p>
-    <em>100% schema compliant or we tell you why</em>
+    <em>100% schema compliant for supported features - or we tell you why</em>
   </p>
   
   <p>
