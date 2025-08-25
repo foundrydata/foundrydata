@@ -75,17 +75,6 @@ export default tseslint.config(
     }
   },
 
-  // Error types - allow any for context and params, relaxed complexity
-  {
-    name: 'error-types',
-    files: ['**/types/errors.ts'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      'complexity': 'off',
-      'max-lines': ['error', 500],
-      'max-params': ['error', 6],
-    }
-  },
 
   // Test files - relaxed rules
   {
@@ -100,7 +89,9 @@ export default tseslint.config(
         afterEach: 'readonly',
         beforeAll: 'readonly',
         afterAll: 'readonly',
-        jest: 'readonly'
+        jest: 'readonly',
+        __dirname: 'readonly',  // Node.js global
+        __filename: 'readonly'  // Node.js global
       }
     },
     rules: {
@@ -108,6 +99,7 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': 'off',
       'max-lines-per-function': 'off',
       'max-lines': 'off',
+      'no-console': 'off',  // Allow console in tests for debugging
     }
   },
 
@@ -117,6 +109,41 @@ export default tseslint.config(
     files: ['packages/cli/**/*.ts'],
     rules: {
       'no-console': 'off',
+    }
+  },
+
+  // Core library files - slightly relaxed (must be before more specific rules)
+  {
+    name: 'core-files',
+    files: ['packages/core/src/**/*.ts'],
+    rules: {
+      'max-lines': ['error', 400],           // Up from 300 - domain complexity
+      'complexity': ['error', 12],           // Up from 10 - business logic
+    }
+  },
+
+  // Parser and generator files - relaxed complexity rules
+  {
+    name: 'parser-generator-files',
+    files: ['**/parser/**/*.ts', '**/generator/**/*.ts'],
+    rules: {
+      'complexity': ['error', 15],           // Up from 10 - complex validation logic
+      'max-lines': ['error', 500],           // Up from 300 - schema transformation
+      'max-lines-per-function': ['error', 75], // Up from 50 - switch statements  
+      'max-depth': ['error', 4],             // Up from 3 - nested object traversal
+      'max-params': ['error', 5],            // Up from 4 - parser context
+    }
+  },
+
+  // Error types - allow any for context and params, relaxed complexity (after core-files)
+  {
+    name: 'error-types',
+    files: ['**/types/errors.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      'complexity': 'off',
+      'max-lines': ['error', 500],
+      'max-params': ['error', 6],
     }
   },
 

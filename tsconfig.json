@@ -24,13 +24,6 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     
-    // Emit
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "removeComments": false,
-    "importHelpers": true,
-    
     // JavaScript Support
     "allowJs": false,
     "checkJs": false,
@@ -43,12 +36,9 @@
     "experimentalDecorators": false,
     "emitDecoratorMetadata": false,
     "preserveConstEnums": true,
-    "isolatedModules": true,
-    
-    // Output
-    "incremental": true,
-    "tsBuildInfoFile": ".tsbuildinfo"
+    "isolatedModules": true
   },
+  "files": [],
   "references": [
     { "path": "./packages/shared" },
     { "path": "./packages/core" },
