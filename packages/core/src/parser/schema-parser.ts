@@ -1,0 +1,50 @@
+/**
+ * Schema parser interface and registry system
+ * Supports multiple schema formats with extensible parser registration
+ */
+
+import type { Result } from '../types/result';
+import type { Schema } from '../types/schema';
+import { ParseError } from '../types/errors';
+import { err } from '../types/result';
+
+/**
+ * Base interface for schema parsers
+ */
+export interface SchemaParser {
+  supports(input: unknown): boolean;
+  parse(input: unknown): Result<Schema, ParseError>;
+}
+
+/**
+ * Parser registry for extensibility
+ */
+export class ParserRegistry {
+  private parsers: SchemaParser[] = [];
+
+  register(parser: SchemaParser): void {
+    this.parsers.push(parser);
+  }
+
+  parse(input: unknown): Result<Schema, ParseError> {
+    const parser = this.parsers.find((p) => p.supports(input));
+    if (!parser) {
+      return err(new ParseError('No suitable parser found'));
+    }
+    return parser.parse(input);
+  }
+
+  getRegisteredParsers(): string[] {
+    return this.parsers.map((p) => p.constructor.name);
+  }
+}
+
+/**
+ * Utility function to check if object has property
+ */
+export function hasProperty<T extends Record<string, unknown>>(
+  obj: unknown,
+  prop: keyof T
+): obj is T {
+  return typeof obj === 'object' && obj !== null && prop in obj;
+}
