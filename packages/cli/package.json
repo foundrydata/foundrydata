@@ -1,6 +1,7 @@
 {
   "name": "foundrydata",
   "version": "0.1.0",
+  "type": "module",
   "description": "CLI tool to generate test data from JSON Schema",
   "bin": {
     "foundrydata": "./dist/index.js"

@@ -1,6 +1,7 @@
 {
   "name": "@foundrydata/core",
   "version": "0.1.0",
+  "type": "module",
   "description": "Core generator for test data from JSON Schema",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

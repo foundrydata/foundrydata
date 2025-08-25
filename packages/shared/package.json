@@ -1,6 +1,7 @@
 {
   "name": "@foundrydata/shared",
   "version": "0.1.0",
+  "type": "module",
   "description": "Shared utilities and types for foundrydata packages",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

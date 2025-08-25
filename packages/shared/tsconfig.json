@@ -5,14 +5,13 @@
     "rootDir": "./src",
     "composite": true,
     "declaration": true,
-    "declarationMap": true,
-    "tsBuildInfoFile": "./tsconfig.shared.tsbuildinfo"
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": [
     "src/**/*"
   ],
   "exclude": [
-    "dist",
-    "**/*.test.ts"
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts"
   ]
 }
