@@ -18,6 +18,13 @@
 **Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
 @./.taskmaster/CLAUDE.md
 
+### CRITICAL: Task Completion Protocol
+**ALWAYS use the `/complete-task <id>` command when marking any TaskMaster task as complete.**
+- NEVER manually use `task-master set-status --status=done` 
+- ALWAYS use `/complete-task <id>` which runs all quality checks first
+- Only mark tasks as complete after lint, typecheck, and tests pass
+- This ensures code quality is maintained throughout development
+
 ## ESLint and Code Quality Guidelines
 
 **DO NOT blindly follow ESLint rules** - they are guidelines, not absolute laws. Use judgment based on context:
