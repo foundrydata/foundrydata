@@ -82,11 +82,17 @@ export class SchemaError extends FoundryError {
 export class GenerationError extends FoundryError {
   constructor(
     message: string,
+    public readonly suggestion?: string,
     public readonly field?: string,
     public readonly constraint?: string,
     context?: Record<string, any>
   ) {
-    super(message, 'GENERATION_ERROR', { field, constraint, ...context });
+    super(message, 'GENERATION_ERROR', {
+      field,
+      constraint,
+      suggestion,
+      ...context,
+    });
   }
 
   getUserMessage(): string {
@@ -99,6 +105,11 @@ export class GenerationError extends FoundryError {
 
   getSuggestions(): string[] {
     const suggestions: string[] = [];
+
+    // Add explicit suggestion if provided
+    if (this.suggestion) {
+      suggestions.push(this.suggestion);
+    }
 
     if (this.constraint === 'minLength' || this.constraint === 'maxLength') {
       suggestions.push(

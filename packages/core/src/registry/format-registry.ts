@@ -45,30 +45,85 @@ export interface FormatGenerator {
 }
 
 /**
- * Registry for format generators
+ * Registry for format generators with lazy initialization
  * Supports format lookup by name and pattern matching
  */
 export class FormatRegistry {
   private readonly formats = new Map<string, FormatGenerator>();
+  private initialized = false;
+
+  // Lazy initialization function
+  private initializer?: () => void;
+
+  /**
+   * Set the initialization function (called once on first use)
+   */
+  setInitializer(init: () => void): void {
+    this.initializer = init;
+  }
+
+  /**
+   * Ensure registry is initialized before use
+   */
+  private ensureInitialized(): void {
+    if (!this.initialized && this.initializer) {
+      this.initializer();
+      this.initialized = true;
+      this.initializer = undefined; // Free the reference
+    }
+  }
 
   /**
    * Register a format generator
    */
   register(generator: FormatGenerator): void {
     this.formats.set(generator.name, generator);
+
+    // Also register common aliases
+    const aliases = this.getAliases(generator.name);
+    for (const alias of aliases) {
+      if (!this.formats.has(alias)) {
+        this.formats.set(alias, generator);
+      }
+    }
+  }
+
+  /**
+   * Get common aliases for format names
+   */
+  private getAliases(name: string): string[] {
+    const aliasMap: Record<string, string[]> = {
+      uuid: ['guid'],
+      'date-time': ['datetime', 'dateTime'],
+      email: ['e-mail'],
+      uri: ['url'],
+      ipv4: ['ip', 'ip-address'],
+      ipv6: ['ipv6-address'],
+    };
+
+    return aliasMap[name] || [];
   }
 
   /**
    * Get a format generator by name or pattern
    */
   get(format: string): FormatGenerator | null {
+    this.ensureInitialized();
+
     // Try exact match first
-    if (this.formats.has(format)) {
-      return this.formats.get(format)!;
+    const exact = this.formats.get(format);
+    if (exact) return exact;
+
+    // Try case-insensitive match
+    const lowerFormat = format.toLowerCase();
+    for (const [key, generator] of Array.from(this.formats.entries())) {
+      if (key.toLowerCase() === lowerFormat) {
+        return generator;
+      }
     }
 
-    // Try pattern matching - check all generators to see if they support this format
-    for (const generator of this.formats.values()) {
+    // Try pattern matching
+    for (const generator of Array.from(this.formats.values())) {
       if (generator.supports(format)) {
         return generator;
       }
@@ -94,17 +149,92 @@ export class FormatRegistry {
     const generator = this.get(format);
 
     if (!generator) {
+      // Provide helpful error message
+      const available = this.getRegisteredFormats();
+      const suggestion = this.findSimilarFormat(format, available);
+
       return err(
         new GenerationError(
-          `No generator found for format: ${format}`,
-          undefined,
-          'format',
-          { format }
+          `No generator found for format: "${format}"`,
+          suggestion ? `Did you mean "${suggestion}"?` : undefined,
+          undefined, // field
+          'format', // constraint
+          {
+            format,
+            available: available.slice(0, 10), // Show first 10 available formats
+          }
         )
       );
     }
 
     return generator.generate(options);
+  }
+
+  /**
+   * Find similar format name (for error suggestions)
+   */
+  private findSimilarFormat(
+    format: string,
+    available: string[]
+  ): string | null {
+    const lower = format.toLowerCase();
+
+    // Exact case-insensitive match
+    const exact = available.find((f) => f.toLowerCase() === lower);
+    if (exact) return exact;
+
+    // Partial match
+    const partial = available.find(
+      (f) => f.toLowerCase().includes(lower) || lower.includes(f.toLowerCase())
+    );
+    if (partial) return partial;
+
+    // Levenshtein distance for typos (simplified)
+    const closeMatch = available.find((f) => {
+      const distance = this.levenshteinDistance(lower, f.toLowerCase());
+      return distance <= 2; // Allow 2 character differences
+    });
+
+    return closeMatch || null;
+  }
+
+  /**
+   * Simple Levenshtein distance implementation
+   */
+  private levenshteinDistance(a: string, b: string): number {
+    // Initialize matrix with proper dimensions
+    const matrix: number[][] = Array(b.length + 1)
+      .fill(null)
+      .map(() => Array(a.length + 1).fill(0));
+
+    // Initialize first row and column
+    for (let i = 0; i <= b.length; i++) {
+      matrix[i]![0] = i;
+    }
+
+    for (let j = 0; j <= a.length; j++) {
+      matrix[0]![j] = j;
+    }
+
+    // Fill the matrix
+    for (let i = 1; i <= b.length; i++) {
+      const currentRow = matrix[i]!;
+      const prevRow = matrix[i - 1]!;
+
+      for (let j = 1; j <= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+          currentRow[j] = prevRow[j - 1]!;
+        } else {
+          currentRow[j] = Math.min(
+            prevRow[j - 1]! + 1, // substitution
+            currentRow[j - 1]! + 1, // insertion
+            prevRow[j]! + 1 // deletion
+          );
+        }
+      }
+    }
+
+    return matrix[b.length]![a.length]!;
   }
 
   /**
@@ -119,13 +249,16 @@ export class FormatRegistry {
    * Get all registered format names
    */
   getRegisteredFormats(): string[] {
-    return Array.from(this.formats.keys()).sort();
+    this.ensureInitialized();
+    return Array.from(new Set(this.formats.keys())).sort();
   }
 
   /**
    * Get all supported formats (including pattern-matched ones)
    */
   getAllSupportedFormats(): StringFormat[] {
+    this.ensureInitialized();
+
     // Start with registered format names
     const formats = new Set<string>(this.formats.keys());
 
@@ -169,6 +302,7 @@ export class FormatRegistry {
    */
   clear(): void {
     this.formats.clear();
+    this.initialized = false;
   }
 
   /**
@@ -177,8 +311,11 @@ export class FormatRegistry {
   static createDefault(): FormatRegistry {
     const registry = new FormatRegistry();
 
-    // Built-in formats will be registered by the caller
-    // This avoids circular dependencies during module initialization
+    // Set lazy initializer to avoid circular deps
+    registry.setInitializer(() => {
+      // This will be called by the main module
+      // to register built-in formats
+    });
 
     return registry;
   }
@@ -186,15 +323,14 @@ export class FormatRegistry {
   /**
    * Initialize the registry with built-in formats
    * Call this after creating the registry to register built-in formats
+   * @deprecated Use initializeBuiltInFormats function instead
    */
   initializeBuiltInFormats(): void {
-    // This will be called by the main module to register built-in formats
-    // Import here to avoid issues during module loading
-    try {
-      // We'll handle this in the main index file to avoid circular deps
-    } catch (error) {
-      console.warn('Failed to initialize built-in formats:', error);
-    }
+    // This method is kept for backwards compatibility
+    // The actual initialization is now handled via lazy loading
+    console.warn(
+      'FormatRegistry.initializeBuiltInFormats() is deprecated. Use the initializeBuiltInFormats function instead.'
+    );
   }
 }
 
@@ -203,6 +339,19 @@ export class FormatRegistry {
  * Can be replaced in tests or for custom configurations
  */
 export const defaultFormatRegistry = FormatRegistry.createDefault();
+
+/**
+ * Initialize the default registry with built-in formats
+ * Call this from the main index.ts to avoid circular dependencies
+ */
+export function initializeBuiltInFormats(
+  registry: FormatRegistry,
+  generators: FormatGenerator[]
+): void {
+  for (const generator of generators) {
+    registry.register(generator);
+  }
+}
 
 /**
  * Convenience function to register a format generator globally

@@ -126,8 +126,9 @@ describe('Error Hierarchy', () => {
     it('should create generation error with field and constraint', () => {
       const error = new GenerationError(
         'Cannot generate value',
-        'email',
-        'pattern'
+        undefined, // suggestion
+        'email', // field
+        'pattern' // constraint
       );
 
       expect(error.message).toBe('Cannot generate value');
@@ -137,7 +138,12 @@ describe('Error Hierarchy', () => {
     });
 
     it('should provide detailed user message', () => {
-      const error = new GenerationError('Value too large', 'age', 'maximum');
+      const error = new GenerationError(
+        'Value too large',
+        undefined,
+        'age',
+        'maximum'
+      );
       const userMessage = error.getUserMessage();
 
       expect(userMessage).toBe(
@@ -148,8 +154,9 @@ describe('Error Hierarchy', () => {
     it('should provide constraint-specific suggestions', () => {
       const minLengthError = new GenerationError(
         'Length conflict',
-        'name',
-        'minLength'
+        undefined, // suggestion
+        'name', // field
+        'minLength' // constraint
       );
       const suggestions = minLengthError.getSuggestions();
 
@@ -364,8 +371,9 @@ describe('Error Hierarchy', () => {
       it('should format GenerationError with context', () => {
         const error = new GenerationError(
           'Cannot generate',
-          'email',
-          'pattern',
+          undefined, // suggestion
+          'email', // field
+          'pattern', // constraint
           { regex: '/test/' }
         );
         const formatted = reporter.formatError(error);
@@ -438,7 +446,7 @@ describe('Error Hierarchy', () => {
       it('should format multiple errors with numbering', () => {
         const errors = [
           new SchemaError('Schema error', '/schema'),
-          new GenerationError('Generation error', 'field'),
+          new GenerationError('Generation error', undefined, 'field'),
         ];
         const formatted = reporter.formatErrors(errors);
 
@@ -453,7 +461,7 @@ describe('Error Hierarchy', () => {
         const errors = [
           new SchemaError('Schema error 1', '/path1'),
           new SchemaError('Schema error 2', '/path2'),
-          new GenerationError('Generation error', 'field'),
+          new GenerationError('Generation error', undefined, 'field'),
           new ValidationError('Validation error', []),
         ];
 

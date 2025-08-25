@@ -53,7 +53,7 @@ describe('FormatRegistry', () => {
       expect(registry.supports('nonexistent')).toBe(false);
     });
 
-    test('should return registered format names', () => {
+    test('should return registered format names including aliases', () => {
       const uuidGenerator = new UUIDGenerator();
       const emailGenerator = new EmailGenerator();
 
@@ -61,7 +61,7 @@ describe('FormatRegistry', () => {
       registry.register(emailGenerator);
 
       const formats = registry.getRegisteredFormats();
-      expect(formats).toEqual(['email', 'uuid']);
+      expect(formats).toEqual(['e-mail', 'email', 'guid', 'uuid']);
     });
 
     test('should generate values through registry', () => {
@@ -86,7 +86,7 @@ describe('FormatRegistry', () => {
       if (isErr(result)) {
         expect(result.error).toBeInstanceOf(GenerationError);
         expect(result.error.message).toContain(
-          'No generator found for format: nonexistent'
+          'No generator found for format: "nonexistent"'
         );
       }
     });
@@ -179,6 +179,73 @@ describe('FormatRegistry', () => {
 
       if (isOk(result1) && isOk(result2)) {
         expect(result1.value).toBe(result2.value);
+      }
+    });
+  });
+
+  describe('Enhanced Error Messages and Suggestions', () => {
+    beforeEach(() => {
+      registry.register(new UUIDGenerator());
+      registry.register(new EmailGenerator());
+    });
+
+    test('should suggest similar format for typos', () => {
+      const result = registry.generate('uuuid'); // typo in uuid
+      expect(isErr(result)).toBe(true);
+
+      if (isErr(result)) {
+        expect(result.error.message).toContain(
+          'No generator found for format: "uuuid"'
+        );
+        expect(result.error.suggestion).toBe('Did you mean "uuid"?');
+      }
+    });
+
+    test('should suggest partial matches', () => {
+      const result = registry.generate('mail'); // partial match for email
+      expect(isErr(result)).toBe(true);
+
+      if (isErr(result)) {
+        expect(result.error.message).toContain(
+          'No generator found for format: "mail"'
+        );
+        expect(result.error.suggestion).toBe('Did you mean "e-mail"?'); // Returns alias first
+      }
+    });
+
+    test('should provide available formats in error context', () => {
+      const result = registry.generate('nonexistent');
+      expect(isErr(result)).toBe(true);
+
+      if (isErr(result)) {
+        expect(result.error.context?.available).toBeDefined();
+        expect(Array.isArray(result.error.context?.available)).toBe(true);
+      }
+    });
+  });
+
+  describe('Case-insensitive Format Matching', () => {
+    beforeEach(() => {
+      registry.register(new UUIDGenerator());
+      registry.register(new EmailGenerator());
+    });
+
+    test('should match formats case-insensitively', () => {
+      expect(registry.get('UUID')).toBe(registry.get('uuid'));
+      expect(registry.get('Email')).toBe(registry.get('email'));
+      expect(registry.get('GUID')).toBe(registry.get('guid'));
+    });
+
+    test('should generate values with case-insensitive format names', () => {
+      const result1 = registry.generate('UUID');
+      const result2 = registry.generate('uuid');
+
+      expect(isOk(result1)).toBe(true);
+      expect(isOk(result2)).toBe(true);
+
+      if (isOk(result1) && isOk(result2)) {
+        expect(registry.validate('uuid', result1.value)).toBe(true);
+        expect(registry.validate('uuid', result2.value)).toBe(true);
       }
     });
   });

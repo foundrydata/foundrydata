@@ -25,9 +25,15 @@ export class UUIDGenerator implements FormatGenerator {
       return ok(uuid);
     } catch (error) {
       return err(
-        new GenerationError('Failed to generate UUID', undefined, 'uuid', {
-          error: String(error),
-        })
+        new GenerationError(
+          'Failed to generate UUID',
+          undefined,
+          undefined,
+          'uuid',
+          {
+            error: String(error),
+          }
+        )
       );
     }
   }
