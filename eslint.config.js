@@ -116,16 +116,18 @@ export default tseslint.config(
   {
     name: 'core-files',
     files: ['packages/core/src/**/*.ts'],
+    ignores: ['**/*.test.ts', '**/*.spec.ts'],
     rules: {
       'max-lines': ['error', 400],           // Up from 300 - domain complexity
       'complexity': ['error', 12],           // Up from 10 - business logic
     }
   },
 
-  // Parser and generator files - relaxed complexity rules
+  // Parser and generator files - relaxed complexity rules (exclude test files)
   {
     name: 'parser-generator-files',
     files: ['**/parser/**/*.ts', '**/generator/**/*.ts'],
+    ignores: ['**/*.test.ts', '**/*.spec.ts'],
     rules: {
       'complexity': ['error', 15],           // Up from 10 - complex validation logic
       'max-lines': ['error', 500],           // Up from 300 - schema transformation
