@@ -165,7 +165,7 @@ describe('JSONSchemaParser', () => {
       });
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error.message).toContain('Missing or invalid type');
+        expect(result.error.message).toContain('Cannot determine type');
       }
     });
 
@@ -188,9 +188,9 @@ describe('JSONSchemaParser', () => {
 
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error.message).toContain('$ref not supported');
+        expect(result.error.message).toContain('Unsupported feature: "$ref"');
         expect(result.error.context?.suggestion).toContain(
-          'Inline the referenced schema'
+          'Reference resolution will be supported'
         );
       }
     });
@@ -201,9 +201,9 @@ describe('JSONSchemaParser', () => {
 
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error.message).toContain('Composition keywords');
+        expect(result.error.message).toContain('Unsupported feature: "allOf"');
         expect(result.error.context?.suggestion).toContain(
-          'single, flat schema'
+          'Schema composition will be supported'
         );
       }
     });
@@ -240,7 +240,7 @@ describe('JSONSchemaParser', () => {
 
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error.message).toContain('Conditional schemas');
+        expect(result.error.message).toContain('Unsupported feature: "if"');
       }
     });
   });

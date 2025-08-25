@@ -1,7 +1,12 @@
 /**
  * JSON Schema parser implementation
  * Converts JSON Schema to internal Schema representation
+ *
+ * Enhanced with comprehensive feature detection following
+ * the "Fail Fast with Context" architecture principle
  */
+
+/* eslint-disable max-lines */
 
 import type { Result } from '../types/result';
 import type {
@@ -17,24 +22,61 @@ import type {
 import { ParseError } from '../types/errors';
 import { ok, err } from '../types/result';
 import type { SchemaParser } from './schema-parser';
-import { hasProperty } from './schema-parser';
 
 export class JSONSchemaParser implements SchemaParser {
+  // Features we explicitly support
+  private static readonly SUPPORTED_TYPES = new Set([
+    'object',
+    'array',
+    'string',
+    'number',
+    'integer',
+    'boolean',
+    'null',
+  ]);
+
+  // Features we plan to support (with helpful messages)
+  private static readonly PLANNED_FEATURES = {
+    $ref: 'Reference resolution will be supported in v0.2.0',
+    allOf: 'Schema composition will be supported in v0.3.0',
+    anyOf: 'Schema composition will be supported in v0.3.0',
+    oneOf: 'Schema composition will be supported in v0.3.0',
+    not: 'Negation will be supported in v0.4.0',
+    if: 'Conditional schemas will be supported in v0.4.0',
+    then: 'Conditional schemas will be supported in v0.4.0',
+    else: 'Conditional schemas will be supported in v0.4.0',
+    dependencies: 'Dependencies will be supported in v0.3.0',
+    additionalItems: 'Additional items will be supported in v0.2.0',
+    contains: 'Contains validation will be supported in v0.3.0',
+    const: 'Const values are supported - please report if not working',
+    multipleOf: 'MultipleOf constraint will be supported in v0.2.0',
+  } as const;
+
   supports(input: unknown): boolean {
     // Handle boolean schemas
     if (typeof input === 'boolean') {
       return true;
     }
 
-    // Handle object schemas with indicators
-    return (
-      hasProperty(input, '$schema') ||
-      hasProperty(input, 'type') ||
-      hasProperty(input, 'allOf') ||
-      hasProperty(input, 'anyOf') ||
-      hasProperty(input, 'oneOf') ||
-      hasProperty(input, '$ref') ||
-      hasProperty(input, 'if')
+    if (typeof input !== 'object' || input === null) {
+      return false;
+    }
+
+    const obj = input as Record<string, unknown>;
+
+    // Check for JSON Schema indicators
+    return Boolean(
+      obj.$schema ||
+        obj.type ||
+        obj.properties ||
+        obj.items ||
+        obj.$ref ||
+        obj.allOf ||
+        obj.anyOf ||
+        obj.oneOf ||
+        obj.if ||
+        obj.then ||
+        obj.else
     );
   }
 
@@ -44,6 +86,12 @@ export class JSONSchemaParser implements SchemaParser {
     }
 
     try {
+      // Early feature detection before deep parsing
+      const featureCheck = this.detectUnsupportedFeatures(input);
+      if (featureCheck.isErr()) {
+        return featureCheck;
+      }
+
       return this.parseSchema(input as Record<string, unknown> | boolean, '');
     } catch (error) {
       const message =
@@ -61,21 +109,13 @@ export class JSONSchemaParser implements SchemaParser {
       return ok(schema);
     }
 
-    // Check for unsupported features first (before checking type)
-    const unsupportedCheck = this.checkUnsupportedFeatures(schema, path);
-    if (unsupportedCheck.isErr()) {
-      return unsupportedCheck;
+    // Extract and validate type
+    const typeResult = this.extractType(schema, path);
+    if (typeResult.isErr()) {
+      return typeResult;
     }
 
-    // Extract type
-    const type = schema.type;
-    if (typeof type !== 'string') {
-      return err(
-        new ParseError(`Missing or invalid type at ${path || 'root'}`)
-      );
-    }
-
-    return this.parseByType(type, schema, path);
+    return this.parseByType(typeResult.value, schema, path);
   }
 
   private parseByType(
@@ -100,7 +140,12 @@ export class JSONSchemaParser implements SchemaParser {
       default:
         return err(
           new ParseError(
-            `Unsupported schema type: ${type} at ${path || 'root'}`
+            `Unknown type: ${type} at ${path || 'root'}`,
+            undefined,
+            undefined,
+            {
+              suggestion: `Supported types: ${Array.from(JSONSchemaParser.SUPPORTED_TYPES).join(', ')}`,
+            }
           )
         );
     }
@@ -319,60 +364,225 @@ export class JSONSchemaParser implements SchemaParser {
     return base;
   }
 
-  private checkUnsupportedFeatures(
+  /**
+   * Extract and validate type from schema
+   */
+  private extractType(
     schema: Record<string, unknown>,
     path: string
-  ): Result<void, ParseError> {
-    // Check for $ref
-    if (schema.$ref) {
-      return err(
-        new ParseError(
-          `JSON Schema $ref not supported at ${path || 'root'}`,
-          undefined,
-          undefined,
-          { suggestion: 'Inline the referenced schema instead of using $ref' }
-        )
-      );
-    }
-
-    // Check for composition keywords
-    if (schema.allOf || schema.anyOf || schema.oneOf) {
-      return err(
-        new ParseError(
-          `Composition keywords (allOf, anyOf, oneOf) not supported at ${path || 'root'}`,
-          undefined,
-          undefined,
-          { suggestion: 'Use a single, flat schema structure instead' }
-        )
-      );
-    }
-
-    // Check for conditional schemas
-    if (schema.if || schema.then || schema.else) {
-      return err(
-        new ParseError(
-          `Conditional schemas (if/then/else) not supported at ${path || 'root'}`,
-          undefined,
-          undefined,
-          { suggestion: 'Use separate schemas for different conditions' }
-        )
-      );
-    }
-
-    // Check for nested objects (MVP limitation)
-    if (schema.type === 'object' && schema.properties) {
-      const nestedObjectCheck = this.checkForNestedObjects(schema, path);
-      if (nestedObjectCheck.isErr()) {
-        return nestedObjectCheck;
+  ): Result<string, ParseError> {
+    // Type can be explicitly defined or inferred
+    if ('type' in schema) {
+      const type = schema.type;
+      if (typeof type !== 'string') {
+        return err(
+          new ParseError(
+            `Invalid type at ${path || 'root'}`,
+            undefined,
+            undefined,
+            {
+              suggestion: `Type must be a string, found: ${typeof type}`,
+            }
+          )
+        );
       }
+      return ok(type);
+    }
+
+    // Try to infer type from structure
+    if ('properties' in schema || 'required' in schema) {
+      return ok('object');
+    }
+
+    if ('items' in schema) {
+      return ok('array');
+    }
+
+    // For schemas with only constraints, default to the most permissive type
+    if ('enum' in schema && Array.isArray(schema.enum)) {
+      // Infer type from enum values
+      const types = new Set(schema.enum.map((v) => typeof v));
+      if (types.size === 1) {
+        const inferredType = Array.from(types)[0];
+        return ok(inferredType === 'object' ? 'object' : 'string');
+      }
+    }
+
+    return err(
+      new ParseError(
+        `Cannot determine type at ${path || 'root'}`,
+        undefined,
+        undefined,
+        {
+          suggestion:
+            'Schema must have a "type" property or be inferrable from structure',
+        }
+      )
+    );
+  }
+
+  /**
+   * Detect unsupported features early with helpful messages
+   */
+  private detectUnsupportedFeatures(
+    input: unknown,
+    visited = new Set<unknown>()
+  ): Result<void, ParseError> {
+    // Prevent circular reference infinite loops
+    if (visited.has(input)) return ok(undefined);
+    visited.add(input);
+
+    if (typeof input !== 'object' || input === null) {
+      return ok(undefined);
+    }
+
+    const schema = input as Record<string, unknown>;
+
+    // Run individual feature checks
+    const featureCheck = this.checkPlannedFeatures(schema);
+    if (featureCheck.isErr()) return featureCheck;
+
+    const typeCheck = this.checkTypeSupport(schema);
+    if (typeCheck.isErr()) return typeCheck;
+
+    const arrayCheck = this.checkArrayFeatures(schema);
+    if (arrayCheck.isErr()) return arrayCheck;
+
+    const objectCheck = this.checkObjectFeatures(schema);
+    if (objectCheck.isErr()) return objectCheck;
+
+    // Recursively check nested schemas
+    return this.checkNestedSchemas(schema, visited);
+  }
+
+  /**
+   * Check for planned but unsupported features
+   */
+  private checkPlannedFeatures(
+    schema: Record<string, unknown>
+  ): Result<void, ParseError> {
+    for (const [feature, message] of Object.entries(
+      JSONSchemaParser.PLANNED_FEATURES
+    )) {
+      if (feature in schema && feature !== 'const') {
+        // const is actually supported
+        return err(
+          new ParseError(
+            `Unsupported feature: "${feature}"`,
+            undefined,
+            undefined,
+            {
+              suggestion: `${message}. Consider removing "${feature}" or wait for the update`,
+            }
+          )
+        );
+      }
+    }
+    return ok(undefined);
+  }
+
+  /**
+   * Check if type is supported
+   */
+  private checkTypeSupport(
+    schema: Record<string, unknown>
+  ): Result<void, ParseError> {
+    if (schema.type && typeof schema.type === 'string') {
+      if (!JSONSchemaParser.SUPPORTED_TYPES.has(schema.type)) {
+        return err(
+          new ParseError(
+            `Unsupported type: "${schema.type}"`,
+            undefined,
+            undefined,
+            {
+              suggestion: `Supported types: ${Array.from(JSONSchemaParser.SUPPORTED_TYPES).join(', ')}`,
+            }
+          )
+        );
+      }
+    }
+    return ok(undefined);
+  }
+
+  /**
+   * Check for unsupported array features
+   */
+  private checkArrayFeatures(
+    schema: Record<string, unknown>
+  ): Result<void, ParseError> {
+    // Check for mixed type arrays (not supported yet)
+    if (Array.isArray(schema.type)) {
+      return err(
+        new ParseError(
+          'Union types are not yet supported',
+          undefined,
+          undefined,
+          {
+            suggestion:
+              'Use a single type instead of an array of types. This feature will be added in v0.3.0',
+          }
+        )
+      );
+    }
+
+    // Check for complex array items (tuple validation)
+    if (Array.isArray(schema.items)) {
+      return err(
+        new ParseError(
+          'Tuple validation is not yet supported',
+          undefined,
+          undefined,
+          {
+            suggestion:
+              'Use a single schema for all array items. This feature will be added in v0.3.0',
+          }
+        )
+      );
     }
 
     return ok(undefined);
   }
 
-  private checkForNestedObjects(
+  /**
+   * Check for unsupported object features
+   */
+  private checkObjectFeatures(
+    schema: Record<string, unknown>
+  ): Result<void, ParseError> {
+    // Check for nested objects (MVP limitation)
+    if (schema.type === 'object' && schema.properties) {
+      return this.checkForNestedObjects(schema);
+    }
+    return ok(undefined);
+  }
+
+  /**
+   * Recursively check nested schemas
+   */
+  private checkNestedSchemas(
     schema: Record<string, unknown>,
-    path: string
+    visited: Set<unknown>
+  ): Result<void, ParseError> {
+    if (schema.properties && typeof schema.properties === 'object') {
+      for (const prop of Object.values(schema.properties)) {
+        const result = this.detectUnsupportedFeatures(prop, visited);
+        if (result.isErr()) return result;
+      }
+    }
+
+    if (schema.items) {
+      const result = this.detectUnsupportedFeatures(schema.items, visited);
+      if (result.isErr()) return result;
+    }
+
+    return ok(undefined);
+  }
+
+  /**
+   * Check for nested objects (MVP limitation)
+   */
+  private checkForNestedObjects(
+    schema: Record<string, unknown>
   ): Result<void, ParseError> {
     const props = schema.properties as Record<string, unknown>;
     for (const [key, propSchema] of Object.entries(props)) {
@@ -381,7 +591,7 @@ export class JSONSchemaParser implements SchemaParser {
         if (prop.type === 'object') {
           return err(
             new ParseError(
-              `Nested objects not supported at ${path}.properties.${key}`,
+              `Nested objects not supported at properties.${key}`,
               undefined,
               undefined,
               {
