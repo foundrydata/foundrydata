@@ -21,13 +21,11 @@
   "scripts": {
     "build": "tsc --build",
     "dev": "tsc --watch",
-    "test": "jest"
+    "test": "vitest run"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
-    "typescript": "^5.9.2",
-    "jest": "^30.0.5",
-    "@types/jest": "^30.0.0"
+    "typescript": "^5.9.2"
   },
   "files": [
     "dist",

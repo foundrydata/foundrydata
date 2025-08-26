@@ -3,7 +3,7 @@
  * Tests 100% compliance validation, batch processing, and performance
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import {
   ComplianceValidator,
   createSecureValidator,

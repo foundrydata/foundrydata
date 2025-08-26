@@ -3,7 +3,7 @@
  * Test the format registry system and built-in format generators
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { FormatRegistry } from '../format-registry';
 import {
   UUIDGenerator,

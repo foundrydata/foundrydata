@@ -3,6 +3,7 @@
  * Comprehensive test coverage for Ok and Err variants
  */
 
+import { describe, it, expect } from 'vitest';
 import { Result, Ok, Err, ok, err, isOk, isErr } from '../result';
 
 describe('Result Pattern', () => {

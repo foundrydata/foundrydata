@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach } from 'vitest';
 /**
  * Tests for SchemaParser interface and ParserRegistry
  */

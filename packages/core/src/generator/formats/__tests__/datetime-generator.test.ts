@@ -2,7 +2,7 @@
  * DateTime Generator Tests
  */
 
-import { describe, test, expect } from '@jest/globals';
+import { describe, it as test, expect } from 'vitest';
 import { DateTimeGenerator } from '../datetime-generator';
 import { isOk } from '../../../types/result';
 

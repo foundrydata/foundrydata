@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach } from 'vitest';
 /**
  * Tests with example schemas to verify parser functionality
  */

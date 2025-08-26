@@ -23,11 +23,11 @@
   "scripts": {
     "build": "tsc --build",
     "dev": "tsc --watch",
-    "test": "jest"
+    "test": "vitest run"
   },
   "dependencies": {
-    "@foundrydata/shared": "^0.1.0",
     "@faker-js/faker": "^10.0.0",
+    "@foundrydata/shared": "^0.1.0",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "uuid": "^11.1.0"
@@ -35,9 +35,9 @@
   "devDependencies": {
     "@types/node": "^24.3.0",
     "@types/uuid": "^10.0.0",
+    "fast-check": "^3.23.2",
     "typescript": "^5.9.2",
-    "jest": "^30.0.5",
-    "@types/jest": "^30.0.0"
+    "vitest": "^3.2.4"
   },
   "files": [
     "dist",

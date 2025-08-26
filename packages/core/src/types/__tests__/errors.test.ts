@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach } from 'vitest';
 /**
  * Tests for Error hierarchy
  * Comprehensive coverage of all error types and ErrorReporter

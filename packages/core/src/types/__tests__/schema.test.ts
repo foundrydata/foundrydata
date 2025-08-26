@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach } from 'vitest';
 /**
  * Tests for Schema types and type guards
  * Comprehensive coverage of schema interfaces and validation
