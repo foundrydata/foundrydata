@@ -7,12 +7,7 @@
     "typescriptreact"
   ],
   "eslint.workingDirectories": [
-    {
-      "mode": "auto"
-    }
+    "."
   ],
-  "eslint.options": {
-    "overrideConfigFile": "./eslint.config.js"
-  },
   "typescript.preferences.includePackageJsonAutoImports": "off"
 }
