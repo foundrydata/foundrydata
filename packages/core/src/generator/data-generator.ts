@@ -130,11 +130,12 @@ export abstract class DataGenerator {
    * Helper to check if generation should use edge cases
    */
   protected shouldUseEdgeCase(context: GeneratorContext): boolean {
-    return (
-      context.scenario === 'edge' ||
-      context.scenario === 'peak' ||
-      Math.random() < 0.1
-    ); // 10% chance for normal scenario
+    if (context.scenario === 'edge' || context.scenario === 'peak') {
+      return true;
+    }
+    // 10% chance for normal scenario, using seeded random
+    const fakerInstance = this.prepareFaker(context);
+    return fakerInstance.number.float({ min: 0, max: 1 }) < 0.1;
   }
 
   /**
@@ -277,7 +278,21 @@ export class GeneratorRegistry {
       return null; // Boolean schemas (true/false) are handled specially
     }
 
-    const typeGenerators = this.generators.get(schema.type);
+    // Handle schema type - can be string, array of strings, or undefined
+    let schemaType: string;
+    if (typeof schema.type === 'string') {
+      schemaType = schema.type;
+    } else if (
+      Array.isArray(schema.type) &&
+      schema.type.length > 0 &&
+      schema.type[0]
+    ) {
+      schemaType = schema.type[0]; // Use first type for simplicity
+    } else {
+      return null; // No valid type specified
+    }
+
+    const typeGenerators = this.generators.get(schemaType);
     if (!typeGenerators) {
       return null;
     }

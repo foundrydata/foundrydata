@@ -19,19 +19,27 @@ import {
   GenerationConfig,
 } from '../data-generator';
 
+// Default bounds for integer generation when not specified
+const DEFAULT_INTEGER_MIN = -1000000;
+const DEFAULT_INTEGER_MAX = 1000000;
+
 export class IntegerGenerator extends DataGenerator {
   supports(schema: Schema): boolean {
-    if (
-      typeof schema !== 'object' ||
-      schema === null ||
-      schema.type !== 'integer'
-    ) {
+    if (typeof schema !== 'object' || schema === null) {
+      return false;
+    }
+
+    const schemaType = schema.type;
+    const hasInteger =
+      schemaType === 'integer' ||
+      (Array.isArray(schemaType) && schemaType.includes('integer'));
+
+    if (!hasInteger) {
       return false;
     }
 
     const integerSchema = schema as IntegerSchema;
-
-    // Reject Draft-04 boolean exclusive bounds (Draft-07+ only supports numeric)
+    // Reject Draft-04 boolean exclusive bounds
     if (
       typeof integerSchema.exclusiveMinimum === 'boolean' ||
       typeof integerSchema.exclusiveMaximum === 'boolean'
@@ -68,14 +76,25 @@ export class IntegerGenerator extends DataGenerator {
 
       // Handle const values
       if (integerSchema.const !== undefined) {
-        const constValue = this.toInteger(integerSchema.const);
+        const constValue = this.toStrictInteger(integerSchema.const);
         if (constValue === null) {
           return err(
             new GenerationError(
-              `Invalid const value for integer: ${integerSchema.const}`,
-              'Const value must be a valid integer',
+              `Invalid const value for integer: ${JSON.stringify(integerSchema.const)}`,
+              'Const must be exactly an integer (no coercion)',
               context.path,
               'const'
+            )
+          );
+        }
+        // Vérifier que const respecte les autres contraintes
+        if (!this.meetsConstraints(constValue, integerSchema)) {
+          return err(
+            new GenerationError(
+              `Const value ${constValue} violates schema constraints`,
+              'Check minimum, maximum, exclusiveMinimum, exclusiveMaximum, or multipleOf',
+              context.path,
+              'const-constraints'
             )
           );
         }
@@ -140,6 +159,23 @@ export class IntegerGenerator extends DataGenerator {
   }
 
   /**
+   * Convert value to integer with strict validation (no coercion)
+   */
+  private toStrictInteger(value: unknown): number | null {
+    if (typeof value === 'number') {
+      return Number.isInteger(value) ? value : null;
+    }
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (/^-?\d+$/.test(trimmed)) {
+        const num = Number(trimmed);
+        return Number.isSafeInteger(num) ? num : null;
+      }
+    }
+    return null;
+  }
+
+  /**
    * Generate integer from enum values, respecting other constraints
    */
   private generateFromEnum(
@@ -159,34 +195,22 @@ export class IntegerGenerator extends DataGenerator {
 
     const integerSchema = context.schema as IntegerSchema;
 
-    // Convert all enum values to integers and filter valid ones
-    const validEnumValues: number[] = [];
+    // Filtrer : garder seulement les entiers valides
+    const validIntegers = enumValues
+      .map((v) => this.toStrictInteger(v))
+      .filter((v): v is number => v !== null)
+      .filter((v) => this.meetsConstraints(v, integerSchema));
 
-    for (const value of enumValues) {
-      const integerValue = this.toInteger(value);
+    if (validIntegers.length === 0) {
+      // Détail pour debug
+      const integerCount = enumValues
+        .map((v) => this.toStrictInteger(v))
+        .filter((v) => v !== null).length;
 
-      if (integerValue === null) {
-        return err(
-          new GenerationError(
-            `Non-integer value in enum: ${value}`,
-            'All enum values must be valid integers',
-            context.path,
-            'enum'
-          )
-        );
-      }
-
-      // Check if this enum value satisfies all other constraints
-      if (this.meetsConstraints(integerValue, integerSchema)) {
-        validEnumValues.push(integerValue);
-      }
-    }
-
-    if (validEnumValues.length === 0) {
       return err(
         new GenerationError(
-          'No enum values satisfy the schema constraints',
-          'Ensure enum values are compatible with minimum, maximum, multipleOf, and exclusive bounds',
+          `No valid enum values: ${integerCount} integers found, 0 meet constraints`,
+          `Enum values: ${JSON.stringify(enumValues)}`,
           context.path,
           'enum-constraints'
         )
@@ -194,8 +218,7 @@ export class IntegerGenerator extends DataGenerator {
     }
 
     const fakerInstance = this.prepareFaker(context);
-    const selectedValue = fakerInstance.helpers.arrayElement(validEnumValues);
-    return ok(selectedValue);
+    return ok(fakerInstance.helpers.arrayElement(validIntegers));
   }
 
   /**
@@ -215,8 +238,8 @@ export class IntegerGenerator extends DataGenerator {
       schema.maximum
     );
 
-    let min = Math.ceil(bounds.min ?? Number.MIN_SAFE_INTEGER);
-    let max = Math.floor(bounds.max ?? Number.MAX_SAFE_INTEGER);
+    let min = Math.ceil(bounds.min ?? DEFAULT_INTEGER_MIN);
+    let max = Math.floor(bounds.max ?? DEFAULT_INTEGER_MAX);
 
     // Ensure we have valid integer bounds - be more conservative with safe integers
     min = Math.max(min, Number.MIN_SAFE_INTEGER);
@@ -252,16 +275,71 @@ export class IntegerGenerator extends DataGenerator {
       value = this.generateNormalValue(min, max, fakerInstance);
     }
 
-    // Apply multipleOf constraint for integers
-    if (schema.multipleOf !== undefined && schema.multipleOf > 0) {
-      const multipleOfInt = Math.max(1, Math.round(schema.multipleOf));
-      value = this.applyMultipleOf(value, multipleOfInt);
-
-      // Ensure multipleOf result is still within bounds
-      if (value < min || value > max) {
-        // Find nearest valid multiple within bounds
-        value = this.findNearestValidMultiple(min, max, multipleOfInt);
+    // Apply multipleOf constraint for integers (Draft-07+ compliant)
+    if (schema.multipleOf !== undefined) {
+      // Validation selon spec Draft-07+
+      if (schema.multipleOf <= 0) {
+        return err(
+          new GenerationError(
+            `multipleOf must be > 0, got: ${schema.multipleOf}`,
+            'JSON Schema requires multipleOf to be a positive number',
+            context.path,
+            'multipleOf'
+          )
+        );
       }
+
+      // Optimisation pour multipleOf entier >= 1
+      if (Number.isInteger(schema.multipleOf) && schema.multipleOf >= 1) {
+        const minMultiple = Math.ceil(min / schema.multipleOf);
+        const maxMultiple = Math.floor(max / schema.multipleOf);
+
+        if (minMultiple > maxMultiple) {
+          return err(
+            new GenerationError(
+              `No valid multiple of ${schema.multipleOf} between ${min} and ${max}`,
+              'Adjust bounds or multipleOf constraint',
+              context.path,
+              'multipleOf-range'
+            )
+          );
+        }
+
+        const selectedMultiple = fakerInstance.number.int({
+          min: minMultiple,
+          max: maxMultiple,
+        });
+        return ok(selectedMultiple * schema.multipleOf);
+      }
+
+      // Pour multipleOf décimal, collecter les entiers valides
+      const validIntegers: number[] = [];
+      const step = Math.max(1, Math.floor(schema.multipleOf));
+
+      // Parcourir efficacement en commençant par les multiples proches
+      for (let i = min; i <= max && validIntegers.length < 100; i += step) {
+        for (let offset = 0; offset < step && i + offset <= max; offset++) {
+          const candidate = i + offset;
+          const division = candidate / schema.multipleOf;
+          // Vérifier si division donne un entier (tolérance pour float)
+          if (Math.abs(division - Math.round(division)) < 1e-10) {
+            validIntegers.push(candidate);
+          }
+        }
+      }
+
+      if (validIntegers.length === 0) {
+        return err(
+          new GenerationError(
+            `No integer satisfies multipleOf ${schema.multipleOf} in range [${min}, ${max}]`,
+            'No valid integer values for this multipleOf constraint',
+            context.path,
+            'multipleOf-range'
+          )
+        );
+      }
+
+      return ok(fakerInstance.helpers.arrayElement(validIntegers));
     }
 
     // Ensure final value is an integer
@@ -317,12 +395,17 @@ export class IntegerGenerator extends DataGenerator {
       edgeCases.push(-1);
     }
 
-    // Add values based on multipleOf
+    // Add values based on multipleOf (Draft-07+ compliant)
     if (schema.multipleOf !== undefined && schema.multipleOf > 0) {
-      const multipleOfInt = Math.max(1, Math.round(schema.multipleOf));
-      const multiple = Math.ceil(min / multipleOfInt) * multipleOfInt;
-      if (multiple <= max) {
-        edgeCases.push(multiple);
+      // Ajouter le premier et dernier multiple valide
+      for (const candidate of [min, min + 1, max - 1, max]) {
+        if (candidate >= min && candidate <= max) {
+          const division = candidate / schema.multipleOf;
+          if (Math.abs(division - Math.round(division)) < 1e-10) {
+            edgeCases.push(candidate);
+            break; // Un seul suffit pour les edge cases
+          }
+        }
       }
     }
 
@@ -388,35 +471,6 @@ export class IntegerGenerator extends DataGenerator {
   }
 
   /**
-   * Apply multipleOf constraint to a value
-   */
-  protected applyMultipleOf(value: number, multipleOf: number): number {
-    return Math.round(value / multipleOf) * multipleOf;
-  }
-
-  /**
-   * Find nearest valid integer multiple within bounds
-   */
-  private findNearestValidMultiple(
-    min: number,
-    max: number,
-    multipleOf: number
-  ): number {
-    const lowerMultiple = Math.ceil(min / multipleOf) * multipleOf;
-    const upperMultiple = Math.floor(max / multipleOf) * multipleOf;
-
-    if (lowerMultiple <= max) {
-      return lowerMultiple;
-    }
-    if (upperMultiple >= min) {
-      return upperMultiple;
-    }
-
-    // No valid multiple exists within range
-    return min;
-  }
-
-  /**
    * Check if integer value meets all schema constraints
    */
   private meetsConstraints(value: number, schema: IntegerSchema): boolean {
@@ -474,10 +528,17 @@ export class IntegerGenerator extends DataGenerator {
       return false;
     }
 
-    // Check multipleOf constraint
-    if (schema.multipleOf !== undefined && schema.multipleOf > 0) {
-      const multipleOfInt = Math.max(1, Math.round(schema.multipleOf));
-      if (value % multipleOfInt !== 0) {
+    // Check multipleOf constraint (Draft-07 compliance)
+    if (schema.multipleOf !== undefined) {
+      // multipleOf must be > 0 (can be decimal for integers)
+      if (schema.multipleOf <= 0) {
+        return false; // Invalid constraint
+      }
+
+      // Draft-07: value / multipleOf must result in an integer
+      const division = value / schema.multipleOf;
+      const epsilon = 1e-10; // Tolerance for floating point errors
+      if (Math.abs(division - Math.round(division)) > epsilon) {
         return false;
       }
     }
@@ -558,15 +619,20 @@ export class IntegerGenerator extends DataGenerator {
       examples.push(-1);
     }
 
-    // Add multipleOf examples
+    // Add multipleOf examples (Draft-07 compliant)
     if (
       integerSchema.multipleOf !== undefined &&
       integerSchema.multipleOf > 0
     ) {
-      const multipleOfInt = Math.max(1, Math.round(integerSchema.multipleOf));
-      const multiple = Math.ceil(min / multipleOfInt) * multipleOfInt;
-      if (multiple <= max) {
-        examples.push(multiple);
+      // Find valid integer multiples
+      const minMultiple = Math.ceil(min / integerSchema.multipleOf);
+      const maxMultiple = Math.floor(max / integerSchema.multipleOf);
+
+      for (let m = minMultiple; m <= maxMultiple && examples.length < 20; m++) {
+        const multiple = m * integerSchema.multipleOf;
+        if (Number.isInteger(multiple) && multiple >= min && multiple <= max) {
+          examples.push(multiple);
+        }
       }
     }
 

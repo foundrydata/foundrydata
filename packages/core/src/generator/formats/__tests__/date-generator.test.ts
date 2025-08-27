@@ -96,6 +96,7 @@ describe('DateGenerator', () => {
       }
     });
 
+    // eslint-disable-next-line complexity
     test('should generate valid days for each month', () => {
       // Generate many dates to check month/day combinations
       const dates = [];
@@ -108,23 +109,31 @@ describe('DateGenerator', () => {
       }
 
       for (const dateString of dates) {
-        const [year, month, day] = dateString.split('-').map(Number);
+        const parts = dateString.split('-').map(Number);
+        const [year, month, day] = parts;
 
+        expect(year).toBeDefined();
+        expect(month).toBeDefined();
+        expect(day).toBeDefined();
         expect(month).toBeGreaterThanOrEqual(1);
         expect(month).toBeLessThanOrEqual(12);
         expect(day).toBeGreaterThanOrEqual(1);
 
         // Check maximum days per month
-        if (month === 2) {
+        if (month === 2 && year !== undefined && day !== undefined) {
           // February - check leap year logic
           const isLeapYear =
             (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
           const maxDays = isLeapYear ? 29 : 28;
           expect(day).toBeLessThanOrEqual(maxDays);
-        } else if ([4, 6, 9, 11].includes(month)) {
+        } else if (
+          month !== undefined &&
+          [4, 6, 9, 11].includes(month) &&
+          day !== undefined
+        ) {
           // April, June, September, November - 30 days
           expect(day).toBeLessThanOrEqual(30);
-        } else {
+        } else if (day !== undefined) {
           // All other months - 31 days
           expect(day).toBeLessThanOrEqual(31);
         }

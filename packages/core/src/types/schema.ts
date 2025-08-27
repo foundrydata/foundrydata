@@ -32,9 +32,11 @@ export type StringFormat =
 
 /**
  * Base interface for all schema types
+ * JSON Schema Draft-07 allows type to be either a string or array of strings, or omitted
  */
 export interface BaseSchema {
-  type: string;
+  // Keywords existants (corrects)
+  type?: string | string[];
   title?: string;
   description?: string;
   examples?: any[];
@@ -42,13 +44,21 @@ export interface BaseSchema {
   const?: any;
   enum?: any[];
 
-  // JSON Schema meta-schema properties
+  // Core keywords (existants)
   $id?: string;
   $schema?: string;
   $ref?: string;
   $comment?: string;
+  $anchor?: string; // Draft 2019-09+
+  $vocabulary?: Record<string, boolean>; // Draft 2019-09+
+  $defs?: Record<string, Schema>; // Draft 2020-12
 
-  // Conditional schema properties
+  // Keywords d'annotation (Draft 07+)
+  readOnly?: boolean; // ✅ Draft 07
+  writeOnly?: boolean; // ✅ Draft 07
+  deprecated?: boolean; // ✅ Draft 2019-09
+
+  // Conditional keywords
   if?: Schema;
   then?: Schema;
   else?: Schema;
@@ -101,9 +111,11 @@ export interface StringSchema extends BaseSchema {
   pattern?: string;
   minLength?: number;
   maxLength?: number;
-  contentEncoding?: string;
-  contentMediaType?: string;
-  contentSchema?: Schema;
+
+  // Keywords spécifiques aux strings (Draft 07+)
+  contentEncoding?: string; // ✅ Draft 07 'base64', '7bit', '8bit', 'binary', 'quoted-printable'
+  contentMediaType?: string; // ✅ Draft 07 'text/html', 'application/json', etc.
+  contentSchema?: Schema; // Draft 2019-09
 }
 
 /**
@@ -145,6 +157,14 @@ export interface NullSchema extends BaseSchema {
 }
 
 /**
+ * Enum schema definition
+ * According to JSON Schema Draft-07, enum can appear with any type or no type
+ */
+export interface EnumSchema extends BaseSchema {
+  enum: any[];
+}
+
+/**
  * Union type representing all possible schema types
  */
 export type Schema =
@@ -155,6 +175,7 @@ export type Schema =
   | IntegerSchema
   | BooleanSchema
   | NullSchema
+  | EnumSchema
   | boolean; // JSON Schema allows boolean schemas (true/false for any/never)
 
 /**
@@ -213,6 +234,15 @@ export function isNullSchema(schema: Schema): schema is NullSchema {
   );
 }
 
+export function isEnumSchema(schema: Schema): schema is EnumSchema {
+  return (
+    typeof schema === 'object' &&
+    schema !== null &&
+    'enum' in schema &&
+    Array.isArray(schema.enum)
+  );
+}
+
 /**
  * Type guards for branded types
  */
@@ -266,7 +296,7 @@ export interface SchemaValidationResult {
 /**
  * Helper to get schema type from a schema object
  */
-export function getSchemaType(schema: Schema): string | undefined {
+export function getSchemaType(schema: Schema): string | string[] | undefined {
   if (typeof schema === 'boolean') {
     return schema ? 'any' : 'never';
   }

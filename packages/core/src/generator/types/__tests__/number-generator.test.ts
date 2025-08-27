@@ -39,7 +39,10 @@ type NumberSchemaConstraints = {
 function decimalPlaces(step: number): number {
   const s = step.toString().toLowerCase();
   if (s.includes('e')) {
-    const [coeffStr, expStr] = s.split('e');
+    const parts = s.split('e');
+    const coeffStr = parts[0];
+    const expStr = parts[1];
+    if (!coeffStr || !expStr) return 0;
     const coeffFrac = coeffStr.split('.')[1]?.length ?? 0;
     const exp = Number(expStr);
     // exp < 0 => décale la virgule vers la gauche
@@ -673,6 +676,7 @@ describe('NumberGenerator', () => {
                 );
               }
             }
+            return true;
           }
         )
       );
@@ -1034,7 +1038,7 @@ describe('NumberGenerator', () => {
             noNaN: true,
             noDefaultInfinity: true,
           }),
-          (enumValues, testValue, outsideValue) => {
+          (enumValues, _testValue, outsideValue) => {
             const schema: NumberSchema = {
               type: 'number',
               enum: enumValues,
@@ -1578,6 +1582,7 @@ describe('NumberGenerator', () => {
               expect(generator.validate(v + d, schema)).toBe(false);
             if (v - d >= 0)
               expect(generator.validate(v - d, schema)).toBe(false);
+            return true;
           }
         )
       );
@@ -2644,9 +2649,9 @@ describe('NumberGenerator', () => {
 
       const testValue = 14; // Satisfies multipleOf: 7 but not the others
 
-      expect(generator.validate(testValue, constraints[0])).toBe(false); // >= 100
-      expect(generator.validate(testValue, constraints[1])).toBe(false); // <= -100
-      expect(generator.validate(testValue, constraints[2])).toBe(true); // multiple of 7
+      expect(generator.validate(testValue, constraints[0]!)).toBe(false); // >= 100
+      expect(generator.validate(testValue, constraints[1]!)).toBe(false); // <= -100
+      expect(generator.validate(testValue, constraints[2]!)).toBe(true); // multiple of 7
     });
 
     it('should validate numbers for oneOf scenarios', () => {
@@ -2660,14 +2665,14 @@ describe('NumberGenerator', () => {
       const testValue75 = 75; // Should satisfy second constraint only
       const testValue50dot5 = 50.5; // Should satisfy neither (between ranges)
 
-      expect(generator.validate(testValue25, constraints[0])).toBe(true);
-      expect(generator.validate(testValue25, constraints[1])).toBe(false);
+      expect(generator.validate(testValue25, constraints[0]!)).toBe(true);
+      expect(generator.validate(testValue25, constraints[1]!)).toBe(false);
 
-      expect(generator.validate(testValue75, constraints[0])).toBe(false);
-      expect(generator.validate(testValue75, constraints[1])).toBe(true);
+      expect(generator.validate(testValue75, constraints[0]!)).toBe(false);
+      expect(generator.validate(testValue75, constraints[1]!)).toBe(true);
 
-      expect(generator.validate(testValue50dot5, constraints[0])).toBe(false);
-      expect(generator.validate(testValue50dot5, constraints[1])).toBe(false);
+      expect(generator.validate(testValue50dot5, constraints[0]!)).toBe(false);
+      expect(generator.validate(testValue50dot5, constraints[1]!)).toBe(false);
     });
   });
 

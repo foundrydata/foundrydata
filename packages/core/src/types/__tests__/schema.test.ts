@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 /**
  * Tests for Schema types and type guards
  * Comprehensive coverage of schema interfaces and validation
@@ -10,6 +10,7 @@ import {
   ArraySchema,
   StringSchema,
   NumberSchema,
+  IntegerSchema,
   BooleanSchema,
   NullSchema,
   StringFormat,
@@ -41,7 +42,13 @@ describe('Schema Types', () => {
       };
 
       expect(schema.type).toBe('object');
-      expect(schema.properties.id.type).toBe('string');
+      expect(schema.properties?.id).toBeDefined();
+      if (
+        typeof schema.properties?.id === 'object' &&
+        schema.properties.id !== null
+      ) {
+        expect(schema.properties.id.type).toBe('string');
+      }
       expect(schema.required).toEqual(['id']);
     });
 
@@ -77,8 +84,8 @@ describe('Schema Types', () => {
       expect(schema.pattern).toBeDefined();
     });
 
-    it('should create NumberSchema with constraints', () => {
-      const integerSchema: NumberSchema = {
+    it('should create IntegerSchema with constraints', () => {
+      const integerSchema: IntegerSchema = {
         type: 'integer',
         minimum: 0,
         maximum: 100,
@@ -194,7 +201,6 @@ describe('Schema Types', () => {
     };
 
     const booleanTrueSchema: Schema = true;
-    const booleanFalseSchema: Schema = false;
 
     describe('isObjectSchema', () => {
       it('should identify object schemas', () => {
@@ -224,9 +230,9 @@ describe('Schema Types', () => {
     });
 
     describe('isNumberSchema', () => {
-      it('should identify number and integer schemas', () => {
+      it('should identify number schemas only', () => {
         expect(isNumberSchema(numberSchema)).toBe(true);
-        expect(isNumberSchema(integerSchema)).toBe(true);
+        expect(isNumberSchema(integerSchema)).toBe(false);
         expect(isNumberSchema(stringSchema)).toBe(false);
         expect(isNumberSchema(booleanTrueSchema)).toBe(false);
       });
@@ -454,11 +460,22 @@ describe('Schema Types', () => {
       };
 
       expect(isObjectSchema(schema)).toBe(true);
-      expect(isObjectSchema(schema.properties.user)).toBe(true);
-      expect(isObjectSchema(schema.properties.user.properties?.profile)).toBe(
-        true
-      );
-      expect(isArraySchema(schema.properties.tags)).toBe(true);
+
+      if (schema.properties?.user) {
+        expect(isObjectSchema(schema.properties.user)).toBe(true);
+        if (
+          isObjectSchema(schema.properties.user) &&
+          schema.properties.user.properties?.profile
+        ) {
+          expect(
+            isObjectSchema(schema.properties.user.properties.profile)
+          ).toBe(true);
+        }
+      }
+
+      if (schema.properties?.tags) {
+        expect(isArraySchema(schema.properties.tags)).toBe(true);
+      }
     });
 
     it('should support JSON Schema meta-properties', () => {
@@ -493,9 +510,11 @@ describe('Schema Types', () => {
           name: { type: 'string' },
         },
         if: {
-          properties: { type: { const: 'business' } },
+          type: 'object',
+          properties: { type: { type: 'string', const: 'business' } },
         },
         then: {
+          type: 'object',
           properties: {
             businessName: { type: 'string' },
             taxId: { type: 'string' },
@@ -503,6 +522,7 @@ describe('Schema Types', () => {
           required: ['businessName'],
         },
         else: {
+          type: 'object',
           properties: {
             firstName: { type: 'string' },
             lastName: { type: 'string' },

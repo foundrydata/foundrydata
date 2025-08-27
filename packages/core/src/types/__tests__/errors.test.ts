@@ -220,7 +220,7 @@ describe('Error Hierarchy', () => {
     });
 
     it('should handle single failure', () => {
-      const singleFailure = [mockFailures[0]];
+      const singleFailure: ValidationFailure[] = [mockFailures[0]!];
       const error = new ValidationError('Single error', singleFailure);
       const userMessage = error.getUserMessage();
 

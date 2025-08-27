@@ -9,7 +9,6 @@ import fc from 'fast-check';
 import { EnumGenerator } from '../enum-generator';
 import { createGeneratorContext } from '../../data-generator';
 import { FormatRegistry } from '../../../registry/format-registry';
-import type { Schema } from '../../../types/schema';
 
 describe('EnumGenerator', () => {
   let generator: EnumGenerator;
@@ -34,7 +33,13 @@ describe('EnumGenerator', () => {
           fc.array(fc.anything(), { minLength: 1, maxLength: 10 }),
           fc.record({
             type: fc.option(
-              fc.constantFrom('string', 'number', 'boolean', 'integer')
+              fc.constantFrom(
+                'string' as const,
+                'number' as const,
+                'boolean' as const,
+                'integer' as const
+              ),
+              { nil: undefined }
             ),
           }),
           (enumValues, baseSchema) => {
@@ -50,7 +55,13 @@ describe('EnumGenerator', () => {
         fc.property(
           fc.oneof(
             // Schema without enum
-            fc.record({ type: fc.constantFrom('string', 'number', 'boolean') }),
+            fc.record({
+              type: fc.constantFrom(
+                'string' as const,
+                'number' as const,
+                'boolean' as const
+              ),
+            }),
             // Schema with empty enum
             fc.record({
               type: fc.constantFrom('string', 'number'),
@@ -63,7 +74,7 @@ describe('EnumGenerator', () => {
             fc.string()
           ),
           (schema) => {
-            expect(generator.supports(schema)).toBe(false);
+            expect(generator.supports(schema as any)).toBe(false);
           }
         )
       );
@@ -85,7 +96,7 @@ describe('EnumGenerator', () => {
             { minLength: 1, maxLength: 5 }
           ),
           (mixedEnumValues) => {
-            const schema = { enum: mixedEnumValues };
+            const schema = { enum: mixedEnumValues, type: 'string' as const };
             expect(generator.supports(schema)).toBe(true);
           }
         )
@@ -100,7 +111,7 @@ describe('EnumGenerator', () => {
           fc.array(fc.anything(), { minLength: 1, maxLength: 10 }),
           fc.integer({ min: 0, max: 1000 }),
           (enumValues, seed) => {
-            const schema = { enum: enumValues };
+            const schema = { enum: enumValues, type: 'string' };
             const context = createGeneratorContext(schema, formatRegistry, {
               seed,
             });
@@ -122,7 +133,7 @@ describe('EnumGenerator', () => {
           fc.array(fc.string(), { minLength: 1, maxLength: 5 }),
           fc.integer({ min: 0, max: 1000 }),
           (enumValues, seed) => {
-            const schema = { enum: enumValues };
+            const schema = { enum: enumValues, type: 'string' };
 
             const context1 = createGeneratorContext(schema, formatRegistry, {
               seed,
@@ -175,7 +186,7 @@ describe('EnumGenerator', () => {
           fc.integer({ min: 0, max: 1000 }),
           (value, duplicateCount, seed) => {
             const enumValues = Array(duplicateCount).fill(value);
-            const schema = { enum: enumValues };
+            const schema = { enum: enumValues, type: 'string' };
             const context = createGeneratorContext(schema, formatRegistry, {
               seed,
             });
@@ -240,7 +251,7 @@ describe('EnumGenerator', () => {
         fc.property(
           fc.array(fc.integer(), { minLength: 2, maxLength: 5 }),
           (enumValues) => {
-            const schema = { enum: enumValues };
+            const schema = { enum: enumValues, type: 'string' };
             const generatedValues = new Set();
 
             // Generate many samples to increase likelihood of hitting all values
@@ -276,7 +287,7 @@ describe('EnumGenerator', () => {
           fc.array(fc.string(), { minLength: 2, maxLength: 4 }),
           fc.integer({ min: 0, max: 1000 }),
           (enumValues, seed) => {
-            const schema = { enum: enumValues };
+            const schema = { enum: enumValues, type: 'string' };
             const context = createGeneratorContext(schema, formatRegistry, {
               seed,
             });
@@ -352,7 +363,7 @@ describe('EnumGenerator', () => {
               adjustedWeights.push(0.5);
             }
 
-            const schema = { enum: enumValues };
+            const schema = { enum: enumValues, type: 'string' };
             const context = createGeneratorContext(schema, formatRegistry, {
               seed,
             });
@@ -392,7 +403,7 @@ describe('EnumGenerator', () => {
           fc.array(fc.string(), { minLength: 1, maxLength: 3 }),
           fc.integer({ min: 0, max: 100 }),
           (enumValues, seed) => {
-            const schema = { enum: enumValues };
+            const schema = { enum: enumValues, type: 'string' };
             const context = createGeneratorContext(schema, formatRegistry, {
               seed,
             });
@@ -425,7 +436,7 @@ describe('EnumGenerator', () => {
         fc.property(
           fc.array(fc.anything(), { minLength: 1, maxLength: 10 }),
           (enumValues) => {
-            const schema = { enum: enumValues };
+            const schema = { enum: enumValues, type: 'string' };
 
             enumValues.forEach((enumValue) => {
               expect(generator.validate(enumValue, schema)).toBe(true);
@@ -443,7 +454,7 @@ describe('EnumGenerator', () => {
           (enumValues, testValue) => {
             fc.pre(!enumValues.includes(testValue)); // Ensure test value is not in enum
 
-            const schema = { enum: enumValues };
+            const schema = { enum: enumValues, type: 'string' };
             expect(generator.validate(testValue, schema)).toBe(false);
           }
         )
@@ -512,7 +523,7 @@ describe('EnumGenerator', () => {
         fc.property(
           fc.array(fc.anything(), { minLength: 1, maxLength: 10 }),
           (enumValues) => {
-            const schema = { enum: enumValues };
+            const schema = { enum: enumValues, type: 'string' };
             const examples = generator.getExamples(schema);
 
             expect(examples).toEqual([...enumValues]);
@@ -570,7 +581,7 @@ describe('EnumGenerator', () => {
           fc.integer({ min: 1, max: 10 }),
           fc.integer({ min: 0, max: 1000 }),
           (enumValues, count, seed) => {
-            const schema = { enum: enumValues };
+            const schema = { enum: enumValues, type: 'string' };
             const context = createGeneratorContext(schema, formatRegistry, {
               seed,
             });
@@ -590,7 +601,7 @@ describe('EnumGenerator', () => {
     });
 
     it('should fail for unsupported schemas in generateMultiple', () => {
-      const unsupportedSchema = { type: 'string' };
+      const unsupportedSchema = { type: 'string' } as const;
       const context = createGeneratorContext(unsupportedSchema, formatRegistry);
 
       const result = generator.generateMultiple(
@@ -647,7 +658,7 @@ describe('EnumGenerator', () => {
           fc.array(fc.anything(), { minLength: 1, maxLength: 8 }),
           fc.integer({ min: 0, max: 1000 }),
           (enumValues, seed) => {
-            const schema = { enum: enumValues };
+            const schema = { enum: enumValues, type: 'string' };
             const context = createGeneratorContext(schema, formatRegistry, {
               seed,
             });
@@ -707,13 +718,14 @@ describe('EnumGenerator', () => {
         Array.from({ length: 100 }, (_, i) => i), // Large enum (100 values)
       ];
 
-      enumTestCases.forEach((enumValues, caseIndex) => {
+      enumTestCases.forEach((enumValues) => {
         fc.assert(
           fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
-            const context = createGeneratorContext({}, formatRegistry, {
+            const schema = { enum: enumValues };
+            const context = createGeneratorContext(schema, formatRegistry, {
               seed,
             });
-            const result = generator.generateFromEnum(enumValues, context);
+            const result = generator.generate(schema, context);
 
             expect(result.isOk()).toBe(true);
             if (result.isOk()) {
@@ -731,8 +743,11 @@ describe('EnumGenerator', () => {
 
       // Generate 1000 samples
       for (let i = 0; i < 1000; i++) {
-        const context = createGeneratorContext({}, formatRegistry, { seed: i });
-        const result = generator.generateFromEnum(largeEnum, context);
+        const schema = { enum: largeEnum };
+        const context = createGeneratorContext(schema, formatRegistry, {
+          seed: i,
+        });
+        const result = generator.generate(schema, context);
 
         if (result.isOk()) {
           const value = result.value as string;
@@ -755,8 +770,11 @@ describe('EnumGenerator', () => {
 
       // Generate 1000 values from very large enum
       for (let i = 0; i < 1000; i++) {
-        const context = createGeneratorContext({}, formatRegistry, { seed: i });
-        const result = generator.generateFromEnum(veryLargeEnum, context);
+        const schema = { enum: veryLargeEnum };
+        const context = createGeneratorContext(schema, formatRegistry, {
+          seed: i,
+        });
+        const result = generator.generate(schema, context);
         expect(result.isOk()).toBe(true);
       }
 
@@ -771,15 +789,20 @@ describe('EnumGenerator', () => {
       const enumValues = ['cached-1', 'cached-2', 'cached-3'];
 
       // First generation should populate cache
-      const context1 = createGeneratorContext({}, formatRegistry, { seed: 42 });
-      const result1 = generator.generateFromEnum(enumValues, context1);
+      const schema = { enum: enumValues };
+      const context1 = createGeneratorContext(schema, formatRegistry, {
+        seed: 42,
+      });
+      const result1 = generator.generate(schema, context1);
       expect(result1.isOk()).toBe(true);
 
       // Second generation with same enum should use cache (faster)
       const startTime = performance.now();
       for (let i = 0; i < 100; i++) {
-        const context = createGeneratorContext({}, formatRegistry, { seed: i });
-        const result = generator.generateFromEnum(enumValues, context);
+        const context = createGeneratorContext(schema, formatRegistry, {
+          seed: i,
+        });
+        const result = generator.generate(schema, context);
         expect(result.isOk()).toBe(true);
       }
       const duration = performance.now() - startTime;

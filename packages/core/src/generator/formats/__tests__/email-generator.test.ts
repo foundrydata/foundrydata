@@ -87,7 +87,12 @@ describe('EmailGenerator', () => {
       }
 
       // Should contain some test domains
-      const domains = emails.map((email) => email.split('@')[1]);
+      const domains = emails
+        .map((email) => {
+          const parts = email.split('@');
+          return parts[1];
+        })
+        .filter((domain): domain is string => domain !== undefined);
       const testDomains = [
         'example.com',
         'test.org',

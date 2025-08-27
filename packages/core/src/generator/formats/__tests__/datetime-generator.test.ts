@@ -61,7 +61,10 @@ describe('DateTimeGenerator', () => {
         expect(year).toBeLessThanOrEqual(2030);
 
         // Extract and validate time components
-        const [datePart, timePart] = dateTimeString.split('T');
+        const [_datePart, timePart] = dateTimeString.split('T');
+        if (!timePart) {
+          throw new Error('Invalid datetime format: missing time part');
+        }
         const timeWithoutZ = timePart.replace('Z', '');
         const [hour, minute, second] = timeWithoutZ.split(':').map(Number);
 
@@ -112,6 +115,7 @@ describe('DateTimeGenerator', () => {
       }
     });
 
+    // eslint-disable-next-line complexity
     test('should generate valid days for each month', () => {
       // Generate many date-times to check month/day combinations
       const dateTimes = [];
@@ -125,23 +129,35 @@ describe('DateTimeGenerator', () => {
 
       for (const dateTimeString of dateTimes) {
         const [datePart] = dateTimeString.split('T');
-        const [year, month, day] = datePart.split('-').map(Number);
+        if (!datePart) {
+          throw new Error('Invalid datetime format: missing date part');
+        }
+        const parts = datePart.split('-').map(Number);
+        const [year, month, day] = parts;
+
+        expect(year).toBeDefined();
+        expect(month).toBeDefined();
+        expect(day).toBeDefined();
 
         expect(month).toBeGreaterThanOrEqual(1);
         expect(month).toBeLessThanOrEqual(12);
         expect(day).toBeGreaterThanOrEqual(1);
 
         // Check maximum days per month
-        if (month === 2) {
+        if (month === 2 && year !== undefined && day !== undefined) {
           // February - check leap year logic
           const isLeapYear =
             (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
           const maxDays = isLeapYear ? 29 : 28;
           expect(day).toBeLessThanOrEqual(maxDays);
-        } else if ([4, 6, 9, 11].includes(month)) {
+        } else if (
+          month !== undefined &&
+          [4, 6, 9, 11].includes(month) &&
+          day !== undefined
+        ) {
           // April, June, September, November - 30 days
           expect(day).toBeLessThanOrEqual(30);
-        } else {
+        } else if (day !== undefined) {
           // All other months - 31 days
           expect(day).toBeLessThanOrEqual(31);
         }

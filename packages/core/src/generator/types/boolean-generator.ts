@@ -52,12 +52,7 @@ export class BooleanGenerator extends DataGenerator {
     const booleanSchema = schema as BooleanSchema;
 
     try {
-      // Handle enum values first (highest priority)
-      if (booleanSchema.enum) {
-        return this.generateFromEnum(booleanSchema.enum, context);
-      }
-
-      // Handle const values
+      // Handle const values first (highest priority)
       if (booleanSchema.const !== undefined) {
         const constValue = this.toBoolean(booleanSchema.const);
         if (constValue === null) {
@@ -71,6 +66,11 @@ export class BooleanGenerator extends DataGenerator {
           );
         }
         return ok(constValue);
+      }
+
+      // Handle enum values
+      if (booleanSchema.enum) {
+        return this.generateFromEnum(booleanSchema.enum, context);
       }
 
       // Handle default values
@@ -200,7 +200,7 @@ export class BooleanGenerator extends DataGenerator {
       switch (context.scenario) {
         case 'edge':
           // For edge cases, prefer extreme values more often
-          trueProbability = Math.random() < 0.3 ? 0.1 : 0.9;
+          trueProbability = fakerInstance.datatype.boolean() ? 0.1 : 0.9;
           break;
 
         case 'peak':
@@ -209,8 +209,8 @@ export class BooleanGenerator extends DataGenerator {
           break;
 
         case 'error':
-          // For error scenarios, randomly choose
-          trueProbability = Math.random();
+          // For error scenarios, use seeded random
+          trueProbability = fakerInstance.number.float({ min: 0, max: 1 });
           break;
 
         case 'normal':
