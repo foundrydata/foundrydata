@@ -41,6 +41,19 @@ packages/
 - Use import/export syntax, not require/module.exports
 - All file extensions must be explicit in imports (.js for compiled output)
 
+### TypeScript Configuration Strategy
+**Separate configurations for different purposes:**
+- **Build (`tsc --build`)**: Uses `packages/*/tsconfig.json` - excludes test files for production builds
+- **Type checking (`npm run typecheck`)**: Uses root `tsconfig.test.json` - includes all files including tests
+- **VS Code**: Automatically uses `tsconfig.test.json` for comprehensive error reporting
+- **Quality gates**: `task-ready` script runs `typecheck` before `build` to catch all TypeScript errors
+
+This ensures:
+- ✅ VS Code shows TypeScript errors in test files  
+- ✅ Production builds exclude test files
+- ✅ CI/CD catches all type errors before deployment
+- ✅ Consistent behavior between IDE and command line
+
 ### Key Types & Patterns
 ```typescript
 // Result type for error handling (no exceptions)
@@ -246,3 +259,52 @@ We'd rather support 10% of schemas perfectly than 100% of schemas poorly.
 ### Key principle:
 **Optimize for readability, maintainability, and performance - not for ESLint compliance.** 
 If a rule conflicts with good software engineering practices for the specific context, disable it with a comment explaining why.
+
+### CRITICAL: No Hacks or Quick Fixes
+**NEVER use TypeScript hacks like `as any`, `@ts-ignore`, or type assertions to bypass errors.**
+- ❌ `(schema as any).type` - This masks real type system issues
+- ❌ `// @ts-ignore` - This hides problems that need solving
+- ❌ `value!` - Non-null assertions without proper validation
+
+**When you encounter TypeScript errors, investigate systematically:**
+1. **Check specification compliance** - Are types missing or incorrect per standards?
+2. **Investigate both implementation AND tests** - Both can have issues simultaneously
+3. **Validate against external standards** - Use Context7 to verify against official specs
+4. **Fix all root causes** - Whether in implementation, tests, or both
+5. **Use proper type guards** - Runtime checks with TypeScript narrowing when needed
+
+**Debugging Approach: Systematic Investigation**
+When facing TypeScript errors in tests:
+1. **Verify specification compliance** - Do types match actual standards (JSON Schema, etc.)?
+2. **Check implementation completeness** - Are interfaces/unions missing valid cases?
+3. **Validate test correctness** - Are tests calling correct methods with valid data?
+4. **Fix everything that's broken** - Don't compromise one to fix the other
+
+**Example from this project:**
+- ❌ Bad: `(schema as any).type` to bypass Schema union type error  
+- ✅ Good: Fix both issues - Add missing `EnumSchema` interface AND correct test method calls
+- 🔍 **Real issues**: Missing `EnumSchema` in Schema union + tests calling non-existent `generateFromEnum()`
+
+**Philosophy**: TypeScript errors often reveal multiple issues. Fix them all properly rather than silencing symptoms.
+
+## Code Quality
+
+**ALWAYS maintain high code quality standards:**
+
+### ESLint Integration
+- **Run `npm run lint --fix` after editing any TypeScript/JavaScript files**
+- Fix all ESLint errors before completing tasks
+- Use `npm run lint:check` to validate without auto-fixing
+- Follow project's ESLint configuration strictly
+
+### Quality Gates
+- All code changes must pass: `npm run typecheck`, `npm run lint`, `npm run test`
+- Use the `task-ready` script for comprehensive validation
+- Never commit code with linting errors or TypeScript errors
+- Address quality issues immediately, not as technical debt
+
+### Code Standards
+- Maintain consistent formatting and style
+- Follow existing code patterns and conventions
+- Write clear, self-documenting code
+- Ensure all functions and classes have proper TypeScript types

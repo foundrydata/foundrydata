@@ -29,7 +29,7 @@
     "checkJs": false,
     
     // Editor Support
-    "skipLibCheck": false,
+    "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     
     // Advanced

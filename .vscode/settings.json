@@ -9,5 +9,8 @@
   "eslint.workingDirectories": [
     "."
   ],
-  "typescript.preferences.includePackageJsonAutoImports": "off"
+  "typescript.preferences.includePackageJsonAutoImports": "off",
+  "typescript.tsc.autoDetect": "off",
+  "typescript.validate.enable": true,
+  "typescript.reportStyleChecksAsWarnings": false
 }
