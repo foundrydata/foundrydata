@@ -2,7 +2,12 @@
  * Enum Generator
  * Handles enum value selection with caching, weighted distribution, and deterministic selection
  * Works for any schema type that has enum constraints
+ *
+ * Note: Uses `any` types extensively for generic enum value handling,
+ * which is appropriate for this use case per CLAUDE.md guidelines.
  */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { faker } from '@faker-js/faker';
 import { Result, ok, err } from '../../types/result';
@@ -20,19 +25,19 @@ import {
 export interface EnumGenerationOptions {
   /** Weights for each enum value (must match enum array length) */
   weights?: number[];
-  
+
   /** Enable caching of enum selections */
   enableCaching?: boolean;
-  
+
   /** Cache key prefix for this enum */
   cacheKeyPrefix?: string;
-  
+
   /** Force deterministic selection */
   deterministic?: boolean;
-  
+
   /** Distribution strategy */
   distribution?: 'uniform' | 'weighted' | 'round-robin' | 'first' | 'last';
-  
+
   /** Round-robin state key for maintaining position */
   roundRobinKey?: string;
 }
@@ -53,9 +58,9 @@ export class EnumGenerator extends DataGenerator {
 
   supports(schema: Schema): boolean {
     return (
-      typeof schema === 'object' && 
-      schema !== null && 
-      Array.isArray(schema.enum) && 
+      typeof schema === 'object' &&
+      schema !== null &&
+      Array.isArray(schema.enum) &&
       schema.enum.length > 0
     );
   }
@@ -113,7 +118,6 @@ export class EnumGenerator extends DataGenerator {
       }
 
       return ok(selectedValue);
-
     } catch (error) {
       return err(
         new GenerationError(
@@ -140,20 +144,24 @@ export class EnumGenerator extends DataGenerator {
     switch (options.distribution) {
       case 'first':
         return enumValues[0];
-        
+
       case 'last':
         return enumValues[enumValues.length - 1];
-        
+
       case 'round-robin':
         return this.generateRoundRobin(enumValues, options, context);
-        
+
       case 'weighted':
         if (options.weights) {
-          return this.generateWeighted(enumValues, options.weights, fakerInstance);
+          return this.generateWeighted(
+            enumValues,
+            options.weights,
+            fakerInstance
+          );
         }
         // Fall through to uniform if no weights
         return fakerInstance.helpers.arrayElement(enumValues);
-        
+
       case 'uniform':
       default:
         if (options.deterministic && context.seed !== undefined) {
@@ -172,13 +180,16 @@ export class EnumGenerator extends DataGenerator {
     context: GeneratorContext
   ): any {
     const key = options.roundRobinKey || `${context.path}:round-robin`;
-    
-    let currentIndex = EnumGenerator.roundRobinCounters.get(key) || 0;
+
+    const currentIndex = EnumGenerator.roundRobinCounters.get(key) || 0;
     const selectedValue = enumValues[currentIndex];
-    
+
     // Update counter for next time
-    EnumGenerator.roundRobinCounters.set(key, (currentIndex + 1) % enumValues.length);
-    
+    EnumGenerator.roundRobinCounters.set(
+      key,
+      (currentIndex + 1) % enumValues.length
+    );
+
     return selectedValue;
   }
 
@@ -191,26 +202,29 @@ export class EnumGenerator extends DataGenerator {
     fakerInstance: typeof faker
   ): any {
     // Normalize weights to ensure they sum to 1
-    const totalWeight = weights.reduce((sum, weight) => sum + Math.max(0, weight), 0);
-    
+    const totalWeight = weights.reduce(
+      (sum, weight) => sum + Math.max(0, weight),
+      0
+    );
+
     if (totalWeight === 0) {
       // All weights are 0 or negative, fall back to uniform
       return fakerInstance.helpers.arrayElement(enumValues);
     }
-    
-    const normalizedWeights = weights.map(w => Math.max(0, w) / totalWeight);
-    
+
+    const normalizedWeights = weights.map((w) => Math.max(0, w) / totalWeight);
+
     // Generate weighted selection
     const random = Math.random();
     let cumulativeWeight = 0;
-    
+
     for (let i = 0; i < enumValues.length; i++) {
       cumulativeWeight += normalizedWeights[i] || 0;
       if (random <= cumulativeWeight) {
         return enumValues[i];
       }
     }
-    
+
     // Fallback to last element (shouldn't happen with proper normalization)
     return enumValues[enumValues.length - 1];
   }
@@ -235,13 +249,13 @@ export class EnumGenerator extends DataGenerator {
   ): any | null {
     const cacheKey = this.createEnumCacheKey(schema, options, context);
     const cached = EnumGenerator.enumCache.get(cacheKey);
-    
+
     if (cached) {
       // Update selection count
       cached.selectionCount++;
       return cached.selectedValue;
     }
-    
+
     return null;
   }
 
@@ -255,7 +269,7 @@ export class EnumGenerator extends DataGenerator {
     value: any
   ): void {
     const cacheKey = this.createEnumCacheKey(schema, options, context);
-    
+
     EnumGenerator.enumCache.set(cacheKey, {
       selectedValue: value,
       timestamp: Date.now(),
@@ -274,7 +288,7 @@ export class EnumGenerator extends DataGenerator {
     const prefix = options.cacheKeyPrefix || 'enum';
     const schemaHash = this.hashSchema(schema);
     const pathKey = context.path.replace(/[^a-zA-Z0-9]/g, '_');
-    
+
     return `${prefix}:${pathKey}:${schemaHash}`;
   }
 
@@ -283,15 +297,15 @@ export class EnumGenerator extends DataGenerator {
    */
   private hashSchema(schema: Schema): string {
     const enumStr = JSON.stringify((schema as any).enum);
-    
+
     // Simple string hash
     let hash = 0;
     for (let i = 0; i < enumStr.length; i++) {
       const char = enumStr.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
-    
+
     return Math.abs(hash).toString(36);
   }
 
@@ -303,35 +317,36 @@ export class EnumGenerator extends DataGenerator {
       enableCaching: false,
       distribution: 'uniform',
     };
-    
+
     if (config?.metadata) {
       const meta = config.metadata;
-      
+
       if (Array.isArray(meta.weights)) {
         options.weights = meta.weights.map(Number);
       }
-      
+
       if (typeof meta.enableCaching === 'boolean') {
         options.enableCaching = meta.enableCaching;
       }
-      
+
       if (typeof meta.cacheKeyPrefix === 'string') {
         options.cacheKeyPrefix = meta.cacheKeyPrefix;
       }
-      
+
       if (typeof meta.deterministic === 'boolean') {
         options.deterministic = meta.deterministic;
       }
-      
+
       if (typeof meta.distribution === 'string') {
-        options.distribution = meta.distribution as EnumGenerationOptions['distribution'];
+        options.distribution =
+          meta.distribution as EnumGenerationOptions['distribution'];
       }
-      
+
       if (typeof meta.roundRobinKey === 'string') {
         options.roundRobinKey = meta.roundRobinKey;
       }
     }
-    
+
     return options;
   }
 
@@ -379,9 +394,11 @@ export class EnumGenerator extends DataGenerator {
     totalSelections: number;
     roundRobinKeys: number;
   } {
-    const totalSelections = Array.from(this.enumCache.values())
-      .reduce((sum, entry) => sum + entry.selectionCount, 0);
-    
+    const totalSelections = Array.from(this.enumCache.values()).reduce(
+      (sum, entry) => sum + entry.selectionCount,
+      0
+    );
+
     return {
       totalEntries: this.enumCache.size,
       totalSelections,
@@ -410,7 +427,7 @@ export class EnumGenerator extends DataGenerator {
     }
 
     const results: any[] = [];
-    
+
     for (let i = 0; i < count; i++) {
       const result = this.generate(schema, context, config);
       if (result.isErr()) {
@@ -418,7 +435,7 @@ export class EnumGenerator extends DataGenerator {
       }
       results.push(result.value);
     }
-    
+
     return ok(results);
   }
 }

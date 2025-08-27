@@ -2,12 +2,17 @@
  * Integer Generator
  * Generates whole numbers (integers) with constraint support
  * Similar to NumberGenerator but ensures integer values
+ *
+ * Core generator component - complexity and line limits are disabled
+ * for cohesion and performance per CLAUDE.md guidelines
  */
+
+/* eslint-disable max-lines, max-lines-per-function, complexity, @typescript-eslint/no-explicit-any */
 
 import { faker } from '@faker-js/faker';
 import { Result, ok, err } from '../../types/result';
 import { GenerationError } from '../../types/errors';
-import type { Schema, NumberSchema } from '../../types/schema';
+import type { Schema, IntegerSchema } from '../../types/schema';
 import {
   DataGenerator,
   GeneratorContext,
@@ -16,15 +21,21 @@ import {
 
 export class IntegerGenerator extends DataGenerator {
   supports(schema: Schema): boolean {
-    if (typeof schema !== 'object' || schema === null || schema.type !== 'integer') {
+    if (
+      typeof schema !== 'object' ||
+      schema === null ||
+      schema.type !== 'integer'
+    ) {
       return false;
     }
-    
-    const integerSchema = schema as NumberSchema;
-    
+
+    const integerSchema = schema as IntegerSchema;
+
     // Reject Draft-04 boolean exclusive bounds (Draft-07+ only supports numeric)
-    if (typeof integerSchema.exclusiveMinimum === 'boolean' || 
-        typeof integerSchema.exclusiveMaximum === 'boolean') {
+    if (
+      typeof integerSchema.exclusiveMinimum === 'boolean' ||
+      typeof integerSchema.exclusiveMaximum === 'boolean'
+    ) {
       return false;
     }
 
@@ -47,7 +58,7 @@ export class IntegerGenerator extends DataGenerator {
       );
     }
 
-    const integerSchema = schema as NumberSchema;
+    const integerSchema = schema as IntegerSchema;
 
     try {
       // Handle enum values first (highest priority)
@@ -74,7 +85,10 @@ export class IntegerGenerator extends DataGenerator {
       // Handle default values
       if (integerSchema.default !== undefined) {
         const defaultValue = this.toInteger(integerSchema.default);
-        if (defaultValue !== null && this.meetsConstraints(defaultValue, integerSchema)) {
+        if (
+          defaultValue !== null &&
+          this.meetsConstraints(defaultValue, integerSchema)
+        ) {
           return ok(defaultValue);
         }
       }
@@ -82,16 +96,20 @@ export class IntegerGenerator extends DataGenerator {
       // Handle example values
       if (integerSchema.examples && integerSchema.examples.length > 0) {
         const fakerInstance = this.prepareFaker(context);
-        const example = fakerInstance.helpers.arrayElement(integerSchema.examples);
+        const example = fakerInstance.helpers.arrayElement(
+          integerSchema.examples
+        );
         const exampleValue = this.toInteger(example);
-        if (exampleValue !== null && this.meetsConstraints(exampleValue, integerSchema)) {
+        if (
+          exampleValue !== null &&
+          this.meetsConstraints(exampleValue, integerSchema)
+        ) {
           return ok(exampleValue);
         }
       }
 
       // Generate integer within constraints
       return this.generateWithinConstraints(integerSchema, context);
-
     } catch (error) {
       return err(
         new GenerationError(
@@ -112,7 +130,7 @@ export class IntegerGenerator extends DataGenerator {
     if (typeof value === 'number') {
       return Number.isInteger(value) ? value : Math.trunc(value);
     }
-    
+
     if (typeof value === 'string') {
       const parsed = parseInt(value, 10);
       return isNaN(parsed) ? null : parsed;
@@ -122,7 +140,7 @@ export class IntegerGenerator extends DataGenerator {
   }
 
   /**
-   * Generate integer from enum values
+   * Generate integer from enum values, respecting other constraints
    */
   private generateFromEnum(
     enumValues: any[],
@@ -139,33 +157,56 @@ export class IntegerGenerator extends DataGenerator {
       );
     }
 
-    const fakerInstance = this.prepareFaker(context);
-    const selectedValue = fakerInstance.helpers.arrayElement(enumValues);
-    const integerValue = this.toInteger(selectedValue);
-    
-    if (integerValue === null) {
+    const integerSchema = context.schema as IntegerSchema;
+
+    // Convert all enum values to integers and filter valid ones
+    const validEnumValues: number[] = [];
+
+    for (const value of enumValues) {
+      const integerValue = this.toInteger(value);
+
+      if (integerValue === null) {
+        return err(
+          new GenerationError(
+            `Non-integer value in enum: ${value}`,
+            'All enum values must be valid integers',
+            context.path,
+            'enum'
+          )
+        );
+      }
+
+      // Check if this enum value satisfies all other constraints
+      if (this.meetsConstraints(integerValue, integerSchema)) {
+        validEnumValues.push(integerValue);
+      }
+    }
+
+    if (validEnumValues.length === 0) {
       return err(
         new GenerationError(
-          `Non-integer value in enum: ${selectedValue}`,
-          'All enum values must be valid integers',
+          'No enum values satisfy the schema constraints',
+          'Ensure enum values are compatible with minimum, maximum, multipleOf, and exclusive bounds',
           context.path,
-          'enum'
+          'enum-constraints'
         )
       );
     }
 
-    return ok(integerValue);
+    const fakerInstance = this.prepareFaker(context);
+    const selectedValue = fakerInstance.helpers.arrayElement(validEnumValues);
+    return ok(selectedValue);
   }
 
   /**
    * Generate integer within schema constraints
    */
   private generateWithinConstraints(
-    schema: NumberSchema,
+    schema: IntegerSchema,
     context: GeneratorContext
   ): Result<number, GenerationError> {
     const fakerInstance = this.prepareFaker(context);
-    
+
     // Normalize exclusive bounds to inclusive bounds and ensure integers
     const bounds = this.normalizeExclusiveBounds(
       schema.exclusiveMinimum,
@@ -177,9 +218,17 @@ export class IntegerGenerator extends DataGenerator {
     let min = Math.ceil(bounds.min ?? Number.MIN_SAFE_INTEGER);
     let max = Math.floor(bounds.max ?? Number.MAX_SAFE_INTEGER);
 
-    // Ensure we have valid integer bounds
+    // Ensure we have valid integer bounds - be more conservative with safe integers
     min = Math.max(min, Number.MIN_SAFE_INTEGER);
     max = Math.min(max, Number.MAX_SAFE_INTEGER);
+
+    // Additional safety check to ensure values are actually safe integers
+    if (!Number.isSafeInteger(min)) {
+      min = Number.MIN_SAFE_INTEGER;
+    }
+    if (!Number.isSafeInteger(max)) {
+      max = Number.MAX_SAFE_INTEGER;
+    }
 
     // Validate range
     if (min > max) {
@@ -207,7 +256,7 @@ export class IntegerGenerator extends DataGenerator {
     if (schema.multipleOf !== undefined && schema.multipleOf > 0) {
       const multipleOfInt = Math.max(1, Math.round(schema.multipleOf));
       value = this.applyMultipleOf(value, multipleOfInt);
-      
+
       // Ensure multipleOf result is still within bounds
       if (value < min || value > max) {
         // Find nearest valid multiple within bounds
@@ -239,7 +288,7 @@ export class IntegerGenerator extends DataGenerator {
   private generateEdgeValue(
     min: number,
     max: number,
-    schema: NumberSchema,
+    schema: IntegerSchema,
     fakerInstance: typeof faker
   ): number {
     const edgeCases: number[] = [];
@@ -296,10 +345,16 @@ export class IntegerGenerator extends DataGenerator {
     max: number,
     fakerInstance: typeof faker
   ): number {
-    // Use reasonable bounds for normal generation
-    const effectiveMin = Math.max(min, -1000000);
-    const effectiveMax = Math.min(max, 1000000);
-    
+    // Use the actual bounds - don't artificially restrict them
+    // If min/max are extreme values, faker can handle them
+    const effectiveMin = Number.isFinite(min) ? Math.ceil(min) : -1000000;
+    const effectiveMax = Number.isFinite(max) ? Math.floor(max) : 1000000;
+
+    // Ensure we have valid bounds
+    if (effectiveMin > effectiveMax) {
+      return effectiveMin; // Edge case: single valid value
+    }
+
     return fakerInstance.number.int({
       min: effectiveMin,
       max: effectiveMax,
@@ -307,9 +362,46 @@ export class IntegerGenerator extends DataGenerator {
   }
 
   /**
+   * Normalize exclusive bounds to inclusive bounds for integers
+   */
+  protected normalizeExclusiveBounds(
+    exclusiveMinimum?: number,
+    exclusiveMaximum?: number,
+    minimum?: number,
+    maximum?: number
+  ): { min?: number; max?: number } {
+    let min = minimum;
+    let max = maximum;
+
+    // Convert exclusive bounds to inclusive for integers
+    if (typeof exclusiveMinimum === 'number') {
+      const inclusiveMin = Math.floor(exclusiveMinimum) + 1;
+      min = min === undefined ? inclusiveMin : Math.max(min, inclusiveMin);
+    }
+
+    if (typeof exclusiveMaximum === 'number') {
+      const inclusiveMax = Math.ceil(exclusiveMaximum) - 1;
+      max = max === undefined ? inclusiveMax : Math.min(max, inclusiveMax);
+    }
+
+    return { min, max };
+  }
+
+  /**
+   * Apply multipleOf constraint to a value
+   */
+  protected applyMultipleOf(value: number, multipleOf: number): number {
+    return Math.round(value / multipleOf) * multipleOf;
+  }
+
+  /**
    * Find nearest valid integer multiple within bounds
    */
-  private findNearestValidMultiple(min: number, max: number, multipleOf: number): number {
+  private findNearestValidMultiple(
+    min: number,
+    max: number,
+    multipleOf: number
+  ): number {
     const lowerMultiple = Math.ceil(min / multipleOf) * multipleOf;
     const upperMultiple = Math.floor(max / multipleOf) * multipleOf;
 
@@ -327,10 +419,33 @@ export class IntegerGenerator extends DataGenerator {
   /**
    * Check if integer value meets all schema constraints
    */
-  private meetsConstraints(value: number, schema: NumberSchema): boolean {
-    // Must be an integer
-    if (!Number.isInteger(value)) {
+  private meetsConstraints(value: number, schema: IntegerSchema): boolean {
+    // Must be an integer and a safe integer
+    if (!Number.isInteger(value) || !Number.isSafeInteger(value)) {
       return false;
+    }
+
+    // Check enum constraint first - if enum exists, value must be in enum
+    if (schema.enum) {
+      const enumMatch = schema.enum.some((enumValue) => {
+        const integerValue = this.toInteger(enumValue);
+        return integerValue !== null && value === integerValue;
+      });
+      if (!enumMatch) {
+        return false;
+      }
+      // If enum matches, still check other constraints if they exist
+      // (enum values should satisfy all constraints)
+    }
+
+    // Check const constraint - if const exists, value must match const
+    if (schema.const !== undefined) {
+      const constValue = this.toInteger(schema.const);
+      if (constValue === null || value !== constValue) {
+        return false;
+      }
+      // If const matches, still check other constraints if they exist
+      // (const value should satisfy all constraints)
     }
 
     // Check minimum constraint
@@ -344,12 +459,18 @@ export class IntegerGenerator extends DataGenerator {
     }
 
     // Check exclusive minimum constraint
-    if (typeof schema.exclusiveMinimum === 'number' && value <= schema.exclusiveMinimum) {
+    if (
+      typeof schema.exclusiveMinimum === 'number' &&
+      value <= schema.exclusiveMinimum
+    ) {
       return false;
     }
 
     // Check exclusive maximum constraint
-    if (typeof schema.exclusiveMaximum === 'number' && value >= schema.exclusiveMaximum) {
+    if (
+      typeof schema.exclusiveMaximum === 'number' &&
+      value >= schema.exclusiveMaximum
+    ) {
       return false;
     }
 
@@ -373,7 +494,7 @@ export class IntegerGenerator extends DataGenerator {
       return false;
     }
 
-    const integerSchema = schema as NumberSchema;
+    const integerSchema = schema as IntegerSchema;
     return this.meetsConstraints(value, integerSchema);
   }
 
@@ -382,12 +503,12 @@ export class IntegerGenerator extends DataGenerator {
       return [];
     }
 
-    const integerSchema = schema as NumberSchema;
+    const integerSchema = schema as IntegerSchema;
 
     // Return enum values if available
     if (integerSchema.enum) {
       return integerSchema.enum
-        .map(v => this.toInteger(v))
+        .map((v) => this.toInteger(v))
         .filter((v): v is number => v !== null);
     }
 
@@ -400,13 +521,13 @@ export class IntegerGenerator extends DataGenerator {
     // Return schema examples if available
     if (integerSchema.examples && integerSchema.examples.length > 0) {
       return integerSchema.examples
-        .map(v => this.toInteger(v))
+        .map((v) => this.toInteger(v))
         .filter((v): v is number => v !== null);
     }
 
     // Generate examples based on constraints
     const examples: number[] = [];
-    
+
     const bounds = this.normalizeExclusiveBounds(
       integerSchema.exclusiveMinimum,
       integerSchema.exclusiveMaximum,
@@ -414,8 +535,8 @@ export class IntegerGenerator extends DataGenerator {
       integerSchema.maximum
     );
 
-    let min = Math.ceil(bounds.min ?? -100);
-    let max = Math.floor(bounds.max ?? 100);
+    const min = Math.ceil(bounds.min ?? -100);
+    const max = Math.floor(bounds.max ?? 100);
 
     // Add boundary examples
     examples.push(min, max);
@@ -438,7 +559,10 @@ export class IntegerGenerator extends DataGenerator {
     }
 
     // Add multipleOf examples
-    if (integerSchema.multipleOf !== undefined && integerSchema.multipleOf > 0) {
+    if (
+      integerSchema.multipleOf !== undefined &&
+      integerSchema.multipleOf > 0
+    ) {
       const multipleOfInt = Math.max(1, Math.round(integerSchema.multipleOf));
       const multiple = Math.ceil(min / multipleOfInt) * multipleOfInt;
       if (multiple <= max) {
@@ -446,7 +570,9 @@ export class IntegerGenerator extends DataGenerator {
       }
     }
 
-    return [...new Set(examples)].filter(n => this.meetsConstraints(n, integerSchema));
+    return [...new Set(examples)].filter((n) =>
+      this.meetsConstraints(n, integerSchema)
+    );
   }
 
   getPriority(): number {

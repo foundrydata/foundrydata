@@ -107,10 +107,22 @@ export interface StringSchema extends BaseSchema {
 }
 
 /**
- * Number schema definition (covers both integer and number)
+ * Number schema definition
  */
 export interface NumberSchema extends BaseSchema {
-  type: 'number' | 'integer';
+  type: 'number';
+  minimum?: number;
+  maximum?: number;
+  exclusiveMinimum?: number;
+  exclusiveMaximum?: number;
+  multipleOf?: number;
+}
+
+/**
+ * Integer schema definition
+ */
+export interface IntegerSchema extends BaseSchema {
+  type: 'integer';
   minimum?: number;
   maximum?: number;
   exclusiveMinimum?: number;
@@ -140,6 +152,7 @@ export type Schema =
   | ArraySchema
   | StringSchema
   | NumberSchema
+  | IntegerSchema
   | BooleanSchema
   | NullSchema
   | boolean; // JSON Schema allows boolean schemas (true/false for any/never)
@@ -178,9 +191,13 @@ export function isStringSchema(schema: Schema): schema is StringSchema {
 
 export function isNumberSchema(schema: Schema): schema is NumberSchema {
   return (
-    typeof schema === 'object' &&
-    schema !== null &&
-    (schema.type === 'number' || schema.type === 'integer')
+    typeof schema === 'object' && schema !== null && schema.type === 'number'
+  );
+}
+
+export function isIntegerSchema(schema: Schema): schema is IntegerSchema {
+  return (
+    typeof schema === 'object' && schema !== null && schema.type === 'integer'
   );
 }
 

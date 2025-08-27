@@ -376,6 +376,7 @@ export class ComplianceValidator {
   /**
    * Generate summary statistics for compliance report
    */
+  // eslint-disable-next-line max-lines-per-function -- Summary generation requires comprehensive statistics
   private generateSummary(
     results: ComplianceValidationResult[]
   ): ComplianceSummary {

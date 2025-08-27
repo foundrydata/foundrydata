@@ -16,28 +16,28 @@ import type { FormatRegistry } from '../registry/format-registry';
 export interface GeneratorContext {
   /** The schema being processed */
   schema: Schema;
-  
+
   /** Random seed for deterministic generation */
   seed?: number;
-  
+
   /** Locale for localized data generation */
   locale?: string;
-  
+
   /** Generation scenario for different data patterns */
   scenario?: 'normal' | 'edge' | 'peak' | 'error';
-  
+
   /** Cache for memoization and performance */
-  cache: Map<string, any>;
-  
+  cache: Map<string, unknown>;
+
   /** Format registry for string format generation */
   formatRegistry: FormatRegistry;
-  
+
   /** Current path in the schema (for error reporting) */
   path: string;
-  
+
   /** Maximum depth for nested structures (prevent infinite recursion) */
   maxDepth: number;
-  
+
   /** Current depth in generation */
   currentDepth: number;
 }
@@ -48,12 +48,12 @@ export interface GeneratorContext {
 export interface GenerationConfig {
   /** Override default generator behavior */
   override?: boolean;
-  
+
   /** Custom generation function */
-  customGenerator?: (context: GeneratorContext) => any;
-  
+  customGenerator?: (context: GeneratorContext) => unknown;
+
   /** Additional metadata for generator */
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -74,7 +74,7 @@ export abstract class DataGenerator {
     schema: Schema,
     context: GeneratorContext,
     config?: GenerationConfig
-  ): Result<any, GenerationError>;
+  ): Result<unknown, GenerationError>;
 
   /**
    * Get the priority of this generator (higher = more specific)
@@ -88,7 +88,7 @@ export abstract class DataGenerator {
    * Validate generated data against schema constraints
    * Override for type-specific validation beyond basic type checking
    */
-  validate(value: any, _schema: Schema): boolean {
+  validate(value: unknown, _schema: Schema): boolean {
     // Default implementation - just check if value exists
     return value !== undefined && value !== null;
   }
@@ -97,7 +97,7 @@ export abstract class DataGenerator {
    * Get example values that this generator might produce
    * Useful for documentation and testing
    */
-  getExamples(_schema: Schema): any[] {
+  getExamples(_schema: Schema): unknown[] {
     return [];
   }
 
@@ -106,6 +106,7 @@ export abstract class DataGenerator {
    */
   protected prepareFaker(context: GeneratorContext): typeof faker {
     if (context.seed !== undefined) {
+      // Use global faker with seed - simple and reliable approach
       faker.seed(context.seed);
     }
 
@@ -129,19 +130,21 @@ export abstract class DataGenerator {
    * Helper to check if generation should use edge cases
    */
   protected shouldUseEdgeCase(context: GeneratorContext): boolean {
-    return context.scenario === 'edge' || 
-           context.scenario === 'peak' ||
-           (Math.random() < 0.1); // 10% chance for normal scenario
+    return (
+      context.scenario === 'edge' ||
+      context.scenario === 'peak' ||
+      Math.random() < 0.1
+    ); // 10% chance for normal scenario
   }
 
   /**
    * Helper to get constraint value with edge case consideration
    */
   protected getConstraintValue(
-    normalValue: any,
-    edgeValue: any,
+    normalValue: unknown,
+    edgeValue: unknown,
     context: GeneratorContext
-  ): any {
+  ): unknown {
     return this.shouldUseEdgeCase(context) ? edgeValue : normalValue;
   }
 
@@ -150,7 +153,9 @@ export abstract class DataGenerator {
    */
   protected validateNumericRange(min?: number, max?: number): void {
     if (min !== undefined && max !== undefined && min > max) {
-      throw new Error(`Invalid range: minimum (${min}) cannot be greater than maximum (${max})`);
+      throw new Error(
+        `Invalid range: minimum (${min}) cannot be greater than maximum (${max})`
+      );
     }
   }
 
@@ -188,7 +193,7 @@ export abstract class DataGenerator {
    */
   protected applyMultipleOf(value: number, multipleOf: number): number {
     if (multipleOf <= 0) return value;
-    
+
     return Math.round(value / multipleOf) * multipleOf;
   }
 
@@ -256,10 +261,10 @@ export class GeneratorRegistry {
     if (!this.generators.has(type)) {
       this.generators.set(type, []);
     }
-    
+
     const typeGenerators = this.generators.get(type)!;
     typeGenerators.push(generator);
-    
+
     // Sort by priority (highest first)
     typeGenerators.sort((a, b) => b.getPriority() - a.getPriority());
   }

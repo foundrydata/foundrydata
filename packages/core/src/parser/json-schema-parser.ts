@@ -15,6 +15,7 @@ import type {
   ArraySchema,
   StringSchema,
   NumberSchema,
+  IntegerSchema,
   BooleanSchema,
   NullSchema,
   StringFormat,
@@ -276,11 +277,12 @@ export class JSONSchemaParser implements SchemaParser {
   private parseNumberSchema(
     schema: Record<string, unknown>,
     _path: string
-  ): Result<NumberSchema, ParseError> {
-    const result: NumberSchema = {
-      type: schema.type as 'number' | 'integer',
+  ): Result<NumberSchema | IntegerSchema, ParseError> {
+    const schemaType = schema.type as 'number' | 'integer';
+    const result: NumberSchema | IntegerSchema = {
+      type: schemaType,
       ...this.parseBaseProperties(schema),
-    };
+    } as NumberSchema | IntegerSchema;
 
     // Parse constraints
     if (typeof schema.minimum === 'number') {

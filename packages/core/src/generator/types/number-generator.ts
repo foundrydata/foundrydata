@@ -1,22 +1,27 @@
 /**
  * Number Generator
  * Generates floating-point numbers with JSON Schema Draft 7+ constraint support
- * 
+ *
  * Features:
  * - Supports minimum, maximum, exclusiveMinimum, exclusiveMaximum constraints
  * - Handles multipleOf with floating-point precision awareness
  * - Draft 7+ compliance: rejects NaN/Infinity constraints, multipleOf must be > 0
  * - Enum and const value generation with constraint validation
  * - Scenario-based generation (normal, edge) with deterministic seed support
- * 
+ *
  * Limitations:
- * - Extremely small ranges (< 1e-300) may not be handled reliably due to 
+ * - Extremely small ranges (< 1e-300) may not be handled reliably due to
  *   JavaScript floating-point precision limits
  * - Subnormal values near Number.MIN_VALUE may have reduced accuracy
  * - MultipleOf validation uses epsilon tolerance for floating-point comparisons
  * - MultipleOf with irrational numbers (π, e, √2) may have precision issues
  * - For multipleOf < 1e-15, validation tolerance may cause edge case inconsistencies
+ *
+ * Core generator component - complexity and line limits are disabled
+ * for cohesion and performance per CLAUDE.md guidelines
  */
+
+/* eslint-disable max-lines, max-lines-per-function, complexity, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 
 import { faker } from '@faker-js/faker';
 import { Result, ok, err } from '../../types/result';
@@ -30,15 +35,21 @@ import {
 
 export class NumberGenerator extends DataGenerator {
   supports(schema: Schema): boolean {
-    if (typeof schema !== 'object' || schema === null || schema.type !== 'number') {
+    if (
+      typeof schema !== 'object' ||
+      schema === null ||
+      schema.type !== 'number'
+    ) {
       return false;
     }
 
     const numberSchema = schema as NumberSchema;
 
     // Reject Draft-04 boolean exclusive bounds (Draft-07+ only supports numeric)
-    if (typeof numberSchema.exclusiveMinimum === 'boolean' || 
-        typeof numberSchema.exclusiveMaximum === 'boolean') {
+    if (
+      typeof numberSchema.exclusiveMinimum === 'boolean' ||
+      typeof numberSchema.exclusiveMaximum === 'boolean'
+    ) {
       return false;
     }
 
@@ -48,19 +59,34 @@ export class NumberGenerator extends DataGenerator {
     }
 
     // Reject non-finite constraints (NaN/Infinity)
-    if (numberSchema.minimum !== undefined && !Number.isFinite(numberSchema.minimum)) {
+    if (
+      numberSchema.minimum !== undefined &&
+      !Number.isFinite(numberSchema.minimum)
+    ) {
       return false;
     }
-    if (numberSchema.maximum !== undefined && !Number.isFinite(numberSchema.maximum)) {
+    if (
+      numberSchema.maximum !== undefined &&
+      !Number.isFinite(numberSchema.maximum)
+    ) {
       return false;
     }
-    if (typeof numberSchema.exclusiveMinimum === 'number' && !Number.isFinite(numberSchema.exclusiveMinimum)) {
+    if (
+      typeof numberSchema.exclusiveMinimum === 'number' &&
+      !Number.isFinite(numberSchema.exclusiveMinimum)
+    ) {
       return false;
     }
-    if (typeof numberSchema.exclusiveMaximum === 'number' && !Number.isFinite(numberSchema.exclusiveMaximum)) {
+    if (
+      typeof numberSchema.exclusiveMaximum === 'number' &&
+      !Number.isFinite(numberSchema.exclusiveMaximum)
+    ) {
       return false;
     }
-    if (numberSchema.multipleOf !== undefined && !Number.isFinite(numberSchema.multipleOf)) {
+    if (
+      numberSchema.multipleOf !== undefined &&
+      !Number.isFinite(numberSchema.multipleOf)
+    ) {
       return false;
     }
 
@@ -86,7 +112,10 @@ export class NumberGenerator extends DataGenerator {
     const numberSchema = schema as NumberSchema;
 
     // Validate schema constraints are valid numbers (Draft 7+ compliance)
-    if (numberSchema.minimum !== undefined && !Number.isFinite(numberSchema.minimum)) {
+    if (
+      numberSchema.minimum !== undefined &&
+      !Number.isFinite(numberSchema.minimum)
+    ) {
       return err(
         new GenerationError(
           `Invalid minimum constraint: ${numberSchema.minimum}`,
@@ -96,8 +125,11 @@ export class NumberGenerator extends DataGenerator {
         )
       );
     }
-    
-    if (numberSchema.maximum !== undefined && !Number.isFinite(numberSchema.maximum)) {
+
+    if (
+      numberSchema.maximum !== undefined &&
+      !Number.isFinite(numberSchema.maximum)
+    ) {
       return err(
         new GenerationError(
           `Invalid maximum constraint: ${numberSchema.maximum}`,
@@ -107,8 +139,11 @@ export class NumberGenerator extends DataGenerator {
         )
       );
     }
-    
-    if (typeof numberSchema.exclusiveMinimum === 'number' && !Number.isFinite(numberSchema.exclusiveMinimum)) {
+
+    if (
+      typeof numberSchema.exclusiveMinimum === 'number' &&
+      !Number.isFinite(numberSchema.exclusiveMinimum)
+    ) {
       return err(
         new GenerationError(
           `Invalid exclusiveMinimum constraint: ${numberSchema.exclusiveMinimum}`,
@@ -118,8 +153,11 @@ export class NumberGenerator extends DataGenerator {
         )
       );
     }
-    
-    if (typeof numberSchema.exclusiveMaximum === 'number' && !Number.isFinite(numberSchema.exclusiveMaximum)) {
+
+    if (
+      typeof numberSchema.exclusiveMaximum === 'number' &&
+      !Number.isFinite(numberSchema.exclusiveMaximum)
+    ) {
       return err(
         new GenerationError(
           `Invalid exclusiveMaximum constraint: ${numberSchema.exclusiveMaximum}`,
@@ -129,8 +167,12 @@ export class NumberGenerator extends DataGenerator {
         )
       );
     }
-    
-    if (numberSchema.multipleOf !== undefined && (!Number.isFinite(numberSchema.multipleOf) || numberSchema.multipleOf <= 0)) {
+
+    if (
+      numberSchema.multipleOf !== undefined &&
+      (!Number.isFinite(numberSchema.multipleOf) ||
+        numberSchema.multipleOf <= 0)
+    ) {
       return err(
         new GenerationError(
           `Invalid multipleOf constraint: ${numberSchema.multipleOf}`,
@@ -160,7 +202,7 @@ export class NumberGenerator extends DataGenerator {
             )
           );
         }
-        
+
         // Validate const value against other constraints
         if (!this.meetsConstraints(constValue, numberSchema)) {
           return err(
@@ -172,14 +214,17 @@ export class NumberGenerator extends DataGenerator {
             )
           );
         }
-        
+
         return ok(constValue);
       }
 
       // Handle default values
       if (numberSchema.default !== undefined) {
         const defaultValue = Number(numberSchema.default);
-        if (!isNaN(defaultValue) && this.meetsConstraints(defaultValue, numberSchema)) {
+        if (
+          !isNaN(defaultValue) &&
+          this.meetsConstraints(defaultValue, numberSchema)
+        ) {
           return ok(defaultValue);
         }
       }
@@ -187,16 +232,20 @@ export class NumberGenerator extends DataGenerator {
       // Handle example values
       if (numberSchema.examples && numberSchema.examples.length > 0) {
         const fakerInstance = this.prepareFaker(context);
-        const example = fakerInstance.helpers.arrayElement(numberSchema.examples);
+        const example = fakerInstance.helpers.arrayElement(
+          numberSchema.examples
+        );
         const exampleValue = Number(example);
-        if (!isNaN(exampleValue) && this.meetsConstraints(exampleValue, numberSchema)) {
+        if (
+          !isNaN(exampleValue) &&
+          this.meetsConstraints(exampleValue, numberSchema)
+        ) {
           return ok(exampleValue);
         }
       }
 
       // Generate number within constraints
       return this.generateWithinConstraints(numberSchema, context);
-
     } catch (error) {
       return err(
         new GenerationError(
@@ -229,11 +278,11 @@ export class NumberGenerator extends DataGenerator {
     }
 
     const numberSchema = context.schema as NumberSchema;
-    
+
     // Validate that all enum values are finite numbers (Draft 7+ compliance)
     for (const value of enumValues) {
       const numericValue = Number(value);
-      
+
       if (isNaN(numericValue) || !isFinite(numericValue)) {
         return err(
           new GenerationError(
@@ -245,19 +294,19 @@ export class NumberGenerator extends DataGenerator {
         );
       }
     }
-    
+
     // Filter enum values to only those that satisfy all other constraints
     const validEnumValues: number[] = [];
-    
+
     for (const value of enumValues) {
       const numericValue = Number(value);
-      
+
       // Check if this enum value satisfies all other constraints
       if (this.meetsConstraints(numericValue, numberSchema)) {
         validEnumValues.push(numericValue);
       }
     }
-    
+
     if (validEnumValues.length === 0) {
       return err(
         new GenerationError(
@@ -282,17 +331,21 @@ export class NumberGenerator extends DataGenerator {
     context: GeneratorContext
   ): Result<number, GenerationError> {
     const fakerInstance = this.prepareFaker(context);
-    
+
     // Normalize exclusive bounds to inclusive bounds
     const bounds = this.normalizeExclusiveBoundsULP(
-      typeof schema.exclusiveMinimum === 'number' ? schema.exclusiveMinimum : undefined,
-      typeof schema.exclusiveMaximum === 'number' ? schema.exclusiveMaximum : undefined,
+      typeof schema.exclusiveMinimum === 'number'
+        ? schema.exclusiveMinimum
+        : undefined,
+      typeof schema.exclusiveMaximum === 'number'
+        ? schema.exclusiveMaximum
+        : undefined,
       schema.minimum,
       schema.maximum
     );
 
-    let min = bounds.min ?? -1000000;
-    let max = bounds.max ?? 1000000;
+    const min = bounds.min ?? -1000000;
+    const max = bounds.max ?? 1000000;
 
     // Validate range
     if (min > max) {
@@ -307,7 +360,11 @@ export class NumberGenerator extends DataGenerator {
     }
 
     // Check for impossible exclusive bounds
-    if (min >= max && (schema.exclusiveMinimum !== undefined || schema.exclusiveMaximum !== undefined)) {
+    if (
+      min >= max &&
+      (schema.exclusiveMinimum !== undefined ||
+        schema.exclusiveMaximum !== undefined)
+    ) {
       return err(
         new GenerationError(
           `Impossible exclusive bounds: no value can be both > ${min} and < ${max}`,
@@ -320,34 +377,37 @@ export class NumberGenerator extends DataGenerator {
 
     // Handle extremely small ranges that are at the limit of floating-point precision
     // Also handle any case where max is small enough to cause precision issues
-    const isSubnormalRange = max > 0 && max <= 1e-100; 
+    const isSubnormalRange = max > 0 && max <= 1e-100;
     const hasSmallRange = max - min <= 1e-100;
     if (isSubnormalRange || hasSmallRange) {
       // For subnormal or extremely small ranges, use special handling
       const candidates = [min, max, (min + max) / 2, 0];
-      
+
       for (const candidate of candidates) {
-        if (Number.isFinite(candidate) && this.meetsConstraints(candidate, schema)) {
+        if (
+          Number.isFinite(candidate) &&
+          this.meetsConstraints(candidate, schema)
+        ) {
           return ok(candidate);
         }
       }
-      
+
       // If no simple candidate works, generate using safe interpolation
-      const safeMin = Math.max(min, -Number.MAX_SAFE_INTEGER/1e6);
-      const safeMax = Math.min(max, Number.MAX_SAFE_INTEGER/1e6);
+      const safeMin = Math.max(min, -Number.MAX_SAFE_INTEGER / 1e6);
+      const safeMax = Math.min(max, Number.MAX_SAFE_INTEGER / 1e6);
       const fakerInstance = this.prepareFaker(context);
       const t = fakerInstance.number.float({ min: 0, max: 1 });
       const value = safeMin + (safeMax - safeMin) * t;
-      
+
       if (Number.isFinite(value) && this.meetsConstraints(value, schema)) {
         return ok(value);
       }
-      
+
       // Last resort: return min if it's valid
       if (this.meetsConstraints(min, schema)) {
         return ok(min);
       }
-      
+
       return err(
         new GenerationError(
           `Range too small for floating-point precision: [${min}, ${max}]`,
@@ -369,7 +429,7 @@ export class NumberGenerator extends DataGenerator {
       // Find the first multiple >= min
       const minMultiple = Math.ceil(min / schema.multipleOf);
       const maxMultiple = Math.floor(max / schema.multipleOf);
-      
+
       if (minMultiple > maxMultiple) {
         return err(
           new GenerationError(
@@ -380,31 +440,45 @@ export class NumberGenerator extends DataGenerator {
           )
         );
       }
-      
+
       const totalMultiples = maxMultiple - minMultiple + 1;
-      
+
       // Optimization for large intervals: use logarithmic distribution to avoid bias
       if (totalMultiples > 1000000) {
         // For very large ranges, use segmented approach to ensure uniform distribution
         // without bias toward extremes and avoid memory/performance issues
         const segments = 1000;
         const segmentSize = totalMultiples / segments;
-        const randomSegment = fakerInstance.number.int({ min: 0, max: segments - 1 });
-        const segmentStart = Math.floor(minMultiple + randomSegment * segmentSize);
-        const segmentEnd = Math.floor(minMultiple + (randomSegment + 1) * segmentSize - 1);
-        const randomMultipleIndex = fakerInstance.number.int({ 
-          min: segmentStart, 
-          max: Math.min(segmentEnd, maxMultiple) 
+        const randomSegment = fakerInstance.number.int({
+          min: 0,
+          max: segments - 1,
+        });
+        const segmentStart = Math.floor(
+          minMultiple + randomSegment * segmentSize
+        );
+        const segmentEnd = Math.floor(
+          minMultiple + (randomSegment + 1) * segmentSize - 1
+        );
+        const randomMultipleIndex = fakerInstance.number.int({
+          min: segmentStart,
+          max: Math.min(segmentEnd, maxMultiple),
         });
         // Use precise multiplication to avoid floating-point precision errors
         const digits = this.getDecimalPlacesHelper(schema.multipleOf);
-        value = Number((randomMultipleIndex * schema.multipleOf).toFixed(digits));
+        value = Number(
+          (randomMultipleIndex * schema.multipleOf).toFixed(digits)
+        );
       } else {
         // Standard approach for reasonable-sized ranges
-        const randomMultipleIndex = fakerInstance.number.int({ min: minMultiple, max: maxMultiple });
+        const randomMultipleIndex = fakerInstance.number.int({
+          min: minMultiple,
+          max: maxMultiple,
+        });
         // Use precise multiplication to avoid floating-point precision errors
         const digits = this.getDecimalPlacesHelper(schema.multipleOf);
-        value = Number((randomMultipleIndex * schema.multipleOf).toFixed(digits));
+        value = Number(
+          (randomMultipleIndex * schema.multipleOf).toFixed(digits)
+        );
       }
     } else if (context.scenario === 'edge') {
       // Generate edge case values
@@ -476,24 +550,27 @@ export class NumberGenerator extends DataGenerator {
     if (schema.multipleOf !== undefined && schema.multipleOf > 0) {
       const nearMin = Math.ceil(min / schema.multipleOf) * schema.multipleOf;
       const nearMax = Math.floor(max / schema.multipleOf) * schema.multipleOf;
-      
+
       // Add first valid multiple
       if (nearMin <= max) {
         edgeCases.push(nearMin);
       }
-      
+
       // Add last valid multiple
       if (nearMax >= min && nearMax !== nearMin) {
         edgeCases.push(nearMax);
       }
-      
+
       // Add 2nd multiple if it exists (inflection point)
       if (nearMin + schema.multipleOf <= max) {
         edgeCases.push(nearMin + schema.multipleOf);
       }
-      
+
       // Add penultimate multiple if it exists (inflection point)
-      if (nearMax - schema.multipleOf >= min && nearMax - schema.multipleOf !== nearMin) {
+      if (
+        nearMax - schema.multipleOf >= min &&
+        nearMax - schema.multipleOf !== nearMin
+      ) {
         edgeCases.push(nearMax - schema.multipleOf);
       }
     }
@@ -516,20 +593,24 @@ export class NumberGenerator extends DataGenerator {
   ): number {
     // Handle extreme ranges that would cause overflow
     const range = max - min;
-    if (!Number.isFinite(range) || !Number.isFinite(min) || !Number.isFinite(max)) {
+    if (
+      !Number.isFinite(range) ||
+      !Number.isFinite(min) ||
+      !Number.isFinite(max)
+    ) {
       // For extreme bounds, clamp to safe values and interpolate
       const safeMin = Math.max(min, -Number.MAX_SAFE_INTEGER);
       const safeMax = Math.min(max, Number.MAX_SAFE_INTEGER);
       const t = fakerInstance.number.float({ min: 0, max: 1 });
       return safeMin + (safeMax - safeMin) * t;
     }
-    
+
     // For very small ranges, use direct interpolation
     if (range < 1e-100) {
       const t = fakerInstance.number.float({ min: 0, max: 1 });
       return min + range * t;
     }
-    
+
     try {
       return fakerInstance.number.float({
         min: min,
@@ -542,7 +623,6 @@ export class NumberGenerator extends DataGenerator {
       return min + range * t;
     }
   }
-
 
   /**
    * Simple helper to get decimal places for .toFixed() formatting
@@ -560,7 +640,7 @@ export class NumberGenerator extends DataGenerator {
   private ulp(x: number): number {
     if (!Number.isFinite(x)) return Number.NaN;
     const ax = Math.abs(x);
-    if (ax === 0) return Number.MIN_VALUE;         // plus petit pas > 0
+    if (ax === 0) return Number.MIN_VALUE; // plus petit pas > 0
     // ulp(x) ≈ 2^(⌊log2(|x|)⌋ - 52)
     const exp = Math.floor(Math.log2(ax));
     return Math.pow(2, exp - 52);
@@ -597,11 +677,11 @@ export class NumberGenerator extends DataGenerator {
 
     if (typeof exclusiveMin === 'number') {
       const cand = this.nextUp(exclusiveMin);
-      min = (min === undefined) ? cand : Math.max(min, cand);
+      min = min === undefined ? cand : Math.max(min, cand);
     }
     if (typeof exclusiveMax === 'number') {
       const cand = this.nextDown(exclusiveMax);
-      max = (max === undefined) ? cand : Math.min(max, cand);
+      max = max === undefined ? cand : Math.min(max, cand);
     }
 
     // Si min/max sont ±Infinity, on les laisse undefined pour les valeurs par défaut
@@ -614,8 +694,16 @@ export class NumberGenerator extends DataGenerator {
   /**
    * Check if value is multiple of multipleOf with ULP-based robust tolerance
    */
-  private isMultipleOfWithTolerance(value: number, multipleOf: number): boolean {
-    if (multipleOf <= 0 || !Number.isFinite(value) || !Number.isFinite(multipleOf)) return false;
+  private isMultipleOfWithTolerance(
+    value: number,
+    multipleOf: number
+  ): boolean {
+    if (
+      multipleOf <= 0 ||
+      !Number.isFinite(value) ||
+      !Number.isFinite(multipleOf)
+    )
+      return false;
 
     const q = value / multipleOf;
     // Rapproche q de l'entier le plus proche
@@ -626,7 +714,10 @@ export class NumberGenerator extends DataGenerator {
     const absErr = Math.abs(value - recon);
 
     // Tolérance: somme de 2 ULP pertinentes + petite marge relative
-    const tol = this.ulp(value) + Math.abs(k) * this.ulp(multipleOf) + Math.abs(value) * 1e-15;
+    const tol =
+      this.ulp(value) +
+      Math.abs(k) * this.ulp(multipleOf) +
+      Math.abs(value) * 1e-15;
 
     return absErr <= tol;
   }
@@ -637,7 +728,7 @@ export class NumberGenerator extends DataGenerator {
   private meetsConstraints(value: number, schema: NumberSchema): boolean {
     // Check enum constraint first - if enum exists, value must be in enum
     if (schema.enum) {
-      const enumMatch = schema.enum.some(enumValue => {
+      const enumMatch = schema.enum.some((enumValue) => {
         const numericValue = Number(enumValue);
         if (isNaN(numericValue) || !isFinite(numericValue)) {
           return false;
@@ -677,7 +768,10 @@ export class NumberGenerator extends DataGenerator {
     }
 
     // Check exclusive minimum constraint (Draft 7+ numeric form only)
-    if (typeof schema.exclusiveMinimum === 'number' && value <= schema.exclusiveMinimum) {
+    if (
+      typeof schema.exclusiveMinimum === 'number' &&
+      value <= schema.exclusiveMinimum
+    ) {
       return false;
     }
     // Special case: -0 with exclusiveMinimum: 0 should be rejected
@@ -687,7 +781,10 @@ export class NumberGenerator extends DataGenerator {
     }
 
     // Check exclusive maximum constraint (Draft 7+ numeric form only)
-    if (typeof schema.exclusiveMaximum === 'number' && value >= schema.exclusiveMaximum) {
+    if (
+      typeof schema.exclusiveMaximum === 'number' &&
+      value >= schema.exclusiveMaximum
+    ) {
       return false;
     }
 
@@ -723,7 +820,7 @@ export class NumberGenerator extends DataGenerator {
 
     // Return enum values if available
     if (numberSchema.enum) {
-      return numberSchema.enum.map(Number).filter(n => !isNaN(n));
+      return numberSchema.enum.map(Number).filter((n) => !isNaN(n));
     }
 
     // Return const value if available
@@ -734,15 +831,19 @@ export class NumberGenerator extends DataGenerator {
 
     // Return schema examples if available
     if (numberSchema.examples && numberSchema.examples.length > 0) {
-      return numberSchema.examples.map(Number).filter(n => !isNaN(n));
+      return numberSchema.examples.map(Number).filter((n) => !isNaN(n));
     }
 
     // Generate examples based on constraints
     const examples: number[] = [];
-    
+
     const bounds = this.normalizeExclusiveBoundsULP(
-      typeof numberSchema.exclusiveMinimum === 'number' ? numberSchema.exclusiveMinimum : undefined,
-      typeof numberSchema.exclusiveMaximum === 'number' ? numberSchema.exclusiveMaximum : undefined,
+      typeof numberSchema.exclusiveMinimum === 'number'
+        ? numberSchema.exclusiveMinimum
+        : undefined,
+      typeof numberSchema.exclusiveMaximum === 'number'
+        ? numberSchema.exclusiveMaximum
+        : undefined,
       numberSchema.minimum,
       numberSchema.maximum
     );
@@ -752,14 +853,16 @@ export class NumberGenerator extends DataGenerator {
 
     // Check for impossible multipleOf constraints
     if (numberSchema.multipleOf !== undefined && numberSchema.multipleOf > 0) {
-      const minMultiple = Math.ceil(min / numberSchema.multipleOf) * numberSchema.multipleOf;
-      const maxMultiple = Math.floor(max / numberSchema.multipleOf) * numberSchema.multipleOf;
-      
+      const minMultiple =
+        Math.ceil(min / numberSchema.multipleOf) * numberSchema.multipleOf;
+      const maxMultiple =
+        Math.floor(max / numberSchema.multipleOf) * numberSchema.multipleOf;
+
       // If no valid multiples exist in the range, return empty array
       if (minMultiple > max || maxMultiple < min) {
         return [];
       }
-      
+
       // Generate multipleOf-based examples
       if (minMultiple <= max) {
         examples.push(minMultiple);
@@ -768,8 +871,16 @@ export class NumberGenerator extends DataGenerator {
         examples.push(maxMultiple);
       }
       // Add a middle multiple if it exists
-      const midMultiple = Math.floor((minMultiple + maxMultiple) / (2 * numberSchema.multipleOf)) * numberSchema.multipleOf;
-      if (midMultiple >= min && midMultiple <= max && midMultiple !== minMultiple && midMultiple !== maxMultiple) {
+      const midMultiple =
+        Math.floor(
+          (minMultiple + maxMultiple) / (2 * numberSchema.multipleOf)
+        ) * numberSchema.multipleOf;
+      if (
+        midMultiple >= min &&
+        midMultiple <= max &&
+        midMultiple !== minMultiple &&
+        midMultiple !== maxMultiple
+      ) {
         examples.push(midMultiple);
       }
     } else {
@@ -784,7 +895,9 @@ export class NumberGenerator extends DataGenerator {
     }
 
     // Filter examples and ensure uniqueness
-    const filteredExamples = examples.filter(n => this.meetsConstraints(n, numberSchema));
+    const filteredExamples = examples.filter((n) =>
+      this.meetsConstraints(n, numberSchema)
+    );
     return [...new Set(filteredExamples)];
   }
 

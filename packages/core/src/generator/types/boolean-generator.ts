@@ -18,17 +18,19 @@ import {
 export interface BooleanGenerationOptions {
   /** Probability of generating true (0.0 to 1.0) */
   trueProbability?: number;
-  
+
   /** Force deterministic output */
   deterministic?: boolean;
-  
+
   /** Weighted selection based on scenario */
   useScenarioWeighting?: boolean;
 }
 
 export class BooleanGenerator extends DataGenerator {
   supports(schema: Schema): boolean {
-    return typeof schema === 'object' && schema !== null && schema.type === 'boolean';
+    return (
+      typeof schema === 'object' && schema !== null && schema.type === 'boolean'
+    );
   }
 
   generate(
@@ -82,7 +84,9 @@ export class BooleanGenerator extends DataGenerator {
       // Handle example values
       if (booleanSchema.examples && booleanSchema.examples.length > 0) {
         const fakerInstance = this.prepareFaker(context);
-        const example = fakerInstance.helpers.arrayElement(booleanSchema.examples);
+        const example = fakerInstance.helpers.arrayElement(
+          booleanSchema.examples
+        );
         const exampleValue = this.toBoolean(example);
         if (exampleValue !== null) {
           return ok(exampleValue);
@@ -91,7 +95,6 @@ export class BooleanGenerator extends DataGenerator {
 
       // Generate boolean with scenario-based logic
       return this.generateWithScenario(booleanSchema, context, config);
-
     } catch (error) {
       return err(
         new GenerationError(
@@ -108,21 +111,33 @@ export class BooleanGenerator extends DataGenerator {
   /**
    * Convert value to boolean, return null if invalid
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic type conversion requires any
   private toBoolean(value: any): boolean | null {
     if (typeof value === 'boolean') {
       return value;
     }
-    
+
     if (typeof value === 'string') {
       const lower = value.toLowerCase().trim();
-      if (lower === 'true' || lower === '1' || lower === 'yes' || lower === 'on') {
+      if (
+        lower === 'true' ||
+        lower === '1' ||
+        lower === 'yes' ||
+        lower === 'on'
+      ) {
         return true;
       }
-      if (lower === 'false' || lower === '0' || lower === 'no' || lower === 'off' || lower === '') {
+      if (
+        lower === 'false' ||
+        lower === '0' ||
+        lower === 'no' ||
+        lower === 'off' ||
+        lower === ''
+      ) {
         return false;
       }
     }
-    
+
     if (typeof value === 'number') {
       if (value === 1) return true;
       if (value === 0) return false;
@@ -135,7 +150,7 @@ export class BooleanGenerator extends DataGenerator {
    * Generate boolean from enum values
    */
   private generateFromEnum(
-    enumValues: any[],
+    enumValues: any[], // eslint-disable-line @typescript-eslint/no-explicit-any -- Enum values can be of any type
     context: GeneratorContext
   ): Result<boolean, GenerationError> {
     if (enumValues.length === 0) {
@@ -152,7 +167,7 @@ export class BooleanGenerator extends DataGenerator {
     const fakerInstance = this.prepareFaker(context);
     const selectedValue = fakerInstance.helpers.arrayElement(enumValues);
     const booleanValue = this.toBoolean(selectedValue);
-    
+
     if (booleanValue === null) {
       return err(
         new GenerationError(
@@ -177,7 +192,7 @@ export class BooleanGenerator extends DataGenerator {
   ): Result<boolean, GenerationError> {
     const fakerInstance = this.prepareFaker(context);
     const options = this.extractOptions(config);
-    
+
     let trueProbability = options.trueProbability ?? 0.5; // Default 50/50
 
     // Adjust probability based on scenario
@@ -187,17 +202,17 @@ export class BooleanGenerator extends DataGenerator {
           // For edge cases, prefer extreme values more often
           trueProbability = Math.random() < 0.3 ? 0.1 : 0.9;
           break;
-          
+
         case 'peak':
           // For peak testing, slightly bias toward true
           trueProbability = 0.6;
           break;
-          
+
         case 'error':
           // For error scenarios, randomly choose
           trueProbability = Math.random();
           break;
-          
+
         case 'normal':
         default:
           // Keep default probability
@@ -206,7 +221,7 @@ export class BooleanGenerator extends DataGenerator {
     }
 
     // Generate boolean with the calculated probability
-    const value = options.deterministic 
+    const value = options.deterministic
       ? trueProbability >= 0.5
       : fakerInstance.datatype.boolean({ probability: trueProbability });
 
@@ -218,24 +233,28 @@ export class BooleanGenerator extends DataGenerator {
    */
   private extractOptions(config?: GenerationConfig): BooleanGenerationOptions {
     const options: BooleanGenerationOptions = {};
-    
+
     if (config?.metadata) {
       if (typeof config.metadata.trueProbability === 'number') {
-        options.trueProbability = Math.max(0, Math.min(1, config.metadata.trueProbability));
+        options.trueProbability = Math.max(
+          0,
+          Math.min(1, config.metadata.trueProbability)
+        );
       }
-      
+
       if (typeof config.metadata.deterministic === 'boolean') {
         options.deterministic = config.metadata.deterministic;
       }
-      
+
       if (typeof config.metadata.useScenarioWeighting === 'boolean') {
         options.useScenarioWeighting = config.metadata.useScenarioWeighting;
       }
     }
-    
+
     return options;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Validation requires accepting any input type
   validate(value: any, schema: Schema): boolean {
     if (typeof value !== 'boolean') {
       return false;
@@ -248,7 +267,10 @@ export class BooleanGenerator extends DataGenerator {
     const booleanSchema = schema as BooleanSchema;
 
     // Check enum constraint
-    if (booleanSchema.enum && !booleanSchema.enum.some(v => this.toBoolean(v) === value)) {
+    if (
+      booleanSchema.enum &&
+      !booleanSchema.enum.some((v) => this.toBoolean(v) === value)
+    ) {
       return false;
     }
 
@@ -273,7 +295,7 @@ export class BooleanGenerator extends DataGenerator {
     // Return enum values if available
     if (booleanSchema.enum) {
       return booleanSchema.enum
-        .map(v => this.toBoolean(v))
+        .map((v) => this.toBoolean(v))
         .filter((v): v is boolean => v !== null);
     }
 
@@ -286,7 +308,7 @@ export class BooleanGenerator extends DataGenerator {
     // Return schema examples if available
     if (booleanSchema.examples && booleanSchema.examples.length > 0) {
       return booleanSchema.examples
-        .map(v => this.toBoolean(v))
+        .map((v) => this.toBoolean(v))
         .filter((v): v is boolean => v !== null);
     }
 
@@ -306,8 +328,8 @@ export class BooleanGenerator extends DataGenerator {
     context: GeneratorContext
   ): boolean {
     const fakerInstance = this.prepareFaker(context);
-    return fakerInstance.datatype.boolean({ 
-      probability: Math.max(0, Math.min(1, trueProbability)) 
+    return fakerInstance.datatype.boolean({
+      probability: Math.max(0, Math.min(1, trueProbability)),
     });
   }
 
