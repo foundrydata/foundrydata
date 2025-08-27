@@ -34,6 +34,13 @@ packages/
 └── api/                     # REST API (future)
 ```
 
+### Module System
+**ESM (ECMAScript Modules) Configuration:**
+- All packages use `"type": "module"` in package.json
+- TypeScript configured with `"module": "ESNext"` targeting ES2022
+- Use import/export syntax, not require/module.exports
+- All file extensions must be explicit in imports (.js for compiled output)
+
 ### Key Types & Patterns
 ```typescript
 // Result type for error handling (no exceptions)
