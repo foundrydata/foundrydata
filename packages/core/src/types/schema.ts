@@ -113,8 +113,8 @@ export interface NumberSchema extends BaseSchema {
   type: 'number' | 'integer';
   minimum?: number;
   maximum?: number;
-  exclusiveMinimum?: number | boolean;
-  exclusiveMaximum?: number | boolean;
+  exclusiveMinimum?: number;
+  exclusiveMaximum?: number;
   multipleOf?: number;
 }
 

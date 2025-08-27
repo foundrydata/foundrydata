@@ -2,7 +2,7 @@
   "name": "@foundrydata/core",
   "version": "0.1.0",
   "type": "module",
-  "description": "Core generator for test data from JSON Schema",
+  "description": "Core generator for test data from JSON Schema (Draft-07, 2019-09, 2020-12)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "license": "MIT",
@@ -15,6 +15,9 @@
   "keywords": [
     "test-data",
     "json-schema",
+    "json-schema-draft-07",
+    "json-schema-2019-09", 
+    "json-schema-2020-12",
     "mock",
     "generator",
     "faker",

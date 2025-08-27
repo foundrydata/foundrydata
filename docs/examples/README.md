@@ -14,6 +14,20 @@ This directory contains real-world schema examples and usage patterns for Foundr
 | [`team-with-users-schema.json`](./team-with-users-schema.json) | Team with member arrays | Arrays of flat objects example |
 | [`quick-test-schema.json`](./quick-test-schema.json) | Simple test schema | Quick testing & demos |
 
+
+## 📋 JSON Schema Compatibility
+
+FoundryData supports modern JSON Schema versions:
+- ✅ **Draft-07** (2017) - Default, most compatible
+- ✅ **Draft 2019-09** - Enhanced validation
+- ✅ **Draft 2020-12** - Latest features, OpenAPI 3.1
+
+**Not supported:**
+- ❌ Draft-04 (too old, use migration tools)
+- ❌ Draft-03 (ancient)
+
+The tool auto-detects your schema version from the `$schema` property.
+
 ## 🚀 Basic Usage
 
 ### Installation
