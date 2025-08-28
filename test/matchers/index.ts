@@ -9,12 +9,12 @@
  * ================================================================================
  */
 
-import type { JsonSchemaDraft } from '../helpers/ajv-factory.js';
+import type { JsonSchemaDraft } from '../helpers/ajv-factory.ts';
 import type { AnySchema } from 'ajv';
 
 // Import matcher implementations
-import './core-matchers.js';
-import './advanced-matchers.js';
+import './core-matchers.ts';
+import './advanced-matchers.ts';
 
 // ================================================================================
 // INTERFACE DECLARATIONS FOR TYPESCRIPT

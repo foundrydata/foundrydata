@@ -77,9 +77,6 @@ export default defineConfig({
     // No retries - surface issues immediately
     retry: 0,
 
-    // Fixed execution order (disable shuffling in CI for consistency)
-    shuffle: !isCI,
-
     // Disable file parallelization in CI for deterministic results
     fileParallelism: !isCI,
 
@@ -93,7 +90,7 @@ export default defineConfig({
     // ========================================================================
 
     // Enhanced reporter configuration
-    reporter: isDevelopment ? ['verbose'] : ['default'],
+    reporters: isDevelopment ? ['verbose'] : ['default'],
 
     // Logging configuration
     logHeapUsage: isCI,

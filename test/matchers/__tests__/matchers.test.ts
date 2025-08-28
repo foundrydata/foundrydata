@@ -11,8 +11,8 @@
 
 import { describe, test, expect, beforeAll } from 'vitest';
 import fc from 'fast-check';
-import '../index.js'; // Import to register matchers
-import { getAjv, createAjv } from '../../helpers/ajv-factory.js';
+import '../index.ts'; // Import to register matchers
+import { getAjv, createAjv } from '../../helpers/ajv-factory.ts';
 import type { AnySchema } from 'ajv';
 
 // ================================================================================
