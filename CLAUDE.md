@@ -244,7 +244,7 @@ We'd rather support 10% of schemas perfectly than 100% of schemas poorly.
 **When working on testing tasks (tag: testing-v2), ALWAYS reference these comprehensive technical documents:**
 
 ### Core Testing References
-- **`docs/tests/foundrydata-complete-testing-guide-en.ts`** - Complete implementation guide with:
+- **`docs/tests/foundrydata-complete-testing-guide-en.ts.txt`** - Complete implementation guide with:
   - Exact Vitest configuration (platform-specific pools, deterministic settings)
   - Fast-check global configuration (seed=424242, environment-based numRuns)
   - AJV factory patterns for multi-draft support (draft-07, 2019-09, 2020-12)
@@ -275,6 +275,41 @@ We'd rather support 10% of schemas perfectly than 100% of schemas poorly.
 - **CI/CD tasks (#10)**: Matrix testing configuration and environment setup
 
 **These documents contain the precise technical specifications that complement the task orchestration.**
+
+## JSON Schema Format Handling - Normative References
+
+**When working with JSON Schema format validation across different drafts, ALWAYS reference these authoritative documents:**
+
+### Primary Format Policy (Normative)
+- **`docs/tests/policy_json_schema_formats_by_draft_v_2.md`** - The single source of truth for format behavior:
+  - Definitive classification: **Assertive** (validation-error on mismatch) vs **Annotative** (no validation effect)
+  - Cross-draft compatibility matrix for formats (draft-07, 2019-09, 2020-12)
+  - Vendor format handling policy (`uuid`, `semver`, etc.)
+  - Conformance gates and governance requirements
+  - **MUST** be referenced for any format-related implementation or testing decisions
+
+### Format Specification Reference (Non-normative)
+- **`docs/tests/reference_json_schema_format_v_2.md`** - Technical specification explanation:
+  - Comprehensive list of built-in formats by category (dates, email, URI, etc.)
+  - RFC references and semantic definitions
+  - Interoperability considerations and partial support policies
+  - **Use for understanding format semantics, but defer to policy doc for behavioral decisions**
+
+### Critical Implementation Rules
+1. **Policy Precedence**: The policy document is normative; the reference doc is explanatory
+2. **Draft-Aware Behavior**: Different JSON Schema drafts have different format rules - always check the policy matrix
+3. **Assertive vs Annotative**: Never assume format validation behavior - consult the policy classification
+4. **Vendor Format Handling**: Non-standard formats (like `uuid` in draft-07) follow special rules
+5. **Unknown Format Degradation**: Unsupported formats MUST degrade to Annotative with logging
+
+### When to Consult Format Documentation
+- **Any format validation implementation** - Check policy for Assertive/Annotative behavior
+- **Cross-draft compatibility work** - Verify format support across draft versions
+- **AJV configuration** - Ensure format-assertion vocabulary is properly configured
+- **Test case creation** - Understand which formats should/shouldn't cause validation failures
+- **Vendor format support** - Check policy for non-standard format handling rules
+
+**These documents ensure 100% schema compliance with deterministic behavior across all JSON Schema drafts.**
 
 ## ESLint and Code Quality Guidelines
 
