@@ -380,3 +380,15 @@ When facing TypeScript errors in tests:
 - Follow existing code patterns and conventions
 - Write clear, self-documenting code
 - Ensure all functions and classes have proper TypeScript types
+
+## Test Commands
+
+```bash
+npm run test                # All tests (packages + matchers)
+npm run test:packages       # Core application tests only  
+npm run test:matchers       # Custom Vitest matchers tests only
+npm run test:watch          # Watch mode for packages
+npm run test:watch:matchers # Watch mode for matchers
+```
+
+**Custom matchers location**: `/test/matchers/` - Enhanced Vitest matchers with circular reference protection and multi-draft JSON Schema support.
