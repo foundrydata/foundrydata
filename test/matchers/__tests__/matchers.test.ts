@@ -30,28 +30,48 @@ beforeAll(() => {
 // ================================================================================
 
 // Mock generator function for determinism testing
+/**
+ * Deterministic PRNG using Linear Congruential Generator (Park-Miller)
+ * Replaces unreliable Math.sin() approach with proper pseudo-random generation
+ */
+class SeededRandom {
+  private seed: number;
+
+  constructor(seed: number) {
+    // Ensure positive seed within valid range
+    this.seed = Math.abs(seed) % 0x7fffffff || 1;
+  }
+
+  next(): number {
+    // Linear Congruential Generator (Park-Miller implementation)
+    this.seed = (this.seed * 16807) % 0x7fffffff;
+    return this.seed / 0x7fffffff;
+  }
+
+  nextInt(min: number, max: number): number {
+    return Math.floor(this.next() * (max - min + 1)) + min;
+  }
+}
+
 function mockGenerator(schema: AnySchema, seed: number): unknown {
-  // Simple deterministic mock based on seed
-  const random = (seed: number): number =>
-    Math.sin(seed * 12.9898) * 43758.5453;
-  const value = random(seed);
+  const rng = new SeededRandom(seed);
 
   if (typeof schema === 'object' && schema !== null && 'type' in schema) {
     switch (schema.type) {
       case 'string':
-        return `test-${Math.floor(Math.abs(value) * 1000)}`;
+        return `test-${rng.nextInt(0, 9999)}`;
       case 'number':
-        return Math.floor(Math.abs(value) * 100);
+        return rng.nextInt(0, 100);
       case 'boolean':
-        return value > 0;
+        return rng.next() > 0.5;
       case 'array':
-        return [1, 2, 3];
+        return [1, 2, 3]; // Fixed array for consistency
       default:
-        return { id: Math.floor(Math.abs(value) * 1000) };
+        return { id: rng.nextInt(0, 9999) };
     }
   }
 
-  return { id: Math.floor(Math.abs(value) * 1000) };
+  return { id: rng.nextInt(0, 9999) };
 }
 
 // ================================================================================

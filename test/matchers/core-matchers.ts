@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 /**
  * ================================================================================
  * CORE MATCHERS - JSON Schema & Validation
