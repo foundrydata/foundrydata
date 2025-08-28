@@ -12,9 +12,23 @@
 import type { JsonSchemaDraft } from '../helpers/ajv-factory';
 import type { AnySchema } from 'ajv';
 
-// Import matcher implementations
-import './core-matchers';
-import './advanced-matchers';
+// Import matcher functions
+import {
+  toMatchJsonSchema,
+  toBeWithinRange,
+  toBeValidUUID,
+  toBeValidEmail,
+  toBeValidISO8601,
+  toBeValidJSON,
+} from './core-matchers';
+
+import {
+  toHaveCompliance,
+  toBeDistinct,
+  toHaveErrorRate,
+  toHaveErrorStats,
+  toBeGeneratedWithSeed,
+} from './advanced-matchers';
 
 // ================================================================================
 // INTERFACE DECLARATIONS FOR TYPESCRIPT
@@ -97,6 +111,27 @@ declare module 'vitest' {
   interface Assertion<T> extends CustomMatchers<T> {}
   interface AsymmetricMatchersContaining extends CustomMatchers {}
 }
+
+// ================================================================================
+// MATCHER REGISTRATION
+// ================================================================================
+
+// Register all custom matchers with Vitest expect
+import { expect } from 'vitest';
+
+expect.extend({
+  toMatchJsonSchema,
+  toBeWithinRange,
+  toBeValidUUID,
+  toBeValidEmail,
+  toBeValidISO8601,
+  toBeValidJSON,
+  toHaveCompliance,
+  toBeDistinct,
+  toHaveErrorRate,
+  toHaveErrorStats,
+  toBeGeneratedWithSeed,
+});
 
 // ================================================================================
 // EXPORTS

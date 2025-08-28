@@ -7,7 +7,6 @@
  * ================================================================================
  */
 
-import { expect } from 'vitest';
 import {
   getAjv,
   createAjv,
@@ -73,199 +72,245 @@ const ISO8601_REGEX =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:\d{2})$/;
 
 // ================================================================================
-// CORE MATCHER IMPLEMENTATIONS
+// CORE MATCHER FUNCTIONS
 // ================================================================================
 
-expect.extend({
-  /**
-   * JSON Schema validation matcher using cached AJV
-   */
-  toMatchJsonSchema(
-    received: unknown,
-    schema: AnySchema,
-    draft?: JsonSchemaDraft
-  ) {
-    // Validate the schema parameter first
-    if (!schema || typeof schema !== 'object') {
-      throw new Error(
-        `Invalid schema provided to toMatchJsonSchema: expected object, got ${typeof schema}`
-      );
-    }
-
-    // Additional validation for common schema structure issues
-    if (Array.isArray(schema)) {
-      throw new Error(
-        'Invalid schema provided to toMatchJsonSchema: schema cannot be an array'
-      );
-    }
-
-    const ajv = draft ? createAjv(draft) : getAjv();
-
-    // Wrap AJV compilation in try-catch to provide better error messages
-    let validate: ReturnType<typeof ajv.compile>;
-    try {
-      validate = ajv.compile(schema);
-    } catch (compileError) {
-      throw new Error(
-        `Invalid schema provided to toMatchJsonSchema: ${compileError instanceof Error ? compileError.message : String(compileError)}`
-      );
-    }
-
-    const isValid = validate(received);
-
-    return {
-      pass: Boolean(isValid),
-      message: () => {
-        if (isValid) {
-          return `Expected ${JSON.stringify(received)} NOT to match schema`;
-        } else {
-          const errors: ErrorObject[] = validate.errors || [];
-          const errorMessages = errors
-            .map(
-              (err: ErrorObject) =>
-                `${err.instancePath || 'root'}: ${err.message}`
-            )
-            .join(', ');
-          return `Expected ${JSON.stringify(received)} to match schema. Errors: ${errorMessages}`;
-        }
-      },
-      actual: received,
-      expected: schema,
-    };
-  },
-
-  /**
-   * Numeric range validation matcher
-   */
-  toBeWithinRange(received: unknown, min: number, max: number) {
-    const isNumber = typeof received === 'number' && !isNaN(received);
-    const isInRange = isNumber && received >= min && received <= max;
-
-    return {
-      pass: isInRange,
-      message: () => {
-        if (!isNumber) {
-          return `Expected ${JSON.stringify(received)} to be a number, but got ${typeof received}`;
-        }
-        return `Expected ${received} to be within range [${min}, ${max}]`;
-      },
-      actual: received,
-      expected: { min, max },
-    };
-  },
-
-  /**
-   * UUID validation matcher (supports v1, v3, v4, v5)
-   */
-  toBeValidUUID(received: unknown) {
-    const nullUndefinedResult = validateNullUndefined(received, 'a valid UUID');
-    if (nullUndefinedResult) return nullUndefinedResult;
-
-    const isString = typeof received === 'string';
-    const isValidUUID = isString && UUID_REGEX.test(received);
-
-    return {
-      pass: isValidUUID,
-      message: () => {
-        if (!isString) {
-          return `Expected ${JSON.stringify(received)} to be a string, but got ${typeof received}`;
-        }
-        return `Expected "${received}" to be a valid UUID v4`;
-      },
-      actual: received,
-      expected: 'valid UUID v4 format',
-    };
-  },
-
-  /**
-   * Email validation matcher
-   */
-  toBeValidEmail(received: unknown) {
-    const nullUndefinedResult = validateNullUndefined(
-      received,
-      'a valid email address'
+/**
+ * JSON Schema validation matcher using cached AJV
+ */
+// eslint-disable-next-line max-lines-per-function -- Complex validation logic requires detailed error handling
+function toMatchJsonSchema(
+  received: unknown,
+  schema: AnySchema,
+  draft?: JsonSchemaDraft
+): {
+  pass: boolean;
+  message: () => string;
+  actual: unknown;
+  expected: AnySchema;
+} {
+  // Validate the schema parameter first
+  if (!schema || typeof schema !== 'object') {
+    throw new Error(
+      `Invalid schema provided to toMatchJsonSchema: expected object, got ${typeof schema}`
     );
-    if (nullUndefinedResult) return nullUndefinedResult;
+  }
 
-    const isString = typeof received === 'string';
-    const isValidEmail = isString && EMAIL_REGEX.test(received);
-
-    return {
-      pass: isValidEmail,
-      message: () => {
-        if (!isString) {
-          return `Expected ${JSON.stringify(received)} to be a string, but got ${typeof received}`;
-        }
-        return `Expected "${received}" to be a valid email address`;
-      },
-      actual: received,
-      expected: 'valid email format',
-    };
-  },
-
-  /**
-   * ISO8601 datetime validation matcher
-   */
-  toBeValidISO8601(received: unknown) {
-    const nullUndefinedResult = validateNullUndefined(
-      received,
-      'a valid ISO8601 datetime'
+  // Additional validation for common schema structure issues
+  if (Array.isArray(schema)) {
+    throw new Error(
+      'Invalid schema provided to toMatchJsonSchema: schema cannot be an array'
     );
-    if (nullUndefinedResult) return nullUndefinedResult;
+  }
 
-    const isString = typeof received === 'string';
-    const isValidISO8601 = isString && ISO8601_REGEX.test(received);
+  const ajv = draft ? createAjv(draft) : getAjv();
 
-    return {
-      pass: isValidISO8601,
-      message: () => {
-        if (!isString) {
-          return `Expected ${JSON.stringify(received)} to be a string, but got ${typeof received}`;
-        }
-        return `Expected "${received}" to be a valid ISO8601 datetime`;
-      },
-      actual: received,
-      expected: 'valid ISO8601 datetime format',
-    };
-  },
-
-  /**
-   * JSON validation matcher
-   */
-  toBeValidJSON(received: unknown) {
-    const nullUndefinedResult = validateNullUndefined(
-      received,
-      'a valid JSON string'
+  // Wrap AJV compilation in try-catch to provide better error messages
+  let validate: ReturnType<typeof ajv.compile>;
+  try {
+    validate = ajv.compile(schema);
+  } catch (compileError) {
+    throw new Error(
+      `Invalid schema provided to toMatchJsonSchema: ${compileError instanceof Error ? compileError.message : String(compileError)}`
     );
-    if (nullUndefinedResult) return nullUndefinedResult;
+  }
 
-    const isString = typeof received === 'string';
+  const isValid = validate(received);
 
-    if (!isString) {
-      return {
-        pass: false,
-        message: () =>
-          `Expected ${JSON.stringify(received)} to be a string, but got ${typeof received}`,
-        actual: received,
-        expected: 'valid JSON string',
-      };
-    }
+  return {
+    pass: Boolean(isValid),
+    message: () => {
+      if (isValid) {
+        return `Expected ${JSON.stringify(received)} NOT to match schema`;
+      } else {
+        const errors: ErrorObject[] = validate.errors || [];
+        const errorMessages = errors
+          .map(
+            (err: ErrorObject) =>
+              `${err.instancePath || 'root'}: ${err.message}`
+          )
+          .join(', ');
+        return `Expected ${JSON.stringify(received)} to match schema. Errors: ${errorMessages}`;
+      }
+    },
+    actual: received,
+    expected: schema,
+  };
+}
 
-    try {
-      JSON.parse(received);
-      return {
-        pass: true,
-        message: () => `Expected "${received}" NOT to be valid JSON`,
-        actual: received,
-        expected: 'invalid JSON string',
-      };
-    } catch {
-      return {
-        pass: false,
-        message: () => `Expected "${received}" to be valid JSON`,
-        actual: received,
-        expected: 'valid JSON string',
-      };
-    }
-  },
-});
+/**
+ * Numeric range validation matcher
+ */
+function toBeWithinRange(
+  received: unknown,
+  min: number,
+  max: number
+): {
+  pass: boolean;
+  message: () => string;
+  actual: unknown;
+  expected: { min: number; max: number };
+} {
+  const isNumber = typeof received === 'number' && !isNaN(received);
+  const isInRange = isNumber && received >= min && received <= max;
+
+  return {
+    pass: isInRange,
+    message: () => {
+      if (!isNumber) {
+        return `Expected ${JSON.stringify(received)} to be a number, but got ${typeof received}`;
+      }
+      return `Expected ${received} to be within range [${min}, ${max}]`;
+    },
+    actual: received,
+    expected: { min, max },
+  };
+}
+
+/**
+ * UUID validation matcher (supports v1, v3, v4, v5)
+ */
+function toBeValidUUID(received: unknown): {
+  pass: boolean;
+  message: () => string;
+  actual: unknown;
+  expected: string;
+} {
+  const nullUndefinedResult = validateNullUndefined(received, 'a valid UUID');
+  if (nullUndefinedResult) return nullUndefinedResult;
+
+  const isString = typeof received === 'string';
+  const isValidUUID = isString && UUID_REGEX.test(received);
+
+  return {
+    pass: isValidUUID,
+    message: () => {
+      if (!isString) {
+        return `Expected ${JSON.stringify(received)} to be a string, but got ${typeof received}`;
+      }
+      return `Expected "${received}" to be a valid UUID v4`;
+    },
+    actual: received,
+    expected: 'valid UUID v4 format',
+  };
+}
+
+/**
+ * Email validation matcher
+ */
+function toBeValidEmail(received: unknown): {
+  pass: boolean;
+  message: () => string;
+  actual: unknown;
+  expected: string;
+} {
+  const nullUndefinedResult = validateNullUndefined(
+    received,
+    'a valid email address'
+  );
+  if (nullUndefinedResult) return nullUndefinedResult;
+
+  const isString = typeof received === 'string';
+  const isValidEmail = isString && EMAIL_REGEX.test(received);
+
+  return {
+    pass: isValidEmail,
+    message: () => {
+      if (!isString) {
+        return `Expected ${JSON.stringify(received)} to be a string, but got ${typeof received}`;
+      }
+      return `Expected "${received}" to be a valid email address`;
+    },
+    actual: received,
+    expected: 'valid email format',
+  };
+}
+
+/**
+ * ISO8601 datetime validation matcher
+ */
+function toBeValidISO8601(received: unknown): {
+  pass: boolean;
+  message: () => string;
+  actual: unknown;
+  expected: string;
+} {
+  const nullUndefinedResult = validateNullUndefined(
+    received,
+    'a valid ISO8601 datetime'
+  );
+  if (nullUndefinedResult) return nullUndefinedResult;
+
+  const isString = typeof received === 'string';
+  const isValidISO8601 = isString && ISO8601_REGEX.test(received);
+
+  return {
+    pass: isValidISO8601,
+    message: () => {
+      if (!isString) {
+        return `Expected ${JSON.stringify(received)} to be a string, but got ${typeof received}`;
+      }
+      return `Expected "${received}" to be a valid ISO8601 datetime`;
+    },
+    actual: received,
+    expected: 'valid ISO8601 datetime format',
+  };
+}
+
+/**
+ * JSON validation matcher
+ */
+function toBeValidJSON(received: unknown): {
+  pass: boolean;
+  message: () => string;
+  actual: unknown;
+  expected: string;
+} {
+  const nullUndefinedResult = validateNullUndefined(
+    received,
+    'a valid JSON string'
+  );
+  if (nullUndefinedResult) return nullUndefinedResult;
+
+  const isString = typeof received === 'string';
+
+  if (!isString) {
+    return {
+      pass: false,
+      message: () =>
+        `Expected ${JSON.stringify(received)} to be a string, but got ${typeof received}`,
+      actual: received,
+      expected: 'valid JSON string',
+    };
+  }
+
+  try {
+    JSON.parse(received);
+    return {
+      pass: true,
+      message: () => `Expected "${received}" NOT to be valid JSON`,
+      actual: received,
+      expected: 'invalid JSON string',
+    };
+  } catch {
+    return {
+      pass: false,
+      message: () => `Expected "${received}" to be valid JSON`,
+      actual: received,
+      expected: 'valid JSON string',
+    };
+  }
+}
+
+// ================================================================================
+// EXPORTS
+// ================================================================================
+
+export {
+  toMatchJsonSchema,
+  toBeWithinRange,
+  toBeValidUUID,
+  toBeValidEmail,
+  toBeValidISO8601,
+  toBeValidJSON,
+};

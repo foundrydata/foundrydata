@@ -9,7 +9,6 @@
 
 /* eslint-disable max-lines */
 
-import { expect } from 'vitest';
 import type { AnySchema } from 'ajv';
 
 // ================================================================================
@@ -147,183 +146,212 @@ function validateErrorStatsRate(
 }
 
 // ================================================================================
-// ADVANCED MATCHER IMPLEMENTATIONS
+// ADVANCED MATCHER FUNCTIONS
 // ================================================================================
 
-expect.extend({
-  /**
-   * Compliance score validation matcher
-   */
-  toHaveCompliance(received: unknown, expected: number) {
-    const isValid =
-      typeof received === 'number' &&
-      received >= 0 &&
-      received <= 100 &&
-      received >= expected;
+/**
+ * Compliance score validation matcher
+ */
+function toHaveCompliance(
+  received: unknown,
+  expected: number
+): { pass: boolean; message: () => string; actual: unknown; expected: string } {
+  const isValid =
+    typeof received === 'number' &&
+    received >= 0 &&
+    received <= 100 &&
+    received >= expected;
 
-    return {
-      pass: isValid,
-      message: () => {
-        if (typeof received !== 'number') {
-          return `Expected compliance score to be a number, but got ${typeof received}`;
-        }
-        if (received < 0 || received > 100) {
-          return `Expected compliance score to be between 0-100, but got ${received}`;
-        }
-        return `Expected compliance score ${received}% to be at least ${expected}%`;
-      },
-      actual: received,
-      expected: `>= ${expected}%`,
-    };
-  },
-
-  /**
-   * Array distinctness validation matcher
-   */
-  toBeDistinct(received: unknown, deep = false) {
-    if (!Array.isArray(received)) {
-      return {
-        pass: false,
-        message: () =>
-          `Expected ${stableStringify(received)} to be an array, but got ${typeof received}`,
-        actual: received,
-        expected: 'array',
-      };
-    }
-
-    const seen = new Set<string>();
-    const duplicates: unknown[] = [];
-
-    for (const item of received) {
-      const key = deep
-        ? stableStringify(item)
-        : isPrimitive(item)
-          ? `${typeof item}:${String(item)}`
-          : stableStringify(item); // Use stableStringify for objects even in non-deep mode
-      if (seen.has(key)) {
-        duplicates.push(item);
-      } else {
-        seen.add(key);
+  return {
+    pass: isValid,
+    message: () => {
+      if (typeof received !== 'number') {
+        return `Expected compliance score to be a number, but got ${typeof received}`;
       }
-    }
+      if (received < 0 || received > 100) {
+        return `Expected compliance score to be between 0-100, but got ${received}`;
+      }
+      return `Expected compliance score ${received}% to be at least ${expected}%`;
+    },
+    actual: received,
+    expected: `>= ${expected}%`,
+  };
+}
 
-    const isDistinct = duplicates.length === 0;
-
+/**
+ * Array distinctness validation matcher
+ */
+function toBeDistinct(
+  received: unknown,
+  deep = false
+): { pass: boolean; message: () => string; actual: unknown; expected: string } {
+  if (!Array.isArray(received)) {
     return {
-      pass: isDistinct,
-      message: () => {
-        if (isDistinct) {
-          return `Expected array to have duplicate values, but all values were distinct`;
-        } else {
-          return `Expected array to have distinct values, but found duplicates: ${stableStringify(duplicates)}`;
-        }
-      },
-      actual: received,
-      expected: 'array with distinct values',
-    };
-  },
-
-  /**
-   * Error rate validation matcher for simple rates (0-1 range)
-   *
-   * Use for: Direct error rate numbers (e.g., 0.1 for 10% error rate)
-   * Expected input: number between 0.0-1.0
-   *
-   * Example:
-   * ```typescript
-   * const errorRate = 0.05; // 5% errors
-   * expect(errorRate).toHaveErrorRate(0.05, 0.01);
-   * ```
-   */
-  toHaveErrorRate(received: unknown, expectedRate: number, tolerance = 0.05) {
-    if (typeof received !== 'number' || received < 0 || received > 1) {
-      return {
-        pass: false,
-        message: () =>
-          `Expected error rate to be a number between 0-1, but got ${stableStringify(received)}`,
-        actual: received,
-        expected: 'number between 0-1',
-      };
-    }
-
-    const deviation = Math.abs(received - expectedRate);
-    const withinTolerance = deviation <= tolerance;
-
-    return {
-      pass: withinTolerance,
+      pass: false,
       message: () =>
-        `Expected error rate ${received} to be within ${tolerance} of ${expectedRate} (actual deviation: ${deviation})`,
+        `Expected ${stableStringify(received)} to be an array, but got ${typeof received}`,
       actual: received,
-      expected: `${expectedRate} ± ${tolerance}`,
+      expected: 'array',
     };
-  },
+  }
 
-  /**
-   * Error statistics validation matcher for {errors, total} objects
-   *
-   * Use for: Error statistics objects with error count and total count
-   * Expected input: {errors: number, total: number} where total > 0
-   * Calculates rate as: errors/total
-   *
-   * Example:
-   * ```typescript
-   * const stats = {errors: 5, total: 100}; // 5% error rate
-   * expect(stats).toHaveErrorStats(0.05, 0.01);
-   * ```
-   */
-  toHaveErrorStats(received: unknown, expectedRate: number, tolerance = 0.05) {
-    if (!isErrorStatsObject(received)) {
-      return {
-        pass: false,
-        message: () =>
-          `Expected {errors: number, total: number}, but got ${stableStringify(received)}`,
-        actual: received,
-        expected: 'object with {errors: number, total: number} properties',
-      };
+  const seen = new Set<string>();
+  const duplicates: unknown[] = [];
+
+  for (const item of received) {
+    const key = deep
+      ? stableStringify(item)
+      : isPrimitive(item)
+        ? `${typeof item}:${String(item)}`
+        : stableStringify(item); // Use stableStringify for objects even in non-deep mode
+    if (seen.has(key)) {
+      duplicates.push(item);
+    } else {
+      seen.add(key);
     }
+  }
 
-    const result = validateErrorStatsRate(received, expectedRate, tolerance);
+  const isDistinct = duplicates.length === 0;
+
+  return {
+    pass: isDistinct,
+    message: () => {
+      if (isDistinct) {
+        return `Expected array to have duplicate values, but all values were distinct`;
+      } else {
+        return `Expected array to have distinct values, but found duplicates: ${stableStringify(duplicates)}`;
+      }
+    },
+    actual: received,
+    expected: 'array with distinct values',
+  };
+}
+
+/**
+ * Error rate validation matcher for simple rates (0-1 range)
+ *
+ * Use for: Direct error rate numbers (e.g., 0.1 for 10% error rate)
+ * Expected input: number between 0.0-1.0
+ *
+ * Example:
+ * ```typescript
+ * const errorRate = 0.05; // 5% errors
+ * expect(errorRate).toHaveErrorRate(0.05, 0.01);
+ * ```
+ */
+function toHaveErrorRate(
+  received: unknown,
+  expectedRate: number,
+  tolerance = 0.05
+): { pass: boolean; message: () => string; actual: unknown; expected: string } {
+  if (typeof received !== 'number' || received < 0 || received > 1) {
     return {
-      ...result,
+      pass: false,
+      message: () =>
+        `Expected error rate to be a number between 0-1, but got ${stableStringify(received)}`,
       actual: received,
-      expected: `${expectedRate} ± ${tolerance}`,
+      expected: 'number between 0-1',
     };
-  },
+  }
 
-  /**
-   * Deterministic generation validation matcher (flexible API)
-   */
-  toBeGeneratedWithSeed(
-    received: unknown,
-    options: {
-      seed: number;
-      schema: AnySchema;
-      generate: (schema: AnySchema, seed: number, options?: unknown) => unknown;
-      generateOptions?: unknown;
-    }
-  ) {
-    const { seed, schema, generate, generateOptions } = options;
+  const deviation = Math.abs(received - expectedRate);
+  const withinTolerance = deviation <= tolerance;
 
-    try {
-      const { generated1, generated2 } = generateTwice(
-        schema,
-        seed,
-        generate,
-        generateOptions
-      );
-      return validateDeterministicGeneration(
-        received,
-        generated1,
-        generated2,
-        seed
-      );
-    } catch (error) {
-      return {
-        pass: false,
-        message: () => `Failed to generate data with seed ${seed}: ${error}`,
-        actual: received,
-        expected: 'successfully generated data',
-      };
-    }
-  },
-});
+  return {
+    pass: withinTolerance,
+    message: () =>
+      `Expected error rate ${received} to be within ${tolerance} of ${expectedRate} (actual deviation: ${deviation})`,
+    actual: received,
+    expected: `${expectedRate} ± ${tolerance}`,
+  };
+}
+
+/**
+ * Error statistics validation matcher for {errors, total} objects
+ *
+ * Use for: Error statistics objects with error count and total count
+ * Expected input: {errors: number, total: number} where total > 0
+ * Calculates rate as: errors/total
+ *
+ * Example:
+ * ```typescript
+ * const stats = {errors: 5, total: 100}; // 5% error rate
+ * expect(stats).toHaveErrorStats(0.05, 0.01);
+ * ```
+ */
+function toHaveErrorStats(
+  received: unknown,
+  expectedRate: number,
+  tolerance = 0.05
+): { pass: boolean; message: () => string; actual: unknown; expected: string } {
+  if (!isErrorStatsObject(received)) {
+    return {
+      pass: false,
+      message: () =>
+        `Expected {errors: number, total: number}, but got ${stableStringify(received)}`,
+      actual: received,
+      expected: 'object with {errors: number, total: number} properties',
+    };
+  }
+
+  const result = validateErrorStatsRate(received, expectedRate, tolerance);
+  return {
+    ...result,
+    actual: received,
+    expected: `${expectedRate} ± ${tolerance}`,
+  };
+}
+
+/**
+ * Deterministic generation validation matcher (flexible API)
+ */
+function toBeGeneratedWithSeed(
+  received: unknown,
+  options: {
+    seed: number;
+    schema: AnySchema;
+    generate: (schema: AnySchema, seed: number, options?: unknown) => unknown;
+    generateOptions?: unknown;
+  }
+): {
+  pass: boolean;
+  message: () => string;
+  actual: unknown;
+  expected: string | unknown;
+} {
+  const { seed, schema, generate, generateOptions } = options;
+
+  try {
+    const { generated1, generated2 } = generateTwice(
+      schema,
+      seed,
+      generate,
+      generateOptions
+    );
+    return validateDeterministicGeneration(
+      received,
+      generated1,
+      generated2,
+      seed
+    );
+  } catch (error) {
+    return {
+      pass: false,
+      message: () => `Failed to generate data with seed ${seed}: ${error}`,
+      actual: received,
+      expected: 'successfully generated data',
+    };
+  }
+}
+
+// ================================================================================
+// EXPORTS
+// ================================================================================
+
+export {
+  toHaveCompliance,
+  toBeDistinct,
+  toHaveErrorRate,
+  toHaveErrorStats,
+  toBeGeneratedWithSeed,
+};
