@@ -239,6 +239,43 @@ We'd rather support 10% of schemas perfectly than 100% of schemas poorly.
 - Only mark tasks as complete after lint, typecheck, and tests pass
 - This ensures code quality is maintained throughout development
 
+## Testing Architecture v2.1 - Reference Documentation
+
+**When working on testing tasks (tag: testing-v2), ALWAYS reference these comprehensive technical documents:**
+
+### Core Testing References
+- **`docs/tests/foundrydata-complete-testing-guide-en.ts`** - Complete implementation guide with:
+  - Exact Vitest configuration (platform-specific pools, deterministic settings)
+  - Fast-check global configuration (seed=424242, environment-based numRuns)
+  - AJV factory patterns for multi-draft support (draft-07, 2019-09, 2020-12)
+  - Custom matchers implementation (toMatchJsonSchema, toBeDistinct, etc.)
+  - Property-based testing patterns and arbitraries
+  - Complete code examples and configuration files
+
+- **`docs/tests/foundrydata-testing-architecture-doc-en.md`** - Testing philosophy and strategy:
+  - Zero tolerance policy (100% compliance via AJV oracle)
+  - Determinism-first approach (fixed seeds, no retries)
+  - Multi-draft JSON Schema support strategy
+  - Performance targets (percentiles: p50, p95, p99)
+  - Testing patterns (invariant, metamorphic, stateful, oracle)
+  - Environmental configuration and CI/CD pipeline requirements
+
+### Key Implementation Principles from References
+- **Fixed seed 424242** - Never use Date.now() or random seeds
+- **AJV as single source of truth** - Cached singleton with WeakMap validators
+- **No schema contradictions** - Use createBounds() helper, ensure required ⊆ properties
+- **Platform-aware configuration** - Windows uses 'threads', others use 'forks'
+- **Environment-driven settings** - TEST_SEED, FC_NUM_RUNS, SCHEMA_DRAFT variables
+- **Percentile-based performance** - Use p95 targets, not averages
+
+### When to Consult These References
+- **Setup tasks (#1-#6)**: Configuration details and exact implementation patterns
+- **Migration tasks (#19-#23)**: Specific migration strategies from existing patterns
+- **Performance tasks (#9, #16)**: Benchmarking methodology and targets
+- **CI/CD tasks (#10)**: Matrix testing configuration and environment setup
+
+**These documents contain the precise technical specifications that complement the task orchestration.**
+
 ## ESLint and Code Quality Guidelines
 
 **DO NOT blindly follow ESLint rules** - they are guidelines, not absolute laws. Use judgment based on context:
