@@ -10,8 +10,11 @@
   "scripts": {
     "build": "npm run build -ws --if-present",
     "dev": "npm run dev -ws",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "npm run test:packages; npm run test:matchers",
+    "test:packages": "vitest run --config vitest.config.ts",
+    "test:matchers": "vitest run --config test/vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "test:watch:matchers": "vitest --config test/vitest.config.ts",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit --project tsconfig.test.json",
     "typecheck:build": "tsc --noEmit --build",

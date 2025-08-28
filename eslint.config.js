@@ -177,6 +177,7 @@ export default tseslint.config(
       'node_modules/**',
       'coverage/**',
       '**/*.config.js',
+      '**/*.config.cjs',
       'eslint.config.js'
     ]
   }
