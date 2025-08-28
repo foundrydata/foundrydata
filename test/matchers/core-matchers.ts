@@ -12,7 +12,7 @@ import {
   getAjv,
   createAjv,
   type JsonSchemaDraft,
-} from '../helpers/ajv-factory.js';
+} from '../helpers/ajv-factory.ts';
 import type { AnySchema } from 'ajv';
 
 // ================================================================================
@@ -99,6 +99,26 @@ expect.extend({
    * UUID validation matcher (supports v1, v3, v4, v5)
    */
   toBeValidUUID(received: unknown) {
+    // Explicit null/undefined handling
+    if (received === null) {
+      return {
+        pass: false,
+        message: () => 'Expected null to be a valid UUID, but received null',
+        actual: received,
+        expected: 'valid UUID v4 format',
+      };
+    }
+
+    if (received === undefined) {
+      return {
+        pass: false,
+        message: () =>
+          'Expected undefined to be a valid UUID, but received undefined',
+        actual: received,
+        expected: 'valid UUID v4 format',
+      };
+    }
+
     const isString = typeof received === 'string';
     const isValidUUID = isString && UUID_REGEX.test(received);
 
@@ -119,6 +139,27 @@ expect.extend({
    * Email validation matcher
    */
   toBeValidEmail(received: unknown) {
+    // Explicit null/undefined handling
+    if (received === null) {
+      return {
+        pass: false,
+        message: () =>
+          'Expected null to be a valid email address, but received null',
+        actual: received,
+        expected: 'valid email format',
+      };
+    }
+
+    if (received === undefined) {
+      return {
+        pass: false,
+        message: () =>
+          'Expected undefined to be a valid email address, but received undefined',
+        actual: received,
+        expected: 'valid email format',
+      };
+    }
+
     const isString = typeof received === 'string';
     const isValidEmail = isString && EMAIL_REGEX.test(received);
 
@@ -139,6 +180,27 @@ expect.extend({
    * ISO8601 datetime validation matcher
    */
   toBeValidISO8601(received: unknown) {
+    // Explicit null/undefined handling
+    if (received === null) {
+      return {
+        pass: false,
+        message: () =>
+          'Expected null to be a valid ISO8601 datetime, but received null',
+        actual: received,
+        expected: 'valid ISO8601 datetime format',
+      };
+    }
+
+    if (received === undefined) {
+      return {
+        pass: false,
+        message: () =>
+          'Expected undefined to be a valid ISO8601 datetime, but received undefined',
+        actual: received,
+        expected: 'valid ISO8601 datetime format',
+      };
+    }
+
     const isString = typeof received === 'string';
     const isValidISO8601 = isString && ISO8601_REGEX.test(received);
 
@@ -159,6 +221,27 @@ expect.extend({
    * JSON validation matcher
    */
   toBeValidJSON(received: unknown) {
+    // Explicit null/undefined handling
+    if (received === null) {
+      return {
+        pass: false,
+        message: () =>
+          'Expected null to be a valid JSON string, but received null',
+        actual: received,
+        expected: 'valid JSON string',
+      };
+    }
+
+    if (received === undefined) {
+      return {
+        pass: false,
+        message: () =>
+          'Expected undefined to be a valid JSON string, but received undefined',
+        actual: received,
+        expected: 'valid JSON string',
+      };
+    }
+
     const isString = typeof received === 'string';
 
     if (!isString) {
