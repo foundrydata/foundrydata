@@ -68,11 +68,18 @@ interface CustomMatchers<R = unknown> {
   toBeDistinct: (deep?: boolean) => R;
 
   /**
-   * Assert error rate is within tolerance
+   * Assert error rate is within tolerance for simple numbers (0-1 range)
    * @param expectedRate Expected error rate (0-1)
    * @param tolerance Tolerance for deviation (default: 0.05)
    */
   toHaveErrorRate: (expectedRate: number, tolerance?: number) => R;
+
+  /**
+   * Assert error statistics for {errors, total} objects
+   * @param expectedRate Expected error rate (0-1)
+   * @param tolerance Tolerance for deviation (default: 0.05)
+   */
+  toHaveErrorStats: (expectedRate: number, tolerance?: number) => R;
 
   /**
    * Assert data was generated with specific seed (determinism check)
@@ -81,7 +88,8 @@ interface CustomMatchers<R = unknown> {
   toBeGeneratedWithSeed: (options: {
     seed: number;
     schema: AnySchema;
-    generate: (schema: AnySchema, seed: number) => unknown;
+    generate: (schema: AnySchema, seed: number, options?: unknown) => unknown;
+    generateOptions?: unknown;
   }) => R;
 }
 

@@ -8,7 +8,11 @@
  */
 
 import { expect } from 'vitest';
-import { getAjv, type JsonSchemaDraft } from '../helpers/ajv-factory.js';
+import {
+  getAjv,
+  createAjv,
+  type JsonSchemaDraft,
+} from '../helpers/ajv-factory.js';
 import type { AnySchema } from 'ajv';
 
 // ================================================================================
@@ -47,9 +51,9 @@ expect.extend({
   toMatchJsonSchema(
     received: unknown,
     schema: AnySchema,
-    _draft?: JsonSchemaDraft
+    draft?: JsonSchemaDraft
   ) {
-    const ajv = getAjv();
+    const ajv = draft ? createAjv(draft) : getAjv();
     const validate = ajv.compile(schema);
     const isValid = validate(received);
 

@@ -12,7 +12,7 @@
 import { describe, test, expect, beforeAll } from 'vitest';
 import fc from 'fast-check';
 import '../index.js'; // Import to register matchers
-import { getAjv } from '../../helpers/ajv-factory.js';
+import { getAjv, createAjv } from '../../helpers/ajv-factory.js';
 import type { AnySchema } from 'ajv';
 
 // ================================================================================
@@ -117,6 +117,40 @@ describe('toMatchJsonSchema', () => {
       }),
       { numRuns: 50 } // Reduced for performance
     );
+  });
+
+  test('should use different AJV instances for different drafts', () => {
+    // Create AJV instances for different drafts
+    const ajvDraft07 = createAjv('draft-07');
+    const ajv201909 = createAjv('2019-09');
+    const ajv202012 = createAjv('2020-12');
+    const ajvDefault = getAjv();
+
+    // Verify they are different instances
+    expect(ajvDraft07).not.toBe(ajv201909);
+    expect(ajv201909).not.toBe(ajv202012);
+    expect(ajvDraft07).not.toBe(ajv202012);
+
+    // The default singleton should be different from the new created instances
+    expect(ajvDefault).not.toBe(ajvDraft07);
+    expect(ajvDefault).not.toBe(ajv201909);
+    expect(ajvDefault).not.toBe(ajv202012);
+  });
+
+  test('should use draft-specific AJV instance when draft parameter is provided', () => {
+    const schema = {
+      type: 'string',
+      format: 'uuid',
+    };
+    const validUUID = '550e8400-e29b-41d4-a716-446655440000';
+
+    // Test that the matcher works with different drafts
+    expect(validUUID).toMatchJsonSchema(schema, 'draft-07');
+    expect(validUUID).toMatchJsonSchema(schema, '2019-09');
+    expect(validUUID).toMatchJsonSchema(schema, '2020-12');
+
+    // Test that it falls back to default AJV when no draft is specified
+    expect(validUUID).toMatchJsonSchema(schema);
   });
 });
 
@@ -325,6 +359,127 @@ describe('toBeDistinct', () => {
     expect(arr2).not.toBeDistinct(true);
   });
 
+  test('should handle circular references without stack overflow', () => {
+    // Create objects with circular references
+    const obj1: { a: number; self?: unknown } = { a: 1 };
+    obj1.self = obj1;
+
+    const obj2: { a: number; self?: unknown } = { a: 1 };
+    obj2.self = obj2;
+
+    const obj3: { b: number; self?: unknown } = { b: 2 };
+    obj3.self = obj3;
+
+    // Array with circular objects should not crash
+    const arr1 = [obj1, obj3];
+    const arr2 = [obj1, obj1]; // duplicate circular objects
+
+    expect(() => {
+      expect(arr1).toBeDistinct(true);
+    }).not.toThrow();
+
+    expect(() => {
+      expect(arr2).not.toBeDistinct(true);
+    }).not.toThrow();
+  });
+
+  test('should handle nested circular references', () => {
+    // Create more complex circular structures
+    const parent: { name: string; child?: unknown } = { name: 'parent' };
+    const child: { name: string; parent?: unknown } = { name: 'child' };
+    parent.child = child;
+    child.parent = parent;
+
+    const parent2: { name: string; child?: unknown } = { name: 'parent2' }; // Different name for distinctness
+    const child2: { name: string; parent?: unknown } = { name: 'child2' }; // Different name for distinctness
+    parent2.child = child2;
+    child2.parent = parent2;
+
+    const arr = [parent, parent2];
+
+    // Should handle nested circular references without crashing
+    expect(() => {
+      expect(arr).toBeDistinct(true);
+    }).not.toThrow();
+
+    // The assertion should pass because the objects are actually distinct (different names)
+    expect(arr).toBeDistinct(true);
+  });
+
+  test('should detect identical circular references as duplicates', () => {
+    // Create identical circular structures
+    const createCircular = (
+      name: string
+    ): { name: string; child?: unknown } => {
+      const parent: { name: string; child?: unknown } = { name };
+      const child: { name: string; parent?: unknown } = { name: 'child' };
+      parent.child = child;
+      child.parent = parent;
+      return parent;
+    };
+
+    const obj1 = createCircular('parent');
+    const obj2 = createCircular('parent'); // Same structure, should be considered duplicate
+
+    const arr = [obj1, obj2];
+
+    // Should handle circular references without crashing
+    expect(() => {
+      expect(arr).not.toBeDistinct(true);
+    }).not.toThrow();
+
+    // The assertion should pass - these should be detected as duplicates
+    expect(arr).not.toBeDistinct(true);
+  });
+
+  test('should properly handle objects without deep=true', () => {
+    const obj1 = { a: 1 };
+    const obj2 = { a: 1 }; // Same structure
+    const obj3 = { b: 2 }; // Different structure
+
+    // Without deep=true, objects with same content should be detected as duplicates
+    expect([obj1, obj2]).not.toBeDistinct();
+    expect([obj1, obj2]).not.toBeDistinct(false);
+
+    // Objects with different content should be distinct
+    expect([obj1, obj3]).toBeDistinct();
+    expect([obj1, obj3]).toBeDistinct(false);
+  });
+
+  test('should handle mixed primitives and objects without deep=true', () => {
+    const obj1 = { value: 1 };
+    const obj2 = { value: 1 }; // Same structure as obj1
+    const obj3 = { value: 2 }; // Different structure
+
+    const mixedArray = [1, '1', obj1, obj2, obj3];
+
+    // Primitives 1 and '1' are different types so distinct
+    // obj1 and obj2 have same structure so duplicates
+    // obj3 is different so distinct
+    expect(mixedArray).not.toBeDistinct(); // Should detect obj1/obj2 as duplicates
+  });
+
+  test('should differentiate between objects and primitives in non-deep mode', () => {
+    // Array with various types
+    const arr = [
+      1, // number
+      '1', // string - different from number 1
+      true, // boolean
+      null, // null
+      undefined, // undefined
+      { a: 1 }, // object
+      { a: 1 }, // same object content - should be duplicate
+      [1, 2], // array
+      [1, 2], // same array content - should be duplicate
+    ];
+
+    // Should detect object and array duplicates
+    expect(arr).not.toBeDistinct();
+
+    // Different primitive types should be distinct
+    expect([1, '1', true, null, undefined]).toBeDistinct();
+  });
+
   test('should reject non-arrays', () => {
     expect('not-array').not.toBeDistinct();
     expect(123).not.toBeDistinct();
@@ -374,6 +529,7 @@ describe('toHaveErrorRate', () => {
     expect(1.1).not.toHaveErrorRate(0.1);
     expect('0.1').not.toHaveErrorRate(0.1);
     expect(null).not.toHaveErrorRate(0.1);
+    expect({ errors: 10, total: 100 }).not.toHaveErrorRate(0.1); // object should use toHaveErrorStats
   });
 
   test('property-based: valid error rates should pass within tolerance', () => {
@@ -387,6 +543,62 @@ describe('toHaveErrorRate', () => {
 
           if (Math.abs(clampedRate - rate) <= tolerance) {
             expect(clampedRate).toHaveErrorRate(rate, tolerance);
+          }
+        }
+      ),
+      { numRuns: 50 }
+    );
+  });
+});
+
+// ================================================================================
+// TOHAVEERRORSTATS MATCHER TESTS
+// ================================================================================
+
+describe('toHaveErrorStats', () => {
+  test('should validate error statistics within tolerance', () => {
+    expect({ errors: 10, total: 100 }).toHaveErrorStats(0.1, 0.05); // exact match
+    expect({ errors: 12, total: 100 }).toHaveErrorStats(0.1, 0.05); // within tolerance
+    expect({ errors: 8, total: 100 }).toHaveErrorStats(0.1, 0.05); // within tolerance
+    expect({ errors: 16, total: 100 }).not.toHaveErrorStats(0.1, 0.05); // outside tolerance
+    expect({ errors: 4, total: 100 }).not.toHaveErrorStats(0.1, 0.05); // outside tolerance
+  });
+
+  test('should use default tolerance', () => {
+    expect({ errors: 12, total: 100 }).toHaveErrorStats(0.1); // default 0.05 tolerance
+    expect({ errors: 16, total: 100 }).not.toHaveErrorStats(0.1); // outside default tolerance
+  });
+
+  test('should reject invalid error stats objects', () => {
+    expect({ errors: '10', total: 100 }).not.toHaveErrorStats(0.1);
+    expect({ errors: 10, total: '100' }).not.toHaveErrorStats(0.1);
+    expect({ errors: 10, total: 0 }).not.toHaveErrorStats(0.1);
+    expect({ errors: 10 }).not.toHaveErrorStats(0.1);
+    expect({ total: 100 }).not.toHaveErrorStats(0.1);
+    expect('not-an-object').not.toHaveErrorStats(0.1);
+    expect(null).not.toHaveErrorStats(0.1);
+    expect(0.1).not.toHaveErrorStats(0.1); // number should use toHaveErrorRate
+  });
+
+  test('should calculate error rate correctly', () => {
+    expect({ errors: 5, total: 50 }).toHaveErrorStats(0.1); // 5/50 = 0.1
+    expect({ errors: 1, total: 10 }).toHaveErrorStats(0.1); // 1/10 = 0.1
+    expect({ errors: 25, total: 250 }).toHaveErrorStats(0.1); // 25/250 = 0.1
+    expect({ errors: 0, total: 100 }).toHaveErrorStats(0); // 0/100 = 0
+  });
+
+  test('property-based: valid error stats should pass within tolerance', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 1000 }), // total
+        fc.float({ min: 0, max: 1, noNaN: true }), // expected rate
+        fc.float({ min: 0, max: 0.5, noNaN: true }), // tolerance
+        (total, expectedRate, tolerance) => {
+          const errors = Math.floor(total * expectedRate);
+          const actualRate = errors / total;
+
+          if (Math.abs(actualRate - expectedRate) <= tolerance) {
+            expect({ errors, total }).toHaveErrorStats(expectedRate, tolerance);
           }
         }
       ),

@@ -7,7 +7,6 @@ import {
   clearCache,
   type JsonSchemaDraft,
 } from '../ajv-factory.js';
-import type Ajv from 'ajv';
 
 describe('AJV Factory', () => {
   beforeEach(() => {

@@ -1,5 +1,6 @@
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
+// @ts-ignore - No TypeScript definitions available for ajv-formats-draft2019
 import addFormats2019 from 'ajv-formats-draft2019';
 
 export type JsonSchemaDraft = 'draft-07' | '2019-09' | '2020-12';
@@ -66,7 +67,7 @@ export function validateWithErrors(
 
   return {
     valid,
-    errors: valid ? undefined : validate.errors,
+    errors: valid ? undefined : (validate.errors ?? undefined),
   };
 }
 

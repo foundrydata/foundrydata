@@ -12,7 +12,7 @@ export default defineConfig({
     environment: 'node',
 
     // Test discovery
-    include: ['**/*.{test,spec}.ts'],
+    include: ['test/**/*.{test,spec}.ts'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/coverage/**'],
 
     // Extended timeouts for property-based testing
@@ -20,7 +20,7 @@ export default defineConfig({
     hookTimeout: 10000,
 
     // Setup
-    setupFiles: ['./setup.ts'],
+    setupFiles: ['./test/setup.ts'],
 
     // Pool configuration
     pool: process.platform === 'win32' ? 'threads' : 'forks',

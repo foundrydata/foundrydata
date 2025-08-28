@@ -7,6 +7,8 @@
  * ================================================================================
  */
 
+/* eslint-disable max-lines */
+
 import { expect } from 'vitest';
 import type { AnySchema } from 'ajv';
 
@@ -17,22 +19,33 @@ import type { AnySchema } from 'ajv';
 /**
  * Stable stringify for deep equality checks
  * Ensures consistent JSON representation for deduplication
+ * Protected against circular references with WeakSet
  */
 function stableStringify(obj: unknown): string {
-  if (obj === null || typeof obj !== 'object') {
-    return JSON.stringify(obj);
+  const seen = new WeakSet();
+
+  function stringify(value: unknown): string {
+    if (value === null || typeof value !== 'object') {
+      return JSON.stringify(value);
+    }
+
+    if (seen.has(value)) {
+      return '"[Circular]"';
+    }
+    seen.add(value);
+
+    if (Array.isArray(value)) {
+      return '[' + value.map(stringify).join(',') + ']';
+    }
+
+    const keys = Object.keys(value as Record<string, unknown>).sort();
+    const pairs = keys.map(
+      (key) => `"${key}":${stringify((value as Record<string, unknown>)[key])}`
+    );
+    return '{' + pairs.join(',') + '}';
   }
 
-  if (Array.isArray(obj)) {
-    return '[' + obj.map(stableStringify).join(',') + ']';
-  }
-
-  const keys = Object.keys(obj as Record<string, unknown>).sort();
-  const pairs = keys.map(
-    (key) =>
-      `"${key}":${stableStringify((obj as Record<string, unknown>)[key])}`
-  );
-  return '{' + pairs.join(',') + '}';
+  return stringify(obj);
 }
 
 /**
@@ -87,22 +100,30 @@ function validateDeterministicGeneration(
 }
 
 /**
- * Validate error statistics object format
+ * Check if a value is a primitive type (null, string, number, boolean, undefined, symbol, bigint)
+ * Returns false for objects (including arrays) and functions
  */
-function validateErrorStats(errorObj: {
-  errors: unknown;
-  total: unknown;
-}): string | null {
-  if (
-    typeof errorObj.errors !== 'number' ||
-    typeof errorObj.total !== 'number'
-  ) {
-    return `Expected {errors, total} to be numbers, but got {errors: ${typeof errorObj.errors}, total: ${typeof errorObj.total}}`;
-  }
-  if (errorObj.total === 0) {
-    return 'Cannot calculate error rate when total is 0';
-  }
-  return null;
+function isPrimitive(value: unknown): boolean {
+  return (
+    value === null || (typeof value !== 'object' && typeof value !== 'function')
+  );
+}
+
+/**
+ * Check if a value has the structure of an error stats object
+ */
+function isErrorStatsObject(
+  value: unknown
+): value is { errors: number; total: number } {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    'errors' in value &&
+    'total' in value &&
+    typeof (value as { errors: unknown; total: unknown }).errors === 'number' &&
+    typeof (value as { errors: unknown; total: unknown }).total === 'number' &&
+    (value as { errors: number; total: number }).total > 0
+  );
 }
 
 /**
@@ -164,7 +185,7 @@ expect.extend({
       return {
         pass: false,
         message: () =>
-          `Expected ${JSON.stringify(received)} to be an array, but got ${typeof received}`,
+          `Expected ${stableStringify(received)} to be an array, but got ${typeof received}`,
         actual: received,
         expected: 'array',
       };
@@ -176,7 +197,9 @@ expect.extend({
     for (const item of received) {
       const key = deep
         ? stableStringify(item)
-        : `${typeof item}:${String(item)}`;
+        : isPrimitive(item)
+          ? `${typeof item}:${String(item)}`
+          : stableStringify(item); // Use stableStringify for objects even in non-deep mode
       if (seen.has(key)) {
         duplicates.push(item);
       } else {
@@ -192,7 +215,7 @@ expect.extend({
         if (isDistinct) {
           return `Expected array to have duplicate values, but all values were distinct`;
         } else {
-          return `Expected array to have distinct values, but found duplicates: ${JSON.stringify(duplicates)}`;
+          return `Expected array to have distinct values, but found duplicates: ${stableStringify(duplicates)}`;
         }
       },
       actual: received,
@@ -201,48 +224,16 @@ expect.extend({
   },
 
   /**
-   * Error rate validation matcher (flexible API)
+   * Error rate validation matcher for simple rates (0-1 range)
    */
   toHaveErrorRate(received: unknown, expectedRate: number, tolerance = 0.05) {
-    // Handle object format {errors, total}
-    if (
-      received &&
-      typeof received === 'object' &&
-      'errors' in received &&
-      'total' in received
-    ) {
-      const errorObj = received as { errors: unknown; total: unknown };
-      const validationError = validateErrorStats(errorObj);
-
-      if (validationError) {
-        return {
-          pass: false,
-          message: () => validationError,
-          actual: received,
-          expected: 'object with numeric errors and total > 0',
-        };
-      }
-
-      const result = validateErrorStatsRate(
-        errorObj as { errors: number; total: number },
-        expectedRate,
-        tolerance
-      );
-      return {
-        ...result,
-        actual: received,
-        expected: `${expectedRate} ± ${tolerance}`,
-      };
-    }
-
-    // Handle simple number format (0-1)
     if (typeof received !== 'number' || received < 0 || received > 1) {
       return {
         pass: false,
         message: () =>
-          `Expected error rate to be a number between 0-1 or {errors, total} object, but got ${JSON.stringify(received)}`,
+          `Expected error rate to be a number between 0-1, but got ${stableStringify(received)}`,
         actual: received,
-        expected: 'number between 0-1 or {errors, total} object',
+        expected: 'number between 0-1',
       };
     }
 
@@ -253,6 +244,28 @@ expect.extend({
       pass: withinTolerance,
       message: () =>
         `Expected error rate ${received} to be within ${tolerance} of ${expectedRate} (actual deviation: ${deviation})`,
+      actual: received,
+      expected: `${expectedRate} ± ${tolerance}`,
+    };
+  },
+
+  /**
+   * Error statistics validation matcher for {errors, total} objects
+   */
+  toHaveErrorStats(received: unknown, expectedRate: number, tolerance = 0.05) {
+    if (!isErrorStatsObject(received)) {
+      return {
+        pass: false,
+        message: () =>
+          `Expected {errors: number, total: number}, but got ${stableStringify(received)}`,
+        actual: received,
+        expected: 'object with {errors: number, total: number} properties',
+      };
+    }
+
+    const result = validateErrorStatsRate(received, expectedRate, tolerance);
+    return {
+      ...result,
       actual: received,
       expected: `${expectedRate} ± ${tolerance}`,
     };

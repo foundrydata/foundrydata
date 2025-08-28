@@ -493,7 +493,12 @@ declare module 'vitest' {
     toBeValidJSON(): void;
     toBeDistinct(deep?: boolean): void;
     toHaveErrorRate(expectedRate: number, tolerance?: number): void;
-    toBeGeneratedWithSeed(options: { seed: number; schema: any; generate: Function }): void;
+    toBeGeneratedWithSeed(options: {
+      seed: number;
+      schema: AnySchema;
+      generate: (schema: AnySchema, seed: number, options?: unknown) => unknown;
+      generateOptions?: unknown;
+    }): void;
   }
 }
 
