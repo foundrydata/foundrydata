@@ -103,6 +103,26 @@ export default tseslint.config(
     }
   },
 
+  // Test setup files - relaxed rules for infrastructure
+  {
+    name: 'test-setup-files',
+    files: ['test/setup.ts', 'test/global-setup.ts', 'test/global-teardown.ts', 'vitest.config.ts'],
+    languageOptions: {
+      globals: {
+        globalThis: 'writable',
+        performance: 'readonly',
+      }
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',  // AJV validators need any
+      '@typescript-eslint/explicit-function-return-type': 'off', // Config functions
+      'no-console': 'off',  // Logging is essential for test infrastructure
+      'max-lines': 'off',    // Comprehensive setup requires length
+      'complexity': ['error', 15], // Complex validation logic needed
+      'max-depth': ['error', 4],   // Nested directory operations
+    }
+  },
+
   // CLI files - allow console
   {
     name: 'cli-files',
