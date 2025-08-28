@@ -225,6 +225,15 @@ expect.extend({
 
   /**
    * Error rate validation matcher for simple rates (0-1 range)
+   *
+   * Use for: Direct error rate numbers (e.g., 0.1 for 10% error rate)
+   * Expected input: number between 0.0-1.0
+   *
+   * Example:
+   * ```typescript
+   * const errorRate = 0.05; // 5% errors
+   * expect(errorRate).toHaveErrorRate(0.05, 0.01);
+   * ```
    */
   toHaveErrorRate(received: unknown, expectedRate: number, tolerance = 0.05) {
     if (typeof received !== 'number' || received < 0 || received > 1) {
@@ -251,6 +260,16 @@ expect.extend({
 
   /**
    * Error statistics validation matcher for {errors, total} objects
+   *
+   * Use for: Error statistics objects with error count and total count
+   * Expected input: {errors: number, total: number} where total > 0
+   * Calculates rate as: errors/total
+   *
+   * Example:
+   * ```typescript
+   * const stats = {errors: 5, total: 100}; // 5% error rate
+   * expect(stats).toHaveErrorStats(0.05, 0.01);
+   * ```
    */
   toHaveErrorStats(received: unknown, expectedRate: number, tolerance = 0.05) {
     if (!isErrorStatsObject(received)) {
