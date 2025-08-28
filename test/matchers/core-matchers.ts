@@ -12,12 +12,44 @@ import {
   getAjv,
   createAjv,
   type JsonSchemaDraft,
-} from '../helpers/ajv-factory.ts';
-import type { AnySchema } from 'ajv';
+} from '../helpers/ajv-factory';
+import type { AnySchema, ErrorObject } from 'ajv';
 
 // ================================================================================
 // UTILITY FUNCTIONS
 // ================================================================================
+
+/**
+ * Helper function to handle null/undefined validation
+ */
+const validateNullUndefined = (
+  received: unknown,
+  expectedFormat: string
+): {
+  pass: false;
+  message: () => string;
+  actual: unknown;
+  expected: string;
+} | null => {
+  if (received === null) {
+    return {
+      pass: false,
+      message: () => `Expected null to be ${expectedFormat}, but received null`,
+      actual: received,
+      expected: expectedFormat,
+    };
+  }
+  if (received === undefined) {
+    return {
+      pass: false,
+      message: () =>
+        `Expected undefined to be ${expectedFormat}, but received undefined`,
+      actual: received,
+      expected: expectedFormat,
+    };
+  }
+  return null;
+};
 
 /**
  * UUID validation regex (supports v1, v3, v4, v5)
@@ -53,8 +85,32 @@ expect.extend({
     schema: AnySchema,
     draft?: JsonSchemaDraft
   ) {
+    // Validate the schema parameter first
+    if (!schema || typeof schema !== 'object') {
+      throw new Error(
+        `Invalid schema provided to toMatchJsonSchema: expected object, got ${typeof schema}`
+      );
+    }
+
+    // Additional validation for common schema structure issues
+    if (Array.isArray(schema)) {
+      throw new Error(
+        'Invalid schema provided to toMatchJsonSchema: schema cannot be an array'
+      );
+    }
+
     const ajv = draft ? createAjv(draft) : getAjv();
-    const validate = ajv.compile(schema);
+
+    // Wrap AJV compilation in try-catch to provide better error messages
+    let validate: ReturnType<typeof ajv.compile>;
+    try {
+      validate = ajv.compile(schema);
+    } catch (compileError) {
+      throw new Error(
+        `Invalid schema provided to toMatchJsonSchema: ${compileError instanceof Error ? compileError.message : String(compileError)}`
+      );
+    }
+
     const isValid = validate(received);
 
     return {
@@ -63,9 +119,12 @@ expect.extend({
         if (isValid) {
           return `Expected ${JSON.stringify(received)} NOT to match schema`;
         } else {
-          const errors = validate.errors || [];
+          const errors: ErrorObject[] = validate.errors || [];
           const errorMessages = errors
-            .map((err) => `${err.instancePath || 'root'}: ${err.message}`)
+            .map(
+              (err: ErrorObject) =>
+                `${err.instancePath || 'root'}: ${err.message}`
+            )
             .join(', ');
           return `Expected ${JSON.stringify(received)} to match schema. Errors: ${errorMessages}`;
         }
@@ -99,25 +158,8 @@ expect.extend({
    * UUID validation matcher (supports v1, v3, v4, v5)
    */
   toBeValidUUID(received: unknown) {
-    // Explicit null/undefined handling
-    if (received === null) {
-      return {
-        pass: false,
-        message: () => 'Expected null to be a valid UUID, but received null',
-        actual: received,
-        expected: 'valid UUID v4 format',
-      };
-    }
-
-    if (received === undefined) {
-      return {
-        pass: false,
-        message: () =>
-          'Expected undefined to be a valid UUID, but received undefined',
-        actual: received,
-        expected: 'valid UUID v4 format',
-      };
-    }
+    const nullUndefinedResult = validateNullUndefined(received, 'a valid UUID');
+    if (nullUndefinedResult) return nullUndefinedResult;
 
     const isString = typeof received === 'string';
     const isValidUUID = isString && UUID_REGEX.test(received);
@@ -139,26 +181,11 @@ expect.extend({
    * Email validation matcher
    */
   toBeValidEmail(received: unknown) {
-    // Explicit null/undefined handling
-    if (received === null) {
-      return {
-        pass: false,
-        message: () =>
-          'Expected null to be a valid email address, but received null',
-        actual: received,
-        expected: 'valid email format',
-      };
-    }
-
-    if (received === undefined) {
-      return {
-        pass: false,
-        message: () =>
-          'Expected undefined to be a valid email address, but received undefined',
-        actual: received,
-        expected: 'valid email format',
-      };
-    }
+    const nullUndefinedResult = validateNullUndefined(
+      received,
+      'a valid email address'
+    );
+    if (nullUndefinedResult) return nullUndefinedResult;
 
     const isString = typeof received === 'string';
     const isValidEmail = isString && EMAIL_REGEX.test(received);
@@ -180,26 +207,11 @@ expect.extend({
    * ISO8601 datetime validation matcher
    */
   toBeValidISO8601(received: unknown) {
-    // Explicit null/undefined handling
-    if (received === null) {
-      return {
-        pass: false,
-        message: () =>
-          'Expected null to be a valid ISO8601 datetime, but received null',
-        actual: received,
-        expected: 'valid ISO8601 datetime format',
-      };
-    }
-
-    if (received === undefined) {
-      return {
-        pass: false,
-        message: () =>
-          'Expected undefined to be a valid ISO8601 datetime, but received undefined',
-        actual: received,
-        expected: 'valid ISO8601 datetime format',
-      };
-    }
+    const nullUndefinedResult = validateNullUndefined(
+      received,
+      'a valid ISO8601 datetime'
+    );
+    if (nullUndefinedResult) return nullUndefinedResult;
 
     const isString = typeof received === 'string';
     const isValidISO8601 = isString && ISO8601_REGEX.test(received);
@@ -221,26 +233,11 @@ expect.extend({
    * JSON validation matcher
    */
   toBeValidJSON(received: unknown) {
-    // Explicit null/undefined handling
-    if (received === null) {
-      return {
-        pass: false,
-        message: () =>
-          'Expected null to be a valid JSON string, but received null',
-        actual: received,
-        expected: 'valid JSON string',
-      };
-    }
-
-    if (received === undefined) {
-      return {
-        pass: false,
-        message: () =>
-          'Expected undefined to be a valid JSON string, but received undefined',
-        actual: received,
-        expected: 'valid JSON string',
-      };
-    }
+    const nullUndefinedResult = validateNullUndefined(
+      received,
+      'a valid JSON string'
+    );
+    if (nullUndefinedResult) return nullUndefinedResult;
 
     const isString = typeof received === 'string';
 

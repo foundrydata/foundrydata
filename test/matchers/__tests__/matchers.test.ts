@@ -11,8 +11,8 @@
 
 import { describe, test, expect, beforeAll } from 'vitest';
 import fc from 'fast-check';
-import '../index.ts'; // Import to register matchers
-import { getAjv, createAjv } from '../../helpers/ajv-factory.ts';
+import '../index'; // Import to register matchers
+import { getAjv, createAjv } from '../../helpers/ajv-factory';
 import type { AnySchema } from 'ajv';
 
 // ================================================================================
@@ -151,6 +151,44 @@ describe('toMatchJsonSchema', () => {
 
     // Test that it falls back to default AJV when no draft is specified
     expect(validUUID).toMatchJsonSchema(schema);
+  });
+
+  test('should throw error for invalid schemas', () => {
+    const validData = { name: 'Alice' };
+
+    // Test null schema
+    expect(() => expect(validData).toMatchJsonSchema(null as any)).toThrow(
+      'Invalid schema provided to toMatchJsonSchema: expected object, got object'
+    );
+
+    // Test undefined schema
+    expect(() => expect(validData).toMatchJsonSchema(undefined as any)).toThrow(
+      'Invalid schema provided to toMatchJsonSchema: expected object, got undefined'
+    );
+
+    // Test primitive schema
+    expect(() =>
+      expect(validData).toMatchJsonSchema('not-a-schema' as any)
+    ).toThrow(
+      'Invalid schema provided to toMatchJsonSchema: expected object, got string'
+    );
+
+    // Test number schema
+    expect(() => expect(validData).toMatchJsonSchema(42 as any)).toThrow(
+      'Invalid schema provided to toMatchJsonSchema: expected object, got number'
+    );
+
+    // Test array schema
+    expect(() =>
+      expect(validData).toMatchJsonSchema(['not', 'a', 'schema'] as any)
+    ).toThrow(
+      'Invalid schema provided to toMatchJsonSchema: schema cannot be an array'
+    );
+
+    // Test malformed schema that AJV can't compile
+    expect(() =>
+      expect(validData).toMatchJsonSchema({ type: 'invalid-type' } as any)
+    ).toThrow('Invalid schema provided to toMatchJsonSchema:');
   });
 });
 
