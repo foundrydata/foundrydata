@@ -8,7 +8,9 @@
   "include": [
     "packages/*/src/**/*.ts",
     "packages/*/src/**/*.test.ts",
-    "packages/*/src/**/*.spec.ts"
+    "packages/*/src/**/*.spec.ts",
+    "test/**/*.ts",
+    "types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",
