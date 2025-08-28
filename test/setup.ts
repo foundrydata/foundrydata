@@ -57,17 +57,8 @@ export function configureFastCheck(): void {
     seed: testSeed,
     numRuns,
     verbose: process.env.NODE_ENV === 'development' ? 2 : 1,
-    asyncReporter: async (report) => {
-      if (report.failed) {
-        console.error('❌ Fast-check property test failed:', {
-          seed: report.seed,
-          counterExample: report.counterexample,
-          shrunkCounterExample: report.counterexamplePath,
-          numRuns: report.numRuns,
-          numSkips: report.numSkips,
-        });
-      }
-    },
+    // Disable asyncReporter to allow synchronous fc.assert() usage
+    asyncReporter: undefined,
   });
 
   // Log configuration for debugging
@@ -152,7 +143,7 @@ export function createAjvValidator(draft: SupportedDraft = 'draft-07'): Ajv {
     verbose: true, // Include schema and data in errors
 
     // Performance optimizations
-    cache: true,
+    // cache: true, // Not available in AJV options
     // loadSchema disabled for testing (no async schema loading)
 
     // Deterministic behavior
