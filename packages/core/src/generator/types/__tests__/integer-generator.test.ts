@@ -1317,7 +1317,7 @@ describe('IntegerGenerator', () => {
         // Should use DEFAULT_INTEGER_MIN and DEFAULT_INTEGER_MAX bounds
         expect(result.value).toBeGreaterThanOrEqual(-1000000);
         expect(result.value).toBeLessThanOrEqual(1000000);
-        expect(result.value % 3).toBe(0);
+        expect(Math.abs(result.value % 3)).toBe(0);
       }
     });
 
