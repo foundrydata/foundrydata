@@ -380,6 +380,30 @@ When facing TypeScript errors in tests:
 
 **Philosophy**: TypeScript errors often reveal multiple issues. Fix them all properly rather than silencing symptoms.
 
+### CRITICAL: Investigate Before Deletion
+**When code appears unused or broken, ALWAYS investigate its intended purpose before deletion.**
+
+**The "Easy Way Out" Anti-Pattern:**
+- ❌ See unused variable → Delete it immediately
+- ❌ See failing test → Comment it out
+- ❌ See complex code → Simplify without understanding purpose
+
+**The Proper Investigation Process:**
+1. **Understand the intended functionality** - What was this code supposed to do?
+2. **Check if it's actually unused** - Is it part of an incomplete implementation?
+3. **Verify test coverage** - Does a test exist but isn't properly implemented?
+4. **Fix the underlying issue** - Implement the missing functionality properly
+5. **Only then consider deletion** - If truly unused after investigation
+
+**Real Example from Metamorphic Testing:**
+- **Problem**: Variables `shortRuns` and `longRun` appeared unused
+- **Easy way**: Delete the variables
+- **Investigation revealed**: Test was called "prefix stability" but wasn't testing that property
+- **Proper fix**: Implement the actual prefix stability test using those variables
+- **Result**: Working metamorphic property test instead of deleted code
+
+**Key Insight**: "Unused" code often indicates incomplete implementations, not unnecessary code.
+
 ## Code Quality
 
 **ALWAYS maintain high code quality standards:**
