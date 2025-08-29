@@ -31,7 +31,28 @@ packages/
 │   ├── registry/            # Extensibility (format, type, validator registries)
 │   └── types/               # Core types (Schema, Result, errors)
 ├── cli/                     # CLI application (Commander.js)
+├── shared/                  # Shared utilities and types
 └── api/                     # REST API (future)
+```
+
+### Test Structure
+```
+test/                                        # Global tests
+├── arbitraries/                            # Fast-check generators
+│   ├── json-schema.ts                     # Draft-aware arbitraries
+│   └── business.ts
+├── fixtures/                               # Test data
+├── helpers/                                # Utilities
+│   └── ajv-factory.ts                     # AJV by draft
+├── matchers/                               # Custom Vitest matchers
+├── patterns/                               # Pattern tests
+│   ├── invariant-testing.test.ts
+│   ├── metamorphic-testing.test.ts
+│   └── stateful-testing.test.ts
+├── performance/                            # Benchmarks
+├── setup.ts                                # Global config
+├── global-setup.ts                         # Before all tests
+└── global-teardown.ts                      # After all tests
 ```
 
 ### Module System
