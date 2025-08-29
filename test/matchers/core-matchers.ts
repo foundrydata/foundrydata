@@ -60,10 +60,10 @@ const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
- * Email validation regex (basic)
- * More comprehensive than simple @ check, less strict than full RFC 5322
+ * Email validation using AJV format validation for consistency
+ * Uses RFC 5322 compliant validation via ajv-formats
  */
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_SCHEMA = { type: 'string', format: 'email' } as const;
 
 /**
  * ISO8601 datetime validation regex
@@ -78,6 +78,41 @@ const ISO8601_REGEX =
 
 /**
  * JSON Schema validation matcher using cached AJV
+ *
+ * Validates data against a JSON Schema using AJV with multi-draft support.
+ * Uses cached AJV instances for optimal performance in test suites.
+ *
+ * @param received - The value to validate against the schema
+ * @param schema - JSON Schema object to validate against
+ * @param draft - Optional JSON Schema draft version to use.
+ *                When not specified, uses the default draft-07.
+ *                Supported drafts: 'draft-07', '2019-09', '2020-12'
+ *
+ *                Use cases for specifying draft:
+ *                - Testing schemas with draft-specific features (e.g., unevaluatedProperties in 2020-12)
+ *                - Validating compatibility across different schema versions
+ *                - Working with API specifications that require specific drafts (OpenAPI 3.1 = 2020-12)
+ *                - Format validation differences (uuid is assertive in 2019-09+ but annotative in draft-07)
+ *
+ * @returns Matcher result object with pass/fail status and descriptive messages
+ *
+ * @example
+ * ```typescript
+ * // Basic usage with default draft-07
+ * expect(data).toMatchJsonSchema({ type: 'string' });
+ *
+ * // Specify draft for format assertions
+ * expect('not-a-uuid').toMatchJsonSchema(
+ *   { type: 'string', format: 'uuid' },
+ *   '2019-09' // Will fail validation
+ * );
+ *
+ * // Test draft-specific features
+ * expect(data).toMatchJsonSchema(
+ *   { type: 'object', unevaluatedProperties: false },
+ *   '2020-12'
+ * );
+ * ```
  */
 // eslint-disable-next-line max-lines-per-function -- Complex validation logic requires detailed error handling
 function toMatchJsonSchema(
@@ -197,7 +232,7 @@ function toBeValidUUID(received: unknown): {
 }
 
 /**
- * Email validation matcher
+ * Email validation matcher using AJV format validation
  */
 function toBeValidEmail(received: unknown): {
   pass: boolean;
@@ -211,16 +246,32 @@ function toBeValidEmail(received: unknown): {
   );
   if (nullUndefinedResult) return nullUndefinedResult;
 
-  const isString = typeof received === 'string';
-  const isValidEmail = isString && EMAIL_REGEX.test(received);
+  if (typeof received !== 'string') {
+    return {
+      pass: false,
+      message: () =>
+        `Expected ${JSON.stringify(received)} to be a string, but got ${typeof received}`,
+      actual: received,
+      expected: 'valid email format',
+    };
+  }
+
+  // Use AJV for consistent email validation
+  const ajv = getAjv();
+  const validate = ajv.compile(EMAIL_SCHEMA);
+  const isValidEmail = validate(received);
 
   return {
-    pass: isValidEmail,
+    pass: Boolean(isValidEmail),
     message: () => {
-      if (!isString) {
-        return `Expected ${JSON.stringify(received)} to be a string, but got ${typeof received}`;
+      if (isValidEmail) {
+        return `Expected "${received}" NOT to be a valid email address`;
       }
-      return `Expected "${received}" to be a valid email address`;
+      const errors = validate.errors || [];
+      const errorMessages = errors
+        .map((err) => `${err.instancePath || 'root'}: ${err.message}`)
+        .join(', ');
+      return `Expected "${received}" to be a valid email address. Errors: ${errorMessages}`;
     },
     actual: received,
     expected: 'valid email format',
