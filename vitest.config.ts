@@ -155,9 +155,6 @@ export default defineConfig({
     // Projects configuration for monorepo - each package is a project
     projects: ['packages/*'],
 
-    // Workspace configuration
-    workspace: 'vitest.workspace.ts', // Will be created if needed
-
     // ========================================================================
     // DEBUGGING AND DEVELOPMENT
     // ========================================================================
