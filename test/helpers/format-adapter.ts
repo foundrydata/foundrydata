@@ -10,7 +10,7 @@
  * ================================================================================
  */
 
-import { getAjv, type JsonSchemaDraft } from './ajv-factory';
+import { createAjv, type JsonSchemaDraft } from './ajv-factory';
 import {
   FormatRegistry,
   type FormatOptions,
@@ -115,7 +115,7 @@ export class FormatAdapter {
     } as const;
 
     try {
-      const ajv = getAjv(draft);
+      const ajv = createAjv(draft);
       const validate = ajv.compile(schema);
       return validate(value);
     } catch {
@@ -250,7 +250,7 @@ export class FormatAdapter {
     draft: JsonSchemaDraft = this.defaultDraft
   ): boolean {
     try {
-      const ajv = getAjv(draft);
+      const ajv = createAjv(draft);
       const schema = { type: 'string', format: ajvFormat } as const;
       ajv.compile(schema); // Will throw if format not supported
       return true;

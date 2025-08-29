@@ -16,12 +16,8 @@
  */
 
 import fc from 'fast-check';
-import Ajv from 'ajv';
-import Ajv2019 from 'ajv/dist/2019';
-import Ajv2020 from 'ajv/dist/2020';
-import addFormats from 'ajv-formats';
-import addFormats2019 from 'ajv-formats-draft2019';
 import { beforeAll, afterAll } from 'vitest';
+import { createAjv, type JsonSchemaDraft } from './helpers/ajv-factory';
 
 // ============================================================================
 // CONSTANTS AND CONFIGURATION
@@ -71,100 +67,26 @@ export function configureFastCheck(): void {
 }
 
 // ============================================================================
-// AJV JSON SCHEMA VALIDATOR FACTORY
+// AJV JSON SCHEMA VALIDATOR FACTORY (UNIFIED WITH ajv-factory.ts)
 // ============================================================================
 
 /**
- * Cached AJV validators by draft version
+ * Schema cache for compiled validators
  * WeakMap provides automatic garbage collection when schemas are no longer referenced
  */
-const ajvCache = new Map<string, Ajv>();
 const schemaCache = new WeakMap<object, any>();
 
-/**
- * JSON Schema draft configurations
- * Each draft has specific AJV class, format validation behaviors and vocabulary
- */
-const SCHEMA_DRAFTS = {
-  'draft-07': {
-    AjvClass: Ajv, // Default AJV supports draft-07
-    formatValidation: true,
-    strictTypes: true,
-    strictTuples: false, // More lenient for draft-07 compatibility
-    addFormatsFunc: addFormats, // Standard ajv-formats
-  },
-  '2019-09': {
-    AjvClass: Ajv2019, // Specific AJV class for 2019-09
-    formatValidation: true,
-    strictTypes: true,
-    strictTuples: true,
-    addFormatsFunc: addFormats2019, // Draft-2019-09 specific formats
-  },
-  '2020-12': {
-    AjvClass: Ajv2020, // Specific AJV class for 2020-12
-    formatValidation: true,
-    strictTypes: true,
-    strictTuples: true,
-    addFormatsFunc: addFormats, // Standard ajv-formats works with 2020-12
-  },
-} as const;
-
-export type SupportedDraft = keyof typeof SCHEMA_DRAFTS;
+export type SupportedDraft = JsonSchemaDraft;
 
 /**
- * Create and cache AJV validator for specific JSON Schema draft
+ * Create AJV validator using unified ajv-factory system
  * Provides 100% schema compliance validation as testing oracle
  *
  * @param draft - JSON Schema draft version
  * @returns Configured AJV instance
  */
-export function createAjvValidator(draft: SupportedDraft = 'draft-07'): Ajv {
-  const cacheKey = draft;
-
-  if (ajvCache.has(cacheKey)) {
-    return ajvCache.get(cacheKey)!;
-  }
-
-  const config = SCHEMA_DRAFTS[draft];
-
-  // Use the appropriate AJV class for the draft
-  const ajv = new config.AjvClass({
-    // Schema validation strictness
-    strict: true,
-    strictTypes: config.strictTypes,
-    strictTuples: config.strictTuples,
-
-    // Format validation behavior
-    validateFormats: config.formatValidation,
-    addUsedSchema: false, // Prevent automatic schema registration
-
-    // Error reporting
-    allErrors: true, // Collect all validation errors
-    verbose: true, // Include schema and data in errors
-
-    // Performance optimizations
-    // cache: true, // Not available in AJV options
-    // loadSchema disabled for testing (no async schema loading)
-
-    // Deterministic behavior
-    removeAdditional: false, // Don't modify input data
-    useDefaults: false, // Don't apply default values
-    coerceTypes: false, // Strict type validation
-  });
-
-  // Add format validators using the appropriate function for the draft
-  config.addFormatsFunc(ajv);
-
-  // Cache the configured instance
-  ajvCache.set(cacheKey, ajv);
-
-  console.log(`📋 AJV validator created for ${draft}:`, {
-    ajvClass: config.AjvClass.name,
-    strictTypes: config.strictTypes,
-    formatValidation: config.formatValidation,
-  });
-
-  return ajv;
+export function createAjvValidator(draft: SupportedDraft = 'draft-07') {
+  return createAjv(draft);
 }
 
 /**
@@ -242,9 +164,9 @@ beforeAll(async () => {
 
   // Pre-warm AJV validators for common drafts
   console.log('🔥 Pre-warming AJV validators...');
-  createAjvValidator('draft-07');
-  createAjvValidator('2019-09');
-  createAjvValidator('2020-12');
+  createAjv('draft-07');
+  createAjv('2019-09');
+  createAjv('2020-12');
 
   console.log('✅ Global test setup complete');
   console.log('================================================');
@@ -256,9 +178,6 @@ beforeAll(async () => {
  */
 afterAll(async () => {
   console.log('🏁 Global test teardown');
-
-  // Clear AJV cache to free memory
-  ajvCache.clear();
 
   // Display final test configuration summary
   console.log('📊 Test session summary:', {
@@ -285,7 +204,7 @@ export function getTestConfig() {
     numRuns,
     isCI,
     environment: process.env.NODE_ENV || 'test',
-    supportedDrafts: Object.keys(SCHEMA_DRAFTS) as SupportedDraft[],
+    supportedDrafts: ['draft-07', '2019-09', '2020-12'] as SupportedDraft[],
   };
 }
 

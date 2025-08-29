@@ -11,7 +11,6 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import fc from 'fast-check';
 import {
   FormatAdapter,
-  defaultFormatAdapter,
   validateFormat,
   generateFormat,
   supportsFormat,
@@ -21,8 +20,7 @@ import {
   FormatRegistry,
   type FormatGenerator,
 } from '../../../packages/core/src/registry/format-registry';
-import { ok, err } from '../../../packages/core/src/types/result';
-import { GenerationError } from '../../../packages/core/src/types/errors';
+import { ok } from '../../../packages/core/src/types/result';
 
 // Mock format generator for testing
 class MockUUIDGenerator implements FormatGenerator {
