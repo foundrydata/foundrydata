@@ -34,6 +34,7 @@ import {
   simpleSchemaArbitrary,
 } from '../arbitraries/json-schema.js';
 import { validateAgainstSchema, getTestConfig } from '../setup.js';
+import { FormatAdapter } from '../helpers/format-adapter.js';
 
 // ============================================================================
 // CONFIGURATION AND UTILITIES
@@ -47,6 +48,9 @@ const ORACLE_SEED = 424242;
 
 /** Performance threshold: Oracle shouldn't be slower than 2x our validator */
 const PERFORMANCE_THRESHOLD_MULTIPLIER = 2.0;
+
+/** FormatAdapter instance for AJV-consistent format handling */
+const formatAdapter = new FormatAdapter();
 
 /**
  * Get the current draft from environment or default
@@ -934,14 +938,46 @@ function generateValidTestData(
         : 10;
     const targetLength = Math.max(minLength, Math.min(maxLength, 8));
 
-    if (schema.format === 'uuid') {
-      return 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
-    }
-    if (schema.format === 'email') {
-      return 'test@example.com';
-    }
-    if (schema.format === 'date-time') {
-      return '2023-12-25T10:30:00Z';
+    // Use FormatAdapter for format-specific generation when available
+    if (schema.format && typeof schema.format === 'string') {
+      const currentDraft = getCurrentDraft();
+      const formatResult = formatAdapter.generate(schema.format, {
+        draft: currentDraft,
+        formatOptions: { seed },
+      });
+
+      // If FormatAdapter can generate the format, use it
+      if (formatResult.isOk()) {
+        const generatedValue = formatResult.value;
+        // Ensure generated value respects string length constraints
+        // eslint-disable-next-line max-depth -- Format validation logic requires deep nesting for correctness
+        if (
+          generatedValue.length >= minLength &&
+          generatedValue.length <= maxLength
+        ) {
+          return generatedValue;
+        }
+      }
+
+      // Fallback to known valid examples for common formats
+      if (schema.format === 'uuid') {
+        return 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+      }
+      if (schema.format === 'email') {
+        return 'test@example.com';
+      }
+      if (schema.format === 'date-time') {
+        return '2023-12-25T10:30:00Z';
+      }
+      if (schema.format === 'uri') {
+        return 'https://example.com';
+      }
+      if (schema.format === 'ipv4') {
+        return '192.168.1.1';
+      }
+      if (schema.format === 'ipv6') {
+        return '2001:0db8:85a3:0000:0000:8a2e:0370:7334';
+      }
     }
 
     return 'test_' + 'x'.repeat(Math.max(0, targetLength - 5));
@@ -1019,12 +1055,51 @@ function generateInvalidTestData(schema: Record<string, unknown>): unknown {
     if (typeof schema.maxLength === 'number') {
       return 'x'.repeat(schema.maxLength + 1); // Too long
     }
-    if (schema.format === 'uuid') {
-      return 'not-a-uuid';
+
+    // Use FormatAdapter to determine format-specific invalid values
+    if (schema.format && typeof schema.format === 'string') {
+      const currentDraft = getCurrentDraft();
+
+      // Generate invalid values that fail FormatAdapter validation
+      const invalidCandidates = [
+        'invalid-format-value',
+        'not-a-valid-format',
+        '123-invalid',
+        '',
+        ' ',
+        'x'.repeat(100),
+      ];
+
+      // Find an invalid value that FormatAdapter correctly rejects
+      for (const candidate of invalidCandidates) {
+        // eslint-disable-next-line max-depth -- Format validation logic requires deep nesting for correctness
+        if (
+          !formatAdapter.validate(schema.format, candidate, {
+            draft: currentDraft,
+          })
+        ) {
+          return candidate;
+        }
+      }
+
+      // Fallback to known invalid examples for common formats
+      if (schema.format === 'uuid') {
+        return 'not-a-uuid';
+      }
+      if (schema.format === 'email') {
+        return 'not-an-email';
+      }
+      if (schema.format === 'date-time') {
+        return 'not-a-datetime';
+      }
+      if (schema.format === 'uri') {
+        return 'not-a-uri';
+      }
+      if (schema.format === 'ipv4') {
+        return 'not-an-ip';
+      }
     }
-    if (schema.format === 'email') {
-      return 'not-an-email';
-    }
+
     return 123; // Wrong type
   }
 
