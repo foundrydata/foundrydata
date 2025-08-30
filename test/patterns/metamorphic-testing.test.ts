@@ -802,6 +802,191 @@ describe('Metamorphic Testing Pattern', () => {
     });
   });
 
+  describe('EXPLICIT METAMORPHIC RELATIONS (MR1, MR2, MR3)', () => {
+    test('MR1: schema with minLength:10 generates ⊆ schema with minLength:5', () => {
+      const currentDraft = getCurrentDraft();
+
+      // Test with concrete values for MR1 relation
+      const restrictiveSchema = {
+        type: 'string',
+        minLength: 10,
+        maxLength: 20,
+      };
+
+      const relaxedSchema = {
+        type: 'string',
+        minLength: 5,
+        maxLength: 20,
+      };
+
+      fc.assert(
+        fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
+          // Generate data valid for the restrictive schema
+          const testData = 'test_string_' + seed.toString().padStart(3, '0'); // At least 10 characters
+
+          // Verify data is valid for restrictive schema
+          const restrictiveResult = validateAgainstSchema(
+            testData,
+            restrictiveSchema,
+            currentDraft
+          );
+
+          if (restrictiveResult.valid) {
+            // Test metamorphic relation: data valid for minLength:10
+            // must be valid for minLength:5
+            const relaxedResult = validateAgainstSchema(
+              testData,
+              relaxedSchema,
+              currentDraft
+            );
+
+            if (!relaxedResult.valid) {
+              logMetamorphicContext({
+                seed,
+                originalSchema: restrictiveSchema,
+                relaxedSchema,
+                data: testData,
+                relation: 'MR1: minLength:10 ⊆ minLength:5',
+                errors: relaxedResult.errors,
+              });
+            }
+
+            expect(relaxedResult.valid).toBe(true);
+          }
+        }),
+        {
+          seed: config.seed,
+          numRuns: 25,
+          verbose: true,
+        }
+      );
+    });
+
+    test('MR2: type:"string" generates ⊆ type:["string","null"]', () => {
+      const currentDraft = getCurrentDraft();
+
+      // Test with concrete values for MR2 relation
+      const restrictiveSchema = {
+        type: 'string',
+      };
+
+      const relaxedSchema = {
+        type: ['string', 'null'],
+      };
+
+      fc.assert(
+        fc.property(
+          fc.string({ minLength: 1, maxLength: 10 }),
+          (testString) => {
+            // Verify string data is valid for type:'string'
+            const restrictiveResult = validateAgainstSchema(
+              testString,
+              restrictiveSchema,
+              currentDraft
+            );
+
+            if (restrictiveResult.valid) {
+              // Test metamorphic relation: data valid for type:'string'
+              // must be valid for type:['string','null']
+              const relaxedResult = validateAgainstSchema(
+                testString,
+                relaxedSchema,
+                currentDraft
+              );
+
+              if (!relaxedResult.valid) {
+                logMetamorphicContext({
+                  seed: config.seed,
+                  originalSchema: restrictiveSchema,
+                  relaxedSchema,
+                  data: testString,
+                  relation: 'MR2: type:"string" ⊆ type:["string","null"]',
+                  errors: relaxedResult.errors,
+                });
+              }
+
+              expect(relaxedResult.valid).toBe(true);
+            }
+          }
+        ),
+        {
+          seed: config.seed,
+          numRuns: 20,
+          verbose: true,
+        }
+      );
+    });
+
+    test('MR3: additionalProperties:false generates ⊆ additionalProperties:true', () => {
+      const currentDraft = getCurrentDraft();
+
+      // Test with concrete values for MR3 relation
+      const restrictiveSchema = {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          age: { type: 'number' },
+        },
+        additionalProperties: false,
+      };
+
+      const relaxedSchema = {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          age: { type: 'number' },
+        },
+        additionalProperties: true,
+      };
+
+      fc.assert(
+        fc.property(
+          fc.record({
+            name: fc.string({ minLength: 1, maxLength: 10 }),
+            age: fc.float({ min: 0, max: 100 }),
+          }),
+          (testObject) => {
+            // Verify object is valid for additionalProperties:false
+            const restrictiveResult = validateAgainstSchema(
+              testObject,
+              restrictiveSchema,
+              currentDraft
+            );
+
+            if (restrictiveResult.valid) {
+              // Test metamorphic relation: data valid for additionalProperties:false
+              // must be valid for additionalProperties:true
+              const relaxedResult = validateAgainstSchema(
+                testObject,
+                relaxedSchema,
+                currentDraft
+              );
+
+              if (!relaxedResult.valid) {
+                logMetamorphicContext({
+                  seed: config.seed,
+                  originalSchema: restrictiveSchema,
+                  relaxedSchema,
+                  data: testObject,
+                  relation:
+                    'MR3: additionalProperties:false ⊆ additionalProperties:true',
+                  errors: relaxedResult.errors,
+                });
+              }
+
+              expect(relaxedResult.valid).toBe(true);
+            }
+          }
+        ),
+        {
+          seed: config.seed,
+          numRuns: 20,
+          verbose: true,
+        }
+      );
+    });
+  });
+
   describe('Environment-based draft testing', () => {
     test(`metamorphic properties hold for current draft: ${getCurrentDraft()}`, () => {
       const currentDraft = getCurrentDraft();
