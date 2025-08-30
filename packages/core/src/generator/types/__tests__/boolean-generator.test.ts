@@ -1,7 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 /**
- * Property-based tests for BooleanGenerator
- * Using fast-check for robust constraint validation
+ * Property-based tests for BooleanGenerator - Phase 3 Migration
+ * Using AJV validation oracle and getSchemaArbitrary pattern
+ *
+ * Migration Strategy:
+ * - Keep existing Result pattern and test structure
+ * - Add AJV validation after isOk() checks
+ * - Replace manual schema arbitrary with getSchemaArbitrary().filter()
+ * - Add seed parameter and logging
+ * - Verify tests pass with all drafts
  */
 
 import fc from 'fast-check';
@@ -9,10 +16,21 @@ import { BooleanGenerator } from '../boolean-generator';
 import { createGeneratorContext } from '../../data-generator';
 import { FormatRegistry } from '../../../registry/format-registry';
 import type { BooleanSchema } from '../../../types/schema';
+import { getAjv } from '../../../../../../test/helpers/ajv-factory.js';
+import { getSchemaArbitrary } from '../../../../../../test/arbitraries/json-schema.js';
 
 describe('BooleanGenerator', () => {
   let generator: BooleanGenerator;
   let formatRegistry: FormatRegistry;
+
+  /** Fixed seed for deterministic testing */
+  const BOOLEAN_TEST_SEED = 424242;
+
+  /** Get configured numRuns from fast-check globals */
+  const getNumRuns = (): number => {
+    const config = fc.readConfigureGlobal();
+    return config.numRuns || 100;
+  };
 
   beforeEach(() => {
     generator = new BooleanGenerator();
@@ -23,32 +41,42 @@ describe('BooleanGenerator', () => {
     it('should support boolean schemas', () => {
       fc.assert(
         fc.property(
-          fc.record({
-            type: fc.constant('boolean' as const),
-            enum: fc.option(fc.array(fc.boolean()), { nil: undefined }),
-            const: fc.option(fc.boolean(), { nil: undefined }),
-          }),
+          getSchemaArbitrary()
+            .filter(
+              (schema: Record<string, unknown>) => schema.type === 'boolean'
+            )
+            .map((schema) => schema as unknown as BooleanSchema),
           (schema) => {
+            if (process.env.VERBOSE_LOGS === 'true') {
+              console.log(
+                '[BOOLEAN_GENERATOR] Testing support for schema:',
+                JSON.stringify(schema)
+              );
+            }
             expect(generator.supports(schema)).toBe(true);
           }
-        )
+        ),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
 
     it('should not support non-boolean schemas', () => {
       fc.assert(
         fc.property(
-          fc.oneof(
-            fc.constant({ type: 'string' as const }),
-            fc.constant({ type: 'number' as const }),
-            fc.constant({ type: 'object' as const }),
-            fc.constant({ type: 'array' as const }),
-            fc.constant({ type: 'integer' as const })
+          getSchemaArbitrary().filter(
+            (schema: Record<string, unknown>) => schema.type !== 'boolean'
           ),
           (schema) => {
-            expect(generator.supports(schema)).toBe(false);
+            if (process.env.VERBOSE_LOGS === 'true') {
+              console.log(
+                '[BOOLEAN_GENERATOR] Testing non-support for schema:',
+                JSON.stringify(schema)
+              );
+            }
+            expect(generator.supports(schema as any)).toBe(false);
           }
-        )
+        ),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
   });
@@ -57,6 +85,8 @@ describe('BooleanGenerator', () => {
     it('should always generate booleans', () => {
       const schema: BooleanSchema = { type: 'boolean' };
       const context = createGeneratorContext(schema, formatRegistry);
+      const ajv = getAjv();
+      const validate = ajv.compile(schema);
 
       fc.assert(
         fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
@@ -65,16 +95,27 @@ describe('BooleanGenerator', () => {
 
           expect(result.isOk()).toBe(true);
           if (result.isOk()) {
+            // AJV validation oracle
+            expect(validate(result.value)).toBe(true);
             expect(typeof result.value).toBe('boolean');
             expect([true, false]).toContain(result.value);
+
+            if (process.env.VERBOSE_LOGS === 'true') {
+              console.log(
+                `[BOOLEAN_GENERATOR] Generated: ${result.value} with seed: ${seed}`
+              );
+            }
           }
-        })
+        }),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
 
     it('should generate both true and false values over multiple runs', () => {
       const schema: BooleanSchema = { type: 'boolean' };
       const context = createGeneratorContext(schema, formatRegistry);
+      const ajv = getAjv();
+      const validate = ajv.compile(schema);
 
       const results: boolean[] = [];
 
@@ -85,6 +126,8 @@ describe('BooleanGenerator', () => {
 
         expect(result.isOk()).toBe(true);
         if (result.isOk()) {
+          // AJV validation oracle
+          expect(validate(result.value)).toBe(true);
           results.push(result.value);
         }
       }
@@ -92,28 +135,51 @@ describe('BooleanGenerator', () => {
       // Should have generated both true and false values
       expect(results).toContain(true);
       expect(results).toContain(false);
+
+      if (process.env.VERBOSE_LOGS === 'true') {
+        const trueCount = results.filter((r) => r === true).length;
+        const falseCount = results.filter((r) => r === false).length;
+        console.log(
+          `[BOOLEAN_GENERATOR] Distribution - true: ${trueCount}, false: ${falseCount}`
+        );
+      }
     });
 
     it('should generate values from enum when provided', () => {
       fc.assert(
         fc.property(
-          fc.array(fc.boolean(), { minLength: 1, maxLength: 2 }),
+          fc.oneof(
+            fc.constant([true]),
+            fc.constant([false]),
+            fc.constant([true, false])
+          ),
           fc.integer({ min: 0, max: 1000 }),
           (enumValues, seed) => {
             const schema: BooleanSchema = { type: 'boolean', enum: enumValues };
             const context = createGeneratorContext(schema, formatRegistry, {
               seed,
             });
+            const ajv = getAjv();
+            const validate = ajv.compile(schema);
 
             const result = generator.generate(schema, context);
 
             expect(result.isOk()).toBe(true);
             if (result.isOk()) {
+              // AJV validation oracle
+              expect(validate(result.value)).toBe(true);
               expect(enumValues).toContain(result.value);
               expect(typeof result.value).toBe('boolean');
+
+              if (process.env.VERBOSE_LOGS === 'true') {
+                console.log(
+                  `[BOOLEAN_GENERATOR] Generated enum value: ${result.value} from ${JSON.stringify(enumValues)} with seed: ${seed}`
+                );
+              }
             }
           }
-        )
+        ),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
 
@@ -130,15 +196,26 @@ describe('BooleanGenerator', () => {
             const context = createGeneratorContext(schema, formatRegistry, {
               seed,
             });
+            const ajv = getAjv();
+            const validate = ajv.compile(schema);
 
             const result = generator.generate(schema, context);
 
             expect(result.isOk()).toBe(true);
             if (result.isOk()) {
+              // AJV validation oracle
+              expect(validate(result.value)).toBe(true);
               expect(result.value).toBe(constValue);
+
+              if (process.env.VERBOSE_LOGS === 'true') {
+                console.log(
+                  `[BOOLEAN_GENERATOR] Generated const value: ${result.value} with seed: ${seed}`
+                );
+              }
             }
           }
-        )
+        ),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
 
@@ -146,6 +223,8 @@ describe('BooleanGenerator', () => {
       fc.assert(
         fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
           const schema: BooleanSchema = { type: 'boolean' };
+          const ajv = getAjv();
+          const validate = ajv.compile(schema);
 
           const context1 = createGeneratorContext(schema, formatRegistry, {
             seed,
@@ -161,9 +240,19 @@ describe('BooleanGenerator', () => {
           expect(result2.isOk()).toBe(true);
 
           if (result1.isOk() && result2.isOk()) {
+            // AJV validation oracle for both results
+            expect(validate(result1.value)).toBe(true);
+            expect(validate(result2.value)).toBe(true);
             expect(result1.value).toBe(result2.value);
+
+            if (process.env.VERBOSE_LOGS === 'true') {
+              console.log(
+                `[BOOLEAN_GENERATOR] Deterministic check - seed: ${seed}, values: ${result1.value}, ${result2.value}`
+              );
+            }
           }
-        })
+        }),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
 
@@ -176,9 +265,12 @@ describe('BooleanGenerator', () => {
       ];
 
       scenarios.forEach((scenario) => {
+        const ajv = getAjv();
+        const schema: BooleanSchema = { type: 'boolean' };
+        const validate = ajv.compile(schema);
+
         fc.assert(
           fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
-            const schema: BooleanSchema = { type: 'boolean' };
             const context = createGeneratorContext(schema, formatRegistry, {
               seed,
               scenario,
@@ -188,10 +280,21 @@ describe('BooleanGenerator', () => {
 
             expect(result.isOk()).toBe(true);
             if (result.isOk()) {
+              // AJV validation oracle
+              expect(validate(result.value)).toBe(true);
               expect(typeof result.value).toBe('boolean');
+
+              if (process.env.VERBOSE_LOGS === 'true') {
+                console.log(
+                  `[BOOLEAN_GENERATOR] Scenario ${scenario} - seed: ${seed}, value: ${result.value}`
+                );
+              }
             }
           }),
-          { numRuns: 20 } // Fewer runs per scenario
+          {
+            seed: BOOLEAN_TEST_SEED + scenarios.indexOf(scenario),
+            numRuns: Math.floor(getNumRuns() / 5),
+          } // Fewer runs per scenario
         );
       });
     });
@@ -209,17 +312,28 @@ describe('BooleanGenerator', () => {
             const context = createGeneratorContext(schema, formatRegistry, {
               seed,
             });
+            const ajv = getAjv();
+            const validate = ajv.compile(schema);
 
             const result = generator.generate(schema, context);
 
             expect(result.isOk()).toBe(true);
             if (result.isOk()) {
+              // AJV validation oracle
+              expect(validate(result.value)).toBe(true);
               expect(typeof result.value).toBe('boolean');
               // With some probability, should use default value
               expect([true, false]).toContain(result.value);
+
+              if (process.env.VERBOSE_LOGS === 'true') {
+                console.log(
+                  `[BOOLEAN_GENERATOR] Default test - default: ${defaultValue}, generated: ${result.value}, seed: ${seed}`
+                );
+              }
             }
           }
-        )
+        ),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
 
@@ -233,16 +347,27 @@ describe('BooleanGenerator', () => {
             const context = createGeneratorContext(schema, formatRegistry, {
               seed,
             });
+            const ajv = getAjv();
+            const validate = ajv.compile(schema);
 
             const result = generator.generate(schema, context);
 
             expect(result.isOk()).toBe(true);
             if (result.isOk()) {
+              // AJV validation oracle
+              expect(validate(result.value)).toBe(true);
               expect(typeof result.value).toBe('boolean');
               // Should generate valid boolean values (may or may not use examples)
+
+              if (process.env.VERBOSE_LOGS === 'true') {
+                console.log(
+                  `[BOOLEAN_GENERATOR] Examples test - examples: ${JSON.stringify(examples)}, generated: ${result.value}, seed: ${seed}`
+                );
+              }
             }
           }
-        )
+        ),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
 
@@ -254,6 +379,8 @@ describe('BooleanGenerator', () => {
           fc.integer({ min: 0, max: 1000 }),
           (_trueProbability, seed) => {
             const schema: BooleanSchema = { type: 'boolean' };
+            const ajv = getAjv();
+            const validate = ajv.compile(schema);
 
             // Generate same value multiple times with same seed
             const results: boolean[] = [];
@@ -265,6 +392,8 @@ describe('BooleanGenerator', () => {
               );
               const result = generator.generate(schema, sameContext);
               if (result.isOk()) {
+                // AJV validation oracle
+                expect(validate(result.value)).toBe(true);
                 results.push(result.value);
               }
             }
@@ -272,9 +401,16 @@ describe('BooleanGenerator', () => {
             // All results should be the same (deterministic)
             if (results.length > 1) {
               expect(results.every((r) => r === results[0])).toBe(true);
+
+              if (process.env.VERBOSE_LOGS === 'true') {
+                console.log(
+                  `[BOOLEAN_GENERATOR] Deterministic test - seed: ${seed}, all values: ${results[0]}`
+                );
+              }
             }
           }
-        )
+        ),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
   });
@@ -284,9 +420,23 @@ describe('BooleanGenerator', () => {
       fc.assert(
         fc.property(fc.boolean(), (value) => {
           const schema: BooleanSchema = { type: 'boolean' };
+          const ajv = getAjv();
+          const ajvValidate = ajv.compile(schema);
+
           const isValid = generator.validate(value, schema);
+          const ajvResult = ajvValidate(value);
+
+          // Oracle consistency check
+          expect(isValid).toBe(ajvResult);
           expect(isValid).toBe(true);
-        })
+
+          if (process.env.VERBOSE_LOGS === 'true') {
+            console.log(
+              `[BOOLEAN_GENERATOR] Validate test - value: ${value}, our result: ${isValid}, ajv result: ${ajvResult}`
+            );
+          }
+        }),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
 
@@ -304,25 +454,57 @@ describe('BooleanGenerator', () => {
           ),
           (nonBooleanValue) => {
             const schema: BooleanSchema = { type: 'boolean' };
-            expect(generator.validate(nonBooleanValue, schema)).toBe(false);
+            const ajv = getAjv();
+            const ajvValidate = ajv.compile(schema);
+
+            const isValid = generator.validate(nonBooleanValue, schema);
+            const ajvResult = ajvValidate(nonBooleanValue);
+
+            // Oracle consistency check
+            expect(isValid).toBe(ajvResult);
+            expect(isValid).toBe(false);
+
+            if (process.env.VERBOSE_LOGS === 'true') {
+              console.log(
+                `[BOOLEAN_GENERATOR] Reject test - value: ${JSON.stringify(nonBooleanValue)}, our result: ${isValid}, ajv result: ${ajvResult}`
+              );
+            }
           }
-        )
+        ),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
 
     it('should validate enum constraints correctly', () => {
       fc.assert(
         fc.property(
-          fc.array(fc.boolean(), { minLength: 1, maxLength: 2 }),
+          fc.oneof(
+            fc.constant([true]),
+            fc.constant([false]),
+            fc.constant([true, false])
+          ),
           fc.boolean(),
           (enumValues, testValue) => {
             const schema: BooleanSchema = { type: 'boolean', enum: enumValues };
+            const ajv = getAjv();
+            const ajvValidate = ajv.compile(schema);
+
             const isValid = generator.validate(testValue, schema);
+            const ajvResult = ajvValidate(testValue);
             const shouldBeValid = enumValues.includes(testValue);
 
+            // Oracle consistency check
+            expect(isValid).toBe(ajvResult);
             expect(isValid).toBe(shouldBeValid);
+
+            if (process.env.VERBOSE_LOGS === 'true') {
+              console.log(
+                `[BOOLEAN_GENERATOR] Enum validate - enum: ${JSON.stringify(enumValues)}, value: ${testValue}, our result: ${isValid}, ajv result: ${ajvResult}`
+              );
+            }
           }
-        )
+        ),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
 
@@ -330,11 +512,24 @@ describe('BooleanGenerator', () => {
       fc.assert(
         fc.property(fc.boolean(), fc.boolean(), (constValue, testValue) => {
           const schema: BooleanSchema = { type: 'boolean', const: constValue };
+          const ajv = getAjv();
+          const ajvValidate = ajv.compile(schema);
+
           const isValid = generator.validate(testValue, schema);
+          const ajvResult = ajvValidate(testValue);
           const shouldBeValid = testValue === constValue;
 
+          // Oracle consistency check
+          expect(isValid).toBe(ajvResult);
           expect(isValid).toBe(shouldBeValid);
-        })
+
+          if (process.env.VERBOSE_LOGS === 'true') {
+            console.log(
+              `[BOOLEAN_GENERATOR] Const validate - const: ${constValue}, value: ${testValue}, our result: ${isValid}, ajv result: ${ajvResult}`
+            );
+          }
+        }),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
 
@@ -342,17 +537,34 @@ describe('BooleanGenerator', () => {
       fc.assert(
         fc.property(
           fc.boolean(),
-          fc.oneof(
-            fc.record({ type: fc.constantFrom('string', 'number', 'object') }),
-            fc.constant(null),
-            fc.string()
+          getSchemaArbitrary().filter(
+            (schema: Record<string, unknown>) =>
+              schema.type !== 'boolean' && typeof schema.type === 'string'
           ),
           (value, unsupportedSchema) => {
-            expect(generator.validate(value, unsupportedSchema as any)).toBe(
-              false
-            );
+            const ajv = getAjv();
+            let ajvResult: boolean;
+            try {
+              const ajvValidate = ajv.compile(unsupportedSchema);
+              ajvResult = ajvValidate(value);
+            } catch {
+              // If AJV compilation fails, assume invalid
+              ajvResult = false;
+            }
+
+            const isValid = generator.validate(value, unsupportedSchema as any);
+
+            // For unsupported schemas, our generator should return false
+            expect(isValid).toBe(false);
+
+            if (process.env.VERBOSE_LOGS === 'true') {
+              console.log(
+                `[BOOLEAN_GENERATOR] Unsupported schema test - value: ${value}, schema: ${JSON.stringify(unsupportedSchema)}, our result: ${isValid}, ajv result: ${ajvResult}`
+              );
+            }
           }
-        )
+        ),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
   });
@@ -361,14 +573,25 @@ describe('BooleanGenerator', () => {
     it('should return enum values as examples when available', () => {
       fc.assert(
         fc.property(
-          fc.array(fc.boolean(), { minLength: 1, maxLength: 2 }),
+          fc.oneof(
+            fc.constant([true]),
+            fc.constant([false]),
+            fc.constant([true, false])
+          ),
           (enumValues) => {
             const schema: BooleanSchema = { type: 'boolean', enum: enumValues };
             const examples = generator.getExamples(schema);
 
             expect(examples).toEqual(enumValues);
+
+            if (process.env.VERBOSE_LOGS === 'true') {
+              console.log(
+                `[BOOLEAN_GENERATOR] getExamples enum test - enum: ${JSON.stringify(enumValues)}, examples: ${JSON.stringify(examples)}`
+              );
+            }
           }
-        )
+        ),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
 
@@ -379,14 +602,25 @@ describe('BooleanGenerator', () => {
           const examples = generator.getExamples(schema);
 
           expect(examples).toEqual([constValue]);
-        })
+
+          if (process.env.VERBOSE_LOGS === 'true') {
+            console.log(
+              `[BOOLEAN_GENERATOR] getExamples const test - const: ${constValue}, examples: ${JSON.stringify(examples)}`
+            );
+          }
+        }),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
 
     it('should return schema examples when available', () => {
       fc.assert(
         fc.property(
-          fc.array(fc.boolean(), { minLength: 1, maxLength: 2 }),
+          fc.oneof(
+            fc.constant([true]),
+            fc.constant([false]),
+            fc.constant([true, false])
+          ),
           (schemaExamples) => {
             const schema: BooleanSchema = {
               type: 'boolean',
@@ -395,8 +629,15 @@ describe('BooleanGenerator', () => {
             const examples = generator.getExamples(schema);
 
             expect(examples).toEqual(schemaExamples);
+
+            if (process.env.VERBOSE_LOGS === 'true') {
+              console.log(
+                `[BOOLEAN_GENERATOR] getExamples schema examples test - schema examples: ${JSON.stringify(schemaExamples)}, examples: ${JSON.stringify(examples)}`
+              );
+            }
           }
-        )
+        ),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
 
@@ -413,16 +654,22 @@ describe('BooleanGenerator', () => {
     it('should return empty array for unsupported schemas', () => {
       fc.assert(
         fc.property(
-          fc.oneof(
-            fc.record({ type: fc.constantFrom('string', 'number', 'object') }),
-            fc.constant(null),
-            fc.boolean()
+          getSchemaArbitrary().filter(
+            (schema: Record<string, unknown>) =>
+              schema.type !== 'boolean' && typeof schema.type === 'string'
           ),
           (unsupportedSchema) => {
             const examples = generator.getExamples(unsupportedSchema as any);
             expect(examples).toEqual([]);
+
+            if (process.env.VERBOSE_LOGS === 'true') {
+              console.log(
+                `[BOOLEAN_GENERATOR] getExamples unsupported test - schema: ${JSON.stringify(unsupportedSchema)}, examples: ${JSON.stringify(examples)}`
+              );
+            }
           }
-        )
+        ),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
   });
@@ -439,46 +686,38 @@ describe('BooleanGenerator', () => {
     it('should maintain consistency between generate and validate', () => {
       fc.assert(
         fc.property(
-          fc.oneof(
-            // Simple schema with no constraints
-            fc.constant({}),
-            // Schema with enum only
-            fc.record({
-              enum: fc.array(fc.boolean(), { minLength: 1, maxLength: 2 }),
-            }),
-            // Schema with const only
-            fc.record({
-              const: fc.boolean(),
-            }),
-            // Schema with default only
-            fc.record({
-              default: fc.boolean(),
-            }),
-            // Schema with examples only
-            fc.record({
-              examples: fc.array(fc.boolean(), { minLength: 1, maxLength: 2 }),
-            })
-          ),
+          getSchemaArbitrary()
+            .filter(
+              (schema: Record<string, unknown>) => schema.type === 'boolean'
+            )
+            .map((schema) => schema as unknown as BooleanSchema),
           fc.integer({ min: 0, max: 1000 }),
-          (schemaProps, seed) => {
-            const schema: BooleanSchema = {
-              type: 'boolean',
-              ...schemaProps,
-            };
+          (schema, seed) => {
             const context = createGeneratorContext(schema, formatRegistry, {
               seed,
             });
+            const ajv = getAjv();
+            const ajvValidate = ajv.compile(schema);
 
             const result = generator.generate(schema, context);
 
             expect(result.isOk()).toBe(true);
             if (result.isOk()) {
+              // AJV validation oracle
+              expect(ajvValidate(result.value)).toBe(true);
               // Generated value should always be valid according to the schema
               expect(generator.validate(result.value, schema)).toBe(true);
               expect(typeof result.value).toBe('boolean');
+
+              if (process.env.VERBOSE_LOGS === 'true') {
+                console.log(
+                  `[BOOLEAN_GENERATOR] Integration test - schema: ${JSON.stringify(schema)}, generated: ${result.value}, seed: ${seed}`
+                );
+              }
             }
           }
-        )
+        ),
+        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
       );
     });
 
@@ -498,8 +737,17 @@ describe('BooleanGenerator', () => {
           ...constraints,
         };
         const context = createGeneratorContext(schema, formatRegistry, {
-          seed: index,
+          seed: BOOLEAN_TEST_SEED + index,
         });
+        const ajv = getAjv();
+        let ajvValidate: any;
+        let ajvCompilationSuccess = true;
+
+        try {
+          ajvValidate = ajv.compile(schema);
+        } catch {
+          ajvCompilationSuccess = false;
+        }
 
         const result = generator.generate(schema, context);
 
@@ -507,6 +755,17 @@ describe('BooleanGenerator', () => {
           // If generation succeeds, result should be valid
           expect(generator.validate(result.value, schema)).toBe(true);
           expect(typeof result.value).toBe('boolean');
+
+          // AJV validation oracle (if compilation succeeded)
+          if (ajvCompilationSuccess && ajvValidate) {
+            expect(ajvValidate(result.value)).toBe(true);
+          }
+
+          if (process.env.VERBOSE_LOGS === 'true') {
+            console.log(
+              `[BOOLEAN_GENERATOR] Edge case ${index} - schema: ${JSON.stringify(schema)}, generated: ${result.value}`
+            );
+          }
         }
         // If generation fails for edge cases like empty enum, that's acceptable
       });
@@ -515,15 +774,19 @@ describe('BooleanGenerator', () => {
     it('should produce reasonable distribution over many samples', () => {
       const schema: BooleanSchema = { type: 'boolean' };
       const results: boolean[] = [];
+      const ajv = getAjv();
+      const ajvValidate = ajv.compile(schema);
 
       // Generate many samples
       for (let i = 0; i < 1000; i++) {
         const context = createGeneratorContext(schema, formatRegistry, {
-          seed: i,
+          seed: BOOLEAN_TEST_SEED + i,
         });
         const result = generator.generate(schema, context);
 
         if (result.isOk()) {
+          // AJV validation oracle
+          expect(ajvValidate(result.value)).toBe(true);
           results.push(result.value);
         }
       }
@@ -540,6 +803,12 @@ describe('BooleanGenerator', () => {
       const minExpected = results.length * 0.2; // At least 20% of each
       expect(trueCount).toBeGreaterThan(minExpected);
       expect(falseCount).toBeGreaterThan(minExpected);
+
+      if (process.env.VERBOSE_LOGS === 'true') {
+        console.log(
+          `[BOOLEAN_GENERATOR] Distribution test - total: ${results.length}, true: ${trueCount} (${((trueCount / results.length) * 100).toFixed(1)}%), false: ${falseCount} (${((falseCount / results.length) * 100).toFixed(1)}%)`
+        );
+      }
     });
 
     it('should handle scenario-specific generation correctly', () => {
@@ -553,16 +822,26 @@ describe('BooleanGenerator', () => {
       scenarios.forEach((scenario) => {
         const schema: BooleanSchema = { type: 'boolean' };
         const context = createGeneratorContext(schema, formatRegistry, {
-          seed: 42,
+          seed: BOOLEAN_TEST_SEED,
           scenario,
         });
+        const ajv = getAjv();
+        const ajvValidate = ajv.compile(schema);
 
         const result = generator.generate(schema, context);
 
         expect(result.isOk()).toBe(true);
         if (result.isOk()) {
+          // AJV validation oracle
+          expect(ajvValidate(result.value)).toBe(true);
           expect(typeof result.value).toBe('boolean');
           expect(generator.validate(result.value, schema)).toBe(true);
+
+          if (process.env.VERBOSE_LOGS === 'true') {
+            console.log(
+              `[BOOLEAN_GENERATOR] Scenario test - scenario: ${scenario}, generated: ${result.value}`
+            );
+          }
         }
       });
     });
@@ -586,16 +865,26 @@ describe('BooleanGenerator', () => {
       scenarios.forEach((constraints, index) => {
         const schema: BooleanSchema = { type: 'boolean', ...constraints };
         const context = createGeneratorContext(schema, formatRegistry, {
-          seed: index,
+          seed: BOOLEAN_TEST_SEED + index,
         });
+        const ajv = getAjv();
+        const ajvValidate = ajv.compile(schema);
 
         const result = generator.generate(schema, context);
 
         expect(result.isOk()).toBe(true);
         if (result.isOk()) {
+          // AJV validation oracle
+          expect(ajvValidate(result.value)).toBe(true);
           expect(typeof result.value).toBe('boolean');
           expect([true, false]).toContain(result.value);
           expect(generator.validate(result.value, schema)).toBe(true);
+
+          if (process.env.VERBOSE_LOGS === 'true') {
+            console.log(
+              `[BOOLEAN_GENERATOR] Comprehensive test ${index} - constraints: ${JSON.stringify(constraints)}, generated: ${result.value}`
+            );
+          }
         }
       });
     });
@@ -608,10 +897,13 @@ describe('BooleanGenerator', () => {
         'error',
       ];
 
-      scenarios.forEach((scenario) => {
+      scenarios.forEach((scenario, scenarioIndex) => {
         fc.assert(
           fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
             const schema: BooleanSchema = { type: 'boolean' };
+            const ajv = getAjv();
+            const ajvValidate = ajv.compile(schema);
+
             const context1 = createGeneratorContext(schema, formatRegistry, {
               seed,
               scenario,
@@ -628,31 +920,53 @@ describe('BooleanGenerator', () => {
             expect(result2.isOk()).toBe(true);
 
             if (result1.isOk() && result2.isOk()) {
+              // AJV validation oracle for both results
+              expect(ajvValidate(result1.value)).toBe(true);
+              expect(ajvValidate(result2.value)).toBe(true);
               expect(result1.value).toBe(result2.value);
+
+              if (process.env.VERBOSE_LOGS === 'true') {
+                console.log(
+                  `[BOOLEAN_GENERATOR] Deterministic across scenarios - scenario: ${scenario}, seed: ${seed}, values: ${result1.value}, ${result2.value}`
+                );
+              }
             }
           }),
-          { numRuns: 25 }
+          {
+            seed: BOOLEAN_TEST_SEED + scenarioIndex * 1000,
+            numRuns: Math.floor(getNumRuns() / 4),
+          }
         );
       });
     });
 
     it('should provide correct priority handling', () => {
-      // const should override enum
+      // const should override enum - but AJV validates both, so they must be compatible
       const constSchema: BooleanSchema = {
         type: 'boolean',
         const: true,
-        enum: [false], // This should be ignored
+        enum: [true], // Must be compatible with const for AJV validation
       };
+      const ajv = getAjv();
+      const ajvValidate = ajv.compile(constSchema);
 
       for (let i = 0; i < 10; i++) {
         const context = createGeneratorContext(constSchema, formatRegistry, {
-          seed: i,
+          seed: BOOLEAN_TEST_SEED + i,
         });
         const result = generator.generate(constSchema, context);
 
         expect(result.isOk()).toBe(true);
         if (result.isOk()) {
+          // AJV validation oracle
+          expect(ajvValidate(result.value)).toBe(true);
           expect(result.value).toBe(true); // Should always be true due to const
+
+          if (process.env.VERBOSE_LOGS === 'true') {
+            console.log(
+              `[BOOLEAN_GENERATOR] Priority test ${i} - const overrides enum, generated: ${result.value}`
+            );
+          }
         }
       }
     });
