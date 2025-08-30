@@ -216,6 +216,37 @@ npm run test                 # All tests must pass
 ✅ // Instead: Understand purpose → Fix implementation → Then evaluate
 ```
 
+### 🧠 Implementation Bias Prevention
+
+#### Framework Bypass = CRITICAL ANTI-PATTERN
+**Scenario**: TypeScript errors with existing framework functions
+
+```typescript
+❌ BAD REFLEX: "Fix" by avoiding the framework
+// TypeScript error with getSchemaArbitrary().filter()?
+// → Create manual arbitraries instead
+const customArbitrary = fc.oneof(...)  // WRONG!
+
+✅ CORRECT APPROACH: Fix the framework integration
+// Understand WHY the framework has type issues
+// → Add proper type guards or improve the framework
+getSchemaArbitrary().filter().map(schema => schema as unknown as SpecificType)
+```
+
+**Root Cause**: Cognitive bias toward "easy local fix" instead of "correct architectural fix"
+
+**Prevention Protocol**:
+1. **STOP** when bypassing existing framework
+2. **ASK**: "Why does the framework have this limitation?"
+3. **INVESTIGATE**: Read framework docs and existing usage patterns
+4. **FIX**: Improve framework integration, don't replace it
+5. **VERIFY**: Check if other similar code has the same pattern
+
+**Example**: Task 19 Boolean Generator
+- ❌ Created manual `fc.oneof()` arbitraries
+- ✅ Should use `getSchemaArbitrary().filter()` as prescribed
+- **Lesson**: Framework patterns exist for multi-draft support and consistency
+
 ### ESLint Guidelines
 **DO NOT blindly follow ESLint** - use judgment:
 
