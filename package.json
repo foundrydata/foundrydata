@@ -10,7 +10,7 @@
   "scripts": {
     "build": "npm run build -ws --if-present",
     "dev": "npm run dev -ws",
-    "test": "npm run test:packages; npm run test:matchers",
+    "test": "npm run test:packages&& npm run test:matchers",
     "test:packages": "vitest run --config vitest.config.ts",
     "test:matchers": "vitest run --config test/vitest.config.ts",
     "test:watch": "vitest --config vitest.config.ts",
