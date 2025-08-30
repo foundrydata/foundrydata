@@ -737,11 +737,8 @@ export class StringGenerator extends DataGenerator {
       }
     }
 
-    // Check format constraint
-    if (stringSchema.format) {
-      // This would use the format registry for validation
-      // For now, we'll skip format validation here as it's handled by format generators
-    }
+    // Note: Format validation is intentionally skipped in validate method
+    // Format validation is handled during generation phase with context.formatRegistry
 
     return true;
   }
