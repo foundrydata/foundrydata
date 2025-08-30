@@ -68,9 +68,14 @@ function configureFormats(ajv: Ajv, draft: JsonSchemaDraft): void {
       validate: () => true,
     });
     if (!once.has(name)) {
-      console.warn(
-        `[Formats Policy v2.2] Downgraded format to annotative: ${name}`
-      );
+      if (
+        process.env.NODE_ENV !== 'test' ||
+        process.env.VERBOSE_FORMAT_LOGS === 'true'
+      ) {
+        console.warn(
+          `[Formats Policy v2.2] Downgraded format to annotative: ${name}`
+        );
+      }
       once.add(name);
     }
   }

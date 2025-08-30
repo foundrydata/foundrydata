@@ -497,7 +497,12 @@ describe('Metamorphic Testing Pattern', () => {
             // METAMORPHIC PROPERTY: relaxed schema should accept original data
             expect(relaxedResult.valid).toBe(true);
           } catch (error) {
-            console.warn(`Skipping complex schema: ${error}`);
+            if (
+              process.env.NODE_ENV !== 'test' ||
+              process.env.VERBOSE_FORMAT_LOGS === 'true'
+            ) {
+              console.warn(`Skipping complex schema: ${error}`);
+            }
             return; // Skip problematic schemas
           }
         }),
@@ -545,7 +550,12 @@ describe('Metamorphic Testing Pattern', () => {
 
               expect(relaxedResult.valid).toBe(true);
             } catch (error) {
-              console.warn(`Skipping complex schema for ${draft}: ${error}`);
+              if (
+                process.env.NODE_ENV !== 'test' ||
+                process.env.VERBOSE_FORMAT_LOGS === 'true'
+              ) {
+                console.warn(`Skipping complex schema for ${draft}: ${error}`);
+              }
               return;
             }
           }),
@@ -588,7 +598,12 @@ describe('Metamorphic Testing Pattern', () => {
               // METAMORPHIC PROPERTY: prefixes should be identical
               expect(prefixFromFull).toEqual(prefix);
             } catch (error) {
-              console.warn(`Prefix stability test skipped: ${error}`);
+              if (
+                process.env.NODE_ENV !== 'test' ||
+                process.env.VERBOSE_FORMAT_LOGS === 'true'
+              ) {
+                console.warn(`Prefix stability test skipped: ${error}`);
+              }
               return;
             }
           }
@@ -688,7 +703,12 @@ describe('Metamorphic Testing Pattern', () => {
               expect(twiceResult.valid).toBe(true);
             }
           } catch (error) {
-            console.warn(`Idempotency test skipped: ${error}`);
+            if (
+              process.env.NODE_ENV !== 'test' ||
+              process.env.VERBOSE_FORMAT_LOGS === 'true'
+            ) {
+              console.warn(`Idempotency test skipped: ${error}`);
+            }
             return;
           }
         }),
@@ -789,7 +809,12 @@ describe('Metamorphic Testing Pattern', () => {
               true
             );
           } catch (error) {
-            console.warn(`Cross-draft test skipped: ${error}`);
+            if (
+              process.env.NODE_ENV !== 'test' ||
+              process.env.VERBOSE_FORMAT_LOGS === 'true'
+            ) {
+              console.warn(`Cross-draft test skipped: ${error}`);
+            }
             return;
           }
         }),
@@ -1027,9 +1052,14 @@ describe('Metamorphic Testing Pattern', () => {
             // Core metamorphic invariant must hold
             expect(relaxedResult.valid).toBe(true);
           } catch (error) {
-            console.warn(
-              `Environmental test skipped for ${currentDraft}: ${error}`
-            );
+            if (
+              process.env.NODE_ENV !== 'test' ||
+              process.env.VERBOSE_FORMAT_LOGS === 'true'
+            ) {
+              console.warn(
+                `Environmental test skipped for ${currentDraft}: ${error}`
+              );
+            }
             return;
           }
         }),

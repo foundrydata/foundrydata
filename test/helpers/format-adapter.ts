@@ -179,10 +179,15 @@ export class FormatAdapter {
     if (context?.seed !== undefined) {
       // Note: FormatRegistry integration with seed would require modification
       // For now, we document the seed propagation requirement
-      // eslint-disable-next-line no-console -- Debugging output for Testing Architecture v2.1
-      console.debug(
-        `[FormatAdapter] Seed ${context.seed} should be applied to generation`
-      );
+      if (
+        process.env.NODE_ENV !== 'test' ||
+        process.env.VERBOSE_FORMAT_LOGS === 'true'
+      ) {
+        // eslint-disable-next-line no-console
+        console.debug(
+          `[FormatAdapter] Seed ${context.seed} should be applied to generation`
+        );
+      }
     }
 
     // Try FormatRegistry generation first (preserves existing UX)
@@ -747,7 +752,7 @@ export async function monitorAdapterPerformance<T>(
 
   // Use median duration to avoid outliers
   const sortedTimes = times.sort((a, b) => a - b);
-  const duration = sortedTimes[Math.floor(sortedTimes.length / 2)];
+  const duration = sortedTimes[Math.floor(sortedTimes.length / 2)] ?? 0;
 
   // For validation operations, based on research, a reasonable baseline is around 1ms
   // AJV compilation and validation have inherent costs
