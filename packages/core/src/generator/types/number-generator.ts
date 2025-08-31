@@ -34,6 +34,16 @@ import {
 } from '../data-generator';
 
 export class NumberGenerator extends DataGenerator {
+  // Default bounds constants for consistent behavior across methods
+  private static readonly DEFAULT_MIN_BOUND = -1000000;
+  private static readonly DEFAULT_MAX_BOUND = 1000000;
+  private static readonly EXAMPLE_MIN_BOUND = -100;
+  private static readonly EXAMPLE_MAX_BOUND = 100;
+
+  // Performance and precision thresholds
+  private static readonly LARGE_MULTIPLE_THRESHOLD = 1000000;
+  private static readonly SEGMENTATION_SIZE = 1000;
+  private static readonly PRECISION_LIMIT = 1e-100;
   supports(schema: Schema): boolean {
     if (
       typeof schema !== 'object' ||
@@ -296,13 +306,14 @@ export class NumberGenerator extends DataGenerator {
     }
 
     // Filter enum values to only those that satisfy all other constraints
+    // Use AJV-compatible strict validation for enum filtering to ensure oracle compliance
     const validEnumValues: number[] = [];
 
     for (const value of enumValues) {
       const numericValue = Number(value);
 
-      // Check if this enum value satisfies all other constraints
-      if (this.meetsConstraints(numericValue, numberSchema)) {
+      // Check if this enum value satisfies all other constraints using AJV-compatible logic
+      if (this.meetsConstraintsStrict(numericValue, numberSchema)) {
         validEnumValues.push(numericValue);
       }
     }
@@ -330,8 +341,49 @@ export class NumberGenerator extends DataGenerator {
     schema: NumberSchema,
     context: GeneratorContext
   ): Result<number, GenerationError> {
-    const fakerInstance = this.prepareFaker(context);
+    // Calculate bounds and validate range
+    const boundsResult = this.calculateValidBounds(schema, context);
+    if (!boundsResult.isOk()) {
+      return boundsResult;
+    }
+    const { min, max } = boundsResult.value;
 
+    // Handle precision-limited ranges
+    const precisionResult = this.handlePrecisionLimitedRange(
+      min,
+      max,
+      schema,
+      context
+    );
+    if (precisionResult !== null) {
+      return precisionResult;
+    }
+
+    // Generate value based on constraints
+    const value = this.generateValueByConstraints(min, max, schema, context);
+
+    // Final validation
+    if (!this.meetsConstraints(value, schema)) {
+      return err(
+        new GenerationError(
+          `Generated value ${value} does not meet constraints`,
+          'Constraints may be too restrictive or conflicting',
+          context.path,
+          'constraints'
+        )
+      );
+    }
+
+    return ok(value);
+  }
+
+  /**
+   * Calculate valid bounds from schema constraints
+   */
+  private calculateValidBounds(
+    schema: NumberSchema,
+    context: GeneratorContext
+  ): Result<{ min: number; max: number }, GenerationError> {
     // Normalize exclusive bounds to inclusive bounds
     const bounds = this.normalizeExclusiveBoundsULP(
       typeof schema.exclusiveMinimum === 'number'
@@ -344,8 +396,8 @@ export class NumberGenerator extends DataGenerator {
       schema.maximum
     );
 
-    const min = bounds.min ?? -1000000;
-    const max = bounds.max ?? 1000000;
+    const min = bounds.min ?? NumberGenerator.DEFAULT_MIN_BOUND;
+    const max = bounds.max ?? NumberGenerator.DEFAULT_MAX_BOUND;
 
     // Validate range
     if (min > max) {
@@ -375,132 +427,145 @@ export class NumberGenerator extends DataGenerator {
       );
     }
 
+    return ok({ min, max });
+  }
+
+  /**
+   * Handle ranges with precision limitations
+   * @returns Result if range needs special handling, null if normal processing should continue
+   */
+  private handlePrecisionLimitedRange(
+    min: number,
+    max: number,
+    schema: NumberSchema,
+    context: GeneratorContext
+  ): Result<number, GenerationError> | null {
     // Handle extremely small ranges that are at the limit of floating-point precision
-    // Also handle any case where max is small enough to cause precision issues
-    const isSubnormalRange = max > 0 && max <= 1e-100;
-    const hasSmallRange = max - min <= 1e-100;
-    if (isSubnormalRange || hasSmallRange) {
-      // For subnormal or extremely small ranges, use special handling
-      const candidates = [min, max, (min + max) / 2, 0];
+    const isSubnormalRange = max > 0 && max <= NumberGenerator.PRECISION_LIMIT;
+    const hasSmallRange = max - min <= NumberGenerator.PRECISION_LIMIT;
 
-      for (const candidate of candidates) {
-        if (
-          Number.isFinite(candidate) &&
-          this.meetsConstraints(candidate, schema)
-        ) {
-          return ok(candidate);
-        }
-      }
-
-      // If no simple candidate works, generate using safe interpolation
-      const safeMin = Math.max(min, -Number.MAX_SAFE_INTEGER / 1e6);
-      const safeMax = Math.min(max, Number.MAX_SAFE_INTEGER / 1e6);
-      const fakerInstance = this.prepareFaker(context);
-      const t = fakerInstance.number.float({ min: 0, max: 1 });
-      const value = safeMin + (safeMax - safeMin) * t;
-
-      if (Number.isFinite(value) && this.meetsConstraints(value, schema)) {
-        return ok(value);
-      }
-
-      // Last resort: return min if it's valid
-      if (this.meetsConstraints(min, schema)) {
-        return ok(min);
-      }
-
-      return err(
-        new GenerationError(
-          `Range too small for floating-point precision: [${min}, ${max}]`,
-          'Adjust bounds to allow representable values',
-          context.path,
-          'precision-limit'
-        )
-      );
+    if (!isSubnormalRange && !hasSmallRange) {
+      return null; // Continue with normal processing
     }
 
-    let value: number;
+    // For subnormal or extremely small ranges, use special handling
+    const candidates = [min, max, (min + max) / 2, 0];
+
+    for (const candidate of candidates) {
+      if (
+        Number.isFinite(candidate) &&
+        this.meetsConstraints(candidate, schema)
+      ) {
+        return ok(candidate);
+      }
+    }
+
+    // If no simple candidate works, generate using safe interpolation
+    const safeMin = Math.max(min, -Number.MAX_SAFE_INTEGER / 1e6);
+    const safeMax = Math.min(max, Number.MAX_SAFE_INTEGER / 1e6);
+    const fakerInstance = this.prepareFaker(context);
+    const t = fakerInstance.number.float({ min: 0, max: 1 });
+    const value = safeMin + (safeMax - safeMin) * t;
+
+    if (Number.isFinite(value) && this.meetsConstraints(value, schema)) {
+      return ok(value);
+    }
+
+    // Last resort: return min if it's valid
+    if (this.meetsConstraints(min, schema)) {
+      return ok(min);
+    }
+
+    return err(
+      new GenerationError(
+        `Range too small for floating-point precision: [${min}, ${max}]`,
+        'Adjust bounds to allow representable values',
+        context.path,
+        'precision-limit'
+      )
+    );
+  }
+
+  /**
+   * Generate value based on constraint type priority
+   */
+  private generateValueByConstraints(
+    min: number,
+    max: number,
+    schema: NumberSchema,
+    context: GeneratorContext
+  ): number {
+    // Handle multipleOf constraint (highest priority after enum/const)
+    if (schema.multipleOf !== undefined && schema.multipleOf > 0) {
+      return this.generateMultipleOfValue(min, max, schema.multipleOf, context);
+    }
 
     // Special case: when min equals max, return that exact value
     if (min === max) {
-      value = min;
+      return min;
     }
-    // Handle multipleOf constraint
-    else if (schema.multipleOf !== undefined && schema.multipleOf > 0) {
-      // Find the first multiple >= min
-      const minMultiple = Math.ceil(min / schema.multipleOf);
-      const maxMultiple = Math.floor(max / schema.multipleOf);
 
-      if (minMultiple > maxMultiple) {
-        return err(
-          new GenerationError(
-            `No valid multiple of ${schema.multipleOf} exists within range [${min}, ${max}]`,
-            'Adjust constraints to allow valid multiples',
-            context.path,
-            'multipleOf'
-          )
-        );
-      }
+    const fakerInstance = this.prepareFaker(context);
 
-      const totalMultiples = maxMultiple - minMultiple + 1;
-
-      // Optimization for large intervals: use logarithmic distribution to avoid bias
-      if (totalMultiples > 1000000) {
-        // For very large ranges, use segmented approach to ensure uniform distribution
-        // without bias toward extremes and avoid memory/performance issues
-        const segments = 1000;
-        const segmentSize = totalMultiples / segments;
-        const randomSegment = fakerInstance.number.int({
-          min: 0,
-          max: segments - 1,
-        });
-        const segmentStart = Math.floor(
-          minMultiple + randomSegment * segmentSize
-        );
-        const segmentEnd = Math.floor(
-          minMultiple + (randomSegment + 1) * segmentSize - 1
-        );
-        const randomMultipleIndex = fakerInstance.number.int({
-          min: segmentStart,
-          max: Math.min(segmentEnd, maxMultiple),
-        });
-        // Use precise multiplication to avoid floating-point precision errors
-        const digits = this.getDecimalPlacesHelper(schema.multipleOf);
-        value = Number(
-          (randomMultipleIndex * schema.multipleOf).toFixed(digits)
-        );
-      } else {
-        // Standard approach for reasonable-sized ranges
-        const randomMultipleIndex = fakerInstance.number.int({
-          min: minMultiple,
-          max: maxMultiple,
-        });
-        // Use precise multiplication to avoid floating-point precision errors
-        const digits = this.getDecimalPlacesHelper(schema.multipleOf);
-        value = Number(
-          (randomMultipleIndex * schema.multipleOf).toFixed(digits)
-        );
-      }
-    } else if (context.scenario === 'edge') {
+    if (context.scenario === 'edge') {
       // Generate edge case values
-      value = this.generateEdgeValue(min, max, schema, fakerInstance);
+      return this.generateEdgeValue(min, max, schema, fakerInstance);
     } else {
       // Generate normal values within range
-      value = this.generateNormalValue(min, max, fakerInstance);
+      return this.generateNormalValue(min, max, fakerInstance);
     }
+  }
 
-    // Final validation
-    if (!this.meetsConstraints(value, schema)) {
-      return err(
-        new GenerationError(
-          `Generated value ${value} does not meet constraints`,
-          'Constraints may be too restrictive or conflicting',
-          context.path,
-          'constraints'
-        )
+  /**
+   * Generate value that satisfies multipleOf constraint
+   */
+  private generateMultipleOfValue(
+    min: number,
+    max: number,
+    multipleOf: number,
+    context: GeneratorContext
+  ): number {
+    const fakerInstance = this.prepareFaker(context);
+
+    // Find the first multiple >= min
+    const minMultiple = Math.ceil(min / multipleOf);
+    const maxMultiple = Math.floor(max / multipleOf);
+
+    if (minMultiple > maxMultiple) {
+      throw new Error(
+        `No valid multiple of ${multipleOf} exists within range [${min}, ${max}]`
       );
     }
 
-    return ok(value);
+    const totalMultiples = maxMultiple - minMultiple + 1;
+
+    // Optimization for large intervals: use segmented approach to avoid bias
+    if (totalMultiples > NumberGenerator.LARGE_MULTIPLE_THRESHOLD) {
+      const segments = NumberGenerator.SEGMENTATION_SIZE;
+      const segmentSize = totalMultiples / segments;
+      const randomSegment = fakerInstance.number.int({
+        min: 0,
+        max: segments - 1,
+      });
+      const segmentStart = Math.floor(
+        minMultiple + randomSegment * segmentSize
+      );
+      const segmentEnd = Math.floor(
+        minMultiple + (randomSegment + 1) * segmentSize - 1
+      );
+      const randomMultipleIndex = fakerInstance.number.int({
+        min: segmentStart,
+        max: Math.min(segmentEnd, maxMultiple),
+      });
+      return this.generateValidMultiple(randomMultipleIndex, multipleOf);
+    } else {
+      // Standard approach for reasonable-sized ranges
+      const randomMultipleIndex = fakerInstance.number.int({
+        min: minMultiple,
+        max: maxMultiple,
+      });
+      return this.generateValidMultiple(randomMultipleIndex, multipleOf);
+    }
   }
 
   /**
@@ -548,8 +613,17 @@ export class NumberGenerator extends DataGenerator {
 
     // Add values based on multipleOf - including inflection points
     if (schema.multipleOf !== undefined && schema.multipleOf > 0) {
-      const nearMin = Math.ceil(min / schema.multipleOf) * schema.multipleOf;
-      const nearMax = Math.floor(max / schema.multipleOf) * schema.multipleOf;
+      const minMultipleIndex = Math.ceil(min / schema.multipleOf);
+      const maxMultipleIndex = Math.floor(max / schema.multipleOf);
+
+      const nearMin = this.generateValidMultiple(
+        minMultipleIndex,
+        schema.multipleOf
+      );
+      const nearMax = this.generateValidMultiple(
+        maxMultipleIndex,
+        schema.multipleOf
+      );
 
       // Add first valid multiple
       if (nearMin <= max) {
@@ -562,16 +636,21 @@ export class NumberGenerator extends DataGenerator {
       }
 
       // Add 2nd multiple if it exists (inflection point)
-      if (nearMin + schema.multipleOf <= max) {
-        edgeCases.push(nearMin + schema.multipleOf);
+      const secondMultiple = this.generateValidMultiple(
+        minMultipleIndex + 1,
+        schema.multipleOf
+      );
+      if (secondMultiple <= max) {
+        edgeCases.push(secondMultiple);
       }
 
       // Add penultimate multiple if it exists (inflection point)
-      if (
-        nearMax - schema.multipleOf >= min &&
-        nearMax - schema.multipleOf !== nearMin
-      ) {
-        edgeCases.push(nearMax - schema.multipleOf);
+      const penultimateMultiple = this.generateValidMultiple(
+        maxMultipleIndex - 1,
+        schema.multipleOf
+      );
+      if (penultimateMultiple >= min && penultimateMultiple !== nearMin) {
+        edgeCases.push(penultimateMultiple);
       }
     }
 
@@ -606,7 +685,7 @@ export class NumberGenerator extends DataGenerator {
     }
 
     // For very small ranges, use direct interpolation
-    if (range < 1e-100) {
+    if (range < NumberGenerator.PRECISION_LIMIT) {
       const t = fakerInstance.number.float({ min: 0, max: 1 });
       return min + range * t;
     }
@@ -625,12 +704,60 @@ export class NumberGenerator extends DataGenerator {
   }
 
   /**
-   * Simple helper to get decimal places for .toFixed() formatting
+   * Generate a multiple that AJV will validate as correct
+   * Uses AJV's exact validation logic as oracle: (value / multipleOf) === parseInt(value / multipleOf)
+   * Handles IEEE 754 precision issues by testing candidates before returning
    */
-  private getDecimalPlacesHelper(num: number): number {
-    const str = num.toString();
-    const decimalPart = str.split('.')[1];
-    return decimalPart ? decimalPart.length : 0;
+  private generateValidMultiple(index: number, multipleOf: number): number {
+    // For integer multipleOf >= 1, direct multiplication is safe
+    if (multipleOf >= 1 && Number.isInteger(multipleOf)) {
+      return index * multipleOf;
+    }
+
+    // Helper function to test if AJV would accept a value
+    const wouldAjvAccept = (value: number): boolean => {
+      const quotient = value / multipleOf;
+      return quotient === Math.floor(quotient);
+    };
+
+    // Try the direct calculation first
+    let candidate = index * multipleOf;
+    if (wouldAjvAccept(candidate)) {
+      return candidate;
+    }
+
+    // If direct fails, try with toFixed for cleaner decimal representation
+    const multipleOfStr = multipleOf.toString();
+    if (multipleOfStr.includes('.')) {
+      const decimalPlaces = multipleOfStr.split('.')[1]?.length ?? 0;
+      candidate = parseFloat((index * multipleOf).toFixed(decimalPlaces));
+
+      if (wouldAjvAccept(candidate)) {
+        return candidate;
+      }
+    }
+
+    // Search nearby indices for an AJV-safe value
+    // Some indices produce IEEE 754 errors, others don't
+    for (let offset = 1; offset <= 5; offset++) {
+      // Try higher index
+      candidate = (index + offset) * multipleOf;
+      if (wouldAjvAccept(candidate)) {
+        return candidate;
+      }
+
+      // Try lower index (if positive)
+      if (index - offset >= 0) {
+        candidate = (index - offset) * multipleOf;
+        if (wouldAjvAccept(candidate)) {
+          return candidate;
+        }
+      }
+    }
+
+    // Final fallback: return direct multiplication
+    // This may fail AJV but will pass our tolerance-based validation
+    return index * multipleOf;
   }
 
   /**
@@ -692,11 +819,15 @@ export class NumberGenerator extends DataGenerator {
   }
 
   /**
-   * Check if value is multiple of multipleOf with ULP-based robust tolerance
+   * Check if value is multiple of multipleOf
+   * @param value The value to check
+   * @param multipleOf The multiple to check against
+   * @param strict If true, uses AJV-compatible exact validation; if false, uses ULP-based tolerance for IEEE 754 precision issues
    */
-  private isMultipleOfWithTolerance(
+  private isMultipleOfValid(
     value: number,
-    multipleOf: number
+    multipleOf: number,
+    strict: boolean = false
   ): boolean {
     if (
       multipleOf <= 0 ||
@@ -705,21 +836,80 @@ export class NumberGenerator extends DataGenerator {
     )
       return false;
 
-    const q = value / multipleOf;
-    // Rapproche q de l'entier le plus proche
-    const k = Math.round(q);
+    const quotient = value / multipleOf;
 
-    // Erreur absolue sur la reconstruction
-    const recon = k * multipleOf;
-    const absErr = Math.abs(value - recon);
+    if (strict) {
+      // AJV-compatible strict validation (no tolerance)
+      return quotient === Math.floor(quotient);
+    } else {
+      // ULP-based robust tolerance for IEEE 754 precision issues like 0.1 + 0.2 !== 0.3
+      const k = Math.round(quotient);
+      const recon = k * multipleOf;
+      const absErr = Math.abs(value - recon);
 
-    // Tolérance: somme de 2 ULP pertinentes + petite marge relative
-    const tol =
-      this.ulp(value) +
-      Math.abs(k) * this.ulp(multipleOf) +
-      Math.abs(value) * 1e-15;
+      // Tolerance: sum of 2 relevant ULPs + small relative margin
+      const tol =
+        this.ulp(value) +
+        Math.abs(k) * this.ulp(multipleOf) +
+        Math.abs(value) * 1e-15;
 
-    return absErr <= tol;
+      return absErr <= tol;
+    }
+  }
+
+  /**
+   * Check if a value meets constraints using AJV-compatible strict validation
+   * Used for enum filtering to ensure oracle compliance
+   */
+  private meetsConstraintsStrict(value: number, schema: NumberSchema): boolean {
+    // Check minimum constraint
+    if (schema.minimum !== undefined && value < schema.minimum) {
+      return false;
+    }
+
+    // Check maximum constraint
+    if (schema.maximum !== undefined && value > schema.maximum) {
+      return false;
+    }
+
+    // Check exclusive minimum constraint (Draft 7+ numeric form only)
+    if (
+      typeof schema.exclusiveMinimum === 'number' &&
+      value <= schema.exclusiveMinimum
+    ) {
+      return false;
+    }
+    // Special case: -0 with exclusiveMinimum: 0 should be rejected
+    if (schema.exclusiveMinimum === 0 && Object.is(value, -0)) {
+      return false; // -0 is not > 0
+    }
+
+    // Check exclusive maximum constraint (Draft 7+ numeric form only)
+    if (
+      typeof schema.exclusiveMaximum === 'number' &&
+      value >= schema.exclusiveMaximum
+    ) {
+      return false;
+    }
+
+    // Check multipleOf constraint using AJV's strict logic (no tolerance)
+    if (schema.multipleOf !== undefined && schema.multipleOf > 0) {
+      if (!this.isMultipleOfValid(value, schema.multipleOf, true)) {
+        return false;
+      }
+    }
+
+    // Check const constraint - if const exists, value must match const
+    if (schema.const !== undefined) {
+      const constValue = Number(schema.const);
+      if (isNaN(constValue)) {
+        return false;
+      }
+      // Use Object.is for strict equality (handles -0 vs 0)
+      return Object.is(value, constValue);
+    }
+
+    return true;
   }
 
   /**
@@ -788,9 +978,9 @@ export class NumberGenerator extends DataGenerator {
       return false;
     }
 
-    // Check multipleOf constraint using relative tolerance
+    // Check multipleOf constraint using tolerance for IEEE 754 compatibility
     if (schema.multipleOf !== undefined && schema.multipleOf > 0) {
-      if (!this.isMultipleOfWithTolerance(value, schema.multipleOf)) {
+      if (!this.isMultipleOfValid(value, schema.multipleOf, false)) {
         return false;
       }
     }
@@ -848,15 +1038,22 @@ export class NumberGenerator extends DataGenerator {
       numberSchema.maximum
     );
 
-    const min = bounds.min ?? -100;
-    const max = bounds.max ?? 100;
+    const min = bounds.min ?? NumberGenerator.EXAMPLE_MIN_BOUND;
+    const max = bounds.max ?? NumberGenerator.EXAMPLE_MAX_BOUND;
 
     // Check for impossible multipleOf constraints
     if (numberSchema.multipleOf !== undefined && numberSchema.multipleOf > 0) {
-      const minMultiple =
-        Math.ceil(min / numberSchema.multipleOf) * numberSchema.multipleOf;
-      const maxMultiple =
-        Math.floor(max / numberSchema.multipleOf) * numberSchema.multipleOf;
+      const minMultipleIndex = Math.ceil(min / numberSchema.multipleOf);
+      const maxMultipleIndex = Math.floor(max / numberSchema.multipleOf);
+
+      const minMultiple = this.generateValidMultiple(
+        minMultipleIndex,
+        numberSchema.multipleOf
+      );
+      const maxMultiple = this.generateValidMultiple(
+        maxMultipleIndex,
+        numberSchema.multipleOf
+      );
 
       // If no valid multiples exist in the range, return empty array
       if (minMultiple > max || maxMultiple < min) {
@@ -871,10 +1068,13 @@ export class NumberGenerator extends DataGenerator {
         examples.push(maxMultiple);
       }
       // Add a middle multiple if it exists
-      const midMultiple =
-        Math.floor(
-          (minMultiple + maxMultiple) / (2 * numberSchema.multipleOf)
-        ) * numberSchema.multipleOf;
+      const midMultipleIndex = Math.floor(
+        (minMultipleIndex + maxMultipleIndex) / 2
+      );
+      const midMultiple = this.generateValidMultiple(
+        midMultipleIndex,
+        numberSchema.multipleOf
+      );
       if (
         midMultiple >= min &&
         midMultiple <= max &&
