@@ -1,7 +1,7 @@
 # 🏗️ Testing Architecture & Strategy - FoundryData v2.1
 
 > **Version**: 2.1.0  
-> **Date**: 2024  
+> **Date**: 2025  
 > **Stack**: TypeScript + Vitest + Fast-check  
 > **Goal**: Guarantee 100% schema compliance with deterministic tests  
 > **Updates**: Fixed API consistency, enum/const coherence, relaxation completeness
@@ -388,7 +388,7 @@ graph LR
 
 ## 📊 Metrics & KPIs
 
-### Quality Metrics (Updated)
+### Quality Metrics
 
 ```typescript
 interface QualityMetrics {
@@ -437,7 +437,7 @@ interface QualityMetrics {
 
 ## 🚀 CI/CD & Automation
 
-### Test Pipeline (Updated)
+### Test Pipeline
 
 ```yaml
 name: Test Pipeline
@@ -629,7 +629,7 @@ npm test -- --grep "test name" --reporter=verbose
 - [ ] Performance baselines updated
 - [ ] Draft compatibility verified
 
-### Property Test Checklist (Updated)
+### Property Test Checklist
 
 ```typescript
 // For each new property test:
@@ -664,17 +664,14 @@ npm test -- --grep "test name" --reporter=verbose
 5. **Stable Deep Comparison**: `toBeDistinct` uses sorted key stringify
 6. **Format Assertion**: Formats are validated, not just annotated
 7. **Clear Semantics**: Vitest seed vs fast-check seed documented
-
-### Key Improvements in v2.0
-
-1. **Multi-Draft Support**: Proper handling of draft-07, 2019-09, 2020-12
-2. **True Determinism**: Fixed seed (424242), no shuffle in CI, no retries
-3. **AJV as Oracle**: Single source of truth for validation
-4. **No Contradictions**: Arbitraries guarantee valid schemas
-5. **Realistic Performance**: Percentile-based targets with tolerance
-6. **Cached Compilation**: WeakMap for schema validators
-7. **Platform-Specific**: Pool selection based on OS
-8. **Environment-Driven**: All config via env vars
+8. **Multi-Draft Support**: Proper handling of draft-07, 2019-09, 2020-12
+9. **True Determinism**: Fixed seed (424242), no shuffle in CI, no retries
+10. **AJV as Oracle**: Single source of truth for validation
+11. **No Contradictions**: Arbitraries guarantee valid schemas
+12. **Realistic Performance**: Percentile-based targets with tolerance
+13. **Cached Compilation**: WeakMap for schema validators
+14. **Platform-Specific**: Pool selection based on OS
+15. **Environment-Driven**: All config via env vars
 
 ### Migration from v1.0
 
@@ -746,7 +743,7 @@ expect(p95).toBeLessThan(target * (1 + tolerance));
 
 ## 🚨 Final Golden Rules
 
-### The 10 Commandments of FoundryData Testing v2.0
+### The 10 Commandments of FoundryData Testing
 
 1. **Thou shalt use fixed seed 424242, never Date.now()**
 2. **Thou shalt use AJV as the single source of truth**
@@ -759,7 +756,7 @@ expect(p95).toBeLessThan(target * (1 + tolerance));
 9. **Thou shalt log seed and draft on every failure**
 10. **Thou shalt test the matrix of drafts × platforms**
 
-### Anti-Patterns to Avoid (Updated v2.1)
+### Anti-Patterns to Avoid
 
 ❌ **Random Seed**: Using `Date.now()` or `Math.random()`  
 ❌ **Multiple AJV Instances**: Creating new AJV per test  
@@ -780,16 +777,13 @@ expect(p95).toBeLessThan(target * (1 + tolerance));
 
 ## 🎯 Conclusion
 
-This v2.1 guide incorporates all critical fixes from both expert reviews:
+This v2.1 guide incorporates all critical fixes :
 
-**v2.1 Critical Fixes**:
 - **API consistency** with unified array return
 - **Enum/const coherence** respecting all constraints
 - **Strict JSON Schema** compliance (no union types)
 - **Complete relaxation** including unevaluated*
 - **Stable deep comparison** for object equality
-
-**v2.0 Foundation**:
 - **Determinism** guaranteed with fixed seeds
 - **Multi-draft** support with proper factories
 - **AJV** as the oracle with caching
@@ -802,6 +796,6 @@ FoundryData's promise of 100% schema compliance is now properly tested and guara
 ---
 
 *Document version: 2.1.0*  
-*Last updated: 2024*  
+*Last updated: 2025*  
 *Maintainers: FoundryData Team*  
 *License: MIT*
