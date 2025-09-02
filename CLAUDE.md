@@ -247,6 +247,32 @@ getSchemaArbitrary().filter().map(schema => schema as unknown as SpecificType)
 - ✅ Should use `getSchemaArbitrary().filter()` as prescribed
 - **Lesson**: Framework patterns exist for multi-draft support and consistency
 
+#### Framework Performance = CRITICAL UNDERSTANDING
+**Scenario**: Overusing `getSchemaArbitrary().filter()` for simple constants
+
+```typescript
+❌ PERFORMANCE KILLER: Over-filtering for constants
+getSchemaArbitrary()
+  .filter(s => s.type === 'number' && s.multipleOf > 0)  // 0.7% success rate
+  .chain(() => fc.constantFrom(0.1, 0.01, 1))           // Ignores generated schema!
+// Result: 14,300 schema generations for 100 test runs = MINUTES
+
+✅ CORRECT: Use simple patterns for simple values
+fc.oneof(fc.constant(0.1), fc.constant(0.01), fc.constant(1))
+// Result: 100 constant generations for 100 test runs = MILLISECONDS
+```
+
+**Performance Rules**:
+1. **`getSchemaArbitrary()` only for complex schema testing** - Multi-draft validation, full schema properties
+2. **`fc.oneof()` for simple constants** - Known values like `0.1, 1, 2.5`
+3. **Filter probability matters** - `type === 'number'` (14%) vs `type + multipleOf + > 0` (0.7%)
+4. **Use generated schemas** - Don't filter then ignore with `.chain(() => constants)`
+
+**Example**: Number Generator Performance Fix
+- ❌ Added framework pattern everywhere → Tests took minutes
+- ✅ Rollback to simple patterns → Tests take 522ms  
+- **Lesson**: Framework complexity requires framework-appropriate problems
+
 ### ESLint Guidelines
 **DO NOT blindly follow ESLint** - use judgment:
 
