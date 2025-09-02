@@ -1028,7 +1028,12 @@ describe('NumberGenerator', () => {
       const context = createGeneratorContext(schema, formatRegistry, {
         seed: 1,
       });
-      expect(generator.generate(schema, context).isErr()).toBe(true);
+      const result = generator.generate(schema, context);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.message).toContain('minimum');
+        expect(result.error.message).toContain('maximum');
+      }
     });
 
     it('should error when no multipleOf fits in range', () => {
@@ -1041,7 +1046,11 @@ describe('NumberGenerator', () => {
       const context = createGeneratorContext(schema, formatRegistry, {
         seed: 1,
       });
-      expect(generator.generate(schema, context).isErr()).toBe(true);
+      const result = generator.generate(schema, context);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.message).toContain('multiple');
+      }
     });
 
     it('should error when exclusiveMinimum >= exclusiveMaximum', () => {
@@ -1053,7 +1062,12 @@ describe('NumberGenerator', () => {
       const context = createGeneratorContext(schema, formatRegistry, {
         seed: 1,
       });
-      expect(generator.generate(schema, context).isErr()).toBe(true);
+      const result = generator.generate(schema, context);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.message).toContain('minimum');
+        expect(result.error.message).toContain('maximum');
+      }
     });
 
     it('should handle enum with additional constraints', () => {
@@ -1998,6 +2012,13 @@ describe('NumberGenerator', () => {
         ),
         { seed: NUMBER_TEST_SEED, numRuns: Math.floor(getNumRuns() / 3) }
       );
+    });
+
+    it('should handle -0 vs 0 with exclusiveMinimum constraint', () => {
+      const schema: NumberSchema = { type: 'number', exclusiveMinimum: 0 };
+      expect(generator.validate(-0, schema)).toBe(false);
+      expect(generator.validate(0, schema)).toBe(false);
+      expect(generator.validate(0.1, schema)).toBe(true);
     });
 
     it('should handle -0 with exclusiveMinimum: 0 correctly', () => {
