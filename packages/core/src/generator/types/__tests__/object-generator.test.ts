@@ -60,18 +60,9 @@ describe('ObjectGenerator', () => {
     it('should support object schemas with valid constraints', () => {
       fc.assert(
         fc.property(
-          fc.record({
-            type: fc.constant('object'),
-            properties: fc.dictionary(
-              fc.string({ minLength: 1, maxLength: 10 }),
-              fc.record({
-                type: fc.constantFrom('string', 'number', 'boolean'),
-              }),
-              { minKeys: 1, maxKeys: 5 }
-            ),
-          }),
+          getSchemaArbitrary().filter((s) => (s as any).type === 'object'),
           (schema) => {
-            expect(generator.supports(schema as Schema)).toBe(true);
+            expect(generator.supports(schema as unknown as Schema)).toBe(true);
           }
         ),
         { seed: 424242, numRuns: 100 }
@@ -97,6 +88,31 @@ describe('ObjectGenerator', () => {
   });
 
   describe('generate', () => {
+    it('should generate valid objects from schema arbitrary', () => {
+      fc.assert(
+        fc.property(
+          getSchemaArbitrary().filter((s) => (s as any).type === 'object'),
+          fc.integer({ min: 0, max: 1000 }),
+          (schema, seed) => {
+            const context = createGeneratorContext(
+              schema as unknown as Schema,
+              formatRegistry,
+              { seed }
+            );
+            const result = generator.generate(
+              schema as unknown as Schema,
+              context
+            );
+
+            expect(result.isOk()).toBe(true);
+            if (result.isOk()) {
+              expect(result.value).toMatchJsonSchema(schema);
+            }
+          }
+        ),
+        { seed: 424242, numRuns: 50 }
+      );
+    });
     it('should generate objects respecting required ⊆ properties constraint', () => {
       fc.assert(
         fc.property(
