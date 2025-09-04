@@ -8,7 +8,7 @@
 - **Why**: Generate 10,000 perfectly valid records in <200ms, including edge cases
 - **How**: `foundrydata generate --schema user.json --rows 10000`
 - **Unique**: **Only OSS tool with scenario-based generation for edge cases and stress tests**
-- **Philosophy**: "Do one thing well: Generate simple test data that actually matches the schema"
+- **Philosophy**: "Generate deterministic, schema-true data with explicit limits"
 
 ## 🎯 Killer Feature: Scenario-Based Generation
 
