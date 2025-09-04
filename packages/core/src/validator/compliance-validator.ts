@@ -4,9 +4,9 @@
  */
 
 /* eslint-disable max-lines */
-import Ajv, { ErrorObject, ValidateFunction } from 'ajv';
+import Ajv from 'ajv';
+import type { ErrorObject, ValidateFunction, JSONSchemaType } from 'ajv';
 import addFormats from 'ajv-formats';
-import type { JSONSchemaType } from 'ajv';
 
 import type { Result } from '../types/result';
 import { ok, err } from '../types/result';
@@ -68,14 +68,21 @@ export interface ComplianceValidatorOptions {
 
 /**
  * High-performance compliance validator using AJV
- * Configured with strict mode for maximum accuracy
+ * Uses singleton AJV instance with WeakMap caching for optimal performance
  */
 export class ComplianceValidator {
   private ajv: Ajv;
-  private compiledValidators = new Map<string, ValidateFunction>();
+  private compiledValidators = new WeakMap<object, ValidateFunction>();
+  private schemaKeyMap = new Map<string, object>();
+  private performanceMetrics = {
+    totalValidations: 0,
+    cacheHits: 0,
+    cacheMisses: 0,
+    totalValidationTime: 0,
+  };
 
   constructor(options: ComplianceValidatorOptions = {}) {
-    // Initialize AJV with strict configuration for maximum compliance
+    // Create AJV instance with configured options
     this.ajv = new Ajv({
       // Core validation options
       strict: options.strict ?? true,
@@ -110,6 +117,38 @@ export class ComplianceValidator {
 
     // Add custom secure formats that are more restrictive
     this.addSecureFormats();
+  }
+
+  /**
+   * Helper method to get or compile a validator with caching
+   */
+  private getOrCompileValidator(schema: object): ValidateFunction {
+    // Check WeakMap cache first
+    let validate = this.compiledValidators.get(schema);
+
+    if (validate) {
+      this.performanceMetrics.cacheHits++;
+      return validate;
+    }
+
+    // Check if we have a cached schema object for this key
+    const schemaKey = this.getSchemaKey(schema);
+    const cachedSchema = this.schemaKeyMap.get(schemaKey);
+
+    if (cachedSchema) {
+      validate = this.compiledValidators.get(cachedSchema);
+      if (validate) {
+        this.performanceMetrics.cacheHits++;
+        return validate;
+      }
+    }
+
+    // Cache miss - compile new validator
+    this.performanceMetrics.cacheMisses++;
+    validate = this.ajv.compile(schema);
+    this.compiledValidators.set(schema, validate);
+    this.schemaKeyMap.set(schemaKey, schema);
+    return validate;
   }
 
   /**
@@ -184,16 +223,11 @@ export class ComplianceValidator {
     schema: JSONSchemaType<T> | object
   ): Result<ComplianceReport, ValidationError> {
     const startTime = Date.now();
+    this.performanceMetrics.totalValidations++;
 
     try {
-      // Get or compile validator
-      const schemaKey = this.getSchemaKey(schema);
-      let validate = this.compiledValidators.get(schemaKey);
-
-      if (!validate) {
-        validate = this.ajv.compile(schema);
-        this.compiledValidators.set(schemaKey, validate);
-      }
+      // Get or compile validator using WeakMap cache
+      const validate = this.getOrCompileValidator(schema);
 
       const results: ComplianceValidationResult[] = [];
       let passedCount = 0;
@@ -226,12 +260,16 @@ export class ComplianceValidator {
 
       const endTime = Date.now();
       const duration = endTime - startTime;
+      this.performanceMetrics.totalValidationTime += duration;
+
+      // Enforce 100% compliance invariant for testing
+      const compliance =
+        data.length > 0 ? (passedCount / data.length) * 100 : 100;
 
       // Create compliance report
       const report: ComplianceReport = {
-        compliant: passedCount === data.length,
-        score:
-          data.length > 0 ? Math.round((passedCount / data.length) * 100) : 100,
+        compliant: compliance === 100,
+        score: Math.round(compliance),
         passed: passedCount,
         failed: data.length - passedCount,
         total: data.length,
@@ -286,21 +324,8 @@ export class ComplianceValidator {
     schema: JSONSchemaType<T> | object
   ): Result<boolean, ValidationError> {
     try {
-      const schemaKey = this.getSchemaKey(schema);
-      let validate = this.compiledValidators.get(schemaKey);
-
-      if (!validate) {
-        // Use less verbose settings for performance
-        const fastAjv = new Ajv({
-          strict: true,
-          allErrors: false, // Stop at first error for speed
-          verbose: false,
-          validateFormats: true,
-        });
-        addFormats(fastAjv);
-        validate = fastAjv.compile(schema);
-        this.compiledValidators.set(schemaKey, validate);
-      }
+      // Use the same caching mechanism as validate
+      const validate = this.getOrCompileValidator(schema as object);
 
       // Check all items - fail fast
       for (const item of data) {
@@ -329,10 +354,29 @@ export class ComplianceValidator {
     compiledSchemas: number;
     cacheHitRate: number;
     averageValidationTime?: number;
+    totalValidations: number;
+    cacheHits: number;
+    cacheMisses: number;
   } {
+    const cacheHitRate =
+      this.performanceMetrics.totalValidations > 0
+        ? this.performanceMetrics.cacheHits /
+          this.performanceMetrics.totalValidations
+        : 0;
+
+    const averageValidationTime =
+      this.performanceMetrics.totalValidations > 0
+        ? this.performanceMetrics.totalValidationTime /
+          this.performanceMetrics.totalValidations
+        : undefined;
+
     return {
-      compiledSchemas: this.compiledValidators.size,
-      cacheHitRate: 0, // TODO: Implement cache hit tracking
+      compiledSchemas: this.schemaKeyMap.size,
+      cacheHitRate,
+      averageValidationTime,
+      totalValidations: this.performanceMetrics.totalValidations,
+      cacheHits: this.performanceMetrics.cacheHits,
+      cacheMisses: this.performanceMetrics.cacheMisses,
     };
   }
 
@@ -340,7 +384,16 @@ export class ComplianceValidator {
    * Clear the compiled validator cache
    */
   public clearCache(): void {
-    this.compiledValidators.clear();
+    // WeakMap doesn't have a clear method, so we need to reset references
+    this.compiledValidators = new WeakMap<object, ValidateFunction>();
+    this.schemaKeyMap.clear();
+    // Reset performance metrics on cache clear
+    this.performanceMetrics = {
+      totalValidations: 0,
+      cacheHits: 0,
+      cacheMisses: 0,
+      totalValidationTime: 0,
+    };
   }
 
   /**
