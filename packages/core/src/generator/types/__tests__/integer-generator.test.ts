@@ -31,6 +31,7 @@ import {
   createBounds,
 } from '../../../../../../test/arbitraries/json-schema.js';
 import '../../../../../../test/matchers';
+import { propertyTest } from '../../../../../../test/setup.js';
 
 describe('IntegerGenerator', () => {
   let generator: IntegerGenerator;
@@ -52,7 +53,8 @@ describe('IntegerGenerator', () => {
 
   describe('supports', () => {
     it('should support integer schemas', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator supports integer schemas',
         fc.property(
           getSchemaArbitrary()
             .filter(
@@ -69,12 +71,16 @@ describe('IntegerGenerator', () => {
             expect(generator.supports(schema)).toBe(true);
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() },
+          context: { component: 'IntegerGenerator', phase: 'supports' },
+        }
       );
     });
 
     it('should not support non-integer schemas', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator does not support non-integer schemas',
         fc.property(
           getSchemaArbitrary().filter(
             (schema: Record<string, unknown>) => schema.type !== 'integer'
@@ -89,7 +95,13 @@ describe('IntegerGenerator', () => {
             expect(generator.supports(schema as any)).toBe(false);
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() },
+          context: {
+            component: 'IntegerGenerator',
+            phase: 'supports-negative',
+          },
+        }
       );
     });
 
@@ -130,7 +142,8 @@ describe('IntegerGenerator', () => {
       const ajv = getAjv();
       const validate = ajv.compile(schema);
 
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator always generates integers',
         fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
           const contextWithSeed = { ...context, seed };
           const result = generator.generate(schema, contextWithSeed);
@@ -150,12 +163,16 @@ describe('IntegerGenerator', () => {
             }
           }
         }),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() },
+          context: { component: 'IntegerGenerator', phase: 'generate' },
+        }
       );
     });
 
     it('should respect minimum constraint', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator respects minimum constraint',
         fc.property(
           createBounds(-1000, 1000),
           fc.integer({ min: 0, max: 1000 }),
@@ -187,12 +204,16 @@ describe('IntegerGenerator', () => {
             }
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() },
+          context: { constraint: 'minimum' },
+        }
       );
     });
 
     it('should respect maximum constraint', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator respects maximum constraint',
         fc.property(
           createBounds(-1000, 1000),
           fc.integer({ min: 0, max: 1000 }),
@@ -224,12 +245,16 @@ describe('IntegerGenerator', () => {
             }
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() },
+          context: { constraint: 'maximum' },
+        }
       );
     });
 
     it('should respect both minimum and maximum constraints', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator respects min and max',
         fc.property(
           createBounds(-1000, 1000),
           fc.integer({ min: 0, max: 1000 }),
@@ -258,12 +283,16 @@ describe('IntegerGenerator', () => {
             }
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() },
+          context: { constraint: 'range' },
+        }
       );
     });
 
     it('should respect exclusiveMinimum constraint', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator respects exclusiveMinimum',
         fc.property(
           createBounds(-1000, 1000),
           fc.integer({ min: 0, max: 1000 }),
@@ -292,12 +321,16 @@ describe('IntegerGenerator', () => {
             }
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() },
+          context: { constraint: 'exclusiveMinimum' },
+        }
       );
     });
 
     it('should respect exclusiveMaximum constraint', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator respects exclusiveMaximum',
         fc.property(
           createBounds(-1000, 1000),
           fc.integer({ min: 0, max: 1000 }),
@@ -326,12 +359,16 @@ describe('IntegerGenerator', () => {
             }
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() },
+          context: { constraint: 'exclusiveMaximum' },
+        }
       );
     });
 
     it('should respect multipleOf constraint', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator respects multipleOf',
         fc.property(
           fc.oneof(
             fc.constant(1),
@@ -369,12 +406,16 @@ describe('IntegerGenerator', () => {
             }
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() },
+          context: { constraint: 'multipleOf' },
+        }
       );
     });
 
     it('should generate values from enum when provided', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator generates enums',
         fc.property(
           fc.array(fc.integer({ min: -100, max: 100 }), {
             minLength: 1,
@@ -412,12 +453,16 @@ describe('IntegerGenerator', () => {
             }
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() },
+          context: { feature: 'enum' },
+        }
       );
     });
 
     it('should generate const value when provided', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator generates const',
         fc.property(
           fc.integer({ min: -100, max: 100 }),
           fc.integer({ min: 0, max: 1000 }),
@@ -449,12 +494,16 @@ describe('IntegerGenerator', () => {
             }
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() },
+          context: { feature: 'const' },
+        }
       );
     });
 
     it('should handle complex constraints combinations', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator complex constraints',
         fc.property(
           createBounds(0, 100),
           fc.oneof(fc.constant(1), fc.constant(2), fc.constant(5)),
@@ -493,12 +542,13 @@ describe('IntegerGenerator', () => {
             }
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should generate same values with same seed', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator same seed stability',
         fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
           const schema: IntegerSchema = { type: 'integer' };
           const ajv = getAjv();
@@ -530,11 +580,11 @@ describe('IntegerGenerator', () => {
             }
           }
         }),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
-    it('should handle different scenarios appropriately', () => {
+    it('should handle different scenarios appropriately', async () => {
       const scenarios: Array<'normal' | 'edge' | 'peak' | 'error'> = [
         'normal',
         'edge',
@@ -542,12 +592,13 @@ describe('IntegerGenerator', () => {
         'error',
       ];
 
-      scenarios.forEach((scenario) => {
+      for (const scenario of scenarios) {
         const ajv = getAjv();
         const schema: IntegerSchema = { type: 'integer' };
         const validate = ajv.compile(schema);
 
-        fc.assert(
+        await propertyTest(
+          `IntegerGenerator scenario ${scenario}`,
           fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
             const context = createGeneratorContext(schema, formatRegistry, {
               seed,
@@ -571,15 +622,19 @@ describe('IntegerGenerator', () => {
             }
           }),
           {
-            seed: INTEGER_TEST_SEED + scenarios.indexOf(scenario),
-            numRuns: Math.floor(getNumRuns() / 5),
+            parameters: {
+              seed: INTEGER_TEST_SEED + scenarios.indexOf(scenario),
+              numRuns: Math.floor(getNumRuns() / 5),
+            },
+            context: { scenario },
           }
         );
-      });
+      }
     });
 
     it('should handle exclusive bounds correctly', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator exclusive bounds',
         fc.property(
           createBounds(0, 100),
           fc.integer({ min: 0, max: 1000 }),
@@ -615,14 +670,15 @@ describe('IntegerGenerator', () => {
             }
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
   });
 
   describe('validate', () => {
     it('should validate integer values correctly', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator validate integers',
         fc.property(fc.integer(), (value) => {
           const schema: IntegerSchema = { type: 'integer' };
           const ajv = getAjv();
@@ -641,12 +697,13 @@ describe('IntegerGenerator', () => {
             );
           }
         }),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should reject non-integer values', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator rejects non-integers',
         fc.property(
           fc.oneof(
             fc.string(),
@@ -676,12 +733,13 @@ describe('IntegerGenerator', () => {
             }
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should validate constraint compliance', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator constraint compliance',
         fc.property(
           createBounds(0, 100),
           fc.integer({ min: -200, max: 200 }),
@@ -705,12 +763,13 @@ describe('IntegerGenerator', () => {
             }
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should validate multipleOf constraint correctly', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator multipleOf validation',
         fc.property(
           fc.oneof(
             fc.constant(1),
@@ -739,14 +798,15 @@ describe('IntegerGenerator', () => {
             }
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
   });
 
   describe('getExamples', () => {
     it('should return enum values as examples when available', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator getExamples enum',
         fc.property(
           fc.array(fc.integer({ min: -100, max: 100 }), {
             minLength: 1,
@@ -765,12 +825,13 @@ describe('IntegerGenerator', () => {
             }
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should return const value as example when available', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator getExamples const',
         fc.property(fc.integer({ min: -100, max: 100 }), (constValue) => {
           const schema: IntegerSchema = { type: 'integer', const: constValue };
           const examples = generator.getExamples(schema);
@@ -783,12 +844,13 @@ describe('IntegerGenerator', () => {
             );
           }
         }),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should return schema examples when available', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator getExamples schema examples',
         fc.property(
           fc.array(fc.integer({ min: -100, max: 100 }), {
             minLength: 1,
@@ -810,12 +872,13 @@ describe('IntegerGenerator', () => {
             }
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should return empty array for unsupported schemas', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator getExamples unsupported',
         fc.property(
           getSchemaArbitrary().filter(
             (schema: Record<string, unknown>) =>
@@ -832,7 +895,7 @@ describe('IntegerGenerator', () => {
             }
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
@@ -1111,7 +1174,8 @@ describe('IntegerGenerator', () => {
 
   describe('integration tests', () => {
     it('should maintain consistency between generate and validate', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator generate/validate consistency',
         fc.property(
           getSchemaArbitrary()
             .filter(
@@ -1150,7 +1214,10 @@ describe('IntegerGenerator', () => {
             }
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() },
+          context: { phase: 'integration' },
+        }
       );
     });
 
@@ -1204,14 +1271,14 @@ describe('IntegerGenerator', () => {
       });
     });
 
-    it('should handle draft-specific exclusive bounds correctly', () => {
+    it('should handle draft-specific exclusive bounds correctly', async () => {
       const drafts: Array<'2019-09' | '2020-12' | 'draft-07'> = [
         'draft-07',
         '2019-09',
         '2020-12',
       ];
 
-      drafts.forEach((draft) => {
+      for (const draft of drafts) {
         const ajv = createAjv(draft);
         const schema: IntegerSchema = {
           type: 'integer',
@@ -1220,7 +1287,8 @@ describe('IntegerGenerator', () => {
         };
         const validate = ajv.compile(schema);
 
-        fc.assert(
+        await propertyTest(
+          `IntegerGenerator draft ${draft} exclusive bounds`,
           fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
             const context = createGeneratorContext(schema, formatRegistry, {
               seed,
@@ -1244,11 +1312,14 @@ describe('IntegerGenerator', () => {
             }
           }),
           {
-            seed: INTEGER_TEST_SEED + drafts.indexOf(draft) * 1000,
-            numRuns: Math.floor(getNumRuns() / 3),
+            parameters: {
+              seed: INTEGER_TEST_SEED + drafts.indexOf(draft) * 1000,
+              numRuns: Math.floor(getNumRuns() / 3),
+            },
+            context: { draft },
           }
         );
-      });
+      }
     });
 
     it('should handle multipleOf edge cases correctly', () => {
@@ -1291,7 +1362,8 @@ describe('IntegerGenerator', () => {
 
   describe('FormatAdapter Cross-Reference Tests (Task 21)', () => {
     it('should maintain consistency with numeric format handling', () => {
-      fc.assert(
+      return propertyTest(
+        'IntegerGenerator numeric format consistency',
         fc.property(
           createBounds(-1000, 1000),
           fc.integer({ min: 0, max: 1000 }),
@@ -1320,7 +1392,7 @@ describe('IntegerGenerator', () => {
             }
           }
         ),
-        { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: INTEGER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 

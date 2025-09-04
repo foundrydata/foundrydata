@@ -151,10 +151,11 @@ test/
 
 ### Test Commands
 ```bash
-npm run test                 # All tests
-npm run test:packages        # Core tests only  
-npm run test:matchers        # Custom matchers only
-npm run test:watch           # Watch mode
+npm run test:all             # All tests (root Vitest with projects)
+npm run test                 # Legacy: packages then test/ (composite)
+npm run test:packages        # Packages only (root config)
+npm run test:matchers        # test/**/* only (test config)
+npm run test:watch           # Watch mode (root)
 ```
 
 ### Performance Targets
@@ -316,6 +317,8 @@ When working on testing (tag: testing-v2), reference:
 - **`docs/tests/foundrydata-complete-testing-guide-en.ts.txt`** - Implementation guide with Vitest config, Fast-check setup, AJV patterns
 - **`docs/tests/foundrydata-testing-architecture-doc-en.md`** - Testing philosophy and strategy
 
+For concrete fast-check configuration and the unified `propertyTest` wrapper (timeouts, shrinking, failure context), see the section “Property-Based Testing v2.1 (Fast-check + Vitest)” below.
+
 ### Format Handling (Normative)
 For JSON Schema format validation:
 - **`docs/tests/policy_json_schema_formats_by_draft_v_2.md`** - Single source of truth for Assertive vs Annotative behavior
@@ -326,6 +329,67 @@ For JSON Schema format validation:
 2. Different drafts have different format rules
 3. Never assume format validation behavior
 4. Unknown formats degrade to Annotative with logging
+
+---
+
+## 🧪 Property-Based Testing v2.1 (Fast-check + Vitest)
+
+### Global Configuration
+- Deterministic seed: `TEST_SEED=424242`
+- Fast-check global: `endOnFailure: true`, `interruptAfterTimeLimit: 10000`, `markInterruptAsFailure: true`
+- Verbosity: CI=0 (minimal), Dev=2 (detailed), otherwise 1
+- Test timeout: 30s global (covers properties and shrinking)
+
+Sources:
+- `test/setup.ts` → `configureFastCheck()`, `propertyTest()`, and utilities
+- `vitest.config.ts` → timeouts and projects (packages + test/)
+
+### Wrapper `propertyTest`
+Purpose: enforce timeouts/shrinking, log complete failure context, and keep tests deterministic.
+
+Signature:
+```ts
+propertyTest(
+  name: string,
+  property: fc.IProperty<any>,
+  options?: {
+    parameters?: fc.Parameters<any>; // seed, numRuns, verbose, etc.
+    samples?: fc.Arbitrary<unknown>[]; // samples for logs
+    context?: Record<string, unknown>; // debug metadata
+  }
+): Promise<void>
+```
+
+Example:
+```ts
+import fc from 'fast-check';
+import { propertyTest } from '../setup';
+
+test('string length respects bounds', () => {
+  return propertyTest(
+    'bounds:string',
+    fc.property(fc.tuple(fc.integer({min:0,max:5}), fc.integer({min:5,max:10})), ([min,max]) => {
+      const s = 'a'.repeat(min);
+      expect(s.length).toBeGreaterThanOrEqual(min);
+      expect(s.length).toBeLessThanOrEqual(max);
+    }),
+    { parameters: { seed: 424242, numRuns: 50 }, context: { invariant: 'bounds', type: 'string' } }
+  );
+});
+```
+
+### Failure context and metrics
+- Logs: seed, numRuns, counterexample, shrinking path, duration, timeout breach, samples.
+- Soft cap for shrinking: CI=1000, Dev=500 (noted in failure context when exceeded).
+- Shrinking time‑guard: 10s via `interruptAfterTimeLimit` (prevents infinite loops).
+
+### Shrinking progress (optional)
+- For fine-grained progress, use `fc.asyncProperty` and pass `parameters.asyncReporter` to `propertyTest`.
+- Note: do not use `asyncReporter` with synchronous properties (fast-check forbids it).
+
+### CI vs Local
+- CI: strict (verbosity 0, shrinking caps, strict performance thresholds)
+- Local: relaxed performance thresholds to avoid machine variability; everything else is identical.
 
 ---
 

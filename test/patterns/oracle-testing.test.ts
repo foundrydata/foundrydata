@@ -33,7 +33,11 @@ import {
   jsonSchemaArbitraryFor,
   simpleSchemaArbitrary,
 } from '../arbitraries/json-schema.js';
-import { validateAgainstSchema, getTestConfig } from '../setup.js';
+import {
+  validateAgainstSchema,
+  getTestConfig,
+  propertyTest,
+} from '../setup.js';
 import { FormatAdapter } from '../helpers/format-adapter.js';
 
 // ============================================================================
@@ -286,12 +290,13 @@ describe('Oracle Testing Pattern', () => {
   });
 
   describe('100% Agreement Invariant Tests', () => {
-    test('zero tolerance policy: ourValidator(data) === ajvValidator(data) for positive cases', () => {
+    test('zero tolerance policy: ourValidator(data) === ajvValidator(data) for positive cases', async () => {
       const currentDraft = getCurrentDraft();
       let agreements = 0;
       let total = 0;
 
-      fc.assert(
+      await propertyTest(
+        'oracle positive agreement',
         fc.property(simpleSchemaArbitrary, (schema) => {
           try {
             // Generate data that should be valid against the schema
@@ -324,9 +329,8 @@ describe('Oracle Testing Pattern', () => {
           }
         }),
         {
-          seed: ORACLE_SEED,
-          numRuns: 100,
-          verbose: true,
+          parameters: { seed: ORACLE_SEED, numRuns: 100, verbose: true },
+          context: { case: 'positive' },
         }
       );
 
@@ -334,12 +338,13 @@ describe('Oracle Testing Pattern', () => {
       expect({ agreements, total }).toHaveAgreement(1.0, 0.0);
     });
 
-    test('zero tolerance policy: ourValidator(data) === ajvValidator(data) for negative cases', () => {
+    test('zero tolerance policy: ourValidator(data) === ajvValidator(data) for negative cases', async () => {
       const currentDraft = getCurrentDraft();
       let agreements = 0;
       let total = 0;
 
-      fc.assert(
+      await propertyTest(
+        'oracle negative agreement',
         fc.property(simpleSchemaArbitrary, (schema) => {
           try {
             // Generate data that should be invalid against the schema
@@ -372,9 +377,8 @@ describe('Oracle Testing Pattern', () => {
           }
         }),
         {
-          seed: ORACLE_SEED,
-          numRuns: 100,
-          verbose: true,
+          parameters: { seed: ORACLE_SEED, numRuns: 100, verbose: true },
+          context: { case: 'negative' },
         }
       );
 
@@ -437,9 +441,10 @@ describe('Oracle Testing Pattern', () => {
   });
 
   describe('Multi-Draft Matrix Testing', () => {
-    test('oracle consistency across all supported JSON Schema drafts', () => {
+    test('oracle consistency across all supported JSON Schema drafts', async () => {
       for (const draft of ALL_DRAFTS) {
-        fc.assert(
+        await propertyTest(
+          `oracle multi-draft ${draft}`,
           fc.property(jsonSchemaArbitraryFor(draft), (schema) => {
             try {
               const testData = generateValidTestData(schema, ORACLE_SEED);
@@ -467,9 +472,8 @@ describe('Oracle Testing Pattern', () => {
             }
           }),
           {
-            seed: ORACLE_SEED,
-            numRuns: 30, // Reduced for multi-draft testing
-            verbose: false,
+            parameters: { seed: ORACLE_SEED, numRuns: 30, verbose: false },
+            context: { draft },
           }
         );
       }
@@ -550,7 +554,7 @@ describe('Oracle Testing Pattern', () => {
   });
 
   describe('Performance Comparison Testing', () => {
-    test('oracle performance should not exceed 2x our validator performance', () => {
+    test('oracle performance should not exceed 2x our validator performance', async () => {
       const currentDraft = getCurrentDraft();
       const performanceResults: Array<{
         ourTime: number;
@@ -558,7 +562,8 @@ describe('Oracle Testing Pattern', () => {
         ratio: number;
       }> = [];
 
-      fc.assert(
+      await propertyTest(
+        'oracle performance ratio',
         fc.property(simpleSchemaArbitrary, (schema) => {
           try {
             const testData = generateValidTestData(schema, ORACLE_SEED);
@@ -606,11 +611,7 @@ describe('Oracle Testing Pattern', () => {
             return;
           }
         }),
-        {
-          seed: ORACLE_SEED,
-          numRuns: 50,
-          verbose: false,
-        }
+        { parameters: { seed: ORACLE_SEED, numRuns: 50, verbose: false } }
       );
 
       // Log performance summary
@@ -630,7 +631,8 @@ describe('Oracle Testing Pattern', () => {
     test('invariant checking with fc.property() for random schemas', () => {
       const currentDraft = getCurrentDraft();
 
-      fc.assert(
+      return propertyTest(
+        'oracle random data invariant',
         fc.property(getSchemaArbitrary(), (schema) => {
           try {
             // Generate random test data using fast-check
@@ -659,11 +661,7 @@ describe('Oracle Testing Pattern', () => {
             return;
           }
         }),
-        {
-          seed: ORACLE_SEED,
-          numRuns: 75,
-          verbose: true,
-        }
+        { parameters: { seed: ORACLE_SEED, numRuns: 75, verbose: true } }
       );
     });
 
@@ -850,7 +848,7 @@ describe('Oracle Testing Pattern', () => {
   });
 
   describe('Comprehensive Discrepancy Analysis', () => {
-    test('categorize and analyze all types of discrepancies', () => {
+    test('categorize and analyze all types of discrepancies', async () => {
       const currentDraft = getCurrentDraft();
       const discrepancyStats = {
         formatDifferences: 0,
@@ -859,7 +857,8 @@ describe('Oracle Testing Pattern', () => {
         total: 0,
       };
 
-      fc.assert(
+      await propertyTest(
+        'oracle discrepancy analysis',
         fc.property(
           fc.record({
             schema: simpleSchemaArbitrary,
@@ -902,11 +901,7 @@ describe('Oracle Testing Pattern', () => {
             }
           }
         ),
-        {
-          seed: ORACLE_SEED,
-          numRuns: 100,
-          verbose: false,
-        }
+        { parameters: { seed: ORACLE_SEED, numRuns: 100, verbose: false } }
       );
 
       // Log discrepancy statistics for analysis

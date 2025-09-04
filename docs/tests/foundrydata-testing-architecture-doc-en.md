@@ -221,7 +221,8 @@ describe('Critical Invariants', () => {
   it('MUST maintain 100% schema compliance', () => {
     const ajv = getAjv(); // Singleton, cached
     
-    fc.assert(
+    return propertyTest(
+      'Critical invariants: AJV compliance',
       fc.property(
         getSchemaArbitrary(), // Draft-aware
         seedArbitrary,
@@ -238,7 +239,7 @@ describe('Critical Invariants', () => {
           }
         }
       ),
-      { numRuns: fc.readConfigureGlobal().numRuns }
+      { parameters: { numRuns: fc.readConfigureGlobal().numRuns } }
     );
   });
 });
@@ -300,7 +301,8 @@ expect(JSON.stringify(all.slice(0, n1))).toEqual(JSON.stringify(part1));
 
 ```typescript
 it('should match AJV validation', () => {
-  fc.assert(
+  return propertyTest(
+    'Oracle consistency: AJV vs internal',
     fc.property(schema, data, (s, d) => {
       const ajvResult = ajv.compile(s)(d);
       const ourResult = ourValidator.validate(d, s);
@@ -308,6 +310,9 @@ it('should match AJV validation', () => {
     })
   );
 });
+
+// Note: FoundryData wraps fast-check via propertyTest to standardize timeouts,
+// shrinking logs and failure context (seed, numRuns). Prefer propertyTest over fc.assert.
 ```
 
 ### 4. Stateful Testing

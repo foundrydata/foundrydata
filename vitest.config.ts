@@ -81,7 +81,8 @@ export default defineConfig({
     fileParallelism: !isCI,
 
     // Extended timeouts for property-based testing
-    testTimeout: isCI ? 30000 : 10000, // 30s in CI, 10s locally
+    // Property-based tests need longer timeouts to shrink safely
+    testTimeout: 30000, // 30s for all tests to cover property-based use
     hookTimeout: 10000, // 10s for setup/teardown hooks
     teardownTimeout: 5000, // 5s for cleanup
 
@@ -153,7 +154,8 @@ export default defineConfig({
     // ========================================================================
 
     // Projects configuration for monorepo - each package is a project
-    projects: ['packages/*'],
+    // Also include the dedicated test utilities project
+    projects: ['packages/*', './test/vitest.config.ts'],
 
     // ========================================================================
     // DEBUGGING AND DEVELOPMENT

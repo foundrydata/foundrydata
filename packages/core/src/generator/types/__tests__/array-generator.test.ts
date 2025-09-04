@@ -25,6 +25,7 @@ import { ArrayGenerator } from '../array-generator.js';
 import { FormatRegistry } from '../../../registry/format-registry.js';
 import type { ArraySchema, Schema } from '../../../types/schema.js';
 import { createGeneratorContext } from '../../data-generator.js';
+import { propertyTest } from '../../../../../../test/setup.js';
 
 describe('ArrayGenerator', () => {
   let generator: ArrayGenerator;
@@ -42,7 +43,8 @@ describe('ArrayGenerator', () => {
 
   describe('supports', () => {
     it('should support array schemas with valid constraints', () => {
-      fc.assert(
+      return propertyTest(
+        'ArrayGenerator supports array schemas',
         fc.property(
           createBounds(0, 10).chain(([minItems, maxItems]) =>
             fc.record({
@@ -58,7 +60,10 @@ describe('ArrayGenerator', () => {
             expect(generator.supports(schema as ArraySchema)).toBe(true);
           }
         ),
-        { seed: 424242, numRuns: 100 }
+        {
+          parameters: { seed: 424242, numRuns: 100 },
+          context: { component: 'ArrayGenerator', phase: 'supports' },
+        }
       );
     });
 
@@ -84,7 +89,8 @@ describe('ArrayGenerator', () => {
 
   describe('generate', () => {
     it('should generate arrays respecting minItems/maxItems with createBounds', () => {
-      fc.assert(
+      return propertyTest(
+        'ArrayGenerator respects min/max items',
         fc.property(
           createBounds(0, 5).chain(([minItems, maxItems]) =>
             fc.record({
@@ -130,12 +136,16 @@ describe('ArrayGenerator', () => {
             }
           }
         ),
-        { seed: 424242, numRuns: 100 }
+        {
+          parameters: { seed: 424242, numRuns: 100 },
+          context: { phase: 'generate', constraint: 'min/max' },
+        }
       );
     });
 
     it('should generate arrays with uniqueItems using toBeDistinct matcher', () => {
-      fc.assert(
+      return propertyTest(
+        'ArrayGenerator uniqueItems',
         fc.property(
           createBounds(2, 5).chain(([minItems, maxItems]) =>
             fc.record({
@@ -176,7 +186,10 @@ describe('ArrayGenerator', () => {
             }
           }
         ),
-        { seed: 424242, numRuns: 100 }
+        {
+          parameters: { seed: 424242, numRuns: 100 },
+          context: { constraint: 'uniqueItems' },
+        }
       );
     });
 
@@ -316,7 +329,8 @@ describe('ArrayGenerator', () => {
 
   describe('validate', () => {
     it('should validate arrays against schema constraints', () => {
-      fc.assert(
+      return propertyTest(
+        'ArrayGenerator validate arrays',
         fc.property(
           createBounds(1, 5).chain(([minItems, maxItems]) =>
             fc.tuple(
@@ -349,7 +363,7 @@ describe('ArrayGenerator', () => {
             expect(generator.validate(tooLong, arraySchema)).toBe(false);
           }
         ),
-        { seed: 424242, numRuns: 100 }
+        { parameters: { seed: 424242, numRuns: 100 } }
       );
     });
 
@@ -392,7 +406,8 @@ describe('ArrayGenerator', () => {
 
   describe('getExamples', () => {
     it('should return valid example arrays', () => {
-      fc.assert(
+      return propertyTest(
+        'ArrayGenerator getExamples valid arrays',
         fc.property(
           fc.record({
             type: fc.constant('array' as const),
@@ -416,7 +431,7 @@ describe('ArrayGenerator', () => {
             });
           }
         ),
-        { seed: 424242, numRuns: 100 }
+        { parameters: { seed: 424242, numRuns: 100 } }
       );
     });
 
@@ -446,7 +461,8 @@ describe('ArrayGenerator', () => {
 
   describe('generateMultiple', () => {
     it('should generate multiple distinct arrays', () => {
-      fc.assert(
+      return propertyTest(
+        'ArrayGenerator generateMultiple',
         fc.property(
           createBounds(0, 3).chain(([minItems, maxItems]) =>
             fc.record({
@@ -486,14 +502,15 @@ describe('ArrayGenerator', () => {
             }
           }
         ),
-        { seed: 424242, numRuns: 50 }
+        { parameters: { seed: 424242, numRuns: 50 } }
       );
     });
   });
 
   describe('integration tests', () => {
     it('should maintain consistency between generate and validate', () => {
-      fc.assert(
+      return propertyTest(
+        'ArrayGenerator generate/validate consistency',
         fc.property(
           createBounds(0, 5).chain(([minItems, maxItems]) =>
             fc.record({
@@ -558,7 +575,10 @@ describe('ArrayGenerator', () => {
             }
           }
         ),
-        { seed: 424242, numRuns: 100 }
+        {
+          parameters: { seed: 424242, numRuns: 100 },
+          context: { phase: 'integration' },
+        }
       );
     });
 

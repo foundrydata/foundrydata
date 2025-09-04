@@ -30,6 +30,7 @@ import {
   assertValidAgainstSchema,
   validateAgainstSchema,
   getTestConfig,
+  propertyTest,
 } from '../setup.js';
 
 // ============================================================================
@@ -311,7 +312,8 @@ describe('Invariant Testing Pattern', () => {
       const currentDraft = getCurrentDraft();
       const ajv = createAjv(currentDraft);
 
-      fc.assert(
+      return propertyTest(
+        'Invariant simple schemas',
         fc.property(simpleSchemaArbitrary, (schema) => {
           // Generate data using mock generator
           const generatedData = mockDataGenerator(schema);
@@ -337,16 +339,20 @@ describe('Invariant Testing Pattern', () => {
           }
         }),
         {
-          seed: config.seed,
-          numRuns: Math.min(config.numRuns, 50), // Lighter for simple schemas
-          verbose: true,
+          parameters: {
+            seed: config.seed,
+            numRuns: Math.min(config.numRuns, 50),
+            verbose: true,
+          },
+          context: { invariant: 'simple-schemas', draft: currentDraft },
         }
       );
     });
 
-    test('across all JSON Schema drafts', () => {
+    test('across all JSON Schema drafts', async () => {
       for (const draft of ALL_DRAFTS) {
-        fc.assert(
+        await propertyTest(
+          `Invariant across draft ${draft}`,
           fc.property(jsonSchemaArbitraryFor(draft), (schema) => {
             try {
               const generatedData = mockDataGenerator(schema);
@@ -389,9 +395,8 @@ describe('Invariant Testing Pattern', () => {
             }
           }),
           {
-            seed: config.seed,
-            numRuns: 25, // Reduced for multi-draft testing
-            verbose: true,
+            parameters: { seed: config.seed, numRuns: 25, verbose: true },
+            context: { invariant: 'all-drafts', draft },
           }
         );
       }
@@ -417,7 +422,7 @@ describe('Invariant Testing Pattern', () => {
       expect(data1).toEqual(data2);
     });
 
-    test('deterministic behavior across test runs', () => {
+    test('deterministic behavior across test runs', async () => {
       const schema = {
         type: 'object',
         properties: {
@@ -433,7 +438,8 @@ describe('Invariant Testing Pattern', () => {
       for (let run = 0; run < 3; run++) {
         const currentResults: unknown[] = [];
 
-        fc.assert(
+        await propertyTest(
+          `Determinism run ${run + 1}`,
           fc.property(fc.constant(schema), (testSchema) => {
             const data = mockDataGenerator(testSchema);
             currentResults.push(data);
@@ -441,12 +447,11 @@ describe('Invariant Testing Pattern', () => {
             // Must be valid
             const result = validateAgainstSchema(data, testSchema);
             expect(result.valid).toBe(true);
-
             return true;
           }),
           {
-            seed: config.seed,
-            numRuns: 5,
+            parameters: { seed: config.seed, numRuns: 5 },
+            context: { invariant: 'determinism', run },
           }
         );
 
@@ -461,7 +466,8 @@ describe('Invariant Testing Pattern', () => {
 
   describe('INVARIANT: MUST generate correct data types', () => {
     test('string schemas produce strings', () => {
-      fc.assert(
+      return propertyTest(
+        'Types: strings',
         fc.property(
           fc
             .record({
@@ -480,12 +486,16 @@ describe('Invariant Testing Pattern', () => {
             assertValidAgainstSchema(data, schema);
           }
         ),
-        { seed: config.seed, numRuns: 50 }
+        {
+          parameters: { seed: config.seed, numRuns: 50 },
+          context: { invariant: 'types', type: 'string' },
+        }
       );
     });
 
     test('number schemas produce numbers', () => {
-      fc.assert(
+      return propertyTest(
+        'Types: numbers/integers',
         fc.property(
           createBounds(0, 1000).chain(([min, max]) =>
             fc.record({
@@ -508,7 +518,10 @@ describe('Invariant Testing Pattern', () => {
             assertValidAgainstSchema(data, schema);
           }
         ),
-        { seed: config.seed, numRuns: 50 }
+        {
+          parameters: { seed: config.seed, numRuns: 50 },
+          context: { invariant: 'types', type: 'number/integer' },
+        }
       );
     });
 
@@ -532,7 +545,8 @@ describe('Invariant Testing Pattern', () => {
 
   describe('INVARIANT: MUST respect all boundary constraints', () => {
     test('string length constraints', () => {
-      fc.assert(
+      return propertyTest(
+        'Bounds: string length',
         fc.property(
           createBounds(1, 10).chain(([minLength, maxLength]) =>
             fc.record({
@@ -551,12 +565,16 @@ describe('Invariant Testing Pattern', () => {
             assertValidAgainstSchema(data, schema);
           }
         ),
-        { seed: config.seed, numRuns: 100 }
+        {
+          parameters: { seed: config.seed, numRuns: 100 },
+          context: { invariant: 'bounds', type: 'string' },
+        }
       );
     });
 
     test('numeric value constraints', () => {
-      fc.assert(
+      return propertyTest(
+        'Bounds: numeric values',
         fc.property(
           createBounds(0, 100).chain(([minimum, maximum]) =>
             fc.record({
@@ -579,12 +597,16 @@ describe('Invariant Testing Pattern', () => {
             assertValidAgainstSchema(data, schema);
           }
         ),
-        { seed: config.seed, numRuns: 100 }
+        {
+          parameters: { seed: config.seed, numRuns: 100 },
+          context: { invariant: 'bounds', type: 'number/integer' },
+        }
       );
     });
 
     test('array item count constraints', () => {
-      fc.assert(
+      return propertyTest(
+        'Bounds: array length',
         fc.property(
           createBounds(1, 5).chain(([minItems, maxItems]) =>
             fc.record({
@@ -605,12 +627,16 @@ describe('Invariant Testing Pattern', () => {
             assertValidAgainstSchema(data, schema);
           }
         ),
-        { seed: config.seed, numRuns: 50 }
+        {
+          parameters: { seed: config.seed, numRuns: 50 },
+          context: { invariant: 'bounds', type: 'array' },
+        }
       );
     });
 
     test('object required properties constraints', () => {
-      fc.assert(
+      return propertyTest(
+        'Bounds: object required',
         fc.property(
           fc
             .array(fc.string({ minLength: 1, maxLength: 8 }), {
@@ -644,7 +670,10 @@ describe('Invariant Testing Pattern', () => {
             assertValidAgainstSchema(data, schema);
           }
         ),
-        { seed: config.seed, numRuns: 50 }
+        {
+          parameters: { seed: config.seed, numRuns: 50 },
+          context: { invariant: 'bounds', type: 'object' },
+        }
       );
     });
   });
@@ -654,7 +683,8 @@ describe('Invariant Testing Pattern', () => {
       const currentDraft = getCurrentDraft();
       const schemaArbitrary = getSchemaArbitrary();
 
-      fc.assert(
+      return propertyTest(
+        `Current draft ${currentDraft}`,
         fc.property(schemaArbitrary, (schema) => {
           try {
             const data = mockDataGenerator(schema);
@@ -686,9 +716,8 @@ describe('Invariant Testing Pattern', () => {
           }
         }),
         {
-          seed: config.seed,
-          numRuns: 30,
-          verbose: true,
+          parameters: { seed: config.seed, numRuns: 30, verbose: true },
+          context: { invariant: 'current-draft', draft: currentDraft },
         }
       );
     });

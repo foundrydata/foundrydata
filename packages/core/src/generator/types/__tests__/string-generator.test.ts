@@ -31,6 +31,7 @@ import {
   createBounds,
 } from '../../../../../../test/arbitraries/json-schema.js';
 import '../../../../../../test/matchers';
+import { propertyTest } from '../../../../../../test/setup.js';
 
 describe('StringGenerator', () => {
   let generator: StringGenerator;
@@ -52,7 +53,8 @@ describe('StringGenerator', () => {
 
   describe('supports', () => {
     it('should support string schemas', () => {
-      fc.assert(
+      return propertyTest(
+        'StringGenerator supports string',
         fc.property(
           getSchemaArbitrary()
             .filter(
@@ -69,12 +71,13 @@ describe('StringGenerator', () => {
             expect(generator.supports(schema)).toBe(true);
           }
         ),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should not support non-string schemas', () => {
-      fc.assert(
+      return propertyTest(
+        'StringGenerator rejects non-string',
         fc.property(
           getSchemaArbitrary().filter(
             (schema: Record<string, unknown>) => schema.type !== 'string'
@@ -89,7 +92,7 @@ describe('StringGenerator', () => {
             expect(generator.supports(schema as any)).toBe(false);
           }
         ),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
   });
@@ -101,7 +104,8 @@ describe('StringGenerator', () => {
       const ajv = getAjv();
       const validate = ajv.compile(schema);
 
-      fc.assert(
+      return propertyTest(
+        'StringGenerator always generates strings',
         fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
           const contextWithSeed = { ...context, seed };
           const result = generator.generate(schema, contextWithSeed);
@@ -119,12 +123,13 @@ describe('StringGenerator', () => {
             }
           }
         }),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should respect minLength constraint', () => {
-      fc.assert(
+      return propertyTest(
+        'StringGenerator respects minLength',
         fc.property(
           fc.integer({ min: 0, max: 100 }),
           fc.integer({ min: 0, max: 1000 }),
@@ -152,12 +157,13 @@ describe('StringGenerator', () => {
             }
           }
         ),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should respect maxLength constraint', () => {
-      fc.assert(
+      return propertyTest(
+        'StringGenerator respects maxLength',
         fc.property(
           fc.integer({ min: 1, max: 100 }),
           fc.integer({ min: 0, max: 1000 }),
@@ -185,12 +191,13 @@ describe('StringGenerator', () => {
             }
           }
         ),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should respect both minLength and maxLength constraints', () => {
-      fc.assert(
+      return propertyTest(
+        'StringGenerator respects min+max length',
         fc.property(
           createBounds(0, 50).chain(([minLength, maxLength]) =>
             fc.tuple(
@@ -228,12 +235,13 @@ describe('StringGenerator', () => {
             }
           }
         ),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should generate values from enum when provided', () => {
-      fc.assert(
+      return propertyTest(
+        'StringGenerator generates enums',
         fc.property(
           fc
             .array(fc.string(), { minLength: 1, maxLength: 10 })
@@ -264,12 +272,13 @@ describe('StringGenerator', () => {
             }
           }
         ),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should generate const value when provided', () => {
-      fc.assert(
+      return propertyTest(
+        'StringGenerator generates const',
         fc.property(
           fc.string(),
           fc.integer({ min: 0, max: 1000 }),
@@ -297,7 +306,7 @@ describe('StringGenerator', () => {
             }
           }
         ),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
@@ -343,7 +352,8 @@ describe('StringGenerator', () => {
     });
 
     it('should generate same values with same seed', () => {
-      fc.assert(
+      return propertyTest(
+        'StringGenerator same seed stability',
         fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
           const schema: StringSchema = { type: 'string' };
           const ajv = getAjv();
@@ -375,7 +385,7 @@ describe('StringGenerator', () => {
             }
           }
         }),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
@@ -391,7 +401,8 @@ describe('StringGenerator', () => {
       ];
 
       patterns.forEach((pattern) => {
-        fc.assert(
+        return propertyTest(
+          `StringGenerator pattern ${pattern}`,
           fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
             const schema: StringSchema = { type: 'string', pattern };
             const context = createGeneratorContext(schema, formatRegistry, {
@@ -418,7 +429,10 @@ describe('StringGenerator', () => {
               }
             }
           }),
-          { seed: STRING_TEST_SEED, numRuns: 20 } // Fewer runs for pattern tests as they're more constrained
+          {
+            parameters: { seed: STRING_TEST_SEED, numRuns: 20 },
+            context: { pattern },
+          }
         );
       });
     });
@@ -475,7 +489,8 @@ describe('StringGenerator', () => {
 
     it('should handle edge case scenarios', () => {
       const ajv = getAjv();
-      fc.assert(
+      return propertyTest(
+        'StringGenerator edge cases',
         fc.property(
           fc.record({
             minLength: fc.option(fc.integer({ min: 0, max: 10 }), {
@@ -539,7 +554,7 @@ describe('StringGenerator', () => {
             }
           }
         ),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
@@ -939,7 +954,8 @@ describe('StringGenerator', () => {
   describe('validate', () => {
     it('should validate string values correctly', () => {
       const ajv = getAjv();
-      fc.assert(
+      return propertyTest(
+        'StringGenerator validate values',
         fc.property(
           fc.string(),
           fc.record({
@@ -1002,13 +1018,14 @@ describe('StringGenerator', () => {
             }
           }
         ),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should reject non-string values', () => {
       const ajv = getAjv();
-      fc.assert(
+      return propertyTest(
+        'StringGenerator rejects non-strings',
         fc.property(
           fc.oneof(
             fc.integer(),
@@ -1032,13 +1049,14 @@ describe('StringGenerator', () => {
             }
           }
         ),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should validate enum constraints correctly', () => {
       const ajv = getAjv();
-      fc.assert(
+      return propertyTest(
+        'StringGenerator validate enum',
         fc.property(
           fc
             .array(fc.string(), { minLength: 1, maxLength: 5 })
@@ -1061,13 +1079,14 @@ describe('StringGenerator', () => {
             }
           }
         ),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should validate const constraints correctly', () => {
       const ajv = getAjv();
-      fc.assert(
+      return propertyTest(
+        'StringGenerator validate const',
         fc.property(fc.string(), fc.string(), (constValue, testValue) => {
           const schema: StringSchema = { type: 'string', const: constValue };
           const validate = ajv.compile(schema);
@@ -1084,7 +1103,7 @@ describe('StringGenerator', () => {
             );
           }
         }),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
@@ -1106,7 +1125,8 @@ describe('StringGenerator', () => {
 
   describe('getExamples', () => {
     it('should return enum values as examples when available', () => {
-      fc.assert(
+      return propertyTest(
+        'StringGenerator getExamples enum',
         fc.property(
           fc.array(fc.string(), { minLength: 1, maxLength: 10 }),
           (enumValues) => {
@@ -1122,12 +1142,13 @@ describe('StringGenerator', () => {
             }
           }
         ),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should return const value as example when available', () => {
-      fc.assert(
+      return propertyTest(
+        'StringGenerator getExamples const',
         fc.property(fc.string(), (constValue) => {
           const schema: StringSchema = { type: 'string', const: constValue };
           const examples = generator.getExamples(schema);
@@ -1140,12 +1161,13 @@ describe('StringGenerator', () => {
             );
           }
         }),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should return schema examples when available', () => {
-      fc.assert(
+      return propertyTest(
+        'StringGenerator getExamples schema examples',
         fc.property(
           fc.array(fc.string(), { minLength: 1, maxLength: 5 }),
           (schemaExamples) => {
@@ -1164,12 +1186,13 @@ describe('StringGenerator', () => {
             }
           }
         ),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should generate constraint-based examples when no explicit examples', () => {
-      fc.assert(
+      return propertyTest(
+        'StringGenerator getExamples constraints',
         fc.property(
           fc.integer({ min: 1, max: 10 }).chain((minLen) =>
             fc.record({
@@ -1210,12 +1233,13 @@ describe('StringGenerator', () => {
             });
           }
         ),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should return empty array for unsupported schemas', () => {
-      fc.assert(
+      return propertyTest(
+        'StringGenerator getExamples unsupported',
         fc.property(
           fc.oneof(
             fc.record({ type: fc.constantFrom('number', 'boolean', 'object') }),
@@ -1233,7 +1257,7 @@ describe('StringGenerator', () => {
             }
           }
         ),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
   });
@@ -1249,7 +1273,8 @@ describe('StringGenerator', () => {
   describe('integration tests', () => {
     it('should maintain consistency between generate and validate', () => {
       const ajv = getAjv();
-      fc.assert(
+      return propertyTest(
+        'StringGenerator generate/validate consistency',
         fc.property(
           fc.oneof(
             // Simple schema with no constraints
@@ -1297,7 +1322,10 @@ describe('StringGenerator', () => {
             }
           }
         ),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() },
+          context: { phase: 'integration' },
+        }
       );
     });
   });
@@ -1309,7 +1337,8 @@ describe('StringGenerator', () => {
 
       formats.forEach((format) => {
         drafts.forEach((draft) => {
-          fc.assert(
+          return propertyTest(
+            `StringGenerator multi-draft ${format} ${draft}`,
             fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
               const schema: StringSchema = { type: 'string', format };
               const context = createGeneratorContext(schema, formatRegistry, {
@@ -1352,14 +1381,21 @@ describe('StringGenerator', () => {
                 }
               }
             }),
-            { seed: STRING_TEST_SEED, numRuns: Math.floor(getNumRuns() / 3) }
+            {
+              parameters: {
+                seed: STRING_TEST_SEED,
+                numRuns: Math.floor(getNumRuns() / 3),
+              },
+              context: { draft, format },
+            }
           );
         });
       });
     });
 
     it('should demonstrate constraint coherence with createBounds() helper', () => {
-      fc.assert(
+      return propertyTest(
+        'StringGenerator createBounds coherence',
         fc.property(
           createBounds(0, 15).chain(([minLength, maxLength]) =>
             fc.tuple(
@@ -1412,7 +1448,7 @@ describe('StringGenerator', () => {
             }
           }
         ),
-        { seed: STRING_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: STRING_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 

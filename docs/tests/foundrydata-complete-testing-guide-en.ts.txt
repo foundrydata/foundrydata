@@ -326,6 +326,7 @@ export function getAjv(): Ajv {
 
 import { beforeAll, beforeEach, afterEach, afterAll, vi, expect } from 'vitest';
 import fc from 'fast-check';
+import { propertyTest } from '@test/setup';
 import { getAjv } from './helpers/ajv-factory';
 
 // Fast-check Configuration with deterministic defaults
@@ -1072,7 +1073,8 @@ describe('Invariant Testing - Core Properties', () => {
     const ajv = getAjv();
     const schemaArbitrary = getSchemaArbitrary();
     
-    fc.assert(
+    return propertyTest(
+      'Invariant: 100% AJV compliance',
       fc.property(
         schemaArbitrary,
         businessScenarioArbitrary,
@@ -1109,9 +1111,11 @@ describe('Invariant Testing - Core Properties', () => {
         }
       ),
       {
-        numRuns: fc.readConfigureGlobal().numRuns, // Use global config
-        endOnFailure: false,
-        verbose: true,
+        parameters: {
+          numRuns: fc.readConfigureGlobal().numRuns,
+          endOnFailure: false,
+          verbose: true,
+        },
       }
     );
   });
@@ -1123,7 +1127,8 @@ describe('Invariant Testing - Core Properties', () => {
   it('MUST be deterministic with same seed', () => {
     const schemaArbitrary = getSchemaArbitrary();
     
-    fc.assert(
+    return propertyTest(
+      'Invariant: deterministic with same seed',
       fc.property(
         schemaArbitrary,
         fc.integer({ min: 0, max: Number.MAX_SAFE_INTEGER }),
@@ -1158,7 +1163,8 @@ describe('Invariant Testing - Core Properties', () => {
   it('MUST always generate correct data types', () => {
     const schemaArbitrary = getSchemaArbitrary();
     
-    fc.assert(
+    return propertyTest(
+      'Invariant: correct data types',
       fc.property(
         schemaArbitrary,
         fc.integer({ min: 1, max: 100 }),
@@ -1835,7 +1841,8 @@ describe('Performance Benchmarks', () => {
   
   Object.entries(benchmarks).forEach(([level, benchmark]) => {
     it(`should meet ${level} performance targets (p95)`, () => {
-      fc.assert(
+      return propertyTest(
+        `Perf: ${level} p95 target`,
         fc.property(
           fc.integer({ min: 100, max: 1000 }),
           (count) => {
@@ -1876,7 +1883,7 @@ describe('Performance Benchmarks', () => {
             }
           }
         ),
-        { numRuns: 3 } // Few runs for perf tests
+        { parameters: { numRuns: 3 } }
       );
     });
   });

@@ -9,6 +9,7 @@
 
 import { describe, test, expect, beforeEach } from 'vitest';
 import fc from 'fast-check';
+import { propertyTest } from '../../setup';
 import {
   FormatAdapter,
   validateFormat,
@@ -136,7 +137,8 @@ describe('FormatAdapter', () => {
     });
 
     test('property-based: valid format values should pass validation', () => {
-      fc.assert(
+      return propertyTest(
+        'valid format values pass validation',
         fc.property(
           fc.constantFrom('uuid', 'email', 'date-time', 'uri'),
           fc.oneof(
@@ -163,7 +165,7 @@ describe('FormatAdapter', () => {
             expect(adapter.validate(format, value)).toBe(true);
           }
         ),
-        { numRuns: 50 }
+        { parameters: { numRuns: 50 } }
       );
     });
   });

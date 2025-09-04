@@ -20,6 +20,7 @@ import { EnumGenerator } from '../enum-generator.js';
 import { FormatRegistry } from '../../../registry/format-registry.js';
 import { createGeneratorContext } from '../../data-generator.js';
 import type { Schema } from '../../../types/schema.js';
+import { propertyTest } from '../../../../../../test/setup.js';
 
 describe('EnumGenerator', () => {
   let generator: EnumGenerator;
@@ -37,7 +38,8 @@ describe('EnumGenerator', () => {
 
   describe('supports', () => {
     it('should support schemas with non-empty enum arrays', () => {
-      fc.assert(
+      return propertyTest(
+        'EnumGenerator supports non-empty enum',
         fc.property(
           fc.array(
             fc.oneof(
@@ -54,7 +56,7 @@ describe('EnumGenerator', () => {
             expect(generator.supports(schema)).toBe(true);
           }
         ),
-        { seed: 424242, numRuns: 100 }
+        { parameters: { seed: 424242, numRuns: 100 } }
       );
     });
 
@@ -84,7 +86,8 @@ describe('EnumGenerator', () => {
 
   describe('generate', () => {
     it('should generate values from enum with AJV oracle validation', () => {
-      fc.assert(
+      return propertyTest(
+        'EnumGenerator generate values with AJV',
         fc.property(
           fc.uniqueArray(fc.oneof(fc.string(), fc.integer(), fc.boolean()), {
             minLength: 1,
@@ -119,12 +122,13 @@ describe('EnumGenerator', () => {
             }
           }
         ),
-        { seed: 424242, numRuns: 100 }
+        { parameters: { seed: 424242, numRuns: 100 } }
       );
     });
 
     it('should generate deterministically with same seed', () => {
-      fc.assert(
+      return propertyTest(
+        'EnumGenerator deterministic same seed',
         fc.property(
           fc.uniqueArray(fc.string(), { minLength: 2, maxLength: 10 }),
           fc.integer({ min: 0, max: 1000 }),
@@ -154,12 +158,13 @@ describe('EnumGenerator', () => {
             }
           }
         ),
-        { seed: 424242, numRuns: 100 }
+        { parameters: { seed: 424242, numRuns: 100 } }
       );
     });
 
     it('should handle single-value enums', () => {
-      fc.assert(
+      return propertyTest(
+        'EnumGenerator single-value enums',
         fc.property(
           fc.oneof(fc.string(), fc.integer(), fc.boolean(), fc.constant(null)),
           fc.integer({ min: 0, max: 1000 }),
@@ -178,7 +183,7 @@ describe('EnumGenerator', () => {
             }
           }
         ),
-        { seed: 424242, numRuns: 100 }
+        { parameters: { seed: 424242, numRuns: 100 } }
       );
     });
 
@@ -328,7 +333,8 @@ describe('EnumGenerator', () => {
 
   describe('validate', () => {
     it('should validate values in enum', () => {
-      fc.assert(
+      return propertyTest(
+        'EnumGenerator validate in-enum',
         fc.property(
           fc.array(fc.oneof(fc.string(), fc.integer(), fc.boolean()), {
             minLength: 1,
@@ -343,12 +349,13 @@ describe('EnumGenerator', () => {
             });
           }
         ),
-        { seed: 424242, numRuns: 100 }
+        { parameters: { seed: 424242, numRuns: 100 } }
       );
     });
 
     it('should reject values not in enum', () => {
-      fc.assert(
+      return propertyTest(
+        'EnumGenerator reject out-of-enum',
         fc.property(
           fc.array(fc.integer({ min: 0, max: 100 }), {
             minLength: 1,
@@ -360,7 +367,7 @@ describe('EnumGenerator', () => {
             expect(generator.validate(testValue, schema as Schema)).toBe(false);
           }
         ),
-        { seed: 424242, numRuns: 100 }
+        { parameters: { seed: 424242, numRuns: 100 } }
       );
     });
 
@@ -408,7 +415,8 @@ describe('EnumGenerator', () => {
 
   describe('getExamples', () => {
     it('should return all enum values as examples', () => {
-      fc.assert(
+      return propertyTest(
+        'EnumGenerator getExamples all values',
         fc.property(
           fc.uniqueArray(fc.oneof(fc.string(), fc.integer(), fc.boolean()), {
             minLength: 1,
@@ -422,7 +430,7 @@ describe('EnumGenerator', () => {
             expect(examples).toHaveLength(enumValues.length);
           }
         ),
-        { seed: 424242, numRuns: 100 }
+        { parameters: { seed: 424242, numRuns: 100 } }
       );
     });
 
@@ -451,7 +459,8 @@ describe('EnumGenerator', () => {
 
   describe('generateMultiple', () => {
     it('should generate multiple enum values', () => {
-      fc.assert(
+      return propertyTest(
+        'EnumGenerator generateMultiple',
         fc.property(
           fc.uniqueArray(fc.string(), { minLength: 1, maxLength: 5 }),
           fc.integer({ min: 2, max: 10 }),
@@ -490,7 +499,7 @@ describe('EnumGenerator', () => {
             }
           }
         ),
-        { seed: 424242, numRuns: 50 }
+        { parameters: { seed: 424242, numRuns: 50 } }
       );
     });
 
@@ -507,7 +516,8 @@ describe('EnumGenerator', () => {
 
   describe('integration tests', () => {
     it('should maintain consistency between generate and validate', () => {
-      fc.assert(
+      return propertyTest(
+        'EnumGenerator generate/validate consistency',
         fc.property(
           fc.uniqueArray(
             fc.oneof(
@@ -553,7 +563,7 @@ describe('EnumGenerator', () => {
             }
           }
         ),
-        { seed: 424242, numRuns: 100 }
+        { parameters: { seed: 424242, numRuns: 100 } }
       );
     });
 

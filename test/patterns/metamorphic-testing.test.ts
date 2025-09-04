@@ -24,7 +24,11 @@ import {
   jsonSchemaArbitraryFor,
   simpleSchemaArbitrary,
 } from '../arbitraries/json-schema.js';
-import { validateAgainstSchema, getTestConfig } from '../setup.js';
+import {
+  validateAgainstSchema,
+  getTestConfig,
+  propertyTest,
+} from '../setup.js';
 
 // ============================================================================
 // CONFIGURATION AND UTILITIES
@@ -456,7 +460,8 @@ describe('Metamorphic Testing Pattern', () => {
     test('data valid against original schema remains valid against relaxed schema', () => {
       const currentDraft = getCurrentDraft();
 
-      fc.assert(
+      return propertyTest(
+        'metamorphic validity preserved',
         fc.property(simpleSchemaArbitrary, (originalSchema) => {
           try {
             // Generate data that's valid against the original schema
@@ -507,16 +512,23 @@ describe('Metamorphic Testing Pattern', () => {
           }
         }),
         {
-          seed: config.seed,
-          numRuns: 50,
-          verbose: true,
+          parameters: {
+            seed: config.seed,
+            numRuns: 50,
+            verbose: true,
+          },
+          context: {
+            relation: 'validity_preserved_relaxation',
+            draft: currentDraft,
+          },
         }
       );
     });
 
-    test('validity preservation across all JSON Schema drafts', () => {
+    test('validity preservation across all JSON Schema drafts', async () => {
       for (const draft of ALL_DRAFTS) {
-        fc.assert(
+        await propertyTest(
+          `metamorphic validity preserved (${draft})`,
           fc.property(jsonSchemaArbitraryFor(draft), (originalSchema) => {
             try {
               const testData = generateMockData(originalSchema, config.seed);
@@ -560,9 +572,12 @@ describe('Metamorphic Testing Pattern', () => {
             }
           }),
           {
-            seed: config.seed,
-            numRuns: 20, // Reduced for multi-draft testing
-            verbose: false, // Less verbose for batch testing
+            parameters: {
+              seed: config.seed,
+              numRuns: 20,
+              verbose: false,
+            },
+            context: { relation: 'validity_preserved_relaxation', draft },
           }
         );
       }
@@ -573,7 +588,8 @@ describe('Metamorphic Testing Pattern', () => {
     test('generate(seed, n1+n2)[0:n1] === generate(seed, n1)', () => {
       const testSeed = 98765;
 
-      fc.assert(
+      return propertyTest(
+        'metamorphic prefix stability',
         fc.property(
           fc.record({
             schema: simpleSchemaArbitrary,
@@ -609,9 +625,8 @@ describe('Metamorphic Testing Pattern', () => {
           }
         ),
         {
-          seed: config.seed,
-          numRuns: 30,
-          verbose: true,
+          parameters: { seed: config.seed, numRuns: 30, verbose: true },
+          context: { relation: 'prefix_stability' },
         }
       );
     });
@@ -676,7 +691,8 @@ describe('Metamorphic Testing Pattern', () => {
 
   describe('METAMORPHIC RELATION: Schema composition properties', () => {
     test('relaxation is idempotent: relax(relax(schema)) ≈ relax(schema)', () => {
-      fc.assert(
+      return propertyTest(
+        'metamorphic idempotent relaxation',
         fc.property(simpleSchemaArbitrary, (originalSchema) => {
           try {
             const currentDraft = getCurrentDraft();
@@ -713,15 +729,15 @@ describe('Metamorphic Testing Pattern', () => {
           }
         }),
         {
-          seed: config.seed,
-          numRuns: 30,
-          verbose: false,
+          parameters: { seed: config.seed, numRuns: 30, verbose: false },
+          context: { relation: 'idempotent_relaxation' },
         }
       );
     });
 
     test('relaxation preserves schema structure semantics', () => {
-      fc.assert(
+      return propertyTest(
+        'metamorphic structure semantics',
         fc.property(
           fc
             .record({
@@ -771,9 +787,8 @@ describe('Metamorphic Testing Pattern', () => {
           }
         ),
         {
-          seed: config.seed,
-          numRuns: 40,
-          verbose: false,
+          parameters: { seed: config.seed, numRuns: 40, verbose: false },
+          context: { relation: 'structure_semantics' },
         }
       );
     });
@@ -781,7 +796,8 @@ describe('Metamorphic Testing Pattern', () => {
 
   describe('METAMORPHIC RELATION: Cross-draft compatibility', () => {
     test('relaxation behaves consistently across JSON Schema drafts', () => {
-      fc.assert(
+      return propertyTest(
+        'metamorphic cross-draft consistency',
         fc.property(simpleSchemaArbitrary, (schema) => {
           try {
             const testData = generateMockData(schema, config.seed);
@@ -819,9 +835,8 @@ describe('Metamorphic Testing Pattern', () => {
           }
         }),
         {
-          seed: config.seed,
-          numRuns: 25,
-          verbose: false,
+          parameters: { seed: config.seed, numRuns: 25, verbose: false },
+          context: { relation: 'cross_draft_consistency' },
         }
       );
     });
@@ -844,7 +859,8 @@ describe('Metamorphic Testing Pattern', () => {
         maxLength: 20,
       };
 
-      fc.assert(
+      return propertyTest(
+        'metamorphic MR1 minLength subset',
         fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
           // Generate data valid for the restrictive schema
           const testData = 'test_string_' + seed.toString().padStart(3, '0'); // At least 10 characters
@@ -880,9 +896,8 @@ describe('Metamorphic Testing Pattern', () => {
           }
         }),
         {
-          seed: config.seed,
-          numRuns: 25,
-          verbose: true,
+          parameters: { seed: config.seed, numRuns: 25, verbose: true },
+          context: { relation: 'MR1' },
         }
       );
     });
@@ -899,7 +914,8 @@ describe('Metamorphic Testing Pattern', () => {
         type: ['string', 'null'],
       };
 
-      fc.assert(
+      return propertyTest(
+        'metamorphic MR2 string subset',
         fc.property(
           fc.string({ minLength: 1, maxLength: 10 }),
           (testString) => {
@@ -935,9 +951,8 @@ describe('Metamorphic Testing Pattern', () => {
           }
         ),
         {
-          seed: config.seed,
-          numRuns: 20,
-          verbose: true,
+          parameters: { seed: config.seed, numRuns: 20, verbose: true },
+          context: { relation: 'MR2' },
         }
       );
     });
@@ -964,7 +979,8 @@ describe('Metamorphic Testing Pattern', () => {
         additionalProperties: true,
       };
 
-      fc.assert(
+      return propertyTest(
+        'metamorphic MR3 additionalProperties subset',
         fc.property(
           fc.record({
             name: fc.string({ minLength: 1, maxLength: 10 }),
@@ -1004,9 +1020,8 @@ describe('Metamorphic Testing Pattern', () => {
           }
         ),
         {
-          seed: config.seed,
-          numRuns: 20,
-          verbose: true,
+          parameters: { seed: config.seed, numRuns: 20, verbose: true },
+          context: { relation: 'MR3' },
         }
       );
     });
@@ -1017,7 +1032,8 @@ describe('Metamorphic Testing Pattern', () => {
       const currentDraft = getCurrentDraft();
       const schemaArbitrary = getSchemaArbitrary();
 
-      fc.assert(
+      return propertyTest(
+        `metamorphic env draft ${currentDraft}`,
         fc.property(schemaArbitrary, (schema) => {
           try {
             const testData = generateMockData(schema, config.seed);
@@ -1064,9 +1080,8 @@ describe('Metamorphic Testing Pattern', () => {
           }
         }),
         {
-          seed: config.seed,
-          numRuns: 35,
-          verbose: true,
+          parameters: { seed: config.seed, numRuns: 35, verbose: true },
+          context: { relation: 'env_draft', draft: currentDraft },
         }
       );
     });
