@@ -635,13 +635,9 @@ describe('ArrayGenerator', () => {
       }
 
       const duration = performance.now() - startTime;
-      const avgTime = duration / 1000;
-
-      // Should be very fast due to caching
-      expect(avgTime).toBeLessThan(0.5);
-
+      // Percentile-based performance checks are covered in the dedicated p95 test
       console.log(
-        `Cache performance: ${avgTime.toFixed(3)}ms per operation with AJV validation`
+        `Cache performance: ${(duration / 1000).toFixed(3)}ms per operation with AJV validation`
       );
     });
 
