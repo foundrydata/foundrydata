@@ -10,7 +10,7 @@
     <strong>Stop wasting hours on test data that breaks your API. Generate perfectly valid records in seconds.</strong>
   </p>
   <p>
-    <em>Simple MVP that does one thing well: 100% schema compliance for basic JSON schemas</em>
+    <em>Schema-first, deterministic test data with guaranteed compliance</em>
   </p>
   
   <p>
@@ -288,7 +288,7 @@ Looking to contribute? Here are some features the community has requested:
 
 - **Current Version:** v0.1.0 (MVP - basic types, arrays of flat objects, core formats)
 - **Next Release:** Based on community feedback and requests
-- **Philosophy:** Ship simple, reliable features. Add complexity only when requested.
+- **Philosophy:** Correctness first, determinism, and clarity; add complexity only when guarantees hold.
 
 See our [Discussions](https://github.com/foundrydata/foundrydata/discussions) for what's being considered next.
 
