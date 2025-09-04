@@ -153,11 +153,26 @@ function toMatchJsonSchema(
 
   const isValid = validate(received);
 
+  // Helper to truncate large objects for error messages
+  const formatReceived = (value: unknown): string => {
+    const stringified = JSON.stringify(value);
+    if (stringified.length > 1000) {
+      // Truncate large objects and add summary
+      const type = Array.isArray(value)
+        ? `array with ${value.length} items`
+        : typeof value === 'object' && value !== null
+          ? `object with ${Object.keys(value).length} properties`
+          : typeof value;
+      return `${stringified.substring(0, 500)}... (truncated ${type})`;
+    }
+    return stringified;
+  };
+
   return {
     pass: Boolean(isValid),
     message: () => {
       if (isValid) {
-        return `Expected ${JSON.stringify(received)} NOT to match schema`;
+        return `Expected value NOT to match schema`;
       } else {
         const errors: ErrorObject[] = validate.errors || [];
         const errorMessages = errors
@@ -166,7 +181,7 @@ function toMatchJsonSchema(
               `${err.instancePath || 'root'}: ${err.message}`
           )
           .join(', ');
-        return `Expected ${JSON.stringify(received)} to match schema. Errors: ${errorMessages}`;
+        return `Expected value to match schema. Errors: ${errorMessages}\nReceived: ${formatReceived(received)}`;
       }
     },
     actual: received,
@@ -194,7 +209,7 @@ function toBeWithinRange(
     pass: isInRange,
     message: () => {
       if (!isNumber) {
-        return `Expected ${JSON.stringify(received)} to be a number, but got ${typeof received}`;
+        return `Expected value to be a number, but got ${typeof received}`;
       }
       return `Expected ${received} to be within range [${min}, ${max}]`;
     },
@@ -222,7 +237,7 @@ function toBeValidUUID(received: unknown): {
     pass: isValidUUID,
     message: () => {
       if (!isString) {
-        return `Expected ${JSON.stringify(received)} to be a string, but got ${typeof received}`;
+        return `Expected value to be a string, but got ${typeof received}`;
       }
       return `Expected "${received}" to be a valid UUID v4`;
     },
@@ -250,7 +265,7 @@ function toBeValidEmail(received: unknown): {
     return {
       pass: false,
       message: () =>
-        `Expected ${JSON.stringify(received)} to be a string, but got ${typeof received}`,
+        `Expected value to be a string, but got ${typeof received}`,
       actual: received,
       expected: 'valid email format',
     };
@@ -300,7 +315,7 @@ function toBeValidISO8601(received: unknown): {
     pass: isValidISO8601,
     message: () => {
       if (!isString) {
-        return `Expected ${JSON.stringify(received)} to be a string, but got ${typeof received}`;
+        return `Expected value to be a string, but got ${typeof received}`;
       }
       return `Expected "${received}" to be a valid ISO8601 datetime`;
     },
@@ -330,7 +345,7 @@ function toBeValidJSON(received: unknown): {
     return {
       pass: false,
       message: () =>
-        `Expected ${JSON.stringify(received)} to be a string, but got ${typeof received}`,
+        `Expected value to be a string, but got ${typeof received}`,
       actual: received,
       expected: 'valid JSON string',
     };

@@ -351,7 +351,7 @@ export class EnumGenerator extends DataGenerator {
   }
 
   validate(value: any, schema: Schema): boolean {
-    if (!this.supports(schema)) {
+    if (!schema || !this.supports(schema)) {
       return false;
     }
 

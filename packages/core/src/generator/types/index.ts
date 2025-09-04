@@ -8,6 +8,8 @@ export { NumberGenerator } from './number-generator';
 export { IntegerGenerator } from './integer-generator';
 export { BooleanGenerator } from './boolean-generator';
 export { EnumGenerator } from './enum-generator';
+export { ArrayGenerator } from './array-generator';
+export { ObjectGenerator } from './object-generator';
 
 // Re-export base generator classes
 export {
@@ -17,7 +19,4 @@ export {
   defaultGeneratorRegistry,
 } from '../data-generator';
 
-export type {
-  GeneratorContext,
-  GenerationConfig,
-} from '../data-generator';
+export type { GeneratorContext, GenerationConfig } from '../data-generator';
