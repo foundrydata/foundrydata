@@ -246,10 +246,11 @@ describe('toBeWithinRange', () => {
       fc.property(
         fc.integer({ min: -100, max: 100 }),
         fc.integer({ min: -100, max: 100 }),
-        (a, b) => {
+        fc.float({ min: 0, max: 1, noNaN: true }),
+        (a, b, t) => {
           const min = Math.min(a, b);
           const max = Math.max(a, b);
-          const value = min + Math.random() * (max - min);
+          const value = min + t * (max - min);
 
           expect(value).toBeWithinRange(min, max);
         }
@@ -595,8 +596,9 @@ describe('toHaveErrorRate', () => {
       fc.property(
         fc.float({ min: 0, max: 1, noNaN: true }),
         fc.float({ min: 0, max: 0.5, noNaN: true }), // tolerance
-        (rate, tolerance) => {
-          const testRate = rate + (Math.random() - 0.5) * tolerance; // within tolerance
+        fc.float({ min: -0.5, max: 0.5, noNaN: true }), // jitter factor
+        (rate, tolerance, jitter) => {
+          const testRate = rate + jitter * tolerance; // within tolerance window
           const clampedRate = Math.max(0, Math.min(1, testRate));
 
           if (Math.abs(clampedRate - rate) <= tolerance) {
@@ -687,8 +689,9 @@ describe('toBeGeneratedWithSeed', () => {
     const schema = { type: 'string' };
     const seed = 12345;
 
-    // Non-deterministic generator
-    const randomGenerator = (): string => Math.random().toString();
+    // Non-deterministic generator (stateful, no RNG)
+    let counter = 0;
+    const randomGenerator = (): string => String(counter++);
 
     const generated = randomGenerator();
 
