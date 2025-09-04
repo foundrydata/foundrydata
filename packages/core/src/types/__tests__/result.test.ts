@@ -170,20 +170,29 @@ describe('Result Pattern', () => {
       expect(isErr(errResult)).toBe(true);
     });
 
-    it('should provide type narrowing', () => {
-      const result: Result<string, number> =
-        Math.random() > 0.5 ? ok('test') : err(500);
+    it('should provide type narrowing (Ok branch)', () => {
+      const result: Result<string, number> = ok('test');
 
       if (isOk(result)) {
         // TypeScript should narrow this to Ok<string>
         expect(typeof result.value).toBe('string');
         expect(result.value.length).toBeGreaterThanOrEqual(0);
+      } else {
+        // This branch should not run
+        expect.unreachable('Expected Ok branch');
       }
+    });
+
+    it('should provide type narrowing (Err branch)', () => {
+      const result: Result<string, number> = err(500);
 
       if (isErr(result)) {
         // TypeScript should narrow this to Err<number>
         expect(typeof result.error).toBe('number');
         expect(result.error).toBeGreaterThan(0);
+      } else {
+        // This branch should not run
+        expect.unreachable('Expected Err branch');
       }
     });
   });

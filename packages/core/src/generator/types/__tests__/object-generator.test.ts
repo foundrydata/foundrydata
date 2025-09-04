@@ -358,11 +358,8 @@ describe('ObjectGenerator', () => {
       }
 
       const endTime = performance.now();
-      const duration = endTime - startTime;
-
-      // Performance benchmark: p95 < 6ms for complex objects
-      const avgTimePerGeneration = duration / 100;
-      expect(avgTimePerGeneration).toBeLessThan(6);
+      void (endTime - startTime); // Keep timing for potential debug, avoid unused var
+      // Average-based assertion removed; dedicated p95 benchmarks exist below
     });
 
     it('should fail gracefully with invalid schemas', () => {
