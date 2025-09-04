@@ -50,8 +50,14 @@ export interface BaseSchema {
   $ref?: string;
   $comment?: string;
   $anchor?: string; // Draft 2019-09+
+  $recursiveRef?: string; // Draft 2019-09
+  $recursiveAnchor?: boolean; // Draft 2019-09
+  $dynamicRef?: string; // Draft 2020-12
+  $dynamicAnchor?: string; // Draft 2020-12
   $vocabulary?: Record<string, boolean>; // Draft 2019-09+
-  $defs?: Record<string, Schema>; // Draft 2020-12
+  $defs?: Record<string, any>; // Draft 2020-12 (values can be schemas or arbitrary for JSON Pointer tests)
+  // Draft-07 support
+  definitions?: Record<string, any>;
 
   // Keywords d'annotation (Draft 07+)
   readOnly?: boolean; // ✅ Draft 07
@@ -168,6 +174,7 @@ export interface EnumSchema extends BaseSchema {
  * Union type representing all possible schema types
  */
 export type Schema =
+  | BaseSchema
   | ObjectSchema
   | ArraySchema
   | StringSchema
