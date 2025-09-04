@@ -491,10 +491,10 @@ export class StringGenerator extends DataGenerator {
       if (pattern.includes(hint)) {
         const effectiveMin = Math.max(min, minRequired);
 
+        // Do not throw from core generation. If impossible, clamp length and
+        // let validation fail so higher-level logic can fall back gracefully.
         if (effectiveMin > max) {
-          throw new Error(
-            `Pattern requires at least ${minRequired} chars but maxLength is ${max}`
-          );
+          return max;
         }
 
         return effectiveMin === 0 ? 0 : Math.min(effectiveMin + 3, max);

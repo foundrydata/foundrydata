@@ -152,12 +152,12 @@ export abstract class DataGenerator {
   /**
    * Helper to validate numeric ranges
    */
-  protected validateNumericRange(min?: number, max?: number): void {
+  protected validateNumericRange(min?: number, max?: number): boolean {
     if (min !== undefined && max !== undefined && min > max) {
-      throw new Error(
-        `Invalid range: minimum (${min}) cannot be greater than maximum (${max})`
-      );
+      // Do not throw in core logic; return false to let callers decide
+      return false;
     }
+    return true;
   }
 
   /**

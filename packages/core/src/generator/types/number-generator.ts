@@ -359,6 +359,22 @@ export class NumberGenerator extends DataGenerator {
       return precisionResult;
     }
 
+    // If multipleOf is set, ensure at least one valid multiple exists in range
+    if (schema.multipleOf !== undefined && schema.multipleOf > 0) {
+      const minMultiple = Math.ceil(min / schema.multipleOf);
+      const maxMultiple = Math.floor(max / schema.multipleOf);
+      if (minMultiple > maxMultiple) {
+        return err(
+          new GenerationError(
+            `No valid multiple of ${schema.multipleOf} exists within range [${min}, ${max}]`,
+            'Adjust bounds or multipleOf to allow at least one valid value',
+            context.path,
+            'multipleOf-range'
+          )
+        );
+      }
+    }
+
     // Generate value based on constraints
     const value = this.generateValueByConstraints(min, max, schema, context);
 
@@ -530,11 +546,11 @@ export class NumberGenerator extends DataGenerator {
     // Find the first multiple >= min
     const minMultiple = Math.ceil(min / multipleOf);
     const maxMultiple = Math.floor(max / multipleOf);
-
+    // Precondition: caller ensured there is at least one valid multiple.
+    // If not, fall back to min to avoid throwing in core. The caller will
+    // validate and return Err if constraints are not met.
     if (minMultiple > maxMultiple) {
-      throw new Error(
-        `No valid multiple of ${multipleOf} exists within range [${min}, ${max}]`
-      );
+      return min;
     }
 
     const totalMultiples = maxMultiple - minMultiple + 1;
