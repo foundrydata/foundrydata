@@ -66,12 +66,12 @@ export class EmailGenerator implements FormatGenerator {
   ];
 
   private readonly patterns = [
-    (first: string, last: string) => `${first}.${last}`,
-    (first: string, last: string) => `${first}${last}`,
-    (first: string, last: string) => `${first}_${last}`,
-    (first: string, _last: string) =>
-      `${first}${Math.floor(Math.random() * 999)}`,
-    (first: string, last: string) => `${first[0]}${last}`,
+    (first: string, last: string, _rand: () => number) => `${first}.${last}`,
+    (first: string, last: string, _rand: () => number) => `${first}${last}`,
+    (first: string, last: string, _rand: () => number) => `${first}_${last}`,
+    (first: string, _last: string, rand: () => number) =>
+      `${first}${Math.floor(rand() * 999)}`,
+    (first: string, last: string, _rand: () => number) => `${first[0]}${last}`,
   ];
 
   supports(format: string): boolean {
@@ -94,7 +94,7 @@ export class EmailGenerator implements FormatGenerator {
       return ok(`${firstName}.${lastName}@${domain}`);
     }
 
-    const localPart = pattern(firstName, lastName);
+    const localPart = pattern(firstName, lastName, random);
     const email = `${localPart}@${domain}`;
 
     return ok(email);

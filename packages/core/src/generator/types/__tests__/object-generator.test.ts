@@ -21,26 +21,13 @@ import {
   getSchemaArbitrary,
 } from '../../../../../../test/arbitraries/json-schema.js';
 import '../../../../../../test/matchers/index.js';
-import {
-  getAjv,
-  createAjv,
-} from '../../../../../../test/helpers/ajv-factory.js';
+import { getAjv } from '../../../../../../test/helpers/ajv-factory.js';
 import { ObjectGenerator } from '../object-generator.js';
 import { FormatRegistry } from '../../../registry/format-registry.js';
 import { createGeneratorContext } from '../../data-generator.js';
 import type { ObjectSchema, Schema } from '../../../types/schema.js';
 
-// Helper to create shuffled subarray for required properties
-function shuffledSubarray<T>(
-  arr: T[],
-  minLength: number,
-  maxLength: number
-): T[] {
-  const shuffled = [...arr].sort(() => Math.random() - 0.5);
-  const length =
-    Math.floor(Math.random() * (maxLength - minLength + 1)) + minLength;
-  return shuffled.slice(0, length);
-}
+// Note: Avoid Math.random() to preserve determinism; use fast-check combinators instead
 
 describe('ObjectGenerator', () => {
   let generator: ObjectGenerator;
@@ -129,9 +116,10 @@ describe('ObjectGenerator', () => {
               return fc.record({
                 type: fc.constant('object'),
                 properties: fc.constant(properties),
-                required: fc.constant(
-                  shuffledSubarray(propNames, 0, propNames.length)
-                ),
+                required: fc.subarray(propNames, {
+                  minLength: 0,
+                  maxLength: propNames.length,
+                }),
               });
             }),
           fc.integer({ min: 0, max: 1000 }),
@@ -419,9 +407,10 @@ describe('ObjectGenerator', () => {
               return fc.record({
                 type: fc.constant('object'),
                 properties: fc.constant(properties),
-                required: fc.constant(
-                  shuffledSubarray(propNames, 0, propNames.length)
-                ),
+                required: fc.subarray(propNames, {
+                  minLength: 0,
+                  maxLength: propNames.length,
+                }),
               });
             }),
           fc.dictionary(fc.string(), fc.anything()),
@@ -656,9 +645,10 @@ describe('ObjectGenerator', () => {
               return fc.record({
                 type: fc.constant('object'),
                 properties: fc.constant(properties),
-                required: fc.constant(
-                  shuffledSubarray(propNames, 0, propNames.length)
-                ),
+                required: fc.subarray(propNames, {
+                  minLength: 0,
+                  maxLength: propNames.length,
+                }),
                 minProperties: fc.integer({ min: 0, max: propNames.length }),
                 maxProperties: fc.integer({
                   min: propNames.length,

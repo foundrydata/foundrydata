@@ -214,8 +214,8 @@ export class EnumGenerator extends DataGenerator {
 
     const normalizedWeights = weights.map((w) => Math.max(0, w) / totalWeight);
 
-    // Generate weighted selection
-    const random = Math.random();
+    // Generate weighted selection using seeded RNG via faker
+    const random = fakerInstance.number.float({ min: 0, max: 1 });
     let cumulativeWeight = 0;
 
     for (let i = 0; i < enumValues.length; i++) {
