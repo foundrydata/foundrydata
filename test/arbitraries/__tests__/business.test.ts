@@ -9,6 +9,7 @@
 
 import { describe, test, expect } from 'vitest';
 import * as fc from 'fast-check';
+import { propertyTest } from '../../setup.js';
 import {
   businessScenarioArbitrary,
   normalScenarioArbitrary,
@@ -35,19 +36,21 @@ const FC_SEED = 424242;
 describe('Business Scenario Arbitraries', () => {
   describe('createDistributionRatios helper', () => {
     test('always generates distributions that sum to 1', () => {
-      fc.assert(
+      return propertyTest(
+        'distribution sums to 1',
         fc.property(createDistributionRatios(), (distribution) => {
           const sum =
             distribution.normal + distribution.edge + distribution.error;
           expect(Math.abs(sum - 1)).toBeLessThan(0.001);
           expect(isValidDistribution(distribution)).toBe(true);
         }),
-        { seed: FC_SEED, numRuns: 100 }
+        { parameters: { seed: FC_SEED, numRuns: 100 } }
       );
     });
 
     test('generates positive ratios within valid ranges', () => {
-      fc.assert(
+      return propertyTest(
+        'distribution ratios valid',
         fc.property(createDistributionRatios(), (distribution) => {
           expect(distribution.normal).toBeGreaterThan(0);
           expect(distribution.edge).toBeGreaterThan(0);
@@ -56,14 +59,15 @@ describe('Business Scenario Arbitraries', () => {
           expect(distribution.edge).toBeLessThanOrEqual(1);
           expect(distribution.error).toBeLessThanOrEqual(1);
         }),
-        { seed: FC_SEED, numRuns: 50 }
+        { parameters: { seed: FC_SEED, numRuns: 50 } }
       );
     });
   });
 
   describe('errorConfigArbitrary', () => {
     test('generates valid error configurations', () => {
-      fc.assert(
+      return propertyTest(
+        'errorConfigArbitrary valid',
         fc.property(errorConfigArbitrary, (config: ErrorConfig) => {
           // Rate should be within bounds
           expect(config.rate).toBeGreaterThanOrEqual(0.1);
@@ -96,14 +100,15 @@ describe('Business Scenario Arbitraries', () => {
           expect(config.maxRetries).toBeGreaterThanOrEqual(0);
           expect(config.maxRetries).toBeLessThanOrEqual(5);
         }),
-        { seed: FC_SEED, numRuns: 50 }
+        { parameters: { seed: FC_SEED, numRuns: 50 } }
       );
     });
   });
 
   describe('loadParametersArbitrary', () => {
     test('generates valid load parameters', () => {
-      fc.assert(
+      return propertyTest(
+        'loadParametersArbitrary valid',
         fc.property(loadParametersArbitrary, (params: LoadParameters) => {
           expect(params.users).toBeGreaterThanOrEqual(1);
           expect(params.users).toBeLessThanOrEqual(10000);
@@ -120,12 +125,13 @@ describe('Business Scenario Arbitraries', () => {
           expect(params.rampDown).toBeGreaterThanOrEqual(0);
           expect(params.rampDown).toBeLessThanOrEqual(300);
         }),
-        { seed: FC_SEED, numRuns: 50 }
+        { parameters: { seed: FC_SEED, numRuns: 50 } }
       );
     });
 
     test('validates load parameters consistency', () => {
-      fc.assert(
+      return propertyTest(
+        'load parameters consistency',
         fc.property(loadParametersArbitrary, (params: LoadParameters) => {
           // Basic validation should pass for generated parameters
           expect(params.users > 0).toBe(true);
@@ -140,14 +146,15 @@ describe('Business Scenario Arbitraries', () => {
             expect(isValidLoadParameters(params)).toBe(true);
           }
         }),
-        { seed: FC_SEED, numRuns: 50 }
+        { parameters: { seed: FC_SEED, numRuns: 50 } }
       );
     });
   });
 
   describe('edgeCaseFlagsArbitrary', () => {
     test('generates valid edge case flags', () => {
-      fc.assert(
+      return propertyTest(
+        'edgeCaseFlagsArbitrary valid',
         fc.property(edgeCaseFlagsArbitrary, (flags: EdgeCaseFlags) => {
           expect(typeof flags.boundaries).toBe('boolean');
           expect(typeof flags.nullish).toBe('boolean');
@@ -155,14 +162,15 @@ describe('Business Scenario Arbitraries', () => {
           expect(typeof flags.maxSize).toBe('boolean');
           expect(typeof flags.unicode).toBe('boolean');
         }),
-        { seed: FC_SEED, numRuns: 30 }
+        { parameters: { seed: FC_SEED, numRuns: 30 } }
       );
     });
   });
 
   describe('businessScenarioMetadataArbitrary', () => {
     test('generates valid metadata', () => {
-      fc.assert(
+      return propertyTest(
+        'businessScenarioMetadataArbitrary valid',
         fc.property(
           businessScenarioMetadataArbitrary,
           (metadata: BusinessScenarioMetadata) => {
@@ -198,14 +206,15 @@ describe('Business Scenario Arbitraries', () => {
             expect(/^\d+\.\d+\.\d+$/.test(metadata.version)).toBe(true);
           }
         ),
-        { seed: FC_SEED, numRuns: 50 }
+        { parameters: { seed: FC_SEED, numRuns: 50 } }
       );
     });
   });
 
   describe('businessScenarioArbitrary', () => {
     test('generates complete valid business scenarios', () => {
-      fc.assert(
+      return propertyTest(
+        'businessScenarioArbitrary valid',
         fc.property(businessScenarioArbitrary, (scenario: BusinessScenario) => {
           // Type validation
           const validTypes = ['normal', 'edge', 'peak', 'error'];
@@ -224,14 +233,15 @@ describe('Business Scenario Arbitraries', () => {
           expect(typeof scenario.edgeCases).toBe('object');
           expect(typeof scenario.metadata).toBe('object');
         }),
-        { seed: FC_SEED, numRuns: 100 }
+        { parameters: { seed: FC_SEED, numRuns: 100 } }
       );
     });
   });
 
   describe('Scenario-specific arbitraries', () => {
     test('normalScenarioArbitrary enforces normal scenario constraints', () => {
-      fc.assert(
+      return propertyTest(
+        'normalScenarioArbitrary constraints',
         fc.property(normalScenarioArbitrary, (scenario) => {
           expect(scenario.type).toBe('normal');
 
@@ -244,12 +254,13 @@ describe('Business Scenario Arbitraries', () => {
           // Low error rate for normal scenarios
           expect(scenario.errorConfig.rate).toBeLessThanOrEqual(1.0);
         }),
-        { seed: FC_SEED, numRuns: 30 }
+        { parameters: { seed: FC_SEED, numRuns: 30 } }
       );
     });
 
     test('edgeScenarioArbitrary enforces edge case flags', () => {
-      fc.assert(
+      return propertyTest(
+        'edgeScenarioArbitrary flags',
         fc.property(edgeScenarioArbitrary, (scenario) => {
           expect(scenario.type).toBe('edge');
 
@@ -258,12 +269,13 @@ describe('Business Scenario Arbitraries', () => {
           expect(scenario.edgeCases.nullish).toBe(true);
           expect(scenario.edgeCases.empty).toBe(true);
         }),
-        { seed: FC_SEED, numRuns: 30 }
+        { parameters: { seed: FC_SEED, numRuns: 30 } }
       );
     });
 
     test('peakScenarioArbitrary enforces high load constraints', () => {
-      fc.assert(
+      return propertyTest(
+        'peakScenarioArbitrary high load',
         fc.property(peakScenarioArbitrary, (scenario) => {
           expect(scenario.type).toBe('peak');
 
@@ -273,12 +285,13 @@ describe('Business Scenario Arbitraries', () => {
             scenario.loadParameters.requestsPerSecond
           ).toBeGreaterThanOrEqual(100);
         }),
-        { seed: FC_SEED, numRuns: 30 }
+        { parameters: { seed: FC_SEED, numRuns: 30 } }
       );
     });
 
     test('errorScenarioArbitrary enforces error-focused configuration', () => {
-      fc.assert(
+      return propertyTest(
+        'errorScenarioArbitrary config',
         fc.property(errorScenarioArbitrary, (scenario) => {
           expect(scenario.type).toBe('error');
 
@@ -292,7 +305,7 @@ describe('Business Scenario Arbitraries', () => {
           expect(scenario.distribution.normal).toBe(0.3);
           expect(scenario.distribution.edge).toBe(0.2);
         }),
-        { seed: FC_SEED, numRuns: 30 }
+        { parameters: { seed: FC_SEED, numRuns: 30 } }
       );
     });
   });
@@ -357,13 +370,14 @@ describe('Business Scenario Arbitraries', () => {
 
   describe('Seed generation and determinism', () => {
     test('generated seeds are within expected range', () => {
-      fc.assert(
+      return propertyTest(
+        'seeds within range',
         fc.property(businessScenarioArbitrary, (scenario) => {
           expect(scenario.seed).toBeGreaterThanOrEqual(100000);
           expect(scenario.seed).toBeLessThanOrEqual(999999);
           expect(Number.isInteger(scenario.seed)).toBe(true);
         }),
-        { seed: FC_SEED, numRuns: 50 }
+        { parameters: { seed: FC_SEED, numRuns: 50 } }
       );
     });
 
@@ -401,7 +415,7 @@ describe('Business Scenario Arbitraries', () => {
   });
 
   describe('Distribution sum validation across all arbitraries', () => {
-    test('all scenario arbitraries maintain valid distributions', () => {
+    test('all scenario arbitraries maintain valid distributions', async () => {
       const scenarios = [
         businessScenarioArbitrary,
         normalScenarioArbitrary,
@@ -410,23 +424,21 @@ describe('Business Scenario Arbitraries', () => {
         errorScenarioArbitrary,
       ];
 
-      scenarios.forEach((arbitrary, index) => {
-        fc.assert(
+      for (let index = 0; index < scenarios.length; index++) {
+        const arbitrary = scenarios[index]!; // noUncheckedIndexedAccess: guaranteed by loop bounds
+        await propertyTest(
+          `scenario distribution ${index}`,
           fc.property(arbitrary, (scenario) => {
             expect(isValidDistribution(scenario.distribution)).toBe(true);
-
             const sum =
               scenario.distribution.normal +
               scenario.distribution.edge +
               scenario.distribution.error;
             expect(Math.abs(sum - 1)).toBeLessThan(0.001);
           }),
-          {
-            seed: FC_SEED + index, // Different seed for each arbitrary
-            numRuns: 20,
-          }
+          { parameters: { seed: FC_SEED + index, numRuns: 20 } }
         );
-      });
+      }
     });
   });
 });

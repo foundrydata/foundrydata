@@ -77,8 +77,8 @@ export default defineConfig({
     // Disable file parallelism in CI for deterministic results
     fileParallelism: !isCI,
 
-    // Extended timeouts for property-based testing (consistent with root)
-    testTimeout: isCI ? 30000 : 10000, // 30s in CI, 10s locally
+    // Extended timeouts for property-based testing (align with root at 30s)
+    testTimeout: 30000,
     hookTimeout: 10000, // 10s for setup/teardown hooks
     teardownTimeout: 5000, // 5s for cleanup
 

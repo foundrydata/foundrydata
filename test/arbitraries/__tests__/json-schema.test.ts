@@ -10,6 +10,7 @@
 
 import { describe, test, expect } from 'vitest';
 import * as fc from 'fast-check';
+import { propertyTest } from '../../setup.js';
 import { createAjv } from '../../helpers/ajv-factory.js';
 import {
   createBounds,
@@ -25,23 +26,25 @@ const FC_SEED = 424242;
 describe('JSON Schema Arbitraries', () => {
   describe('createBounds helper', () => {
     test('always generates consistent bounds (min ≤ max)', () => {
-      fc.assert(
+      return propertyTest(
+        'createBounds: consistent',
         fc.property(createBounds(-1000, 1000), ([min, max]) => {
           expect(min).toBeLessThanOrEqual(max);
           expect(typeof min).toBe('number');
           expect(typeof max).toBe('number');
         }),
-        { seed: FC_SEED }
+        { parameters: { seed: FC_SEED } }
       );
     });
 
     test('respects input range', () => {
-      fc.assert(
+      return propertyTest(
+        'createBounds: input range',
         fc.property(createBounds(10, 50), ([min, max]) => {
           expect(min).toBeGreaterThanOrEqual(10);
           expect(max).toBeLessThanOrEqual(50);
         }),
-        { seed: FC_SEED }
+        { parameters: { seed: FC_SEED } }
       );
     });
   });
@@ -53,7 +56,8 @@ describe('JSON Schema Arbitraries', () => {
       test(`generates valid schemas for ${draft}`, () => {
         const ajv = createAjv(draft);
 
-        fc.assert(
+        return propertyTest(
+          `schemas valid ${draft}`,
           fc.property(jsonSchemaArbitraryFor(draft), (schema) => {
             // Schema should be valid according to JSON Schema meta-schema
             const isValid = ajv.validateSchema(schema);
@@ -65,12 +69,13 @@ describe('JSON Schema Arbitraries', () => {
             }
             expect(isValid).toBe(true);
           }),
-          { seed: FC_SEED, numRuns: 50 }
+          { parameters: { seed: FC_SEED, numRuns: 50 }, context: { draft } }
         );
       });
 
       test(`string schemas have consistent constraints for ${draft}`, () => {
-        fc.assert(
+        return propertyTest(
+          `string constraints ${draft}`,
           fc.property(jsonSchemaArbitraryFor(draft), (schema) => {
             if (schema.type === 'string') {
               const minLength = schema.minLength as number | undefined;
@@ -105,12 +110,13 @@ describe('JSON Schema Arbitraries', () => {
               }
             }
           }),
-          { seed: FC_SEED, numRuns: 100 }
+          { parameters: { seed: FC_SEED, numRuns: 100 }, context: { draft } }
         );
       });
 
       test(`number schemas have consistent bounds for ${draft}`, () => {
-        fc.assert(
+        return propertyTest(
+          `number bounds ${draft}`,
           fc.property(jsonSchemaArbitraryFor(draft), (schema) => {
             if (schema.type === 'number' || schema.type === 'integer') {
               const minimum = schema.minimum as number | undefined;
@@ -149,12 +155,13 @@ describe('JSON Schema Arbitraries', () => {
               }
             }
           }),
-          { seed: FC_SEED, numRuns: 100 }
+          { parameters: { seed: FC_SEED, numRuns: 100 }, context: { draft } }
         );
       });
 
       test(`object schemas have required ⊆ properties for ${draft}`, () => {
-        fc.assert(
+        return propertyTest(
+          `object required ${draft}`,
           fc.property(jsonSchemaArbitraryFor(draft), (schema) => {
             if (schema.type === 'object') {
               const properties = schema.properties as
@@ -177,12 +184,13 @@ describe('JSON Schema Arbitraries', () => {
               }
             }
           }),
-          { seed: FC_SEED, numRuns: 100 }
+          { parameters: { seed: FC_SEED, numRuns: 100 }, context: { draft } }
         );
       });
 
       test(`array schemas have consistent item constraints for ${draft}`, () => {
-        fc.assert(
+        return propertyTest(
+          `array items ${draft}`,
           fc.property(jsonSchemaArbitraryFor(draft), (schema) => {
             if (schema.type === 'array') {
               const minItems = schema.minItems as number | undefined;
@@ -208,7 +216,7 @@ describe('JSON Schema Arbitraries', () => {
               }
             }
           }),
-          { seed: FC_SEED, numRuns: 100 }
+          { parameters: { seed: FC_SEED, numRuns: 100 }, context: { draft } }
         );
       });
     });
@@ -223,12 +231,16 @@ describe('JSON Schema Arbitraries', () => {
         const arbitrary = getSchemaArbitrary();
 
         // Verify it generates valid schemas
-        fc.assert(
+        return propertyTest(
+          'env draft schemas valid',
           fc.property(arbitrary, (schema) => {
             expect(typeof schema).toBe('object');
             expect(schema).not.toBeNull();
           }),
-          { seed: FC_SEED, numRuns: 10 }
+          {
+            parameters: { seed: FC_SEED, numRuns: 10 },
+            context: { draft: process.env.SCHEMA_DRAFT },
+          }
         );
       } finally {
         process.env.SCHEMA_DRAFT = originalEnv;
@@ -242,11 +254,12 @@ describe('JSON Schema Arbitraries', () => {
         delete process.env.SCHEMA_DRAFT;
         const arbitrary = getSchemaArbitrary();
 
-        fc.assert(
+        return propertyTest(
+          'default draft schemas valid',
           fc.property(arbitrary, (schema) => {
             expect(typeof schema).toBe('object');
           }),
-          { seed: FC_SEED, numRuns: 5 }
+          { parameters: { seed: FC_SEED, numRuns: 5 } }
         );
       } finally {
         process.env.SCHEMA_DRAFT = originalEnv;
@@ -256,7 +269,8 @@ describe('JSON Schema Arbitraries', () => {
 
   describe('Simple schema arbitrary', () => {
     test('generates only basic schemas without complex combinations', () => {
-      fc.assert(
+      return propertyTest(
+        'simpleSchemaArbitrary: basic schemas',
         fc.property(simpleSchemaArbitrary, (schema) => {
           expect(schema).toHaveProperty('type');
 
@@ -279,7 +293,7 @@ describe('JSON Schema Arbitraries', () => {
           ];
           expect(validTypes).toContain(schema.type);
         }),
-        { seed: FC_SEED, numRuns: 50 }
+        { parameters: { seed: FC_SEED, numRuns: 50 } }
       );
     });
   });
@@ -289,7 +303,8 @@ describe('JSON Schema Arbitraries', () => {
       const drafts: JsonSchemaDraft[] = ['draft-07', '2019-09', '2020-12'];
 
       drafts.forEach((draft) => {
-        fc.assert(
+        return propertyTest(
+          `no contradictions ${draft}`,
           fc.property(jsonSchemaArbitraryFor(draft), (schema) => {
             // Test that we can generate valid data for any schema produced
             const ajv = createAjv(draft);
@@ -303,13 +318,14 @@ describe('JSON Schema Arbitraries', () => {
             // This is verified by AJV's ability to compile it without errors
             expect(ajv.errors).toBeNull();
           }),
-          { seed: FC_SEED, numRuns: 50 }
+          { parameters: { seed: FC_SEED, numRuns: 50 }, context: { draft } }
         );
       });
     });
 
     test('string schemas never have contradictory length constraints', () => {
-      fc.assert(
+      return propertyTest(
+        'no contradiction: string lengths',
         fc.property(jsonSchemaArbitraryFor('draft-07'), (schema) => {
           if (schema.type === 'string') {
             const minLength = schema.minLength as number | undefined;
@@ -323,12 +339,16 @@ describe('JSON Schema Arbitraries', () => {
             }
           }
         }),
-        { seed: FC_SEED, numRuns: 100 }
+        {
+          parameters: { seed: FC_SEED, numRuns: 100 },
+          context: { draft: 'draft-07' },
+        }
       );
     });
 
     test('number schemas never have contradictory bound constraints', () => {
-      fc.assert(
+      return propertyTest(
+        'no contradiction: numeric bounds',
         fc.property(jsonSchemaArbitraryFor('draft-07'), (schema) => {
           if (schema.type === 'number' || schema.type === 'integer') {
             const minimum = schema.minimum as number | undefined;
@@ -346,12 +366,16 @@ describe('JSON Schema Arbitraries', () => {
             }
           }
         }),
-        { seed: FC_SEED, numRuns: 100 }
+        {
+          parameters: { seed: FC_SEED, numRuns: 100 },
+          context: { draft: 'draft-07' },
+        }
       );
     });
 
     test('array schemas never have contradictory item constraints', () => {
-      fc.assert(
+      return propertyTest(
+        'no contradiction: array items',
         fc.property(jsonSchemaArbitraryFor('draft-07'), (schema) => {
           if (schema.type === 'array') {
             const minItems = schema.minItems as number | undefined;
@@ -365,12 +389,16 @@ describe('JSON Schema Arbitraries', () => {
             }
           }
         }),
-        { seed: FC_SEED, numRuns: 100 }
+        {
+          parameters: { seed: FC_SEED, numRuns: 100 },
+          context: { draft: 'draft-07' },
+        }
       );
     });
 
     test('object schemas never have impossible required properties', () => {
-      fc.assert(
+      return propertyTest(
+        'no contradiction: object required',
         fc.property(jsonSchemaArbitraryFor('draft-07'), (schema) => {
           if (schema.type === 'object') {
             const properties = schema.properties as
@@ -395,12 +423,16 @@ describe('JSON Schema Arbitraries', () => {
             }
           }
         }),
-        { seed: FC_SEED, numRuns: 100 }
+        {
+          parameters: { seed: FC_SEED, numRuns: 100 },
+          context: { draft: 'draft-07' },
+        }
       );
     });
 
     test('enum/const values always respect schema constraints', () => {
-      fc.assert(
+      return propertyTest(
+        'values respect constraints',
         fc.property(jsonSchemaArbitraryFor('draft-07'), (schema) => {
           // Check string enum/const respects length constraints
           if (schema.type === 'string') {
@@ -462,12 +494,16 @@ describe('JSON Schema Arbitraries', () => {
             }
           }
         }),
-        { seed: FC_SEED, numRuns: 100 }
+        {
+          parameters: { seed: FC_SEED, numRuns: 100 },
+          context: { draft: 'draft-07' },
+        }
       );
     });
 
     test('createBounds helper never generates contradictory bounds', () => {
-      fc.assert(
+      return propertyTest(
+        'createBounds: never contradictory',
         fc.property(
           fc
             .tuple(
@@ -489,7 +525,7 @@ describe('JSON Schema Arbitraries', () => {
             expect(Number.isFinite(max)).toBe(true);
           }
         ),
-        { seed: FC_SEED, numRuns: 200 }
+        { parameters: { seed: FC_SEED, numRuns: 200 } }
       );
     });
   });

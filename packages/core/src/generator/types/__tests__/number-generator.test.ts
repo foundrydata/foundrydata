@@ -18,6 +18,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
  */
 
 import fc from 'fast-check';
+import { propertyTest } from '../../../../../../test/setup.js';
 import { NumberGenerator } from '../number-generator';
 import { createGeneratorContext } from '../../data-generator';
 import { FormatRegistry } from '../../../registry/format-registry';
@@ -102,7 +103,8 @@ describe('NumberGenerator', () => {
 
   describe('supports', () => {
     it('should support number schemas', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator supports number schemas',
         fc.property(
           getSchemaArbitrary()
             .filter(
@@ -119,12 +121,13 @@ describe('NumberGenerator', () => {
             expect(generator.supports(schema)).toBe(true);
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should not support non-number schemas', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator rejects non-number schemas',
         fc.property(
           getSchemaArbitrary().filter(
             (schema: Record<string, unknown>) => schema.type !== 'number'
@@ -139,7 +142,7 @@ describe('NumberGenerator', () => {
             expect(generator.supports(schema as any)).toBe(false);
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
@@ -180,7 +183,8 @@ describe('NumberGenerator', () => {
       const ajv = getAjv();
       const validate = ajv.compile(schema);
 
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator always generates numbers',
         fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
           const contextWithSeed = { ...context, seed };
           const result = generator.generate(schema, contextWithSeed);
@@ -200,12 +204,13 @@ describe('NumberGenerator', () => {
             }
           }
         }),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should respect minimum constraint', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator respects minimum',
         fc.property(
           createBounds(-1000, 1000),
           fc.integer({ min: 0, max: 1000 }),
@@ -236,12 +241,16 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() },
+          context: { constraint: 'minimum' },
+        }
       );
     });
 
     it('should respect maximum constraint', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator respects maximum',
         fc.property(
           createBounds(-1000, 1000),
           fc.integer({ min: 0, max: 1000 }),
@@ -272,12 +281,16 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() },
+          context: { constraint: 'maximum' },
+        }
       );
     });
 
     it('should respect both minimum and maximum constraints', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator respects min and max',
         fc.property(
           createBounds(-1000, 1000),
           fc.integer({ min: 0, max: 1000 }),
@@ -305,12 +318,16 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() },
+          context: { constraint: 'range' },
+        }
       );
     });
 
     it('should respect exclusiveMinimum constraint', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator respects exclusiveMinimum',
         fc.property(
           createBounds(-1000, 1000),
           fc.integer({ min: 0, max: 1000 }),
@@ -338,12 +355,16 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() },
+          context: { constraint: 'exclusiveMinimum' },
+        }
       );
     });
 
     it('should respect exclusiveMaximum constraint', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator respects exclusiveMaximum',
         fc.property(
           createBounds(-1000, 1000),
           fc.integer({ min: 0, max: 1000 }),
@@ -371,12 +392,16 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() },
+          context: { constraint: 'exclusiveMaximum' },
+        }
       );
     });
 
     it('should respect multipleOf constraint', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator respects multipleOf',
         fc.property(
           fc.oneof(
             fc.constant(0.1),
@@ -415,12 +440,16 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() },
+          context: { constraint: 'multipleOf' },
+        }
       );
     });
 
     it('should generate values from enum when provided', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator generates enum',
         fc.property(
           fc.array(
             fc.float({
@@ -466,12 +495,13 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should generate const value when provided', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator generates const',
         fc.property(
           fc.float({
             min: -100,
@@ -504,12 +534,13 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should handle complex constraints combinations', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator complex constraints combinations',
         fc.property(
           createBounds(0, 100),
           fc.oneof(fc.constant(0.1), fc.constant(1), fc.constant(2.5)),
@@ -549,12 +580,13 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should generate same values with same seed', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator deterministic same-seed generation',
         fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
           const schema: NumberSchema = { type: 'number' };
           const ajv = getAjv();
@@ -586,11 +618,11 @@ describe('NumberGenerator', () => {
             }
           }
         }),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
-    it('should handle different scenarios appropriately', () => {
+    it('should handle different scenarios appropriately', async () => {
       const scenarios: Array<'normal' | 'edge' | 'peak' | 'error'> = [
         'normal',
         'edge',
@@ -598,12 +630,13 @@ describe('NumberGenerator', () => {
         'error',
       ];
 
-      scenarios.forEach((scenario) => {
+      for (const [i, scenario] of scenarios.entries()) {
         const ajv = getAjv();
         const schema: NumberSchema = { type: 'number' };
         const validate = ajv.compile(schema);
 
-        fc.assert(
+        await propertyTest(
+          `NumberGenerator scenario ${scenario}`,
           fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
             const context = createGeneratorContext(schema, formatRegistry, {
               seed,
@@ -627,15 +660,19 @@ describe('NumberGenerator', () => {
             }
           }),
           {
-            seed: NUMBER_TEST_SEED + scenarios.indexOf(scenario),
-            numRuns: Math.floor(getNumRuns() / 5),
+            parameters: {
+              seed: NUMBER_TEST_SEED + i,
+              numRuns: Math.floor(getNumRuns() / 5),
+            },
+            context: { scenario },
           }
         );
-      });
+      }
     });
 
     it('should handle exclusive bounds correctly', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator exclusive bounds',
         fc.property(
           createBounds(0, 100),
           fc.integer({ min: 0, max: 1000 }),
@@ -670,12 +707,13 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should handle precise multipleOf constraints with floating-point tolerance', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator precise multipleOf with tolerance',
         fc.property(
           fc.oneof(
             fc.constant(0.01),
@@ -709,7 +747,10 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() },
+          context: { constraint: 'multipleOf-precision' },
+        }
       );
     });
 
@@ -733,7 +774,8 @@ describe('NumberGenerator', () => {
     });
 
     it('should handle exclusive bounds with precise floating-point boundaries', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator exclusive bounds (float precision)',
         fc.property(
           fc.oneof(
             fc.constant({
@@ -782,12 +824,16 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        {
+          parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() },
+          context: { constraint: 'exclusive-bounds-float' },
+        }
       );
     });
 
     it('metamorphic: generated value +/- half-step should violate multipleOf (if in-bounds)', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator metamorphic half-step violates multipleOf',
         fc.property(
           fc.record({
             minimum: fc.constant(0),
@@ -832,7 +878,7 @@ describe('NumberGenerator', () => {
             return true;
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
@@ -872,7 +918,8 @@ describe('NumberGenerator', () => {
 
   describe('Impossible and Contradictory Schema Constraints', () => {
     it('should handle impossible minimum > maximum constraints', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator impossible minimum > maximum',
         fc.property(
           fc.float({ min: 0, max: 100, noNaN: true, noDefaultInfinity: true }),
           fc.float({ min: 0, max: 100, noNaN: true, noDefaultInfinity: true }),
@@ -915,12 +962,13 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should handle impossible exclusiveMinimum >= exclusiveMaximum', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator impossible exclusiveMinimum >= exclusiveMaximum',
         fc.property(
           fc.float({ min: -50, max: 50, noNaN: true, noDefaultInfinity: true }),
           fc.float({ min: -50, max: 50, noNaN: true, noDefaultInfinity: true }),
@@ -963,7 +1011,7 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
@@ -1071,7 +1119,8 @@ describe('NumberGenerator', () => {
     });
 
     it('should handle enum with additional constraints', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator enum with additional constraints',
         fc.property(
           fc.array(
             fc.float({
@@ -1117,7 +1166,7 @@ describe('NumberGenerator', () => {
             // Generation might fail if no enum value satisfies constraints
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
@@ -1163,7 +1212,8 @@ describe('NumberGenerator', () => {
 
   describe('validate', () => {
     it('should validate number values correctly', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator validate number values',
         fc.property(
           fc.float({ noNaN: true, noDefaultInfinity: true }),
           (value) => {
@@ -1185,12 +1235,13 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should reject non-number values', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator reject non-number values',
         fc.property(
           fc.oneof(
             fc.string(),
@@ -1220,12 +1271,13 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should validate constraint compliance', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator validate constraint compliance',
         fc.property(
           createBounds(0, 100),
           fc.float({
@@ -1254,12 +1306,13 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should validate enum constraints correctly with floating-point precision', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator validate enum constraints (precision)',
         fc.property(
           fc
             .array(
@@ -1306,12 +1359,13 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should validate complex constraint combinations with isMultipleOf precision', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator validate complex constraints (multipleOf precision)',
         fc.property(
           createBounds(0, 100),
           fc.oneof(
@@ -1356,14 +1410,15 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
   });
 
   describe('getExamples', () => {
     it('should return enum values as examples when available', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator getExamples enum',
         fc.property(
           fc.array(
             fc.float({
@@ -1390,12 +1445,13 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should return const value as example when available', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator getExamples const',
         fc.property(
           fc.float({
             min: -100,
@@ -1416,12 +1472,13 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should return schema examples when available', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator getExamples schema examples',
         fc.property(
           fc.array(
             fc.float({
@@ -1451,12 +1508,13 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should return empty array for unsupported schemas', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator getExamples unsupported schemas',
         fc.property(
           getSchemaArbitrary().filter(
             (schema: Record<string, unknown>) =>
@@ -1473,7 +1531,7 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
@@ -1667,7 +1725,8 @@ describe('NumberGenerator', () => {
 
   describe('integration tests', () => {
     it('should maintain consistency between generate and validate', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator integration: generate vs validate',
         fc.property(
           getSchemaArbitrary()
             .filter(
@@ -1706,7 +1765,7 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
@@ -1760,14 +1819,14 @@ describe('NumberGenerator', () => {
       });
     });
 
-    it('should handle draft-specific exclusive bounds correctly', () => {
+    it('should handle draft-specific exclusive bounds correctly', async () => {
       const drafts: Array<'2019-09' | '2020-12' | 'draft-07'> = [
         'draft-07',
         '2019-09',
         '2020-12',
       ];
 
-      drafts.forEach((draft) => {
+      for (const [i, draft] of drafts.entries()) {
         const ajv = createAjv(draft);
         const schema: NumberSchema = {
           type: 'number',
@@ -1776,7 +1835,8 @@ describe('NumberGenerator', () => {
         };
         const validate = ajv.compile(schema);
 
-        fc.assert(
+        await propertyTest(
+          `NumberGenerator draft ${draft} exclusive bounds`,
           fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
             const context = createGeneratorContext(schema, formatRegistry, {
               seed,
@@ -1799,17 +1859,21 @@ describe('NumberGenerator', () => {
             }
           }),
           {
-            seed: NUMBER_TEST_SEED + drafts.indexOf(draft) * 1000,
-            numRuns: Math.floor(getNumRuns() / 3),
+            parameters: {
+              seed: NUMBER_TEST_SEED + i * 1000,
+              numRuns: Math.floor(getNumRuns() / 3),
+            },
+            context: { draft },
           }
         );
-      });
+      }
     });
   });
 
   describe('Boundary Constraint Priority Tests (v2.1 Migration)', () => {
     it('should honor tighter of maximum and exclusiveMaximum', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator boundary: max vs exclusiveMaximum',
         fc.property(
           fc.constant({
             type: 'number' as const,
@@ -1839,12 +1903,13 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should honor tighter of minimum and exclusiveMinimum', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator boundary: min vs exclusiveMinimum',
         fc.property(
           fc.constant({
             type: 'number' as const,
@@ -1874,14 +1939,15 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
   });
 
   describe('Regression Tests for Classic Bugs (v2.1 Migration)', () => {
     it('should handle multipleOf with narrow decimal boundaries', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator regression: narrow decimal multipleOf',
         fc.property(
           fc.constant({
             type: 'number' as const,
@@ -1905,12 +1971,13 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should handle floating-point precision with enum validation', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator regression: enum precision',
         fc.property(
           fc.constant({
             type: 'number' as const,
@@ -1933,7 +2000,7 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
@@ -1947,7 +2014,8 @@ describe('NumberGenerator', () => {
     });
 
     it('should handle very small multipleOf values without precision loss', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator small multipleOf precision',
         fc.property(
           fc.constantFrom(0.001, 0.0001, 0.00001),
           fc.integer({ min: 0, max: 100 }),
@@ -1972,14 +2040,20 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: Math.floor(getNumRuns() / 3) }
+        {
+          parameters: {
+            seed: NUMBER_TEST_SEED,
+            numRuns: Math.floor(getNumRuns() / 3),
+          },
+        }
       );
     });
   });
 
   describe('Extreme Values and Precision (v2.1 Migration)', () => {
     it('should handle extreme bounds near JS limits', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator extreme bounds',
         fc.property(
           fc.constantFrom(
             { minimum: -Number.MAX_VALUE, maximum: Number.MAX_VALUE },
@@ -2010,7 +2084,12 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: Math.floor(getNumRuns() / 3) }
+        {
+          parameters: {
+            seed: NUMBER_TEST_SEED,
+            numRuns: Math.floor(getNumRuns() / 3),
+          },
+        }
       );
     });
 
@@ -2037,7 +2116,8 @@ describe('NumberGenerator', () => {
 
   describe('JSON Serialization Compliance (v2.1 Migration)', () => {
     it('should generate values that are JSON serializable', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator JSON serializable results',
         fc.property(
           fc.constantFrom(
             { type: 'number' as const },
@@ -2073,14 +2153,15 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
   });
 
   describe('FormatAdapter Cross-Reference Tests (Task 21)', () => {
     it('should maintain consistency with numeric format handling', () => {
-      fc.assert(
+      return propertyTest(
+        'NumberGenerator format adapter consistency',
         fc.property(
           createBounds(-1000, 1000),
           fc.integer({ min: 0, max: 1000 }),
@@ -2109,7 +2190,7 @@ describe('NumberGenerator', () => {
             }
           }
         ),
-        { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: NUMBER_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 

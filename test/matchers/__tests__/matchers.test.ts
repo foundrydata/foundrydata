@@ -14,6 +14,7 @@ import fc from 'fast-check';
 import '../index'; // Import to register matchers
 import { getAjv, createAjv } from '../../helpers/ajv-factory';
 import type { AnySchema } from 'ajv';
+import { propertyTest } from '../../setup.js';
 
 // ================================================================================
 // TEST SETUP
@@ -130,12 +131,13 @@ describe('toMatchJsonSchema', () => {
   });
 
   test('property-based: any valid JSON should validate against permissive schema', () => {
-    fc.assert(
+    return propertyTest(
+      'toMatchJsonSchema permissive schema accepts anything',
       fc.property(fc.jsonValue(), (data) => {
         const permissiveSchema = {}; // Empty schema accepts anything
         expect(data).toMatchJsonSchema(permissiveSchema);
       }),
-      { numRuns: 50 } // Reduced for performance
+      { parameters: { numRuns: 50 } }
     );
   });
 
@@ -242,7 +244,8 @@ describe('toBeWithinRange', () => {
   });
 
   test('property-based: generated numbers should be within expected bounds', () => {
-    fc.assert(
+    return propertyTest(
+      'toBeWithinRange generated numbers within bounds',
       fc.property(
         fc.integer({ min: -100, max: 100 }),
         fc.integer({ min: -100, max: 100 }),
@@ -255,7 +258,7 @@ describe('toBeWithinRange', () => {
           expect(value).toBeWithinRange(min, max);
         }
       ),
-      { numRuns: 100 }
+      { parameters: { numRuns: 100 } }
     );
   });
 });
@@ -280,7 +283,8 @@ describe('toHaveCompliance', () => {
   });
 
   test('property-based: valid compliance scores should pass when above threshold', () => {
-    fc.assert(
+    return propertyTest(
+      'toHaveCompliance valid scores vs thresholds',
       fc.property(
         fc.float({ min: 0, max: 100, noNaN: true }),
         fc.float({ min: 0, max: 100, noNaN: true }),
@@ -292,7 +296,7 @@ describe('toHaveCompliance', () => {
           }
         }
       ),
-      { numRuns: 100 }
+      { parameters: { numRuns: 100 } }
     );
   });
 });
@@ -547,7 +551,8 @@ describe('toBeDistinct', () => {
   });
 
   test('property-based: arrays with unique elements should be distinct', () => {
-    fc.assert(
+    return propertyTest(
+      'toBeDistinct unique arrays',
       fc.property(
         fc.array(fc.integer(), { minLength: 0, maxLength: 20 }),
         (arr) => {
@@ -560,7 +565,7 @@ describe('toBeDistinct', () => {
           }
         }
       ),
-      { numRuns: 50 }
+      { parameters: { numRuns: 50 } }
     );
   });
 });
@@ -592,7 +597,8 @@ describe('toHaveErrorRate', () => {
   });
 
   test('property-based: valid error rates should pass within tolerance', () => {
-    fc.assert(
+    return propertyTest(
+      'toHaveErrorRate valid rates within tolerance',
       fc.property(
         fc.float({ min: 0, max: 1, noNaN: true }),
         fc.float({ min: 0, max: 0.5, noNaN: true }), // tolerance
@@ -606,7 +612,7 @@ describe('toHaveErrorRate', () => {
           }
         }
       ),
-      { numRuns: 50 }
+      { parameters: { numRuns: 50 } }
     );
   });
 });
@@ -648,7 +654,8 @@ describe('toHaveErrorStats', () => {
   });
 
   test('property-based: valid error stats should pass within tolerance', () => {
-    fc.assert(
+    return propertyTest(
+      'toHaveErrorStats valid stats within tolerance',
       fc.property(
         fc.integer({ min: 1, max: 1000 }), // total
         fc.float({ min: 0, max: 1, noNaN: true }), // expected rate
@@ -662,7 +669,7 @@ describe('toHaveErrorStats', () => {
           }
         }
       ),
-      { numRuns: 50 }
+      { parameters: { numRuns: 50 } }
     );
   });
 });

@@ -18,6 +18,7 @@ import { FormatRegistry } from '../../../registry/format-registry';
 import type { BooleanSchema } from '../../../types/schema';
 import { getAjv } from '../../../../../../test/helpers/ajv-factory.js';
 import { getSchemaArbitrary } from '../../../../../../test/arbitraries/json-schema.js';
+import { propertyTest } from '../../../../../../test/setup.js';
 
 describe('BooleanGenerator', () => {
   let generator: BooleanGenerator;
@@ -39,7 +40,8 @@ describe('BooleanGenerator', () => {
 
   describe('supports', () => {
     it('should support boolean schemas', () => {
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator supports boolean',
         fc.property(
           getSchemaArbitrary()
             .filter(
@@ -56,12 +58,13 @@ describe('BooleanGenerator', () => {
             expect(generator.supports(schema)).toBe(true);
           }
         ),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should not support non-boolean schemas', () => {
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator rejects non-boolean',
         fc.property(
           getSchemaArbitrary().filter(
             (schema: Record<string, unknown>) => schema.type !== 'boolean'
@@ -76,7 +79,7 @@ describe('BooleanGenerator', () => {
             expect(generator.supports(schema as any)).toBe(false);
           }
         ),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
   });
@@ -88,7 +91,8 @@ describe('BooleanGenerator', () => {
       const ajv = getAjv();
       const validate = ajv.compile(schema);
 
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator always generates booleans',
         fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
           const contextWithSeed = { ...context, seed };
           const result = generator.generate(schema, contextWithSeed);
@@ -107,7 +111,7 @@ describe('BooleanGenerator', () => {
             }
           }
         }),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
@@ -146,7 +150,8 @@ describe('BooleanGenerator', () => {
     });
 
     it('should generate values from enum when provided', () => {
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator generates enum',
         fc.property(
           fc.oneof(
             fc.constant([true]),
@@ -179,12 +184,13 @@ describe('BooleanGenerator', () => {
             }
           }
         ),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should generate const value when provided', () => {
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator generates const',
         fc.property(
           fc.boolean(),
           fc.integer({ min: 0, max: 1000 }),
@@ -215,12 +221,13 @@ describe('BooleanGenerator', () => {
             }
           }
         ),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should generate same values with same seed', () => {
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator same seed stability',
         fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
           const schema: BooleanSchema = { type: 'boolean' };
           const ajv = getAjv();
@@ -252,11 +259,11 @@ describe('BooleanGenerator', () => {
             }
           }
         }),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
-    it('should handle different scenarios appropriately', () => {
+    it('should handle different scenarios appropriately', async () => {
       const scenarios: Array<'normal' | 'edge' | 'peak' | 'error'> = [
         'normal',
         'edge',
@@ -264,12 +271,13 @@ describe('BooleanGenerator', () => {
         'error',
       ];
 
-      scenarios.forEach((scenario) => {
+      for (const [i, scenario] of scenarios.entries()) {
         const ajv = getAjv();
         const schema: BooleanSchema = { type: 'boolean' };
         const validate = ajv.compile(schema);
 
-        fc.assert(
+        await propertyTest(
+          `BooleanGenerator scenario ${scenario}`,
           fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
             const context = createGeneratorContext(schema, formatRegistry, {
               seed,
@@ -292,15 +300,19 @@ describe('BooleanGenerator', () => {
             }
           }),
           {
-            seed: BOOLEAN_TEST_SEED + scenarios.indexOf(scenario),
-            numRuns: Math.floor(getNumRuns() / 5),
-          } // Fewer runs per scenario
+            parameters: {
+              seed: BOOLEAN_TEST_SEED + i,
+              numRuns: Math.floor(getNumRuns() / 5),
+            },
+            context: { scenario },
+          }
         );
-      });
+      }
     });
 
     it('should handle default values when provided', () => {
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator default values respected',
         fc.property(
           fc.boolean(),
           fc.integer({ min: 0, max: 1000 }),
@@ -333,12 +345,13 @@ describe('BooleanGenerator', () => {
             }
           }
         ),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should handle examples when provided', () => {
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator examples influence generation',
         fc.property(
           fc.array(fc.boolean(), { minLength: 1, maxLength: 2 }),
           fc.integer({ min: 0, max: 1000 }),
@@ -367,13 +380,14 @@ describe('BooleanGenerator', () => {
             }
           }
         ),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should be deterministic with probability configuration', () => {
       // Test that the generator respects probability settings consistently
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator deterministic with probability configuration',
         fc.property(
           fc.float({ min: 0, max: 1 }),
           fc.integer({ min: 0, max: 1000 }),
@@ -410,14 +424,15 @@ describe('BooleanGenerator', () => {
             }
           }
         ),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
   });
 
   describe('validate', () => {
     it('should validate boolean values correctly', () => {
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator validate booleans',
         fc.property(fc.boolean(), (value) => {
           const schema: BooleanSchema = { type: 'boolean' };
           const ajv = getAjv();
@@ -436,12 +451,13 @@ describe('BooleanGenerator', () => {
             );
           }
         }),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should reject non-boolean values', () => {
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator reject non-boolean',
         fc.property(
           fc.oneof(
             fc.string(),
@@ -471,12 +487,13 @@ describe('BooleanGenerator', () => {
             }
           }
         ),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should validate enum constraints correctly', () => {
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator validate enum',
         fc.property(
           fc.oneof(
             fc.constant([true]),
@@ -504,12 +521,13 @@ describe('BooleanGenerator', () => {
             }
           }
         ),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should validate const constraints correctly', () => {
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator validate const',
         fc.property(fc.boolean(), fc.boolean(), (constValue, testValue) => {
           const schema: BooleanSchema = { type: 'boolean', const: constValue };
           const ajv = getAjv();
@@ -529,12 +547,13 @@ describe('BooleanGenerator', () => {
             );
           }
         }),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should handle schemas without boolean type', () => {
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator unsupported schema validation',
         fc.property(
           fc.boolean(),
           getSchemaArbitrary().filter(
@@ -564,14 +583,15 @@ describe('BooleanGenerator', () => {
             }
           }
         ),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
   });
 
   describe('getExamples', () => {
     it('should return enum values as examples when available', () => {
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator getExamples enum',
         fc.property(
           fc.oneof(
             fc.constant([true]),
@@ -591,12 +611,13 @@ describe('BooleanGenerator', () => {
             }
           }
         ),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should return const value as example when available', () => {
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator getExamples const',
         fc.property(fc.boolean(), (constValue) => {
           const schema: BooleanSchema = { type: 'boolean', const: constValue };
           const examples = generator.getExamples(schema);
@@ -609,12 +630,13 @@ describe('BooleanGenerator', () => {
             );
           }
         }),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
     it('should return schema examples when available', () => {
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator getExamples schema examples',
         fc.property(
           fc.oneof(
             fc.constant([true]),
@@ -637,7 +659,7 @@ describe('BooleanGenerator', () => {
             }
           }
         ),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
@@ -652,7 +674,8 @@ describe('BooleanGenerator', () => {
     });
 
     it('should return empty array for unsupported schemas', () => {
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator getExamples unsupported schemas',
         fc.property(
           getSchemaArbitrary().filter(
             (schema: Record<string, unknown>) =>
@@ -669,7 +692,7 @@ describe('BooleanGenerator', () => {
             }
           }
         ),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
   });
@@ -684,7 +707,8 @@ describe('BooleanGenerator', () => {
 
   describe('integration tests', () => {
     it('should maintain consistency between generate and validate', () => {
-      fc.assert(
+      return propertyTest(
+        'BooleanGenerator integration generate vs validate',
         fc.property(
           getSchemaArbitrary()
             .filter(
@@ -717,7 +741,7 @@ describe('BooleanGenerator', () => {
             }
           }
         ),
-        { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() }
+        { parameters: { seed: BOOLEAN_TEST_SEED, numRuns: getNumRuns() } }
       );
     });
 
@@ -898,7 +922,8 @@ describe('BooleanGenerator', () => {
       ];
 
       scenarios.forEach((scenario, scenarioIndex) => {
-        fc.assert(
+        void propertyTest(
+          `BooleanGenerator deterministic across scenarios: ${scenario}`,
           fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
             const schema: BooleanSchema = { type: 'boolean' };
             const ajv = getAjv();
@@ -933,8 +958,11 @@ describe('BooleanGenerator', () => {
             }
           }),
           {
-            seed: BOOLEAN_TEST_SEED + scenarioIndex * 1000,
-            numRuns: Math.floor(getNumRuns() / 4),
+            parameters: {
+              seed: BOOLEAN_TEST_SEED + scenarioIndex * 1000,
+              numRuns: Math.floor(getNumRuns() / 4),
+            },
+            context: { scenario },
           }
         );
       });
