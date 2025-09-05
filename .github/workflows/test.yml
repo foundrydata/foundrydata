@@ -60,7 +60,7 @@ jobs:
           exit 1
 
   quick-tests:
-    name: Quick Tests (${% raw %}{{ matrix.os }} · Node {{ matrix.node }} · {{ matrix.draft }}{% endraw %})
+    name: Quick Tests (${{ matrix.os }} · Node ${{ matrix.node }} · ${{ matrix.draft }})
     needs: [lint]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 5
@@ -103,7 +103,7 @@ jobs:
           if-no-files-found: ignore
 
   full-tests:
-    name: Full Tests (${% raw %}{{ matrix.os }} · Node {{ matrix.node }} · {{ matrix.draft }}{% endraw %})
+    name: Full Tests (${{ matrix.os }} · Node ${{ matrix.node }} · ${{ matrix.draft }})
     needs: [quick-tests]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
