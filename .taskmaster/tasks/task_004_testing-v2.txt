@@ -1,0 +1,11 @@
+# Task ID: 4
+# Title: Implement Custom Vitest Matchers
+# Status: pending
+# Dependencies: 3
+# Priority: high
+# Description: Phase 1 - Create custom matchers for JSON Schema validation and testing
+# Details:
+- Create test/matchers/index.ts\n- Implement toMatchJsonSchema(schema) using cached AJV\n- Implement toBeWithinRange(min, max) for numbers\n- Implement toHaveCompliance(expected) for compliance scores\n- Implement toBeValidUUID(), toBeValidEmail(), toBeValidISO8601()\n- Implement toBeDistinct(deep) with stable stringify\n- Implement toHaveErrorRate(rate, tolerance)\n- Implement toBeGeneratedWithSeed({seed, schema, generate})\n- Register matchers with expect.extend()\n- Create test/matchers/__tests__/matchers.test.ts
+
+# Test Strategy:
+

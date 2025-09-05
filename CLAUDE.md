@@ -72,6 +72,8 @@ foundrydata generate --schema user.json --rows 100 --scenario errors
 }
 ```
 
+Note: Arrays of flat objects are supported; nested object properties in root objects are not (until v0.3).
+
 ❌ **NOT Supported (v0.1)**
 - Nested objects in properties (coming v0.3)
 - Complex patterns (regex validation)
@@ -426,9 +428,6 @@ test('string length respects bounds', () => {
 | **v0.2** | Month 2 | Pattern validation, more formats | 100+ users |
 | **v0.3** | Month 4 | Nested objects (1 level), CSV, API | 10+ paying |
 | **v1.0** | Month 6 | Full nesting, schema composition | 25+ paying |
-
-### Never (Too Complex for Solo Dev)
-Circular references, Custom plugins, GUI/Web interface, Multi-tenant SaaS
 
 ---
 

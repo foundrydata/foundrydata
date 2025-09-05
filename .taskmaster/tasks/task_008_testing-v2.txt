@@ -1,0 +1,11 @@
+# Task ID: 8
+# Title: Migrate Existing Generator Tests
+# Status: pending
+# Dependencies: 6, 7
+# Priority: high
+# Description: Phase 3 - Migrate all existing generator tests to use AJV validation and property-based testing
+# Details:
+- Migrate boolean-generator.test.ts with AJV validation layer\n- Migrate string-generator.test.ts with comprehensive constraint testing\n- Migrate number/integer generator tests with exclusive bounds\n- Migrate complex type generators (enum, array, object)\n- Handle draft-specific differences in tests\n- Maintain existing Result pattern and test structure
+
+# Test Strategy:
+

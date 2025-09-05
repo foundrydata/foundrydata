@@ -141,7 +141,6 @@ vite.config.ts.timestamp-*
 # .claude/
 
 # Task Master AI (local task tracking)
-.taskmaster/
 *.sh.sh
 
 # System files
