@@ -441,8 +441,8 @@
           6
         ],
         "status": "pending",
-        "details": "Build FoundryGenerator class orchestrating the pipeline: Parse → Plan → Generate → Validate. Support seed parameter for deterministic generation. Handle batch generation efficiently.",
-        "testStrategy": "Integration tests with all example schemas. Test deterministic generation with seeds. Performance benchmarks: 1000 rows < 200ms, 10000 rows < 2s.",
+        "details": "Build FoundryGenerator class orchestrating the pipeline: Parse → Plan → Generate → Validate. Deterministic generation via per-context PRNG (no global faker.seed). Enforce 100% compliance gate for supported features (otherwise fail with clear error). Collect per-stage metrics (parse/generate/validate): durations, AJV cache hit rate, formats used. Handle batch generation efficiently and expose a reproducible seed in outputs.",
+        "testStrategy": "Integration tests with all example schemas. Property-based tests asserting determinism: same seed → bit-identical outputs, prefix stability. Performance benchmarks: 1000 rows < 200ms, 10000 rows < 2s. Compliance invariant: score === 100 or explicit unsupported-feature error.",
         "subtasks": [
           {
             "id": 1,
@@ -475,7 +475,9 @@
               "Batch generation optimization",
               "Memory efficiency for large datasets",
               "Meet performance targets",
-              "Benchmark documentation"
+              "Benchmark documentation",
+              "Expose per-stage metrics (durations, AJV cache hit rate)",
+              "Prefix-stability check in pipeline"
             ]
           }
         ]
@@ -743,14 +745,150 @@
             ]
           }
         ]
+      },
+      {
+        "id": 13,
+        "title": "Enable pattern support in JSONSchemaParser",
+        "description": "Propagate string `pattern` from JSON Schema into parsed StringSchema (instead of rejecting), aligned with StringGenerator capabilities.",
+        "priority": "high",
+        "estimatedHours": 4,
+        "dependencies": [
+          2,
+          4
+        ],
+        "status": "pending",
+        "details": "Update packages/core/src/parser/json-schema-parser.ts to accept and pass through the `pattern` keyword for string schemas. Remove the current early rejection of `pattern`, validate regex only for syntactic correctness (try new RegExp), and store the original pattern string on the parsed schema. Ensure this remains draft-agnostic (Draft-07, 2019-09, 2020-12). Keep error messaging helpful for invalid regex. Add ReDoS guards: limit pattern length/complexity and provide a clear ParseError with suggestion; document generation fallbacks for complex patterns.",
+        "testStrategy": "Add unit tests in packages/core/src/parser/__tests__/ to verify that: (1) valid pattern strings are preserved on parsed StringSchema; (2) invalid/too-complex regex patterns produce a clear ParseError with suggestion; (3) end-to-end: StringGenerator generates values matching the pattern when present, with safe fallbacks when patterns are complex. Add an integration test in test/__tests__/integration/generator-compliance/ to confirm AJV accepts generated values under schemas with pattern.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Allow pattern in parser",
+            "estimatedHours": 1,
+            "file": "packages/core/src/parser/json-schema-parser.ts",
+            "checklist": [
+              "Remove early error on pattern",
+              "Set StringSchema.pattern when string",
+              "Validate regex syntax safely"
+            ],
+            "status": "pending"
+          },
+          {
+            "id": 2,
+            "title": "Parser tests for pattern",
+            "estimatedHours": 1,
+            "file": "packages/core/src/parser/__tests__/",
+            "checklist": [
+              "Valid pattern passes and is preserved",
+              "Invalid pattern yields ParseError with suggestion"
+            ],
+            "status": "pending"
+          },
+          {
+            "id": 3,
+            "title": "E2E generation with pattern",
+            "estimatedHours": 1,
+            "file": "test/__tests__/integration/generator-compliance/",
+            "checklist": [
+              "StringGenerator respects pattern",
+              "AJV validates generated values"
+            ],
+            "status": "pending"
+          },
+          {
+            "id": 4,
+            "title": "Docs and limitations update",
+            "estimatedHours": 1,
+            "checklist": [
+              "Update docs/MVP_LIMITATIONS.md",
+              "Mention supported regex scope and caveats"
+            ],
+            "status": "pending"
+          }
+        ]
+      }
+      ,
+      {
+        "id": 27,
+        "title": "Introduce Per-Context PRNG (remove global faker.seed)",
+        "description": "Replace global Faker seeding with a per-context deterministic PRNG exposed via GeneratorContext to ensure isolation and reproducibility.",
+        "priority": "high",
+        "estimatedHours": 6,
+        "dependencies": [
+          4,
+          7
+        ],
+        "status": "pending",
+        "details": "ACCEPTANCE: (1) No calls to faker.seed in repo; (2) Same seed + same schema → bit-identical outputs across runs and in parallel; (3) Overhead <5% vs baseline on micro-benchmarks (p95). IMPLEMENTATION: Add RNG interface (next(), int(min,max), float(min,max)) to GeneratorContext; implement seeded PRNG (mulberry32/xorshift) with pure state; refactor generators to use context RNG for selection/shuffle; document determinism guarantees.",
+        "testStrategy": "Determinism tests (same seed → identical outputs); concurrency tests (N workers); integration in full pipeline with prefix-stability; micro-benchmarks to verify overhead <5%.",
+        "subtasks": [
+          {"id": 1, "title": "Add PRNG to context", "status": "pending", "file": "packages/core/src/generator/data-generator.ts"},
+          {"id": 2, "title": "Remove faker.seed global", "status": "pending", "file": "packages/core/src/generator/data-generator.ts"},
+          {"id": 3, "title": "Refactor generators to RNG", "status": "pending", "file": "packages/core/src/generator/types/"},
+          {"id": 4, "title": "Determinism tests", "status": "pending", "file": "test/__tests__/integration/pipeline/"}
+        ]
+      }
+      ,
+      {
+        "id": 28,
+        "title": "Stable Cache Key for AJV Compiled Validators",
+        "description": "Use a stable stringify or hashing strategy for schema cache keys to maximize cache hits and avoid recompilation due to key order.",
+        "priority": "medium",
+        "estimatedHours": 3,
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "details": "ACCEPTANCE: schemas with different key orders share the same cache entry; improved cache hit rate recorded. IMPLEMENTATION: canonical stringify (sorted keys) or fast hash; retain WeakMap for identity; guard heavy canonicalization. METRICS: before/after hit-rate and compile counts.",
+        "testStrategy": "Unit tests for key equality across orderings; measure hit/miss deltas in validator metrics; micro-bench compile vs cached validate.",
+        "subtasks": [
+          {"id": 1, "title": "Implement stable stringify/hash", "status": "pending", "file": "packages/core/src/validator/compliance-validator.ts"},
+          {"id": 2, "title": "Integrate into cache", "status": "pending", "file": "packages/core/src/validator/compliance-validator.ts"},
+          {"id": 3, "title": "Add tests and metrics", "status": "pending", "file": "packages/core/src/validator/__tests__/"}
+        ]
+      }
+      ,
+      {
+        "id": 29,
+        "title": "Support Bounded Nested Object Parsing",
+        "description": "Allow nested objects in JSONSchemaParser up to a configurable depth; beyond the limit, produce a clear ParseError with suggestions.",
+        "priority": "high",
+        "estimatedHours": 5,
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "details": "ACCEPTANCE: nested objects parsed up to default depth=2; deeper structures fail fast with guidance. IMPLEMENTATION: recursive descent with depth counter; reuse existing type guards; keep MVP constraints documented. TESTS: AJV × generator end-to-end for nested objects within bounds.",
+        "testStrategy": "Unit tests for depth boundary; integration tests ensuring generated nested objects validate; error-path tests with suggestion messages for over-depth schemas.",
+        "subtasks": [
+          {"id": 1, "title": "Add depth limit to parser", "status": "pending", "file": "packages/core/src/parser/json-schema-parser.ts"},
+          {"id": 2, "title": "Nested objects tests", "status": "pending", "file": "packages/core/src/parser/__tests__/"}
+        ]
+      }
+      ,
+      {
+        "id": 30,
+        "title": "Format Registry Init: Exactly-Once & Tests",
+        "description": "Guarantee that built-in formats initialize exactly once even with deep imports; add tests for idempotence and direct-registry import.",
+        "priority": "medium",
+        "estimatedHours": 3,
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "details": "ACCEPTANCE: lazy init runs once; re-imports or deep imports do not duplicate registration; no memory leaks. TESTS: import registry without core index; verify formats available and registered once.",
+        "testStrategy": "Unit tests in registry __tests__ for lazy init idempotence and deep import behavior; integration test touching generators that use formats.",
+        "subtasks": [
+          {"id": 1, "title": "Idempotent initializer", "status": "pending", "file": "packages/core/src/registry/format-registry.ts"},
+          {"id": 2, "title": "Lazy init tests", "status": "pending", "file": "packages/core/src/registry/__tests__/"}
+        ]
       }
     ],
     "metadata": {
       "created": "2025-08-24T14:00:00.000Z",
       "updated": "2025-08-26T17:34:08.651Z",
       "approach": "Hybrid - Task Master structure with granular subtasks",
-      "totalTasks": 13,
-      "totalSubtasks": 48,
+      "totalTasks": 14,
+      "totalSubtasks": 52,
       "estimatedTotalHours": 86,
       "phases": {
         "setup": [
@@ -1697,6 +1835,45 @@
         ],
         "priority": "high",
         "subtasks": []
+      }
+      ,
+      {
+        "id": 31,
+        "title": "Verify Per-Context PRNG Determinism (master:27)",
+        "description": "Testing v2 - Validate determinism and parallel reproducibility of the per-context PRNG implemented in master task 27.",
+        "priority": "high",
+        "estimatedHours": 3,
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "details": "ACCEPTANCE: (1) Same seed + same schema → bit-identical outputs across runs; (2) Parallel executions (N workers) produce identical outputs; (3) Prefix-stability holds; (4) No calls to faker.seed exist in codebase. REPORT: record p95 overhead <5% in micro-benchmarks.",
+        "testStrategy": "Property-based tests for determinism and prefix-stability at pipeline level; concurrency tests with worker threads/process pool; micro-benchmarks comparing PRNG vs baseline (report percentiles).",
+        "subtasks": [
+          {"id": 1, "title": "Determinism property test", "status": "pending", "file": "test/__tests__/integration/pipeline/"},
+          {"id": 2, "title": "Prefix-stability test", "status": "pending", "file": "test/__tests__/integration/pipeline/"},
+          {"id": 3, "title": "Concurrency reproducibility test", "status": "pending", "file": "test/performance/benchmarks.test.ts"},
+          {"id": 4, "title": "Micro-bench overhead report", "status": "pending", "file": "test/performance/benchmarks.test.ts"}
+        ]
+      }
+      ,
+      {
+        "id": 32,
+        "title": "Measure AJV Cache Effectiveness (master:28)",
+        "description": "Testing v2 - Measure and gate cache hit rate improvements from stable cache key strategy implemented in master task 28.",
+        "priority": "medium",
+        "estimatedHours": 2,
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "details": "ACCEPTANCE: (1) Semantically identical schemas (reordered keys) use the same compiled validator; (2) Cache hit rate improves vs baseline; (3) Compile count reduced under repeated validation workloads. REPORT: include hit/miss deltas and timing percentiles.",
+        "testStrategy": "Create reordered-schema fixtures and validate equality of cache key behavior; run micro-bench compile vs cached validate; record metrics and assert thresholds; integrate with performance baseline/regression suite.",
+        "subtasks": [
+          {"id": 1, "title": "Reordered schemas fixtures", "status": "pending", "file": "test/helpers/ajv-factory.ts"},
+          {"id": 2, "title": "Cache metrics capture", "status": "pending", "file": "test/performance/benchmarks.test.ts"},
+          {"id": 3, "title": "Threshold assertions & report", "status": "pending", "file": "test/performance/regression-suite.test.ts"}
+        ]
       }
     ],
     "metadata": {
