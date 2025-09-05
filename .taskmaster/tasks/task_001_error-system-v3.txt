@@ -1,0 +1,76 @@
+# Task ID: 1
+# Title: Create Error Code Infrastructure
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Implement the foundational error code system with enums, mappings, and severity types
+# Details:
+Create packages/core/src/errors/codes.ts with:
+- ErrorCode enum (E001-E499 range)
+- EXIT_CODES mapping for CLI integration
+- HTTP_STATUS_BY_CODE mapping for API responses
+- Severity type definition ('info' | 'warn' | 'error')
+
+Key error codes:
+- E001-E099: Schema errors (nested objects, patterns, composition)
+- E100-E199: Generation errors (constraints, limits)
+- E200-E299: Validation errors (compliance)
+- E300-E399: Configuration errors
+- E400-E499: Parse errors
+
+Special code E012 for circular reference detection.
+
+# Test Strategy:
+Unit tests in packages/core/src/errors/__tests__/codes.test.ts:
+- Verify all error codes are unique
+- Test exit code mapping completeness
+- Test HTTP status mapping validity (400-599 range)
+- Ensure every ErrorCode has both exit and HTTP mappings
+
+# Subtasks:
+## 1. Define ErrorCode enum structure [pending]
+### Dependencies: None
+### Description: Create the ErrorCode enum with all error categories (E001-E499)
+### Details:
+Define enum ErrorCode in packages/core/src/errors/codes.ts:
+- E001-E099: Schema errors (nested objects, patterns, composition, structure, parse, circular refs)
+- E100-E199: Generation errors (constraints, limits)
+- E200-E299: Validation errors (compliance)
+- E300-E399: Configuration errors
+- E400-E499: Parse errors
+Include E012 for CIRCULAR_REFERENCE_DETECTED
+<info added on 2025-09-05T21:50:30.398Z>
+Ensure the ErrorCode enum explicitly defines CIRCULAR_REFERENCE_DETECTED = 'E012' as a named constant. Verify that EXIT_CODES mapping includes an entry for E012 (suggest exit code 2 for schema validation failures). Verify that HTTP_STATUS_BY_CODE includes an entry for E012 (suggest 400 Bad Request for schema validation errors). Add validation tests to ensure every enum member has corresponding entries in both mapping objects.
+</info added on 2025-09-05T21:50:30.398Z>
+<info added on 2025-09-05T21:55:51.415Z>
+Add INTERNAL_ERROR = 'E500' for unexpected/uncategorized errors with exit code 99 and HTTP status 500. Use this code as fallback for any unknown or uncategorized errors.
+</info added on 2025-09-05T21:55:51.415Z>
+
+## 2. Create exit code and HTTP mappings [pending]
+### Dependencies: None
+### Description: Define EXIT_CODES and HTTP_STATUS_BY_CODE mappings for all error codes
+### Details:
+Add to packages/core/src/errors/codes.ts:
+- EXIT_CODES: Record<ErrorCode, number> mapping each code to CLI exit code (10-99 range)
+- HTTP_STATUS_BY_CODE: Record<ErrorCode, number> mapping to HTTP status (400-599)
+- Export type Severity = 'info' | 'warn' | 'error'
+Ensure all ErrorCode values have entries in both mappings
+<info added on 2025-09-05T21:54:42.361Z>
+Add TypeScript exhaustiveness constraint: use 'satisfies Record<ErrorCode, number>' on EXIT_CODES and HTTP_STATUS_BY_CODE to enforce compile-time exhaustiveness checking. This ensures every ErrorCode has an entry in both mappings and provides TypeScript compiler errors if any ErrorCode is missing.
+</info added on 2025-09-05T21:54:42.361Z>
+
+## 3. Write error code infrastructure tests [pending]
+### Dependencies: None
+### Description: Create comprehensive unit tests for error codes, exit codes, and HTTP mappings
+### Details:
+Create packages/core/src/errors/__tests__/codes.test.ts:
+- Test all error codes are unique (no duplicates)
+- Test every ErrorCode has an exit code mapping
+- Test every ErrorCode has an HTTP status mapping
+- Test HTTP status codes are valid (400-599 range)
+- Test exit codes are in valid range (1-255)
+- Test Severity type exports correctly
+<info added on 2025-09-05T21:50:49.474Z>
+Add complete mapping coverage tests: verify size(ErrorCode enum) === size(EXIT_CODES) === size(HTTP_STATUS_BY_CODE), test that each ErrorCode has an entry in both mappings, validate HTTP status in range 400-599, validate exit codes in range 1-255
+</info added on 2025-09-05T21:50:49.474Z>
+

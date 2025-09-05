@@ -1,0 +1,57 @@
+# Task ID: 6
+# Title: Create Limitations Registry
+# Status: pending
+# Dependencies: 1
+# Priority: medium
+# Description: Implement centralized registry for MVP limitations with workarounds and version roadmap
+# Details:
+Create packages/core/src/errors/limitations.ts:
+
+LIMITATIONS_REGISTRY with entries for:
+- nestedObjects: E001, available v0.3, flatten workaround
+- regexPatterns: E002, available v0.2, enum/format alternative
+- schemaComposition: E003, available v1.0, manual merge workaround
+
+Each limitation includes:
+- errorCode mapping
+- availableIn version
+- workaround description and example
+- docsAnchor for documentation links
+- featureExamples for context
+
+Helper functions:
+- isSupported(limitationKey, version): boolean
+- getLimitation(key): Limitation | null
+- enrichErrorWithLimitation(error, key): adds limitation context to error
+- compareVersions(v1, v2): number for version comparison
+
+# Test Strategy:
+Create packages/core/src/errors/__tests__/limitations.test.ts:
+- Test getLimitation returns correct data
+- Test isSupported version comparison logic
+- Test enrichErrorWithLimitation adds proper fields
+- Test unknown limitations return null
+- Test registry completeness (all keys have full data)
+
+# Subtasks:
+## 1. Define LIMITATIONS_REGISTRY entries [pending]
+### Dependencies: None
+### Description: Create the centralized registry with all MVP limitation entries
+### Details:
+Create LIMITATIONS_REGISTRY in packages/core/src/errors/limitations.ts:
+- nestedObjects entry: E001, v0.3, flatten workaround
+- regexPatterns entry: E002, v0.2, enum/format alternative  
+- schemaComposition entry: E003, v1.0, manual merge
+Each entry includes: errorCode, availableIn, workaround, workaroundExample, docsAnchor, featureExamples
+
+## 2. Implement limitation helper functions [pending]
+### Dependencies: None
+### Description: Create utility functions for limitation management
+### Details:
+Add to packages/core/src/errors/limitations.ts:
+- isSupported(limitationKey, version): Check if feature is available
+- getLimitation(key): Retrieve limitation details
+- enrichErrorWithLimitation(error, key): Auto-add limitation context
+- compareVersions(v1, v2): Version comparison logic
+Export CURRENT_VERSION constant
+

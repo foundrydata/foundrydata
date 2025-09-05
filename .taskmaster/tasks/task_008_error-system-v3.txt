@@ -1,0 +1,66 @@
+# Task ID: 8
+# Title: Migrate and Update Tests
+# Status: pending
+# Dependencies: 5, 7, 4
+# Priority: high
+# Description: Update all existing tests and create new test suites for the error system refactor
+# Details:
+Complete test migration:
+- Remove tests for deleted getUserMessage/getSuggestions methods
+- Update error.code assertions to error.errorCode
+- Update constructor calls in all test files
+- Migrate ErrorReporter tests to ErrorPresenter with deterministic CLI snapshots (no colors/emojis in CI)
+- Ensure all error instantiations use new params pattern
+- Verify no direct ErrorReporter usage remains in production code
+- Ensure all CLI/API outputs come from ErrorPresenter only
+<info added on 2025-09-05T21:55:13.862Z>
+Additional acceptance criteria: Zero ErrorReporter imports in production code. Verify with grep/ripgrep that no production files import ErrorReporter after migration
+</info added on 2025-09-05T21:55:13.862Z>
+
+# Test Strategy:
+Run full test suite after migration:
+- npm run test:all
+- Verify no failures related to error handling
+- Check coverage remains above threshold
+- Validate snapshot tests for CLI output are deterministic in CI environment
+- Verify ErrorPresenter outputs match expected CLI format without colors/emojis in CI
+- Confirm all production code uses ErrorPresenter instead of ErrorReporter
+
+# Subtasks:
+## 1. Remove ErrorReporter tests and migrate to ErrorPresenter [pending]
+### Dependencies: None
+### Description: Replace all ErrorReporter test files with ErrorPresenter equivalents using deterministic snapshots
+### Details:
+- Locate all test files referencing ErrorReporter
+- Create new ErrorPresenter test files with snapshot testing
+- Configure snapshots to exclude colors and emojis in CI environment
+- Ensure deterministic output for consistent CI runs
+- Remove old ErrorReporter test files
+
+## 2. Update error property assertions throughout test suite [pending]
+### Dependencies: None
+### Description: Change all error.code references to error.errorCode in test files
+### Details:
+- Search for all instances of error.code assertions
+- Replace with error.errorCode
+- Update error constructor calls to use new params pattern
+- Verify test expectations match new error structure
+
+## 3. Verify no direct ErrorReporter usage in production code [pending]
+### Dependencies: None
+### Description: Audit codebase to ensure ErrorReporter is completely replaced by ErrorPresenter in production paths
+### Details:
+- Search for any remaining ErrorReporter imports or usage
+- Verify all CLI output goes through ErrorPresenter
+- Verify all API error responses use ErrorPresenter
+- Document any ErrorReporter deprecation warnings if kept for compatibility
+
+## 4. Configure CI-specific snapshot testing [pending]
+### Dependencies: None
+### Description: Set up test configuration to generate deterministic snapshots without colors or emojis in CI
+### Details:
+- Configure test environment detection for CI
+- Ensure ErrorPresenter outputs plain text in CI mode
+- Update or create new snapshots for CLI error outputs
+- Verify snapshots are consistent across different CI environments
+

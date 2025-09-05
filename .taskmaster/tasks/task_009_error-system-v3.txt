@@ -1,0 +1,40 @@
+# Task ID: 9
+# Title: Final Quality Checks and Documentation
+# Status: pending
+# Dependencies: 8
+# Priority: medium
+# Description: Complete final verification, linting, documentation of breaking changes, and error code documentation setup
+# Details:
+Final steps:
+- Verify no stack traces in production mode
+- Verify all ErrorCode mappings work (exit codes, HTTP status)
+- Verify formatForAPI().type points to existing or stub pages at https://foundrydata.dev/errors/{code}
+- Create minimum stub file to document error codes
+- Run linter and fix any issues: npm run lint
+- Run formatter: npm run format
+- Document all breaking changes in CHANGELOG.md
+- Update README with new error handling features
+- Ensure ErrorReporter is properly deprecated or removed
+
+# Test Strategy:
+Final validation:
+- npm run task-ready (full quality check)
+- npm run typecheck
+- npm run lint
+- npm run test:all
+- Manual testing of error scenarios in CLI
+- Verify error code documentation URLs are accessible
+
+# Subtasks:
+## 1. Verify error code URL mapping [pending]
+### Dependencies: None
+### Description: Check that formatForAPI().type points to valid documentation URLs
+### Details:
+Verify each error code in ErrorCode enum has corresponding documentation at https://foundrydata.dev/errors/{code}
+
+## 2. Create error code documentation stub [pending]
+### Dependencies: None
+### Description: Create minimum documentation file for error codes
+### Details:
+Create stub documentation file that lists all error codes with basic descriptions to serve as foundation for https://foundrydata.dev/errors/ pages
+

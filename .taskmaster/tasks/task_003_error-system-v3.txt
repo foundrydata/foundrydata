@@ -1,0 +1,86 @@
+# Task ID: 3
+# Title: Update Error Subclasses
+# Status: pending
+# Dependencies: 2
+# Priority: high
+# Description: Migrate all error subclasses to new constructor pattern with default error codes and typed contexts
+# Details:
+Update all subclasses in packages/core/src/types/errors.ts:
+
+SchemaError:
+- New params constructor with errorCode (default: INVALID_SCHEMA_STRUCTURE)
+- Required context.path as JSON Pointer
+- Optional context.schemaPath and context.ref
+
+GenerationError:
+- New params constructor with errorCode (default: CONSTRAINT_VIOLATION)
+- Optional context.field and context.constraint
+
+ValidationError:
+- Keep failures array parameter
+- Add errorCode (default: COMPLIANCE_VALIDATION_FAILED)
+- New params constructor pattern
+
+ConfigError:
+- New params constructor with errorCode (default: CONFIGURATION_ERROR)
+- Optional context.setting
+
+ParseError:
+- New params constructor with errorCode (default: PARSE_ERROR)
+- Optional context.input and context.position
+
+# Test Strategy:
+Update error subclass tests:
+- Test each subclass with new constructor
+- Verify default error codes are applied
+- Test context type enforcement
+- Verify specialized context fields (path for SchemaError, etc.)
+- Test inheritance from FoundryError base
+
+# Subtasks:
+## 1. Update SchemaError class [pending]
+### Dependencies: None
+### Description: Refactor SchemaError to new params constructor with required path context
+### Details:
+Update SchemaError in packages/core/src/types/errors.ts:
+- New params constructor pattern
+- Default errorCode: INVALID_SCHEMA_STRUCTURE
+- Required context.path as JSON Pointer format
+- Optional context.schemaPath and context.ref
+- Remove old constructor (message, path, suggestion)
+<info added on 2025-09-05T21:53:34.576Z>
+Correction: SchemaError doit avoir context.schemaPath REQUIS (pas path). Le champ path est réservé pour les données dans ValidationError. SchemaError utilise schemaPath pour localiser l'erreur dans le schéma JSON Schema lui-même. Mise à jour nécessaire:
+- Required context.schemaPath (JSON Pointer vers l'erreur dans le schéma)
+- Supprimer context.path (réservé pour ValidationError)
+- Optional context.ref uniquement
+</info added on 2025-09-05T21:53:34.576Z>
+
+## 2. Update GenerationError class [pending]
+### Dependencies: None
+### Description: Refactor GenerationError with new constructor and optional field/constraint context
+### Details:
+Update GenerationError in packages/core/src/types/errors.ts:
+- New params constructor pattern
+- Default errorCode: CONSTRAINT_VIOLATION
+- Optional context.field and context.constraint
+- Remove old constructor (message, suggestion, field, constraint)
+
+## 3. Update ValidationError, ConfigError, ParseError [pending]
+### Dependencies: None
+### Description: Refactor remaining error classes to new constructor pattern
+### Details:
+Update in packages/core/src/types/errors.ts:
+
+ValidationError:
+- Keep failures array parameter
+- Default errorCode: COMPLIANCE_VALIDATION_FAILED
+- New params constructor
+
+ConfigError:
+- Default errorCode: CONFIGURATION_ERROR
+- Optional context.setting
+
+ParseError:
+- Default errorCode: PARSE_ERROR
+- Optional context.input and context.position
+
