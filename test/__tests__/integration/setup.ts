@@ -12,11 +12,25 @@ export const INTEGRATION_NUM_RUNS = 100;
 export const INTEGRATION_TIMEOUT = 30000;
 
 // Performance thresholds for integration tests
+// Helper to read numeric env with default (keeps test config flexible per-host/CI)
+function envNum(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (raw === undefined) return fallback;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 export const PERFORMANCE_THRESHOLDS = {
   pipeline: {
-    p50: 10, // ms
-    p95: 20, // ms
-    p99: 50, // ms
+    p50: envNum('PIPELINE_P50_MS', 10), // ms
+    p95: envNum('PIPELINE_P95_MS', 20), // ms
+    p99: envNum('PIPELINE_P99_MS', 50), // ms
+  },
+  generatorCompliance: {
+    // End-to-end generator → AJV validation target for 1000 records
+    p50: envNum('GEN_COMPLIANCE_P50_MS', 120), // ms
+    p95: envNum('GEN_COMPLIANCE_P95_MS', 200), // ms
+    p99: envNum('GEN_COMPLIANCE_P99_MS', 500), // ms
   },
   memory: {
     small: 10 * 1024 * 1024, // 10MB for 100 records

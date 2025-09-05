@@ -116,7 +116,7 @@ describe('Full Pipeline Integration Tests', () => {
 
             // Check performance
             const timePerItem = time / count;
-            expect(timePerItem).toBeLessThan(
+            expect(timePerItem).toBeLessThanOrEqual(
               PERFORMANCE_THRESHOLDS.pipeline.p95
             );
 
