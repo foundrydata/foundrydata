@@ -972,13 +972,16 @@ describe('ObjectGenerator', () => {
         // Platform-aware tolerance with optional env override for CI variability
         const platform = process.platform;
         const isWindows = platform === 'win32';
-        const envFactor = Number(process.env.P95_TOLERANCE_FACTOR || '');
+        const envRaw = process.env.P95_TOLERANCE_FACTOR;
+        const envFactor =
+          envRaw !== undefined && envRaw !== '' ? Number(envRaw) : NaN;
         // Base factors: local 1.5x, CI 2.5x by default; Windows gets extra 1.2x
         const baseFactor = strict ? 2.5 : 1.5; // strict=CI
         const platformFactor = isWindows ? 1.2 : 1.0;
-        const factor = Number.isFinite(envFactor)
-          ? Math.max(envFactor, 1)
-          : baseFactor * platformFactor;
+        const factor =
+          Number.isFinite(envFactor) && envFactor > 0
+            ? Math.max(envFactor, 1)
+            : baseFactor * platformFactor;
         const target = p95Target * factor;
         expect(p95).toBeLessThan(target);
       });
