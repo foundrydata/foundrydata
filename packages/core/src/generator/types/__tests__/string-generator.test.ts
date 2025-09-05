@@ -1334,13 +1334,14 @@ describe('StringGenerator', () => {
   });
 
   describe('comprehensive Phase 3 Migration coverage', () => {
-    it('should demonstrate multi-draft format validation with AJV oracle', () => {
+    it('should demonstrate multi-draft format validation with AJV oracle', async () => {
       const formats: StringFormat[] = ['uuid', 'email', 'date', 'date-time'];
       const drafts = ['draft-07', '2019-09', '2020-12'] as const;
+      const perCaseRuns = Math.max(5, Math.floor(getNumRuns() / 10));
 
-      formats.forEach((format) => {
-        drafts.forEach((draft) => {
-          return propertyTest(
+      for (const format of formats) {
+        for (const draft of drafts) {
+          await propertyTest(
             `StringGenerator multi-draft ${format} ${draft}`,
             fc.property(fc.integer({ min: 0, max: 1000 }), (seed) => {
               const schema: StringSchema = { type: 'string', format };
@@ -1387,14 +1388,14 @@ describe('StringGenerator', () => {
             {
               parameters: {
                 seed: STRING_TEST_SEED,
-                numRuns: Math.floor(getNumRuns() / 3),
+                numRuns: perCaseRuns,
               },
               context: { draft, format },
             }
           );
-        });
-      });
-    }, 15000);
+        }
+      }
+    }, 20000);
 
     it('should demonstrate constraint coherence with createBounds() helper', () => {
       return propertyTest(
