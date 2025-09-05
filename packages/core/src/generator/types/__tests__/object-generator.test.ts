@@ -972,12 +972,14 @@ describe('ObjectGenerator', () => {
         // Platform-aware tolerance with optional env override for CI variability
         const platform = process.platform;
         const isWindows = platform === 'win32';
+        const isDarwin = platform === 'darwin';
         const envRaw = process.env.P95_TOLERANCE_FACTOR;
         const envFactor =
           envRaw !== undefined && envRaw !== '' ? Number(envRaw) : NaN;
         // Base factors: local 1.5x, CI 2.5x by default; Windows gets extra 1.2x
         const baseFactor = strict ? 2.5 : 1.5; // strict=CI
-        const platformFactor = isWindows ? 1.2 : 1.0;
+        // macOS runners tend to be slower than Linux; add slight tolerance
+        const platformFactor = isWindows ? 1.2 : isDarwin ? 1.1 : 1.0;
         const factor =
           Number.isFinite(envFactor) && envFactor > 0
             ? Math.max(envFactor, 1)
