@@ -764,8 +764,14 @@ export async function monitorAdapterPerformance<T>(
       ? ((duration - reasonableBaseline) / reasonableBaseline) * 100
       : 0;
 
-  if (overhead > 10) {
-    // 10% threshold
+  // Controlled warning policy: only log when explicitly enabled
+  const warnEnabled = process.env.PERF_LOG === 'true';
+  const defaultThreshold = process.env.CI === 'true' ? 50 : 10; // more tolerance on CI
+  const warnThreshold = Number.isFinite(Number(process.env.PERF_WARN_THRESHOLD))
+    ? Number(process.env.PERF_WARN_THRESHOLD)
+    : defaultThreshold;
+
+  if (warnEnabled && overhead > warnThreshold) {
     console.warn(
       `[FormatAdapter] Performance overhead ${overhead.toFixed(1)}% for ${label} (median duration: ${duration.toFixed(3)}ms, baseline: ${reasonableBaseline.toFixed(3)}ms)`
     );
