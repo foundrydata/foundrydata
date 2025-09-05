@@ -69,7 +69,10 @@ export class ArrayGenerator extends DataGenerator {
 
     // Validate constraints first
     const minItems = arraySchema.minItems ?? 0;
-    const maxItems = arraySchema.maxItems ?? Number.MAX_SAFE_INTEGER;
+    // Use a safe default when maxItems is not specified to avoid generating
+    // extremely large arrays that can exhaust memory.
+    const DEFAULT_MAX_ITEMS = 10;
+    const maxItems = arraySchema.maxItems ?? DEFAULT_MAX_ITEMS;
 
     if (minItems < 0) {
       return err(
