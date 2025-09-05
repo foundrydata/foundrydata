@@ -263,6 +263,37 @@ npm run build
 
 See [CONTRIBUTING.md](https://github.com/foundrydata/foundrydata/blob/main/CONTRIBUTING.md) for more details.
 
+### Integration & Generator Compliance Tests
+
+- Run all tests (root config):
+  - `npm test`
+
+- Run test utilities and integration (test config):
+  - `npm run test:matchers`
+  - `npm run test:performance`
+
+- Run Generator Compliance Integration suite only:
+  - `npm run test:gen:compliance`
+  - With heavy assertions (p50/p99 and large memory check):
+    - `npm run test:gen:compliance:extra`
+
+Performance thresholds are centralized in `test/__tests__/integration/setup.ts` and can be tuned via environment variables to account for host variability:
+
+- Pipeline thresholds:
+  - `PIPELINE_P50_MS` (default 10)
+  - `PIPELINE_P95_MS` (default 20)
+  - `PIPELINE_P99_MS` (default 50)
+
+- Generator compliance thresholds:
+  - `GEN_COMPLIANCE_P50_MS` (default 120)
+  - `GEN_COMPLIANCE_P95_MS` (default 200)
+  - `GEN_COMPLIANCE_P99_MS` (default 500)
+  - `GEN_COMPLIANCE_ASSERT_EXTRA=true` to enable extra assertions and heavy memory test
+
+Memory thresholds (heap delta) are also centralized:
+- `PERFORMANCE_THRESHOLDS.memory.medium` (default 50MB for ~3k records)
+- `PERFORMANCE_THRESHOLDS.memory.large` (default 100MB for ~10k records; only asserted when `GEN_COMPLIANCE_ASSERT_EXTRA=true`)
+
 ### Planned Integrations (Community Requested)
 
 Future versions may include:
