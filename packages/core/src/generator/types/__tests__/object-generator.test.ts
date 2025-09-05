@@ -969,8 +969,17 @@ describe('ObjectGenerator', () => {
         console.log(`  p99: ${p99?.toFixed(3) ?? 'N/A'}ms`);
 
         // Assert p95 target
-        // In CI we allow a larger headroom (50%) to reduce flakiness across heterogeneous runners
-        const target = strict ? p95Target * 1.5 : p95Target * 1.5;
+        // Platform-aware tolerance with optional env override for CI variability
+        const platform = process.platform;
+        const isWindows = platform === 'win32';
+        const envFactor = Number(process.env.P95_TOLERANCE_FACTOR || '');
+        // Base factors: local 1.5x, CI 2.5x by default; Windows gets extra 1.2x
+        const baseFactor = strict ? 2.5 : 1.5; // strict=CI
+        const platformFactor = isWindows ? 1.2 : 1.0;
+        const factor = Number.isFinite(envFactor)
+          ? Math.max(envFactor, 1)
+          : baseFactor * platformFactor;
+        const target = p95Target * factor;
         expect(p95).toBeLessThan(target);
       });
     });
