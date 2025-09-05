@@ -451,18 +451,21 @@ describe('NumberGenerator', () => {
       return propertyTest(
         'NumberGenerator generates enum',
         fc.property(
-          fc.array(
-            fc.float({
-              min: -100,
-              max: 100,
-              noNaN: true,
-              noDefaultInfinity: true,
-            }),
-            {
-              minLength: 1,
-              maxLength: 5,
-            }
-          ),
+          fc
+            .array(
+              fc.float({
+                min: -100,
+                max: 100,
+                noNaN: true,
+                noDefaultInfinity: true,
+              }),
+              {
+                minLength: 1,
+                maxLength: 5,
+              }
+            )
+            .map((arr) => Array.from(new Set(arr)))
+            .filter((arr) => arr.length > 0),
           fc.integer({ min: 0, max: 1000 }),
           (enumValues, seed) => {
             const schema: NumberSchema = { type: 'number', enum: enumValues };

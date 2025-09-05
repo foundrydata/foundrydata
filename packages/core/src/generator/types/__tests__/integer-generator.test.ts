@@ -417,10 +417,13 @@ describe('IntegerGenerator', () => {
       return propertyTest(
         'IntegerGenerator generates enums',
         fc.property(
-          fc.array(fc.integer({ min: -100, max: 100 }), {
-            minLength: 1,
-            maxLength: 5,
-          }),
+          fc
+            .array(fc.integer({ min: -100, max: 100 }), {
+              minLength: 1,
+              maxLength: 5,
+            })
+            .map((arr) => Array.from(new Set(arr)))
+            .filter((arr) => arr.length > 0),
           fc.integer({ min: 0, max: 1000 }),
           (enumValues, seed) => {
             const schema: IntegerSchema = { type: 'integer', enum: enumValues };
