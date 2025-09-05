@@ -82,7 +82,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        node: [18.x, 20.x, 22.x]
+        node: [20.x, 22.x]
         draft: [draft-07, 2019-09, 2020-12]
     env:
       CI: "true"

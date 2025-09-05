@@ -1122,18 +1122,22 @@ describe('NumberGenerator', () => {
       return propertyTest(
         'NumberGenerator enum with additional constraints',
         fc.property(
-          fc.array(
-            fc.float({
-              min: -100,
-              max: 100,
-              noNaN: true,
-              noDefaultInfinity: true,
-            }),
-            {
-              minLength: 3,
-              maxLength: 10,
-            }
-          ),
+          fc
+            .array(
+              fc.float({
+                min: -100,
+                max: 100,
+                noNaN: true,
+                noDefaultInfinity: true,
+              }),
+              {
+                minLength: 3,
+                maxLength: 10,
+              }
+            )
+            // Ensure uniqueness to satisfy AJV enum schema validity
+            .map((arr) => Array.from(new Set(arr)))
+            .filter((arr) => arr.length > 0),
           createBounds(-50, 50),
           fc.integer({ min: 0, max: 1000 }),
           (enumValues, [minimum, maximum], seed) => {
