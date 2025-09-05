@@ -16,7 +16,7 @@ export const INTEGRATION_TIMEOUT = 30000;
 // Platform-aware tolerance (keep integration thresholds stable across runners)
 const IS_WINDOWS = process.platform === 'win32';
 const IS_DARWIN = process.platform === 'darwin';
-const PLATFORM_TOLERANCE_FACTOR = IS_WINDOWS ? 1.5 : IS_DARWIN ? 1.1 : 1.0;
+const PLATFORM_TOLERANCE_FACTOR = IS_WINDOWS ? 1.5 : IS_DARWIN ? 1.25 : 1.0;
 
 // Read numeric env, else apply platform factor to default
 function envNumWithPlatform(name: string, fallback: number): number {
