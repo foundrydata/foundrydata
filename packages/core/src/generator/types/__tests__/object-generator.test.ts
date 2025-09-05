@@ -925,7 +925,11 @@ describe('ObjectGenerator', () => {
           },
         ];
 
-        const strict = process.env.CI === 'true';
+        // Consider multiple CI indicators to avoid mis-detection in various runners
+        const strict =
+          (process.env.CI ?? '').toLowerCase() === 'true' ||
+          process.env.CI === '1' ||
+          (process.env.GITHUB_ACTIONS ?? '').toLowerCase() === 'true';
         benchmarks.forEach(({ name, schema, iterations, p95Target }) => {
           const times: number[] = [];
           const effectiveIterations =
@@ -983,7 +987,7 @@ describe('ObjectGenerator', () => {
           // Base factors: local 1.5x, CI 2.5x by default; Windows gets extra 1.2x
           const baseFactor = strict ? 2.5 : 1.5; // strict=CI
           // macOS runners tend to be slower than Linux; add slight tolerance
-          const platformFactor = isWindows ? 1.2 : isDarwin ? 1.1 : 1.0;
+          const platformFactor = isWindows ? 1.2 : isDarwin ? 1.25 : 1.0;
           const defaultFactor = baseFactor * platformFactor;
           // Allow env to RELAX thresholds (increase factor), but never tighten below default
           const factor =
