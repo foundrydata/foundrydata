@@ -870,6 +870,7 @@ describe('ObjectGenerator', () => {
       'should meet p95 targets for various object complexities',
       () => {
         const isWindows = process.platform === 'win32';
+        const isDarwin = process.platform === 'darwin';
         const benchmarks = [
           {
             name: 'small objects',
@@ -975,9 +976,7 @@ describe('ObjectGenerator', () => {
 
           // Assert p95 target
           // Platform-aware tolerance with optional env override for CI variability
-          const platform = process.platform;
-          const isWindows = platform === 'win32';
-          const isDarwin = platform === 'darwin';
+          // Use precomputed platform flags
           const envRaw = process.env.P95_TOLERANCE_FACTOR;
           const envFactor =
             envRaw !== undefined && envRaw !== '' ? Number(envRaw) : NaN;
