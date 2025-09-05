@@ -1,0 +1,11 @@
+# Task ID: 7
+# Title: Implement Metamorphic Testing Pattern
+# Status: pending
+# Dependencies: 6
+# Priority: high
+# Description: Phase 2 - Metamorphic relations testing with schema relaxation
+# Details:
+- Create test/patterns/metamorphic-testing.test.ts\n- Implement complete relaxSchema(schema, draft) function handling all constraint removal\n- Remove unevaluatedItems/Properties for 2019-09+ drafts\n- Handle arrays, objects, conditional schemas recursively\n- Implement \"validity preserved under relaxation\" test\n- Implement \"prefix stability\" test: generate(seed, n1+n2)[0:n1] === generate(seed, n1)\n- Test all metamorphic relations with each draft\n- Add failure logging with full context
+
+# Test Strategy:
+

@@ -1,0 +1,11 @@
+# Task ID: 5
+# Title: Create JSON Schema Arbitraries
+# Status: pending
+# Dependencies: 3
+# Priority: medium
+# Description: Phase 1 - Build fast-check arbitraries for JSON Schema generation without contradictions
+# Details:
+- Create test/arbitraries/json-schema.ts\n- Implement createBounds(min, max) helper\n- Implement jsonSchemaArbitraryFor(draft) with support for:\n  * stringSchema with valid enum/const respecting constraints\n  * numberSchema with valid enum/const respecting bounds\n  * booleanSchema, nullSchema, objectSchema, arraySchema\n  * combinedSchema (allOf, anyOf, oneOf, not)\n  * conditionalSchema (if/then/else)\n- Handle draft-specific keywords properly\n- Ensure required ⊆ properties always\n- Create tests verifying no contradictions possible
+
+# Test Strategy:
+

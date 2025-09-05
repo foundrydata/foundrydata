@@ -1,0 +1,11 @@
+# Task ID: 6
+# Title: Implement Invariant Testing Pattern
+# Status: pending
+# Dependencies: 4, 5
+# Priority: medium
+# Description: Phase 2 - Core invariant tests ensuring 100% schema compliance
+# Details:
+- Create test/patterns/invariant-testing.test.ts\n- Implement \"MUST generate 100% schema-compliant data\" test using AJV oracle\n- Implement \"MUST be deterministic with same seed\" test\n- Implement \"MUST generate correct data types\" test\n- Implement \"MUST respect all boundary constraints\" test for numeric, string, array, object constraints\n- Test with all drafts via SCHEMA_DRAFT env variable\n- Log seed, schema, errors on failure
+
+# Test Strategy:
+

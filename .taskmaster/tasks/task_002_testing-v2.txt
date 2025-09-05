@@ -1,0 +1,31 @@
+# Task ID: 2
+# Title: Setup Test Configuration Infrastructure
+# Status: pending
+# Dependencies: 1
+# Priority: medium
+# Description: Phase 1 - Create comprehensive test configuration with Vitest, fast-check, and AJV setup
+# Details:
+- Create test/setup.ts with fast-check global config (seed=424242, numRuns from env)\n- Create test/global-setup.ts and test/global-teardown.ts\n- Update vitest.config.ts with platform-specific pool, no retries, fixed sequence in CI\n- Install missing dependencies: ajv@8.x, ajv-formats@3.x, ajv-formats-draft2019@1.x, @vitest/coverage-v8\n- Verify setup with test run
+
+# Test Strategy:
+
+
+# Subtasks:
+## 1. Create test/setup.ts configuration [pending]
+### Dependencies: None
+### Description: Configure fast-check global settings with fixed seed and environment-based numRuns
+### Details:
+- Set TEST_SEED=424242 by default\n- Configure FC_NUM_RUNS from environment (100 local, 1000 CI)\n- Configure global AJV instance\n- Add logging for debugging
+
+## 2. Update vitest.config.ts for stability [pending]
+### Dependencies: None
+### Description: Configure Vitest for deterministic testing across platforms
+### Details:
+- Set pool based on platform (threads for Windows, forks for others)\n- Disable retries (retry: 0)\n- Configure fixed sequence in CI (shuffle: false)\n- Set appropriate timeouts for property-based testing
+
+## 3. Install testing dependencies [pending]
+### Dependencies: None
+### Description: Install all required testing packages for the new architecture
+### Details:
+- Install ajv@8.x and ajv-formats@3.x\n- Install ajv-formats-draft2019@1.x for full draft support\n- Install @vitest/coverage-v8 for coverage reporting\n- Update package.json with test scripts
+

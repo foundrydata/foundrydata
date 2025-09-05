@@ -1,0 +1,279 @@
+# FoundryData - Product Requirements Document
+
+## Executive Summary
+FoundryData is a schema-first test data generator that guarantees 100% JSON Schema compliance for supported features. Open source CLI (MIT) with optional paid API for CI/CD integration.
+
+**Core Value:** Stop wasting hours on test data that breaks your API. Generate 10,000 perfectly valid records in 1 second.
+
+## Project Documentation Map
+
+### MVP Project base path
+- foundrydata/
+
+
+### Strategic Documents
+- `MVP/foundrydata-mvp-spec.md` - MVP scope and feature set
+- `MVP/foundrydata-business-plan-mvp.md` - Go-to-market and revenue strategy  
+- `MVP/foundrydata-open-source-strategy.md` - Open source approach
+- `MVP/foundrydata-compatibility-mvp.md` - Feature support matrix
+
+### Technical Documents
+- `MVP/foundrydata-architecture.md` - Complete technical architecture
+- `ARCHITECTURE.md` - Architecture summary and principles
+- `MVP/foundrydata-api-spec-mvp.txt` - Future API specification
+
+### Implementation References
+- `docs/examples/*.json` - Example schemas for testing
+- `README.md` - Public-facing documentation template
+
+## Business Requirements
+
+### Target Users
+- **Primary:** Frontend/Backend developers (2-5 years experience) at startups
+- **Secondary:** DevOps engineers needing test fixtures
+- **Future:** QA teams requiring deterministic test data
+
+### Success Metrics (Month 1)
+- 100 GitHub stars
+- 10 beta users confirming "saves time"
+- 100 weekly npm downloads
+- Performance: 10,000 records/second
+
+## Functional Requirements
+
+### MVP Features (v0.1)
+
+#### CLI Commands
+```bash
+foundrydata generate --schema <file> --rows <n>
+foundrydata generate --schema <file> --rows <n> --seed <n>
+foundrydata generate --schema <file> --rows <n> --output <file>
+foundrydata help
+foundrydata version
+```
+
+#### Supported Schema Features
+Per `MVP/foundrydata-compatibility-mvp.md`:
+- ✅ Basic types: string, number, integer, boolean
+- ✅ Arrays of primitives and flat objects
+- ✅ String formats: uuid, email, date, date-time
+- ✅ Constraints: min/max, minLength/maxLength, minItems/maxItems
+- ✅ Enums and required fields
+- ❌ NOT: Nested objects, patterns, $ref, allOf/oneOf
+
+### Performance Requirements
+- Generate 1,000 rows in < 200ms
+- Generate 10,000 rows in < 2s
+- Memory usage < 100MB for 10,000 records
+- Startup time < 100ms
+- Bundle size < 1MB
+
+### Quality Requirements
+- 100% schema compliance for supported features
+- 80% test coverage minimum
+- Clear error messages with workarounds
+- Deterministic generation with seeds
+
+## Technical Requirements
+
+### Architecture Overview
+**Reference:** `MVP/foundrydata-architecture.md` for complete details
+
+#### Core Principles
+1. **Layered Architecture** - Presentation → Application → Domain → Infrastructure
+2. **Functional Core, Imperative Shell** - Pure functions in core, I/O at boundaries
+3. **Result<T,E> Pattern** - No exceptions in business logic
+4. **Registry Pattern** - Extensible generators and formats
+
+#### Package Structure
+```
+foundrydata/
+├── packages/
+│   ├── core/          # @foundrydata/core - Domain logic
+│   ├── cli/           # foundrydata - CLI wrapper
+│   └── shared/        # @foundrydata/shared - Common types
+├── examples/          # Schema examples
+└── docs/             # Documentation
+```
+
+#### Data Flow Pipeline
+```
+Schema → Parse → Validate → Plan → Generate → Verify → Format → Output
+```
+
+See `MVP/foundrydata-architecture.md#data-flow` for implementation details.
+
+### Technology Stack
+- **Language:** TypeScript 5.0+ (strict mode)
+- **Runtime:** Node.js 18+
+- **Core Dependencies:** 
+  - AJV (validation)
+  - Faker.js (base generation)
+  - Commander.js (CLI)
+- **Dev Tools:** Jest, ESLint, Prettier
+- **Architecture:** Monorepo with npm workspaces
+
+## Implementation Plan
+
+### Phase 1: Core Foundation (Days 1-3)
+**Reference:** `MVP/foundrydata-architecture.md#core-components`
+
+Tasks:
+1. Setup monorepo structure with TypeScript config
+2. Implement Result<T,E> pattern (`#type-system`)
+3. Create Schema Parser (`#schema-parser`)
+4. Build Registry pattern (`#format-registry`)
+5. Setup error hierarchy (`#error-handling`)
+
+### Phase 2: Generators (Days 4-7)
+**Reference:** `MVP/foundrydata-architecture.md#generation-pipeline`
+
+Tasks:
+6. Implement DataGenerator abstract class
+7. StringGenerator with formats
+8. NumberGenerator with constraints
+9. BooleanGenerator
+10. ArrayGenerator with flat object support
+11. EnumGenerator with caching
+
+### Phase 3: CLI Implementation (Days 8-10)
+**Reference:** `MVP/foundrydata-architecture.md#cli-architecture`
+
+Tasks:
+12. Setup Commander.js structure
+13. Implement GenerateCommand
+14. Add seed parameter handling
+15. Create UIManager for output
+16. Build ErrorReporter
+
+### Phase 4: Validation & Testing (Days 11-14)
+**Reference:** `MVP/foundrydata-architecture.md#testing-architecture`
+
+Tasks:
+17. Integrate ComplianceValidator with AJV
+18. Property-based testing setup
+19. Create ComplianceTester
+20. Performance benchmarks
+21. CLI integration tests
+
+### Phase 5: Documentation (Days 15-18)
+Tasks:
+22. Create README with demo GIF
+23. Write API documentation
+24. Prepare example schemas
+25. Create CONTRIBUTING.md
+26. Setup GitHub repository
+
+### Phase 6: Launch (Days 19-21)
+**Reference:** `MVP/foundrydata-business-plan-mvp.md#go-to-market-execution`
+
+Tasks:
+27. npm package publication
+28. Create demo GIF (1000 rows < 200ms)
+29. Prepare Hacker News post
+30. Gather beta tester feedback
+31. Launch on Tuesday 9am PST
+
+## Testing Requirements
+
+### Test Strategy
+Per `MVP/foundrydata-architecture.md#testing-architecture`:
+- Property-based testing with fast-check
+- Compliance testing (1000+ samples)
+- Snapshot testing for CLI output
+- Performance benchmarks
+- Integration tests
+
+### Coverage Requirements
+- Unit tests: 80% minimum
+- Integration tests: All CLI commands
+- Performance tests: All generators
+- Compliance tests: All supported types
+
+## Definition of Done
+
+### Feature Complete
+- [ ] All CLI commands working
+- [ ] All supported types generating valid data
+- [ ] 100% AJV validation passing
+- [ ] Performance targets met
+
+### Quality Gates
+- [ ] 80% test coverage
+- [ ] No TypeScript errors (strict mode)
+- [ ] ESLint passing
+- [ ] Documentation complete
+
+### Launch Ready
+- [ ] Published to npm
+- [ ] GitHub repository public
+- [ ] 10 beta testers approved
+- [ ] Demo GIF created
+
+## Risk Register
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| No nested objects | High | Add 1-level if time permits |
+| Performance issues | Medium | Use streaming for large datasets |
+| Low adoption | High | Focus on clear value prop |
+| Complex implementation | Medium | Stick to 3000 lines limit |
+
+## Future Roadmap (Not in MVP)
+
+### v0.2 (Month 2)
+- Pattern validation
+- Additional formats (ipv4, hostname)
+- Exclusive min/max
+
+### v0.3 (Month 4)
+- Nested objects (1 level)
+- Schema composition (allOf, oneOf)
+- $ref support
+
+### API Release (Month 3+)
+- REST API if 10+ users request
+- Stripe integration
+
+## Acceptance Criteria
+
+### User Stories
+1. **As a developer**, I can generate test data from my JSON schema that always passes validation
+2. **As a developer**, I get clear error messages when my schema has unsupported features
+3. **As a developer**, I can generate the same data with a seed for testing
+4. **As a developer**, I can generate 1000 rows in under 200ms
+
+### Success Indicators
+- Zero validation failures for supported features
+- Error messages include workarounds
+- Deterministic output with seeds
+- Performance meets all targets
+
+## Appendix: Key Design Decisions
+
+### Architecture Decision Records (ADRs)
+From `MVP/foundrydata-architecture.md`:
+- **ADR-001:** Result<T,E> for error handling
+- **ADR-002:** Functional Core, Imperative Shell
+- **ADR-003:** Registry Pattern for extensibility
+- **ADR-004:** Monorepo with npm workspaces
+- **ADR-005:** Minimal dependencies in core
+
+### Technical Constraints
+- No external API calls (works offline)
+- Single process (no workers)
+- Synchronous generation (no async in core)
+- Pure functions in domain layer
+
+## References for Implementation
+
+When implementing, consult these sections:
+- **Types:** `MVP/foundrydata-architecture.md#type-system`
+- **Generators:** `MVP/foundrydata-architecture.md#core-components`
+- **Pipeline:** `MVP/foundrydata-architecture.md#generation-pipeline`
+- **Testing:** `MVP/foundrydata-architecture.md#testing-architecture`
+- **Performance:** `MVP/foundrydata-architecture.md#performance-strategy`
+
+---
+
+*This PRD references detailed technical specifications in the MVP/ directory. Implementers should consult the architecture document for code examples and detailed patterns.*

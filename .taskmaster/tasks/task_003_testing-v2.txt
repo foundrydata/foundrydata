@@ -1,0 +1,11 @@
+# Task ID: 3
+# Title: Create AJV Factory System
+# Status: pending
+# Dependencies: 2
+# Priority: medium
+# Description: Phase 1 - Implement AJV factory supporting all JSON Schema drafts with caching
+# Details:
+- Create test/helpers/ajv-factory.ts\n- Implement createAjv(draft: JsonSchemaDraft) function supporting draft-07, 2019-09, 2020-12\n- Configure with allowUnionTypes: false, validateFormats: true\n- Add WeakMap cache for compiled validators\n- Implement getAjv() singleton function\n- Add draft-specific format loading\n- Create unit tests for AJV factory
+
+# Test Strategy:
+
