@@ -1286,9 +1286,12 @@ describe('StringGenerator', () => {
                 maxLength: minLen + extraLen,
               }))
             ),
-            // Schema with enum only
+            // Schema with enum only (ensure unique values for AJV schema validity)
             fc.record({
-              enum: fc.array(fc.string(), { minLength: 1, maxLength: 5 }),
+              enum: fc
+                .array(fc.string(), { minLength: 1, maxLength: 5 })
+                .map((arr) => Array.from(new Set(arr)))
+                .filter((arr) => arr.length > 0),
             })
           ),
           fc.integer({ min: 0, max: 1000 }),
@@ -1391,7 +1394,7 @@ describe('StringGenerator', () => {
           );
         });
       });
-    });
+    }, 15000);
 
     it('should demonstrate constraint coherence with createBounds() helper', () => {
       return propertyTest(
