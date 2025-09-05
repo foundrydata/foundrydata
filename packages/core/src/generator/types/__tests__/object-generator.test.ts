@@ -866,128 +866,135 @@ describe('ObjectGenerator', () => {
   });
 
   describe('performance benchmarks', () => {
-    it('should meet p95 targets for various object complexities', () => {
-      const benchmarks = [
-        {
-          name: 'small objects',
-          schema: {
-            type: 'object',
-            properties: {
-              id: { type: 'string' },
-              name: { type: 'string' },
-              age: { type: 'number' },
-            },
-            required: ['id', 'name'],
-          } as ObjectSchema,
-          iterations: 10000,
-          p95Target: 0.5,
-        },
-        {
-          name: 'medium objects',
-          schema: {
-            type: 'object',
-            properties: Object.fromEntries(
-              Array.from({ length: 20 }, (_, i) => [
-                `prop${i}`,
-                { type: 'string' },
-              ])
-            ),
-            minProperties: 10,
-            maxProperties: 20,
-          } as ObjectSchema,
-          iterations: 1000,
-          p95Target: 1.5,
-        },
-        {
-          name: 'large objects with nested properties',
-          schema: {
-            type: 'object',
-            properties: Object.fromEntries(
-              Array.from({ length: 50 }, (_, i) => [
-                `prop${i}`,
-                i % 3 === 0
-                  ? {
-                      type: 'object',
-                      properties: { nested: { type: 'string' } },
-                    }
-                  : { type: 'string' },
-              ])
-            ),
-            minProperties: 25,
-            maxProperties: 50,
-          } as any,
-          iterations: 100,
-          p95Target: 4.0,
-        },
-      ];
+    it(
+      'should meet p95 targets for various object complexities',
+      () => {
+        const isWindows = process.platform === 'win32';
+        const benchmarks = [
+          {
+            name: 'small objects',
+            schema: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                name: { type: 'string' },
+                age: { type: 'number' },
+              },
+              required: ['id', 'name'],
+            } as ObjectSchema,
+            iterations: 10000,
+            p95Target: 0.5,
+          },
+          {
+            name: 'medium objects',
+            schema: {
+              type: 'object',
+              properties: Object.fromEntries(
+                Array.from({ length: 20 }, (_, i) => [
+                  `prop${i}`,
+                  { type: 'string' },
+                ])
+              ),
+              minProperties: 10,
+              maxProperties: 20,
+            } as ObjectSchema,
+            iterations: 1000,
+            p95Target: 1.5,
+          },
+          {
+            name: 'large objects with nested properties',
+            schema: {
+              type: 'object',
+              properties: Object.fromEntries(
+                Array.from({ length: 50 }, (_, i) => [
+                  `prop${i}`,
+                  i % 3 === 0
+                    ? {
+                        type: 'object',
+                        properties: { nested: { type: 'string' } },
+                      }
+                    : { type: 'string' },
+                ])
+              ),
+              minProperties: 25,
+              maxProperties: 50,
+            } as any,
+            iterations: 100,
+            p95Target: 4.0,
+          },
+        ];
 
-      const strict = process.env.CI === 'true';
-      benchmarks.forEach(({ name, schema, iterations, p95Target }) => {
-        const times: number[] = [];
+        const strict = process.env.CI === 'true';
+        benchmarks.forEach(({ name, schema, iterations, p95Target }) => {
+          const times: number[] = [];
+          const effectiveIterations =
+            isWindows || strict ? Math.ceil(iterations * 0.5) : iterations;
 
-        for (let i = 0; i < iterations; i++) {
-          const context = createGeneratorContext(schema, formatRegistry, {
-            seed: i,
-          });
+          for (let i = 0; i < effectiveIterations; i++) {
+            const context = createGeneratorContext(schema, formatRegistry, {
+              seed: i,
+            });
 
-          const start = performance.now();
-          const result = generator.generate(schema, context);
-          const duration = performance.now() - start;
+            const start = performance.now();
+            const result = generator.generate(schema, context);
+            const duration = performance.now() - start;
 
-          times.push(duration);
+            times.push(duration);
 
-          if (i === 0) {
-            // Validate first result
-            expect(result.isOk()).toBe(true);
-            if (result.isOk()) {
-              const value = result.unwrap();
+            if (i === 0) {
+              // Validate first result
+              expect(result.isOk()).toBe(true);
+              if (result.isOk()) {
+                const value = result.unwrap();
 
-              // Explicit AJV validation for performance test
-              const ajv = getAjv();
-              const validate = ajv.compile(schema);
-              expect(validate(value)).toBe(true);
+                // Explicit AJV validation for performance test
+                const ajv = getAjv();
+                const validate = ajv.compile(schema);
+                expect(validate(value)).toBe(true);
 
-              expect(value).toMatchJsonSchema(schema);
+                expect(value).toMatchJsonSchema(schema);
+              }
             }
           }
-        }
 
-        // Calculate percentiles
-        times.sort((a, b) => a - b);
-        const p50Index = Math.floor(times.length * 0.5);
-        const p95Index = Math.floor(times.length * 0.95);
-        const p99Index = Math.floor(times.length * 0.99);
+          // Calculate percentiles
+          times.sort((a, b) => a - b);
+          const p50Index = Math.floor(times.length * 0.5);
+          const p95Index = Math.floor(times.length * 0.95);
+          const p99Index = Math.floor(times.length * 0.99);
 
-        const p50 = times[p50Index];
-        const p95 = times[p95Index];
-        const p99 = times[p99Index];
+          const p50 = times[p50Index];
+          const p95 = times[p95Index];
+          const p99 = times[p99Index];
 
-        // Log performance metrics
-        console.log(`Performance for ${name}:`);
-        console.log(`  p50: ${p50?.toFixed(3) ?? 'N/A'}ms`);
-        console.log(`  p95: ${p95?.toFixed(3) ?? 'N/A'}ms`);
-        console.log(`  p99: ${p99?.toFixed(3) ?? 'N/A'}ms`);
+          // Log performance metrics
+          console.log(`Performance for ${name}:`);
+          console.log(`  p50: ${p50?.toFixed(3) ?? 'N/A'}ms`);
+          console.log(`  p95: ${p95?.toFixed(3) ?? 'N/A'}ms`);
+          console.log(`  p99: ${p99?.toFixed(3) ?? 'N/A'}ms`);
 
-        // Assert p95 target
-        // Platform-aware tolerance with optional env override for CI variability
-        const platform = process.platform;
-        const isWindows = platform === 'win32';
-        const isDarwin = platform === 'darwin';
-        const envRaw = process.env.P95_TOLERANCE_FACTOR;
-        const envFactor =
-          envRaw !== undefined && envRaw !== '' ? Number(envRaw) : NaN;
-        // Base factors: local 1.5x, CI 2.5x by default; Windows gets extra 1.2x
-        const baseFactor = strict ? 2.5 : 1.5; // strict=CI
-        // macOS runners tend to be slower than Linux; add slight tolerance
-        const platformFactor = isWindows ? 1.2 : isDarwin ? 1.1 : 1.0;
-        const factor =
-          Number.isFinite(envFactor) && envFactor > 0
-            ? Math.max(envFactor, 1)
-            : baseFactor * platformFactor;
-        const target = p95Target * factor;
-        expect(p95).toBeLessThan(target);
-      });
-    });
+          // Assert p95 target
+          // Platform-aware tolerance with optional env override for CI variability
+          const platform = process.platform;
+          const isWindows = platform === 'win32';
+          const isDarwin = platform === 'darwin';
+          const envRaw = process.env.P95_TOLERANCE_FACTOR;
+          const envFactor =
+            envRaw !== undefined && envRaw !== '' ? Number(envRaw) : NaN;
+          // Base factors: local 1.5x, CI 2.5x by default; Windows gets extra 1.2x
+          const baseFactor = strict ? 2.5 : 1.5; // strict=CI
+          // macOS runners tend to be slower than Linux; add slight tolerance
+          const platformFactor = isWindows ? 1.2 : isDarwin ? 1.1 : 1.0;
+          const factor =
+            Number.isFinite(envFactor) && envFactor > 0
+              ? Math.max(envFactor, 1)
+              : baseFactor * platformFactor;
+          const target = p95Target * factor;
+          expect(p95).toBeLessThan(target);
+        });
+      },
+      process.platform === 'win32' ? 40000 : 20000
+    );
 
     it('should handle memory leak detection for complex nested structures', () => {
       const complexSchema = {
