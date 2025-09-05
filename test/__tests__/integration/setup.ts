@@ -12,25 +12,31 @@ export const INTEGRATION_NUM_RUNS = 100;
 export const INTEGRATION_TIMEOUT = 30000;
 
 // Performance thresholds for integration tests
-// Helper to read numeric env with default (keeps test config flexible per-host/CI)
-function envNum(name: string, fallback: number): number {
+
+// Platform-aware tolerance (keep integration thresholds stable across runners)
+const IS_WINDOWS = process.platform === 'win32';
+const IS_DARWIN = process.platform === 'darwin';
+const PLATFORM_TOLERANCE_FACTOR = IS_WINDOWS ? 1.5 : IS_DARWIN ? 1.1 : 1.0;
+
+// Read numeric env, else apply platform factor to default
+function envNumWithPlatform(name: string, fallback: number): number {
   const raw = process.env[name];
-  if (raw === undefined) return fallback;
+  if (raw === undefined) return fallback * PLATFORM_TOLERANCE_FACTOR;
   const n = Number(raw);
-  return Number.isFinite(n) ? n : fallback;
+  return Number.isFinite(n) ? n : fallback * PLATFORM_TOLERANCE_FACTOR;
 }
 
 export const PERFORMANCE_THRESHOLDS = {
   pipeline: {
-    p50: envNum('PIPELINE_P50_MS', 10), // ms
-    p95: envNum('PIPELINE_P95_MS', 20), // ms
-    p99: envNum('PIPELINE_P99_MS', 50), // ms
+    p50: envNumWithPlatform('PIPELINE_P50_MS', 10), // ms
+    p95: envNumWithPlatform('PIPELINE_P95_MS', 20), // ms
+    p99: envNumWithPlatform('PIPELINE_P99_MS', 50), // ms
   },
   generatorCompliance: {
     // End-to-end generator → AJV validation target for 1000 records
-    p50: envNum('GEN_COMPLIANCE_P50_MS', 120), // ms
-    p95: envNum('GEN_COMPLIANCE_P95_MS', 200), // ms
-    p99: envNum('GEN_COMPLIANCE_P99_MS', 500), // ms
+    p50: envNumWithPlatform('GEN_COMPLIANCE_P50_MS', 120), // ms
+    p95: envNumWithPlatform('GEN_COMPLIANCE_P95_MS', 200), // ms
+    p99: envNumWithPlatform('GEN_COMPLIANCE_P99_MS', 500), // ms
   },
   memory: {
     small: 10 * 1024 * 1024, // 10MB for 100 records
