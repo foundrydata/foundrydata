@@ -1,0 +1,89 @@
+# Task ID: 2
+# Title: Refactor FoundryError Base Class
+# Status: pending
+# Dependencies: 1
+# Priority: high
+# Description: Transform the base error class to support new error contract with typed context and environment-aware serialization
+# Details:
+Refactor packages/core/src/types/errors.ts FoundryError class:
+
+NEW Constructor:
+- params object pattern with message, errorCode, severity, context, cause
+- Typed ErrorContext interface with path, schemaPath, ref, value, valueExcerpt, limitationKey, availableIn
+
+REMOVE Methods:
+- getUserMessage() - moved to presenter
+- getSuggestions() - moved to presenter
+
+ADD Methods:
+- toJSON(env: 'dev' | 'prod'): SerializedError with PII redaction
+- toUserError(): UserError for safe external exposure
+- getExitCode(): number from EXIT_CODES mapping
+
+Ensure proper error chaining with cause support.
+
+# Test Strategy:
+Update packages/core/src/types/__tests__/errors.test.ts:
+- Test new constructor with params object
+- Verify toJSON('prod') excludes stack and redacts PII
+- Verify toJSON('dev') includes full context
+- Test getExitCode() returns correct mapping
+- Test cause chaining preservation
+- Remove tests for deleted getUserMessage/getSuggestions
+
+# Subtasks:
+## 1. Define ErrorContext interface [pending]
+### Dependencies: None
+### Description: Create the ErrorContext interface with all required fields for error localization
+### Details:
+Define in packages/core/src/types/errors.ts:
+interface ErrorContext {
+  path?: string;           // JSON Pointer: '/properties/address'
+  schemaPath?: string;     // Schema path: '#/properties/address'
+  ref?: string;            // Reference URI
+  value?: unknown;         // Problematic value (redacted in prod)
+  valueExcerpt?: string;   // Safe excerpt of value
+  limitationKey?: string;  // Links to limitation registry
+  availableIn?: string;    // Version when feature available
+}
+<info added on 2025-09-05T21:50:10.145Z>
+Path semantics clarification: path represents data instance path (JSON Pointer format from AJV instancePath like '/users/0/name'), schemaPath represents schema definition path (JSON Schema pointer like '#/properties/users/items/properties/name'). ValidationError should use path field for data location (AJV instancePath), while SchemaError and reference-resolver should use schemaPath field for schema locations. Tests required: verify ValidationError populates path with instancePath, verify SchemaError/reference-resolver populate schemaPath correctly.
+</info added on 2025-09-05T21:50:10.145Z>
+
+## 2. Refactor FoundryError constructor [pending]
+### Dependencies: None
+### Description: Update FoundryError to use params object pattern with new fields
+### Details:
+Update FoundryError class constructor:
+- Change from (message, code, context?) to params object
+- Params: {message, errorCode: ErrorCode, severity?: Severity, context?: ErrorContext, cause?: Error}
+- Store all fields as class properties
+- Remove getUserMessage() method
+- Remove getSuggestions() method
+- Ensure proper Error.captureStackTrace handling
+
+## 3. Implement serialization methods [pending]
+### Dependencies: None
+### Description: Add toJSON, toUserError, and getExitCode methods to FoundryError
+### Details:
+Add methods to FoundryError:
+- toJSON(env: 'dev' | 'prod'): SerializedError
+  - In prod: exclude stack, redact PII from context.value
+  - In dev: include full context and stack
+- toUserError(): UserError for safe external exposure
+- getExitCode(): number - lookup from EXIT_CODES using errorCode
+Implement PII redaction logic for sensitive fields
+
+## 4. Update FoundryError tests [pending]
+### Dependencies: None
+### Description: Refactor tests for new FoundryError structure and methods
+### Details:
+Update packages/core/src/types/__tests__/errors.test.ts:
+- Test new params constructor pattern
+- Test toJSON('prod') excludes stack and redacts PII
+- Test toJSON('dev') includes full context
+- Test getExitCode() returns correct mapping
+- Test cause chaining works properly
+- Remove tests for deleted getUserMessage/getSuggestions
+- Add tests for ErrorContext interface validation
+

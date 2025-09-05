@@ -1,0 +1,84 @@
+# Task ID: 4
+# Title: Update Error Emission Points
+# Status: pending
+# Dependencies: 3
+# Priority: high
+# Description: Refactor all error throwing locations to use new constructor pattern with proper error codes and JSON Pointer paths
+# Details:
+Update packages/core/src/parser/reference-resolver.ts and other emission points:
+
+BEFORE:
+throw new SchemaError(message, pathOrRef, suggestion?)
+
+AFTER:
+throw new SchemaError({
+  message,
+  errorCode: ErrorCode.SPECIFIC_CODE,
+  context: {
+    path: pointer,      // JSON Pointer format
+    schemaPath: pointer,
+    ref: refUri
+  }
+})
+
+Error code mappings:
+- Circular reference → CIRCULAR_REFERENCE_DETECTED (E012)
+- Max depth exceeded → INVALID_SCHEMA_STRUCTURE
+- Invalid JSON Pointer → INVALID_SCHEMA_STRUCTURE  
+- Missing external schema → SCHEMA_PARSE_FAILED
+
+Search for all "throw new" statements and update accordingly.
+
+# Test Strategy:
+Integration tests for error emission:
+- Test reference-resolver throws correct error codes
+- Verify JSON Pointer paths are properly formatted
+- Test context contains expected fields
+- Verify error messages remain descriptive
+- Test circular reference detection uses E012
+
+# Subtasks:
+## 1. Update reference-resolver.ts errors [pending]
+### Dependencies: None
+### Description: Refactor all error emissions in reference-resolver to use new pattern
+### Details:
+Update packages/core/src/parser/reference-resolver.ts:
+- Replace all SchemaError instantiations with new params pattern
+- Map error scenarios to specific codes:
+  * Circular reference → CIRCULAR_REFERENCE_DETECTED
+  * Max depth exceeded → INVALID_SCHEMA_STRUCTURE
+  * Invalid JSON Pointer → INVALID_SCHEMA_STRUCTURE
+  * Missing external schema → SCHEMA_PARSE_FAILED
+- Include JSON Pointer path and schemaPath in context
+<info added on 2025-09-05T21:54:10.285Z>
+For the reference-resolver.ts error parameter corrections:
+- Use schemaPath for JSON Schema pointer (not path)
+- Use ref for URI reference
+- Keep path field empty/undefined for SchemaError (reserved for data validation)
+- Avoid duplicating pointer value across multiple fields
+
+Updated pattern should be:
+```
+throw new SchemaError({
+  message,
+  errorCode: ErrorCode.SPECIFIC_CODE,
+  context: {
+    schemaPath: jsonPointer,  // JSON Schema location
+    ref: uriReference        // External reference URI
+    // path: undefined        // Reserved for data paths
+  }
+})
+```
+</info added on 2025-09-05T21:54:10.285Z>
+
+## 2. Update other error emission points [pending]
+### Dependencies: None
+### Description: Find and update all other throw statements in the codebase
+### Details:
+Search entire codebase for 'throw new' statements:
+- Update all FoundryError subclass instantiations
+- Use appropriate ErrorCode for each scenario
+- Include proper context with path when available
+- Ensure JSON Pointer format for paths
+- Maintain descriptive error messages
+

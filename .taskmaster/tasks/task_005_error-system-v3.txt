@@ -1,0 +1,92 @@
+# Task ID: 5
+# Title: Create ErrorPresenter Class
+# Status: pending
+# Dependencies: 1
+# Priority: high
+# Description: Implement presentation layer for formatting errors across different environments (CLI, API, production)
+# Details:
+Create packages/core/src/errors/presenter.ts:
+
+ErrorPresenter class:
+- Constructor(env: 'dev'|'prod', options: {colors?, terminalWidth?, locale?, redactKeys?})
+- formatForCLI(error): CLIErrorView with color support, NO_COLOR/FORCE_COLOR respect
+- formatForAPI(error): APIErrorView with RFC7807 structure
+- formatForProduction(error): ProductionView with PII redaction
+
+Key features:
+- NO business logic - pure presentation
+- Terminal width awareness for text wrapping
+- Automatic PII redaction for configured keys
+- Environment-specific stack trace handling
+- Returns view objects, not formatted strings
+
+Default redact keys: password, apiKey, secret, token, ssn, creditCard
+
+Replace existing ErrorReporter functionality.
+
+# Test Strategy:
+Create packages/core/src/errors/__tests__/presenter.test.ts:
+- Test dev vs prod formatting differences
+- Test PII redaction in production
+- Test NO_COLOR and FORCE_COLOR env variables
+- Test terminal width text wrapping
+- Test CLI snapshot outputs (with strip-ansi)
+- Test API format compliance
+- Verify no stack traces in production
+
+# Subtasks:
+## 1. Implement formatForCLI method [pending]
+### Dependencies: None
+### Description: Create CLI formatting with color support and terminal awareness
+### Details:
+In ErrorPresenter.formatForCLI():
+- Return CLIErrorView object (not string)
+- Respect NO_COLOR and FORCE_COLOR env variables
+- Use terminal width for text wrapping
+- Include error code, location (JSON Pointer), workaround, documentation link
+- Format sections: title, location, excerpt, workaround, documentation, ETA
+- Handle colors through options.colors flag
+
+## 2. Implement formatForAPI method [pending]
+### Dependencies: None
+### Description: Create API error formatting following RFC7807 problem details
+### Details:
+In ErrorPresenter.formatForAPI():
+- Return APIErrorView object
+- Include: status (HTTP code), type (error doc URL), title, detail, instance (request ID)
+- Add: code (ErrorCode), path (JSON Pointer), suggestions array
+- Map error code to HTTP status using HTTP_STATUS_BY_CODE
+- Format type as: https://foundrydata.dev/errors/{code}
+
+## 3. Implement PII redaction system [pending]
+### Dependencies: None
+### Description: Create secure redaction for sensitive data in production environments
+### Details:
+Implement in ErrorPresenter:
+- Default redact keys: password, apiKey, secret, token, ssn, creditCard
+- redact() method to apply redaction rules to context.value
+- Replace sensitive values with '[REDACTED]'
+- formatForProduction() method: no stack traces, redacted values, include requestId
+- Ensure redaction is recursive for nested objects
+<info added on 2025-09-05T21:56:36.910Z>
+Tests pour redaction profonde: 
+- Objets imbriqués multi-niveaux avec clés sensibles
+- Arrays contenant des objets avec données PII
+- Combinaisons objets/arrays imbriqués complexes
+- Vérification que toutes les clés par défaut (password, apiKey, secret, token, ssn, creditCard) sont détectées récursivement
+- Cas limites: propriétés null/undefined dans structures imbriquées
+- Test performance sur structures profondes (>5 niveaux)
+- Validation que la structure originale reste intacte après redaction
+</info added on 2025-09-05T21:56:36.910Z>
+
+## 4. Replace ErrorReporter with ErrorPresenter [pending]
+### Dependencies: None
+### Description: Migrate from ErrorReporter to ErrorPresenter to avoid duplication
+### Details:
+Replace or adapt ErrorReporter:
+- Option A: Remove ErrorReporter completely, replace with ErrorPresenter
+- Option B: Make ErrorReporter a thin shim that delegates to ErrorPresenter
+- Ensure no direct ErrorReporter usage in production code
+- All CLI/API outputs must come from ErrorPresenter
+- Update imports across the codebase
+

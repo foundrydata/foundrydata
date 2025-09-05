@@ -1965,5 +1965,374 @@
       "updated": "2025-09-05T18:48:25.093Z",
       "description": "Testing infrastructure v2.1 implementation - property-based testing with AJV, fast-check, and multi-draft support"
     }
+  },
+  "error-system-v3": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Create Error Code Infrastructure",
+        "description": "Implement the foundational error code system with enums, mappings, and severity types",
+        "details": "Create packages/core/src/errors/codes.ts with:\n- ErrorCode enum (E001-E499 range)\n- EXIT_CODES mapping for CLI integration\n- HTTP_STATUS_BY_CODE mapping for API responses\n- Severity type definition ('info' | 'warn' | 'error')\n\nKey error codes:\n- E001-E099: Schema errors (nested objects, patterns, composition)\n- E100-E199: Generation errors (constraints, limits)\n- E200-E299: Validation errors (compliance)\n- E300-E399: Configuration errors\n- E400-E499: Parse errors\n\nSpecial code E012 for circular reference detection.",
+        "testStrategy": "Unit tests in packages/core/src/errors/__tests__/codes.test.ts:\n- Verify all error codes are unique\n- Test exit code mapping completeness\n- Test HTTP status mapping validity (400-599 range)\n- Ensure every ErrorCode has both exit and HTTP mappings",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define ErrorCode enum structure",
+            "description": "Create the ErrorCode enum with all error categories (E001-E499)",
+            "details": "Define enum ErrorCode in packages/core/src/errors/codes.ts:\n- E001-E099: Schema errors (nested objects, patterns, composition, structure, parse, circular refs)\n- E100-E199: Generation errors (constraints, limits)\n- E200-E299: Validation errors (compliance)\n- E300-E399: Configuration errors\n- E400-E499: Parse errors\nInclude E012 for CIRCULAR_REFERENCE_DETECTED\n<info added on 2025-09-05T21:50:30.398Z>\nEnsure the ErrorCode enum explicitly defines CIRCULAR_REFERENCE_DETECTED = 'E012' as a named constant. Verify that EXIT_CODES mapping includes an entry for E012 (suggest exit code 2 for schema validation failures). Verify that HTTP_STATUS_BY_CODE includes an entry for E012 (suggest 400 Bad Request for schema validation errors). Add validation tests to ensure every enum member has corresponding entries in both mapping objects.\n</info added on 2025-09-05T21:50:30.398Z>\n<info added on 2025-09-05T21:55:51.415Z>\nAdd INTERNAL_ERROR = 'E500' for unexpected/uncategorized errors with exit code 99 and HTTP status 500. Use this code as fallback for any unknown or uncategorized errors.\n</info added on 2025-09-05T21:55:51.415Z>",
+            "status": "in-progress",
+            "dependencies": [],
+            "parentTaskId": 1
+          },
+          {
+            "id": 2,
+            "title": "Create exit code and HTTP mappings",
+            "description": "Define EXIT_CODES and HTTP_STATUS_BY_CODE mappings for all error codes",
+            "details": "Add to packages/core/src/errors/codes.ts:\n- EXIT_CODES: Record<ErrorCode, number> mapping each code to CLI exit code (10-99 range)\n- HTTP_STATUS_BY_CODE: Record<ErrorCode, number> mapping to HTTP status (400-599)\n- Export type Severity = 'info' | 'warn' | 'error'\nEnsure all ErrorCode values have entries in both mappings\n<info added on 2025-09-05T21:54:42.361Z>\nAdd TypeScript exhaustiveness constraint: use 'satisfies Record<ErrorCode, number>' on EXIT_CODES and HTTP_STATUS_BY_CODE to enforce compile-time exhaustiveness checking. This ensures every ErrorCode has an entry in both mappings and provides TypeScript compiler errors if any ErrorCode is missing.\n</info added on 2025-09-05T21:54:42.361Z>",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 1
+          },
+          {
+            "id": 3,
+            "title": "Write error code infrastructure tests",
+            "description": "Create comprehensive unit tests for error codes, exit codes, and HTTP mappings",
+            "details": "Create packages/core/src/errors/__tests__/codes.test.ts:\n- Test all error codes are unique (no duplicates)\n- Test every ErrorCode has an exit code mapping\n- Test every ErrorCode has an HTTP status mapping\n- Test HTTP status codes are valid (400-599 range)\n- Test exit codes are in valid range (1-255)\n- Test Severity type exports correctly\n<info added on 2025-09-05T21:50:49.474Z>\nAdd complete mapping coverage tests: verify size(ErrorCode enum) === size(EXIT_CODES) === size(HTTP_STATUS_BY_CODE), test that each ErrorCode has an entry in both mappings, validate HTTP status in range 400-599, validate exit codes in range 1-255\n</info added on 2025-09-05T21:50:49.474Z>",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 1
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Refactor FoundryError Base Class",
+        "description": "Transform the base error class to support new error contract with typed context and environment-aware serialization",
+        "details": "Refactor packages/core/src/types/errors.ts FoundryError class:\n\nNEW Constructor:\n- params object pattern with message, errorCode, severity, context, cause\n- Typed ErrorContext interface with path, schemaPath, ref, value, valueExcerpt, limitationKey, availableIn\n\nREMOVE Methods:\n- getUserMessage() - moved to presenter\n- getSuggestions() - moved to presenter\n\nADD Methods:\n- toJSON(env: 'dev' | 'prod'): SerializedError with PII redaction\n- toUserError(): UserError for safe external exposure\n- getExitCode(): number from EXIT_CODES mapping\n\nEnsure proper error chaining with cause support.",
+        "testStrategy": "Update packages/core/src/types/__tests__/errors.test.ts:\n- Test new constructor with params object\n- Verify toJSON('prod') excludes stack and redacts PII\n- Verify toJSON('dev') includes full context\n- Test getExitCode() returns correct mapping\n- Test cause chaining preservation\n- Remove tests for deleted getUserMessage/getSuggestions",
+        "status": "pending",
+        "dependencies": [
+          1
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define ErrorContext interface",
+            "description": "Create the ErrorContext interface with all required fields for error localization",
+            "details": "Define in packages/core/src/types/errors.ts:\ninterface ErrorContext {\n  path?: string;           // JSON Pointer: '/properties/address'\n  schemaPath?: string;     // Schema path: '#/properties/address'\n  ref?: string;            // Reference URI\n  value?: unknown;         // Problematic value (redacted in prod)\n  valueExcerpt?: string;   // Safe excerpt of value\n  limitationKey?: string;  // Links to limitation registry\n  availableIn?: string;    // Version when feature available\n}\n<info added on 2025-09-05T21:50:10.145Z>\nPath semantics clarification: path represents data instance path (JSON Pointer format from AJV instancePath like '/users/0/name'), schemaPath represents schema definition path (JSON Schema pointer like '#/properties/users/items/properties/name'). ValidationError should use path field for data location (AJV instancePath), while SchemaError and reference-resolver should use schemaPath field for schema locations. Tests required: verify ValidationError populates path with instancePath, verify SchemaError/reference-resolver populate schemaPath correctly.\n</info added on 2025-09-05T21:50:10.145Z>",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 2
+          },
+          {
+            "id": 2,
+            "title": "Refactor FoundryError constructor",
+            "description": "Update FoundryError to use params object pattern with new fields",
+            "details": "Update FoundryError class constructor:\n- Change from (message, code, context?) to params object\n- Params: {message, errorCode: ErrorCode, severity?: Severity, context?: ErrorContext, cause?: Error}\n- Store all fields as class properties\n- Remove getUserMessage() method\n- Remove getSuggestions() method\n- Ensure proper Error.captureStackTrace handling",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 2
+          },
+          {
+            "id": 3,
+            "title": "Implement serialization methods",
+            "description": "Add toJSON, toUserError, and getExitCode methods to FoundryError",
+            "details": "Add methods to FoundryError:\n- toJSON(env: 'dev' | 'prod'): SerializedError\n  - In prod: exclude stack, redact PII from context.value\n  - In dev: include full context and stack\n- toUserError(): UserError for safe external exposure\n- getExitCode(): number - lookup from EXIT_CODES using errorCode\nImplement PII redaction logic for sensitive fields",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 2
+          },
+          {
+            "id": 4,
+            "title": "Update FoundryError tests",
+            "description": "Refactor tests for new FoundryError structure and methods",
+            "details": "Update packages/core/src/types/__tests__/errors.test.ts:\n- Test new params constructor pattern\n- Test toJSON('prod') excludes stack and redacts PII\n- Test toJSON('dev') includes full context\n- Test getExitCode() returns correct mapping\n- Test cause chaining works properly\n- Remove tests for deleted getUserMessage/getSuggestions\n- Add tests for ErrorContext interface validation",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 2
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Update Error Subclasses",
+        "description": "Migrate all error subclasses to new constructor pattern with default error codes and typed contexts",
+        "details": "Update all subclasses in packages/core/src/types/errors.ts:\n\nSchemaError:\n- New params constructor with errorCode (default: INVALID_SCHEMA_STRUCTURE)\n- Required context.path as JSON Pointer\n- Optional context.schemaPath and context.ref\n\nGenerationError:\n- New params constructor with errorCode (default: CONSTRAINT_VIOLATION)\n- Optional context.field and context.constraint\n\nValidationError:\n- Keep failures array parameter\n- Add errorCode (default: COMPLIANCE_VALIDATION_FAILED)\n- New params constructor pattern\n\nConfigError:\n- New params constructor with errorCode (default: CONFIGURATION_ERROR)\n- Optional context.setting\n\nParseError:\n- New params constructor with errorCode (default: PARSE_ERROR)\n- Optional context.input and context.position",
+        "testStrategy": "Update error subclass tests:\n- Test each subclass with new constructor\n- Verify default error codes are applied\n- Test context type enforcement\n- Verify specialized context fields (path for SchemaError, etc.)\n- Test inheritance from FoundryError base",
+        "status": "pending",
+        "dependencies": [
+          2
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Update SchemaError class",
+            "description": "Refactor SchemaError to new params constructor with required path context",
+            "details": "Update SchemaError in packages/core/src/types/errors.ts:\n- New params constructor pattern\n- Default errorCode: INVALID_SCHEMA_STRUCTURE\n- Required context.path as JSON Pointer format\n- Optional context.schemaPath and context.ref\n- Remove old constructor (message, path, suggestion)\n<info added on 2025-09-05T21:53:34.576Z>\nCorrection: SchemaError doit avoir context.schemaPath REQUIS (pas path). Le champ path est réservé pour les données dans ValidationError. SchemaError utilise schemaPath pour localiser l'erreur dans le schéma JSON Schema lui-même. Mise à jour nécessaire:\n- Required context.schemaPath (JSON Pointer vers l'erreur dans le schéma)\n- Supprimer context.path (réservé pour ValidationError)\n- Optional context.ref uniquement\n</info added on 2025-09-05T21:53:34.576Z>",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 3
+          },
+          {
+            "id": 2,
+            "title": "Update GenerationError class",
+            "description": "Refactor GenerationError with new constructor and optional field/constraint context",
+            "details": "Update GenerationError in packages/core/src/types/errors.ts:\n- New params constructor pattern\n- Default errorCode: CONSTRAINT_VIOLATION\n- Optional context.field and context.constraint\n- Remove old constructor (message, suggestion, field, constraint)",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 3
+          },
+          {
+            "id": 3,
+            "title": "Update ValidationError, ConfigError, ParseError",
+            "description": "Refactor remaining error classes to new constructor pattern",
+            "details": "Update in packages/core/src/types/errors.ts:\n\nValidationError:\n- Keep failures array parameter\n- Default errorCode: COMPLIANCE_VALIDATION_FAILED\n- New params constructor\n\nConfigError:\n- Default errorCode: CONFIGURATION_ERROR\n- Optional context.setting\n\nParseError:\n- Default errorCode: PARSE_ERROR\n- Optional context.input and context.position",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 3
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Update Error Emission Points",
+        "description": "Refactor all error throwing locations to use new constructor pattern with proper error codes and JSON Pointer paths",
+        "details": "Update packages/core/src/parser/reference-resolver.ts and other emission points:\n\nBEFORE:\nthrow new SchemaError(message, pathOrRef, suggestion?)\n\nAFTER:\nthrow new SchemaError({\n  message,\n  errorCode: ErrorCode.SPECIFIC_CODE,\n  context: {\n    path: pointer,      // JSON Pointer format\n    schemaPath: pointer,\n    ref: refUri\n  }\n})\n\nError code mappings:\n- Circular reference → CIRCULAR_REFERENCE_DETECTED (E012)\n- Max depth exceeded → INVALID_SCHEMA_STRUCTURE\n- Invalid JSON Pointer → INVALID_SCHEMA_STRUCTURE  \n- Missing external schema → SCHEMA_PARSE_FAILED\n\nSearch for all \"throw new\" statements and update accordingly.",
+        "testStrategy": "Integration tests for error emission:\n- Test reference-resolver throws correct error codes\n- Verify JSON Pointer paths are properly formatted\n- Test context contains expected fields\n- Verify error messages remain descriptive\n- Test circular reference detection uses E012",
+        "status": "pending",
+        "dependencies": [
+          3
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Update reference-resolver.ts errors",
+            "description": "Refactor all error emissions in reference-resolver to use new pattern",
+            "details": "Update packages/core/src/parser/reference-resolver.ts:\n- Replace all SchemaError instantiations with new params pattern\n- Map error scenarios to specific codes:\n  * Circular reference → CIRCULAR_REFERENCE_DETECTED\n  * Max depth exceeded → INVALID_SCHEMA_STRUCTURE\n  * Invalid JSON Pointer → INVALID_SCHEMA_STRUCTURE\n  * Missing external schema → SCHEMA_PARSE_FAILED\n- Include JSON Pointer path and schemaPath in context\n<info added on 2025-09-05T21:54:10.285Z>\nFor the reference-resolver.ts error parameter corrections:\n- Use schemaPath for JSON Schema pointer (not path)\n- Use ref for URI reference\n- Keep path field empty/undefined for SchemaError (reserved for data validation)\n- Avoid duplicating pointer value across multiple fields\n\nUpdated pattern should be:\n```\nthrow new SchemaError({\n  message,\n  errorCode: ErrorCode.SPECIFIC_CODE,\n  context: {\n    schemaPath: jsonPointer,  // JSON Schema location\n    ref: uriReference        // External reference URI\n    // path: undefined        // Reserved for data paths\n  }\n})\n```\n</info added on 2025-09-05T21:54:10.285Z>",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 4
+          },
+          {
+            "id": 2,
+            "title": "Update other error emission points",
+            "description": "Find and update all other throw statements in the codebase",
+            "details": "Search entire codebase for 'throw new' statements:\n- Update all FoundryError subclass instantiations\n- Use appropriate ErrorCode for each scenario\n- Include proper context with path when available\n- Ensure JSON Pointer format for paths\n- Maintain descriptive error messages",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 4
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Create ErrorPresenter Class",
+        "description": "Implement presentation layer for formatting errors across different environments (CLI, API, production)",
+        "details": "Create packages/core/src/errors/presenter.ts:\n\nErrorPresenter class:\n- Constructor(env: 'dev'|'prod', options: {colors?, terminalWidth?, locale?, redactKeys?})\n- formatForCLI(error): CLIErrorView with color support, NO_COLOR/FORCE_COLOR respect\n- formatForAPI(error): APIErrorView with RFC7807 structure\n- formatForProduction(error): ProductionView with PII redaction\n\nKey features:\n- NO business logic - pure presentation\n- Terminal width awareness for text wrapping\n- Automatic PII redaction for configured keys\n- Environment-specific stack trace handling\n- Returns view objects, not formatted strings\n\nDefault redact keys: password, apiKey, secret, token, ssn, creditCard\n\nReplace existing ErrorReporter functionality.",
+        "testStrategy": "Create packages/core/src/errors/__tests__/presenter.test.ts:\n- Test dev vs prod formatting differences\n- Test PII redaction in production\n- Test NO_COLOR and FORCE_COLOR env variables\n- Test terminal width text wrapping\n- Test CLI snapshot outputs (with strip-ansi)\n- Test API format compliance\n- Verify no stack traces in production",
+        "status": "pending",
+        "dependencies": [
+          1
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement formatForCLI method",
+            "description": "Create CLI formatting with color support and terminal awareness",
+            "details": "In ErrorPresenter.formatForCLI():\n- Return CLIErrorView object (not string)\n- Respect NO_COLOR and FORCE_COLOR env variables\n- Use terminal width for text wrapping\n- Include error code, location (JSON Pointer), workaround, documentation link\n- Format sections: title, location, excerpt, workaround, documentation, ETA\n- Handle colors through options.colors flag",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 5
+          },
+          {
+            "id": 2,
+            "title": "Implement formatForAPI method",
+            "description": "Create API error formatting following RFC7807 problem details",
+            "details": "In ErrorPresenter.formatForAPI():\n- Return APIErrorView object\n- Include: status (HTTP code), type (error doc URL), title, detail, instance (request ID)\n- Add: code (ErrorCode), path (JSON Pointer), suggestions array\n- Map error code to HTTP status using HTTP_STATUS_BY_CODE\n- Format type as: https://foundrydata.dev/errors/{code}",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 5
+          },
+          {
+            "id": 3,
+            "title": "Implement PII redaction system",
+            "description": "Create secure redaction for sensitive data in production environments",
+            "details": "Implement in ErrorPresenter:\n- Default redact keys: password, apiKey, secret, token, ssn, creditCard\n- redact() method to apply redaction rules to context.value\n- Replace sensitive values with '[REDACTED]'\n- formatForProduction() method: no stack traces, redacted values, include requestId\n- Ensure redaction is recursive for nested objects\n<info added on 2025-09-05T21:56:36.910Z>\nTests pour redaction profonde: \n- Objets imbriqués multi-niveaux avec clés sensibles\n- Arrays contenant des objets avec données PII\n- Combinaisons objets/arrays imbriqués complexes\n- Vérification que toutes les clés par défaut (password, apiKey, secret, token, ssn, creditCard) sont détectées récursivement\n- Cas limites: propriétés null/undefined dans structures imbriquées\n- Test performance sur structures profondes (>5 niveaux)\n- Validation que la structure originale reste intacte après redaction\n</info added on 2025-09-05T21:56:36.910Z>",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 5
+          },
+          {
+            "id": 4,
+            "title": "Replace ErrorReporter with ErrorPresenter",
+            "description": "Migrate from ErrorReporter to ErrorPresenter to avoid duplication",
+            "details": "Replace or adapt ErrorReporter:\n- Option A: Remove ErrorReporter completely, replace with ErrorPresenter\n- Option B: Make ErrorReporter a thin shim that delegates to ErrorPresenter\n- Ensure no direct ErrorReporter usage in production code\n- All CLI/API outputs must come from ErrorPresenter\n- Update imports across the codebase",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 5
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Create Limitations Registry",
+        "description": "Implement centralized registry for MVP limitations with workarounds and version roadmap",
+        "details": "Create packages/core/src/errors/limitations.ts:\n\nLIMITATIONS_REGISTRY with entries for:\n- nestedObjects: E001, available v0.3, flatten workaround\n- regexPatterns: E002, available v0.2, enum/format alternative\n- schemaComposition: E003, available v1.0, manual merge workaround\n\nEach limitation includes:\n- errorCode mapping\n- availableIn version\n- workaround description and example\n- docsAnchor for documentation links\n- featureExamples for context\n\nHelper functions:\n- isSupported(limitationKey, version): boolean\n- getLimitation(key): Limitation | null\n- enrichErrorWithLimitation(error, key): adds limitation context to error\n- compareVersions(v1, v2): number for version comparison",
+        "testStrategy": "Create packages/core/src/errors/__tests__/limitations.test.ts:\n- Test getLimitation returns correct data\n- Test isSupported version comparison logic\n- Test enrichErrorWithLimitation adds proper fields\n- Test unknown limitations return null\n- Test registry completeness (all keys have full data)",
+        "status": "pending",
+        "dependencies": [
+          1
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define LIMITATIONS_REGISTRY entries",
+            "description": "Create the centralized registry with all MVP limitation entries",
+            "details": "Create LIMITATIONS_REGISTRY in packages/core/src/errors/limitations.ts:\n- nestedObjects entry: E001, v0.3, flatten workaround\n- regexPatterns entry: E002, v0.2, enum/format alternative  \n- schemaComposition entry: E003, v1.0, manual merge\nEach entry includes: errorCode, availableIn, workaround, workaroundExample, docsAnchor, featureExamples",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 6
+          },
+          {
+            "id": 2,
+            "title": "Implement limitation helper functions",
+            "description": "Create utility functions for limitation management",
+            "details": "Add to packages/core/src/errors/limitations.ts:\n- isSupported(limitationKey, version): Check if feature is available\n- getLimitation(key): Retrieve limitation details\n- enrichErrorWithLimitation(error, key): Auto-add limitation context\n- compareVersions(v1, v2): Version comparison logic\nExport CURRENT_VERSION constant",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 6
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Create Suggestion System",
+        "description": "Implement pure functions for error suggestions, typo detection, and schema fix proposals",
+        "details": "Create packages/core/src/errors/suggestions.ts with pure functions:\n\ndidYouMean(input, validOptions[], maxDistance?):\n- Simple edit distance algorithm for MVP\n- Return top 3 suggestions within distance threshold\n- No complex Levenshtein for v0.1 (performance)\n\ngetAlternative(unsupportedFeature):\n- Return alternative from ALTERNATIVES_REGISTRY\n- Map features to workarounds\n\nproposeSchemaFix(error):\n- Generate before/after schema examples\n- Include diff visualization\n- Add explanation text\n\ngetWorkaround(limitationKey):\n- Retrieve workaround from limitations registry\n- Include example and availableIn version\n\nAll functions must be pure (no side effects) for testability.",
+        "testStrategy": "Create packages/core/src/errors/__tests__/suggestions.test.ts:\n- Test didYouMean with various typos\n- Test distance calculation accuracy\n- Test getAlternative registry lookups\n- Test proposeSchemaFix generates valid diffs\n- Test null returns for unknown inputs\n- Property-based testing for didYouMean",
+        "status": "pending",
+        "dependencies": [
+          6
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement didYouMean function",
+            "description": "Create typo detection with simple distance algorithm",
+            "details": "In packages/core/src/errors/suggestions.ts:\n- didYouMean(input, validOptions[], maxDistance = 3)\n- Simple edit distance calculation (not Levenshtein for MVP)\n- Return top 3 suggestions within threshold\n- Sort by distance\nInclude calculateDistance helper function",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 7
+          },
+          {
+            "id": 2,
+            "title": "Implement schema fix proposals",
+            "description": "Create functions for alternative suggestions and schema corrections",
+            "details": "In packages/core/src/errors/suggestions.ts:\n- getAlternative(unsupportedFeature): Lookup from ALTERNATIVES_REGISTRY\n- proposeSchemaFix(error): Generate before/after with diff\n- getWorkaround(limitationKey): Retrieve from limitations registry\nAll functions must be pure (no side effects)",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 7
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Migrate and Update Tests",
+        "description": "Update all existing tests and create new test suites for the error system refactor",
+        "status": "pending",
+        "dependencies": [
+          5,
+          7,
+          "4"
+        ],
+        "priority": "high",
+        "details": "Complete test migration:\n- Remove tests for deleted getUserMessage/getSuggestions methods\n- Update error.code assertions to error.errorCode\n- Update constructor calls in all test files\n- Migrate ErrorReporter tests to ErrorPresenter with deterministic CLI snapshots (no colors/emojis in CI)\n- Ensure all error instantiations use new params pattern\n- Verify no direct ErrorReporter usage remains in production code\n- Ensure all CLI/API outputs come from ErrorPresenter only\n<info added on 2025-09-05T21:55:13.862Z>\nAdditional acceptance criteria: Zero ErrorReporter imports in production code. Verify with grep/ripgrep that no production files import ErrorReporter after migration\n</info added on 2025-09-05T21:55:13.862Z>",
+        "testStrategy": "Run full test suite after migration:\n- npm run test:all\n- Verify no failures related to error handling\n- Check coverage remains above threshold\n- Validate snapshot tests for CLI output are deterministic in CI environment\n- Verify ErrorPresenter outputs match expected CLI format without colors/emojis in CI\n- Confirm all production code uses ErrorPresenter instead of ErrorReporter",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Remove ErrorReporter tests and migrate to ErrorPresenter",
+            "description": "Replace all ErrorReporter test files with ErrorPresenter equivalents using deterministic snapshots",
+            "status": "pending",
+            "dependencies": [],
+            "details": "- Locate all test files referencing ErrorReporter\n- Create new ErrorPresenter test files with snapshot testing\n- Configure snapshots to exclude colors and emojis in CI environment\n- Ensure deterministic output for consistent CI runs\n- Remove old ErrorReporter test files",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Update error property assertions throughout test suite",
+            "description": "Change all error.code references to error.errorCode in test files",
+            "status": "pending",
+            "dependencies": [],
+            "details": "- Search for all instances of error.code assertions\n- Replace with error.errorCode\n- Update error constructor calls to use new params pattern\n- Verify test expectations match new error structure",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Verify no direct ErrorReporter usage in production code",
+            "description": "Audit codebase to ensure ErrorReporter is completely replaced by ErrorPresenter in production paths",
+            "status": "pending",
+            "dependencies": [],
+            "details": "- Search for any remaining ErrorReporter imports or usage\n- Verify all CLI output goes through ErrorPresenter\n- Verify all API error responses use ErrorPresenter\n- Document any ErrorReporter deprecation warnings if kept for compatibility",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Configure CI-specific snapshot testing",
+            "description": "Set up test configuration to generate deterministic snapshots without colors or emojis in CI",
+            "status": "pending",
+            "dependencies": [],
+            "details": "- Configure test environment detection for CI\n- Ensure ErrorPresenter outputs plain text in CI mode\n- Update or create new snapshots for CLI error outputs\n- Verify snapshots are consistent across different CI environments",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Final Quality Checks and Documentation",
+        "description": "Complete final verification, linting, documentation of breaking changes, and error code documentation setup",
+        "status": "pending",
+        "dependencies": [
+          8
+        ],
+        "priority": "medium",
+        "details": "Final steps:\n- Verify no stack traces in production mode\n- Verify all ErrorCode mappings work (exit codes, HTTP status)\n- Verify formatForAPI().type points to existing or stub pages at https://foundrydata.dev/errors/{code}\n- Create minimum stub file to document error codes\n- Run linter and fix any issues: npm run lint\n- Run formatter: npm run format\n- Document all breaking changes in CHANGELOG.md\n- Update README with new error handling features\n- Ensure ErrorReporter is properly deprecated or removed",
+        "testStrategy": "Final validation:\n- npm run task-ready (full quality check)\n- npm run typecheck\n- npm run lint\n- npm run test:all\n- Manual testing of error scenarios in CLI\n- Verify error code documentation URLs are accessible",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Verify error code URL mapping",
+            "description": "Check that formatForAPI().type points to valid documentation URLs",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Verify each error code in ErrorCode enum has corresponding documentation at https://foundrydata.dev/errors/{code}",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create error code documentation stub",
+            "description": "Create minimum documentation file for error codes",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create stub documentation file that lists all error codes with basic descriptions to serve as foundation for https://foundrydata.dev/errors/ pages",
+            "testStrategy": ""
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2025-09-05T21:37:48.791Z",
+      "updated": "2025-09-05T22:03:44.997Z",
+      "description": "Implementation of comprehensive error system with user-friendly messages, stable error codes, JSON Pointer localization, and PII redaction for FoundryData MVP"
+    }
   }
 }

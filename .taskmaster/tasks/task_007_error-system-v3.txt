@@ -1,0 +1,60 @@
+# Task ID: 7
+# Title: Create Suggestion System
+# Status: pending
+# Dependencies: 6
+# Priority: medium
+# Description: Implement pure functions for error suggestions, typo detection, and schema fix proposals
+# Details:
+Create packages/core/src/errors/suggestions.ts with pure functions:
+
+didYouMean(input, validOptions[], maxDistance?):
+- Simple edit distance algorithm for MVP
+- Return top 3 suggestions within distance threshold
+- No complex Levenshtein for v0.1 (performance)
+
+getAlternative(unsupportedFeature):
+- Return alternative from ALTERNATIVES_REGISTRY
+- Map features to workarounds
+
+proposeSchemaFix(error):
+- Generate before/after schema examples
+- Include diff visualization
+- Add explanation text
+
+getWorkaround(limitationKey):
+- Retrieve workaround from limitations registry
+- Include example and availableIn version
+
+All functions must be pure (no side effects) for testability.
+
+# Test Strategy:
+Create packages/core/src/errors/__tests__/suggestions.test.ts:
+- Test didYouMean with various typos
+- Test distance calculation accuracy
+- Test getAlternative registry lookups
+- Test proposeSchemaFix generates valid diffs
+- Test null returns for unknown inputs
+- Property-based testing for didYouMean
+
+# Subtasks:
+## 1. Implement didYouMean function [pending]
+### Dependencies: None
+### Description: Create typo detection with simple distance algorithm
+### Details:
+In packages/core/src/errors/suggestions.ts:
+- didYouMean(input, validOptions[], maxDistance = 3)
+- Simple edit distance calculation (not Levenshtein for MVP)
+- Return top 3 suggestions within threshold
+- Sort by distance
+Include calculateDistance helper function
+
+## 2. Implement schema fix proposals [pending]
+### Dependencies: None
+### Description: Create functions for alternative suggestions and schema corrections
+### Details:
+In packages/core/src/errors/suggestions.ts:
+- getAlternative(unsupportedFeature): Lookup from ALTERNATIVES_REGISTRY
+- proposeSchemaFix(error): Generate before/after with diff
+- getWorkaround(limitationKey): Retrieve from limitations registry
+All functions must be pure (no side effects)
+
