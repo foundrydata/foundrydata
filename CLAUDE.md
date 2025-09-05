@@ -291,6 +291,31 @@ fc.oneof(fc.constant(0.1), fc.constant(0.01), fc.constant(1))
 
 **Principle**: Optimize for readability and performance, not ESLint compliance.
 
+### 🚨 Hiding Problems = CRITICAL ANTI-PATTERN
+
+**Never modify tests to pass instead of fixing the actual problem**
+
+```typescript
+❌ BAD: Test fails → Remove/simplify the failing part
+❌ BAD: Parser rejects valid schema → Change schema to avoid the issue
+❌ BAD: Feature doesn't work → Remove feature from tests
+
+✅ CORRECT: Test fails → Investigate root cause → Fix implementation
+✅ CORRECT: Parser rejects valid schema → Fix parser or document limitation
+✅ CORRECT: Feature doesn't work → Fix it or explicitly mark as unsupported
+```
+
+**Protocol when tests fail:**
+1. **INVESTIGATE** - Understand exactly what's failing and why
+2. **DOCUMENT** - If it's a known limitation, document it clearly
+3. **FIX** - Either fix the implementation or the test expectations
+4. **NEVER HIDE** - Don't sweep problems under the rug
+
+**Example**: Integration tests failing
+- ❌ Removed `multipleOf: 0.5` and `additionalProperties: false` to make tests pass
+- ✅ Should investigate why parser rejects these valid JSON Schema features
+- ✅ Should fix parser or document these as unsupported in MVP
+
 ---
 
 ## 📚 JSON Schema Support
