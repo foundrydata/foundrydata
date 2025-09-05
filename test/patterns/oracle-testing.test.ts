@@ -27,18 +27,14 @@ import {
   getAjv,
   createAjv,
   type JsonSchemaDraft,
-} from '../helpers/ajv-factory.js';
+} from '../helpers/ajv-factory';
 import {
   getSchemaArbitrary,
   jsonSchemaArbitraryFor,
   simpleSchemaArbitrary,
-} from '../arbitraries/json-schema.js';
-import {
-  validateAgainstSchema,
-  getTestConfig,
-  propertyTest,
-} from '../setup.js';
-import { FormatAdapter } from '../helpers/format-adapter.js';
+} from '../arbitraries/json-schema';
+import { validateAgainstSchema, getTestConfig, propertyTest } from '../setup';
+import { FormatAdapter } from '../helpers/format-adapter';
 
 // ============================================================================
 // CONFIGURATION AND UTILITIES

@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import '../../../matchers/index.js';
+import '../../../matchers/index';
 import {
   INTEGRATION_TEST_SEED,
   PERFORMANCE_THRESHOLDS,

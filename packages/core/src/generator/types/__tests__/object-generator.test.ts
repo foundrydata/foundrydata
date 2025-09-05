@@ -20,14 +20,14 @@ import fc from 'fast-check';
 import {
   createBounds,
   getSchemaArbitrary,
-} from '../../../../../../test/arbitraries/json-schema.js';
-import '../../../../../../test/matchers/index.js';
-import { getAjv } from '../../../../../../test/helpers/ajv-factory.js';
-import { ObjectGenerator } from '../object-generator.js';
-import { FormatRegistry } from '../../../registry/format-registry.js';
-import { createGeneratorContext } from '../../data-generator.js';
-import type { ObjectSchema, Schema } from '../../../types/schema.js';
-import { propertyTest } from '../../../../../../test/setup.js';
+} from '../../../../../../test/arbitraries/json-schema';
+import '../../../../../../test/matchers/index';
+import { getAjv } from '../../../../../../test/helpers/ajv-factory';
+import { ObjectGenerator } from '../object-generator';
+import { FormatRegistry } from '../../../registry/format-registry';
+import { createGeneratorContext } from '../../data-generator';
+import type { ObjectSchema, Schema } from '../../../types/schema';
+import { propertyTest } from '../../../../../../test/setup';
 
 // Note: Avoid Math.random() to preserve determinism; use fast-check combinators instead
 

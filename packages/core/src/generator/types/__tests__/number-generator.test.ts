@@ -18,19 +18,16 @@ import { describe, it, expect, beforeEach } from 'vitest';
  */
 
 import fc from 'fast-check';
-import { propertyTest } from '../../../../../../test/setup.js';
+import { propertyTest } from '../../../../../../test/setup';
 import { NumberGenerator } from '../number-generator';
 import { createGeneratorContext } from '../../data-generator';
 import { FormatRegistry } from '../../../registry/format-registry';
 import type { NumberSchema } from '../../../types/schema';
-import {
-  getAjv,
-  createAjv,
-} from '../../../../../../test/helpers/ajv-factory.js';
+import { getAjv, createAjv } from '../../../../../../test/helpers/ajv-factory';
 import {
   getSchemaArbitrary,
   createBounds,
-} from '../../../../../../test/arbitraries/json-schema.js';
+} from '../../../../../../test/arbitraries/json-schema';
 import '../../../../../../test/matchers';
 
 /**

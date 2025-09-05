@@ -9,7 +9,7 @@
 
 import { describe, test, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { propertyTest } from '../../setup.js';
+import { propertyTest } from '../../setup';
 import {
   businessScenarioArbitrary,
   normalScenarioArbitrary,
@@ -28,7 +28,7 @@ import {
   type ErrorConfig,
   type EdgeCaseFlags,
   type BusinessScenarioMetadata,
-} from '../business.js';
+} from '../business';
 
 // Fixed seed for deterministic testing as per testing guide
 const FC_SEED = 424242;

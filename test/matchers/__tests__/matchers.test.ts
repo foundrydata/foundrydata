@@ -14,7 +14,7 @@ import fc from 'fast-check';
 import '../index'; // Import to register matchers
 import { getAjv, createAjv } from '../../helpers/ajv-factory';
 import type { AnySchema } from 'ajv';
-import { propertyTest } from '../../setup.js';
+import { propertyTest } from '../../setup';
 
 // ================================================================================
 // TEST SETUP

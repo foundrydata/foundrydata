@@ -1,5 +1,5 @@
 import { describe, test, expect } from '../setup';
-import '../../../matchers/index.js';
+import '../../../matchers/index';
 import { JSONSchemaParser } from '../../../../packages/core/src/parser/json-schema-parser';
 import { ObjectGenerator } from '../../../../packages/core/src/generator/types/object-generator';
 import { createGeneratorContext } from '../../../../packages/core/src/generator/data-generator';

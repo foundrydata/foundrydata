@@ -6,8 +6,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   ReferenceResolver,
   CircularDependencyDetector,
-} from '../reference-resolver.js';
-import type { Schema } from '../../types/schema.js';
+} from '../reference-resolver';
+import type { Schema } from '../../types/schema';
 
 describe('ReferenceResolver', () => {
   let resolver: ReferenceResolver;
