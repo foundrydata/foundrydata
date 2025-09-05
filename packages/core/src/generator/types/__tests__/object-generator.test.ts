@@ -984,10 +984,12 @@ describe('ObjectGenerator', () => {
           const baseFactor = strict ? 2.5 : 1.5; // strict=CI
           // macOS runners tend to be slower than Linux; add slight tolerance
           const platformFactor = isWindows ? 1.2 : isDarwin ? 1.1 : 1.0;
+          const defaultFactor = baseFactor * platformFactor;
+          // Allow env to RELAX thresholds (increase factor), but never tighten below default
           const factor =
             Number.isFinite(envFactor) && envFactor > 0
-              ? Math.max(envFactor, 1)
-              : baseFactor * platformFactor;
+              ? Math.max(envFactor, defaultFactor)
+              : defaultFactor;
           const target = p95Target * factor;
           expect(p95).toBeLessThan(target);
         });
