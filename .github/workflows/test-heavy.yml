@@ -17,9 +17,34 @@ env:
   DEBUG: "false"
 
 jobs:
+  typecheck:
+    name: TypeScript Typecheck
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(toJson(github.event.pull_request.labels), 'run-perf')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck (tests config)
+        run: npm run typecheck
+
+      - name: Typecheck (project references)
+        run: npm run typecheck:build
+
   full-tests:
     name: Full Tests (${{ matrix.os }} · Node ${{ matrix.node }} · ${{ matrix.draft }})
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(toJson(github.event.pull_request.labels), 'run-perf')) }}
+    needs: [typecheck]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
@@ -66,6 +91,7 @@ jobs:
   performance-tests:
     name: Performance & Baseline
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(toJson(github.event.pull_request.labels), 'run-perf')) }}
+    needs: [typecheck]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -175,6 +201,7 @@ jobs:
   memory-tests:
     name: Memory Tests (leak + GC)
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(toJson(github.event.pull_request.labels), 'run-perf')) }}
+    needs: [typecheck]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -206,4 +233,3 @@ jobs:
           name: memory-test-logs
           path: ./**/vitest*.log
           if-no-files-found: ignore
-
