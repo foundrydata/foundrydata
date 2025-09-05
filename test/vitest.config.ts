@@ -58,7 +58,7 @@ export default defineConfig({
     // ========================================================================
 
     // Test discovery - only test/ directory for matcher testing
-    include: ['test/**/*.{test,spec}.ts'],
+    include: ['**/*.{test,spec}.ts'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
