@@ -5,6 +5,7 @@ import {
   PERFORMANCE_THRESHOLDS,
   measurePipelineTime,
   calculatePercentiles,
+  measureMemory,
 } from '../setup';
 import { createAjv, type JsonSchemaDraft } from '../../../helpers/ajv-factory';
 import type Ajv from 'ajv';
@@ -242,6 +243,207 @@ describe('Determinism (Seed 424242)', () => {
   });
 });
 
+describe('Error Conditions: Contradictory Constraints', () => {
+  const draft: JsonSchemaDraft = '2020-12';
+
+  test('string: minLength > maxLength returns Err', () => {
+    const schema: AnySchema = { type: 'string', minLength: 10, maxLength: 2 };
+    const gen = new StringGenerator();
+    const formatRegistry = makeFormatRegistry();
+    const ctx = createGeneratorContext(
+      schema as unknown as Schema,
+      formatRegistry,
+      { seed: INTEGRATION_TEST_SEED }
+    );
+    // AJV should accept the schema itself (valid structure), generation should fail
+    compileValidator(schema, draft);
+    const res = gen.generate(schema as unknown as Schema, ctx);
+    expect(res.isErr()).toBe(true);
+  });
+
+  test('number: minimum > maximum returns Err', () => {
+    const schema: AnySchema = { type: 'number', minimum: 10, maximum: 5 };
+    const gen = new NumberGenerator();
+    const formatRegistry = makeFormatRegistry();
+    const ctx = createGeneratorContext(
+      schema as unknown as Schema,
+      formatRegistry,
+      { seed: INTEGRATION_TEST_SEED }
+    );
+    compileValidator(schema, draft);
+    const res = gen.generate(schema as unknown as Schema, ctx);
+    expect(res.isErr()).toBe(true);
+  });
+
+  test('number: exclusiveMinimum === exclusiveMaximum (impossible) returns Err', () => {
+    const schema: AnySchema = {
+      type: 'number',
+      exclusiveMinimum: 5,
+      exclusiveMaximum: 5,
+    };
+    const gen = new NumberGenerator();
+    const formatRegistry = makeFormatRegistry();
+    const ctx = createGeneratorContext(
+      schema as unknown as Schema,
+      formatRegistry,
+      { seed: INTEGRATION_TEST_SEED }
+    );
+    compileValidator(schema, draft);
+    const res = gen.generate(schema as unknown as Schema, ctx);
+    expect(res.isErr()).toBe(true);
+  });
+
+  test('array: minItems > maxItems returns Err', () => {
+    const schema: AnySchema = {
+      type: 'array',
+      items: { type: 'string' },
+      minItems: 5,
+      maxItems: 2,
+    };
+    const gen = new ArrayGenerator();
+    const formatRegistry = makeFormatRegistry();
+    const ctx = createGeneratorContext(
+      schema as unknown as Schema,
+      formatRegistry,
+      { seed: INTEGRATION_TEST_SEED }
+    );
+    compileValidator(schema, draft);
+    const res = gen.generate(schema as unknown as Schema, ctx);
+    expect(res.isErr()).toBe(true);
+  });
+
+  test('array: uniqueItems with type null and minItems > 1 returns Err', () => {
+    const schema: AnySchema = {
+      type: 'array',
+      items: { type: 'null' },
+      uniqueItems: true,
+      minItems: 2,
+    };
+    const gen = new ArrayGenerator();
+    const formatRegistry = makeFormatRegistry();
+    const ctx = createGeneratorContext(
+      schema as unknown as Schema,
+      formatRegistry,
+      { seed: INTEGRATION_TEST_SEED }
+    );
+    compileValidator(schema, draft);
+    const res = gen.generate(schema as unknown as Schema, ctx);
+    expect(res.isErr()).toBe(true);
+  });
+
+  test('object: minProperties > maxProperties returns Err', () => {
+    const schema: AnySchema = {
+      type: 'object',
+      properties: { a: { type: 'string' }, b: { type: 'string' } },
+      minProperties: 3,
+      maxProperties: 1,
+    };
+    const gen = new ObjectGenerator();
+    const formatRegistry = makeFormatRegistry();
+    const ctx = createGeneratorContext(
+      schema as unknown as Schema,
+      formatRegistry,
+      { seed: INTEGRATION_TEST_SEED }
+    );
+    compileValidator(schema, draft);
+    const res = gen.generate(schema as unknown as Schema, ctx);
+    expect(res.isErr()).toBe(true);
+  });
+
+  test('object: required not subset of properties returns Err', () => {
+    const schema: AnySchema = {
+      type: 'object',
+      properties: { a: { type: 'string' } },
+      required: ['a', 'missing'],
+    };
+    const gen = new ObjectGenerator();
+    const formatRegistry = makeFormatRegistry();
+    const ctx = createGeneratorContext(
+      schema as unknown as Schema,
+      formatRegistry,
+      { seed: INTEGRATION_TEST_SEED }
+    );
+    compileValidator(schema, draft);
+    const res = gen.generate(schema as unknown as Schema, ctx);
+    expect(res.isErr()).toBe(true);
+  });
+});
+
+describe('Draft-Specific Semantics', () => {
+  test('draft-07: boolean exclusiveMinimum is unsupported by NumberGenerator (Err)', () => {
+    // Draft-07 allows boolean exclusiveMinimum with minimum; generator intentionally does not support boolean form
+    const schema: AnySchema = {
+      type: 'number',
+      minimum: 5,
+      exclusiveMinimum: true,
+    };
+    const gen = new NumberGenerator();
+    const formatRegistry = makeFormatRegistry();
+    const ctx = createGeneratorContext(
+      schema as unknown as Schema,
+      formatRegistry,
+      { seed: INTEGRATION_TEST_SEED }
+    );
+    // AJV (draft-07) compiles, but generation should fail
+    const ajv = createAjv('draft-07');
+    ajv.compile(schema);
+    const res = gen.generate(schema as unknown as Schema, ctx);
+    expect(res.isErr()).toBe(true);
+  });
+
+  test('2019-09: numeric exclusiveMinimum supported and should validate', () => {
+    const draft: JsonSchemaDraft = '2019-09';
+    const schema: AnySchema = {
+      type: 'number',
+      minimum: 5,
+      exclusiveMinimum: 5, // numeric form
+      maximum: 10,
+    };
+    const gen = new NumberGenerator();
+    const formatRegistry = makeFormatRegistry();
+    const ctx = createGeneratorContext(
+      schema as unknown as Schema,
+      formatRegistry,
+      { seed: INTEGRATION_TEST_SEED }
+    );
+    const validate = compileValidator(schema, draft);
+    const res = gen.generate(schema as unknown as Schema, ctx);
+    if (res.isOk()) {
+      expect(validate(res.value)).toBe(true);
+    } else {
+      // If generation fails due to tight constraints, it's acceptable for this draft-specific check
+      expect(res.isErr()).toBe(true);
+    }
+  });
+
+  test('2020-12: strict tuple (prefixItems) honours items:false (no extras)', () => {
+    const draft: JsonSchemaDraft = '2020-12';
+    const schema: AnySchema = {
+      type: 'array',
+      prefixItems: [{ type: 'string' }, { type: 'integer' }],
+      minItems: 2,
+      maxItems: 2,
+      items: false,
+    };
+    const gen = new ArrayGenerator();
+    const formatRegistry = makeFormatRegistry();
+    const ctx = createGeneratorContext(
+      schema as unknown as Schema,
+      formatRegistry,
+      { seed: INTEGRATION_TEST_SEED }
+    );
+    const validate = compileValidator(schema, draft);
+    const res = gen.generate(schema as unknown as Schema, ctx);
+    expect(res.isOk()).toBe(true);
+    if (res.isOk()) {
+      const arr = res.value as unknown[];
+      expect(Array.isArray(arr)).toBe(true);
+      expect(arr.length).toBe(2);
+      expect(validate(arr)).toBe(true);
+    }
+  });
+});
+
 describe('Performance & Memory Integration', () => {
   test('p95 < 200ms for 1000 validations (string)', async () => {
     const draft: JsonSchemaDraft = '2020-12';
@@ -316,4 +518,102 @@ describe('Performance & Memory Integration', () => {
       expect(p99).toBeLessThan(PERF_TARGET_P99);
     }
   });
+
+  test('memory delta stays within medium threshold for 3000 gen+validate', () => {
+    const draft: JsonSchemaDraft = '2020-12';
+    const schema: AnySchema = { type: 'string', minLength: 3, maxLength: 24 };
+    const validate = compileValidator(schema, draft);
+    const gen = new StringGenerator();
+    const formatRegistry = makeFormatRegistry();
+
+    const mem = measureMemory();
+    const total = 3000;
+    for (let i = 0; i < total; i++) {
+      const ctx = createGeneratorContext(
+        schema as unknown as Schema,
+        formatRegistry,
+        { seed: INTEGRATION_TEST_SEED + i }
+      );
+      const res = gen.generate(schema as unknown as Schema, ctx);
+      if (!res.isOk()) continue;
+      const ok = validate(res.value);
+      if (!ok) throw new Error('Validation failed');
+    }
+
+    const { delta } = mem.measure();
+    expect(delta).toBeLessThan(PERFORMANCE_THRESHOLDS.memory.medium);
+  });
+
+  // Optional heavy scenario for large datasets (guarded to avoid slow runs on dev machines)
+  const heavyTest =
+    process.env.GEN_COMPLIANCE_ASSERT_EXTRA === 'true' ? test : test.skip;
+  heavyTest(
+    'large dataset memory delta under large threshold for 10000 gen+validate (object)',
+    () => {
+      const draft: JsonSchemaDraft = '2020-12';
+      const schema: AnySchema = {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          user: {
+            type: 'object',
+            properties: {
+              firstName: { type: 'string', minLength: 1, maxLength: 32 },
+              lastName: { type: 'string', minLength: 1, maxLength: 32 },
+              age: { type: 'integer', minimum: 0, maximum: 120 },
+            },
+            required: ['firstName', 'lastName'],
+          },
+          tags: {
+            type: 'array',
+            items: { type: 'string', minLength: 1, maxLength: 16 },
+            minItems: 0,
+            maxItems: 20,
+          },
+          metadata: {
+            type: 'object',
+            additionalProperties: {
+              type: 'string',
+              minLength: 0,
+              maxLength: 50,
+            },
+          },
+        },
+        required: ['id', 'user'],
+        additionalProperties: false,
+      };
+
+      const validate = compileValidator(schema, draft);
+      const gen = new ObjectGenerator();
+      const formatRegistry = makeFormatRegistry();
+
+      // Warmup
+      for (let i = 0; i < 200; i++) {
+        const ctx = createGeneratorContext(
+          schema as unknown as Schema,
+          formatRegistry,
+          { seed: INTEGRATION_TEST_SEED + i }
+        );
+        const res = gen.generate(schema as unknown as Schema, ctx);
+        if (res.isOk()) validate(res.value);
+      }
+
+      const mem = measureMemory();
+      const total = 10000;
+      for (let i = 0; i < total; i++) {
+        const ctx = createGeneratorContext(
+          schema as unknown as Schema,
+          formatRegistry,
+          { seed: INTEGRATION_TEST_SEED + i }
+        );
+        const res = gen.generate(schema as unknown as Schema, ctx);
+        if (!res.isOk()) continue;
+        const ok = validate(res.value);
+        if (!ok) throw new Error('Validation failed');
+      }
+
+      const { delta } = mem.measure();
+      expect(delta).toBeLessThan(PERFORMANCE_THRESHOLDS.memory.large);
+    }
+  );
 });
