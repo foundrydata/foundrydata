@@ -14,13 +14,13 @@ import { performance } from 'node:perf_hooks';
 
 import fc from 'fast-check';
 // Testing architecture v2.1 imports - relative paths from test file location
-import '../../../../../../test/matchers/index.js';
-import { getAjv } from '../../../../../../test/helpers/ajv-factory.js';
-import { EnumGenerator } from '../enum-generator.js';
-import { FormatRegistry } from '../../../registry/format-registry.js';
-import { createGeneratorContext } from '../../data-generator.js';
-import type { Schema } from '../../../types/schema.js';
-import { propertyTest } from '../../../../../../test/setup.js';
+import '../../../../../../test/matchers/index';
+import { getAjv } from '../../../../../../test/helpers/ajv-factory';
+import { EnumGenerator } from '../enum-generator';
+import { FormatRegistry } from '../../../registry/format-registry';
+import { createGeneratorContext } from '../../data-generator';
+import type { Schema } from '../../../types/schema';
+import { propertyTest } from '../../../../../../test/setup';
 
 describe('EnumGenerator', () => {
   let generator: EnumGenerator;

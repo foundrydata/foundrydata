@@ -19,19 +19,19 @@
 
 import { describe, test, expect } from 'vitest';
 import fc from 'fast-check';
-import { createAjv, type JsonSchemaDraft } from '../helpers/ajv-factory.js';
+import { createAjv, type JsonSchemaDraft } from '../helpers/ajv-factory';
 import {
   getSchemaArbitrary,
   jsonSchemaArbitraryFor,
   simpleSchemaArbitrary,
   createBounds,
-} from '../arbitraries/json-schema.js';
+} from '../arbitraries/json-schema';
 import {
   assertValidAgainstSchema,
   validateAgainstSchema,
   getTestConfig,
   propertyTest,
-} from '../setup.js';
+} from '../setup';
 
 // ============================================================================
 // CONFIGURATION AND UTILITIES

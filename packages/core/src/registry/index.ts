@@ -11,9 +11,6 @@ export {
 } from './format-registry';
 export type { FormatGenerator, FormatOptions } from './format-registry';
 
-// Initialize built-in formats
-import { registerBuiltInFormats } from '../generator/formats/index';
-import { defaultFormatRegistry } from './format-registry';
-
-// Register built-in formats immediately
-registerBuiltInFormats(defaultFormatRegistry);
+// Note: Built-in formats are initialized lazily in `packages/core/src/index.ts`
+// via `defaultFormatRegistry.setInitializer(...)` to avoid circular deps
+// and duplicate registrations. This module only re-exports registry items.

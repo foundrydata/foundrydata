@@ -16,9 +16,9 @@ import { BooleanGenerator } from '../boolean-generator';
 import { createGeneratorContext } from '../../data-generator';
 import { FormatRegistry } from '../../../registry/format-registry';
 import type { BooleanSchema } from '../../../types/schema';
-import { getAjv } from '../../../../../../test/helpers/ajv-factory.js';
-import { getSchemaArbitrary } from '../../../../../../test/arbitraries/json-schema.js';
-import { propertyTest } from '../../../../../../test/setup.js';
+import { getAjv } from '../../../../../../test/helpers/ajv-factory';
+import { getSchemaArbitrary } from '../../../../../../test/arbitraries/json-schema';
+import { propertyTest } from '../../../../../../test/setup';
 
 describe('BooleanGenerator', () => {
   let generator: BooleanGenerator;

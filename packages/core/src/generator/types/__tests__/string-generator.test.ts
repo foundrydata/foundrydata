@@ -22,16 +22,13 @@ import { StringGenerator } from '../string-generator';
 import { createGeneratorContext } from '../../data-generator';
 import { FormatRegistry } from '../../../registry/format-registry';
 import type { StringSchema, StringFormat } from '../../../types/schema';
-import {
-  getAjv,
-  createAjv,
-} from '../../../../../../test/helpers/ajv-factory.js';
+import { getAjv, createAjv } from '../../../../../../test/helpers/ajv-factory';
 import {
   getSchemaArbitrary,
   createBounds,
-} from '../../../../../../test/arbitraries/json-schema.js';
+} from '../../../../../../test/arbitraries/json-schema';
 import '../../../../../../test/matchers';
-import { propertyTest } from '../../../../../../test/setup.js';
+import { propertyTest } from '../../../../../../test/setup';
 
 describe('StringGenerator', () => {
   let generator: StringGenerator;

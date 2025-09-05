@@ -10,15 +10,15 @@
 
 import { describe, test, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { propertyTest } from '../../setup.js';
-import { createAjv } from '../../helpers/ajv-factory.js';
+import { propertyTest } from '../../setup';
+import { createAjv } from '../../helpers/ajv-factory';
 import {
   createBounds,
   jsonSchemaArbitraryFor,
   getSchemaArbitrary,
   simpleSchemaArbitrary,
   type JsonSchemaDraft,
-} from '../json-schema.js';
+} from '../json-schema';
 
 // Fixed seed for deterministic testing as per testing guide
 const FC_SEED = 424242;

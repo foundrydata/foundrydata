@@ -1,5 +1,5 @@
 import { describe, test, expect, fc, propertyTest } from '../setup';
-import '../../../matchers/index.js';
+import '../../../matchers/index';
 import {
   INTEGRATION_TEST_SEED,
   INTEGRATION_SCHEMAS,

@@ -18,17 +18,13 @@
 
 import { describe, test, expect } from 'vitest';
 import fc from 'fast-check';
-import { type JsonSchemaDraft } from '../helpers/ajv-factory.js';
+import { type JsonSchemaDraft } from '../helpers/ajv-factory';
 import {
   getSchemaArbitrary,
   jsonSchemaArbitraryFor,
   simpleSchemaArbitrary,
-} from '../arbitraries/json-schema.js';
-import {
-  validateAgainstSchema,
-  getTestConfig,
-  propertyTest,
-} from '../setup.js';
+} from '../arbitraries/json-schema';
+import { validateAgainstSchema, getTestConfig, propertyTest } from '../setup';
 
 // ============================================================================
 // CONFIGURATION AND UTILITIES

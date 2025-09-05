@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { ReferenceResolver } from '../reference-resolver.js';
-import type { Schema } from '../../types/schema.js';
+import { ReferenceResolver } from '../reference-resolver';
+import type { Schema } from '../../types/schema';
 
 describe('Circular Ignore Test', () => {
   it('should preserve $ref when ignoring circular references', async () => {

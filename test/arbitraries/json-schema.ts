@@ -9,7 +9,7 @@
  */
 
 import * as fc from 'fast-check';
-import type { JsonSchemaDraft } from '../helpers/ajv-factory.js';
+import type { JsonSchemaDraft } from '../helpers/ajv-factory';
 
 // Re-export for convenience
 export type { JsonSchemaDraft };

@@ -12,14 +12,14 @@
  * - Nested structure generation
  */
 
-import { Result, ok, err } from '../../types/result.js';
-import { GenerationError } from '../../types/errors.js';
-import type { Schema, ArraySchema, StringSchema } from '../../types/schema.js';
+import { Result, ok, err } from '../../types/result';
+import { GenerationError } from '../../types/errors';
+import type { Schema, ArraySchema, StringSchema } from '../../types/schema';
 import {
   DataGenerator,
   GeneratorContext,
   GenerationConfig,
-} from '../data-generator.js';
+} from '../data-generator';
 
 // Type guard to check if schema is an object (not boolean)
 function isSchemaObject(schema: Schema): schema is Exclude<Schema, boolean> {

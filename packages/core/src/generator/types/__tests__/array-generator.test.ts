@@ -15,17 +15,14 @@ import { performance } from 'node:perf_hooks';
 
 import fc from 'fast-check';
 // Testing architecture v2.1 imports - relative paths from test file location
-import { createBounds } from '../../../../../../test/arbitraries/json-schema.js';
-import '../../../../../../test/matchers/index.js';
-import {
-  getAjv,
-  createAjv,
-} from '../../../../../../test/helpers/ajv-factory.js';
-import { ArrayGenerator } from '../array-generator.js';
-import { FormatRegistry } from '../../../registry/format-registry.js';
-import type { ArraySchema, Schema } from '../../../types/schema.js';
-import { createGeneratorContext } from '../../data-generator.js';
-import { propertyTest } from '../../../../../../test/setup.js';
+import { createBounds } from '../../../../../../test/arbitraries/json-schema';
+import '../../../../../../test/matchers/index';
+import { getAjv, createAjv } from '../../../../../../test/helpers/ajv-factory';
+import { ArrayGenerator } from '../array-generator';
+import { FormatRegistry } from '../../../registry/format-registry';
+import type { ArraySchema, Schema } from '../../../types/schema';
+import { createGeneratorContext } from '../../data-generator';
+import { propertyTest } from '../../../../../../test/setup';
 
 describe('ArrayGenerator', () => {
   let generator: ArrayGenerator;
