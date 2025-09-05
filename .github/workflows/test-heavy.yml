@@ -1,0 +1,209 @@
+name: Testing v2.1 (Heavy)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *' # nightly at 02:00 UTC
+  pull_request:
+    types: [opened, synchronize, labeled, reopened]
+    branches: ["**"]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  TEST_SEED: "424242"
+  DEBUG: "false"
+
+jobs:
+  full-tests:
+    name: Full Tests (${{ matrix.os }} · Node ${{ matrix.node }} · ${{ matrix.draft }})
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(toJson(github.event.pull_request.labels), 'run-perf')) }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        node: [20.x]
+        draft: [draft-07, 2019-09, 2020-12]
+    env:
+      CI: "true"
+      SCHEMA_DRAFT: ${{ matrix.draft }}
+      FC_NUM_RUNS: "1000"
+      PERF_LOG: "false"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run full tests with coverage + annotations
+        run: npx vitest run --config vitest.config.ts --coverage --reporter=default --reporter=github-actions
+
+      - name: Enforce coverage threshold (90% lines)
+        run: |
+          node -e "const s=require('./coverage/coverage-summary.json'); const pct=s.total.lines.pct; if (pct<90){console.error(\`Coverage lines ${pct}% < 90%\`); process.exit(1);} else {console.log(\`Coverage lines ${pct}% >= 90%\`);}"
+
+      - name: Upload coverage (lcov + summary)
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.os }}-node-${{ matrix.node }}-draft-${{ matrix.draft }}
+          path: |
+            coverage/lcov.info
+            coverage/coverage-summary.json
+            coverage/index.html
+          if-no-files-found: ignore
+
+  performance-tests:
+    name: Performance & Baseline
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(toJson(github.event.pull_request.labels), 'run-perf')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: "true"
+      SCHEMA_DRAFT: "2020-12"
+      FC_NUM_RUNS: "1000"
+      PERF_LOG: "true"
+      NODE_OPTIONS: "--expose-gc"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Preserve previous baseline (if any)
+        run: |
+          if [ -f test/performance/baseline.json ]; then
+            cp test/performance/baseline.json test/performance/baseline.prev.json
+          fi
+
+      - name: Run performance suites
+        run: |
+          npm run test:performance
+          npm run test:benchmarks
+          npm run test:regression
+
+      - name: Check performance regression (>20% p95 or >100MB memory)
+        id: perf
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const prevPath = path.join('test','performance','baseline.prev.json');
+          const currPath = path.join('test','performance','baseline.json');
+          let regressions = [];
+          if (fs.existsSync(prevPath) && fs.existsSync(currPath)) {
+            const prev = JSON.parse(fs.readFileSync(prevPath,'utf8'));
+            const curr = JSON.parse(fs.readFileSync(currPath,'utf8'));
+            for (const name of Object.keys(curr.benchmarks||{})) {
+              const c = curr.benchmarks[name];
+              const p = prev.benchmarks ? prev.benchmarks[name] : undefined;
+              if (!p) continue;
+              const p95reg = ((c.percentiles.p95 - p.percentiles.p95) / p.percentiles.p95) * 100;
+              const memAbs = (c.memory && p.memory) ? (c.memory.delta - p.memory.delta) : 0;
+              if (p95reg > 20) {
+                regressions.push({ name, metric: 'p95', change: p95reg, baseline: p.percentiles.p95, current: c.percentiles.p95 });
+              }
+              if (memAbs > 100 * 1024 * 1024) {
+                regressions.push({ name, metric: 'memory(+MB)', change: memAbs/1024/1024, baseline: p.memory?.delta, current: c.memory?.delta });
+              }
+            }
+          }
+          const report = ['# Performance Report', ''];
+          if (regressions.length === 0) {
+            report.push('No regressions detected vs previous baseline.');
+          } else {
+            report.push('## Regressions Detected');
+            for (const r of regressions) {
+              report.push(`- ${r.name}: ${r.metric} regression: +${r.change.toFixed ? r.change.toFixed(1) : r.change} ${r.metric==='p95'?'%':'MB'}`);
+            }
+          }
+          fs.mkdirSync('test/performance', { recursive: true });
+          fs.writeFileSync('test/performance/performance-report.md', report.join('\n'));
+          const has = regressions.length > 0;
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `has_regression=${has}\n`);
+          if (has) {
+            console.error('Performance regressions detected. See performance-report.md');
+          }
+          process.exit(has ? 1 : 0);
+          NODE
+
+      - name: Upload performance artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-artifacts
+          path: |
+            test/performance/baseline.json
+            test/performance/baseline.prev.json
+            test/performance/performance-report.md
+            test/performance/regression-cases.json
+          if-no-files-found: ignore
+
+      - name: Comment on PR with regression summary
+        if: ${{ failure() && github.event_name == 'pull_request' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'test/performance/performance-report.md';
+            const body = fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : 'Performance regressions detected.';
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+
+  memory-tests:
+    name: Memory Tests (leak + GC)
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(toJson(github.event.pull_request.labels), 'run-perf')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: "true"
+      SCHEMA_DRAFT: "2020-12"
+      FC_NUM_RUNS: "1000"
+      NODE_OPTIONS: "--expose-gc"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run memory/load test suite
+        run: |
+          npx vitest run test/__tests__/integration/performance/memory-load.test.ts --config vitest.config.ts
+
+      - name: Upload memory test logs (optional)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: memory-test-logs
+          path: ./**/vitest*.log
+          if-no-files-found: ignore
+
