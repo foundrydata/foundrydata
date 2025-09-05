@@ -18,7 +18,10 @@
     <a href="https://github.com/foundrydata/foundrydata/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square&labelColor=000000" alt="MIT License" /></a>
     <a href="https://github.com/foundrydata/foundrydata/stargazers"><img src="https://img.shields.io/github/stars/foundrydata/foundrydata?style=flat-square&labelColor=000000&color=3b82f6" alt="GitHub stars" /></a>
     <a href="https://www.npmjs.com/package/foundrydata"><img src="https://img.shields.io/npm/dm/foundrydata?style=flat-square&labelColor=000000&color=3b82f6" alt="npm downloads" /></a>
-    <a href="https://github.com/foundrydata/foundrydata/actions"><img src="https://img.shields.io/github/actions/workflow/status/foundrydata/foundrydata/ci.yml?style=flat-square&labelColor=000000" alt="Build Status" /></a>
+    <a href="https://github.com/foundrydata/foundrydata/actions/workflows/test.yml"><img src="https://img.shields.io/github/actions/workflow/status/foundrydata/foundrydata/test.yml?branch=main&style=flat-square&labelColor=000000&label=tests" alt="Tests Status" /></a>
+    <a href="https://github.com/foundrydata/foundrydata/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/foundrydata/foundrydata/ci.yml?branch=main&style=flat-square&labelColor=000000&label=build" alt="Build Status" /></a>
+    <img src="https://img.shields.io/badge/coverage-%E2%89%A5%2090%25-brightgreen?style=flat-square&labelColor=000000" alt="Coverage ≥ 90%" />
+    <img src="https://img.shields.io/badge/performance-baseline%20tracked-3b82f6?style=flat-square&labelColor=000000&color=3b82f6" alt="Performance baseline tracked" />
   </p>
   
   <p>
@@ -36,6 +39,15 @@
 </div>
 
 <br />
+
+## ✅ CI Overview
+
+- Matrix: `draft-07 × 2019-09 × 2020-12` × Node `18.x · 20.x · 22.x` × OS `ubuntu · macOS · windows`.
+- Jobs: `lint` (zero errors), `quick-tests` (5m, 100 runs), `full-tests` (30m, 1000 runs + coverage), `performance-tests` (baseline + regression), `memory-tests` (leak/GC).
+- Env: `TEST_SEED=424242`, `FC_NUM_RUNS` per job, `SCHEMA_DRAFT` from matrix, `DEBUG=false` (CI), `PERF_LOG=true` (perf).
+- Quality gates: coverage lines ≥ 90%, performance regression p95 > 20% fails, memory regression > 100MB fails, ESLint must pass.
+- Artifacts: coverage (`lcov`, summary, HTML), performance `baseline.json` + report, optional JUnit XML.
+- Workflow: see `.github/workflows/test.yml`.
 
 ## ✨ Features
 
