@@ -21,7 +21,7 @@
     "test:gen:compliance:extra": "GEN_COMPLIANCE_ASSERT_EXTRA=true vitest run test/__tests__/integration/generator-compliance/*.test.ts --config test/vitest.config.ts",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit --project tsconfig.test.json",
-    "typecheck:build": "tsc --noEmit --build",
+    "typecheck:build": "tsc -b --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "clean": "rm -rf packages/*/dist",
