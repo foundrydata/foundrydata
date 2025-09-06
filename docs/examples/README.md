@@ -114,11 +114,14 @@ curl -X POST https://api.foundrydata.dev/generate \
 - `minimum/maximum` - Number ranges (inclusive)
 - `minLength/maxLength` - String length
 - `enum` - Pick from list (cached for consistency)
+- `const` - Constant values (any JSON type)
+- `multipleOf` - Divisibility constraint (numbers/integers)
 - `required` - Required fields
 
 ### Arrays
 - `type: array` with `items` of primitives (string, number, boolean)
 - Arrays of nested objects (objects with nested properties up to depth 2)
+- `prefixItems` - Tuple validation (Draft 2019-09/2020-12)
 - `minItems/maxItems` - Array length constraints
 
 ## ❌ Not Supported Yet
@@ -131,6 +134,9 @@ curl -X POST https://api.foundrydata.dev/generate \
 | `allOf/oneOf` | Coming v0.3 | Pick one type |
 | `$ref` | Coming v0.3 | Inline definitions |
 | `exclusiveMinimum/exclusiveMaximum` | Coming v0.2 | Use inclusive ranges |
+| `additionalItems` | Coming v0.2 | Use `prefixItems` instead |
+| `contains` | Coming v0.3 | Use array items validation |
+| `unevaluatedItems` | Not planned | Use supported array keywords |
 
 ## 💬 Error Messages
 
@@ -220,12 +226,12 @@ Generates: Payment transactions, statuses, fees, timestamps
 - Number constraints (min/max inclusive only)
 - String constraints (minLength/maxLength)
 - Enums and required fields
+- Schema references ($ref)
 
 **❌ Won't work (v0.1):**
 - Nested objects (object properties with object type)
 - Objects nested 2+ levels deep
 - Complex regex patterns (basic patterns are supported)
-- Schema references ($ref)
 - Exclusive minimum/maximum ranges
 
 ## 🆘 Need Help?

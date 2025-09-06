@@ -37,21 +37,43 @@ export class JSONSchemaParser implements SchemaParser {
     'null',
   ]);
 
-  // Features we plan to support (with helpful messages)
+  // JSON Schema keywords not yet supported (only truly unsupported features)
   private static readonly PLANNED_FEATURES = {
-    $ref: 'Reference resolution will be supported in v0.2.0',
+    // Schema composition keywords (truly not implemented)
     allOf: 'Schema composition will be supported in v0.3.0',
     anyOf: 'Schema composition will be supported in v0.3.0',
     oneOf: 'Schema composition will be supported in v0.3.0',
     not: 'Negation will be supported in v0.4.0',
+
+    // Conditional application keywords (truly not implemented)
     if: 'Conditional schemas will be supported in v0.4.0',
     then: 'Conditional schemas will be supported in v0.4.0',
     else: 'Conditional schemas will be supported in v0.4.0',
-    dependencies: 'Dependencies will be supported in v0.3.0',
+
+    // Advanced property validation (truly not implemented)
+    patternProperties: 'Pattern properties validation not supported in MVP',
+    propertyNames: 'Property names validation not supported in MVP',
+    dependentSchemas: 'Dependent schemas (Draft 2019-09+) not supported in MVP',
+
+    // Array validation keywords (truly not implemented)
     additionalItems: 'Additional items will be supported in v0.2.0',
     contains: 'Contains validation will be supported in v0.3.0',
-    const: 'Const values are supported - please report if not working',
-    multipleOf: 'MultipleOf constraint will be supported in v0.2.0',
+    minContains: 'Min contains validation not supported in MVP',
+    maxContains: 'Max contains validation not supported in MVP',
+
+    // Unevaluated keywords (truly not implemented)
+    unevaluatedItems:
+      'Unevaluated items validation will be supported in v0.3.0',
+    unevaluatedProperties:
+      'Unevaluated properties validation will be supported in v0.3.0',
+
+    // Content keywords (annotation-only, no validation implemented)
+    contentEncoding: 'Content encoding validation not supported in MVP',
+    contentMediaType: 'Content media type validation not supported in MVP',
+    contentSchema: 'Content schema validation not supported in MVP',
+
+    // Draft-specific keywords not widely supported
+    $data: '$data references not supported (draft-04 extension)',
   } as const;
 
   supports(input: unknown): boolean {
@@ -121,6 +143,14 @@ export class JSONSchemaParser implements SchemaParser {
     // Handle boolean schemas (true/false)
     if (typeof schema === 'boolean') {
       return ok(schema);
+    }
+
+    // Handle $ref schemas directly (they don't need type extraction)
+    if ('$ref' in schema && typeof schema.$ref === 'string') {
+      return ok({
+        $ref: schema.$ref,
+        ...this.parseBaseProperties(schema),
+      } as Schema);
     }
 
     // Extract and validate type
@@ -209,6 +239,25 @@ export class JSONSchemaParser implements SchemaParser {
       result.additionalProperties = schema.additionalProperties;
     }
 
+    // Parse dependencies (Draft-07 style)
+    if (schema.dependencies && typeof schema.dependencies === 'object') {
+      result.dependencies = schema.dependencies as Record<
+        string,
+        string[] | Schema
+      >;
+    }
+
+    // Parse dependentRequired (Draft 2019-09+ style)
+    if (
+      schema.dependentRequired &&
+      typeof schema.dependentRequired === 'object'
+    ) {
+      result.dependentRequired = schema.dependentRequired as Record<
+        string,
+        string[]
+      >;
+    }
+
     return ok(result);
   }
 
@@ -233,6 +282,22 @@ export class JSONSchemaParser implements SchemaParser {
       result.items = itemsResult.value;
     }
 
+    // Parse prefixItems (Draft 2019-09+)
+    if (Array.isArray(schema.prefixItems)) {
+      const prefixItems: Schema[] = [];
+      for (let i = 0; i < schema.prefixItems.length; i++) {
+        const itemResult = this.parseSchema(
+          schema.prefixItems[i] as Record<string, unknown> | boolean,
+          `${path}.prefixItems[${i}]`
+        );
+        if (itemResult.isErr()) {
+          return itemResult;
+        }
+        prefixItems.push(itemResult.value);
+      }
+      result.prefixItems = prefixItems;
+    }
+
     // Parse constraints
     if (typeof schema.minItems === 'number') {
       result.minItems = schema.minItems;
@@ -251,6 +316,16 @@ export class JSONSchemaParser implements SchemaParser {
     schema: Record<string, unknown>,
     path: string
   ): Result<StringSchema, ParseError> {
+    // Check for inappropriate properties for string type
+    const invalidProps = this.checkInvalidPropertiesForType(
+      'string',
+      schema,
+      path
+    );
+    if (invalidProps.isErr()) {
+      return invalidProps;
+    }
+
     const result: StringSchema = {
       type: 'string' as const,
       ...this.parseBaseProperties(schema),
@@ -507,8 +582,8 @@ export class JSONSchemaParser implements SchemaParser {
     for (const [feature, message] of Object.entries(
       JSONSchemaParser.PLANNED_FEATURES
     )) {
-      if (feature in schema && feature !== 'const') {
-        // const is actually supported
+      if (feature in schema) {
+        // All features in PLANNED_FEATURES are not yet supported
         const code =
           feature === 'allOf' || feature === 'anyOf' || feature === 'oneOf'
             ? ErrorCode.SCHEMA_COMPOSITION_NOT_SUPPORTED
@@ -738,6 +813,89 @@ export class JSONSchemaParser implements SchemaParser {
             context: {
               suggestion:
                 'Use basic regex features like character classes [a-z], quantifiers {n}, and simple anchors ^$.',
+            },
+          })
+        );
+      }
+    }
+
+    return ok(undefined);
+  }
+
+  /**
+   * Check for invalid properties for a specific type
+   */
+  private checkInvalidPropertiesForType(
+    type: string,
+    schema: Record<string, unknown>,
+    path: string
+  ): Result<void, ParseError> {
+    // Define valid properties for each type (excluding base properties)
+    const validPropertiesByType: Record<string, Set<string>> = {
+      string: new Set(['format', 'pattern', 'minLength', 'maxLength']),
+      number: new Set([
+        'minimum',
+        'maximum',
+        'exclusiveMinimum',
+        'exclusiveMaximum',
+        'multipleOf',
+      ]),
+      integer: new Set([
+        'minimum',
+        'maximum',
+        'exclusiveMinimum',
+        'exclusiveMaximum',
+        'multipleOf',
+      ]),
+      boolean: new Set([]),
+      array: new Set([
+        'items',
+        'additionalItems',
+        'minItems',
+        'maxItems',
+        'uniqueItems',
+        'prefixItems',
+      ]),
+      object: new Set([
+        'properties',
+        'required',
+        'additionalProperties',
+        'minProperties',
+        'maxProperties',
+        'dependencies',
+        'dependentRequired',
+      ]),
+      null: new Set([]),
+    };
+
+    // Base properties valid for all types
+    const baseProperties = new Set([
+      'type',
+      'title',
+      'description',
+      'default',
+      'examples',
+      'const',
+      'enum',
+      '$id',
+      '$schema',
+      '$comment',
+      '$ref',
+    ]);
+
+    const validProps = validPropertiesByType[type] || new Set();
+    const allValidProps = new Set([...validProps, ...baseProperties]);
+
+    // Check for invalid properties
+    for (const prop of Object.keys(schema)) {
+      if (!allValidProps.has(prop)) {
+        return err(
+          new ParseError({
+            message: `Invalid property "${prop}" for type "${type}" at ${path || 'root'}`,
+            errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
+            context: {
+              schemaPath: this.toSchemaPointer(path ? `${path}.${prop}` : prop),
+              suggestion: `Valid properties for type "${type}": ${Array.from(validProps).join(', ')}${validProps.size > 0 ? ', ' : ''}plus base properties: ${Array.from(baseProperties).join(', ')}`,
             },
           })
         );

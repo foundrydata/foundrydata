@@ -2,29 +2,36 @@
 
 This document lists the known limitations and unsupported features in the MVP release.
 
-## JSON Schema Features Supported with Limitations
+## JSON Schema Features - Support Status
 
-### Partially Supported Keywords
-- **`pattern`** - Basic regex patterns supported with ReDoS protection and complexity limits
-  - ✅ Simple patterns like `^[A-Z]{3}-[0-9]{4}$`, `^[a-z0-9-]+$`
+### ✅ Fully Supported Keywords  
+- **`const`** - Constant value validation for all primitive types
+- **`multipleOf`** - Number divisibility validation (Draft-07+ compliance)
+- **`prefixItems`** - Tuple validation (Draft 2019-09/2020-12)
+- **`$ref`** - Schema references with full resolution support
+- **`$recursiveRef`**/`$recursiveAnchor`** - Recursive references (Draft 2019-09)
+- **`$dynamicRef`**/`$dynamicAnchor`** - Dynamic references (Draft 2020-12)
+- **`definitions`** - Legacy definitions support (Draft-04/06, use `$defs` instead)
+- **`$defs`** - Modern definitions support (Draft 2019-09+)
+- **`additionalProperties`** - Boolean constraint and edge case generation
+- **`dependencies`**/**`dependentRequired`** - Property dependencies
+
+### ⚠️ Partially Supported Keywords
+- **`pattern`** - Basic regex patterns with ReDoS protection
+  - ✅ Simple patterns like `^[A-Z]{3}-[0-9]{4}$`, `^[a-z0-9-]+$`  
   - ❌ Complex patterns with high ReDoS risk or excessive length
-  - ❌ Patterns using advanced regex features (lookaheads, backreferences)
+  - ❌ Advanced regex features (lookaheads, backreferences)
+- **`readOnly`**/**`writeOnly`** - Annotation-only (no generation impact)
+- **`contentEncoding`**/**`contentMediaType`** - Annotation-only (no validation)
 
-## JSON Schema Features Not Supported
-
-### Keywords Not Supported
-- **`multipleOf`** - Number divisibility constraint (will be in v0.2.0)
-- **`additionalItems`** - Additional items validation (will be in v0.2.0)
-- **`contains`** - Array contains validation (will be in v0.3.0)
-- **`const`** - Constant values (partial support, may work but not guaranteed)
-- **`prefixItems`** - Modern draft tuple validation (2019-09/2020-12)
-- **`unevaluatedItems`** - Unevaluated items validation (2019-09/2020-12)
-- **`$ref`** - Schema references
-- **`allOf`**, **`anyOf`**, **`oneOf`**, **`not`** - Schema composition
-
-### Tuple Arrays
-- Arrays with `items` as an array (tuple validation) are not fully supported
-- Use single schema for `items` instead of array of schemas
+### ❌ Keywords Not Supported  
+- **Schema Composition**: `allOf`, `anyOf`, `oneOf`, `not`
+- **Conditional Application**: `if`, `then`, `else`
+- **Advanced Property Validation**: `patternProperties`, `propertyNames`, `dependentSchemas`
+- **Array Contains**: `contains`, `minContains`, `maxContains`, `additionalItems`
+- **Unevaluated Keywords**: `unevaluatedItems`, `unevaluatedProperties` (Draft 2019-09+)
+- **Content Validation**: `contentSchema`
+- **Legacy Extensions**: `$data` references
 
 ### Nested Objects
 - ✅ **Supported**: Objects nested within object properties up to **depth 2**
@@ -89,27 +96,27 @@ npm run test:integration  # Runs tests sequentially
 ### Testing Schemas with Unsupported Features
 Remove or replace unsupported features before testing:
 - Simplify complex `pattern` constraints or replace with `format`
-- Remove `multipleOf` constraints
-- Flatten nested objects
-- Use single schema instead of tuple arrays
+- Flatten nested objects beyond depth 2
+- Replace schema composition with single schemas
+- Remove conditional logic (`if`/`then`/`else`)
 
 ## Future Releases
 
 ### v0.2.0 (Planned)
 - Complex pattern/regex support with advanced features
-- MultipleOf constraint
 - AdditionalItems validation
 - Better tuple array support
 
 ### v0.3.0 (Planned)
 - Contains validation
+- Schema composition (allOf, anyOf, oneOf)
 - Deeper nested objects (beyond depth 2)
 - More string formats
 
 ### v1.0 (Planned)
 - Full nesting support
-- Schema composition (allOf, anyOf, oneOf)
-- Schema references ($ref)
+- Conditional schemas (if/then/else)
+- Advanced property validation patterns
 
 ## Using the Limitations Registry
 

@@ -273,16 +273,15 @@ describe('JSONSchemaParser', () => {
       });
     });
 
-    it('should return error for $ref', () => {
+    it('should accept $ref schemas', () => {
       const input = { $ref: '#/definitions/User' };
       const result = parser.parse(input);
 
-      expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toContain('Unsupported feature: "$ref"');
-        expect(result.error.context?.suggestion).toContain(
-          'Reference resolution will be supported'
-        );
+      // $ref is now supported, so it should parse successfully
+      // The actual resolution happens later in the pipeline
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        expect(result.value).toEqual({ $ref: '#/definitions/User' });
       }
     });
 

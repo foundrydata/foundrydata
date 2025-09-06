@@ -23,12 +23,14 @@
     "price": {
       "type": "number",
       "minimum": 0.01,
-      "maximum": 9999.99
+      "maximum": 9999.99,
+      "multipleOf": 0.01
     },
     "salePrice": {
       "type": "number",
       "minimum": 0.01,
-      "maximum": 9999.99
+      "maximum": 9999.99,
+      "multipleOf": 0.01
     },
     "category": {
       "type": "string",
@@ -40,7 +42,8 @@
       "maxLength": 50
     },
     "inStock": {
-      "type": "boolean"
+      "type": "boolean",
+      "const": true
     },
     "stockQuantity": {
       "type": "integer",
