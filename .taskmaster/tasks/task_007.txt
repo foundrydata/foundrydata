@@ -1,0 +1,37 @@
+# Task ID: 7
+# Title: Implement Generation Pipeline
+# Status: in-progress
+# Dependencies: 5, 6
+# Priority: highest
+# Description: Create main generation pipeline orchestrating parsing, generation, and validation
+# Details:
+Build FoundryGenerator class orchestrating the pipeline: Parse → Plan → Generate → Validate. Deterministic generation via per-context PRNG (no global faker.seed). Enforce 100% compliance gate for supported features (otherwise fail with clear error). Collect per-stage metrics (parse/generate/validate): durations, AJV cache hit rate, formats used. Handle batch generation efficiently and expose a reproducible seed in outputs. This is the central pipeline that orchestrates the entire system and must be completed before documentation tasks.
+
+# Test Strategy:
+Integration tests with all example schemas. Property-based tests asserting determinism: same seed → bit-identical outputs, prefix stability. Performance benchmarks: 1000 rows < 200ms, 10000 rows < 2s. Compliance invariant: score === 100 or explicit unsupported-feature error.
+
+# Subtasks:
+## 1. Design Pipeline Orchestrator with Error Propagation [pending]
+### Dependencies: None
+### Description: Create FoundryGenerator class with Parse → Plan → Generate → Validate orchestration and comprehensive error handling
+### Details:
+Implement FoundryGenerator class in packages/core/src/generator/foundry-generator.ts with methods: parseSchema(), planGeneration(), generateData(), validateOutput(). Each stage returns Result<T,E> with proper error propagation. Define PipelineStage enum and PipelineMetrics interface. Implement stage-by-stage execution with early termination on errors. Include error context preservation across stages and detailed error messages referencing which stage failed.
+
+## 2. Implement Seed-Based Deterministic Generation [pending]
+### Dependencies: 7.1
+### Description: Create per-context PRNG system ensuring deterministic generation without global faker.seed mutation
+### Details:
+Implement SeedManager class managing per-generation-context PRNGs. Create GenerationContext interface with isolated faker instance per generation call. Ensure same seed produces bit-identical outputs across runs. Implement seed derivation for batch generation (base_seed + row_index). Add seed validation and normalization. Expose used seed in generation results for reproducibility. Never mutate global faker.seed - each context gets its own faker instance.
+
+## 3. Add Performance Monitoring and Metrics Collection [pending]
+### Dependencies: 7.2
+### Description: Implement comprehensive metrics collection for pipeline stages and performance optimization
+### Details:
+Create PipelineMetrics interface tracking per-stage durations, AJV cache hit rates, formats used, and memory usage. Implement MetricsCollector class with startStage()/endStage() methods. Add performance targets validation: 1000 rows < 200ms, 10000 rows < 2s. Implement batch generation optimization to minimize parser/validator overhead. Add memory usage tracking and cleanup. Include metrics in generation results for debugging and optimization.
+
+## 4. Create Integration Tests for Complete Pipeline [pending]
+### Dependencies: 7.3
+### Description: Build comprehensive integration tests validating end-to-end pipeline functionality across all components
+### Details:
+Create integration tests in packages/core/src/generator/__tests__/foundry-generator.integration.test.ts testing all example schemas from docs/examples/. Implement property-based tests asserting determinism: same seed produces identical outputs, prefix stability for batch generation. Add performance benchmarks meeting targets. Test compliance invariant: 100% valid outputs or explicit unsupported-feature errors. Include error propagation tests and edge cases like empty schemas, invalid inputs, and resource constraints.
+

@@ -1,0 +1,37 @@
+# Task ID: 27
+# Title: Introduce Per-Context PRNG (remove global faker.seed)
+# Status: done
+# Dependencies: 4, 7
+# Priority: high
+# Description: Replace global Faker seeding with a per-context deterministic PRNG exposed via GeneratorContext to ensure isolation and reproducibility.
+# Details:
+ACCEPTANCE: (1) No calls to faker.seed in repo; (2) Same seed + same schema → bit-identical outputs across runs and in parallel; (3) Overhead <5% vs baseline on micro-benchmarks (p95). IMPLEMENTATION: Add RNG interface (next(), int(min,max), float(min,max)) to GeneratorContext; implement seeded PRNG (mulberry32/xorshift) with pure state; refactor generators to use context RNG for selection/shuffle; document determinism guarantees.
+
+# Test Strategy:
+Determinism tests (same seed → identical outputs); concurrency tests (N workers); integration in full pipeline with prefix-stability; micro-benchmarks to verify overhead <5%.
+
+# Subtasks:
+## 1. Add PRNG to context [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. Remove faker.seed global [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3. Refactor generators to RNG [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 4. Determinism tests [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

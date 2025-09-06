@@ -1,0 +1,31 @@
+# Task ID: 3
+# Title: Create Format Registry System
+# Status: done
+# Dependencies: 1
+# Priority: high
+# Description: Implement extensible format registry for string formats like uuid, email, date
+# Details:
+Build FormatRegistry class in packages/core/src/registry/format-registry.ts using Registry pattern. Register built-in formats: uuid, email, date, date-time. Allow custom format registration.
+
+# Test Strategy:
+Test each built-in format generates valid data. Test custom format registration and invocation. Verify format constraints are respected.
+
+# Subtasks:
+## 1. Create Registry pattern [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. Implement built-in formats [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3. Format validation and tests [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

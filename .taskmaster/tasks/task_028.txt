@@ -1,0 +1,31 @@
+# Task ID: 28
+# Title: Stable Cache Key for AJV Compiled Validators
+# Status: pending
+# Dependencies: 6
+# Priority: medium
+# Description: Use a stable stringify or hashing strategy for schema cache keys to maximize cache hits and avoid recompilation due to key order.
+# Details:
+ACCEPTANCE: schemas with different key orders share the same cache entry; improved cache hit rate recorded. IMPLEMENTATION: canonical stringify (sorted keys) or fast hash; retain WeakMap for identity; guard heavy canonicalization. METRICS: before/after hit-rate and compile counts.
+
+# Test Strategy:
+Unit tests for key equality across orderings; measure hit/miss deltas in validator metrics; micro-bench compile vs cached validate.
+
+# Subtasks:
+## 1. Implement stable stringify/hash [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. Integrate into cache [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3. Add tests and metrics [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
