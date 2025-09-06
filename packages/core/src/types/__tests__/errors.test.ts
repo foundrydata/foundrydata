@@ -269,10 +269,7 @@ describe('Error Hierarchy', () => {
       ];
 
       errors.forEach((error) => {
-        const maybeUserMsg = (error as any).getUserMessage?.() ?? error.message;
-        const maybeSuggestions = (error as any).getSuggestions?.() ?? [];
-        expect(typeof maybeUserMsg).toBe('string');
-        expect(Array.isArray(maybeSuggestions)).toBe(true);
+        expect(typeof error.message).toBe('string');
         expect(error.toJSON('dev')).toBeDefined();
       });
     });

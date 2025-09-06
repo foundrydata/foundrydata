@@ -785,7 +785,7 @@ describe('CLI Formatting', () => {
 - [x] Créer `packages/core/src/errors/suggestions.ts` avec fonctions pures
 
 ### Étape 6: Migration des tests (45 min)
-- [ ] Supprimer tests getUserMessage/getSuggestions
+- [x] Supprimer tests getUserMessage/getSuggestions
 - [x] Ajouter tests dans `packages/core/src/errors/__tests__/`
   - presenter.test.ts: env dev/prod, redaction, NO_COLOR
   - codes.test.ts: unicité, mapping exit/http
