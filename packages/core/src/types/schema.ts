@@ -84,6 +84,7 @@ export interface ObjectSchema extends BaseSchema {
   properties?: Record<string, Schema>;
   required?: string[];
   additionalProperties?: boolean | Schema;
+  unevaluatedProperties?: boolean | Schema; // Draft 2019-09/2020-12
   propertyNames?: Schema;
   minProperties?: number;
   maxProperties?: number;
@@ -98,9 +99,10 @@ export interface ObjectSchema extends BaseSchema {
  */
 export interface ArraySchema extends BaseSchema {
   type: 'array';
-  items?: Schema | Schema[];
+  items?: Schema | Schema[] | boolean;
   additionalItems?: boolean | Schema;
   prefixItems?: Schema[]; // Draft 2019-09+ for tuple validation
+  unevaluatedItems?: boolean | Schema; // Draft 2019-09/2020-12
   minItems?: number;
   maxItems?: number;
   uniqueItems?: boolean;

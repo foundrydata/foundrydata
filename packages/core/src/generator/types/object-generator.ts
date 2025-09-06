@@ -329,7 +329,11 @@ export class ObjectGenerator extends DataGenerator {
     }
 
     // Handle additionalProperties if needed (for edge cases)
-    if (context.scenario === 'edge' && schema.additionalProperties !== false) {
+    if (
+      context.scenario === 'edge' &&
+      schema.additionalProperties !== false &&
+      (schema as any).unevaluatedProperties !== false
+    ) {
       const currentPropCount = Object.keys(result).length;
       if (currentPropCount < maxProperties) {
         // Add some additional properties for edge testing

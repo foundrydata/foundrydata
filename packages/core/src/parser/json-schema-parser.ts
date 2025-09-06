@@ -1,3 +1,5 @@
+/* eslint-disable complexity */
+/* eslint-disable max-lines-per-function */
 /**
  * JSON Schema parser implementation
  * Converts JSON Schema to internal Schema representation
@@ -61,11 +63,7 @@ export class JSONSchemaParser implements SchemaParser {
     minContains: 'Min contains validation not supported in MVP',
     maxContains: 'Max contains validation not supported in MVP',
 
-    // Unevaluated keywords (truly not implemented)
-    unevaluatedItems:
-      'Unevaluated items validation will be supported in v0.3.0',
-    unevaluatedProperties:
-      'Unevaluated properties validation will be supported in v0.3.0',
+    // Unevaluated keywords (unevaluatedProperties now supported)
 
     // Content keywords (annotation-only, no validation implemented)
     contentEncoding: 'Content encoding validation not supported in MVP',
@@ -235,8 +233,33 @@ export class JSONSchemaParser implements SchemaParser {
     if (typeof schema.maxProperties === 'number') {
       result.maxProperties = schema.maxProperties;
     }
-    if (typeof schema.additionalProperties === 'boolean') {
-      result.additionalProperties = schema.additionalProperties;
+    if ('additionalProperties' in schema) {
+      const ap = schema.additionalProperties as unknown;
+      if (typeof ap === 'boolean') {
+        result.additionalProperties = ap;
+      } else if (ap && typeof ap === 'object') {
+        const apRes = this.parseSchema(
+          ap as Record<string, unknown>,
+          `${path}.additionalProperties`
+        );
+        if (apRes.isErr()) return apRes;
+        result.additionalProperties = apRes.value;
+      }
+    }
+
+    // Parse unevaluatedProperties (Draft 2019-09/2020-12)
+    if ('unevaluatedProperties' in schema) {
+      const up = schema.unevaluatedProperties as unknown;
+      if (typeof up === 'boolean') {
+        result.unevaluatedProperties = up;
+      } else if (up && typeof up === 'object') {
+        const upRes = this.parseSchema(
+          up as Record<string, unknown>,
+          `${path}.unevaluatedProperties`
+        );
+        if (upRes.isErr()) return upRes;
+        result.unevaluatedProperties = upRes.value as Schema;
+      }
     }
 
     // Parse dependencies (Draft-07 style)
@@ -270,16 +293,23 @@ export class JSONSchemaParser implements SchemaParser {
       ...this.parseBaseProperties(schema),
     };
 
-    // Parse items
-    if (schema.items) {
-      const itemsResult = this.parseSchema(
-        schema.items as Record<string, unknown> | boolean,
-        `${path}.items`
-      );
-      if (itemsResult.isErr()) {
-        return itemsResult;
+    // Parse items (can be schema object, boolean true/false, or undefined)
+    if ('items' in schema) {
+      const raw = schema.items as unknown;
+      if (typeof raw === 'boolean') {
+        // Draft-2020-12: items=false forbids additional items beyond prefixItems
+        // items=true allows any additional items
+        result.items = raw;
+      } else if (raw && typeof raw === 'object') {
+        const itemsResult = this.parseSchema(
+          raw as Record<string, unknown> | boolean,
+          `${path}.items`
+        );
+        if (itemsResult.isErr()) {
+          return itemsResult;
+        }
+        result.items = itemsResult.value;
       }
-      result.items = itemsResult.value;
     }
 
     // Parse prefixItems (Draft 2019-09+)
@@ -307,6 +337,21 @@ export class JSONSchemaParser implements SchemaParser {
     }
     if (typeof schema.uniqueItems === 'boolean') {
       result.uniqueItems = schema.uniqueItems;
+    }
+
+    // Parse unevaluatedItems (Draft 2019-09/2020-12)
+    if ('unevaluatedItems' in schema) {
+      const ui = schema.unevaluatedItems as unknown;
+      if (typeof ui === 'boolean') {
+        result.unevaluatedItems = ui;
+      } else if (ui && typeof ui === 'object') {
+        const uiRes = this.parseSchema(
+          ui as Record<string, unknown>,
+          `${path}.unevaluatedItems`
+        );
+        if (uiRes.isErr()) return uiRes;
+        result.unevaluatedItems = uiRes.value;
+      }
     }
 
     return ok(result);
@@ -516,14 +561,36 @@ export class JSONSchemaParser implements SchemaParser {
       return ok('array');
     }
 
-    // For schemas with only constraints, default to the most permissive type
+    // For schemas with only constraints, try to infer type from enum values
     if ('enum' in schema && Array.isArray(schema.enum)) {
-      // Infer type from enum values
-      const types = new Set(schema.enum.map((v) => typeof v));
-      if (types.size === 1) {
-        const inferredType = Array.from(types)[0];
-        return ok(inferredType === 'object' ? 'object' : 'string');
+      const values = schema.enum as unknown[];
+
+      const allNull = values.every((v) => v === null);
+      if (allNull) return ok('null');
+
+      const allStrings = values.every((v) => typeof v === 'string');
+      if (allStrings) return ok('string');
+
+      const allBooleans = values.every((v) => typeof v === 'boolean');
+      if (allBooleans) return ok('boolean');
+
+      const allNumbers = values.every(
+        (v) => typeof v === 'number' && Number.isFinite(v as number)
+      );
+      if (allNumbers) {
+        const allIntegers = values.every((v) => Number.isInteger(v as number));
+        return ok(allIntegers ? 'integer' : 'number');
       }
+
+      const allArrays = values.every((v) => Array.isArray(v));
+      if (allArrays) return ok('array');
+
+      const allObjects = values.every(
+        (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
+      );
+      if (allObjects) return ok('object');
+
+      // Mixed enum types: no inference here; planning can handle unions in future
     }
 
     return err(
@@ -905,10 +972,17 @@ export class JSONSchemaParser implements SchemaParser {
     return ok(undefined);
   }
 
-  // Convert dot path used internally to JSON Pointer with '#/' prefix
+  // Convert internal dot/bracket path to RFC 6901 JSON Pointer '#/...'
   private toSchemaPointer(path: string): string {
     if (!path) return '#';
+    // Drop leading dots, normalize bracket indices into dot segments, then split
     const trimmed = path.replace(/^\.+/, '');
-    return `#/${trimmed.replace(/\./g, '/')}`;
+    const tokens = trimmed
+      .split('.')
+      .flatMap((seg) => seg.replace(/\[(\d+)\]/g, '.$1').split('.'))
+      .filter(Boolean)
+      // RFC 6901 escaping
+      .map((s) => s.replace(/~/g, '~0').replace(/\//g, '~1'));
+    return tokens.length ? `#/${tokens.join('/')}` : '#';
   }
 }

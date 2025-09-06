@@ -1,3 +1,4 @@
+/* eslint-disable max-depth */
 /* eslint-disable max-lines */
 /* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
@@ -16,10 +17,21 @@ import { Result, ok, err } from '../../types/result';
 import { GenerationError } from '../../types/errors';
 import type { Schema, ArraySchema, StringSchema } from '../../types/schema';
 import {
+  isStringSchema,
+  isNumberSchema,
+  isIntegerSchema,
+  isBooleanSchema,
+} from '../../types/schema';
+import {
   DataGenerator,
   GeneratorContext,
   GenerationConfig,
 } from '../data-generator';
+import { StringGenerator } from './string-generator';
+import { NumberGenerator } from './number-generator';
+import { IntegerGenerator } from './integer-generator';
+import { BooleanGenerator } from './boolean-generator';
+import { ObjectGenerator } from './object-generator';
 
 // Type guard to check if schema is an object (not boolean)
 function isSchemaObject(schema: Schema): schema is Exclude<Schema, boolean> {
@@ -36,6 +48,12 @@ function hasType(schema: Schema): schema is Schema & { type: string } {
 }
 
 export class ArrayGenerator extends DataGenerator {
+  // Reuse type generators to reduce per-item instantiation overhead
+  private readonly strGen = new StringGenerator();
+  private readonly numGen = new NumberGenerator();
+  private readonly intGen = new IntegerGenerator();
+  private readonly boolGen = new BooleanGenerator();
+  private readonly objGen = new ObjectGenerator();
   /**
    * Priority for this generator (higher than basic types, lower than complex types)
    */
@@ -151,6 +169,31 @@ export class ArrayGenerator extends DataGenerator {
       }
     }
 
+    // Respect tuple semantics when prefixItems is used and additional items are forbidden
+    // Draft 2019-09/2020-12: prefixItems for tuples, items=false forbids additional elements
+    if (Array.isArray(itemSchemas)) {
+      const tupleLen = itemSchemas.length;
+      if (
+        arraySchema.items === false ||
+        arraySchema.unevaluatedItems === false
+      ) {
+        // Exact tuple length when additional items are forbidden
+        effectiveMinItems = Math.max(effectiveMinItems, tupleLen);
+        effectiveMaxItems = Math.min(effectiveMaxItems, tupleLen);
+        // If minItems exceeds tuple length, the schema is unsatisfiable
+        if (effectiveMinItems > tupleLen) {
+          return err(
+            new GenerationError(
+              `Impossible constraint: minItems (${effectiveMinItems}) > tuple length (${tupleLen}) with items=false`,
+              'Adjust minItems or allow additional items (items != false)',
+              context.path,
+              'impossible-constraint'
+            )
+          );
+        }
+      }
+    }
+
     // Generate array length
     const length = this.generateLength(
       effectiveMinItems,
@@ -162,44 +205,58 @@ export class ArrayGenerator extends DataGenerator {
     const result: unknown[] = [];
     const usedValues = new Set<string>();
 
-    for (let i = 0; i < length; i++) {
-      const itemResult = this.generateItem(itemSchemas, i, context, config);
-
-      if (itemResult.isErr()) {
-        return err(itemResult.error);
+    // Special-case uniqueItems for boolean/null with strict bounds
+    if (
+      uniqueItems &&
+      itemSchemas &&
+      !Array.isArray(itemSchemas) &&
+      hasType(itemSchemas)
+    ) {
+      const t = itemSchemas.type;
+      if (t === 'null') {
+        // length already bounded by earlier check
+        for (let i = 0; i < length; i++) result.push(null);
+        return ok(result);
       }
+      if (t === 'boolean') {
+        if (length === 1) {
+          // Deterministic single boolean
+          const faker = this.prepareFaker(context);
+          result.push(faker.datatype.boolean());
+          return ok(result);
+        }
+        if (length === 2) {
+          const faker = this.prepareFaker(context);
+          const first = faker.datatype.boolean();
+          result.push(first, !first);
+          return ok(result);
+        }
+      }
+    }
 
-      let value = itemResult.value;
+    // General path
+    let attempts = 0;
+    const maxAttempts = Math.max(10 * length, 50);
+    while (result.length < length) {
+      const i = result.length;
+      const itemResult = this.generateItem(
+        itemSchemas,
+        i + attempts,
+        context,
+        config
+      );
+      if (itemResult.isErr()) return err(itemResult.error);
+      const value = itemResult.value;
 
-      // Handle uniqueItems constraint
       if (uniqueItems) {
         const key = JSON.stringify(value);
         if (usedValues.has(key)) {
-          // For types with limited unique values, skip duplicates
-          if (
-            itemSchemas &&
-            !Array.isArray(itemSchemas) &&
-            hasType(itemSchemas)
-          ) {
-            const itemType = itemSchemas.type;
-            if (itemType === 'null' || itemType === 'boolean') {
-              continue; // Skip this iteration
-            }
-          }
-          // Try to generate an alternative value
-          const altResult = this.generateItem(
-            itemSchemas,
-            i + 1000,
-            context,
-            config
-          );
-          if (altResult.isOk()) {
-            value = altResult.value;
-          }
+          attempts++;
+          if (attempts > maxAttempts) break;
+          continue;
         }
-        usedValues.add(JSON.stringify(value));
+        usedValues.add(key);
       }
-
       result.push(value);
     }
 
@@ -389,89 +446,148 @@ export class ArrayGenerator extends DataGenerator {
    */
   private generateFromSchema(
     schema: Schema,
-    seed: number,
+    index: number,
     context: GeneratorContext,
-    config?: GenerationConfig
+    _config?: GenerationConfig
   ): Result<unknown, GenerationError> {
-    // Handle boolean schemas
-    if (schema === true) {
-      return ok(`any-${seed}`);
-    }
-    if (schema === false) {
+    // Handle boolean schemas first
+    if (schema === true) return ok(null);
+    if (schema === false)
       return err(
         new GenerationError(
           'Schema false always fails validation',
           undefined,
-          context.path,
+          `${context.path}[${index}]`,
           'false-schema'
         )
       );
+
+    // Create a nested context for this array element
+    const nested = this.createNestedContext(
+      context,
+      `${context.path}[${index}]`,
+      schema
+    );
+
+    if (typeof schema === 'object' && schema !== null && 'type' in schema) {
+      const s = schema as Record<string, unknown> & {
+        type?: string;
+        properties?: Record<string, Schema>;
+      };
+
+      // Determine if a primitive schema is unconstrained (fast path eligible)
+      const isSimplePrimitive = (sch: unknown): boolean => {
+        if (!sch || typeof sch !== 'object') return false;
+        const tVal = (sch as Record<string, unknown>).type;
+        if (typeof tVal !== 'string') return false;
+        const t = tVal as string;
+        switch (t) {
+          case 'string':
+            return (
+              !('format' in (sch as object)) &&
+              !('minLength' in (sch as object)) &&
+              !('maxLength' in (sch as object)) &&
+              !('pattern' in (sch as object)) &&
+              !('enum' in (sch as object)) &&
+              !('const' in (sch as object))
+            );
+          case 'number':
+            return (
+              !('minimum' in (sch as object)) &&
+              !('maximum' in (sch as object)) &&
+              !('exclusiveMinimum' in (sch as object)) &&
+              !('exclusiveMaximum' in (sch as object)) &&
+              !('multipleOf' in (sch as object)) &&
+              !('enum' in (sch as object)) &&
+              !('const' in (sch as object))
+            );
+          case 'integer':
+            return (
+              !('minimum' in (sch as object)) &&
+              !('maximum' in (sch as object)) &&
+              !('exclusiveMinimum' in (sch as object)) &&
+              !('exclusiveMaximum' in (sch as object)) &&
+              !('multipleOf' in (sch as object)) &&
+              !('enum' in (sch as object)) &&
+              !('const' in (sch as object))
+            );
+          case 'boolean':
+            return (
+              !('enum' in (sch as object)) && !('const' in (sch as object))
+            );
+          default:
+            return false;
+        }
+      };
+
+      if (isSimplePrimitive(s)) {
+        // Extremely fast deterministic generation using index and seed
+        switch (s.type) {
+          case 'string':
+            return ok(`str-${(context.seed ?? 0) ^ index}`);
+          case 'number':
+            return ok(((context.seed ?? 0) + index) % 1000);
+          case 'integer':
+            return ok(Math.floor(((context.seed ?? 0) + index) % 1000));
+          case 'boolean':
+            return ok((((context.seed ?? 0) + index) & 1) === 0);
+        }
+      }
+
+      // Fast-path simple objects with only primitive, unconstrained properties
+      if (
+        s.type === 'object' &&
+        s.properties &&
+        typeof s.properties === 'object'
+      ) {
+        const props = s.properties as Record<string, Schema>;
+        const isAllSimple = Object.values(props).every((ps: Schema) =>
+          isSimplePrimitive(ps)
+        );
+        if (isAllSimple) {
+          const base = (context.seed ?? 0) ^ (index * 2654435761);
+          const hash = (str: string): number => {
+            let h = 2166136261 >>> 0;
+            for (let i = 0; i < str.length; i++) {
+              h ^= str.charCodeAt(i) & 0xff;
+              h = Math.imul(h, 16777619);
+            }
+            return h >>> 0;
+          };
+          const out: Record<string, unknown> = {};
+          for (const [k, ps] of Object.entries(props)) {
+            const h = base ^ hash(k);
+            if (isStringSchema(ps)) out[k] = `str-${(h >>> 0).toString(36)}`;
+            else if (isNumberSchema(ps)) out[k] = (h % 100000) / 10;
+            else if (isIntegerSchema(ps)) out[k] = Math.floor(h % 100000);
+            else if (isBooleanSchema(ps)) out[k] = (h & 1) === 0;
+            else out[k] = null;
+          }
+          return ok(out);
+        }
+      }
+
+      // Delegate to full-feature generators (reused instances)
+      switch (s.type) {
+        case 'string':
+          return this.strGen.generate(schema, nested);
+        case 'number':
+          return this.numGen.generate(schema, nested);
+        case 'integer':
+          return this.intGen.generate(schema, nested);
+        case 'boolean':
+          return this.boolGen.generate(schema, nested);
+        case 'object':
+          return this.objGen.generate(schema, nested);
+        case 'array':
+          return this.generate(schema, nested); // recursion
+        default:
+          return ok(null);
+      }
     }
 
-    // This is a simplified implementation
-    // In production, this would delegate to the appropriate generator via registry
-    const type = hasType(schema) ? schema.type : 'string';
-
-    switch (type) {
-      case 'string':
-        return ok(`str-${seed}`);
-      case 'number':
-      case 'integer':
-        return ok(Math.floor(seed % 100));
-      case 'boolean':
-        return ok(seed % 2 === 0);
-      case 'null':
-        return ok(null);
-      case 'object':
-        // Handle object with properties
-        if (
-          isSchemaObject(schema) &&
-          'properties' in schema &&
-          schema.properties
-        ) {
-          const obj: Record<string, unknown> = {};
-          for (const [key, propSchema] of Object.entries(schema.properties)) {
-            const propResult = this.generateFromSchema(
-              propSchema,
-              seed,
-              context,
-              config
-            );
-            if (propResult.isErr()) {
-              return propResult;
-            }
-            obj[key] = propResult.value;
-          }
-          return ok(obj);
-        }
-        return ok({ id: `id-${seed}`, value: seed });
-      case 'array':
-        // Handle nested array
-        if (isSchemaObject(schema) && 'items' in schema && schema.items) {
-          const minItems =
-            'minItems' in schema ? (schema as ArraySchema).minItems || 1 : 1;
-          const maxItems =
-            'maxItems' in schema ? (schema as ArraySchema).maxItems || 3 : 3;
-          const length = minItems + (seed % (maxItems - minItems + 1));
-          const arr: unknown[] = [];
-          for (let i = 0; i < length; i++) {
-            const itemResult = this.generateFromSchema(
-              schema.items as Schema,
-              seed + i,
-              context,
-              config
-            );
-            if (itemResult.isErr()) {
-              return itemResult;
-            }
-            arr.push(itemResult.value);
-          }
-          return ok(arr);
-        }
-        return ok([seed, seed + 1]);
-      default:
-        return ok(`value-${seed}`);
-    }
+    // Fallback when schema has no explicit type
+    return new StringGenerator().generate({ type: 'string' } as Schema, nested);
   }
 
   /**

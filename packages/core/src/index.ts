@@ -6,6 +6,7 @@ export * from './types';
 export * from './registry';
 export * from './generator/formats';
 export * from './validator';
+export { FoundryGenerator } from './generator/foundry-generator';
 export * from '@foundrydata/shared';
 export {
   ErrorCode,

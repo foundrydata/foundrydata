@@ -36,6 +36,8 @@ function createAjvInstance(draft: JsonSchemaDraft): Ajv {
     strictSchema: true,
     strictNumbers: true,
     strictRequired: true,
+    // Keep tuple checks tolerant in tests to accommodate concise tuple schemas
+    strictTuples: false,
     allowUnionTypes: false, // Avoid non-standard "string|number" syntax
     validateFormats: true, // Assert formats (not just annotate)
   } as const;

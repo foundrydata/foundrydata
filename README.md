@@ -30,6 +30,7 @@
     <a href="#-why-foundrydata">Why?</a> •
     <a href="#-examples">Examples</a> •
     <a href="#-api">API</a> •
+    <a href="#-validator-configuration">Validator Config</a> •
     <a href="#-contributing">Contributing</a>
   </p>
   
@@ -185,6 +186,58 @@ const view = presenter.formatForAPI(error);
 
 Documentation pages for each error code are linked via `type: https://foundrydata.dev/errors/{CODE}`.
 
+## 🧰 Validator Configuration
+
+FoundryData guarantees compliance by validating every generated row with AJV. The validator is strict by default (types, numbers, formats) and supports multiple JSON Schema drafts.
+
+Key behaviors
+- Draft auto‑detection: picks AJV 2020‑12, 2019‑09, or draft‑07 based on `$schema` (with heuristics if absent). Default is 2020‑12.
+- Formats asserted: `validateFormats: true` with `ajv-formats` (+ 2019‑specific formats when needed).
+- Tuple handling: tolerant by default for concise tuple schemas (see `strictTuples` below).
+
+Advanced options (programmatic)
+```ts
+import { ComplianceValidator } from '@foundrydata/core';
+
+// Defaults: auto draft, strict types/formats, tolerant tuple checks
+const validator = new ComplianceValidator({
+  // Force a specific draft instead of auto-detection
+  // draft: 'draft-07' | '2019-09' | '2020-12'
+  // draft: '2020-12',
+
+  // Control how AJV enforces tuple shape hints
+  // - false: allow concise tuples (default)
+  // - 'log': report tuple shape issues without failing
+  // - true: require minItems/maxItems/items to reflect prefixItems exactly
+  // strictTuples: false,
+
+  // Other strict options (defaults shown)
+  // Most strict flags also accept 'log' to report without failing
+  strict: true,            // boolean | 'log'
+  validateFormats: true,
+  strictTypes: true,       // boolean | 'log'
+  strictNumbers: true,     // boolean | 'log'
+  strictRequired: false,   // boolean | 'log'
+  strictSchema: true,      // boolean | 'log'
+  allowUnionTypes: false,  // allow TS-like "string|number" (non-standard)
+  removeAdditional: false,
+  useDefaults: false,
+  coerceTypes: false,
+});
+
+// Validate a batch (used internally by the generation pipeline)
+const result = validator.validate([{ id: '...' }], schemaObject);
+if (result.isErr()) {
+  console.error(result.error);
+}
+```
+
+When to override
+- `draft`: force a draft in CI or when ingesting third‑party schemas with ambiguous/missing `$schema`.
+- `strictTuples`: set to `'log'` in CI to surface tuple modeling issues early, or `true` to enforce explicit tuple constraints.
+- `strictSchema`: set to `'log'` if clients use unknown keywords or mixed drafts; keep `true` for owned schemas.
+- `strictRequired`: set to `'log'` if `required` sometimes omet properties; keep `true` for strict schema hygiene.
+
 **SaaS User Management**
 ```bash
 # Generate test users for your SaaS dashboard
@@ -200,6 +253,72 @@ foundrydata generate --schema examples/api-transaction-schema.json --rows 2000
 
 # Includes realistic amounts, currencies, and status distributions
 ```
+
+### 🔗 Resolve (CLI)
+
+If your schema uses external `$ref` (pointing to other documents), you can ask the CLI to resolve them (bundle) before generation. In‑document `$ref` are already handled by the core; this flag is only needed for external references.
+
+```bash
+# Resolve external refs, then generate 100 items with a deterministic seed
+foundrydata generate \
+  --schema path/to/schema.json \
+  --resolve-externals \
+  --rows 100 \
+  --seed 424242
+
+# Note: Validation still runs against your original schema
+# (including refs). Resolution is used for planning/generation.
+```
+
+Best practice
+- Provide an explicit `$schema` and `$id` in your documents
+- Prefer `$defs` (2020‑12) to share local definitions
+- Use `prefixItems` + `unevaluatedItems: false` and `unevaluatedProperties: false` when targeting 2020‑12
+
+### ⚙️ Compat Mode (CLI)
+
+If your schema uses features not yet supported for planning (e.g., `allOf/anyOf/oneOf`, conditional keywords), you can run in a lax compatibility mode. In `lax` mode the generator proceeds to Plan/Generate and relies on the bounded, deterministic repair loop plus AJV to enforce 100% compliance. In `strict` (default), unsupported features fail fast during Parse.
+
+```bash
+foundrydata generate \
+  --schema path/to/schema.json \
+  --rows 100 \
+  --seed 424242 \
+  --compat lax
+```
+
+Notes
+- Validation still runs against your original schema; outputs are guaranteed to be 100% compliant.
+- `--compat lax` is best-effort: a summary of unsupported features is recorded in the internal plan.
+ - In CLI, `--compat lax` also logs detected unsupported features to stderr (e.g., `[foundrydata] compat=lax unsupported: ["anyOf","contains"]`).
+
+### 📊 Metrics (CLI)
+
+Ask the CLI to print a structured metrics JSON (to stderr) alongside the generated items (on stdout):
+
+```bash
+foundrydata generate \
+  --schema examples/quick-test-schema.json \
+  --rows 100 \
+  --seed 424242 \
+  --print-metrics
+
+# stderr (example):
+# [foundrydata] metrics: {
+#   "durations": { "parseMs": 3, "resolveMs": 1, "planMs": 0, "generateMs": 7, "validateMs": 2, "totalMs": 13 },
+#   "itemsGenerated": 100,
+#   "formatsUsed": ["uuid","email","date","date-time"],
+#   "validatorCacheHitRate": 0.95,
+#   "compiledSchemas": 1,
+#   "memory": { "rss": 12345678, "heapUsed": 987654 },
+#   "itemsRepaired": 2,
+#   "repairAttemptsUsed": 2
+# }
+```
+
+Notes
+- Metrics go to stderr to keep stdout a clean JSON stream of items.
+- `itemsRepaired`/`repairAttemptsUsed` summarize the bounded, deterministic repair loop used to ensure 100% compliance.
 
 ### Basic Usage
 
