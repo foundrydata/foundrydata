@@ -1,0 +1,37 @@
+# Task ID: 26
+# Title: Create Generator Compliance Integration Tests
+# Status: done
+# Dependencies: 16, 15, 4
+# Priority: high
+# Description: Implement comprehensive integration tests that verify all generators produce 100% AJV-compliant data across all supported JSON Schema drafts.
+# Details:
+INTEGRATION TEST ARCHITECTURE:
+- Create test/__tests__/integration/generator-compliance/ directory structure
+- Implement end-to-end generator → AJV validation pipeline tests
+- Test all generator types (string, number, integer, boolean, array, object, enum) against AJV oracle
+- Cross-draft compliance testing: draft-07, 2019-09, 2020-12
+
+COMPLIANCE VERIFICATION:
+- Use getAjv() singleton with WeakMap caching for compiled validators
+- Implement 100% compliance invariant: expect(compliance).toBe(100) never >95%
+- Test constraint coherence: required ⊆ properties, enum/const respect bounds
+- FormatRegistry-AJV adapter integration for format validation
+
+SCENARIO COVERAGE:
+- Normal generation scenarios with realistic constraints
+- Edge cases: min/max bounds, empty arrays, boundary conditions
+- Stress testing: maximum array lengths, complex nested structures
+- Error conditions: contradictory constraints, invalid combinations
+
+PERFORMANCE INTEGRATION:
+- Percentile-based benchmarks: p95 < 200ms for 1000 records
+- Memory monitoring during bulk generation and validation
+- Cache effectiveness metrics for validator compilation
+
+DRAFT-SPECIFIC TESTING:
+- exclusiveMinimum boolean vs number semantics
+- Format validation behavior differences across drafts
+- Keyword support variations (const in draft-07 vs 2019-09+)
+
+# Test Strategy:
+Use custom matchers (toMatchJsonSchema, toBeDistinct, toHaveCompliance) for validation. Implement deterministic testing with fixed seed 424242 for reproducible results. Test with business scenario arbitraries for realistic load patterns. Verify memory leak detection and cache performance. Apply percentile-based performance targets (p95 < 200ms). Test cross-draft compatibility with FormatRegistry-AJV adapter. Validate 100% compliance invariant across all generator types and constraint combinations.

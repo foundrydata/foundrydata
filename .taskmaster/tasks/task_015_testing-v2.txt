@@ -1,0 +1,78 @@
+# Task ID: 15
+# Title: Create Generator Test Adapter Layer
+# Status: done
+# Dependencies: 6
+# Priority: high
+# Description: Phase 3 - Bridge between existing Result pattern and new test expectations with Testing Architecture v2.1 integration
+# Details:
+- Create test/helpers/format-adapter.ts following Adapter Pattern from ADR docs/tests/format-registry-ajv-integration-decision.md
+- Implement adapter between FormatRegistry and AJV validation as specified in ADR
+- Bridge existing Result<T,E> pattern with new test expectations
+- Integrate createBounds() from '../arbitraries/json-schema.js' for constraint coherence
+- Create unified API consistency bridge for array vs {data: array} handling
+- Implement custom matchers integration layer (toMatchJsonSchema, toBeDistinct, toBeGeneratedWithSeed)
+- Handle multi-draft format compatibility with assertive vs annotative behavior
+- Ensure deterministic seed 424242 propagation through adapter layers
+- Convert Result.ok/error to proper ValidationError types
+- Maintain backward compatibility with existing tests
+- Leverage WeakMap caching from getAjv() for performance
+- Add <10% performance overhead requirement for adapters
+
+# Test Strategy:
+Follow test strategy defined in format-registry-ajv-integration-decision.md ADR with Testing Architecture v2.1 patterns including deterministic seed testing, multi-draft validation, and custom matcher integration
+
+# Subtasks:
+## 1. Implement createBounds() Helper Integration [done]
+### Dependencies: None
+### Description: Integrate createBounds() helper from arbitraries for constraint coherence
+### Details:
+- Import createBounds() from '../arbitraries/json-schema.js'
+- Bridge Result<T,E> pattern with createBounds() generated bounds
+- Ensure adapter handles bounds properly for numeric types and array/string lengths
+- Add type safety for bounds validation
+
+## 2. Create Custom Matchers Integration Layer [done]
+### Dependencies: None
+### Description: Bridge existing Result pattern with custom matchers
+### Details:
+- Bridge between existing Result pattern and custom matchers (toMatchJsonSchema, toBeDistinct)
+- Create adapter for API consistency: convert array vs {data: array} seamlessly
+- Integrate toBeGeneratedWithSeed() matcher for deterministic validation
+- Ensure type-safe matcher integration
+
+## 3. Implement FormatRegistry-AJV Adapter Architecture [done]
+### Dependencies: None
+### Description: Create adapter following ADR specification for format handling
+### Details:
+- Implement adapter following ADR docs/tests/format-registry-ajv-integration-decision.md
+- Bridge FormatRegistry calls to AJV format validation
+- Handle format policy v2.2: assertive vs annotative format behavior conversion
+- Create adapter layer for multi-draft format compatibility
+
+## 4. Create Result Pattern Bridge [done]
+### Dependencies: None
+### Description: Convert Result pattern to Testing Architecture v2.1 expectations
+### Details:
+- Convert Result.ok/error to ValidationError proper types
+- Bridge GeneratorContext to include seed and draft information
+- Create adapter for async generation with Promise<Result<T[],E>>
+- Ensure backward compatibility with existing tests using Result pattern
+
+## 5. Implement Testing Architecture v2.1 Adapter Patterns [done]
+### Dependencies: None
+### Description: Integrate core Testing Architecture v2.1 patterns
+### Details:
+- Ensure seed propagation: adapters pass through deterministic seed 424242
+- Implement error conversion: proper mapping between Result errors and AJV validation errors
+- Add draft context: adapter must know current JSON Schema draft for proper validation
+- Integrate cache: adapters should leverage WeakMap caching from getAjv()
+
+## 6. Create API Consistency Bridge [done]
+### Dependencies: None
+### Description: Unified handling of different API patterns
+### Details:
+- Create unified array return vs {data: array} handling via adapter pattern
+- Ensure type safety: adapter maintains TypeScript type consistency
+- Performance requirement: adapters shouldn't add >10% overhead to core operations
+- Memory safety: adapters should not introduce memory leaks with cached references
+

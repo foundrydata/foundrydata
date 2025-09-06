@@ -1,6 +1,6 @@
 # Task ID: 5
 # Title: Create JSON Schema Arbitraries
-# Status: pending
+# Status: done
 # Dependencies: 3
 # Priority: medium
 # Description: Phase 1 - Build fast-check arbitraries for JSON Schema generation without contradictions

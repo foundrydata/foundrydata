@@ -1,0 +1,81 @@
+# Task ID: 20
+# Title: Migrate String Generator Tests
+# Status: done
+# Dependencies: 15
+# Priority: high
+# Description: Phase 3 - Migrate string generator tests with comprehensive constraint testing using testing architecture v2.1 patterns
+# Details:
+- Open packages/core/src/generator/types/__tests__/string-generator.test.ts
+- Keep existing test structure and patterns
+- Integrate createBounds() helper from '../arbitraries/json-schema.js' for minLength/maxLength constraint coherence
+- Replace manual arbitraries with getSchemaArbitrary().filter() patterns
+- Implement custom matchers: toMatchJsonSchema (AJV compliance), toBeValidEmail, toBeValidUUID
+- Use FormatRegistry-AJV adapter per ADR docs/tests/format-registry-ajv-integration-decision.md
+- Handle formats policy v2.2: assertive formats (email, uuid) vs annotative formats (json-pointer)
+- Use getAjv() singleton with WeakMap cached validators
+- Implement deterministic testing with fixed seed 424242 (never Date.now())
+- Add multi-draft testing support: draft-07, 2019-09, 2020-12
+- Test performance with percentiles p95 < 0.5ms/item (not averages)
+- Add seed + schema logging on test failures for reproduction
+- Validate pattern + minLength/maxLength coherence with createBounds().chain()
+- Test enum/const values respect all constraints (length, pattern, format)
+- Implement cross-format validation with all draft-supported formats
+
+# Test Strategy:
+Use AJV oracle validation with FormatRegistry-AJV adapter for format testing. Implement createBounds() helper for consistent constraint handling. Use custom matchers (toMatchJsonSchema, toBeValidEmail, toBeValidUUID) for compliance verification. Test with deterministic seed 424242 and percentile-based performance metrics (p95 targets). Reference format policy v2.2 for assertive vs annotative format behavior across JSON Schema drafts.
+
+# Subtasks:
+## 1. Integrate createBounds() helper and custom matchers [done]
+### Dependencies: None
+### Description: Replace manual constraint calculations with createBounds() patterns and integrate custom Vitest matchers
+### Details:
+- Import createBounds() from '../arbitraries/json-schema.js'
+- Replace manual minLength/maxLength calculations with createBounds(0, 1000).chain() patterns
+- Import and configure custom matchers: toMatchJsonSchema, toBeValidEmail, toBeValidUUID
+- Update constraint validation tests to use coherent bounds generation
+
+## 2. Implement FormatRegistry-AJV adapter integration [done]
+### Dependencies: None
+### Description: Integrate format validation using FormatRegistry-AJV adapter per ADR specifications
+### Details:
+- Reference ADR docs/tests/format-registry-ajv-integration-decision.md
+- Implement adapter for assertive formats (email, uuid) vs annotative formats (json-pointer)
+- Use getAjv() singleton with WeakMap cached validators
+- Test format behavior compliance across different JSON Schema drafts
+
+## 3. Implement deterministic testing with fixed seed [done]
+### Dependencies: None
+### Description: Replace any random seed usage with deterministic seed 424242 and add failure logging
+### Details:
+- Set fixed seed 424242 for all fast-check operations
+- Remove any Date.now() or random seed usage
+- Add seed + schema logging on test failures for reproduction
+- Ensure tests are completely deterministic across runs
+
+## 4. Add multi-draft testing support [done]
+### Dependencies: None
+### Description: Implement testing across draft-07, 2019-09, and 2020-12 using getSchemaArbitrary()
+### Details:
+- Use getSchemaArbitrary() with draft-specific schema generation
+- Test string generation behavior across all supported JSON Schema drafts
+- Verify format validation differences between drafts
+- Ensure consistent behavior where standards overlap
+
+## 5. Implement percentile-based performance testing [done]
+### Dependencies: None
+### Description: Replace average-based performance metrics with percentile targets (p95 < 0.5ms/item)
+### Details:
+- Remove any average-based performance calculations
+- Implement p95 percentile measurement for string generation
+- Set target: p95 < 0.5ms/item for string generation
+- Add performance regression detection
+
+## 6. Add comprehensive constraint coherence testing [done]
+### Dependencies: None
+### Description: Test pattern + minLength/maxLength coherence and enum/const constraint compliance
+### Details:
+- Test pattern validation with minLength/maxLength using createBounds()
+- Verify enum/const values respect all constraints (length, pattern, format)
+- Add cross-format validation tests with all supported formats per draft
+- Test constraint boundary conditions and edge cases
+

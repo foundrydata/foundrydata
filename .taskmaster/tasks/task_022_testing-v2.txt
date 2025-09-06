@@ -1,0 +1,27 @@
+# Task ID: 22
+# Title: Migrate Complex Type Generator Tests
+# Status: done
+# Dependencies: 15
+# Priority: high
+# Description: Phase 3 - Migrate enum, array, and object generator tests with draft-specific handling and testing architecture v2.1 patterns
+# Details:
+- Migrate enum-generator.test.ts, array-generator.test.ts, object-generator.test.ts
+- Integrate createBounds() helper from '../arbitraries/json-schema.js' for minItems/maxItems, minProperties/maxProperties
+- Handle constraint coherence: required ⊆ properties via shuffledSubarray(Object.keys(properties))
+- Avoid contradictions in arbitraries: enum/const values respect all constraints
+- Implement custom matchers: toMatchJsonSchema (AJV compliance), toBeDistinct (deep comparison for uniqueItems)
+- Use getAjv() singleton with WeakMap cached validators for performance
+- Handle draft-specific differences:
+  * items vs prefixItems for tuples: draft-07 items array vs 2019-09+ prefixItems
+  * unevaluatedItems/Properties handling for 2019-09/2020-12 (absent in draft-07)
+  * dependencies keyword (draft-07) vs dependentRequired/dependentSchemas (newer drafts)
+- Performance benchmarks percentiles p95 < 2ms for complex objects
+- Deterministic tests with seed 424242, logging seed+schema on failures
+- Nested schema validation recursive with AJV oracle
+- Memory leak detection for complex nested structures
+- WeakMap caching for compiled validators on nested schemas
+- Format validation via FormatRegistry-AJV adapter for formats in properties
+- Test boundary conditions: empty objects, maxProperties reached, circular refs handling
+
+# Test Strategy:
+Use testing architecture v2.1 patterns: AJV oracle validation with FormatRegistry-AJV adapter, createBounds() helper for constraint coherence, custom matchers (toMatchJsonSchema, toBeDistinct), deterministic seed 424242, percentile-based performance benchmarks (p95 < 2ms), WeakMap cached validators, memory leak detection for nested structures.

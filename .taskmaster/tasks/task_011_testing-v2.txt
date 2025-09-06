@@ -1,0 +1,11 @@
+# Task ID: 11
+# Title: Create Business Scenario Arbitraries
+# Status: done
+# Dependencies: 3
+# Priority: medium
+# Description: Phase 1 - Build arbitraries for business testing scenarios
+# Details:
+- Create test/arbitraries/business.ts\n- Implement businessScenarioArbitrary with scenario types ('normal', 'edge', 'peak', 'error')\n- Configure load parameters: users, requestsPerSecond, duration, rampUp, rampDown\n- Set distribution ratios where normal + edge + error = 1\n- Add errorConfig with rate, types, retryable, maxRetries\n- Include edgeCases boolean flags and seed for determinism\n- Add metadata: name, description, tags, version\n- Create validation tests for distribution sum and seed generation
+
+# Test Strategy:
+

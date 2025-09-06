@@ -1,0 +1,62 @@
+# Task ID: 25
+# Title: Handle JSON Schema References and Circular Dependencies
+# Status: done
+# Dependencies: 3, 4, 5
+# Priority: high
+# Description: Implement detection and handling of $ref, $recursiveRef, $dynamicRef with proper cycle detection algorithms. Create reference resolution engine and circular dependency breaking strategies.
+# Details:
+- Create packages/core/parser/reference-resolver.ts with comprehensive reference handling
+- Implement ReferenceResolver class with support for:
+  * $ref resolution with URI fragment handling (#/definitions/User)
+  * $recursiveRef resolution for recursive schemas (draft 2019-09)
+  * $dynamicRef/$dynamicAnchor resolution (draft 2020-12)
+  * External reference loading with URI resolution
+- Implement cycle detection using Set-based tracking of reference paths
+- Create CircularDependencyDetector with algorithms:
+  * Depth-first traversal with visited node tracking
+  * Stack-based cycle detection for immediate loops
+  * Global reference graph analysis for complex cycles
+- Implement breaking strategies:
+  * Lazy resolution with reference placeholders
+  * Maximum depth limiting (default: 10 levels)
+  * Reference cache with WeakMap for performance
+- Add support for JSON Pointer resolution (RFC 6901)
+- Handle base URI resolution and relative references
+- Integrate with existing Schema union types
+- Add comprehensive error handling with descriptive messages
+- Create reference resolution context with scope tracking
+
+# Test Strategy:
+Create comprehensive test suite with reference scenarios: simple $ref to definitions, nested references, circular self-references, mutual circular references, external file references (mocked), invalid reference handling. Test cycle detection with various loop patterns: direct self-reference, two-node cycles, complex multi-node cycles, deeply nested references. Validate reference resolution across all JSON Schema drafts with draft-specific features. Use property-based testing for reference path generation and resolution. Test performance with large reference graphs and ensure O(n) complexity. Include edge cases: malformed references, missing targets, infinite recursion prevention. Verify integration with existing AJV factory and custom matchers.
+
+# Subtasks:
+## 1. Implement basic $ref resolution [done]
+### Dependencies: None
+### Description: Create ReferenceResolver.resolveRef() with JSON Pointer support
+### Details:
+Implement basic ReferenceResolver.resolveRef() method with JSON Pointer support (RFC 6901) for URI fragments like #/definitions/User
+
+## 2. Add cycle detection algorithms [done]
+### Dependencies: None
+### Description: Implement DFS and stack-based cycle detection for circular references
+### Details:
+Create CircularDependencyDetector with depth-first traversal, visited node tracking, and stack-based detection for immediate loops
+
+## 3. Support advanced references ($recursiveRef/$dynamicRef) [done]
+### Dependencies: None
+### Description: Implement $recursiveRef and $dynamicRef for JSON Schema drafts 2019-09+
+### Details:
+Add support for $recursiveRef (draft 2019-09) and $dynamicRef/$dynamicAnchor (draft 2020-12) with proper scope tracking
+
+## 4. Implement lazy resolution and depth limiting [done]
+### Dependencies: None
+### Description: Add lazy resolution with reference placeholders and maximum depth limiting
+### Details:
+Implement lazy resolution strategy with reference placeholders, maximum depth limiting (default: 10 levels), and reference cache management
+
+## 5. Add WeakMap caching and performance optimization [done]
+### Dependencies: None
+### Description: Implement reference cache with WeakMap for performance and memory management
+### Details:
+Create WeakMap-based reference cache, performance optimization for reference resolution, and memory management for large schema graphs
+

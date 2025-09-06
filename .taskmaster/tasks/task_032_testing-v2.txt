@@ -1,0 +1,31 @@
+# Task ID: 32
+# Title: Measure AJV Cache Effectiveness (master:28)
+# Status: pending
+# Dependencies: 3
+# Priority: medium
+# Description: Testing v2 - Measure and gate cache hit rate improvements from stable cache key strategy implemented in master task 28.
+# Details:
+ACCEPTANCE: (1) Semantically identical schemas (reordered keys) use the same compiled validator; (2) Cache hit rate improves vs baseline; (3) Compile count reduced under repeated validation workloads. REPORT: include hit/miss deltas and timing percentiles.
+
+# Test Strategy:
+Create reordered-schema fixtures and validate equality of cache key behavior; run micro-bench compile vs cached validate; record metrics and assert thresholds; integrate with performance baseline/regression suite.
+
+# Subtasks:
+## 1. Reordered schemas fixtures [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. Cache metrics capture [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3. Threshold assertions & report [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
