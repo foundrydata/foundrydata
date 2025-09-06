@@ -48,6 +48,12 @@ Implementation of comprehensive error system with clear user-facing messages for
 
 ### Phase 2: Error Hierarchy with Stable Codes
 
+Update (2025-09-06): Implemented with backward compatibility
+- FoundryError now supports both the new params constructor and a legacy signature to enable progressive migration.
+- Legacy `code: string` remains temporarily for compatibility; `errorCode: ErrorCode` is authoritative.
+- Added `toJSON(env)` with production PII redaction, `toUserError()`, and `getExitCode()`.
+- ErrorReporter remains in place until Phase 5 and now falls back to `error.message` and `error.suggestions` when subclass helpers are absent.
+
 #### Error Code Registry (`packages/core/src/errors/codes.ts`)
 ```typescript
 export enum ErrorCode {
@@ -145,6 +151,8 @@ class FoundryError extends Error {
     context?: ErrorContext;
     cause?: Error;
   });
+  // Legacy overload kept during migration
+  constructor(message: string, code: string, context?: Record<string, any>);
   
   // Remove these methods (moved to presenter):
   // ❌ getUserMessage()
@@ -164,11 +172,12 @@ class SchemaError extends FoundryError {
     context: ErrorContext & {
       schemaPath: string;   // REQUIRED: Schema location (not path!)
       ref?: string;         // Optional: External reference URI
-      // path is NOT used here - reserved for ValidationError
     };
     severity?: Severity;
     cause?: Error;
   });
+  // Legacy overload for incremental migration
+  constructor(message: string, path: string, suggestion?: string, context?: Record<string, any>);
 }
 
 // GenerationError refactor  
@@ -183,6 +192,8 @@ class GenerationError extends FoundryError {
     severity?: Severity;
     cause?: Error;
   });
+  // Legacy overload for incremental migration
+  constructor(message: string, suggestion?: string, field?: string, constraint?: string, context?: Record<string, any>);
 }
 
 // ValidationError refactor
@@ -195,6 +206,8 @@ class ValidationError extends FoundryError {
     severity?: Severity;
     cause?: Error;
   });
+  // Legacy overload for incremental migration
+  constructor(message: string, failures: ValidationFailure[], context?: Record<string, any>);
 }
 
 // ConfigError refactor
@@ -208,6 +221,8 @@ class ConfigError extends FoundryError {
     severity?: Severity;
     cause?: Error;
   });
+  // Legacy overload for incremental migration
+  constructor(message: string, setting?: string, context?: Record<string, any>);
 }
 
 // ParseError refactor
@@ -222,6 +237,8 @@ class ParseError extends FoundryError {
     severity?: Severity;
     cause?: Error;
   });
+  // Legacy overload for incremental migration
+  constructor(message: string, input?: string, position?: number, context?: Record<string, any>);
 }
 
 ### Phase 3: Error Presenter (Separation of Concerns)
@@ -292,6 +309,8 @@ class ErrorPresenter {
 - **CLI-friendly** - respects NO_COLOR, FORCE_COLOR, terminal width
 - **Security-first** - automatic PII redaction
 - **Testable** - returns objects, not formatted strings
+
+Note (2025-09-06): ErrorReporter remains until this phase ships. It now falls back to `error.message` and `error.suggestions` if subclass helpers are not present, supporting removal of `getUserMessage/getSuggestions` from domain errors.
 
 ### Phase 4: Example Integration with Localization
 
@@ -718,17 +737,19 @@ describe('CLI Formatting', () => {
 - [x] Laisser les mappings bruts via sous-chemin `@foundrydata/core/errors/codes`
 
 ### Étape 2: Refondre la base d'erreurs (45 min)
-- [ ] Refactorer FoundryError avec nouveau constructeur params
-- [ ] Ajouter errorCode, severity, context typé, cause
-- [ ] Implémenter toJSON(env), getExitCode()
-- [ ] Supprimer getUserMessage() et getSuggestions()
+- [x] Refactorer FoundryError avec nouveau constructeur params
+- [x] Ajouter errorCode, severity, context typé, cause
+- [x] Implémenter toJSON(env), getExitCode()
+- [x] Supprimer getUserMessage() et getSuggestions()
+- [x] Conserver une surcharge legacy (message, code, context?) pour migration progressive
 
 ### Étape 3: Mettre à jour les sous-classes (45 min)
-- [ ] SchemaError: nouveau constructeur avec context.schemaPath REQUIS (pas path!)
-- [ ] GenerationError: nouveau constructeur avec field/constraint
-- [ ] ValidationError: garder failures, utiliser path pour instancePath
-- [ ] ConfigError: ajouter setting dans context
-- [ ] ParseError: ajouter input/position dans context
+- [x] SchemaError: nouveau constructeur avec context.schemaPath REQUIS (pas path!)
+- [x] GenerationError: nouveau constructeur avec field/constraint
+- [x] ValidationError: garder failures, utiliser path pour instancePath
+- [x] ConfigError: ajouter setting dans context
+- [x] ParseError: ajouter input/position dans context
+- [x] Ajouter des surcharges legacy pour migration progressive et getters de compat (path, field, constraint, setting, input/position, suggestion)
 
 ### Étape 4: Mettre à jour les points d'émission (30 min)
 - [ ] parser/reference-resolver.ts: utiliser schemaPath (pas path!) et ref
@@ -807,6 +828,7 @@ throw new SchemaError({
 - Option A: Supprimer et remplacer par ErrorPresenter
 - Option B: Adapter comme proxy vers ErrorPresenter
 - **Condition finale**: Zéro import ErrorReporter en production (vérifier avec ripgrep)
+- Note transitoire (2025-09-06): ErrorReporter reste pour l’instant avec fallbacks (`message`, `suggestions`). Les tests qui vérifient les suggestions doivent enrichir `error.suggestions` le cas échéant.
 
 ## 🎯 MVP Priorities (v0.1)
 

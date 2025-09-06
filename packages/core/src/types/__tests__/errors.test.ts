@@ -91,108 +91,45 @@ describe('Error Hierarchy', () => {
   });
 
   describe('SchemaError', () => {
-    it('should create schema error with path', () => {
-      const error = new SchemaError(
-        'Invalid schema',
-        '/properties/name',
-        'Use string type'
-      );
+    it('creates schema error with required schemaPath and default code', () => {
+      const error = new SchemaError({
+        message: 'Invalid schema',
+        context: { schemaPath: '#/properties/name' },
+      });
 
       expect(error.message).toBe('Invalid schema');
-      expect(error.code).toBe('SCHEMA_ERROR');
-      expect(error.path).toBe('/properties/name');
-      expect(error.suggestion).toBe('Use string type');
+      expect(error.errorCode).toBe(ErrorCode.INVALID_SCHEMA_STRUCTURE);
+      expect(error.context?.schemaPath).toBe('#/properties/name');
     });
 
-    it('should provide user-friendly message', () => {
-      const error = new SchemaError('Type mismatch', '/properties/age');
-      const userMessage = error.getUserMessage();
-
-      expect(userMessage).toBe(
-        'Schema error at "/properties/age": Type mismatch'
-      );
-    });
-
-    it('should provide relevant suggestions', () => {
-      const error = new SchemaError(
-        'Invalid format',
-        '/properties/email',
-        'Use email format'
-      );
-      const suggestions = error.getSuggestions();
-
-      expect(suggestions).toContain('Use email format');
-      expect(suggestions).toContain(
-        'Check the JSON Schema specification for valid syntax'
-      );
-      expect(suggestions).toContain(
-        'Validate your schema using a JSON Schema validator'
-      );
-    });
-
-    it('should include context in serialization', () => {
-      const error = new SchemaError(
-        'Test error',
-        '/test/path',
-        'Test suggestion',
-        { extra: 'data' }
-      );
+    it('includes optional ref and serializes context', () => {
+      const error = new SchemaError({
+        message: 'Ref missing',
+        context: { schemaPath: '#/defs/Address', ref: 'file://schema.json' },
+      });
       const json = error.toJSON('dev');
-
-      expect(json.context!.path).toBe('/test/path');
-      expect((json.context as any)!.suggestion).toBe('Test suggestion');
-      expect((json.context as any)!.extra).toBe('data');
+      expect(json.context!.schemaPath).toBe('#/defs/Address');
+      expect((json.context as any)!.ref).toBe('file://schema.json');
     });
   });
 
   describe('GenerationError', () => {
-    it('should create generation error with field and constraint', () => {
-      const error = new GenerationError(
-        'Cannot generate value',
-        undefined, // suggestion
-        'email', // field
-        'pattern' // constraint
-      );
+    it('creates generation error with context and default code', () => {
+      const error = new GenerationError({
+        message: 'Cannot generate value',
+        context: { field: 'email', constraint: 'pattern' },
+      });
 
       expect(error.message).toBe('Cannot generate value');
-      expect(error.code).toBe('GENERATION_ERROR');
-      expect(error.field).toBe('email');
-      expect(error.constraint).toBe('pattern');
+      expect(error.errorCode).toBe(ErrorCode.CONSTRAINT_VIOLATION);
+      expect(error.context?.field).toBe('email');
+      expect(error.context?.constraint).toBe('pattern');
     });
 
-    it('should provide detailed user message', () => {
-      const error = new GenerationError(
-        'Value too large',
-        undefined,
-        'age',
-        'maximum'
-      );
-      const userMessage = error.getUserMessage();
-
-      expect(userMessage).toBe(
-        'Generation failed for field "age": Value too large (constraint: maximum)'
-      );
-    });
-
-    it('should provide constraint-specific suggestions', () => {
-      const minLengthError = new GenerationError(
-        'Length conflict',
-        undefined, // suggestion
-        'name', // field
-        'minLength' // constraint
-      );
-      const suggestions = minLengthError.getSuggestions();
-
-      expect(suggestions).toContain(
-        'Check that minLength <= maxLength for string constraints'
-      );
-    });
-
-    it('should handle missing field and constraint', () => {
-      const error = new GenerationError('General error');
-      const userMessage = error.getUserMessage();
-
-      expect(userMessage).toBe('Generation failed: General error');
+    it('handles missing field and constraint gracefully', () => {
+      const error = new GenerationError({ message: 'General error' });
+      expect(error.message).toBe('General error');
+      expect(error.errorCode).toBe(ErrorCode.CONSTRAINT_VIOLATION);
     });
   });
 
@@ -212,106 +149,52 @@ describe('Error Hierarchy', () => {
       },
     ];
 
-    it('should create validation error with failures', () => {
-      const error = new ValidationError('Validation failed', mockFailures);
+    it('creates validation error with failures and default code', () => {
+      const error = new ValidationError({
+        message: 'Validation failed',
+        failures: mockFailures,
+      });
 
       expect(error.message).toBe('Validation failed');
-      expect(error.code).toBe('VALIDATION_ERROR');
+      expect(error.errorCode).toBe(ErrorCode.COMPLIANCE_VALIDATION_FAILED);
       expect(error.failures).toEqual(mockFailures);
     });
 
-    it('should provide user message with failure count', () => {
-      const error = new ValidationError('Multiple errors', mockFailures);
-      const userMessage = error.getUserMessage();
-
-      expect(userMessage).toBe(
-        'Validation failed with 2 failures: Multiple errors'
-      );
-    });
-
-    it('should provide keyword-specific suggestions', () => {
-      const error = new ValidationError('Validation failed', mockFailures);
-      const suggestions = error.getSuggestions();
-
-      expect(suggestions).toContain(
-        'Ensure all required fields are present in the generated data'
-      );
-      expect(suggestions).toContain(
-        'Check that generated values match the expected types'
-      );
-    });
-
-    it('should handle single failure', () => {
+    it('handles single failure and carries failureCount in context', () => {
       const singleFailure: ValidationFailure[] = [mockFailures[0]!];
-      const error = new ValidationError('Single error', singleFailure);
-      const userMessage = error.getUserMessage();
-
-      expect(userMessage).toBe(
-        'Validation failed with 1 failure: Single error'
-      );
+      const error = new ValidationError({
+        message: 'Single error',
+        failures: singleFailure,
+      });
+      const json = error.toJSON('dev');
+      expect((json.context as any).failureCount).toBe(1);
     });
   });
 
   describe('ConfigError', () => {
-    it('should create config error with setting', () => {
-      const error = new ConfigError('Invalid setting', 'maxRows');
+    it('creates config error with optional setting and default code', () => {
+      const error = new ConfigError({
+        message: 'Invalid setting',
+        context: { setting: 'maxRows' },
+      });
 
       expect(error.message).toBe('Invalid setting');
-      expect(error.code).toBe('CONFIG_ERROR');
-      expect(error.setting).toBe('maxRows');
-    });
-
-    it('should provide user message with setting', () => {
-      const error = new ConfigError('Value out of range', 'timeout');
-      const userMessage = error.getUserMessage();
-
-      expect(userMessage).toBe(
-        'Configuration error (setting: timeout): Value out of range'
-      );
-    });
-
-    it('should provide generic suggestions', () => {
-      const error = new ConfigError('Invalid config');
-      const suggestions = error.getSuggestions();
-
-      expect(suggestions).toContain('Check your configuration file syntax');
-      expect(suggestions).toContain(
-        'Verify all required settings are provided'
-      );
-      expect(suggestions).toContain(
-        'Consult the documentation for valid configuration options'
-      );
+      expect(error.errorCode).toBe(ErrorCode.CONFIGURATION_ERROR);
+      expect(error.context?.setting).toBe('maxRows');
     });
   });
 
   describe('ParseError', () => {
-    it('should create parse error with input and position', () => {
-      const error = new ParseError('Unexpected token', '{"invalid": }', 12);
+    it('creates parse error with input and position in context and default code', () => {
+      const error = new ParseError({
+        message: 'Unexpected token',
+        context: { input: '{"invalid": }', position: 12 },
+      });
 
       expect(error.message).toBe('Unexpected token');
-      expect(error.code).toBe('PARSE_ERROR');
-      expect(error.input).toBe('{"invalid": }');
-      expect(error.position).toBe(12);
-    });
-
-    it('should provide user message with position', () => {
-      const error = new ParseError('Missing comma', undefined, 25);
-      const userMessage = error.getUserMessage();
-
-      expect(userMessage).toBe('Parse error at position 25: Missing comma');
-    });
-
-    it('should provide parsing suggestions', () => {
-      const error = new ParseError('Invalid JSON');
-      const suggestions = error.getSuggestions();
-
-      expect(suggestions).toContain('Validate your JSON syntax');
-      expect(suggestions).toContain(
-        'Check for missing commas, brackets, or quotes'
-      );
-      expect(suggestions).toContain(
-        'Use a JSON formatter to identify syntax issues'
-      );
+      expect(error.errorCode).toBe(ErrorCode.PARSE_ERROR);
+      expect(error.context?.input).toBe('{"invalid": }');
+      expect(error.context?.position).toBe(12);
     });
   });
 
@@ -375,41 +258,37 @@ describe('Error Hierarchy', () => {
     });
 
     describe('formatError', () => {
-      it('should format SchemaError with emoji and suggestions', () => {
-        const error = new SchemaError(
-          'Invalid type',
-          '/properties/name',
-          'Use string type'
-        );
+      it('formats SchemaError with emoji and message (suggestions optional)', () => {
+        const error = new SchemaError({
+          message: 'Invalid type',
+          context: { schemaPath: '#/properties/name' },
+        });
+        // Attach suggestions explicitly to simulate enrichment
+        error.suggestions = ['Use string type'];
         const formatted = reporter.formatError(error);
 
         expect(formatted).toContain('📋');
-        expect(formatted).toContain(
-          'Schema error at "/properties/name": Invalid type'
-        );
+        expect(formatted).toContain('Invalid type');
         expect(formatted).toContain('💡 Suggestions:');
         expect(formatted).toContain('• Use string type');
       });
 
-      it('should format GenerationError with context', () => {
-        const error = new GenerationError(
-          'Cannot generate',
-          undefined, // suggestion
-          'email', // field
-          'pattern', // constraint
-          { regex: '/test/' }
-        );
+      it('formats GenerationError with context displayed', () => {
+        const error = new GenerationError({
+          message: 'Cannot generate',
+          context: { field: 'email', constraint: 'pattern', regex: '/test/' },
+        });
         const formatted = reporter.formatError(error);
 
         expect(formatted).toContain('🔧');
-        expect(formatted).toContain(
-          'Generation failed for field "email": Cannot generate (constraint: pattern)'
-        );
+        expect(formatted).toContain('Cannot generate');
         expect(formatted).toContain('Context:');
+        expect(formatted).toContain('field: email');
+        expect(formatted).toContain('constraint: pattern');
         expect(formatted).toContain('regex: /test/');
       });
 
-      it('should format ValidationError with failure details', () => {
+      it('formats ValidationError with failure details', () => {
         const failures: ValidationFailure[] = [
           {
             path: '/name',
@@ -424,11 +303,13 @@ describe('Error Hierarchy', () => {
             schemaPath: '/properties/age/type',
           },
         ];
-        const error = new ValidationError('Multiple failures', failures);
+        const error = new ValidationError({
+          message: 'Multiple failures',
+          failures,
+        });
         const formatted = reporter.formatError(error);
 
         expect(formatted).toContain('✅');
-        expect(formatted).toContain('Validation failed with 2 failures');
         expect(formatted).toContain('📋 Validation Failures:');
         expect(formatted).toContain('• /name: Required');
         expect(formatted).toContain('• /age: Must be number');
@@ -481,12 +362,14 @@ describe('Error Hierarchy', () => {
 
     describe('createSummary', () => {
       it('should create error summary with counts and suggestions', () => {
-        const errors = [
-          new SchemaError('Schema error 1', '/path1'),
-          new SchemaError('Schema error 2', '/path2'),
-          new GenerationError('Generation error', undefined, 'field'),
-          new ValidationError('Validation error', []),
-        ];
+        const e1 = new SchemaError('Schema error 1', '/path1');
+        const e2 = new SchemaError('Schema error 2', '/path2');
+        const e3 = new GenerationError('Generation error', undefined, 'field');
+        const e4 = new ValidationError('Validation error', []);
+        // Provide suggestions via enrichment to align with new contract
+        e1.suggestions = ['Check schema syntax'];
+        e3.suggestions = ['Relax constraint'];
+        const errors = [e1, e2, e3, e4];
 
         const summary = reporter.createSummary(errors);
 
