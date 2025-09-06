@@ -2,7 +2,7 @@ name: Testing v2.1 (Quick)
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [main, master, develop]
     tags:
       - 'v*'
     paths-ignore:
@@ -12,7 +12,7 @@ on:
       - '**/*.svg'
       - '.github/ISSUE_TEMPLATE/**'
   pull_request:
-    branches: [ "**" ]
+    branches: ['**']
     paths-ignore:
       - '**/*.md'
       - 'docs/**'
@@ -26,8 +26,8 @@ concurrency:
 
 env:
   # Global defaults for Testing v2.1 (can be overridden per job)
-  TEST_SEED: "424242"
-  DEBUG: "false"
+  TEST_SEED: '424242'
+  DEBUG: 'false'
 
 jobs:
   guard-no-error-reporter:
@@ -128,9 +128,9 @@ jobs:
         node: [20.x, 22.x]
         draft: [draft-07, 2019-09, 2020-12]
     env:
-      CI: "true"
+      CI: 'true'
       SCHEMA_DRAFT: ${{ matrix.draft }}
-      FC_NUM_RUNS: "100"
+      FC_NUM_RUNS: '100'
       # Test pool configured in vitest config (threads on Windows, forks otherwise)
     steps:
       - name: Checkout

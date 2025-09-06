@@ -5,7 +5,7 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   // Base configuration
   js.configs.recommended,
-  
+
   // Global settings
   {
     name: 'global-config',
@@ -24,18 +24,18 @@ export default tseslint.config(
         clearInterval: 'readonly',
         setImmediate: 'readonly',
         clearImmediate: 'readonly',
-      }
+      },
     },
     rules: {
       // Code Quality - Following architecture specification (lines 1530-1537)
-      'complexity': ['error', 10],
-      'max-lines': ['error', 300], 
+      complexity: ['error', 10],
+      'max-lines': ['error', 300],
       'max-lines-per-function': ['error', 50],
       'max-depth': ['error', 3],
       'max-params': ['error', 4],
       'no-console': ['error', { allow: ['warn', 'error'] }],
       'prefer-const': 'error',
-    }
+    },
   },
 
   // TypeScript files configuration
@@ -46,24 +46,30 @@ export default tseslint.config(
       parser: tseslint.parser,
       parserOptions: {
         ecmaVersion: 2022,
-        sourceType: 'module'
-      }
+        sourceType: 'module',
+      },
     },
     plugins: {
-      '@typescript-eslint': tseslint.plugin
+      '@typescript-eslint': tseslint.plugin,
     },
     rules: {
       // Disable base rules that are covered by TypeScript versions
       'no-unused-vars': 'off',
-      
+
       // TypeScript rules - Following architecture specification
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-      '@typescript-eslint/explicit-function-return-type': ['error', {
-        allowExpressions: true,
-        allowTypedFunctionExpressions: true
-      }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+      '@typescript-eslint/explicit-function-return-type': [
+        'error',
+        {
+          allowExpressions: true,
+          allowTypedFunctionExpressions: true,
+        },
+      ],
       '@typescript-eslint/no-explicit-any': 'error',
-    }
+    },
   },
 
   // Schema types - allow unknown for JSON Schema compliance
@@ -72,9 +78,8 @@ export default tseslint.config(
     files: ['**/types/schema.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
-    }
+    },
   },
-
 
   // Test files - relaxed rules
   {
@@ -90,37 +95,42 @@ export default tseslint.config(
         beforeAll: 'readonly',
         afterAll: 'readonly',
         jest: 'readonly',
-        __dirname: 'readonly',  // Node.js global
-        __filename: 'readonly'  // Node.js global
-      }
+        __dirname: 'readonly', // Node.js global
+        __filename: 'readonly', // Node.js global
+      },
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
       'max-lines-per-function': 'off',
       'max-lines': 'off',
-      'no-console': 'off',  // Allow console in tests for debugging
-    }
+      'no-console': 'off', // Allow console in tests for debugging
+    },
   },
 
   // Test setup files - relaxed rules for infrastructure
   {
     name: 'test-setup-files',
-    files: ['test/setup.ts', 'test/global-setup.ts', 'test/global-teardown.ts', 'vitest.config.ts'],
+    files: [
+      'test/setup.ts',
+      'test/global-setup.ts',
+      'test/global-teardown.ts',
+      'vitest.config.ts',
+    ],
     languageOptions: {
       globals: {
         globalThis: 'writable',
         performance: 'readonly',
-      }
+      },
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',  // AJV validators need any
+      '@typescript-eslint/no-explicit-any': 'off', // AJV validators need any
       '@typescript-eslint/explicit-function-return-type': 'off', // Config functions
-      'no-console': 'off',  // Logging is essential for test infrastructure
-      'max-lines': 'off',    // Comprehensive setup requires length
-      'complexity': ['error', 15], // Complex validation logic needed
-      'max-depth': ['error', 4],   // Nested directory operations
-    }
+      'no-console': 'off', // Logging is essential for test infrastructure
+      'max-lines': 'off', // Comprehensive setup requires length
+      complexity: ['error', 15], // Complex validation logic needed
+      'max-depth': ['error', 4], // Nested directory operations
+    },
   },
 
   // CLI files - allow console
@@ -129,7 +139,7 @@ export default tseslint.config(
     files: ['packages/cli/**/*.ts'],
     rules: {
       'no-console': 'off',
-    }
+    },
   },
 
   // Core library files - slightly relaxed (must be before more specific rules)
@@ -138,9 +148,9 @@ export default tseslint.config(
     files: ['packages/core/src/**/*.ts'],
     ignores: ['**/*.test.ts', '**/*.spec.ts'],
     rules: {
-      'max-lines': ['error', 400],           // Up from 300 - domain complexity
-      'complexity': ['error', 12],           // Up from 10 - business logic
-    }
+      'max-lines': ['error', 400], // Up from 300 - domain complexity
+      complexity: ['error', 12], // Up from 10 - business logic
+    },
   },
 
   // Parser and generator files - relaxed complexity rules (exclude test files)
@@ -149,12 +159,12 @@ export default tseslint.config(
     files: ['**/parser/**/*.ts', '**/generator/**/*.ts'],
     ignores: ['**/*.test.ts', '**/*.spec.ts'],
     rules: {
-      'complexity': ['error', 15],           // Up from 10 - complex validation logic
-      'max-lines': ['error', 500],           // Up from 300 - schema transformation
-      'max-lines-per-function': ['error', 75], // Up from 50 - switch statements  
-      'max-depth': ['error', 4],             // Up from 3 - nested object traversal
-      'max-params': ['error', 5],            // Up from 4 - parser context
-    }
+      complexity: ['error', 15], // Up from 10 - complex validation logic
+      'max-lines': ['error', 500], // Up from 300 - schema transformation
+      'max-lines-per-function': ['error', 75], // Up from 50 - switch statements
+      'max-depth': ['error', 4], // Up from 3 - nested object traversal
+      'max-params': ['error', 5], // Up from 4 - parser context
+    },
   },
 
   // Error types - allow any for context and params, relaxed complexity (after core-files)
@@ -163,10 +173,10 @@ export default tseslint.config(
     files: ['**/types/errors.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
-      'complexity': 'off',
+      complexity: 'off',
       'max-lines': ['error', 500],
       'max-params': ['error', 6],
-    }
+    },
   },
 
   // Ignore patterns
@@ -178,7 +188,7 @@ export default tseslint.config(
       'coverage/**',
       '**/*.config.js',
       '**/*.config.cjs',
-      'eslint.config.js'
-    ]
+      'eslint.config.js',
+    ],
   }
 );

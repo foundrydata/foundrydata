@@ -114,8 +114,9 @@ parse(input) -> validate(schema) -> plan() -> generate() -> verify() -> format()
 - **ESM only**: `"type": "module"` in all package.json
 - **TypeScript**: `"module": "ESNext"` targeting ES2022
 - **Imports**: Always use explicit extensions (.js for compiled)
-- **Build**: `tsc --build` excludes tests
-- **Typecheck**: `npm run typecheck` includes tests
+- **Build**: `npm run build` builds all workspace packages
+- **Typecheck**: `npm run typecheck` validates with test config (tsconfig.test.json)
+- **Typecheck Build**: `npm run typecheck:build` validates build config only
 
 ### Error Handling
 ```typescript
@@ -178,11 +179,16 @@ test/
 
 ### Test Commands
 ```bash
-npm run test:all             # All tests (root Vitest with projects)
-npm run test                 # Legacy: packages then test/ (composite)
-npm run test:packages        # Packages only (root config)
+npm run test                 # All tests (root Vitest config)
 npm run test:matchers        # test/**/* only (test config)
 npm run test:watch           # Watch mode (root)
+npm run test:watch:matchers  # Watch mode for matchers
+npm run test:benchmarks      # Performance benchmarks
+npm run test:regression      # Regression suite
+npm run test:performance     # All performance tests
+npm run test:gen:compliance  # Generator compliance tests
+npm run test:gen:compliance:extra # Generator compliance with extra assertions
+npm run test:coverage        # Run tests with coverage
 ```
 
 ### Performance Targets
@@ -195,6 +201,13 @@ npm run test:watch           # Watch mode (root)
 ---
 
 ## 🔧 Development Workflow
+
+### Scripts Overview
+- **`npm run build`** - Build all workspace packages
+- **`npm run dev`** - Development mode for all workspaces
+- **`npm run clean`** - Remove dist directories
+- **`npm run format`** - Format code with Prettier
+- **`npm run prepare`** - Setup Husky for git hooks
 
 ### External Documentation Access
 **Context7 MCP** provides latest documentation for:
@@ -217,9 +230,12 @@ npm run test:watch           # Watch mode (root)
 
 ### Quality Gates
 ```bash
-npm run task-ready           # Full validation suite
-npm run typecheck            # TypeScript validation
-npm run lint                 # ESLint with auto-fix
+npm run task-ready           # Full validation suite (lint + typecheck + build + test)
+npm run task-complete        # Same as task-ready with success message
+npm run typecheck            # TypeScript validation (no emit, test config)
+npm run typecheck:build      # TypeScript build validation
+npm run lint                 # ESLint check
+npm run lint:fix             # ESLint with auto-fix
 npm run test                 # All tests must pass
 ```
 

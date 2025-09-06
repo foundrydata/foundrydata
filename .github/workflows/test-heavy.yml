@@ -6,15 +6,15 @@ on:
     - cron: '0 2 * * *' # nightly at 02:00 UTC
   pull_request:
     types: [opened, synchronize, labeled, reopened]
-    branches: ["**"]
+    branches: ['**']
 
 permissions:
   contents: read
   pull-requests: write
 
 env:
-  TEST_SEED: "424242"
-  DEBUG: "false"
+  TEST_SEED: '424242'
+  DEBUG: 'false'
 
 jobs:
   typecheck:
@@ -54,10 +54,10 @@ jobs:
         node: [20.x]
         draft: [draft-07, 2019-09, 2020-12]
     env:
-      CI: "true"
+      CI: 'true'
       SCHEMA_DRAFT: ${{ matrix.draft }}
-      FC_NUM_RUNS: "1000"
-      PERF_LOG: "false"
+      FC_NUM_RUNS: '1000'
+      PERF_LOG: 'false'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -95,11 +95,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      CI: "true"
-      SCHEMA_DRAFT: "2020-12"
-      FC_NUM_RUNS: "1000"
-      PERF_LOG: "true"
-      NODE_OPTIONS: "--expose-gc"
+      CI: 'true'
+      SCHEMA_DRAFT: '2020-12'
+      FC_NUM_RUNS: '1000'
+      PERF_LOG: 'true'
+      NODE_OPTIONS: '--expose-gc'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -205,10 +205,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      CI: "true"
-      SCHEMA_DRAFT: "2020-12"
-      FC_NUM_RUNS: "1000"
-      NODE_OPTIONS: "--expose-gc"
+      CI: 'true'
+      SCHEMA_DRAFT: '2020-12'
+      FC_NUM_RUNS: '1000'
+      NODE_OPTIONS: '--expose-gc'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
