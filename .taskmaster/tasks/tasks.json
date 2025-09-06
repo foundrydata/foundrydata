@@ -762,7 +762,7 @@
           2,
           4
         ],
-        "status": "pending",
+        "status": "done",
         "details": "Update packages/core/src/parser/json-schema-parser.ts to accept and pass through the `pattern` keyword for string schemas. Remove the current early rejection of `pattern`, validate regex only for syntactic correctness (try new RegExp), and store the original pattern string on the parsed schema. Ensure this remains draft-agnostic (Draft-07, 2019-09, 2020-12). Keep error messaging helpful for invalid regex. Add ReDoS guards: limit pattern length/complexity and provide a clear ParseError with suggestion; document generation fallbacks for complex patterns.",
         "testStrategy": "Add unit tests in packages/core/src/parser/__tests__/ to verify that: (1) valid pattern strings are preserved on parsed StringSchema; (2) invalid/too-complex regex patterns produce a clear ParseError with suggestion; (3) end-to-end: StringGenerator generates values matching the pattern when present, with safe fallbacks when patterns are complex. Add an integration test in test/__tests__/integration/generator-compliance/ to confirm AJV accepts generated values under schemas with pattern.",
         "subtasks": [
@@ -776,7 +776,7 @@
               "Set StringSchema.pattern when string",
               "Validate regex syntax safely"
             ],
-            "status": "pending"
+            "status": "done"
           },
           {
             "id": 2,
@@ -787,7 +787,7 @@
               "Valid pattern passes and is preserved",
               "Invalid pattern yields ParseError with suggestion"
             ],
-            "status": "pending"
+            "status": "done"
           },
           {
             "id": 3,
@@ -798,7 +798,7 @@
               "StringGenerator respects pattern",
               "AJV validates generated values"
             ],
-            "status": "pending"
+            "status": "done"
           },
           {
             "id": 4,
@@ -808,7 +808,7 @@
               "Update docs/MVP_LIMITATIONS.md",
               "Mention supported regex scope and caveats"
             ],
-            "status": "pending"
+            "status": "done"
           }
         ]
       },
@@ -942,7 +942,7 @@
     ],
     "metadata": {
       "created": "2025-08-24T14:00:00.000Z",
-      "updated": "2025-09-06T13:08:52.295Z",
+      "updated": "2025-09-06T13:42:40.475Z",
       "approach": "Hybrid - Task Master structure with granular subtasks",
       "totalTasks": 14,
       "totalSubtasks": 52,

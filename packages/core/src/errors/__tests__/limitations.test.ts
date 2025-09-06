@@ -17,7 +17,9 @@ describe('Limitations Registry', () => {
     const comp = getLimitation('schemaComposition');
 
     expect(nested?.errorCode).toBe(ErrorCode.NESTED_OBJECTS_NOT_SUPPORTED);
-    expect(regex?.errorCode).toBe(ErrorCode.REGEX_PATTERNS_NOT_SUPPORTED);
+    expect(regex?.errorCode).toBe(
+      ErrorCode.COMPLEX_REGEX_PATTERNS_NOT_SUPPORTED
+    );
     expect(comp?.errorCode).toBe(ErrorCode.SCHEMA_COMPOSITION_NOT_SUPPORTED);
   });
 

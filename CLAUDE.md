@@ -94,11 +94,14 @@ Note: Arrays of nested objects (up to depth 2) are supported; nested object prop
 }
 ```
 
+✅ **Supported (v0.1)**
+- Basic patterns (regex validation) - Simple to moderate complexity patterns
+
 ❌ **NOT Supported (v0.1)**
-- Complex patterns (regex validation)
 - Schema composition (allOf, oneOf, anyOf)
 - References ($ref, $id)
 - Advanced formats (uri, hostname, ipv4)
+- Complex regex patterns with ReDoS risk
 
 ---
 
@@ -392,8 +395,8 @@ fc.oneof(fc.constant(0.1), fc.constant(0.01), fc.constant(1))
 | **Draft-06** | ⚠️ Partial | Via Draft-07 compatibility |
 
 ### String Formats (v0.1)
-- ✅ **Supported**: uuid, email, date, date-time
-- ❌ **Not supported**: uri, hostname, ipv4, ipv6, regex patterns
+- ✅ **Supported**: uuid, email, date, date-time, basic regex patterns
+- ❌ **Not supported**: uri, hostname, ipv4, ipv6, complex regex patterns with ReDoS risk
 
 ---
 
@@ -484,8 +487,8 @@ test('string length respects bounds', () => {
 
 | Version | Timeline | Features | Success Metric |
 |---------|----------|----------|----------------|
-| **v0.1** | Now | Basic types, CLI, 100% compliance | MVP Launch |
-| **v0.2** | Month 2 | Pattern validation, more formats | 100+ users |
+| **v0.1** | Now | Basic types, CLI, basic patterns, 100% compliance | MVP Launch |
+| **v0.2** | Month 2 | Complex patterns, more formats | 100+ users |
 | **v0.3** | Month 4 | Deep nesting (depth > 2), CSV, API | 10+ paying |
 | **v1.0** | Month 6 | Full nesting, schema composition | 25+ paying |
 

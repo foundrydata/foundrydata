@@ -12,8 +12,8 @@ This page lists the stable error codes emitted by FoundryData. Each code is dura
   - Exit: 10 • HTTP: 400
   - Docs: https://foundrydata.dev/errors/E001
 
-- E002 — REGEX_PATTERNS_NOT_SUPPORTED
-  - Meaning: `pattern` constraints are not yet supported.
+- E002 — COMPLEX_REGEX_PATTERNS_NOT_SUPPORTED
+  - Meaning: Complex `pattern` constraints with ReDoS risk are not supported. Basic patterns are supported.
   - Exit: 11 • HTTP: 400
   - Docs: https://foundrydata.dev/errors/E002
 

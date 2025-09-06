@@ -127,7 +127,7 @@ curl -X POST https://api.foundrydata.dev/generate \
 |---------|--------|------------|
 | Deep nested objects (depth > 2) | Coming v0.3 | Restructure schema |
 | Objects nested beyond depth 2 | Coming v0.3 | Restructure with intermediate objects |
-| `pattern` (regex) | Coming v0.3 | Use formats |
+| `pattern` (regex) | ✅ Basic patterns | Complex patterns v0.2 |
 | `allOf/oneOf` | Coming v0.3 | Pick one type |
 | `$ref` | Coming v0.3 | Inline definitions |
 | `exclusiveMinimum/exclusiveMaximum` | Coming v0.2 | Use inclusive ranges |
@@ -224,7 +224,7 @@ Generates: Payment transactions, statuses, fees, timestamps
 **❌ Won't work (v0.1):**
 - Nested objects (object properties with object type)
 - Objects nested 2+ levels deep
-- Complex patterns, regex validation
+- Complex regex patterns (basic patterns are supported)
 - Schema references ($ref)
 - Exclusive minimum/maximum ranges
 

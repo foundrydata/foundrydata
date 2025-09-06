@@ -59,7 +59,7 @@ Update (2025-09-06): Implemented with backward compatibility
 export enum ErrorCode {
   // Schema Errors (E001-E099)
   NESTED_OBJECTS_NOT_SUPPORTED = 'E001',
-  REGEX_PATTERNS_NOT_SUPPORTED = 'E002',
+  COMPLEX_REGEX_PATTERNS_NOT_SUPPORTED = 'E002',
   SCHEMA_COMPOSITION_NOT_SUPPORTED = 'E003',
   INVALID_SCHEMA_STRUCTURE = 'E010',
   SCHEMA_PARSE_FAILED = 'E011',
@@ -87,7 +87,7 @@ export type Severity = 'info' | 'warn' | 'error';
 // Exit code mapping with TypeScript exhaustiveness check
 export const EXIT_CODES = {
   [ErrorCode.NESTED_OBJECTS_NOT_SUPPORTED]: 10,
-  [ErrorCode.REGEX_PATTERNS_NOT_SUPPORTED]: 11,
+  [ErrorCode.COMPLEX_REGEX_PATTERNS_NOT_SUPPORTED]: 11,
   [ErrorCode.SCHEMA_COMPOSITION_NOT_SUPPORTED]: 12,
   [ErrorCode.INVALID_SCHEMA_STRUCTURE]: 20,
   [ErrorCode.SCHEMA_PARSE_FAILED]: 21,
@@ -103,7 +103,7 @@ export const EXIT_CODES = {
 // HTTP status mapping with TypeScript exhaustiveness check
 export const HTTP_STATUS_BY_CODE = {
   [ErrorCode.NESTED_OBJECTS_NOT_SUPPORTED]: 400,
-  [ErrorCode.REGEX_PATTERNS_NOT_SUPPORTED]: 400,
+  [ErrorCode.COMPLEX_REGEX_PATTERNS_NOT_SUPPORTED]: 400,
   [ErrorCode.SCHEMA_COMPOSITION_NOT_SUPPORTED]: 400,
   [ErrorCode.INVALID_SCHEMA_STRUCTURE]: 400,
   [ErrorCode.SCHEMA_PARSE_FAILED]: 422,
@@ -135,7 +135,7 @@ import { EXIT_CODES, HTTP_STATUS_BY_CODE } from '@foundrydata/core/errors/codes'
   - Missing external schema: `ErrorCode.SCHEMA_PARSE_FAILED` with `schemaPath` reflecting the reference location and `ref` set.
   - Semantics: For `SchemaError`, only `schemaPath`/`ref` are populated (leave `path` undefined).
 - JSON Schema parser now emits `ParseError` via params constructor with codes and JSON Pointers.
-  - Unsupported regex `pattern`: `ErrorCode.REGEX_PATTERNS_NOT_SUPPORTED` at `schemaPath` `#/.../pattern`.
+  - Complex regex `pattern`: `ErrorCode.COMPLEX_REGEX_PATTERNS_NOT_SUPPORTED` at `schemaPath` `#/.../pattern`.
   - Nested objects not supported: `ErrorCode.NESTED_OBJECTS_NOT_SUPPORTED` at `schemaPath` `#/properties/<key>`.
   - Unsupported/invalid type: `ErrorCode.INVALID_SCHEMA_STRUCTURE` with `schemaPath` for the node.
   - Cannot determine type / no suitable parser / generic parse failure: `ErrorCode.SCHEMA_PARSE_FAILED` at `schemaPath` `#`.
@@ -353,7 +353,7 @@ Your schema contains:
 
 #### Invalid Pattern
 ```
-❌ Error E002: Regex patterns not supported in MVP
+❌ Error E002: Complex regex patterns not supported in MVP
 
 📍 Location: /properties/productCode/pattern
 Schema path: #/properties/productCode/pattern
@@ -502,11 +502,11 @@ export const LIMITATIONS_REGISTRY: Record<
   },
   regexPatterns: {
     key: 'regexPatterns',
-    title: 'Regex Patterns Not Supported',
-    errorCode: ErrorCode.REGEX_PATTERNS_NOT_SUPPORTED,
+    title: 'Complex Regex Patterns Not Supported',
+    errorCode: ErrorCode.COMPLEX_REGEX_PATTERNS_NOT_SUPPORTED,
     availableIn: '0.2.0',
-    workaround: 'Use enum or supported format constraints instead of custom regex.',
-    workaroundExample: "Prefer { format: 'email' } or enum over 'pattern'.",
+    workaround: 'Simplify to basic pattern, use enum, or format constraints.',
+    workaroundExample: "Use '^[A-Z]{3}$' instead of complex lookaheads, or prefer { format: 'email' }.",
     docsAnchor: 'keywords-not-supported',
     featureExamples: ["{ type: 'string', pattern: '^[A-Z]{3}$' }"],
   },

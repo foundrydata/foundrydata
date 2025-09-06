@@ -261,21 +261,47 @@ export class JSONSchemaParser implements SchemaParser {
       result.format = schema.format as StringFormat;
     }
 
-    // Parse pattern - check for unsupported regex
+    // Parse pattern - validate regex and check complexity
     if (typeof schema.pattern === 'string') {
-      return err(
-        new ParseError({
-          message: `Pattern/regex not supported at ${path || 'root'}. Use format constraints instead.`,
-          errorCode: ErrorCode.REGEX_PATTERNS_NOT_SUPPORTED,
-          context: {
-            schemaPath: this.toSchemaPointer(
-              path ? `${path}.pattern` : 'pattern'
-            ),
-            suggestion:
-              'Replace pattern with format like "email", "uuid", "date", etc.',
-          },
-        })
-      );
+      try {
+        // Validate regex syntax
+        new RegExp(schema.pattern);
+
+        // Check for ReDoS and complexity
+        const complexityCheck = this.checkPatternComplexity(schema.pattern);
+        if (!complexityCheck.isOk()) {
+          return err(
+            new ParseError({
+              message: `Complex regex pattern not supported at ${path || 'root'}. ${complexityCheck.error.message}`,
+              errorCode: ErrorCode.COMPLEX_REGEX_PATTERNS_NOT_SUPPORTED,
+              context: {
+                schemaPath: this.toSchemaPointer(
+                  path ? `${path}.pattern` : 'pattern'
+                ),
+                suggestion:
+                  'Simplify to basic pattern like "^[A-Z]{3}$", or use format constraints like "email", "uuid".',
+                pattern: schema.pattern,
+              },
+            })
+          );
+        }
+
+        result.pattern = schema.pattern;
+      } catch (error) {
+        return err(
+          new ParseError({
+            message: `Invalid regex pattern at ${path || 'root'}: ${String(error)}`,
+            errorCode: ErrorCode.SCHEMA_PARSE_FAILED,
+            context: {
+              schemaPath: this.toSchemaPointer(
+                path ? `${path}.pattern` : 'pattern'
+              ),
+              suggestion: 'Fix regex syntax or use format constraints.',
+              pattern: schema.pattern,
+            },
+          })
+        );
+      }
     }
 
     // Parse constraints
@@ -643,6 +669,78 @@ export class JSONSchemaParser implements SchemaParser {
             return nestedCheck;
           }
         }
+      }
+    }
+
+    return ok(undefined);
+  }
+
+  /**
+   * Check pattern complexity for ReDoS protection
+   */
+  private checkPatternComplexity(pattern: string): Result<void, ParseError> {
+    // Check pattern length (basic ReDoS protection)
+    if (pattern.length > 1000) {
+      return err(
+        new ParseError({
+          message: 'Pattern too long (max 1000 characters)',
+          errorCode: ErrorCode.COMPLEX_REGEX_PATTERNS_NOT_SUPPORTED,
+          context: {
+            suggestion:
+              'Use shorter, simpler patterns or break into multiple constraints.',
+          },
+        })
+      );
+    }
+
+    // Check for ReDoS-prone patterns
+    const redosPatterns = [
+      /\([^)]*\+[^)]*\)\+/, // (a+)+
+      /\([^)]*\*[^)]*\)\*/, // (a*)*
+      /\([^)]*\+[^)]*\)\*/, // (a+)*
+      /\([^)]*\*[^)]*\)\+/, // (a*)+
+      /\([^|]*\|[^|]*\)[+*]/, // (a|a)+
+      /\?\?/, // ?? (catastrophic backtracking)
+      /\+\?/, // +? (can cause issues with nesting)
+    ];
+
+    for (const redosPattern of redosPatterns) {
+      if (redosPattern.test(pattern)) {
+        return err(
+          new ParseError({
+            message: 'Pattern contains ReDoS-prone construct',
+            errorCode: ErrorCode.COMPLEX_REGEX_PATTERNS_NOT_SUPPORTED,
+            context: {
+              suggestion:
+                'Use simpler patterns without nested quantifiers or redundant alternations.',
+            },
+          })
+        );
+      }
+    }
+
+    // Check for complex features
+    const complexFeatures = [
+      { regex: /\(\?=/, name: 'positive lookahead (?=)' },
+      { regex: /\(\?!/, name: 'negative lookahead (?!)' },
+      { regex: /\(\?<=/, name: 'positive lookbehind (?<=)' },
+      { regex: /\(\?<!/, name: 'negative lookbehind (?<!)' },
+      { regex: /\\[1-9]/, name: 'backreferences (\\1, \\2, etc.)' },
+      { regex: /\(\?:/, name: 'non-capturing groups with complex nesting' },
+    ];
+
+    for (const feature of complexFeatures) {
+      if (feature.regex.test(pattern)) {
+        return err(
+          new ParseError({
+            message: `Pattern uses unsupported feature: ${feature.name}`,
+            errorCode: ErrorCode.COMPLEX_REGEX_PATTERNS_NOT_SUPPORTED,
+            context: {
+              suggestion:
+                'Use basic regex features like character classes [a-z], quantifiers {n}, and simple anchors ^$.',
+            },
+          })
+        );
       }
     }
 
