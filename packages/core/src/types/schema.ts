@@ -100,6 +100,7 @@ export interface ArraySchema extends BaseSchema {
   type: 'array';
   items?: Schema | Schema[];
   additionalItems?: boolean | Schema;
+  prefixItems?: Schema[]; // Draft 2019-09+ for tuple validation
   minItems?: number;
   maxItems?: number;
   uniqueItems?: boolean;

@@ -210,19 +210,18 @@ describe('ArrayGenerator', () => {
       };
 
       // Draft 2019-09/2020-12: prefixItems for tuples
-      // Disabled for MVP - prefixItems not supported yet
-      // const modernTupleSchema: any = {
-      //   type: 'array',
-      //   prefixItems: [{ type: 'string' }, { type: 'number' }],
-      //   items: false, // No additional items
-      //   minItems: 2,
-      //   maxItems: 2,
-      // };
+      const modernTupleSchema: any = {
+        type: 'array',
+        prefixItems: [{ type: 'string' }, { type: 'number' }],
+        items: false, // No additional items
+        minItems: 2,
+        maxItems: 2,
+      };
 
       const schemas = [
         { schema: draft07Schema, draft: 'draft-07' },
         { schema: draft07TupleSchema, draft: 'draft-07' },
-        // { schema: modernTupleSchema, draft: '2020-12' }, // Disabled: prefixItems not supported in MVP
+        { schema: modernTupleSchema, draft: '2020-12' },
       ];
 
       schemas.forEach(({ schema, draft }) => {

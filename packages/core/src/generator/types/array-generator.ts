@@ -325,8 +325,8 @@ export class ArrayGenerator extends DataGenerator {
    */
   private getItemSchemas(schema: ArraySchema): Schema | Schema[] | undefined {
     // Modern drafts use prefixItems for tuples
-    if ('prefixItems' in schema && schema.prefixItems) {
-      return schema.prefixItems as Schema | Schema[];
+    if (schema.prefixItems) {
+      return schema.prefixItems;
     }
     // Draft-07 uses items for both
     if (schema.items) {

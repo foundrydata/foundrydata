@@ -337,7 +337,7 @@
         "dependencies": [
           4
         ],
-        "status": "pending",
+        "status": "done",
         "details": "Create ArrayGenerator and ObjectGenerator classes. Support arrays of primitives and nested objects (depth ≤ 2). Respect minItems/maxItems constraints. Handle required fields correctly.",
         "testStrategy": "Test array length constraints, mixed primitive arrays, and nested object arrays (depth ≤ 2). Verify performance with large arrays (1000+ items). Test required vs optional fields.",
         "subtasks": [
@@ -351,7 +351,8 @@
               "Array of nested objects (depth ≤ 2)",
               "minItems/maxItems constraints",
               "Efficient generation without recursion"
-            ]
+            ],
+            "status": "done"
           },
           {
             "id": 2,
@@ -363,7 +364,8 @@
               "Optional fields conditionally",
               "Block nested objects (MVP limit)",
               "Clear error for unsupported nesting"
-            ]
+            ],
+            "status": "done"
           },
           {
             "id": 3,
@@ -374,7 +376,8 @@
               "Performance with 1000+ objects",
               "Arrays of objects",
               "Complex constraint combinations"
-            ]
+            ],
+            "status": "done"
           }
         ]
       },
@@ -434,51 +437,56 @@
         "id": 7,
         "title": "Implement Generation Pipeline",
         "description": "Create main generation pipeline orchestrating parsing, generation, and validation",
-        "priority": "critical",
-        "estimatedHours": 6,
+        "status": "in-progress",
         "dependencies": [
           5,
           6
         ],
-        "status": "pending",
-        "details": "Build FoundryGenerator class orchestrating the pipeline: Parse → Plan → Generate → Validate. Deterministic generation via per-context PRNG (no global faker.seed). Enforce 100% compliance gate for supported features (otherwise fail with clear error). Collect per-stage metrics (parse/generate/validate): durations, AJV cache hit rate, formats used. Handle batch generation efficiently and expose a reproducible seed in outputs.",
+        "priority": "highest",
+        "details": "Build FoundryGenerator class orchestrating the pipeline: Parse → Plan → Generate → Validate. Deterministic generation via per-context PRNG (no global faker.seed). Enforce 100% compliance gate for supported features (otherwise fail with clear error). Collect per-stage metrics (parse/generate/validate): durations, AJV cache hit rate, formats used. Handle batch generation efficiently and expose a reproducible seed in outputs. This is the central pipeline that orchestrates the entire system and must be completed before documentation tasks.",
         "testStrategy": "Integration tests with all example schemas. Property-based tests asserting determinism: same seed → bit-identical outputs, prefix stability. Performance benchmarks: 1000 rows < 200ms, 10000 rows < 2s. Compliance invariant: score === 100 or explicit unsupported-feature error.",
         "subtasks": [
           {
             "id": 1,
-            "title": "Create pipeline orchestrator",
-            "estimatedHours": 3,
-            "file": "packages/core/src/generator/foundry-generator.ts",
-            "checklist": [
-              "GenerationPipeline class",
-              "Pipeline stages implementation",
-              "Error propagation",
-              "Performance metrics collection"
-            ]
+            "title": "Design Pipeline Orchestrator with Error Propagation",
+            "description": "Create FoundryGenerator class with Parse → Plan → Generate → Validate orchestration and comprehensive error handling",
+            "dependencies": [],
+            "details": "Implement FoundryGenerator class in packages/core/src/generator/foundry-generator.ts with methods: parseSchema(), planGeneration(), generateData(), validateOutput(). Each stage returns Result<T,E> with proper error propagation. Define PipelineStage enum and PipelineMetrics interface. Implement stage-by-stage execution with early termination on errors. Include error context preservation across stages and detailed error messages referencing which stage failed.",
+            "status": "pending",
+            "testStrategy": ""
           },
           {
             "id": 2,
-            "title": "Add seed support",
-            "estimatedHours": 1,
-            "checklist": [
-              "Seed initialization",
-              "Deterministic random generation",
-              "Seed propagation to generators",
-              "Test same seed = same output"
-            ]
+            "title": "Implement Seed-Based Deterministic Generation",
+            "description": "Create per-context PRNG system ensuring deterministic generation without global faker.seed mutation",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "Implement SeedManager class managing per-generation-context PRNGs. Create GenerationContext interface with isolated faker instance per generation call. Ensure same seed produces bit-identical outputs across runs. Implement seed derivation for batch generation (base_seed + row_index). Add seed validation and normalization. Expose used seed in generation results for reproducibility. Never mutate global faker.seed - each context gets its own faker instance.",
+            "status": "pending",
+            "testStrategy": ""
           },
           {
             "id": 3,
-            "title": "Performance optimization",
-            "estimatedHours": 2,
-            "checklist": [
-              "Batch generation optimization",
-              "Memory efficiency for large datasets",
-              "Meet performance targets",
-              "Benchmark documentation",
-              "Expose per-stage metrics (durations, AJV cache hit rate)",
-              "Prefix-stability check in pipeline"
-            ]
+            "title": "Add Performance Monitoring and Metrics Collection",
+            "description": "Implement comprehensive metrics collection for pipeline stages and performance optimization",
+            "dependencies": [
+              "7.2"
+            ],
+            "details": "Create PipelineMetrics interface tracking per-stage durations, AJV cache hit rates, formats used, and memory usage. Implement MetricsCollector class with startStage()/endStage() methods. Add performance targets validation: 1000 rows < 200ms, 10000 rows < 2s. Implement batch generation optimization to minimize parser/validator overhead. Add memory usage tracking and cleanup. Include metrics in generation results for debugging and optimization.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Create Integration Tests for Complete Pipeline",
+            "description": "Build comprehensive integration tests validating end-to-end pipeline functionality across all components",
+            "dependencies": [
+              "7.3"
+            ],
+            "details": "Create integration tests in packages/core/src/generator/__tests__/foundry-generator.integration.test.ts testing all example schemas from docs/examples/. Implement property-based tests asserting determinism: same seed produces identical outputs, prefix stability for batch generation. Add performance benchmarks meeting targets. Test compliance invariant: 100% valid outputs or explicit unsupported-feature errors. Include error propagation tests and edge cases like empty schemas, invalid inputs, and resource constraints.",
+            "status": "pending",
+            "testStrategy": ""
           }
         ]
       },
@@ -822,32 +830,32 @@
           4,
           7
         ],
-        "status": "pending",
+        "status": "done",
         "details": "ACCEPTANCE: (1) No calls to faker.seed in repo; (2) Same seed + same schema → bit-identical outputs across runs and in parallel; (3) Overhead <5% vs baseline on micro-benchmarks (p95). IMPLEMENTATION: Add RNG interface (next(), int(min,max), float(min,max)) to GeneratorContext; implement seeded PRNG (mulberry32/xorshift) with pure state; refactor generators to use context RNG for selection/shuffle; document determinism guarantees.",
         "testStrategy": "Determinism tests (same seed → identical outputs); concurrency tests (N workers); integration in full pipeline with prefix-stability; micro-benchmarks to verify overhead <5%.",
         "subtasks": [
           {
             "id": 1,
             "title": "Add PRNG to context",
-            "status": "pending",
+            "status": "done",
             "file": "packages/core/src/generator/data-generator.ts"
           },
           {
             "id": 2,
             "title": "Remove faker.seed global",
-            "status": "pending",
+            "status": "done",
             "file": "packages/core/src/generator/data-generator.ts"
           },
           {
             "id": 3,
             "title": "Refactor generators to RNG",
-            "status": "pending",
+            "status": "done",
             "file": "packages/core/src/generator/types/"
           },
           {
             "id": 4,
             "title": "Determinism tests",
-            "status": "pending",
+            "status": "done",
             "file": "test/__tests__/integration/pipeline/"
           }
         ]
@@ -942,7 +950,7 @@
     ],
     "metadata": {
       "created": "2025-08-24T14:00:00.000Z",
-      "updated": "2025-09-06T13:42:40.475Z",
+      "updated": "2025-09-06T13:53:29.251Z",
       "approach": "Hybrid - Task Master structure with granular subtasks",
       "totalTasks": 14,
       "totalSubtasks": 52,
