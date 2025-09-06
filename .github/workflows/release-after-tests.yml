@@ -2,7 +2,7 @@ name: Release After Tests
 
 on:
   workflow_run:
-    workflows: ["Testing v2.1 (Quick)"]
+    workflows: ['Testing v2.1 (Quick)']
     types:
       - completed
 
