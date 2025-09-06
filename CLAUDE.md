@@ -72,10 +72,29 @@ foundrydata generate --schema user.json --rows 100 --scenario errors
 }
 ```
 
-Note: Arrays of flat objects are supported; nested object properties in root objects are not (until v0.3).
+Note: Arrays of nested objects (up to depth 2) are supported; nested object properties are supported up to depth 2.
+
+✅ **NEW in v0.1**: Bounded nested objects (up to depth 2)
+```json
+{
+  "type": "object",
+  "properties": {
+    "user": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"}
+          }
+        }
+      }
+    }
+  }
+}
+```
 
 ❌ **NOT Supported (v0.1)**
-- Nested objects in properties (coming v0.3)
 - Complex patterns (regex validation)
 - Schema composition (allOf, oneOf, anyOf)
 - References ($ref, $id)

@@ -30,16 +30,16 @@ const DOCS_BASE_URL =
 export const LIMITATIONS_REGISTRY: Record<LimitationKey, Limitation> = {
   nestedObjects: {
     key: 'nestedObjects',
-    title: 'Nested Objects Not Supported',
+    title: 'Deep Nested Objects Not Supported',
     errorCode: ErrorCode.NESTED_OBJECTS_NOT_SUPPORTED,
     availableIn: '0.3.0',
     workaround:
-      'Flatten nested objects into top-level properties or reference separate objects.',
+      'Nested objects are supported up to depth 2. For deeper nesting, flatten into intermediate objects or top-level properties.',
     workaroundExample:
-      "Replace nested 'address' object with top-level 'address_*' fields.",
+      'Restructure deeply nested objects (depth > 2) into separate object schemas or flatten properties.',
     docsAnchor: 'nested-objects',
     featureExamples: [
-      "{ type: 'object', properties: { address: { type: 'object' } } }",
+      "{ type: 'object', properties: { user: { type: 'object', properties: { profile: { type: 'object', properties: { settings: { type: 'object' } } } } } } }",
     ],
   },
   regexPatterns: {

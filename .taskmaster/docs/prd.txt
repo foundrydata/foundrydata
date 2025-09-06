@@ -55,7 +55,7 @@ foundrydata version
 #### Supported Schema Features
 Per `MVP/foundrydata-compatibility-mvp.md`:
 - ✅ Basic types: string, number, integer, boolean
-- ✅ Arrays of primitives and flat objects
+- ✅ Arrays of primitives and nested objects (depth ≤ 2)
 - ✅ String formats: uuid, email, date, date-time
 - ✅ Constraints: min/max, minLength/maxLength, minItems/maxItems
 - ✅ Enums and required fields
@@ -133,7 +133,7 @@ Tasks:
 7. StringGenerator with formats
 8. NumberGenerator with constraints
 9. BooleanGenerator
-10. ArrayGenerator with flat object support
+10. ArrayGenerator with nested object support (depth ≤ 2)
 11. EnumGenerator with caching
 
 ### Phase 3: CLI Implementation (Days 8-10)

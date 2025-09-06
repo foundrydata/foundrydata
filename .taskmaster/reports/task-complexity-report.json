@@ -22,7 +22,7 @@
 			"taskTitle": "Build Schema Parser with JSON Schema Support",
 			"complexityScore": 8,
 			"recommendedSubtasks": 7,
-			"expansionPrompt": "Divide schema parsing into: JSON Schema specification analysis, parser interface design, basic type parsing (string, number, boolean), array parsing with item validation, flat object parsing with property handling, constraint validation system, and comprehensive error reporting with schema path tracking. Handle edge cases like empty schemas and invalid JSON.",
+			"expansionPrompt": "Divide schema parsing into: JSON Schema specification analysis, parser interface design, basic type parsing (string, number, boolean), array parsing with item validation, nested object parsing with depth limit (≤ 2) and property handling, constraint validation system, and comprehensive error reporting with schema path tracking. Handle edge cases like empty schemas and invalid JSON.",
 			"reasoning": "Very high complexity as it needs to handle JSON Schema specification correctly. Must parse multiple schema types, handle constraints, and provide clear error messages. Foundation for data generation requiring robust implementation."
 		},
 		{

@@ -235,7 +235,7 @@ foundrydata --help
     // ✅ Enums
     "role": { "type": "string", "enum": ["admin", "user", "guest"] },
     
-    // ✅ Arrays (primitives + flat objects)
+    // ✅ Arrays (primitives + nested objects up to depth 2)
     "tags": { 
       "type": "array", 
       "items": { "type": "string" },
@@ -249,7 +249,7 @@ foundrydata --help
       "maxItems": 10
     },
     
-    // ✅ Arrays of flat objects supported  
+    // ✅ Arrays of nested objects (depth ≤ 2) supported  
     "permissions": { 
       "type": "array",
       "items": { 
@@ -278,7 +278,7 @@ foundrydata generate --schema complex.json
 # Unsupported features detected:
 #   - Nested objects at: properties.address
 # 
-# 💡 Workaround: Flatten nested objects
+# 💡 Workaround: Restructure objects deeper than depth 2
 # 📅 Nested objects: v0.3
 # 
 # Want them sooner? Vote or contribute:
@@ -372,7 +372,7 @@ Looking to contribute? Here are some features the community has requested:
 
 ## 📊 Project Status
 
-- **Current Version:** v0.1.0 (MVP - basic types, arrays of flat objects, core formats)
+- **Current Version:** v0.1.0 (MVP - basic types, arrays of nested objects up to depth 2, core formats)
 - **Next Release:** Based on community feedback and requests
 - **Philosophy:** Correctness first, determinism, and clarity; add complexity only when guarantees hold.
 

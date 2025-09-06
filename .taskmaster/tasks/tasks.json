@@ -142,7 +142,7 @@
           1
         ],
         "status": "done",
-        "details": "Implement SchemaParser class in packages/core/src/parser/schema-parser.ts. Parse JSON Schema into internal SchemaNode tree structure. Support basic types, arrays, flat objects, enums, and constraints. Handle string formats. Return Result<SchemaNode, ParseError> for all operations.",
+        "details": "Implement SchemaParser class in packages/core/src/parser/schema-parser.ts. Parse JSON Schema into internal SchemaNode tree structure. Support basic types, arrays, nested objects (depth ≤ 2), enums, and constraints. Handle string formats. Return Result<SchemaNode, ParseError> for all operations.",
         "testStrategy": "Test with all example schemas in docs/examples/. Verify parsing of supported features and proper error handling for unsupported features like nested objects.",
         "subtasks": [
           {
@@ -166,7 +166,7 @@
             "checklist": [
               "Parse basic types",
               "Handle constraints (min/max, lengths)",
-              "Parse arrays and flat objects",
+              "Parse arrays and nested objects (depth ≤ 2)",
               "Support enums and required fields"
             ],
             "status": "done"
@@ -331,15 +331,15 @@
       {
         "id": 5,
         "title": "Build Array and Object Generators",
-        "description": "Implement array generation supporting primitives and flat objects, plus object generation",
+        "description": "Implement array generation supporting primitives and nested objects (depth ≤ 2), plus object generation",
         "priority": "critical",
         "estimatedHours": 8,
         "dependencies": [
           4
         ],
         "status": "pending",
-        "details": "Create ArrayGenerator and ObjectGenerator classes. Support arrays of primitives and flat objects (no nesting in MVP). Respect minItems/maxItems constraints. Handle required fields correctly.",
-        "testStrategy": "Test array length constraints, mixed primitive arrays, and flat object arrays. Verify performance with large arrays (1000+ items). Test required vs optional fields.",
+        "details": "Create ArrayGenerator and ObjectGenerator classes. Support arrays of primitives and nested objects (depth ≤ 2). Respect minItems/maxItems constraints. Handle required fields correctly.",
+        "testStrategy": "Test array length constraints, mixed primitive arrays, and nested object arrays (depth ≤ 2). Verify performance with large arrays (1000+ items). Test required vs optional fields.",
         "subtasks": [
           {
             "id": 1,
@@ -348,7 +348,7 @@
             "file": "packages/core/src/generator/array-generator.ts",
             "checklist": [
               "Array of primitives",
-              "Array of flat objects",
+              "Array of nested objects (depth ≤ 2)",
               "minItems/maxItems constraints",
               "Efficient generation without recursion"
             ]
@@ -552,7 +552,7 @@
         "priority": "high",
         "estimatedHours": 4,
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "details": "Enhance error reporting throughout the system. For unsupported features, provide clear explanations and workarounds. Include suggestions for future feature support.",
         "testStrategy": "Test error messages for all unsupported features. Verify helpful error context and workaround suggestions.",
         "subtasks": [
@@ -565,7 +565,8 @@
               "Workaround suggestions",
               "Feature availability timeline",
               "No stack traces in production"
-            ]
+            ],
+            "status": "done"
           },
           {
             "id": 2,
@@ -576,7 +577,8 @@
               "Supported feature examples",
               "Link to documentation",
               "GitHub issue templates"
-            ]
+            ],
+            "status": "done"
           }
         ]
       },
@@ -589,7 +591,7 @@
         "dependencies": [
           9
         ],
-        "status": "pending",
+        "status": "done",
         "details": "Finalize all tests with 80%+ coverage. Validate performance benchmarks. Create compliance test suite validating 1000+ samples per schema type.",
         "testStrategy": "Achieve 80% test coverage minimum. All example schemas must generate valid data. Performance targets: 1000 rows < 200ms, 10000 rows < 2s.",
         "subtasks": [
@@ -602,7 +604,8 @@
               "All edge cases covered",
               "Mocks for external deps",
               "Test utilities created"
-            ]
+            ],
+            "status": "done"
           },
           {
             "id": 2,
@@ -613,7 +616,8 @@
               "All example schemas",
               "Error path testing",
               "Multi-package integration"
-            ]
+            ],
+            "status": "done"
           },
           {
             "id": 3,
@@ -624,7 +628,8 @@
               "10000 rows < 2s verified",
               "Memory usage < 100MB",
               "Benchmark documentation"
-            ]
+            ],
+            "status": "done"
           },
           {
             "id": 4,
@@ -635,7 +640,8 @@
               "100% compliance rate",
               "Edge case validation",
               "Report generation"
-            ]
+            ],
+            "status": "done"
           }
         ]
       },
@@ -888,7 +894,7 @@
         "dependencies": [
           2
         ],
-        "status": "pending",
+        "status": "in-progress",
         "details": "ACCEPTANCE: nested objects parsed up to default depth=2; deeper structures fail fast with guidance. IMPLEMENTATION: recursive descent with depth counter; reuse existing type guards; keep MVP constraints documented. TESTS: AJV × generator end-to-end for nested objects within bounds.",
         "testStrategy": "Unit tests for depth boundary; integration tests ensuring generated nested objects validate; error-path tests with suggestion messages for over-depth schemas.",
         "subtasks": [
@@ -936,7 +942,7 @@
     ],
     "metadata": {
       "created": "2025-08-24T14:00:00.000Z",
-      "updated": "2025-09-05T21:08:48.387Z",
+      "updated": "2025-09-06T12:45:17.977Z",
       "approach": "Hybrid - Task Master structure with granular subtasks",
       "totalTasks": 14,
       "totalSubtasks": 52,
@@ -1602,7 +1608,7 @@
         "description": "Phase 5 - Comprehensive documentation for the new testing architecture",
         "details": "- Create test/README.md with architecture overview and pattern explanations\\n- Document migration guide from v2.0 to v2.1\\n- Create troubleshooting guide\\n- Document all environment variables: TEST_SEED, FC_NUM_RUNS, SCHEMA_DRAFT, PERF_LOG, DEBUG\\n- Create examples/ directory with pattern examples and migration examples\\n- Add performance optimization tips\\n- Document draft-specific differences table\\n- Add decision log for architectural choices",
         "testStrategy": "",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           10
         ],
@@ -1962,7 +1968,7 @@
     ],
     "metadata": {
       "created": "2025-08-28T17:17:54.786Z",
-      "updated": "2025-09-06T12:17:02.862Z",
+      "updated": "2025-09-06T12:40:16.859Z",
       "description": "Testing infrastructure v2.1 implementation - property-based testing with AJV, fast-check, and multi-draft support"
     }
   },
