@@ -2248,7 +2248,7 @@
         "id": 8,
         "title": "Migrate and Update Tests",
         "description": "Update all existing tests and create new test suites for the error system refactor",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           5,
           7,
@@ -2262,7 +2262,7 @@
             "id": 1,
             "title": "Remove ErrorReporter tests and migrate to ErrorPresenter",
             "description": "Replace all ErrorReporter test files with ErrorPresenter equivalents using deterministic snapshots",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "- Locate all test files referencing ErrorReporter\n- Create new ErrorPresenter test files with snapshot testing\n- Configure snapshots to exclude colors and emojis in CI environment\n- Ensure deterministic output for consistent CI runs\n- Remove old ErrorReporter test files",
             "testStrategy": ""
@@ -2271,7 +2271,7 @@
             "id": 2,
             "title": "Update error property assertions throughout test suite",
             "description": "Change all error.code references to error.errorCode in test files",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "- Search for all instances of error.code assertions\n- Replace with error.errorCode\n- Update error constructor calls to use new params pattern\n- Verify test expectations match new error structure",
             "testStrategy": ""
@@ -2280,7 +2280,7 @@
             "id": 3,
             "title": "Verify no direct ErrorReporter usage in production code",
             "description": "Audit codebase to ensure ErrorReporter is completely replaced by ErrorPresenter in production paths",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "- Search for any remaining ErrorReporter imports or usage\n- Verify all CLI output goes through ErrorPresenter\n- Verify all API error responses use ErrorPresenter\n- Document any ErrorReporter deprecation warnings if kept for compatibility",
             "testStrategy": ""
@@ -2289,7 +2289,7 @@
             "id": 4,
             "title": "Configure CI-specific snapshot testing",
             "description": "Set up test configuration to generate deterministic snapshots without colors or emojis in CI",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "- Configure test environment detection for CI\n- Ensure ErrorPresenter outputs plain text in CI mode\n- Update or create new snapshots for CLI error outputs\n- Verify snapshots are consistent across different CI environments",
             "testStrategy": ""
@@ -2331,7 +2331,7 @@
     ],
     "metadata": {
       "created": "2025-09-05T21:37:48.791Z",
-      "updated": "2025-09-06T10:54:05.948Z",
+      "updated": "2025-09-06T11:05:32.558Z",
       "description": "Implementation of comprehensive error system with user-friendly messages, stable error codes, JSON Pointer localization, and PII redaction for FoundryData MVP"
     }
   }
