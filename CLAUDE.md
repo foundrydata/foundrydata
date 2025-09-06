@@ -126,6 +126,31 @@ abstract class FoundryError extends Error
 └── ParseError       // Input parsing failures
 ```
 
+#### Error Codes (v0.1)
+Recommended public API usage for stable error codes and mappings.
+
+```ts
+// Preferred: root helpers and enum
+import { ErrorCode, getExitCode, getHttpStatus } from '@foundrydata/core';
+
+const code = ErrorCode.NESTED_OBJECTS_NOT_SUPPORTED; // 'E001'
+const exit = getExitCode(code);   // e.g., 10
+const http = getHttpStatus(code); // e.g., 400
+```
+
+Advanced (internal) access to raw mappings if needed:
+
+```ts
+import { EXIT_CODES, HTTP_STATUS_BY_CODE } from '@foundrydata/core/errors/codes';
+
+EXIT_CODES[ErrorCode.INTERNAL_ERROR];      // 99
+HTTP_STATUS_BY_CODE[ErrorCode.PARSE_ERROR]; // 400
+```
+
+Notes:
+- Root API only exposes `ErrorCode`, `Severity`, `getExitCode`, `getHttpStatus` to keep the public surface stable.
+- Raw mappings are subject to change; prefer helpers in application code.
+
 ---
 
 ## 🧪 Testing Architecture

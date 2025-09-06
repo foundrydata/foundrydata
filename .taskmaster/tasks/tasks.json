@@ -1974,7 +1974,7 @@
         "description": "Implement the foundational error code system with enums, mappings, and severity types",
         "details": "Create packages/core/src/errors/codes.ts with:\n- ErrorCode enum (E001-E499 range)\n- EXIT_CODES mapping for CLI integration\n- HTTP_STATUS_BY_CODE mapping for API responses\n- Severity type definition ('info' | 'warn' | 'error')\n\nKey error codes:\n- E001-E099: Schema errors (nested objects, patterns, composition)\n- E100-E199: Generation errors (constraints, limits)\n- E200-E299: Validation errors (compliance)\n- E300-E399: Configuration errors\n- E400-E499: Parse errors\n\nSpecial code E012 for circular reference detection.",
         "testStrategy": "Unit tests in packages/core/src/errors/__tests__/codes.test.ts:\n- Verify all error codes are unique\n- Test exit code mapping completeness\n- Test HTTP status mapping validity (400-599 range)\n- Ensure every ErrorCode has both exit and HTTP mappings",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
         "subtasks": [
@@ -1983,7 +1983,7 @@
             "title": "Define ErrorCode enum structure",
             "description": "Create the ErrorCode enum with all error categories (E001-E499)",
             "details": "Define enum ErrorCode in packages/core/src/errors/codes.ts:\n- E001-E099: Schema errors (nested objects, patterns, composition, structure, parse, circular refs)\n- E100-E199: Generation errors (constraints, limits)\n- E200-E299: Validation errors (compliance)\n- E300-E399: Configuration errors\n- E400-E499: Parse errors\nInclude E012 for CIRCULAR_REFERENCE_DETECTED\n<info added on 2025-09-05T21:50:30.398Z>\nEnsure the ErrorCode enum explicitly defines CIRCULAR_REFERENCE_DETECTED = 'E012' as a named constant. Verify that EXIT_CODES mapping includes an entry for E012 (suggest exit code 2 for schema validation failures). Verify that HTTP_STATUS_BY_CODE includes an entry for E012 (suggest 400 Bad Request for schema validation errors). Add validation tests to ensure every enum member has corresponding entries in both mapping objects.\n</info added on 2025-09-05T21:50:30.398Z>\n<info added on 2025-09-05T21:55:51.415Z>\nAdd INTERNAL_ERROR = 'E500' for unexpected/uncategorized errors with exit code 99 and HTTP status 500. Use this code as fallback for any unknown or uncategorized errors.\n</info added on 2025-09-05T21:55:51.415Z>",
-            "status": "in-progress",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 1
           },
@@ -1992,7 +1992,7 @@
             "title": "Create exit code and HTTP mappings",
             "description": "Define EXIT_CODES and HTTP_STATUS_BY_CODE mappings for all error codes",
             "details": "Add to packages/core/src/errors/codes.ts:\n- EXIT_CODES: Record<ErrorCode, number> mapping each code to CLI exit code (10-99 range)\n- HTTP_STATUS_BY_CODE: Record<ErrorCode, number> mapping to HTTP status (400-599)\n- Export type Severity = 'info' | 'warn' | 'error'\nEnsure all ErrorCode values have entries in both mappings\n<info added on 2025-09-05T21:54:42.361Z>\nAdd TypeScript exhaustiveness constraint: use 'satisfies Record<ErrorCode, number>' on EXIT_CODES and HTTP_STATUS_BY_CODE to enforce compile-time exhaustiveness checking. This ensures every ErrorCode has an entry in both mappings and provides TypeScript compiler errors if any ErrorCode is missing.\n</info added on 2025-09-05T21:54:42.361Z>",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 1
           },
@@ -2001,7 +2001,7 @@
             "title": "Write error code infrastructure tests",
             "description": "Create comprehensive unit tests for error codes, exit codes, and HTTP mappings",
             "details": "Create packages/core/src/errors/__tests__/codes.test.ts:\n- Test all error codes are unique (no duplicates)\n- Test every ErrorCode has an exit code mapping\n- Test every ErrorCode has an HTTP status mapping\n- Test HTTP status codes are valid (400-599 range)\n- Test exit codes are in valid range (1-255)\n- Test Severity type exports correctly\n<info added on 2025-09-05T21:50:49.474Z>\nAdd complete mapping coverage tests: verify size(ErrorCode enum) === size(EXIT_CODES) === size(HTTP_STATUS_BY_CODE), test that each ErrorCode has an entry in both mappings, validate HTTP status in range 400-599, validate exit codes in range 1-255\n</info added on 2025-09-05T21:50:49.474Z>",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 1
           }
@@ -2331,7 +2331,7 @@
     ],
     "metadata": {
       "created": "2025-09-05T21:37:48.791Z",
-      "updated": "2025-09-05T22:03:44.997Z",
+      "updated": "2025-09-06T09:25:03.217Z",
       "description": "Implementation of comprehensive error system with user-friendly messages, stable error codes, JSON Pointer localization, and PII redaction for FoundryData MVP"
     }
   }

@@ -7,6 +7,12 @@ export * from './registry';
 export * from './generator/formats';
 export * from './validator';
 export * from '@foundrydata/shared';
+export {
+  ErrorCode,
+  type Severity,
+  getExitCode,
+  getHttpStatus,
+} from './errors/codes';
 
 // Initialize built-in formats to avoid circular dependencies
 import {

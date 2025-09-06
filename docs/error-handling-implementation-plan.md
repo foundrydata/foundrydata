@@ -111,6 +111,16 @@ export const HTTP_STATUS_BY_CODE = {
 } satisfies Record<ErrorCode, number>;
 ```
 
+Public API exposure and helpers:
+
+```ts
+// Root public API (recommended)
+import { ErrorCode, getExitCode, getHttpStatus, type Severity } from '@foundrydata/core';
+
+// Advanced (internal) mappings if needed
+import { EXIT_CODES, HTTP_STATUS_BY_CODE } from '@foundrydata/core/errors/codes';
+```
+
 #### Refactored Error Classes (`packages/core/src/types/errors.ts`)
 
 ##### New Constructor Signatures
@@ -219,6 +229,8 @@ class ParseError extends FoundryError {
 
 ```typescript
 // Pure presentation layer - no business logic
+import { getHttpStatus } from '@foundrydata/core';
+
 class ErrorPresenter {
   constructor(
     private readonly env: 'dev' | 'prod',
@@ -239,18 +251,18 @@ class ErrorPresenter {
       workaround: this.formatWorkaround(error),
       documentation: this.formatDocLink(error),
       eta: error.availableIn,
-      code: error.code
+      code: error.errorCode
     };
   }
   
   formatForAPI(error: FoundryError): APIErrorView {
     return {
-      status: this.getHttpStatus(error.code),
-      type: `https://foundrydata.dev/errors/${error.code}`,
+      status: getHttpStatus(error.errorCode),
+      type: `https://foundrydata.dev/errors/${error.errorCode}`,
       title: error.message,
       detail: this.getDetail(error),
       instance: this.getRequestId(),
-      code: error.code,
+      code: error.errorCode,
       path: error.context.path,
       suggestions: error.suggestions || []
     };
@@ -698,10 +710,12 @@ describe('CLI Formatting', () => {
 ## 🔄 Implementation Order (Séquencé et Sûr)
 
 ### Étape 1: Introduire l'infrastructure codes (30 min)
-- [ ] Créer `packages/core/src/errors/codes.ts` avec ErrorCode enum incluant E500
-- [ ] Ajouter EXIT_CODES et HTTP_STATUS_BY_CODE avec `satisfies Record<ErrorCode, number>`
-- [ ] Définir type Severity = 'info' | 'warn' | 'error'
-- [ ] Inclure CIRCULAR_REFERENCE_DETECTED = 'E012' explicitement
+- [x] Créer `packages/core/src/errors/codes.ts` avec ErrorCode enum incluant E500
+- [x] Ajouter EXIT_CODES et HTTP_STATUS_BY_CODE avec `satisfies Record<ErrorCode, number>`
+- [x] Définir type Severity = 'info' | 'warn' | 'error'
+- [x] Inclure CIRCULAR_REFERENCE_DETECTED = 'E012' explicitement
+- [x] Exposer via API racine: `ErrorCode`, `Severity`, `getExitCode()`, `getHttpStatus()`
+- [x] Laisser les mappings bruts via sous-chemin `@foundrydata/core/errors/codes`
 
 ### Étape 2: Refondre la base d'erreurs (45 min)
 - [ ] Refactorer FoundryError avec nouveau constructeur params
@@ -805,6 +819,7 @@ throw new SchemaError({
 - ✅ Replace ErrorReporter with ErrorPresenter (zero imports)
 - ✅ TypeScript exhaustiveness with `satisfies Record<ErrorCode, number>`
 - ✅ Error documentation URLs (`https://foundrydata.dev/errors/{code}`)
+- ✅ Helpers publics pour statut HTTP et exit code (root API)
 
 ### Nice to Have (v0.2)
 - ⏳ Levenshtein distance for typos
