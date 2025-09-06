@@ -277,7 +277,14 @@ Best practice
 
 ### ⚙️ Compat Mode (CLI)
 
-If your schema uses features not yet supported for planning (e.g., `allOf/anyOf/oneOf`, conditional keywords), you can run in a lax compatibility mode. In `lax` mode the generator proceeds to Plan/Generate and relies on the bounded, deterministic repair loop plus AJV to enforce 100% compliance. In `strict` (default), unsupported features fail fast during Parse.
+FoundryData supports common composition and object keywords for planning/generation:
+
+- Composition: `allOf` (merged), `anyOf`/`oneOf` (deterministic branch), `not` (inverted)
+- Arrays: tuple validation via `items: []` (draft‑07) and `additionalItems` (boolean | schema)
+- Objects: `patternProperties`, `propertyNames`, `dependentSchemas` (phase 1)
+- References: in‑document `$ref` (with `definitions` → `$defs` normalization)
+
+Conditional schemas (`if/then/else`) are parsed and supported with pragmatic heuristics during planning and a post‑generation repair pass. In `strict` (default), conditional keywords fail fast; use `lax` to proceed and still guarantee 100% AJV compliance of outputs.
 
 ```bash
 foundrydata generate \
@@ -289,8 +296,8 @@ foundrydata generate \
 
 Notes
 - Validation still runs against your original schema; outputs are guaranteed to be 100% compliant.
-- `--compat lax` is best-effort: a summary of unsupported features is recorded in the internal plan.
- - In CLI, `--compat lax` also logs detected unsupported features to stderr (e.g., `[foundrydata] compat=lax unsupported: ["anyOf","dependentSchemas"]`).
+- `--compat lax` is best‑effort: a summary of unsupported features is recorded in the internal plan.
+- In CLI, `--compat lax` also logs detected unsupported features to stderr (e.g., `[foundrydata] compat=lax unsupported: ["if","then","else"]`).
 
 ### 📊 Metrics (CLI)
 
@@ -350,6 +357,7 @@ foundrydata --help
     "email": { "type": "string", "format": "email" },
     "birthday": { "type": "string", "format": "date" },
     "created": { "type": "string", "format": "date-time" },
+    "patternLiteral": { "type": "string", "format": "regex" },
     
     // ✅ Basic regex patterns
     "productCode": { "type": "string", "pattern": "^[A-Z]{3}-[0-9]{4}$" },
@@ -403,19 +411,16 @@ foundrydata --help
 }
 ```
 
-### Clear Error Messages
+### Clear Error Messages (strict)
 
 ```bash
 # When using unsupported features
 foundrydata generate --schema complex.json
 
-# ❌ Error: Schema features not supported in v0.1
+# ❌ Error: Unsupported features in strict mode: if, then, else
 # 
-# Unsupported features detected:
-#   - Schema composition (allOf/anyOf/oneOf) at: properties.user.allOf
-# 
-# 💡 Workaround: Merge constraints into single schema
-# 📅 Composition support: v0.3
+# In strict mode, conditional keywords fail fast. Use `--compat lax` to proceed
+# with planning/generation and rely on AJV for 100% validation of outputs.
 # 
 # Want them sooner? Vote or contribute:
 # https://github.com/foundrydata/foundrydata/issues

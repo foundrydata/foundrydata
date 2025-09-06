@@ -30,6 +30,7 @@ import {
   EmailGenerator,
   DateGenerator,
   DateTimeGenerator,
+  RegexGenerator,
 } from './formats';
 import type { FormatOptions } from '../registry/format-registry';
 import {
@@ -244,6 +245,7 @@ export class FoundryGenerator {
         new EmailGenerator(),
         new DateGenerator(),
         new DateTimeGenerator(),
+        new RegexGenerator(),
       ]);
     }
 
@@ -268,20 +270,10 @@ export class FoundryGenerator {
   // Heuristic scan for unsupported features (aligns with parser's PLANNED_FEATURES)
   private scanUnsupportedFeatures(input: unknown): string[] {
     const unsupported: string[] = [];
-    const KEYS = new Set([
-      'allOf',
-      'anyOf',
-      'oneOf',
-      'not',
-      'if',
-      'then',
-      'else',
-      'patternProperties',
-      'propertyNames',
-      'dependentSchemas',
-      // 'unevaluatedProperties', // supported now
-      // 'unevaluatedItems', // supported now
-    ]);
+    // Only flag features that we do not fully plan/generate in strict mode.
+    // Composition keywords (allOf/anyOf/oneOf/not) and object keywords
+    // (patternProperties/propertyNames/dependentSchemas) are supported now.
+    const KEYS = new Set(['if', 'then', 'else']);
     const visit = (node: unknown): void => {
       if (!node || typeof node !== 'object') return;
       for (const k of Object.keys(node as Record<string, unknown>)) {
@@ -433,6 +425,8 @@ export class FoundryGenerator {
       } else {
         // Handle composition in planning
         effectiveSchema = this.resolveComposition(schema);
+        // Apply conditional heuristics to bias generation
+        effectiveSchema = this.applyConditionalHeuristics(effectiveSchema);
 
         // Special-case: official Draft meta-schemas → generate minimal object schema
         if (this.isOfficialMetaSchema(schema)) {
@@ -740,6 +734,144 @@ export class FoundryGenerator {
     return { type: 'object' } as Schema;
   }
 
+  /**
+   * Heuristically apply top-level and one-level nested if/then/else by merging
+   * the likely branch (prefer satisfying "if" → "then"). Returns a cloned schema.
+   */
+  private applyConditionalHeuristics(schema: Schema): Schema {
+    if (typeof schema !== 'object' || schema === null) return schema;
+    const s = this.clone(schema as Record<string, unknown>);
+
+    const mergeObjectSchema = (
+      base: Record<string, unknown>,
+      add: Record<string, unknown>
+    ): void => {
+      if (Array.isArray(add.required)) {
+        const req = new Set<string>(
+          Array.isArray(base.required) ? (base.required as string[]) : []
+        );
+        for (const r of add.required as string[]) req.add(r);
+        if (req.size > 0) base.required = Array.from(req);
+      }
+      if (add.properties && typeof add.properties === 'object') {
+        const baseProps = (base.properties as Record<string, unknown>) || {};
+        for (const [k, v] of Object.entries(
+          add.properties as Record<string, unknown>
+        )) {
+          if (!(k in baseProps)) baseProps[k] = this.clone(v);
+        }
+        base.properties = baseProps;
+      }
+      if (
+        add.additionalProperties !== undefined &&
+        base.additionalProperties === undefined
+      ) {
+        base.additionalProperties = add.additionalProperties;
+      }
+    };
+
+    const tryApplyOnObject = (obj: Record<string, unknown>): void => {
+      const ifSch = obj['if'];
+      const thenSch = obj['then'];
+      const elseSch = obj['else'];
+      if (!ifSch || typeof ifSch !== 'object') return;
+
+      const ifProps = (ifSch as Record<string, unknown>).properties as
+        | Record<string, unknown>
+        | undefined;
+      const req = (ifSch as Record<string, unknown>).required as
+        | string[]
+        | undefined;
+      let predKey: string | undefined;
+      let predSchema: Record<string, unknown> | undefined;
+      if (ifProps && typeof ifProps === 'object') {
+        const keys = Object.keys(ifProps);
+        if (keys.length === 1) {
+          const k = keys[0]!;
+          const v = ifProps[k];
+          if (
+            v &&
+            typeof v === 'object' &&
+            ('const' in (v as object) || 'enum' in (v as object))
+          ) {
+            predKey = k;
+            predSchema = v as Record<string, unknown>;
+          }
+        }
+      }
+      if (!predKey && Array.isArray(req) && req.length === 1) {
+        predKey = req[0]!;
+        predSchema = undefined;
+      }
+      if (!predKey) return;
+
+      if (obj.type === undefined) obj.type = 'object';
+      if (obj.properties === undefined) obj.properties = {};
+      if (!Array.isArray(obj.required)) obj.required = [];
+
+      const props = obj.properties as Record<string, unknown>;
+      const baseKeySchema = ((props[predKey] as Record<string, unknown>) ??
+        {}) as Record<string, unknown>;
+      const mergedKeySchema: Record<string, unknown> =
+        this.clone(baseKeySchema);
+      if (predSchema) {
+        if ('const' in predSchema) {
+          // Prefer const; drop enum to avoid generator choosing enum path first
+          delete (mergedKeySchema as Record<string, unknown>).enum;
+          mergedKeySchema.const = predSchema.const;
+        } else if (Array.isArray(predSchema.enum)) {
+          const predEnum = predSchema.enum as unknown[];
+          if (Array.isArray(mergedKeySchema.enum)) {
+            const baseEnum = mergedKeySchema.enum as unknown[];
+            const inter = baseEnum.filter((x) =>
+              predEnum.some((y) => JSON.stringify(y) === JSON.stringify(x))
+            );
+            mergedKeySchema.enum =
+              inter.length > 0 ? inter : this.clone(predEnum);
+          } else {
+            mergedKeySchema.enum = this.clone(predEnum);
+          }
+        }
+      }
+      props[predKey] = mergedKeySchema;
+      if (!(obj.required as string[]).includes(predKey))
+        (obj.required as string[]).push(predKey);
+
+      if (thenSch && typeof thenSch === 'object') {
+        mergeObjectSchema(obj, thenSch as Record<string, unknown>);
+      } else if (elseSch && typeof elseSch === 'object') {
+        mergeObjectSchema(obj, elseSch as Record<string, unknown>);
+      }
+    };
+
+    const topType = s.type as string | string[] | undefined;
+    const topIsObject =
+      (typeof topType === 'string' && topType === 'object') ||
+      (Array.isArray(topType) && topType.includes('object')) ||
+      topType === undefined;
+    if (topIsObject) tryApplyOnObject(s);
+
+    if (s.properties && typeof s.properties === 'object') {
+      const props = s.properties as Record<string, unknown>;
+      for (const [k, v] of Object.entries(props)) {
+        if (v && typeof v === 'object') {
+          const vObj = this.clone(v as Record<string, unknown>);
+          const vType = vObj.type as string | string[] | undefined;
+          const vIsObject =
+            (typeof vType === 'string' && vType === 'object') ||
+            (Array.isArray(vType) && vType.includes('object')) ||
+            vType === undefined;
+          if (vIsObject) {
+            tryApplyOnObject(vObj);
+            props[k] = vObj;
+          }
+        }
+      }
+    }
+
+    return s as Schema;
+  }
+
   generateData(
     plan: GenerationPlan,
     options: Required<Pick<GenerationOptions, 'seed' | 'locale' | 'count'>> &
@@ -805,6 +937,23 @@ export class FoundryGenerator {
             }
             break;
           }
+          // Try conditional fixups (if/then/else) once per attempt when applicable
+          const adjusted = this.tryConditionalAdjust(
+            genRes.isOk() ? genRes.value : undefined,
+            originalSchema,
+            context,
+            i,
+            attempt
+          );
+          if (adjusted !== undefined) {
+            const v2 = this.validator.validateSingle(adjusted, originalSchema);
+            if (v2.isOk() && v2.value.valid) {
+              accepted = adjusted;
+              itemsRepaired++;
+              attemptsUsed += attempt + 1;
+              break;
+            }
+          }
           lastError = v.isErr() ? v.error : v.value;
           attempt++;
         }
@@ -844,6 +993,188 @@ export class FoundryGenerator {
           context: { stage: PipelineStage.Generate },
         })
       );
+    }
+  }
+
+  /**
+   * Attempt to repair a generated root value to satisfy simple top-level if/then/else.
+   * Heuristic: if root is an object and schema has top-level { if, then, else },
+   * - If value matches "if", ensure required from "then" are present (generate if needed)
+   * - Otherwise, if "else" exists, ensure required from "else" are present
+   */
+  private tryConditionalAdjust(
+    value: unknown,
+    schemaInput: object,
+    baseContext: GeneratorContext,
+    index: number,
+    attempt: number
+  ): unknown | undefined {
+    if (!value || typeof value !== 'object' || Array.isArray(value))
+      return undefined;
+    const root = schemaInput as Record<string, unknown>;
+    const ifSch = root['if'];
+    const thenSch = root['then'];
+    const elseSch = root['else'];
+    if (!ifSch || typeof ifSch !== 'object') return undefined;
+
+    // Determine which branch applies
+    const ifMatch = this.validator.validateSingle(value, ifSch as object);
+    let isIf = ifMatch.isOk() && ifMatch.value.valid;
+    // Prefer THEN by constructing predicate when simple (const/enum on one key)
+    const ifProps = (ifSch as Record<string, unknown>).properties as
+      | Record<string, unknown>
+      | undefined;
+    const reqIf = (ifSch as Record<string, unknown>).required as
+      | string[]
+      | undefined;
+    let predKey: string | undefined;
+    let candidate: unknown | undefined;
+    if (ifProps && typeof ifProps === 'object') {
+      const keys = Object.keys(ifProps);
+      if (keys.length === 1) {
+        const k = keys[0]!;
+        const v = ifProps[k] as Record<string, unknown>;
+        if (v && typeof v === 'object') {
+          const vObj = v as { const?: unknown; enum?: unknown[] };
+          if ('const' in vObj) candidate = vObj.const;
+          else if (Array.isArray(vObj.enum) && vObj.enum.length > 0)
+            candidate = vObj.enum[0];
+          predKey = k;
+        }
+      }
+    }
+    if (!predKey && Array.isArray(reqIf) && reqIf.length === 1) {
+      predKey = reqIf[0]!;
+      candidate = candidate ?? `val-${(baseContext.seed ?? 0) ^ index}`;
+    }
+    let branch: Record<string, unknown> | undefined = isIf
+      ? (thenSch as Record<string, unknown> | undefined)
+      : (elseSch as Record<string, unknown> | undefined);
+    // If we can satisfy IF by construction, switch to THEN path
+    if (predKey) {
+      const forced = JSON.parse(JSON.stringify(value)) as Record<
+        string,
+        unknown
+      >;
+      forced[predKey] = candidate;
+      value = forced;
+      isIf = true;
+      branch = thenSch as Record<string, unknown> | undefined;
+    }
+    if (!branch || typeof branch !== 'object') return undefined;
+
+    // Collect required keys from branch
+    const reqBranch = Array.isArray(branch.required)
+      ? (branch.required as string[])
+      : [];
+    if (reqBranch.length === 0) return undefined;
+
+    const props =
+      (branch.properties as Record<string, unknown> | undefined) ||
+      (root.properties as Record<string, unknown> | undefined) ||
+      undefined;
+
+    const out = JSON.parse(JSON.stringify(value)) as Record<string, unknown>;
+    let changed = false;
+    for (const k of reqBranch) {
+      if (!(k in out)) {
+        const propSchema = props && (props[k] as Schema | undefined);
+        const propVal = this.generateForSchemaOrDefault(
+          propSchema,
+          baseContext,
+          `${baseContext.path}.${k}`,
+          index,
+          attempt
+        );
+        out[k] = propVal;
+        changed = true;
+      }
+    }
+    // Debug logging removed after verification
+    return changed ? out : undefined;
+  }
+
+  /** Generate a value for a property schema; fall back to sensible defaults */
+  private generateForSchemaOrDefault(
+    schema: Schema | undefined,
+    baseContext: GeneratorContext,
+    path: string,
+    index: number,
+    attempt: number
+  ): unknown {
+    const seed =
+      (baseContext.seed ?? 0) ^
+      Math.imul(index + 1, 0x9e3779b9) ^
+      Math.imul(attempt + 17, 0x85ebca6b);
+    if (!schema || typeof schema === 'boolean') {
+      // Default simple string
+      return `val-${(seed >>> 0).toString(36)}`;
+    }
+
+    // Handle const/enum without invoking generators
+    const sObj = schema as Record<string, unknown>;
+    if ('const' in sObj) return sObj.const as unknown;
+    if (Array.isArray(sObj.enum) && (sObj.enum as unknown[]).length > 0) {
+      return (sObj.enum as unknown[])[0];
+    }
+
+    const type = sObj.type as string | string[] | undefined;
+    const pickType = Array.isArray(type) ? type[0] : type;
+
+    const nested = createGeneratorContext(schema, baseContext.formatRegistry, {
+      seed,
+      locale: baseContext.locale,
+      path,
+      scenario: baseContext.scenario,
+      maxDepth: baseContext.maxDepth,
+    });
+
+    try {
+      switch (pickType) {
+        case 'string': {
+          const r = new StringGenerator().generate(schema, nested);
+          return r.isOk() ? r.value : 'x';
+        }
+        case 'number': {
+          const r = new NumberGenerator().generate(schema, nested);
+          return r.isOk() ? r.value : 0;
+        }
+        case 'integer': {
+          const r = new IntegerGenerator().generate(schema, nested);
+          return r.isOk() ? r.value : 0;
+        }
+        case 'boolean': {
+          const r = new BooleanGenerator().generate(schema, nested);
+          return r.isOk() ? r.value : true;
+        }
+        case 'array': {
+          const r = new ArrayGenerator().generate(schema, nested);
+          return r.isOk() ? r.value : [];
+        }
+        case 'object': {
+          const r = new ObjectGenerator().generate(schema, nested);
+          return r.isOk() ? r.value : {};
+        }
+        default:
+          // Best-effort fallbacks
+          if ('properties' in sObj || 'required' in sObj) {
+            const r = new ObjectGenerator().generate(
+              { ...(sObj as object), type: 'object' } as Schema,
+              nested
+            );
+            return r.isOk() ? r.value : {};
+          }
+          if ('items' in sObj || 'prefixItems' in sObj) {
+            const r = new ArrayGenerator().generate(
+              { ...(sObj as object), type: 'array' } as Schema,
+              nested
+            );
+            return r.isOk() ? r.value : [];
+          }
+          return `val-${(seed >>> 0).toString(36)}`;
+      }
+    } catch {
+      return `val-${(seed >>> 0).toString(36)}`;
     }
   }
 
@@ -929,6 +1260,32 @@ export class FoundryGenerator {
     metrics.end(PipelineStage.Parse);
     const compat = options.compat ?? 'strict';
     if (parsedOriginal.isErr() && compat !== 'lax') return parsedOriginal;
+
+    // In strict mode, fail fast on conditional keywords for modern drafts (2019-09/2020-12).
+    // For draft-07, conditionals are handled heuristically and allowed in strict.
+    if (compat === 'strict') {
+      const unsupported = this.scanUnsupportedFeatures(schemaInput);
+      const hasConditionals = unsupported.some(
+        (k) => k === 'if' || k === 'then' || k === 'else'
+      );
+      const schStr =
+        schemaInput &&
+        typeof (schemaInput as Record<string, unknown>)['$schema'] === 'string'
+          ? String(
+              (schemaInput as Record<string, unknown>)['$schema']
+            ).toLowerCase()
+          : '';
+      const isModernDraft =
+        schStr.includes('2020-12') || schStr.includes('2019-09');
+      if (hasConditionals && isModernDraft) {
+        return err(
+          new ConfigError({
+            message: `Unsupported features in strict mode: ${unsupported.join(', ')}`,
+            context: { stage: PipelineStage.Parse, unsupported },
+          })
+        );
+      }
+    }
 
     // Resolve in-document references for planning/generation
     metrics.start(PipelineStage.Resolve);

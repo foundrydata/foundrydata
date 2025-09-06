@@ -41,15 +41,7 @@ export class JSONSchemaParser implements SchemaParser {
 
   // JSON Schema keywords not yet supported (only truly unsupported features)
   private static readonly PLANNED_FEATURES = {
-    // Conditional application keywords (remaining)
-    if: 'Conditional schemas will be supported in v0.4.0',
-    then: 'Conditional schemas will be supported in v0.4.0',
-    else: 'Conditional schemas will be supported in v0.4.0',
-
     // Advanced property validation (remaining)
-
-    // Array validation keywords (remaining)
-    additionalItems: 'Additional items will be supported in v0.2.0',
 
     // Unevaluated keywords (unevaluatedProperties now supported)
 
@@ -335,6 +327,35 @@ export class JSONSchemaParser implements SchemaParser {
       >;
     }
 
+    // Ensure conditional keywords present on object schemas (safety net)
+    if ('if' in schema && schema.if && typeof schema.if === 'object') {
+      const r = this.parseSchema(
+        schema.if as Record<string, unknown> | boolean,
+        `${path}.if`
+      );
+      (result as unknown as Record<string, unknown>).if = r.isOk()
+        ? r.value
+        : (schema.if as object);
+    }
+    if ('then' in schema && schema.then && typeof schema.then === 'object') {
+      const r = this.parseSchema(
+        schema.then as Record<string, unknown> | boolean,
+        `${path}.then`
+      );
+      (result as unknown as Record<string, unknown>).then = r.isOk()
+        ? r.value
+        : (schema.then as object);
+    }
+    if ('else' in schema && schema.else && typeof schema.else === 'object') {
+      const r = this.parseSchema(
+        schema.else as Record<string, unknown> | boolean,
+        `${path}.else`
+      );
+      (result as unknown as Record<string, unknown>).else = r.isOk()
+        ? r.value
+        : (schema.else as object);
+    }
+
     return ok(result);
   }
 
@@ -347,21 +368,28 @@ export class JSONSchemaParser implements SchemaParser {
       ...this.parseBaseProperties(schema),
     };
 
-    // Parse items (can be schema object, boolean true/false, or undefined)
+    // Parse items (Draft-07: schema | schema[] | boolean)
     if ('items' in schema) {
       const raw = schema.items as unknown;
       if (typeof raw === 'boolean') {
-        // Draft-2020-12: items=false forbids additional items beyond prefixItems
-        // items=true allows any additional items
         result.items = raw;
+      } else if (Array.isArray(raw)) {
+        const tuple: Schema[] = [];
+        for (let i = 0; i < raw.length; i++) {
+          const itemResult = this.parseSchema(
+            raw[i] as Record<string, unknown> | boolean,
+            `${path}.items[${i}]`
+          );
+          if (itemResult.isErr()) return itemResult;
+          tuple.push(itemResult.value);
+        }
+        result.items = tuple;
       } else if (raw && typeof raw === 'object') {
         const itemsResult = this.parseSchema(
           raw as Record<string, unknown> | boolean,
           `${path}.items`
         );
-        if (itemsResult.isErr()) {
-          return itemsResult;
-        }
+        if (itemsResult.isErr()) return itemsResult;
         result.items = itemsResult.value;
       }
     }
@@ -374,12 +402,26 @@ export class JSONSchemaParser implements SchemaParser {
           schema.prefixItems[i] as Record<string, unknown> | boolean,
           `${path}.prefixItems[${i}]`
         );
-        if (itemResult.isErr()) {
-          return itemResult;
-        }
+        if (itemResult.isErr()) return itemResult;
         prefixItems.push(itemResult.value);
       }
       result.prefixItems = prefixItems;
+    }
+
+    // Parse additionalItems (Draft-07)
+    if ('additionalItems' in schema) {
+      const rawAI = schema.additionalItems as unknown;
+      if (typeof rawAI === 'boolean') {
+        result.additionalItems = rawAI;
+      } else if (rawAI && typeof rawAI === 'object') {
+        const aiRes = this.parseSchema(
+          rawAI as Record<string, unknown> | boolean,
+          `${path}.additionalItems`
+        );
+        if (aiRes.isErr())
+          return aiRes as unknown as Result<ArraySchema, ParseError>;
+        result.additionalItems = aiRes.value as Schema;
+      }
     }
 
     // Parse constraints
@@ -393,11 +435,10 @@ export class JSONSchemaParser implements SchemaParser {
       result.uniqueItems = schema.uniqueItems;
     }
 
-    // Parse contains (Draft-07+) and min/maxContains (2019-09+)
+    // Parse contains and min/maxContains
     if ('contains' in schema) {
       const c = schema.contains as unknown;
       if (typeof c === 'boolean') {
-        // Boolean schemas allowed
         result.contains = c;
       } else if (c && typeof c === 'object') {
         const cRes = this.parseSchema(
@@ -643,6 +684,29 @@ export class JSONSchemaParser implements SchemaParser {
       if (r.isOk()) base.not = r.value;
     }
 
+    // Conditional keywords (Draft-07+)
+    if ('if' in schema && schema.if && typeof schema.if === 'object') {
+      const r = this.parseSchema(
+        schema.if as Record<string, unknown> | boolean,
+        'if'
+      );
+      if (r.isOk()) base.if = r.value;
+    }
+    if ('then' in schema && schema.then && typeof schema.then === 'object') {
+      const r = this.parseSchema(
+        schema.then as Record<string, unknown> | boolean,
+        'then'
+      );
+      if (r.isOk()) base.then = r.value;
+    }
+    if ('else' in schema && schema.else && typeof schema.else === 'object') {
+      const r = this.parseSchema(
+        schema.else as Record<string, unknown> | boolean,
+        'else'
+      );
+      if (r.isOk()) base.else = r.value;
+    }
+
     return base;
   }
 
@@ -789,6 +853,22 @@ export class JSONSchemaParser implements SchemaParser {
       return ok(undefined);
     }
 
+    // Conditional-only schemas (no clear type/structure) are not supported in strict parsing
+    const hasConditionals =
+      'if' in schema || 'then' in schema || 'else' in schema;
+    const hasTypeOrStructure =
+      typeof (schema.type as unknown) === 'string' ||
+      'properties' in schema ||
+      'items' in schema;
+    if (hasConditionals && !hasTypeOrStructure) {
+      return err(
+        new ParseError({
+          message: 'Unsupported feature: "if"',
+          errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
+        })
+      );
+    }
+
     // Run individual feature checks
     const featureCheck = this.checkPlannedFeatures(schema);
     if (featureCheck.isErr()) return featureCheck;
@@ -861,23 +941,11 @@ export class JSONSchemaParser implements SchemaParser {
    * Check for unsupported array features
    */
   private checkArrayFeatures(
-    schema: Record<string, unknown>
+    _schema: Record<string, unknown>
   ): Result<void, ParseError> {
     // Union types are allowed; generator will narrow deterministically and validation uses the original schema
 
-    // Check for complex array items (tuple validation)
-    if (Array.isArray(schema.items)) {
-      return err(
-        new ParseError({
-          message: 'Tuple validation is not yet supported',
-          errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
-          context: {
-            suggestion:
-              'Use a single schema for all array items. This feature will be added in v0.3.0',
-          },
-        })
-      );
-    }
+    // Tuple validation via draft-07 items: [] is now supported by parser
 
     return ok(undefined);
   }
