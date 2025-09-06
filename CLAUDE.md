@@ -46,7 +46,6 @@ foundrydata generate --schema user.json --rows 100 --scenario errors
 - **Trust factor**: Prefers open source tools
 
 ### MVP Constraints (v0.1)
-- **Code**: Maximum 3000 lines
 - **Performance**: <200ms for 1000 rows, <100MB for 10,000 records
 - **Bundle**: <1MB (core package)
 - **Architecture**: Single Node.js process, works offline
@@ -96,11 +95,15 @@ Note: Arrays of nested objects (up to depth 2) are supported; nested object prop
 
 ✅ **Supported (v0.1)**
 - Basic patterns (regex validation) - Simple to moderate complexity patterns
+- **References ($ref, $recursiveRef, $dynamicRef)** - Full resolution with cycle detection
+- **Schema definitions (definitions, $defs)** - Legacy and modern support
+- **Property dependencies (dependencies, dependentRequired)** - Conditional requirements
+- **Advanced constraints (const, multipleOf, prefixItems, additionalProperties)**
 
 ❌ **NOT Supported (v0.1)**
 - Schema composition (allOf, oneOf, anyOf)
-- References ($ref, $id)
-- Advanced formats (uri, hostname, ipv4)
+- Schema identifiers ($id) - References work, but schema IDs not processed
+- Advanced formats (uri, hostname, ipv4, ipv6, json-pointer)
 - Complex regex patterns with ReDoS risk
 
 ---
