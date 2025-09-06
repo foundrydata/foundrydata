@@ -165,3 +165,6 @@ Thumbs.db
 *.swo
 *~
 .claude/settings.local.json
+
+# Performance test baselines
+test/performance/baseline.json
