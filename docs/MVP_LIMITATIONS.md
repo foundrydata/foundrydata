@@ -84,3 +84,49 @@ Remove or replace unsupported features before testing:
 - Full nesting support
 - Schema composition (allOf, anyOf, oneOf)
 - Schema references ($ref)
+
+## Using the Limitations Registry
+
+The registry is available from `@foundrydata/core` to help you detect feature availability, suggest workarounds, and enrich errors for better presentation.
+
+### Check support by version
+
+```ts
+import { isSupported, CURRENT_VERSION } from '@foundrydata/core';
+
+// Example: is regex pattern supported in current version?
+const regexOk = isSupported('regexPatterns', CURRENT_VERSION); // false in v0.1.0, true in v0.2.0
+```
+
+### Retrieve limitation details
+
+```ts
+import { getLimitation } from '@foundrydata/core';
+
+const lim = getLimitation('schemaComposition');
+// lim?.availableIn => '1.0.0'
+// lim?.workaround => 'Manually merge constraints from allOf/anyOf/oneOf into a single schema.'
+// lim?.docsAnchor => 'keywords-not-supported'
+```
+
+### Enrich an error with limitation context
+
+```ts
+import { ErrorCode, enrichErrorWithLimitation } from '@foundrydata/core';
+import { SchemaError } from '@foundrydata/core/types';
+
+// Create an error at the emission point
+let error = new SchemaError({
+  message: 'Nested objects are not supported in the current version',
+  errorCode: ErrorCode.NESTED_OBJECTS_NOT_SUPPORTED,
+  context: { schemaPath: '#/properties/address' },
+});
+
+// Enrich it with registry data (workaround, documentation link, ETA)
+error = enrichErrorWithLimitation(error, 'nestedObjects');
+
+// Now presenters and loggers can surface richer info
+// error.suggestions[0] includes a flattening workaround
+// error.documentation links to the relevant doc section
+// error.availableIn provides the planned release version
+```

@@ -20,6 +20,18 @@ export {
   type ProductionView,
 } from './errors/presenter';
 
+// Limitations registry and helpers (Task 6)
+export {
+  LIMITATIONS_REGISTRY,
+  type Limitation,
+  type LimitationKey,
+  CURRENT_VERSION,
+  getLimitation,
+  compareVersions,
+  isSupported,
+  enrichErrorWithLimitation,
+} from './errors/limitations';
+
 // Initialize built-in formats to avoid circular dependencies
 import {
   defaultFormatRegistry,

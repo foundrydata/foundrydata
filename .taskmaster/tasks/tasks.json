@@ -2186,7 +2186,7 @@
         "description": "Implement centralized registry for MVP limitations with workarounds and version roadmap",
         "details": "Create packages/core/src/errors/limitations.ts:\n\nLIMITATIONS_REGISTRY with entries for:\n- nestedObjects: E001, available v0.3, flatten workaround\n- regexPatterns: E002, available v0.2, enum/format alternative\n- schemaComposition: E003, available v1.0, manual merge workaround\n\nEach limitation includes:\n- errorCode mapping\n- availableIn version\n- workaround description and example\n- docsAnchor for documentation links\n- featureExamples for context\n\nHelper functions:\n- isSupported(limitationKey, version): boolean\n- getLimitation(key): Limitation | null\n- enrichErrorWithLimitation(error, key): adds limitation context to error\n- compareVersions(v1, v2): number for version comparison",
         "testStrategy": "Create packages/core/src/errors/__tests__/limitations.test.ts:\n- Test getLimitation returns correct data\n- Test isSupported version comparison logic\n- Test enrichErrorWithLimitation adds proper fields\n- Test unknown limitations return null\n- Test registry completeness (all keys have full data)",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           1
         ],
@@ -2197,7 +2197,7 @@
             "title": "Define LIMITATIONS_REGISTRY entries",
             "description": "Create the centralized registry with all MVP limitation entries",
             "details": "Create LIMITATIONS_REGISTRY in packages/core/src/errors/limitations.ts:\n- nestedObjects entry: E001, v0.3, flatten workaround\n- regexPatterns entry: E002, v0.2, enum/format alternative  \n- schemaComposition entry: E003, v1.0, manual merge\nEach entry includes: errorCode, availableIn, workaround, workaroundExample, docsAnchor, featureExamples",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 6
           },
@@ -2206,7 +2206,7 @@
             "title": "Implement limitation helper functions",
             "description": "Create utility functions for limitation management",
             "details": "Add to packages/core/src/errors/limitations.ts:\n- isSupported(limitationKey, version): Check if feature is available\n- getLimitation(key): Retrieve limitation details\n- enrichErrorWithLimitation(error, key): Auto-add limitation context\n- compareVersions(v1, v2): Version comparison logic\nExport CURRENT_VERSION constant",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 6
           }
@@ -2331,7 +2331,7 @@
     ],
     "metadata": {
       "created": "2025-09-05T21:37:48.791Z",
-      "updated": "2025-09-06T10:32:26.107Z",
+      "updated": "2025-09-06T10:38:35.588Z",
       "description": "Implementation of comprehensive error system with user-friendly messages, stable error codes, JSON Pointer localization, and PII redaction for FoundryData MVP"
     }
   }

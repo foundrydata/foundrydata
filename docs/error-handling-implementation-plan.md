@@ -409,18 +409,16 @@ export function getAlternative(
 // Schema correction proposals
 export function proposeSchemaFix(
   error: SchemaError
-): SchemaFix {
-  const { path, value, limitationKey } = error.context;
-  const limitation = LIMITATIONS_REGISTRY[limitationKey];
-  
+): SchemaFix | null {
+  const { path, limitationKey } = error.context as { path?: string; limitationKey?: string };
+  const limitation = limitationKey ? LIMITATIONS_REGISTRY[limitationKey] : null;
+
   if (!limitation) return null;
-  
+
   return {
-    before: value,
-    after: limitation.workaroundExample,
-    diff: generateDiff(value, limitation.workaroundExample),
     path,
-    explanation: limitation.workaround
+    explanation: limitation.workaround,
+    example: limitation.workaroundExample, // string example in MVP
   };
 }
 
@@ -462,94 +460,80 @@ function calculateDistance(a: string, b: string): number {
 - **Registry-based** - centralized limitation knowledge
 - **Null-safe** - always return null for unknown features
 
+Roadmap note (Task 7/9):
+- For richer “schema fix proposals”, `proposeSchemaFix` may evolve to return structured examples with `{ before, after }` objects and an optional `diff`. The registry could adopt a union type for `workaroundExample` (string | { before: unknown; after: unknown }). MVP stays string-based for simplicity.
+
 ### Phase 6: MVP Limitations Registry (Single Source of Truth)
-**Location**: `packages/core/src/errors/limitations.ts`
+**Location**: `packages/core/src/errors/limitations.ts` (exported via root API)
 
 ```typescript
-// Centralized registry with stable keys
-export const LIMITATIONS_REGISTRY: Record<string, Limitation> = {
-  'nestedObjects': {
-    supported: false,
-    availableIn: 'v0.3',
-    errorCode: ErrorCode.NESTED_OBJECTS_NOT_SUPPORTED,
-    workaround: 'Flatten object structure',
-    workaroundExample: {
-      before: {
-        address: { type: 'object', properties: { street: { type: 'string' } } }
-      },
-      after: {
-        addressStreet: { type: 'string' },
-        addressCity: { type: 'string' }
-      }
-    },
-    docsAnchor: '#nested-objects',
-    featureExamples: ['User profiles', 'Product catalogs']
-  },
-  
-  'regexPatterns': {
-    supported: false,
-    availableIn: 'v0.2',
-    errorCode: ErrorCode.REGEX_PATTERNS_NOT_SUPPORTED,
-    workaround: 'Use enum or format validators',
-    workaroundExample: {
-      before: { pattern: '^[A-Z]{2}-\\d{4}$' },
-      after: { enum: ['US-1234', 'CA-5678'] }
-    },
-    docsAnchor: '#regex-patterns',
-    featureExamples: ['Product codes', 'License plates']
-  },
-  
-  'schemaComposition': {
-    supported: false,
-    availableIn: 'v1.0',
-    errorCode: ErrorCode.SCHEMA_COMPOSITION_NOT_SUPPORTED,
-    workaround: 'Merge schemas manually',
-    workaroundExample: {
-      before: { allOf: [{ $ref: '#/definitions/base' }, { properties: {} }] },
-      after: { type: 'object', properties: { /* merged */ } }
-    },
-    docsAnchor: '#schema-composition',
-    featureExamples: ['Inheritance', 'Mixins']
+// Centralized registry with stable keys and rich metadata
+export const LIMITATIONS_REGISTRY: Record<
+  'nestedObjects' | 'regexPatterns' | 'schemaComposition',
+  {
+    key: string;
+    title: string;
+    errorCode: ErrorCode;
+    availableIn: string; // e.g. '0.3.0'
+    workaround: string;
+    workaroundExample: string;
+    docsAnchor: string; // anchor in MVP_LIMITATIONS.md
+    featureExamples: string[];
   }
+> = {
+  nestedObjects: {
+    key: 'nestedObjects',
+    title: 'Nested Objects Not Supported',
+    errorCode: ErrorCode.NESTED_OBJECTS_NOT_SUPPORTED,
+    availableIn: '0.3.0',
+    workaround: 'Flatten nested objects into top-level properties.',
+    workaroundExample: "Use addressStreet/addressCity instead of nested 'address' object.",
+    docsAnchor: 'nested-objects',
+    featureExamples: ["{ type: 'object', properties: { address: { type: 'object' } } }"],
+  },
+  regexPatterns: {
+    key: 'regexPatterns',
+    title: 'Regex Patterns Not Supported',
+    errorCode: ErrorCode.REGEX_PATTERNS_NOT_SUPPORTED,
+    availableIn: '0.2.0',
+    workaround: 'Use enum or supported format constraints instead of custom regex.',
+    workaroundExample: "Prefer { format: 'email' } or enum over 'pattern'.",
+    docsAnchor: 'keywords-not-supported',
+    featureExamples: ["{ type: 'string', pattern: '^[A-Z]{3}$' }"],
+  },
+  schemaComposition: {
+    key: 'schemaComposition',
+    title: 'Schema Composition Not Supported',
+    errorCode: ErrorCode.SCHEMA_COMPOSITION_NOT_SUPPORTED,
+    availableIn: '1.0.0',
+    workaround: 'Manually merge constraints from composition keywords.',
+    workaroundExample: 'Inline the combined constraints and remove allOf/anyOf/oneOf.',
+    docsAnchor: 'keywords-not-supported',
+    featureExamples: [
+      "{ allOf: [{ type: 'string' }, { minLength: 3 }] }",
+      "{ anyOf: [{ type: 'string' }, { type: 'number' }] }",
+    ],
+  },
 };
 
-// Helper functions
-export function isSupported(
-  limitationKey: string, 
-  version: string = CURRENT_VERSION
-): boolean {
-  const limitation = LIMITATIONS_REGISTRY[limitationKey];
-  if (!limitation) return true; // Unknown = assumed supported
-  
-  return compareVersions(version, limitation.availableIn) >= 0;
-}
+// Helper functions (publicly exported)
+export function getLimitation(key: string): Limitation | null;
+export function compareVersions(a: string, b: string): number;
+export function isSupported(key: string, version: string): boolean; // unknown → false
+export function enrichErrorWithLimitation(error: FoundryError, key: string): FoundryError;
+export const CURRENT_VERSION = '0.1.0';
 
-export function getLimitation(key: string): Limitation | null {
-  return LIMITATIONS_REGISTRY[key] || null;
-}
-
-// Auto-link errors to limitations
-export function enrichErrorWithLimitation(
-  error: FoundryError,
-  limitationKey: string
-): FoundryError {
-  const limitation = getLimitation(limitationKey);
-  if (!limitation) return error;
-  
-  error.limitationKey = limitationKey;
-  error.availableIn = limitation.availableIn;
-  error.suggestions = [limitation.workaround];
-  error.documentation = `https://foundrydata.dev/docs/limitations${limitation.docsAnchor}`;
-  
-  return error;
-}
+// Presenter consumes these enrichments:
+// - error.suggestions[0]  → CLI "Workaround"
+// - error.documentation   → CLI "More info" link
+// - error.availableIn     → CLI "Available in"
 ```
 
-**Key Features**:
-- **Single source of truth** for all limitations
-- **Stable keys** for consistent referencing
-- **Auto-enrichment** of errors with limitation data
-- **Version checking** utilities
+Public API exposure:
+- `packages/core/src/index.ts` re-exports: `LIMITATIONS_REGISTRY`, `CURRENT_VERSION`, `getLimitation`, `compareVersions`, `isSupported`, `enrichErrorWithLimitation`, types `Limitation`, `LimitationKey`.
+
+Doc linkage strategy:
+- Documentation URL points to `docs/MVP_LIMITATIONS.md#<docsAnchor>` in-repo for now (GitHub URL in MVP).
 
 ### Phase 7: Testing Strategy
 
@@ -674,17 +658,16 @@ describe('Pure Suggestion Functions', () => {
     });
   });
   
-  test('proposeSchemaFix generates diff', () => {
-    const error = new UnsupportedFeatureError('nestedObjects', {
-      path: '/properties/address',
-      limitationKey: 'nestedObjects'
+  test('proposeSchemaFix returns explanation and example', () => {
+    const error = new SchemaError({
+      message: 'Nested objects not supported',
+      context: { schemaPath: '#/properties/address', path: '/properties/address', limitationKey: 'nestedObjects' },
     });
-    const fix = proposeSchemaFix(error);
+    const fix = proposeSchemaFix(error)!;
     expect(fix).toMatchObject({
-      before: expect.any(Object),
-      after: expect.any(Object),
-      diff: expect.any(String),
-      explanation: expect.any(String)
+      path: '/properties/address',
+      explanation: expect.any(String),
+      example: expect.any(String),
     });
   });
   
@@ -701,15 +684,17 @@ describe('CLI Formatting', () => {
   test('respects NO_COLOR env variable', () => {
     process.env.NO_COLOR = '1';
     const presenter = new ErrorPresenter('dev', {});
-    const view = presenter.formatForCLI(error);
-    expect(view.useColors).toBe(false);
+    const err = new SchemaError({ message: 'Test', context: { schemaPath: '#' } });
+    const view = presenter.formatForCLI(err);
+    expect(view.colors).toBe(false);
   });
   
   test('respects FORCE_COLOR env variable', () => {
     process.env.FORCE_COLOR = '1';
     const presenter = new ErrorPresenter('prod', {});
-    const view = presenter.formatForCLI(error);
-    expect(view.useColors).toBe(true);
+    const err = new SchemaError({ message: 'Test', context: { schemaPath: '#' } });
+    const view = presenter.formatForCLI(err);
+    expect(view.colors).toBe(true);
   });
   
   test('wraps text to terminal width', () => {
