@@ -1,0 +1,11 @@
+# Task ID: 19
+# Title: Migrate Boolean Generator Tests
+# Status: done
+# Dependencies: 15
+# Priority: high
+# Description: Phase 3 - Migrate boolean generator tests to use AJV validation
+# Details:
+- Open packages/core/src/generator/types/__tests__/boolean-generator.test.ts\n- Keep existing Result pattern and test structure\n- Add AJV validation after isOk() checks\n- Replace manual schema arbitrary with getSchemaArbitrary().filter()\n- Add seed parameter and logging\n- Use fc.readConfigureGlobal().numRuns\n- Verify tests pass with all drafts
+
+# Test Strategy:
+

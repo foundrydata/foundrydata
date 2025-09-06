@@ -1,0 +1,103 @@
+# Task ID: 23
+# Title: Migrate Validator Tests
+# Status: done
+# Dependencies: 15
+# Priority: high
+# Description: Phase 3 - Migrate validator tests to use AJV oracle and performance percentiles with testing architecture v2.1 compliance
+# Details:
+AJV ORACLE WITH ADVANCED CACHING:
+- Replace custom validation with getAjv() singleton as single source of truth
+- Implement WeakMap caching for compiled validators to avoid recompilation
+- Tests 100% compliance invariant: expect(compliance).toBe(100) never >95%
+- Memory leak detection with global.gc() and process.memoryUsage()
+
+PERFORMANCE PERCENTILES (NOT AVERAGES):
+- Performance tests with percentiles p50, p95, p99 (never averages)
+- Targets: p50 < 0.3ms, p95 < 0.5ms, p99 < 2ms per validation
+- Batch validation performance for arrays: p95 < 10ms for 1000 items
+- Platform-aware targets: Windows * 1.5 tolerance factor
+
+TESTING ARCHITECTURE V2.1 COMPLIANCE:
+- Deterministic tests with fixed seed 424242 (never Date.now())
+- Complete logging: seed + schema + errors on failures for reproduction
+- Multi-draft validation: draft-07, 2019-09, 2020-12 with matrix testing
+- Format policy v2.2: assertive vs annotative formats handling
+
+CUSTOM MATCHERS AND VALIDATION PATTERNS:
+- toMatchJsonSchema for AJV compliance verification
+- Custom matchers for validation metrics: toHaveCompliance(100)
+- toHaveErrorRate with zero-division protection
+- Stable stringify for consistent object comparison
+
+MEMORY & PERFORMANCE MONITORING:
+- Memory regression detection: max 100MB diff after iterations
+- Performance regression with baseline comparison
+- Warmup phases before measurements to avoid JIT effects
+- Cache size monitoring to prevent memory bloat
+
+VALIDATOR ARCHITECTURE TESTING:
+- Test compilation caching effectiveness with hit/miss metrics
+- Concurrent validation safety with multi-threading
+- Error aggregation and standardized reporting patterns
+
+# Test Strategy:
+Use AJV oracle validation with getAjv() singleton and WeakMap caching. Implement percentile-based performance benchmarks (p50, p95, p99) with platform-aware targets. Test 100% compliance invariant with deterministic seed 424242. Validate memory leak detection and cache effectiveness metrics. Test multi-draft compliance and format policy v2.2 handling.
+
+# Subtasks:
+## 1. Implement AJV Oracle with Advanced Caching [done]
+### Dependencies: None
+### Description: Replace custom validation with getAjv() singleton and implement WeakMap caching
+### Details:
+- Open packages/core/src/validator/__tests__/compliance-validator.test.ts
+- Replace custom validation logic with getAjv() singleton calls
+- Implement WeakMap caching for compiled validators
+- Add cache hit/miss metrics tracking
+- Test compilation caching effectiveness
+
+## 2. Implement 100% Compliance Invariant Testing [done]
+### Dependencies: None
+### Description: Ensure all validation tests enforce 100% compliance, never >95%
+### Details:
+- Replace all compliance checks with expect(compliance).toBe(100)
+- Add toHaveCompliance(100) custom matcher
+- Implement complete logging: seed + schema + errors on failures
+- Test with deterministic seed 424242
+
+## 3. Migrate to Percentile-Based Performance Testing [done]
+### Dependencies: None
+### Description: Replace average-based performance tests with percentiles (p50, p95, p99)
+### Details:
+- Update performance tests to use percentiles not averages
+- Set targets: p50 < 0.3ms, p95 < 0.5ms, p99 < 2ms per validation
+- Implement batch validation performance: p95 < 10ms for 1000 items
+- Add platform-aware targets: Windows * 1.5 tolerance factor
+- Add warmup phases before measurements to avoid JIT effects
+
+## 4. Implement Memory Leak Detection and Monitoring [done]
+### Dependencies: None
+### Description: Add comprehensive memory monitoring and leak detection
+### Details:
+- Implement memory leak detection with global.gc() and process.memoryUsage()
+- Add memory regression detection: max 100MB diff after iterations
+- Implement cache size monitoring to prevent memory bloat
+- Add performance regression testing with baseline comparison
+
+## 5. Add Multi-Draft Validation Matrix Testing [done]
+### Dependencies: None
+### Description: Implement comprehensive multi-draft JSON Schema validation testing
+### Details:
+- Test validation across draft-07, 2019-09, 2020-12
+- Implement format policy v2.2: assertive vs annotative formats handling
+- Add matrix testing for cross-draft compatibility
+- Ensure consistent behavior across all supported drafts
+
+## 6. Implement Custom Matchers and Validation Patterns [done]
+### Dependencies: None
+### Description: Add comprehensive custom matchers for validation testing
+### Details:
+- Implement toMatchJsonSchema for AJV compliance verification
+- Add toHaveErrorRate with zero-division protection
+- Implement stable stringify for consistent object comparison
+- Add concurrent validation safety testing with multi-threading
+- Implement standardized error aggregation and reporting patterns
+

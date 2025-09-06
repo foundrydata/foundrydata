@@ -1,0 +1,20 @@
+# Task ID: 24
+# Title: Configure Fast-Check Shrinking and Timeout Strategy
+# Status: done
+# Dependencies: 2, 6
+# Priority: high
+# Description: Implement comprehensive fast-check configuration with shrinking settings, timeout management for property-based tests, and failure context preservation for testing stability and debugging.
+# Details:
+- Configure fc.configureGlobal() with shrinking parameters: interruptAfterTimeLimit: 10000ms, endOnFailure: true, verbose: 2 for detailed failure reporting
+- Implement timeout management for property-based tests with 30-second timeout using Vitest's test.timeout() configuration
+- Create failure context preservation mechanism to capture and log: seed values, schema configurations, generated data samples, shrinking steps
+- Add shrinking configuration for different test scenarios: aggressive shrinking for CI (maxShrinkRuns: 1000), balanced for development (maxShrinkRuns: 500)
+- Implement shrinking timeout controls to prevent infinite shrinking loops
+- Configure verbose output levels: level 0 for CI (minimal), level 2 for development (detailed failure context)
+- Add shrinking progress monitoring with intermediate result logging
+- Create shrinking result analysis utilities for debugging complex property failures
+- Integrate with existing TEST_SEED=424242 deterministic configuration
+- Add shrinking performance metrics and timeout breach detection
+
+# Test Strategy:
+Verify fast-check configuration applies correctly across all property-based tests. Test timeout behavior with intentionally slow properties to ensure 30s limit enforcement. Validate shrinking works by introducing failing properties and confirming shrinking finds minimal counterexamples within timeout. Test failure context preservation by triggering failures and verifying complete context capture (seed, schema, data). Verify shrinking performance doesn't exceed configured limits. Test different verbose levels produce expected output detail. Validate integration with existing deterministic seed configuration maintains test reproducibility.

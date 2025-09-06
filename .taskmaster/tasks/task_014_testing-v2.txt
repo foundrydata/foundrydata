@@ -1,0 +1,96 @@
+# Task ID: 14
+# Title: Implement Oracle Testing Pattern
+# Status: done
+# Dependencies: 6
+# Priority: high
+# Description: Phase 2 - Use AJV as validation oracle for consistency testing, implementing the architecture defined in ADR docs/tests/format-registry-ajv-integration-decision.md with advanced caching and testing v2.1 compliance
+# Details:
+- Create test/patterns/oracle-testing.test.ts following ADR architecture and testing v2.1 standards
+- Implement AJV integration via getAjv() singleton with WeakMap caching of compiled validators
+- Implement 100% agreement invariant: expect(ourValidator(data)).toBe(ajvValidator(data))
+- Zero tolerance policy: Both validators MUST agree on ALL validation results
+- Integrate custom matchers: toMatchJsonSchema for AJV compliance verification
+- Implement toHaveAgreement(expectedRate) matcher with division by zero protection
+- Use stable comparison with sorted keys stringify for object consistency
+- Test with deterministic seed 424242 (never Date.now() or random seeds)
+- Complete failure logging: seed + schema + data + discrepancies for reproduction
+- Multi-draft matrix testing: draft-07, 2019-09, 2020-12 using getSchemaArbitrary()
+- Implement FormatRegistry-AJV adapter per ADR specification
+- Test format validation consistency: FormatRegistry vs AJV formats
+- Handle format policy v2.2: assertive formats (email, uuid) vs annotative formats
+- Test cross-format validation with all supported formats per draft
+- Oracle testing patterns: positive cases (valid data passes both), negative cases (invalid data fails both)
+- Test boundary conditions where systems might disagree
+- Property-based testing with fc.property() and invariant checking
+- Performance comparison: oracle shouldn't be slower than 2x our validator
+- Categorize discrepancies: format differences, draft differences, implementation bugs
+- Zero tolerance approach: investigate and fix ALL disagreements with full context logging
+
+# Test Strategy:
+Use property-based testing with AJV as the definitive oracle. Implement deterministic testing with fixed seed 424242. Test both positive cases (valid data should pass both systems) and negative cases (invalid data should fail both systems). Include edge cases and boundary conditions. Use custom matchers for consistent validation checking. Test across all supported JSON Schema drafts with comprehensive failure logging for reproduction.
+
+# Subtasks:
+## 1. Set up AJV oracle infrastructure with advanced caching [done]
+### Dependencies: None
+### Description: Implement getAjv() singleton with WeakMap caching for compiled validators
+### Details:
+- Create getAjv() singleton function with WeakMap-based validator caching
+- Implement per-draft AJV instances with proper format configuration
+- Set up deterministic test environment with seed 424242
+- Configure AJV with format-assertion vocabulary for proper format handling
+
+## 2. Implement custom matchers for oracle testing [done]
+### Dependencies: None
+### Description: Create toMatchJsonSchema and toHaveAgreement matchers with stability guarantees
+### Details:
+- Integrate toMatchJsonSchema matcher for AJV compliance verification
+- Implement toHaveAgreement(expectedRate) matcher with division by zero protection
+- Add stable comparison with sorted keys stringify for object consistency
+- Ensure circular reference protection in matcher implementations
+
+## 3. Implement 100% agreement invariant tests [done]
+### Dependencies: None
+### Description: Create zero-tolerance validation agreement tests between our validator and AJV
+### Details:
+- Implement expect(ourValidator(data)).toBe(ajvValidator(data)) invariant
+- Test with property-based approach using fc.property()
+- Cover positive cases (valid data passes both systems)
+- Cover negative cases (invalid data fails both systems)
+- Include boundary conditions and edge cases
+
+## 4. Implement FormatRegistry-AJV adapter integration [done]
+### Dependencies: None
+### Description: Create adapter following ADR specification for format validation consistency
+### Details:
+- Implement FormatRegistry-AJV adapter per ADR docs/tests/format-registry-ajv-integration-decision.md
+- Test format validation consistency between FormatRegistry and AJV formats
+- Handle format policy v2.2: assertive vs annotative format behavior
+- Test cross-format validation with all supported formats per JSON Schema draft
+
+## 5. Implement multi-draft matrix testing [done]
+### Dependencies: None
+### Description: Test oracle consistency across all supported JSON Schema drafts
+### Details:
+- Multi-draft testing: draft-07, 2019-09, 2020-12 using getSchemaArbitrary()
+- Ensure format behavior consistency across drafts
+- Test draft-specific features and format handling
+- Verify adapter works correctly with all draft versions
+
+## 6. Implement comprehensive failure logging and discrepancy handling [done]
+### Dependencies: None
+### Description: Create zero-tolerance discrepancy tracking with full reproduction context
+### Details:
+- Complete failure logging: seed + schema + data + discrepancies for reproduction
+- Categorize discrepancies: format differences, draft differences, implementation bugs
+- Zero tolerance approach: investigate and fix ALL disagreements
+- Log full context on any disagreement with schemas, data, and validator outputs
+
+## 7. Implement performance comparison testing [done]
+### Dependencies: None
+### Description: Ensure oracle performance doesn't exceed 2x our validator performance
+### Details:
+- Performance comparison: oracle shouldn't be slower than 2x our validator
+- Measure validation times for both systems
+- Test with various schema complexities
+- Report performance metrics and identify bottlenecks
+

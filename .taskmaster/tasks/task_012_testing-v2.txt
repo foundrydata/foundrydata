@@ -1,0 +1,11 @@
+# Task ID: 12
+# Title: Format Registry Integration Strategy
+# Status: done
+# Dependencies: 3
+# Priority: high
+# Description: Phase 1 - Analyze and integrate FormatRegistry with AJV formats
+# Details:
+- Analyze current FormatRegistry usage in existing tests\n- Compare FormatRegistry capabilities with AJV formats\n- Make decision: Keep, Replace, or Adapter pattern\n- If Adapter: create test/helpers/format-adapter.ts mapping FormatRegistry to AJV\n- If Replace: document migration and update all format references\n- Ensure backward compatibility\n- Update existing tests to use decided approach
+
+# Test Strategy:
+

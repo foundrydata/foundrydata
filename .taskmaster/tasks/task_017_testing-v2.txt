@@ -1,0 +1,11 @@
+# Task ID: 17
+# Title: Create Documentation and Examples
+# Status: pending
+# Dependencies: 10
+# Priority: medium
+# Description: Phase 5 - Comprehensive documentation for the new testing architecture
+# Details:
+- Create test/README.md with architecture overview and pattern explanations\n- Document migration guide from v2.0 to v2.1\n- Create troubleshooting guide\n- Document all environment variables: TEST_SEED, FC_NUM_RUNS, SCHEMA_DRAFT, PERF_LOG, DEBUG\n- Create examples/ directory with pattern examples and migration examples\n- Add performance optimization tips\n- Document draft-specific differences table\n- Add decision log for architectural choices
+
+# Test Strategy:
+

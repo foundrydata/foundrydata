@@ -1,0 +1,37 @@
+# Task ID: 31
+# Title: Verify Per-Context PRNG Determinism (master:27)
+# Status: pending
+# Dependencies: 2
+# Priority: high
+# Description: Testing v2 - Validate determinism and parallel reproducibility of the per-context PRNG implemented in master task 27.
+# Details:
+ACCEPTANCE: (1) Same seed + same schema → bit-identical outputs across runs; (2) Parallel executions (N workers) produce identical outputs; (3) Prefix-stability holds; (4) No calls to faker.seed exist in codebase. REPORT: record p95 overhead <5% in micro-benchmarks.
+
+# Test Strategy:
+Property-based tests for determinism and prefix-stability at pipeline level; concurrency tests with worker threads/process pool; micro-benchmarks comparing PRNG vs baseline (report percentiles).
+
+# Subtasks:
+## 1. Determinism property test [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. Prefix-stability test [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3. Concurrency reproducibility test [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 4. Micro-bench overhead report [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+

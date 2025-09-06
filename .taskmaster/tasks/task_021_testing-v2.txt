@@ -1,0 +1,19 @@
+# Task ID: 21
+# Title: Migrate Number/Integer Generator Tests
+# Status: done
+# Dependencies: 15
+# Priority: high
+# Description: Phase 3 - Migrate numeric generator tests with draft-specific bounds handling
+# Details:
+- Migrate number-generator.test.ts and integer-generator.test.ts
+- Replace manual min/max calculations with createBounds() helper from '../arbitraries/json-schema.js'
+- Add AJV validation using toMatchJsonSchema matcher
+- Test exclusive bounds properly (draft-07 exclusiveMinimum boolean vs 2019-09+ exclusiveMinimum number)
+- Test multipleOf with decimals and integers
+- Ensure enum/const values respect all constraints using toBeWithinBounds matcher
+- Add determinism tests with seeds
+- Test edge cases where createBounds() and AJV validation might differ
+- Cross-reference with FormatAdapter tests for numeric format consistency
+
+# Test Strategy:
+Use createBounds() helper for consistent numeric constraint handling. Integrate custom matchers: toMatchJsonSchema for AJV compliance, toBeDistinct for uniqueness, toBeWithinBounds for numeric constraint validation. Test draft-specific semantic differences and ensure deterministic generation with fixed seeds.

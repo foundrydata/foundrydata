@@ -1,0 +1,84 @@
+# Task ID: 13
+# Title: Implement Stateful Testing Pattern
+# Status: pending
+# Dependencies: 6
+# Priority: medium
+# Description: Phase 2 - Model-based testing with state consistency
+# Details:
+- Create test/patterns/stateful-testing.test.ts with testing v2.1 architecture
+- Define SystemState interface with cache (WeakMap), metrics (GenerationMetrics), scenario (ScenarioContext)
+- Integrate getAjv() singleton with WeakMap caching in model state tracking
+- Define Command union type: Generate, Validate, ClearCache, SetScenario, CompileSchema, Reset
+- Implement commandArbitrary using fc.oneof with fixed seed 424242
+- Implement state consistency test tracking changes and verifying invariants with AJV oracle
+- State validation: ensure generated data passes AJV validation after each command
+- Cache state consistency: track AJV validator compilation count in system state
+- Check cache size limits, memory usage, and metrics consistency
+- Test error handling and recovery scenarios with deterministic reproduction
+
+# Test Strategy:
+Use model-based testing with fc.commands() and deterministic seed 424242. Implement custom matchers: toMaintainInvariant() for system state consistency, toHaveValidState() using toMatchJsonSchema, cache metrics matchers (toHaveHitRate(), toCacheEffectively()). Test invariants: cache size limits never exceed configured max, memory consistency tracking, validation consistency between system and AJV oracle, state recovery from errors, and deterministic reproducibility.
+
+# Subtasks:
+## 1. Define SystemState interface with testing v2.1 architecture [pending]
+### Dependencies: None
+### Description: Create comprehensive system state interface integrating AJV oracle and metrics
+### Details:
+- SystemState interface with cache (WeakMap), metrics (GenerationMetrics), scenario (ScenarioContext)
+- GenerationMetrics: track generated count, validated count, cache hits/misses
+- CacheState: monitor memory usage, compilation count, cleanup effectiveness
+- ScenarioContext: current draft, seed, validation rules active
+- Integrate getAjv() singleton with WeakMap caching for state tracking
+
+## 2. Implement Command union type with deterministic generation [pending]
+### Dependencies: None
+### Description: Define all command types with seed propagation and AJV integration
+### Details:
+- Command union: Generate, Validate, ClearCache, SetScenario, CompileSchema, Reset
+- Generate command: includes seed propagation and AJV validation check
+- Validate command: uses AJV oracle for consistency check
+- ClearCache command: tests cache cleanup and memory release
+- SetScenario command: changes generation parameters (draft, constraints)
+- CompileSchema/Reset commands with state management
+
+## 3. Create commandArbitrary with fixed seed 424242 [pending]
+### Dependencies: None
+### Description: Implement deterministic command generation using fc.oneof
+### Details:
+- Implement commandArbitrary using fc.oneof with deterministic arbitrary
+- Fixed seed 424242 for stateful command sequence generation
+- Seed-based command generation ensuring reproducibility
+- Same seed produces identical command sequences for debugging
+- Log seed + command sequence for failure reproduction
+
+## 4. Implement custom matchers for stateful testing [pending]
+### Dependencies: None
+### Description: Create specialized matchers for system state validation
+### Details:
+- toMaintainInvariant() matcher for system state consistency
+- toHaveValidState() utilizing toMatchJsonSchema for data validation
+- Cache metrics matchers: toHaveHitRate(), toCacheEffectively()
+- Integration with existing custom matchers from test/matchers/
+- AJV oracle integration for validation consistency checks
+
+## 5. Implement invariant checking patterns [pending]
+### Dependencies: None
+### Description: Define and test all system invariants with AJV oracle
+### Details:
+- Cache size limits: never exceed configured max cache entries
+- Memory consistency: track memory usage changes after each command
+- Validation consistency: system validator results match AJV oracle
+- State recovery: system can recover from error states gracefully
+- Determinism: same command sequence produces identical results
+- AJV validation check after each command execution
+
+## 6. Implement model-based testing with fc.commands() [pending]
+### Dependencies: None
+### Description: Create comprehensive model-based test suite
+### Details:
+- Property-based command sequences with fc.commands()
+- State consistency checks after each command execution
+- Memory leak detection over extended command sequences
+- Performance monitoring: command execution times within percentile targets
+- Integration with testing v2.1 architecture and deterministic seed 424242
+
