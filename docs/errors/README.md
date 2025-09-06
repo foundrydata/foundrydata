@@ -8,7 +8,7 @@ This page lists the stable error codes emitted by FoundryData. Each code is dura
 ## Schema Errors (E001–E099)
 
 - E001 — NESTED_OBJECTS_NOT_SUPPORTED
-  - Meaning: Nested objects are not yet supported by the generator.
+  - Meaning: Deeply nested objects beyond the supported depth are not allowed.
   - Exit: 10 • HTTP: 400
   - Docs: https://foundrydata.dev/errors/E001
 
@@ -17,8 +17,9 @@ This page lists the stable error codes emitted by FoundryData. Each code is dura
   - Exit: 11 • HTTP: 400
   - Docs: https://foundrydata.dev/errors/E002
 
-- E003 — SCHEMA_COMPOSITION_NOT_SUPPORTED
-  - Meaning: `allOf`/`anyOf`/`oneOf`/`not` are not yet supported.
+- E003 — SCHEMA_COMPOSITION_NOT_SUPPORTED (deprecated)
+  - Meaning: Historical code when composition wasn’t supported. Composition is supported now: `allOf` (merged),
+    `anyOf`/`oneOf` (deterministic branch), and `not` (inverted). This code is no longer emitted.
   - Exit: 12 • HTTP: 400
   - Docs: https://foundrydata.dev/errors/E003
 
@@ -83,4 +84,3 @@ Notes:
 - In production, stack traces are suppressed and sensitive values in `context.value` are redacted.
 - For CLI rendering, use `ErrorPresenter('dev'|'prod').formatForCLI(error)` and render the returned view.
 - For API responses (RFC 7807 style), use `formatForAPI(error)`, which sets `type` to the documentation URL above.
-
