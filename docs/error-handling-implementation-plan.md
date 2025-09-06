@@ -52,7 +52,7 @@ Update (2025-09-06): Implemented with backward compatibility
 - FoundryError now supports both the new params constructor and a legacy signature to enable progressive migration.
 - Legacy `code: string` remains temporarily for compatibility; `errorCode: ErrorCode` is authoritative.
 - Added `toJSON(env)` with production PII redaction, `toUserError()`, and `getExitCode()`.
-- ErrorReporter remains in place until Phase 5 and now falls back to `error.message` and `error.suggestions` when subclass helpers are absent.
+- Removed: ErrorReporter (replaced by ErrorPresenter)
 
 #### Error Code Registry (`packages/core/src/errors/codes.ts`)
 ```typescript
@@ -319,14 +319,14 @@ class ErrorPresenter {
 }
 ```
 
-**Key Features**:
+**Key Features (Implemented)**:
 - **NO business logic** - purely presentation
-- **Environment-aware** - dev vs prod formatting
-- **CLI-friendly** - respects NO_COLOR, FORCE_COLOR, terminal width
-- **Security-first** - automatic PII redaction
+- **Environment-aware** - dev vs prod formatting, `requestId` propagation
+- **CLI-friendly** - respects NO_COLOR, FORCE_COLOR, terminal width metadata
+- **Security-first** - automatic PII redaction; presenter supports extra `redactKeys`
 - **Testable** - returns objects, not formatted strings
 
-Note (2025-09-06): ErrorReporter remains until this phase ships. It now falls back to `error.message` and `error.suggestions` if subclass helpers are not present, supporting removal of `getUserMessage/getSuggestions` from domain errors.
+Note (2025-09-06): Implemented. ErrorReporter has been removed. All formatting now flows through `ErrorPresenter`; CLI uses a small renderer utility.
 
 ### Phase 4: Example Integration with Localization
 
@@ -597,14 +597,15 @@ describe('Error Localization', () => {
 });
 ```
 
-#### Production vs Development Tests
+#### Production vs Development Tests (Updated)
 ```typescript
 describe('Environment-aware Formatting', () => {
-  test('production hides stack trace', () => {
+  test('production hides stack trace and includes requestId', () => {
     const error = new SchemaError('Invalid');
-    const presenter = new ErrorPresenter('prod', {});
+    const presenter = new ErrorPresenter('prod', { requestId: 'req-123' });
     const view = presenter.formatForProduction(error);
-    expect(JSON.stringify(view)).not.toContain('at ');
+    expect((view as any).stack).toBeUndefined();
+    expect((view as any).requestId).toBe('req-123');
   });
   
   test('development shows cause chain', () => {
@@ -629,7 +630,7 @@ describe('Environment-aware Formatting', () => {
 });
 ```
 
-#### Snapshot Tests for CLI Format
+#### Snapshot Tests for CLI Format (Updated)
 ```typescript
 describe('CLI Output Snapshots', () => {
   test('nested object error format', () => {
@@ -643,6 +644,15 @@ describe('CLI Output Snapshots', () => {
     const output = renderCLIView(presenter.formatForCLI(error));
     
     // Strip ANSI for snapshot
+    const clean = stripAnsi(output);
+    expect(clean).toMatchSnapshot();
+  });
+
+  test('wrap respects terminalWidth and keeps doc URL on one line', () => {
+    const presenter = new ErrorPresenter('dev', { colors: false });
+    const view = presenter.formatForCLI(error);
+    (view as any).terminalWidth = 30; // simulate narrow terminal
+    const output = renderCLIView(view);
     const clean = stripAnsi(output);
     expect(clean).toMatchSnapshot();
   });
@@ -840,11 +850,11 @@ throw new SchemaError({
 - Vérifier que SchemaError utilise `schemaPath` et non `path`
 - Vérifier que ValidationError utilise `path` pour instancePath
 
-#### ErrorReporter Migration
-- Option A: Supprimer et remplacer par ErrorPresenter
-- Option B: Adapter comme proxy vers ErrorPresenter
-- **Condition finale**: Zéro import ErrorReporter en production (vérifier avec ripgrep)
-- Note transitoire (2025-09-06): ErrorReporter reste pour l’instant avec fallbacks (`message`, `suggestions`). Les tests qui vérifient les suggestions doivent enrichir `error.suggestions` le cas échéant.
+#### ErrorReporter Migration (Final)
+- Décision: Suppression complète, pas de proxy/shim
+- **Atteint**: Zéro import `ErrorReporter` en production (vérifié via ripgrep)
+- Remplacement: tous les rendus passent par `ErrorPresenter`
+- CLI: rendu effectué via `packages/cli/src/render.ts` (`renderCLIView`, `stripAnsi`)
 
 ## 🎯 MVP Priorities (v0.1)
 

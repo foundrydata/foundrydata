@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 /**
  * Tests for Error hierarchy
  * Comprehensive coverage of all error types and ErrorReporter
@@ -12,7 +12,6 @@ import {
   ConfigError,
   ParseError,
   ValidationFailure,
-  ErrorReporter,
   isFoundryError,
   createValidationFailure,
 } from '../errors';
@@ -247,175 +246,6 @@ describe('Error Hierarchy', () => {
       expect(isFoundryError(notError)).toBe(false);
       expect(isFoundryError(null)).toBe(false);
       expect(isFoundryError(undefined)).toBe(false);
-    });
-  });
-
-  describe('ErrorReporter', () => {
-    let reporter: ErrorReporter;
-
-    beforeEach(() => {
-      reporter = new ErrorReporter();
-    });
-
-    describe('formatError', () => {
-      it('formats SchemaError with emoji and message (suggestions optional)', () => {
-        const error = new SchemaError({
-          message: 'Invalid type',
-          context: { schemaPath: '#/properties/name' },
-        });
-        // Attach suggestions explicitly to simulate enrichment
-        error.suggestions = ['Use string type'];
-        const formatted = reporter.formatError(error);
-
-        expect(formatted).toContain('📋');
-        expect(formatted).toContain('Invalid type');
-        expect(formatted).toContain('💡 Suggestions:');
-        expect(formatted).toContain('• Use string type');
-      });
-
-      it('formats GenerationError with context displayed', () => {
-        const error = new GenerationError({
-          message: 'Cannot generate',
-          context: { field: 'email', constraint: 'pattern', regex: '/test/' },
-        });
-        const formatted = reporter.formatError(error);
-
-        expect(formatted).toContain('🔧');
-        expect(formatted).toContain('Cannot generate');
-        expect(formatted).toContain('Context:');
-        expect(formatted).toContain('field: email');
-        expect(formatted).toContain('constraint: pattern');
-        expect(formatted).toContain('regex: /test/');
-      });
-
-      it('formats ValidationError with failure details', () => {
-        const failures: ValidationFailure[] = [
-          {
-            path: '/name',
-            message: 'Required',
-            keyword: 'required',
-            schemaPath: '/required',
-          },
-          {
-            path: '/age',
-            message: 'Must be number',
-            keyword: 'type',
-            schemaPath: '/properties/age/type',
-          },
-        ];
-        const error = new ValidationError({
-          message: 'Multiple failures',
-          failures,
-        });
-        const formatted = reporter.formatError(error);
-
-        expect(formatted).toContain('✅');
-        expect(formatted).toContain('📋 Validation Failures:');
-        expect(formatted).toContain('• /name: Required');
-        expect(formatted).toContain('• /age: Must be number');
-      });
-
-      it('should limit validation failures display', () => {
-        const failures: ValidationFailure[] = Array.from(
-          { length: 7 },
-          (_, i) => ({
-            path: `/field${i}`,
-            message: `Error ${i}`,
-            keyword: 'test',
-            schemaPath: `/properties/field${i}`,
-          })
-        );
-        const error = new ValidationError('Many failures', failures);
-        const formatted = reporter.formatError(error);
-
-        expect(formatted).toContain('... and 2 more failure(s)');
-      });
-    });
-
-    describe('formatErrors', () => {
-      it('should handle empty error array', () => {
-        const formatted = reporter.formatErrors([]);
-
-        expect(formatted).toBe('✅ No errors found');
-      });
-
-      it('should format single error', () => {
-        const error = new SchemaError('Test error', '/test');
-        const formatted = reporter.formatErrors([error]);
-
-        expect(formatted).toContain('📋');
-        expect(formatted).not.toContain('Found 1 errors:');
-      });
-
-      it('should format multiple errors with numbering', () => {
-        const errors = [
-          new SchemaError('Schema error', '/schema'),
-          new GenerationError('Generation error', undefined, 'field'),
-        ];
-        const formatted = reporter.formatErrors(errors);
-
-        expect(formatted).toContain('❌ Found 2 errors:');
-        expect(formatted).toContain('1. 📋');
-        expect(formatted).toContain('2. 🔧');
-      });
-    });
-
-    describe('createSummary', () => {
-      it('should create error summary with counts and suggestions', () => {
-        const e1 = new SchemaError('Schema error 1', '/path1');
-        const e2 = new SchemaError('Schema error 2', '/path2');
-        const e3 = new GenerationError('Generation error', undefined, 'field');
-        const e4 = new ValidationError('Validation error', []);
-        // Provide suggestions via enrichment to align with new contract
-        e1.suggestions = ['Check schema syntax'];
-        e3.suggestions = ['Relax constraint'];
-        const errors = [e1, e2, e3, e4];
-
-        const summary = reporter.createSummary(errors);
-
-        expect(summary.total).toBe(4);
-        expect(summary.byType['SchemaError']).toBe(2);
-        expect(summary.byType['GenerationError']).toBe(1);
-        expect(summary.byType['ValidationError']).toBe(1);
-
-        expect(summary.mostCommon[0]).toEqual({
-          type: 'SchemaError',
-          count: 2,
-        });
-        expect(summary.suggestions.size).toBeGreaterThan(0);
-      });
-
-      it('should handle empty error array in summary', () => {
-        const summary = reporter.createSummary([]);
-
-        expect(summary.total).toBe(0);
-        expect(Object.keys(summary.byType)).toHaveLength(0);
-        expect(summary.mostCommon).toHaveLength(0);
-        expect(summary.suggestions.size).toBe(0);
-      });
-    });
-
-    describe('emoji selection', () => {
-      it('should use appropriate emojis for each error type', () => {
-        const errors = [
-          new SchemaError('Schema', '/path'),
-          new GenerationError('Generation'),
-          new ValidationError('Validation', []),
-          new ConfigError('Config'),
-          new ParseError('Parse'),
-        ];
-
-        const emojis = errors.map((error) => {
-          const formatted = reporter.formatError(error);
-          return formatted.split(' ')[0];
-        });
-
-        expect(emojis[0]).toBe('📋'); // SchemaError
-        expect(emojis[1]).toBe('🔧'); // GenerationError
-        expect(emojis[2]).toBe('✅'); // ValidationError
-        expect(emojis[3]).toBe('⚙️'); // ConfigError
-        expect(emojis[4]).toBe('📝'); // ParseError
-      });
     });
   });
 
