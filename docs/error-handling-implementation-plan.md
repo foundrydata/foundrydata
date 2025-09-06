@@ -370,16 +370,17 @@ Or use format validation:
 ```
 
 ### Phase 5: Suggestion System (Pure Functions)
+Implemented (2025-09-06)
 **Location**: `packages/core/src/errors/suggestions.ts`
 
 ```typescript
 // Pure functions for testability - NO classes, NO state
-export { 
+export {
   didYouMean,
   getAlternative,
   proposeSchemaFix,
   getWorkaround,
-  calculateDistance
+  calculateDistance,
 };
 
 // Typo detection with simple distance algorithm (MVP)
@@ -399,11 +400,19 @@ export function didYouMean(
     .map(({ option }) => option);
 }
 
-// Feature alternatives from registry
+// Feature alternatives from central limitations registry (MVP)
 export function getAlternative(
   unsupportedFeature: string
 ): Alternative | null {
-  return ALTERNATIVES_REGISTRY[unsupportedFeature] || null;
+  const lim = LIMITATIONS_REGISTRY[unsupportedFeature];
+  return lim
+    ? {
+        workaround: lim.workaround,
+        example: lim.workaroundExample,
+        documentation:
+          `https://github.com/foundrydata/foundrydata/blob/main/docs/MVP_LIMITATIONS.md#${lim.docsAnchor}`,
+      }
+    : null;
 }
 
 // Schema correction proposals
@@ -435,30 +444,30 @@ export function getWorkaround(
 }
 
 // Simple edit distance for MVP (no Levenshtein complexity)
-function calculateDistance(a: string, b: string): number {
-  // Simple algorithm: character differences
-  // For v0.2: implement proper Levenshtein with caching
+export function calculateDistance(a: string, b: string): number {
   const longer = a.length > b.length ? a : b;
   const shorter = a.length > b.length ? b : a;
-  
   if (longer.length === 0) return shorter.length;
   if (shorter.length === 0) return longer.length;
-  
-  // Count character differences (simplified)
   let distance = Math.abs(a.length - b.length);
   for (let i = 0; i < shorter.length; i++) {
     if (shorter[i] !== longer[i]) distance++;
   }
-  
   return distance;
 }
 ```
 
-**Design Principles**:
+**Design Principles (Applied)**:
 - **Pure functions only** - no side effects, fully testable
 - **Simple algorithms for MVP** - optimize in v0.2
 - **Registry-based** - centralized limitation knowledge
 - **Null-safe** - always return null for unknown features
+
+Integration notes (MVP):
+- `FormatRegistry` uses `didYouMean` to suggest close format names.
+- `getAlternative`/`getWorkaround` pull from `LIMITATIONS_REGISTRY` to keep CLI/API consistent with docs.
+- Helpers are exported via root API in `packages/core/src/index.ts`.
+- Tests live in `packages/core/src/errors/__tests__/suggestions.test.ts`.
 
 Roadmap note (Task 7/9):
 - For richer “schema fix proposals”, `proposeSchemaFix` may evolve to return structured examples with `{ before, after }` objects and an optional `diff`. The registry could adopt a union type for `workaroundExample` (string | { before: unknown; after: unknown }). MVP stays string-based for simplicity.
@@ -763,27 +772,27 @@ describe('CLI Formatting', () => {
 - [x] Ajouter des surcharges legacy pour migration progressive et getters de compat (path, field, constraint, setting, input/position, suggestion)
 
 ### Étape 4: Mettre à jour les points d'émission (30 min)
-- [ ] parser/reference-resolver.ts: utiliser schemaPath (pas path!) et ref
+- [x] parser/reference-resolver.ts: utiliser schemaPath (pas path!) et ref
   - Référence circulaire → CIRCULAR_REFERENCE_DETECTED (E012)
   - Profondeur max → INVALID_SCHEMA_STRUCTURE
   - JSON Pointer invalide → INVALID_SCHEMA_STRUCTURE
   - Schéma externe manquant → SCHEMA_PARSE_FAILED
 
 ### Étape 5: Présentation et registre (1 heure)
-- [ ] Créer `packages/core/src/errors/presenter.ts` avec ErrorPresenter
-- [ ] Implémenter formatForCLI/API/Production avec redaction
-- [ ] Créer `packages/core/src/errors/limitations.ts` avec registre
-- [ ] Créer `packages/core/src/errors/suggestions.ts` avec fonctions pures
+- [x] Créer `packages/core/src/errors/presenter.ts` avec ErrorPresenter
+- [x] Implémenter formatForCLI/API/Production avec redaction
+- [x] Créer `packages/core/src/errors/limitations.ts` avec registre
+- [x] Créer `packages/core/src/errors/suggestions.ts` avec fonctions pures
 
 ### Étape 6: Migration des tests (45 min)
 - [ ] Supprimer tests getUserMessage/getSuggestions
-- [ ] Ajouter tests dans `packages/core/src/errors/__tests__/`
+- [x] Ajouter tests dans `packages/core/src/errors/__tests__/`
   - presenter.test.ts: env dev/prod, redaction, NO_COLOR
   - codes.test.ts: unicité, mapping exit/http
   - limitations.test.ts: getLimitation, isSupported
   - suggestions.test.ts: fonctions pures
-- [ ] Mettre à jour tests errors.test.ts pour errorCode
-- [ ] Remplacer ErrorReporter tests par ErrorPresenter
+- [x] Mettre à jour tests errors.test.ts pour errorCode
+- [x] Remplacer ErrorReporter tests par ErrorPresenter
 
 ### Étape 7: Finitions (15 min)
 - [ ] Vérifier absence stack/PII en prod
