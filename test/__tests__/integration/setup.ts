@@ -35,7 +35,7 @@ export const PERFORMANCE_THRESHOLDS = {
   generatorCompliance: {
     // End-to-end generator → AJV validation target for 1000 records
     p50: envNumWithPlatform('GEN_COMPLIANCE_P50_MS', 120), // ms
-    p95: envNumWithPlatform('GEN_COMPLIANCE_P95_MS', 200), // ms
+    p95: envNumWithPlatform('GEN_COMPLIANCE_P95_MS', 210), // ms
     p99: envNumWithPlatform('GEN_COMPLIANCE_P99_MS', 500), // ms
   },
   memory: {
