@@ -2218,7 +2218,7 @@
         "description": "Implement pure functions for error suggestions, typo detection, and schema fix proposals",
         "details": "Create packages/core/src/errors/suggestions.ts with pure functions:\n\ndidYouMean(input, validOptions[], maxDistance?):\n- Simple edit distance algorithm for MVP\n- Return top 3 suggestions within distance threshold\n- No complex Levenshtein for v0.1 (performance)\n\ngetAlternative(unsupportedFeature):\n- Return alternative from ALTERNATIVES_REGISTRY\n- Map features to workarounds\n\nproposeSchemaFix(error):\n- Generate before/after schema examples\n- Include diff visualization\n- Add explanation text\n\ngetWorkaround(limitationKey):\n- Retrieve workaround from limitations registry\n- Include example and availableIn version\n\nAll functions must be pure (no side effects) for testability.",
         "testStrategy": "Create packages/core/src/errors/__tests__/suggestions.test.ts:\n- Test didYouMean with various typos\n- Test distance calculation accuracy\n- Test getAlternative registry lookups\n- Test proposeSchemaFix generates valid diffs\n- Test null returns for unknown inputs\n- Property-based testing for didYouMean",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           6
         ],
@@ -2229,7 +2229,7 @@
             "title": "Implement didYouMean function",
             "description": "Create typo detection with simple distance algorithm",
             "details": "In packages/core/src/errors/suggestions.ts:\n- didYouMean(input, validOptions[], maxDistance = 3)\n- Simple edit distance calculation (not Levenshtein for MVP)\n- Return top 3 suggestions within threshold\n- Sort by distance\nInclude calculateDistance helper function",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 7
           },
@@ -2238,7 +2238,7 @@
             "title": "Implement schema fix proposals",
             "description": "Create functions for alternative suggestions and schema corrections",
             "details": "In packages/core/src/errors/suggestions.ts:\n- getAlternative(unsupportedFeature): Lookup from ALTERNATIVES_REGISTRY\n- proposeSchemaFix(error): Generate before/after with diff\n- getWorkaround(limitationKey): Retrieve from limitations registry\nAll functions must be pure (no side effects)",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 7
           }
@@ -2331,7 +2331,7 @@
     ],
     "metadata": {
       "created": "2025-09-05T21:37:48.791Z",
-      "updated": "2025-09-06T10:38:35.588Z",
+      "updated": "2025-09-06T10:54:05.948Z",
       "description": "Implementation of comprehensive error system with user-friendly messages, stable error codes, JSON Pointer localization, and PII redaction for FoundryData MVP"
     }
   }

@@ -32,6 +32,18 @@ export {
   enrichErrorWithLimitation,
 } from './errors/limitations';
 
+// Suggestion system helpers (Task 7)
+export {
+  didYouMean,
+  getAlternative,
+  proposeSchemaFix,
+  getWorkaround,
+  calculateDistance,
+  type Alternative,
+  type SchemaFix,
+  type Workaround,
+} from './errors/suggestions';
+
 // Initialize built-in formats to avoid circular dependencies
 import {
   defaultFormatRegistry,

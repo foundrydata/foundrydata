@@ -130,3 +130,40 @@ error = enrichErrorWithLimitation(error, 'nestedObjects');
 // error.documentation links to the relevant doc section
 // error.availableIn provides the planned release version
 ```
+
+### Suggestion Helpers
+
+The core exposes small, pure helpers to surface actionable suggestions and workarounds tied to this registry.
+
+```ts
+import {
+  didYouMean,
+  getAlternative,
+  proposeSchemaFix,
+  getWorkaround,
+} from '@foundrydata/core';
+import { SchemaError } from '@foundrydata/core/types';
+
+// 1) Typo assistance (e.g., unknown format names)
+didYouMean('stirng', ['string', 'number', 'boolean']); // ['string']
+
+// 2) High-level alternative for unsupported features
+const alt = getAlternative('regexPatterns');
+// alt => { workaround, example, documentation }
+
+// 3) Schema fix proposal from an error enriched with limitationKey
+//    (context.schemaPath is required by SchemaError)
+const fix = proposeSchemaFix(
+  new SchemaError({
+    message: 'Nested objects not supported',
+    context: { schemaPath: '#/properties/address', path: '/properties/address', limitationKey: 'nestedObjects' },
+  })
+);
+// fix => { path: '/properties/address', explanation, example }
+
+// 4) Direct workaround lookup by key
+const wk = getWorkaround('nestedObjects');
+// wk => { description, example, availableIn }
+```
+
+These helpers are deliberately simple in MVP and rely on the Limitations Registry to keep guidance consistent with product documentation and release timelines.

@@ -5,6 +5,7 @@
 
 import { Result, err } from '../types/result';
 import { GenerationError } from '../types/errors';
+import { didYouMean } from '../errors/suggestions';
 import type { StringFormat } from '../types/schema';
 
 /**
@@ -189,13 +190,25 @@ export class FormatRegistry {
     );
     if (partial) return partial;
 
-    // Levenshtein distance for typos (simplified)
-    const closeMatch = available.find((f) => {
-      const distance = this.levenshteinDistance(lower, f.toLowerCase());
-      return distance <= 2; // Allow 2 character differences
-    });
+    // Use central suggestion helper for typos (MVP distance)
+    const suggestions = didYouMean(
+      lower,
+      available.map((f) => f.toLowerCase()),
+      2
+    );
+    if (suggestions.length > 0) {
+      // Map back to original casing from available list
+      const idx = available
+        .map((f) => f.toLowerCase())
+        .indexOf(suggestions[0]!);
+      if (idx >= 0) return available[idx]!;
+    }
 
-    return closeMatch || null;
+    // As a last resort, try Levenshtein once
+    const closeMatch = available
+      .map((f) => ({ f, d: this.levenshteinDistance(lower, f.toLowerCase()) }))
+      .sort((a, b) => a.d - b.d)[0];
+    return closeMatch && closeMatch.d <= 2 ? closeMatch.f : null;
   }
 
   /**
