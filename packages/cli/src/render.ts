@@ -60,11 +60,9 @@ export function renderCLIView(view: CLIErrorView): string {
 
 export function stripAnsi(input: string): string {
   // Simple ANSI escape code stripper
-  // eslint-disable-next-line no-control-regex
-  return input.replace(
-    /[\u001B\u009B][[\]()#;?]*(?:\d{1,4}(?:;\d{0,4})*)?[\dA-PR-TZcf-ntqry=><~]/g,
-    ''
-  );
+  const ansiRe =
+    /[\u001B\u009B][[\]()#;?]*(?:\d{1,4}(?:;\d{0,4})*)?[\dA-PR-TZcf-ntqry=><~]/g; // eslint-disable-line no-control-regex
+  return input.replace(ansiRe, '');
 }
 
 export default renderCLIView;
