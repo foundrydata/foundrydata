@@ -2013,7 +2013,7 @@
         "description": "Transform the base error class to support new error contract with typed context and environment-aware serialization",
         "details": "Refactor packages/core/src/types/errors.ts FoundryError class:\n\nNEW Constructor:\n- params object pattern with message, errorCode, severity, context, cause\n- Typed ErrorContext interface with path, schemaPath, ref, value, valueExcerpt, limitationKey, availableIn\n\nREMOVE Methods:\n- getUserMessage() - moved to presenter\n- getSuggestions() - moved to presenter\n\nADD Methods:\n- toJSON(env: 'dev' | 'prod'): SerializedError with PII redaction\n- toUserError(): UserError for safe external exposure\n- getExitCode(): number from EXIT_CODES mapping\n\nEnsure proper error chaining with cause support.",
         "testStrategy": "Update packages/core/src/types/__tests__/errors.test.ts:\n- Test new constructor with params object\n- Verify toJSON('prod') excludes stack and redacts PII\n- Verify toJSON('dev') includes full context\n- Test getExitCode() returns correct mapping\n- Test cause chaining preservation\n- Remove tests for deleted getUserMessage/getSuggestions",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           1
         ],
@@ -2024,7 +2024,7 @@
             "title": "Define ErrorContext interface",
             "description": "Create the ErrorContext interface with all required fields for error localization",
             "details": "Define in packages/core/src/types/errors.ts:\ninterface ErrorContext {\n  path?: string;           // JSON Pointer: '/properties/address'\n  schemaPath?: string;     // Schema path: '#/properties/address'\n  ref?: string;            // Reference URI\n  value?: unknown;         // Problematic value (redacted in prod)\n  valueExcerpt?: string;   // Safe excerpt of value\n  limitationKey?: string;  // Links to limitation registry\n  availableIn?: string;    // Version when feature available\n}\n<info added on 2025-09-05T21:50:10.145Z>\nPath semantics clarification: path represents data instance path (JSON Pointer format from AJV instancePath like '/users/0/name'), schemaPath represents schema definition path (JSON Schema pointer like '#/properties/users/items/properties/name'). ValidationError should use path field for data location (AJV instancePath), while SchemaError and reference-resolver should use schemaPath field for schema locations. Tests required: verify ValidationError populates path with instancePath, verify SchemaError/reference-resolver populate schemaPath correctly.\n</info added on 2025-09-05T21:50:10.145Z>",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 2
           },
@@ -2033,7 +2033,7 @@
             "title": "Refactor FoundryError constructor",
             "description": "Update FoundryError to use params object pattern with new fields",
             "details": "Update FoundryError class constructor:\n- Change from (message, code, context?) to params object\n- Params: {message, errorCode: ErrorCode, severity?: Severity, context?: ErrorContext, cause?: Error}\n- Store all fields as class properties\n- Remove getUserMessage() method\n- Remove getSuggestions() method\n- Ensure proper Error.captureStackTrace handling",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 2
           },
@@ -2042,7 +2042,7 @@
             "title": "Implement serialization methods",
             "description": "Add toJSON, toUserError, and getExitCode methods to FoundryError",
             "details": "Add methods to FoundryError:\n- toJSON(env: 'dev' | 'prod'): SerializedError\n  - In prod: exclude stack, redact PII from context.value\n  - In dev: include full context and stack\n- toUserError(): UserError for safe external exposure\n- getExitCode(): number - lookup from EXIT_CODES using errorCode\nImplement PII redaction logic for sensitive fields",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 2
           },
@@ -2051,7 +2051,7 @@
             "title": "Update FoundryError tests",
             "description": "Refactor tests for new FoundryError structure and methods",
             "details": "Update packages/core/src/types/__tests__/errors.test.ts:\n- Test new params constructor pattern\n- Test toJSON('prod') excludes stack and redacts PII\n- Test toJSON('dev') includes full context\n- Test getExitCode() returns correct mapping\n- Test cause chaining works properly\n- Remove tests for deleted getUserMessage/getSuggestions\n- Add tests for ErrorContext interface validation",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 2
           }
@@ -2063,7 +2063,7 @@
         "description": "Migrate all error subclasses to new constructor pattern with default error codes and typed contexts",
         "details": "Update all subclasses in packages/core/src/types/errors.ts:\n\nSchemaError:\n- New params constructor with errorCode (default: INVALID_SCHEMA_STRUCTURE)\n- Required context.path as JSON Pointer\n- Optional context.schemaPath and context.ref\n\nGenerationError:\n- New params constructor with errorCode (default: CONSTRAINT_VIOLATION)\n- Optional context.field and context.constraint\n\nValidationError:\n- Keep failures array parameter\n- Add errorCode (default: COMPLIANCE_VALIDATION_FAILED)\n- New params constructor pattern\n\nConfigError:\n- New params constructor with errorCode (default: CONFIGURATION_ERROR)\n- Optional context.setting\n\nParseError:\n- New params constructor with errorCode (default: PARSE_ERROR)\n- Optional context.input and context.position",
         "testStrategy": "Update error subclass tests:\n- Test each subclass with new constructor\n- Verify default error codes are applied\n- Test context type enforcement\n- Verify specialized context fields (path for SchemaError, etc.)\n- Test inheritance from FoundryError base",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           2
         ],
@@ -2074,7 +2074,7 @@
             "title": "Update SchemaError class",
             "description": "Refactor SchemaError to new params constructor with required path context",
             "details": "Update SchemaError in packages/core/src/types/errors.ts:\n- New params constructor pattern\n- Default errorCode: INVALID_SCHEMA_STRUCTURE\n- Required context.path as JSON Pointer format\n- Optional context.schemaPath and context.ref\n- Remove old constructor (message, path, suggestion)\n<info added on 2025-09-05T21:53:34.576Z>\nCorrection: SchemaError doit avoir context.schemaPath REQUIS (pas path). Le champ path est réservé pour les données dans ValidationError. SchemaError utilise schemaPath pour localiser l'erreur dans le schéma JSON Schema lui-même. Mise à jour nécessaire:\n- Required context.schemaPath (JSON Pointer vers l'erreur dans le schéma)\n- Supprimer context.path (réservé pour ValidationError)\n- Optional context.ref uniquement\n</info added on 2025-09-05T21:53:34.576Z>",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 3
           },
@@ -2083,7 +2083,7 @@
             "title": "Update GenerationError class",
             "description": "Refactor GenerationError with new constructor and optional field/constraint context",
             "details": "Update GenerationError in packages/core/src/types/errors.ts:\n- New params constructor pattern\n- Default errorCode: CONSTRAINT_VIOLATION\n- Optional context.field and context.constraint\n- Remove old constructor (message, suggestion, field, constraint)",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 3
           },
@@ -2092,7 +2092,7 @@
             "title": "Update ValidationError, ConfigError, ParseError",
             "description": "Refactor remaining error classes to new constructor pattern",
             "details": "Update in packages/core/src/types/errors.ts:\n\nValidationError:\n- Keep failures array parameter\n- Default errorCode: COMPLIANCE_VALIDATION_FAILED\n- New params constructor\n\nConfigError:\n- Default errorCode: CONFIGURATION_ERROR\n- Optional context.setting\n\nParseError:\n- Default errorCode: PARSE_ERROR\n- Optional context.input and context.position",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 3
           }
@@ -2104,7 +2104,7 @@
         "description": "Refactor all error throwing locations to use new constructor pattern with proper error codes and JSON Pointer paths",
         "details": "Update packages/core/src/parser/reference-resolver.ts and other emission points:\n\nBEFORE:\nthrow new SchemaError(message, pathOrRef, suggestion?)\n\nAFTER:\nthrow new SchemaError({\n  message,\n  errorCode: ErrorCode.SPECIFIC_CODE,\n  context: {\n    path: pointer,      // JSON Pointer format\n    schemaPath: pointer,\n    ref: refUri\n  }\n})\n\nError code mappings:\n- Circular reference → CIRCULAR_REFERENCE_DETECTED (E012)\n- Max depth exceeded → INVALID_SCHEMA_STRUCTURE\n- Invalid JSON Pointer → INVALID_SCHEMA_STRUCTURE  \n- Missing external schema → SCHEMA_PARSE_FAILED\n\nSearch for all \"throw new\" statements and update accordingly.",
         "testStrategy": "Integration tests for error emission:\n- Test reference-resolver throws correct error codes\n- Verify JSON Pointer paths are properly formatted\n- Test context contains expected fields\n- Verify error messages remain descriptive\n- Test circular reference detection uses E012",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           3
         ],
@@ -2115,7 +2115,7 @@
             "title": "Update reference-resolver.ts errors",
             "description": "Refactor all error emissions in reference-resolver to use new pattern",
             "details": "Update packages/core/src/parser/reference-resolver.ts:\n- Replace all SchemaError instantiations with new params pattern\n- Map error scenarios to specific codes:\n  * Circular reference → CIRCULAR_REFERENCE_DETECTED\n  * Max depth exceeded → INVALID_SCHEMA_STRUCTURE\n  * Invalid JSON Pointer → INVALID_SCHEMA_STRUCTURE\n  * Missing external schema → SCHEMA_PARSE_FAILED\n- Include JSON Pointer path and schemaPath in context\n<info added on 2025-09-05T21:54:10.285Z>\nFor the reference-resolver.ts error parameter corrections:\n- Use schemaPath for JSON Schema pointer (not path)\n- Use ref for URI reference\n- Keep path field empty/undefined for SchemaError (reserved for data validation)\n- Avoid duplicating pointer value across multiple fields\n\nUpdated pattern should be:\n```\nthrow new SchemaError({\n  message,\n  errorCode: ErrorCode.SPECIFIC_CODE,\n  context: {\n    schemaPath: jsonPointer,  // JSON Schema location\n    ref: uriReference        // External reference URI\n    // path: undefined        // Reserved for data paths\n  }\n})\n```\n</info added on 2025-09-05T21:54:10.285Z>",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 4
           },
@@ -2124,7 +2124,7 @@
             "title": "Update other error emission points",
             "description": "Find and update all other throw statements in the codebase",
             "details": "Search entire codebase for 'throw new' statements:\n- Update all FoundryError subclass instantiations\n- Use appropriate ErrorCode for each scenario\n- Include proper context with path when available\n- Ensure JSON Pointer format for paths\n- Maintain descriptive error messages",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 4
           }
@@ -2331,7 +2331,7 @@
     ],
     "metadata": {
       "created": "2025-09-05T21:37:48.791Z",
-      "updated": "2025-09-06T09:25:03.217Z",
+      "updated": "2025-09-06T09:58:47.775Z",
       "description": "Implementation of comprehensive error system with user-friendly messages, stable error codes, JSON Pointer localization, and PII redaction for FoundryData MVP"
     }
   }
