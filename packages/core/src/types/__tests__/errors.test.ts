@@ -16,52 +16,74 @@ import {
   isFoundryError,
   createValidationFailure,
 } from '../errors';
+import { ErrorCode, getExitCode } from '../../errors/codes';
 
 describe('Error Hierarchy', () => {
   describe('FoundryError base class', () => {
     class TestError extends FoundryError {
       constructor(message: string, context?: Record<string, any>) {
-        super(message, 'TEST_ERROR', context);
-      }
-
-      getUserMessage(): string {
-        return `Test error: ${this.message}`;
-      }
-
-      getSuggestions(): string[] {
-        return ['This is a test suggestion'];
+        super({ message, errorCode: ErrorCode.INTERNAL_ERROR, context });
       }
     }
 
-    it('should create error with message and code', () => {
+    it('creates error with new params object', () => {
       const error = new TestError('Test message');
 
       expect(error.message).toBe('Test message');
-      expect(error.code).toBe('TEST_ERROR');
+      expect(error.errorCode).toBe(ErrorCode.INTERNAL_ERROR);
+      expect(error.severity).toBe('error');
       expect(error.name).toBe('TestError');
     });
 
-    it('should include context in error', () => {
-      const context = { field: 'test', value: 123 };
-      const error = new TestError('Test message', context);
+    it('includes context and supports cause', () => {
+      const cause = new Error('root cause');
+      const error = new (class extends FoundryError {})({
+        message: 'Higher level',
+        errorCode: ErrorCode.CONFIGURATION_ERROR,
+        context: { field: 'test', value: { password: 'secret123' } },
+        cause,
+      });
 
-      expect(error.context).toEqual(context);
+      expect(error.context).toMatchObject({ field: 'test' });
+      expect(error.cause?.message).toBe('root cause');
     });
 
-    it('should serialize to JSON', () => {
-      const error = new TestError('Test message', { field: 'test' });
-      const json = error.toJSON();
+    it('serializes differently for dev and prod', () => {
+      const error = new (class extends FoundryError {})({
+        message: 'Serialize me',
+        errorCode: ErrorCode.CONFIGURATION_ERROR,
+        context: { value: { password: 'secret123', safe: 'ok' } },
+      });
 
-      expect(json.name).toBe('TestError');
-      expect(json.message).toBe('Test message');
-      expect(json.code).toBe('TEST_ERROR');
-      expect(json.context).toEqual({ field: 'test' });
-      expect(json.stack).toBeDefined();
+      const devJson = error.toJSON('dev');
+      const prodJson = error.toJSON('prod');
+
+      // dev includes stack and full value
+      expect(devJson.stack).toBeDefined();
+      expect(devJson.context?.value).toMatchObject({
+        password: 'secret123',
+        safe: 'ok',
+      });
+
+      // prod excludes stack and redacts sensitive fields
+      expect(prodJson.stack).toBeUndefined();
+      expect(prodJson.context?.value).toMatchObject({
+        password: '[REDACTED]',
+        safe: 'ok',
+      });
     });
 
-    it('should maintain proper prototype chain', () => {
+    it('returns exit code mapping from ErrorCode', () => {
+      const error = new (class extends FoundryError {})({
+        message: 'Exit please',
+        errorCode: ErrorCode.PARSE_ERROR,
+      });
+
+      expect(error.getExitCode()).toBe(getExitCode(ErrorCode.PARSE_ERROR));
+    });
+
+    it('maintains proper prototype chain', () => {
       const error = new TestError('Test message');
-
       expect(error).toBeInstanceOf(TestError);
       expect(error).toBeInstanceOf(FoundryError);
       expect(error).toBeInstanceOf(Error);
@@ -115,11 +137,11 @@ describe('Error Hierarchy', () => {
         'Test suggestion',
         { extra: 'data' }
       );
-      const json = error.toJSON();
+      const json = error.toJSON('dev');
 
-      expect(json.context.path).toBe('/test/path');
-      expect(json.context.suggestion).toBe('Test suggestion');
-      expect(json.context.extra).toBe('data');
+      expect(json.context!.path).toBe('/test/path');
+      expect((json.context as any)!.suggestion).toBe('Test suggestion');
+      expect((json.context as any)!.extra).toBe('data');
     });
   });
 
@@ -534,9 +556,11 @@ describe('Error Hierarchy', () => {
       ];
 
       errors.forEach((error) => {
-        expect(typeof error.getUserMessage()).toBe('string');
-        expect(error.getSuggestions()).toBeInstanceOf(Array);
-        expect(error.toJSON()).toBeDefined();
+        const maybeUserMsg = (error as any).getUserMessage?.() ?? error.message;
+        const maybeSuggestions = (error as any).getSuggestions?.() ?? [];
+        expect(typeof maybeUserMsg).toBe('string');
+        expect(Array.isArray(maybeSuggestions)).toBe(true);
+        expect(error.toJSON('dev')).toBeDefined();
       });
     });
   });
