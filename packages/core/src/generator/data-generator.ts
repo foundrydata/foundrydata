@@ -1,9 +1,12 @@
+/* eslint-disable max-lines */
+/* eslint-disable max-lines-per-function */
 /**
  * Data Generator Base Class and Context
  * Provides the foundation for all primitive type generators
  */
 
-import { faker } from '@faker-js/faker';
+// Note: we avoid using '@faker-js/faker' seeding to ensure per-context PRNG
+// without global or instance seeding side-effects.
 import type { Result } from '../types/result';
 import type { GenerationError } from '../types/errors';
 import type { Schema } from '../types/schema';
@@ -104,18 +107,278 @@ export abstract class DataGenerator {
   /**
    * Initialize or configure the Faker instance for deterministic generation
    */
-  protected prepareFaker(context: GeneratorContext): typeof faker {
-    if (context.seed !== undefined) {
-      // Use global faker with seed - simple and reliable approach
-      faker.seed(context.seed);
+  // Minimal faker-like interface backed by a per-context seeded RNG
+  // This avoids any global seeding and guarantees per-context determinism
+  protected prepareFaker(context: GeneratorContext): {
+    helpers: {
+      arrayElement<T>(items: readonly T[]): T;
+      fromRegExp?: (regex: RegExp) => string;
+      shuffle<T>(items: T[]): T[];
+    };
+    datatype: {
+      boolean(opts?: { probability?: number }): boolean;
+    };
+    number: {
+      float(opts: { min?: number; max?: number }): number;
+      int(opts: { min?: number; max?: number }): number;
+    };
+    string: {
+      alphanumeric(length: number): string;
+      alpha(length: number): string;
+      numeric(length: number): string;
+      sample(length: number): string;
+      uuid(): string;
+    };
+    internet: {
+      email(): string;
+      url(): string;
+      domainName(): string;
+      ip(): string;
+      ipv6(): string;
+    };
+    date: {
+      recent(): Date;
+    };
+    lorem: {
+      words(count: number): string;
+    };
+    company: {
+      name(): string;
+    };
+    person: {
+      fullName(): string;
+    };
+  } {
+    // Retrieve or initialize a seeded RNG stored in context.cache
+    // to provide stable sequences across nested calls.
+    type Rng = () => number;
+
+    const RNG_CACHE_KEY = '__fd_rng__';
+
+    let rng: Rng | undefined = context.cache.get(RNG_CACHE_KEY) as
+      | Rng
+      | undefined;
+
+    if (!rng) {
+      // Deterministic, fast PRNG (mulberry32)
+      const mulberry32 = (seed: number): Rng => {
+        let t = seed >>> 0;
+        return () => {
+          t += 0x6d2b79f5;
+          let r = Math.imul(t ^ (t >>> 15), 1 | t);
+          r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+          return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+        };
+      };
+
+      // If no seed provided, fall back to a fixed seed to keep tests deterministic
+      const seed = typeof context.seed === 'number' ? context.seed : 123456789;
+      rng = mulberry32(seed);
+      context.cache.set(RNG_CACHE_KEY, rng);
     }
 
-    if (context.locale) {
-      // Set locale if different from default
-      // Note: This would require locale-specific faker instances in a full implementation
-    }
+    const next = (): number => rng!();
 
-    return faker;
+    const helpers = {
+      arrayElement<T>(items: readonly T[]): T {
+        if (!items || items.length === 0) {
+          // @ts-expect-error rely on callers to provide non-empty arrays; fallback to undefined
+          return undefined;
+        }
+        const idx = Math.floor(next() * items.length);
+        return items[idx] as T;
+      },
+      shuffle<T>(items: T[]): T[] {
+        const arr = items.slice();
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(next() * (i + 1));
+          const tmp = arr[i];
+          arr[i] = arr[j]!;
+          arr[j] = tmp!;
+        }
+        return arr;
+      },
+    };
+
+    const datatype = {
+      boolean(opts?: { probability?: number }): boolean {
+        const p =
+          typeof opts?.probability === 'number'
+            ? Math.max(0, Math.min(1, opts!.probability!))
+            : 0.5;
+        return next() < p;
+      },
+    };
+
+    const number = {
+      float(opts: { min?: number; max?: number }): number {
+        const min = typeof opts.min === 'number' ? opts.min : 0;
+        const max = typeof opts.max === 'number' ? opts.max : 1;
+        return min + (max - min) * next();
+      },
+      int(opts: { min?: number; max?: number }): number {
+        const min = typeof opts.min === 'number' ? Math.ceil(opts.min) : 0;
+        const max = typeof opts.max === 'number' ? Math.floor(opts.max) : 1;
+        const range = Math.max(0, max - min);
+        return Math.min(max, min + Math.floor(next() * (range + 1)));
+      },
+    };
+
+    const string = {
+      alphanumeric(length: number): string {
+        const chars =
+          'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let out = '';
+        for (let i = 0; i < Math.max(0, length | 0); i++) {
+          const idx = Math.floor(next() * chars.length);
+          out += chars[idx]!;
+        }
+        return out;
+      },
+      alpha(length: number): string {
+        const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        let out = '';
+        for (let i = 0; i < Math.max(0, length | 0); i++) {
+          const idx = Math.floor(next() * chars.length);
+          out += chars[idx]!;
+        }
+        return out;
+      },
+      numeric(length: number): string {
+        const chars = '0123456789';
+        let out = '';
+        for (let i = 0; i < Math.max(0, length | 0); i++) {
+          const idx = Math.floor(next() * chars.length);
+          out += chars[idx]!;
+        }
+        return out;
+      },
+      sample(length: number): string {
+        // Simple sample using alphanumeric for determinism
+        return string.alphanumeric(length);
+      },
+      uuid(): string {
+        // Deterministic UUIDv4-like string using RNG
+        const hex = '0123456789abcdef';
+        const nibble = (): string => hex[Math.floor(next() * 16)]!;
+        const section = (len: number): string => {
+          let s = '';
+          for (let i = 0; i < len; i++) s += nibble();
+          return s;
+        };
+        // Set version (4) and variant (8,9,a,b)
+        const ver = '4';
+        const variantVals = ['8', '9', 'a', 'b'];
+        const variant = variantVals[Math.floor(next() * variantVals.length)]!;
+        return `${section(8)}-${section(4)}-${ver}${section(3)}-${variant}${section(3)}-${section(12)}`;
+      },
+    };
+
+    const internet = {
+      email(): string {
+        const id = number.int({ min: 0, max: 999999 });
+        return `user${id}@example.com`;
+      },
+      url(): string {
+        const path = string.alphanumeric(8).toLowerCase();
+        return `https://example.com/${path}`;
+      },
+      domainName(): string {
+        const label = string.alpha(6).toLowerCase();
+        const tlds = ['com', 'org', 'net', 'io', 'dev'];
+        const tld = helpers.arrayElement(tlds);
+        return `${label}.${tld}`;
+      },
+      ip(): string {
+        const octet = (): number => number.int({ min: 1, max: 254 });
+        return `${octet()}.${octet()}.${octet()}.${octet()}`;
+      },
+      ipv6(): string {
+        const hex = '0123456789abcdef';
+        const group = (): string => {
+          let g = '';
+          for (let i = 0; i < 4; i++) g += hex[Math.floor(next() * 16)]!;
+          return g;
+        };
+        return `${group()}:${group()}:${group()}:${group()}:${group()}:${group()}:${group()}:${group()}`;
+      },
+    };
+
+    const date = {
+      recent(): Date {
+        // Base date deterministic, add up to ~7 days offset
+        const base = new Date('2023-01-01T00:00:00.000Z').getTime();
+        const offset = Math.floor(next() * 7 * 24 * 60 * 60 * 1000);
+        return new Date(base + offset);
+      },
+    };
+
+    const wordList = (
+      'lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ' +
+      'ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat ' +
+      'duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur ' +
+      'excepteur sint occaecat cupidatat non proident sunt in culpa qui officia deserunt mollit anim id est laborum'
+    ).split(/\s+/);
+
+    const pickWord = (): string => helpers.arrayElement(wordList);
+
+    const lorem = {
+      words(count: number): string {
+        const n = Math.max(1, count | 0);
+        const parts: string[] = [];
+        for (let i = 0; i < n; i++) parts.push(pickWord());
+        return parts.join(' ');
+      },
+    };
+
+    const company = {
+      name(): string {
+        const a = string.alpha(6);
+        const b = string.alpha(4);
+        const suffix = helpers.arrayElement([
+          'Ltd',
+          'Inc',
+          'LLC',
+          'GmbH',
+          'SARL',
+        ]);
+        return `${a} ${b} ${suffix}`;
+      },
+    };
+
+    const person = {
+      fullName(): string {
+        const first = helpers.arrayElement([
+          'Alex',
+          'Sam',
+          'Jordan',
+          'Taylor',
+          'Morgan',
+          'Jamie',
+        ]);
+        const last = helpers.arrayElement([
+          'Smith',
+          'Johnson',
+          'Lee',
+          'Brown',
+          'Garcia',
+          'Martin',
+        ]);
+        return `${first} ${last}`;
+      },
+    };
+
+    return {
+      helpers,
+      datatype,
+      number,
+      string,
+      internet,
+      date,
+      lorem,
+      company,
+      person,
+    };
   }
 
   /**

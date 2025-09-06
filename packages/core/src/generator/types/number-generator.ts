@@ -23,7 +23,6 @@
 
 /* eslint-disable max-lines, max-lines-per-function, complexity, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 
-import { faker } from '@faker-js/faker';
 import { Result, ok, err } from '../../types/result';
 import { GenerationError } from '../../types/errors';
 import type { Schema, NumberSchema } from '../../types/schema';
@@ -591,7 +590,7 @@ export class NumberGenerator extends DataGenerator {
     min: number,
     max: number,
     schema: NumberSchema,
-    fakerInstance: typeof faker
+    fakerInstance: any
   ): number {
     const edgeCases: number[] = [];
 
@@ -684,7 +683,7 @@ export class NumberGenerator extends DataGenerator {
   private generateNormalValue(
     min: number,
     max: number,
-    fakerInstance: typeof faker
+    fakerInstance: any
   ): number {
     // Handle extreme ranges that would cause overflow
     const range = max - min;
