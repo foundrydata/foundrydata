@@ -1,0 +1,25 @@
+# Task ID: 30
+# Title: Format Registry Init: Exactly-Once & Tests
+# Status: pending
+# Dependencies: 3
+# Priority: medium
+# Description: Guarantee that built-in formats initialize exactly once even with deep imports; add tests for idempotence and direct-registry import.
+# Details:
+ACCEPTANCE: lazy init runs once; re-imports or deep imports do not duplicate registration; no memory leaks. TESTS: import registry without core index; verify formats available and registered once.
+
+# Test Strategy:
+Unit tests in registry __tests__ for lazy init idempotence and deep import behavior; integration test touching generators that use formats.
+
+# Subtasks:
+## 1. Idempotent initializer [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. Lazy init tests [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+

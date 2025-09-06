@@ -1,0 +1,37 @@
+# Task ID: 2
+# Title: Build Schema Parser with JSON Schema Support
+# Status: done
+# Dependencies: 1
+# Priority: critical
+# Description: Create schema parsing system that converts JSON Schema to internal representation
+# Details:
+Implement SchemaParser class in packages/core/src/parser/schema-parser.ts. Parse JSON Schema into internal SchemaNode tree structure. Support basic types, arrays, nested objects (depth ≤ 2), enums, and constraints. Handle string formats. Return Result<SchemaNode, ParseError> for all operations.
+
+# Test Strategy:
+Test with all example schemas in docs/examples/. Verify parsing of supported features and proper error handling for unsupported features like nested objects.
+
+# Subtasks:
+## 1. Create SchemaParser interface [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. Implement JSON Schema parser [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3. Handle unsupported features [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 4. Parser testing suite [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

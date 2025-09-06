@@ -1,0 +1,37 @@
+# Task ID: 8
+# Title: Build CLI Commands with Commander.js
+# Status: pending
+# Dependencies: 7
+# Priority: critical
+# Description: Implement CLI interface with generate command and all required options
+# Details:
+Create CLI structure using Commander.js. Implement generate command with options: --schema, --rows, --seed, --output. Add help and version commands. Handle file I/O operations.
+
+# Test Strategy:
+CLI integration tests for all command variations. Test file input/output, error handling, and help text. Performance validation with CLI overhead.
+
+# Subtasks:
+## 1. Setup CLI structure [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. Implement generate command [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3. Add UI feedback [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 4. CLI integration tests [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+

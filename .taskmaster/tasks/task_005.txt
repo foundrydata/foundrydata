@@ -1,0 +1,31 @@
+# Task ID: 5
+# Title: Build Array and Object Generators
+# Status: done
+# Dependencies: 4
+# Priority: critical
+# Description: Implement array generation supporting primitives and nested objects (depth ≤ 2), plus object generation
+# Details:
+Create ArrayGenerator and ObjectGenerator classes. Support arrays of primitives and nested objects (depth ≤ 2). Respect minItems/maxItems constraints. Handle required fields correctly.
+
+# Test Strategy:
+Test array length constraints, mixed primitive arrays, and nested object arrays (depth ≤ 2). Verify performance with large arrays (1000+ items). Test required vs optional fields.
+
+# Subtasks:
+## 1. Implement ArrayGenerator [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. Implement ObjectGenerator [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3. Integration tests [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

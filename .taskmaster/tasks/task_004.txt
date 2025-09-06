@@ -1,0 +1,43 @@
+# Task ID: 4
+# Title: Implement Core Data Generators
+# Status: done
+# Dependencies: 2, 3
+# Priority: critical
+# Description: Build generator classes for primitive types with constraint support
+# Details:
+Create abstract DataGenerator class and concrete implementations for all primitive types. Each generator implements generate(config: GenerationConfig): Result<any, GenerationError>. Use Faker.js as base but ensure constraint compliance.
+
+# Test Strategy:
+Property-based testing with fast-check to verify all generated values meet constraints. Test edge cases like min=max, empty enums, and boundary values.
+
+# Subtasks:
+## 1. Create DataGenerator base class [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. StringGenerator with formats [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3. Number and Integer generators [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 4. Boolean and Enum generators [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 5. Property-based testing [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

@@ -1,0 +1,25 @@
+# Task ID: 29
+# Title: Support Bounded Nested Object Parsing
+# Status: done
+# Dependencies: 2
+# Priority: high
+# Description: Allow nested objects in JSONSchemaParser up to a configurable depth; beyond the limit, produce a clear ParseError with suggestions.
+# Details:
+ACCEPTANCE: nested objects parsed up to default depth=2; deeper structures fail fast with guidance. IMPLEMENTATION: recursive descent with depth counter; reuse existing type guards; keep MVP constraints documented. TESTS: AJV × generator end-to-end for nested objects within bounds.
+
+# Test Strategy:
+Unit tests for depth boundary; integration tests ensuring generated nested objects validate; error-path tests with suggestion messages for over-depth schemas.
+
+# Subtasks:
+## 1. Add depth limit to parser [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. Nested objects tests [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

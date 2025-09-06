@@ -1,0 +1,37 @@
+# Task ID: 13
+# Title: Enable pattern support in JSONSchemaParser
+# Status: done
+# Dependencies: 2, 4
+# Priority: high
+# Description: Propagate string `pattern` from JSON Schema into parsed StringSchema (instead of rejecting), aligned with StringGenerator capabilities.
+# Details:
+Update packages/core/src/parser/json-schema-parser.ts to accept and pass through the `pattern` keyword for string schemas. Remove the current early rejection of `pattern`, validate regex only for syntactic correctness (try new RegExp), and store the original pattern string on the parsed schema. Ensure this remains draft-agnostic (Draft-07, 2019-09, 2020-12). Keep error messaging helpful for invalid regex. Add ReDoS guards: limit pattern length/complexity and provide a clear ParseError with suggestion; document generation fallbacks for complex patterns.
+
+# Test Strategy:
+Add unit tests in packages/core/src/parser/__tests__/ to verify that: (1) valid pattern strings are preserved on parsed StringSchema; (2) invalid/too-complex regex patterns produce a clear ParseError with suggestion; (3) end-to-end: StringGenerator generates values matching the pattern when present, with safe fallbacks when patterns are complex. Add an integration test in test/__tests__/integration/generator-compliance/ to confirm AJV accepts generated values under schemas with pattern.
+
+# Subtasks:
+## 1. Allow pattern in parser [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. Parser tests for pattern [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3. E2E generation with pattern [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 4. Docs and limitations update [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

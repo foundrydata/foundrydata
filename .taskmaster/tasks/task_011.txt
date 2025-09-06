@@ -1,0 +1,31 @@
+# Task ID: 11
+# Title: Documentation and Examples
+# Status: pending
+# Dependencies: 10
+# Priority: medium
+# Description: Create comprehensive documentation and example schemas
+# Details:
+Write README with quickstart guide. Create example schemas for different use cases. Document API and CLI usage.
+
+# Test Strategy:
+All examples must work with the CLI. Documentation code samples must be tested.
+
+# Subtasks:
+## 1. Create README [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. Example schemas [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3. API documentation [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
