@@ -1312,7 +1312,7 @@
         "id": 13,
         "title": "Implement Stateful Testing Pattern",
         "description": "Phase 2 - Model-based testing with state consistency",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [
           6
         ],
@@ -1896,32 +1896,32 @@
         "dependencies": [
           2
         ],
-        "status": "pending",
+        "status": "done",
         "details": "ACCEPTANCE: (1) Same seed + same schema → bit-identical outputs across runs; (2) Parallel executions (N workers) produce identical outputs; (3) Prefix-stability holds; (4) No calls to faker.seed exist in codebase. REPORT: record p95 overhead <5% in micro-benchmarks.",
         "testStrategy": "Property-based tests for determinism and prefix-stability at pipeline level; concurrency tests with worker threads/process pool; micro-benchmarks comparing PRNG vs baseline (report percentiles).",
         "subtasks": [
           {
             "id": 1,
             "title": "Determinism property test",
-            "status": "pending",
+            "status": "done",
             "file": "test/__tests__/integration/pipeline/"
           },
           {
             "id": 2,
             "title": "Prefix-stability test",
-            "status": "pending",
+            "status": "done",
             "file": "test/__tests__/integration/pipeline/"
           },
           {
             "id": 3,
             "title": "Concurrency reproducibility test",
-            "status": "pending",
+            "status": "done",
             "file": "test/performance/benchmarks.test.ts"
           },
           {
             "id": 4,
             "title": "Micro-bench overhead report",
-            "status": "pending",
+            "status": "done",
             "file": "test/performance/benchmarks.test.ts"
           }
         ]
@@ -1962,7 +1962,7 @@
     ],
     "metadata": {
       "created": "2025-08-28T17:17:54.786Z",
-      "updated": "2025-09-05T18:48:25.093Z",
+      "updated": "2025-09-06T11:53:11.080Z",
       "description": "Testing infrastructure v2.1 implementation - property-based testing with AJV, fast-check, and multi-draft support"
     }
   },
