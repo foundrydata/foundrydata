@@ -33,11 +33,11 @@ describe('Limitations Registry', () => {
   });
 
   it('isSupported correctly compares against availableIn', () => {
-    expect(isSupported('nestedObjects', '0.2.0')).toBe(false);
+    expect(isSupported('nestedObjects', '0.2.0')).toBe(true);
     expect(isSupported('nestedObjects', 'v0.3')).toBe(true);
     expect(isSupported('nestedObjects', '0.3.1')).toBe(true);
-    // CURRENT_VERSION is MVP (0.1.0) -> not supported for nestedObjects(0.3.0)
-    expect(isSupported('nestedObjects', CURRENT_VERSION)).toBe(false);
+    // CURRENT_VERSION is MVP (0.1.0) -> now supported for nestedObjects(0.1.0)
+    expect(isSupported('nestedObjects', CURRENT_VERSION)).toBe(true);
     // regexPatterns available at 0.2.0
     expect(isSupported('regexPatterns', '0.2.0')).toBe(true);
   });
@@ -50,13 +50,13 @@ describe('Limitations Registry', () => {
     const enriched = enrichErrorWithLimitation(base, 'nestedObjects');
 
     expect(enriched.limitationKey).toBe('nestedObjects');
-    expect(enriched.availableIn).toBe('0.3.0');
+    expect(enriched.availableIn).toBe('0.1.0'); // Now supported up to depth 2
     expect(Array.isArray(enriched.suggestions)).toBe(true);
-    expect(enriched.suggestions?.[0]).toContain('Flatten nested objects');
+    expect(enriched.suggestions?.[0]).toContain('supported up to depth 2');
     expect(typeof enriched.documentation).toBe('string');
     expect(enriched.documentation).toContain('#nested-objects');
     expect(enriched.context?.limitationKey).toBe('nestedObjects');
-    expect(enriched.context?.availableIn).toBe('0.3.0');
+    expect(enriched.context?.availableIn).toBe('0.1.0');
   });
 
   it('enrichErrorWithLimitation is a no-op for unknown keys', () => {

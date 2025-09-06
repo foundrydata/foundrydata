@@ -486,7 +486,7 @@ test('string length respects bounds', () => {
 |---------|----------|----------|----------------|
 | **v0.1** | Now | Basic types, CLI, 100% compliance | MVP Launch |
 | **v0.2** | Month 2 | Pattern validation, more formats | 100+ users |
-| **v0.3** | Month 4 | Nested objects (1 level), CSV, API | 10+ paying |
+| **v0.3** | Month 4 | Deep nesting (depth > 2), CSV, API | 10+ paying |
 | **v1.0** | Month 6 | Full nesting, schema composition | 25+ paying |
 
 ---

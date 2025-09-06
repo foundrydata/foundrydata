@@ -894,20 +894,20 @@
         "dependencies": [
           2
         ],
-        "status": "in-progress",
+        "status": "done",
         "details": "ACCEPTANCE: nested objects parsed up to default depth=2; deeper structures fail fast with guidance. IMPLEMENTATION: recursive descent with depth counter; reuse existing type guards; keep MVP constraints documented. TESTS: AJV × generator end-to-end for nested objects within bounds.",
         "testStrategy": "Unit tests for depth boundary; integration tests ensuring generated nested objects validate; error-path tests with suggestion messages for over-depth schemas.",
         "subtasks": [
           {
             "id": 1,
             "title": "Add depth limit to parser",
-            "status": "pending",
+            "status": "done",
             "file": "packages/core/src/parser/json-schema-parser.ts"
           },
           {
             "id": 2,
             "title": "Nested objects tests",
-            "status": "pending",
+            "status": "done",
             "file": "packages/core/src/parser/__tests__/"
           }
         ]
@@ -942,7 +942,7 @@
     ],
     "metadata": {
       "created": "2025-08-24T14:00:00.000Z",
-      "updated": "2025-09-06T12:45:17.977Z",
+      "updated": "2025-09-06T13:08:52.295Z",
       "approach": "Hybrid - Task Master structure with granular subtasks",
       "totalTasks": 14,
       "totalSubtasks": 52,

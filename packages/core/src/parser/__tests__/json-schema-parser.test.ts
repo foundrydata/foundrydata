@@ -209,14 +209,53 @@ describe('JSONSchemaParser', () => {
       }
     });
 
-    it('should return error for nested objects', () => {
+    it('should accept nested objects up to depth 2', () => {
       const input = {
         type: 'object',
         properties: {
           user: {
             type: 'object',
             properties: {
-              name: { type: 'string' },
+              profile: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  age: { type: 'integer' },
+                },
+              },
+              id: { type: 'string' },
+            },
+          },
+        },
+      };
+      const result = parser.parse(input);
+
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        const schema = result.value as ObjectSchema;
+        expect(schema.type).toBe('object');
+        expect(schema.properties!.user).toBeDefined();
+      }
+    });
+
+    it('should return error for deep nested objects (depth > 2)', () => {
+      const input = {
+        type: 'object',
+        properties: {
+          user: {
+            type: 'object',
+            properties: {
+              profile: {
+                type: 'object',
+                properties: {
+                  settings: {
+                    type: 'object',
+                    properties: {
+                      theme: { type: 'string' },
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -225,10 +264,42 @@ describe('JSONSchemaParser', () => {
 
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error.message).toContain('Nested objects not supported');
-        expect(result.error.context?.suggestion).toContain(
-          'Flatten the object structure'
+        expect(result.error.message).toContain(
+          'Deep nested objects (depth > 2) not supported'
         );
+        expect(result.error.context?.suggestion).toContain(
+          'Nested objects are supported up to depth 2'
+        );
+      }
+    });
+
+    it('should accept single level nested objects', () => {
+      const input = {
+        type: 'object',
+        properties: {
+          user: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              email: { type: 'string', format: 'email' },
+            },
+          },
+          settings: {
+            type: 'object',
+            properties: {
+              theme: { type: 'string' },
+            },
+          },
+        },
+      };
+      const result = parser.parse(input);
+
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        const schema = result.value as ObjectSchema;
+        expect(schema.type).toBe('object');
+        expect(schema.properties!.user).toBeDefined();
+        expect(schema.properties!.settings).toBeDefined();
       }
     });
 
