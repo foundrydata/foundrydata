@@ -240,6 +240,58 @@ describe('ArrayGenerator', () => {
       });
     });
 
+    it('should cap length to tuple size when unevaluatedItems=false', () => {
+      const tupleSchema: any = {
+        type: 'array',
+        prefixItems: [{ type: 'string' }, { type: 'number' }],
+        unevaluatedItems: false,
+      };
+
+      const context = createGeneratorContext(tupleSchema, formatRegistry, {
+        seed: 424242,
+      });
+      const result = generator.generate(tupleSchema, context);
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        const arr = result.unwrap() as unknown[];
+        expect(Array.isArray(arr)).toBe(true);
+        expect(arr.length).toBe(2);
+
+        // Validate with 2020-12 AJV
+        const ajv = createAjv('2020-12');
+        const validate = ajv.compile(tupleSchema);
+        expect(validate(arr)).toBe(true);
+      }
+    });
+
+    it('should cap length to tuple size when items=false (tuple style)', () => {
+      const tupleSchema: any = {
+        type: 'array',
+        prefixItems: [
+          { type: 'string' },
+          { type: 'number' },
+          { type: 'boolean' },
+        ],
+        items: false,
+      };
+
+      const context = createGeneratorContext(tupleSchema, formatRegistry, {
+        seed: 98765,
+      });
+      const result = generator.generate(tupleSchema, context);
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        const arr = result.unwrap() as unknown[];
+        expect(Array.isArray(arr)).toBe(true);
+        expect(arr.length).toBe(3);
+
+        // Validate against 2020-12 (items=false is a valid schema for suffix items)
+        const ajv = createAjv('2020-12');
+        const validate = ajv.compile(tupleSchema);
+        expect(validate(arr)).toBe(true);
+      }
+    });
+
     it('should handle unevaluatedItems for modern drafts', () => {
       const modernSchema: any = {
         type: 'array',

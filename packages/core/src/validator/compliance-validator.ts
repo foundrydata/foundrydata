@@ -1,3 +1,5 @@
+/* eslint-disable max-lines-per-function */
+/* eslint-disable complexity */
 /**
  * Compliance Validator using AJV for JSON Schema validation
  * Ensures 100% schema compliance with detailed error reporting
@@ -5,8 +7,11 @@
 
 /* eslint-disable max-lines */
 import Ajv from 'ajv';
+import Ajv2019 from 'ajv/dist/2019';
+import Ajv2020 from 'ajv/dist/2020';
 import type { ErrorObject, ValidateFunction, JSONSchemaType } from 'ajv';
 import addFormats from 'ajv-formats';
+import draft2019Formats from 'ajv-formats-draft2019';
 
 import type { Result } from '../types/result';
 import { ok, err } from '../types/result';
@@ -53,7 +58,7 @@ export interface ComplianceSummary {
  * Configuration options for ComplianceValidator
  */
 export interface ComplianceValidatorOptions {
-  strict?: boolean;
+  strict?: boolean | 'log';
   allErrors?: boolean;
   verbose?: boolean;
   removeAdditional?: boolean;
@@ -61,9 +66,17 @@ export interface ComplianceValidatorOptions {
   coerceTypes?: boolean;
   validateFormats?: boolean;
   strictTypes?: boolean | 'log';
-  strictNumbers?: boolean;
-  strictRequired?: boolean;
+  strictNumbers?: boolean | 'log';
+  strictRequired?: boolean | 'log';
+  /** Validate meta-schema keywords strictly (unknown keywords, etc.) */
+  strictSchema?: boolean | 'log';
+  /** Allow non-standard union types like "string|number" */
+  allowUnionTypes?: boolean;
   maxErrors?: number;
+  /** Force a specific JSON Schema draft instead of auto-detection */
+  draft?: 'draft-07' | '2019-09' | '2020-12';
+  /** Control AJV's tuple strictness checks */
+  strictTuples?: boolean | 'log';
 }
 
 /**
@@ -71,132 +84,232 @@ export interface ComplianceValidatorOptions {
  * Uses singleton AJV instance with WeakMap caching for optimal performance
  */
 export class ComplianceValidator {
-  private ajv: Ajv;
-  private compiledValidators = new WeakMap<object, ValidateFunction>();
-  private schemaKeyMap = new Map<string, object>();
+  // Lazily created AJV instances per draft
+  private ajv07?: Ajv;
+  private ajv2019?: Ajv;
+  private ajv2020?: Ajv;
+  // Per-AJV caches
+  private compiledValidators = new Map<
+    Ajv,
+    WeakMap<object, ValidateFunction>
+  >();
+  private schemaKeyMap = new Map<Ajv, Map<string, object>>();
   private performanceMetrics = {
     totalValidations: 0,
     cacheHits: 0,
     cacheMisses: 0,
     totalValidationTime: 0,
   };
+  private readonly opts: ComplianceValidatorOptions;
 
   constructor(options: ComplianceValidatorOptions = {}) {
-    // Create AJV instance with configured options
-    this.ajv = new Ajv({
-      // Core validation options
-      strict: options.strict ?? true,
-      allErrors: options.allErrors ?? true,
-      verbose: options.verbose ?? true,
+    // Store options for later AJV initialization (lazy per-draft)
+    this.opts = options;
+  }
 
-      // Strict mode configuration
-      strictTypes: options.strictTypes ?? true,
-      strictNumbers: options.strictNumbers ?? true,
-      strictRequired: options.strictRequired ?? false,
-
-      // Data modification options (disabled by default for strict compliance)
-      removeAdditional: options.removeAdditional ?? false,
-      useDefaults: options.useDefaults ?? false,
-      coerceTypes: options.coerceTypes ?? false,
-
-      // Format validation
-      validateFormats: options.validateFormats ?? true,
-
-      // Performance and debugging
+  /** Create or return an AJV instance for the given draft */
+  private getAjvForDraft(draft: '2020-12' | '2019-09' | 'draft-07'): Ajv {
+    const baseOptions = {
+      strict: this.opts.strict ?? true,
+      allErrors: this.opts.allErrors ?? true,
+      verbose: this.opts.verbose ?? true,
+      strictSchema: this.opts.strictSchema ?? true,
+      allowUnionTypes: this.opts.allowUnionTypes ?? false,
+      // Tuple strictness: configurable; default tolerates concise tuple schemas
+      strictTuples: this.opts.strictTuples ?? false,
+      strictTypes: this.opts.strictTypes ?? true,
+      strictNumbers: this.opts.strictNumbers ?? true,
+      strictRequired: this.opts.strictRequired ?? false,
+      removeAdditional: this.opts.removeAdditional ?? false,
+      useDefaults: this.opts.useDefaults ?? false,
+      coerceTypes: this.opts.coerceTypes ?? false,
+      validateFormats: this.opts.validateFormats ?? true,
       addUsedSchema: true,
       inlineRefs: true,
       passContext: false,
-
-      // Error handling
       messages: true,
-      logger: false, // Disable console logging
-    });
+      logger: false,
+    } as const;
 
-    // Add format validators from ajv-formats
-    addFormats(this.ajv);
+    const ensureFormats = (
+      ajv: Ajv,
+      d: '2020-12' | '2019-09' | 'draft-07'
+    ): Ajv => {
+      addFormats(ajv);
+      if (d !== 'draft-07') {
+        // Add draft-2019+ specific formats (idn-*, iri, etc.)
+        try {
+          draft2019Formats(ajv);
+        } catch {
+          // Optional dependency; ignore if unavailable
+        }
+      }
+      this.addSecureFormatsTo(ajv);
+      return ajv;
+    };
 
-    // Add custom secure formats that are more restrictive
-    this.addSecureFormats();
+    if (draft === '2020-12') {
+      if (!this.ajv2020) {
+        this.ajv2020 = ensureFormats(
+          new Ajv2020(baseOptions) as unknown as Ajv,
+          draft
+        );
+      }
+      return this.ajv2020;
+    }
+    if (draft === '2019-09') {
+      if (!this.ajv2019) {
+        this.ajv2019 = ensureFormats(
+          new Ajv2019(baseOptions) as unknown as Ajv,
+          draft
+        );
+      }
+      return this.ajv2019;
+    }
+    // draft-07
+    if (!this.ajv07) {
+      this.ajv07 = ensureFormats(new Ajv(baseOptions), draft);
+    }
+    return this.ajv07;
+  }
+
+  /** Detect schema draft via $schema or keywords; default to 2020-12 */
+  private detectDraft(schema: unknown): '2020-12' | '2019-09' | 'draft-07' {
+    if (this.opts.draft) return this.opts.draft;
+    const sObj = (schema as Record<string, unknown>) || {};
+    const sch = sObj.$schema as string | undefined;
+    if (typeof sch === 'string') {
+      const s = sch.toLowerCase();
+      if (s.includes('2020-12')) return '2020-12';
+      if (s.includes('2019-09')) return '2019-09';
+      if (s.includes('draft-07')) return 'draft-07';
+    }
+    // Heuristics
+    if (
+      '$defs' in sObj ||
+      'prefixItems' in sObj ||
+      'unevaluatedItems' in sObj
+    ) {
+      return '2020-12';
+    }
+    if ('definitions' in sObj) {
+      return 'draft-07';
+    }
+    return '2020-12';
   }
 
   /**
    * Helper method to get or compile a validator with caching
    */
   private getOrCompileValidator(schema: object): ValidateFunction {
-    // Check WeakMap cache first
-    let validate = this.compiledValidators.get(schema);
+    const draft = this.detectDraft(schema);
+    const ajv = this.getAjvForDraft(draft);
 
+    // Set up per-AJV caches
+    let wm = this.compiledValidators.get(ajv);
+    if (!wm) {
+      wm = new WeakMap<object, ValidateFunction>();
+      this.compiledValidators.set(ajv, wm);
+    }
+    let km = this.schemaKeyMap.get(ajv);
+    if (!km) {
+      km = new Map<string, object>();
+      this.schemaKeyMap.set(ajv, km);
+    }
+
+    // Check WeakMap cache for this schema object
+    let validate = wm.get(schema);
     if (validate) {
       this.performanceMetrics.cacheHits++;
       return validate;
     }
 
-    // Check if we have a cached schema object for this key
+    // Check by serialized key to deduplicate equivalent schema objects
     const schemaKey = this.getSchemaKey(schema);
-    const cachedSchema = this.schemaKeyMap.get(schemaKey);
-
-    if (cachedSchema) {
-      validate = this.compiledValidators.get(cachedSchema);
+    const cachedSchemaObj = km.get(schemaKey);
+    if (cachedSchemaObj) {
+      validate = wm.get(cachedSchemaObj);
       if (validate) {
         this.performanceMetrics.cacheHits++;
         return validate;
       }
     }
 
-    // Cache miss - compile new validator
+    // Cache miss - compile new validator using selected AJV
     this.performanceMetrics.cacheMisses++;
-    validate = this.ajv.compile(schema);
-    this.compiledValidators.set(schema, validate);
-    this.schemaKeyMap.set(schemaKey, schema);
+    validate = ajv.compile(schema as object);
+    wm.set(schema, validate);
+    km.set(schemaKey, schema);
     return validate;
   }
 
   /**
    * Add secure format validators to prevent ReDoS and other security issues
    */
-  // eslint-disable-next-line max-lines-per-function
-  private addSecureFormats(): void {
+  private addSecureFormatsTo(ajv: Ajv): void {
     // More restrictive email format to prevent ReDoS
-    this.ajv.addFormat('email', {
-      type: 'string',
-      validate: (email: string) => {
-        // Simple, fast email validation without complex regex
-        if (email.length > 320) return false; // RFC 5321 limit
+    const validateEmail = (email: string): boolean => {
+      // Simple, fast email validation without complex regex
+      if (email.length > 320) return false; // RFC 5321 limit
 
-        const parts = email.split('@');
-        if (parts.length !== 2) return false;
+      const parts = email.split('@');
+      if (parts.length !== 2) return false;
 
-        const [local, domain] = parts;
-        if (!local || !domain) return false;
-        if (local.length > 64) return false; // RFC 5321 local part limit
-        if (domain.length > 253) return false; // RFC 5321 domain limit
+      const [local, domain] = parts;
+      if (!local || !domain) return false;
+      if (local.length > 64) return false; // RFC 5321 local part limit
+      if (domain.length > 253) return false; // RFC 5321 domain limit
 
-        // Basic character validation
-        const localRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+$/;
-        const domainRegex =
-          /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+      // Basic character validation
+      const localRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+$/;
+      const domainRegex =
+        /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
-        return localRegex.test(local) && domainRegex.test(domain);
-      },
-    });
+      return localRegex.test(local) && domainRegex.test(domain);
+    };
+    ajv.addFormat('email', { type: 'string', validate: validateEmail });
 
     // Secure URI format with length limits
-    this.ajv.addFormat('uri', {
+    const validateUri = (uri: string): boolean => {
+      if (uri.length > 2048) return false; // Prevent extremely long URIs
+      try {
+        const url = new URL(uri);
+        return ['http:', 'https:', 'ftp:', 'ftps:'].includes(url.protocol);
+      } catch {
+        return false;
+      }
+    };
+    ajv.addFormat('uri', {
       type: 'string',
-      validate: (uri: string) => {
-        if (uri.length > 2048) return false; // Prevent extremely long URIs
+      validate: validateUri,
+    });
 
-        try {
-          const url = new URL(uri);
-          return ['http:', 'https:', 'ftp:', 'ftps:'].includes(url.protocol);
-        } catch {
-          return false;
-        }
-      },
+    // Alias 'url' to same semantics as 'uri' (non-standard but widely used)
+    ajv.addFormat('url', { type: 'string', validate: validateUri });
+
+    // Aliases for date-time
+    const validateDateTime = (s: string): boolean => {
+      // Keep simple/rfc3339-like check: must include a 'T' separator and parse as Date
+      if (!/T/.test(s)) return false;
+      const t = Date.parse(s);
+      return Number.isFinite(t);
+    };
+    ajv.addFormat('datetime', { type: 'string', validate: validateDateTime });
+    ajv.addFormat('dateTime', { type: 'string', validate: validateDateTime });
+
+    // Alias 'e-mail' to 'email'
+    ajv.addFormat('e-mail', { type: 'string', validate: validateEmail });
+
+    // Alias 'guid' to 'uuid'
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    ajv.addFormat('guid', {
+      type: 'string',
+      validate: (s: string) => uuidRegex.test(s),
     });
 
     // IPv4 with stricter validation
-    this.ajv.addFormat('ipv4', {
+    ajv.addFormat('ipv4', {
       type: 'string',
       validate: (ip: string) => {
         if (ip.length > 15) return false; // Max IPv4 length
@@ -217,8 +330,8 @@ export class ComplianceValidator {
   /**
    * Validate a batch of data items against a schema
    */
-  // eslint-disable-next-line max-lines-per-function, @typescript-eslint/no-explicit-any
-  public validate<T = any>(
+  // @typescript-eslint/no-explicit-any
+  public validate<T = unknown>(
     data: T[],
     schema: JSONSchemaType<T> | object
   ): Result<ComplianceReport, ValidationError> {
@@ -295,8 +408,7 @@ export class ComplianceValidator {
   /**
    * Validate a single data item
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public validateSingle<T = any>(
+  public validateSingle<T = unknown>(
     data: T,
     schema: JSONSchemaType<T> | object
   ): Result<ComplianceValidationResult, ValidationError> {
@@ -318,8 +430,7 @@ export class ComplianceValidator {
    * Check if data is compliant without detailed error information
    * Optimized for performance when only pass/fail result is needed
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public isCompliant<T = any>(
+  public isCompliant<T = unknown>(
     data: T[],
     schema: JSONSchemaType<T> | object
   ): Result<boolean, ValidationError> {
@@ -369,9 +480,14 @@ export class ComplianceValidator {
         ? this.performanceMetrics.totalValidationTime /
           this.performanceMetrics.totalValidations
         : undefined;
+    // Sum compiled schemas across all AJV instances
+    const compiledSchemas = Array.from(this.schemaKeyMap.values()).reduce(
+      (acc, m) => acc + m.size,
+      0
+    );
 
     return {
-      compiledSchemas: this.schemaKeyMap.size,
+      compiledSchemas,
       cacheHitRate,
       averageValidationTime,
       totalValidations: this.performanceMetrics.totalValidations,
@@ -384,9 +500,9 @@ export class ComplianceValidator {
    * Clear the compiled validator cache
    */
   public clearCache(): void {
-    // WeakMap doesn't have a clear method, so we need to reset references
-    this.compiledValidators = new WeakMap<object, ValidateFunction>();
-    this.schemaKeyMap.clear();
+    // Reset per-AJV caches
+    this.compiledValidators = new Map<Ajv, WeakMap<object, ValidateFunction>>();
+    this.schemaKeyMap = new Map<Ajv, Map<string, object>>();
     // Reset performance metrics on cache clear
     this.performanceMetrics = {
       totalValidations: 0,
@@ -429,7 +545,7 @@ export class ComplianceValidator {
   /**
    * Generate summary statistics for compliance report
    */
-  // eslint-disable-next-line max-lines-per-function -- Summary generation requires comprehensive statistics
+  // Summary generation requires comprehensive statistics
   private generateSummary(
     results: ComplianceValidationResult[]
   ): ComplianceSummary {

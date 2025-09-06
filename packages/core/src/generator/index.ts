@@ -5,6 +5,7 @@
 
 // Export the main Generator class
 export { Generator } from '../generator';
+export { FoundryGenerator } from './foundry-generator';
 
 // Export base generator infrastructure
 export * from './data-generator';

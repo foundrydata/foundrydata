@@ -4,6 +4,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
  */
 
 import { JSONSchemaParser } from '../json-schema-parser';
+import { getAjv } from '../../../../../test/helpers/ajv-factory';
 import { ParseError } from '../../types/errors';
 import type {
   ObjectSchema,
@@ -104,6 +105,48 @@ describe('JSONSchemaParser', () => {
       }
     });
 
+    it('should parse additionalProperties as schema (object)', () => {
+      const input = {
+        type: 'object',
+        additionalProperties: { type: 'string', minLength: 2 },
+      };
+      const result = parser.parse(input);
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        const schema = result.value as ObjectSchema;
+        expect(schema.additionalProperties).toBeDefined();
+        const ap = schema.additionalProperties as StringSchema;
+        expect(ap.type).toBe('string');
+        expect(ap.minLength).toBe(2);
+      }
+    });
+
+    it('should enforce additionalProperties schema via AJV', () => {
+      const input = {
+        type: 'object',
+        properties: {
+          known: { type: 'number' },
+        },
+        additionalProperties: { type: 'string', minLength: 2 },
+      } as const;
+
+      const parsed = parser.parse(input);
+      expect(parsed.isOk()).toBe(true);
+      if (!parsed.isOk()) return;
+
+      const ajv = getAjv();
+      const validate = ajv.compile(parsed.value);
+
+      // valid: additional props are strings len >= 2
+      expect(validate({ known: 1, extra: 'ab', another: 'xyz' })).toBe(true);
+
+      // invalid: too short
+      expect(validate({ known: 1, extra: 'a' })).toBe(false);
+
+      // invalid: wrong type
+      expect(validate({ known: 1, extra: 123 })).toBe(false);
+    });
+
     it('should parse array schema', () => {
       const input = {
         type: 'array',
@@ -119,6 +162,37 @@ describe('JSONSchemaParser', () => {
         expect(schema.type).toBe('array');
         expect(schema.minItems).toBe(1);
         expect(schema.maxItems).toBe(10);
+      }
+    });
+
+    it('should parse unevaluatedItems (boolean and schema)', () => {
+      // boolean form
+      const inputBool = {
+        type: 'array',
+        prefixItems: [{ type: 'string' }],
+        unevaluatedItems: false,
+      } as const;
+      let result = parser.parse(inputBool);
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        const schema = result.value as ArraySchema;
+        expect(schema.unevaluatedItems).toBe(false);
+      }
+
+      // schema form
+      const inputSchema = {
+        type: 'array',
+        prefixItems: [{ type: 'string' }],
+        unevaluatedItems: { type: 'number', minimum: 0 },
+      } as const;
+      result = parser.parse(inputSchema);
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        const schema = result.value as ArraySchema;
+        expect(schema.unevaluatedItems).toBeDefined();
+        const ui = schema.unevaluatedItems as NumberSchema;
+        expect(ui.type).toBe('number');
+        expect(ui.minimum).toBe(0);
       }
     });
 
@@ -147,6 +221,36 @@ describe('JSONSchemaParser', () => {
       expect(result.isOk()).toBe(true);
       if (result.isOk()) {
         expect(result.value).toBe(true);
+      }
+    });
+
+    it('should parse unevaluatedProperties (boolean and schema)', () => {
+      // boolean form
+      const inputBool = {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        unevaluatedProperties: false,
+      } as const;
+      let result = parser.parse(inputBool);
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        const schema = result.value as ObjectSchema;
+        expect((schema as any).unevaluatedProperties).toBe(false);
+      }
+
+      // schema form
+      const inputSchema = {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        unevaluatedProperties: { type: 'number', minimum: 0 },
+      } as const;
+      result = parser.parse(inputSchema);
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        const schema = result.value as ObjectSchema;
+        const up = (schema as any).unevaluatedProperties as NumberSchema;
+        expect(up.type).toBe('number');
+        expect(up.minimum).toBe(0);
       }
     });
   });
