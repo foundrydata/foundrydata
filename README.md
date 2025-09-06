@@ -232,6 +232,10 @@ foundrydata --help
     "birthday": { "type": "string", "format": "date" },
     "created": { "type": "string", "format": "date-time" },
     
+    // ✅ Basic regex patterns
+    "productCode": { "type": "string", "pattern": "^[A-Z]{3}-[0-9]{4}$" },
+    "slug": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    
     // ✅ Enums
     "role": { "type": "string", "enum": ["admin", "user", "guest"] },
     
@@ -289,10 +293,10 @@ foundrydata generate --schema complex.json
 # ❌ Error: Schema features not supported in v0.1
 # 
 # Unsupported features detected:
-#   - Pattern validation at: properties.email.pattern
+#   - Schema composition (allOf/anyOf/oneOf) at: properties.user.allOf
 # 
-# 💡 Workaround: Use format validation instead of patterns
-# 📅 Pattern support: v0.2
+# 💡 Workaround: Merge constraints into single schema
+# 📅 Composition support: v0.3
 # 
 # Want them sooner? Vote or contribute:
 # https://github.com/foundrydata/foundrydata/issues

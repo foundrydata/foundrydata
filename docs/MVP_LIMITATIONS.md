@@ -2,10 +2,17 @@
 
 This document lists the known limitations and unsupported features in the MVP release.
 
+## JSON Schema Features Supported with Limitations
+
+### Partially Supported Keywords
+- **`pattern`** - Basic regex patterns supported with ReDoS protection and complexity limits
+  - ✅ Simple patterns like `^[A-Z]{3}-[0-9]{4}$`, `^[a-z0-9-]+$`
+  - ❌ Complex patterns with high ReDoS risk or excessive length
+  - ❌ Patterns using advanced regex features (lookaheads, backreferences)
+
 ## JSON Schema Features Not Supported
 
 ### Keywords Not Supported
-- **`pattern`** - Regular expression pattern matching (will be in v0.2.0)
 - **`multipleOf`** - Number divisibility constraint (will be in v0.2.0)
 - **`additionalItems`** - Additional items validation (will be in v0.2.0)
 - **`contains`** - Array contains validation (will be in v0.3.0)
@@ -48,7 +55,6 @@ This document lists the known limitations and unsupported features in the MVP re
 - `ipv4`, `ipv6`
 - `regex`
 - `json-pointer`, `relative-json-pointer`
-- Custom regex patterns
 
 ## Parser Limitations
 
@@ -56,7 +62,8 @@ This document lists the known limitations and unsupported features in the MVP re
 The parser only validates structural validity, not semantic correctness:
 - Negative `minLength` or `minItems` are accepted (will fail at generation)
 - `minimum > maximum` is accepted (will fail at generation)
-- Invalid regex patterns are rejected only because patterns aren't supported
+- Invalid regex patterns are rejected with syntax validation
+- Complex regex patterns are rejected for ReDoS protection
 
 ## Test Infrastructure Issues
 
@@ -81,7 +88,7 @@ npm run test:integration  # Runs tests sequentially
 
 ### Testing Schemas with Unsupported Features
 Remove or replace unsupported features before testing:
-- Replace `pattern` with `format` constraints
+- Simplify complex `pattern` constraints or replace with `format`
 - Remove `multipleOf` constraints
 - Flatten nested objects
 - Use single schema instead of tuple arrays
@@ -89,7 +96,7 @@ Remove or replace unsupported features before testing:
 ## Future Releases
 
 ### v0.2.0 (Planned)
-- Pattern/regex support
+- Complex pattern/regex support with advanced features
 - MultipleOf constraint
 - AdditionalItems validation
 - Better tuple array support
@@ -114,7 +121,7 @@ The registry is available from `@foundrydata/core` to help you detect feature av
 import { isSupported, CURRENT_VERSION } from '@foundrydata/core';
 
 // Example: is regex pattern supported in current version?
-const regexOk = isSupported('regexPatterns', CURRENT_VERSION); // false in v0.1.0, true in v0.2.0
+const regexOk = isSupported('regexPatterns', CURRENT_VERSION); // true (basic) in v0.1.0, true (full) in v0.2.0
 ```
 
 ### Retrieve limitation details

@@ -1,4 +1,5 @@
 import { describe, test, expect } from 'vitest';
+import { performance } from 'node:perf_hooks';
 import '../../../matchers/index';
 import {
   INTEGRATION_TEST_SEED,
@@ -623,4 +624,174 @@ describe('Performance & Memory Integration', () => {
       expect(delta).toBeLessThan(PERFORMANCE_THRESHOLDS.memory.large);
     }
   );
+});
+
+describe('Pattern Support E2E', () => {
+  test.each(DRAFTS)(
+    'string generator with basic patterns validates with AJV (%s)',
+    (draft: JsonSchemaDraft) => {
+      const basicPatterns = [
+        '^[A-Z]{3}$', // Exactly 3 uppercase letters
+        '^[0-9]{4}$', // Exactly 4 digits
+        '^[a-zA-Z0-9-]+$', // One or more alphanumeric or dash
+        '^[A-Z]{3}-[0-9]{4}$', // Format like ABC-1234
+        '^[a-z]+@[a-z]+\\.[a-z]+$', // Basic email pattern
+      ];
+
+      for (const pattern of basicPatterns) {
+        const schema: AnySchema = {
+          type: 'string',
+          pattern,
+          minLength: 1,
+          maxLength: 50,
+        };
+        const validate = compileValidator(schema, draft);
+        const gen = new StringGenerator();
+        const formatRegistry = makeFormatRegistry();
+
+        // Generate multiple values to test consistency
+        for (let i = 0; i < 10; i++) {
+          const ctx = createGeneratorContext(
+            schema as unknown as Schema,
+            formatRegistry,
+            { seed: INTEGRATION_TEST_SEED + i }
+          );
+          const result = gen.generate(schema as unknown as Schema, ctx);
+
+          expect(result.isOk()).toBe(true);
+          if (result.isOk()) {
+            const value = result.value;
+            expect(typeof value).toBe('string');
+
+            // Verify the value matches the pattern
+            const regex = new RegExp(pattern);
+            expect(value).toMatch(regex);
+
+            // Verify AJV also validates the value
+            const isValid = validate(value);
+            expect(isValid).toBe(true);
+          }
+        }
+      }
+    }
+  );
+
+  test('pattern with length constraints works across all drafts', () => {
+    const schema: AnySchema = {
+      type: 'string',
+      pattern: '^[A-Z]{2,5}$', // 2-5 uppercase letters
+      minLength: 2,
+      maxLength: 5,
+    };
+
+    for (const draft of DRAFTS) {
+      const validate = compileValidator(schema, draft);
+      const gen = new StringGenerator();
+      const formatRegistry = makeFormatRegistry();
+
+      for (let i = 0; i < 20; i++) {
+        const ctx = createGeneratorContext(
+          schema as unknown as Schema,
+          formatRegistry,
+          { seed: INTEGRATION_TEST_SEED + i }
+        );
+        const result = gen.generate(schema as unknown as Schema, ctx);
+
+        expect(result.isOk()).toBe(true);
+        if (result.isOk()) {
+          const value = result.value as string;
+
+          // Check pattern
+          expect(value).toMatch(/^[A-Z]{2,5}$/);
+
+          // Check length constraints
+          expect(value.length).toBeGreaterThanOrEqual(2);
+          expect(value.length).toBeLessThanOrEqual(5);
+
+          // Verify AJV validation
+          const isValid = validate(value);
+          expect(isValid).toBe(true);
+        }
+      }
+    }
+  });
+
+  test('pattern with enum respects both constraints', () => {
+    const schema: AnySchema = {
+      type: 'string',
+      pattern: '^[A-Z]{3}$',
+      enum: ['ABC', 'DEF', 'GHI'], // All match the pattern
+    };
+
+    for (const draft of DRAFTS) {
+      const validate = compileValidator(schema, draft);
+      const gen = new StringGenerator();
+      const formatRegistry = makeFormatRegistry();
+
+      for (let i = 0; i < 15; i++) {
+        const ctx = createGeneratorContext(
+          schema as unknown as Schema,
+          formatRegistry,
+          { seed: INTEGRATION_TEST_SEED + i }
+        );
+        const result = gen.generate(schema as unknown as Schema, ctx);
+
+        expect(result.isOk()).toBe(true);
+        if (result.isOk()) {
+          const value = result.value as string;
+
+          // Must be one of the enum values
+          expect(['ABC', 'DEF', 'GHI']).toContain(value);
+
+          // Must match the pattern
+          expect(value).toMatch(/^[A-Z]{3}$/);
+
+          // AJV validation
+          const isValid = validate(value);
+          expect(isValid).toBe(true);
+        }
+      }
+    }
+  });
+
+  test('performance: pattern generation meets thresholds', () => {
+    const schema: AnySchema = {
+      type: 'string',
+      pattern: '^[a-zA-Z0-9]{8,16}$',
+      minLength: 8,
+      maxLength: 16,
+    };
+
+    const validate = compileValidator(schema, 'draft-07');
+    const gen = new StringGenerator();
+    const formatRegistry = makeFormatRegistry();
+
+    const times: number[] = [];
+
+    for (let i = 0; i < 100; i++) {
+      const start = performance.now();
+      const ctx = createGeneratorContext(
+        schema as unknown as Schema,
+        formatRegistry,
+        { seed: INTEGRATION_TEST_SEED + i }
+      );
+      const result = gen.generate(schema as unknown as Schema, ctx);
+      const end = performance.now();
+
+      times.push(end - start);
+
+      // Verify correctness
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        const isValid = validate(result.value);
+        expect(isValid).toBe(true);
+      }
+    }
+
+    const percentiles = calculatePercentiles(times);
+
+    // Performance should be reasonable for pattern generation
+    expect(percentiles.p95).toBeLessThan(5); // 5ms for p95
+    expect(percentiles.p50).toBeLessThan(2); // 2ms for p50
+  });
 });

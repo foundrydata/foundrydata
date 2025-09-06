@@ -336,6 +336,31 @@ export class StringGenerator extends DataGenerator {
         len === 0 ? '' : fakerInstance.string.alphanumeric(len),
       '^.+$': (len) => fakerInstance.string.sample(len),
       '^.*$': (len) => (len === 0 ? '' : fakerInstance.string.sample(len)),
+      // Fixed-length patterns
+      '^[A-Z]{3}$': () => fakerInstance.string.alpha(3).toUpperCase(),
+      '^[0-9]{4}$': () => fakerInstance.string.numeric(4),
+      '^[a-zA-Z0-9-]+$': (len) => {
+        const chars = fakerInstance.string.alphanumeric(Math.max(1, len - 1));
+        return len > 1 && fakerInstance.datatype.boolean()
+          ? chars + '-'
+          : chars;
+      },
+      '^[A-Z]{3}-[0-9]{4}$': () =>
+        fakerInstance.string.alpha(3).toUpperCase() +
+        '-' +
+        fakerInstance.string.numeric(4),
+      '^[a-z]+@[a-z]+\\.[a-z]+$': () => {
+        const user = fakerInstance.string
+          .alpha(fakerInstance.number.int({ min: 3, max: 8 }))
+          .toLowerCase();
+        const domain = fakerInstance.string
+          .alpha(fakerInstance.number.int({ min: 3, max: 8 }))
+          .toLowerCase();
+        const tld = fakerInstance.string
+          .alpha(fakerInstance.number.int({ min: 2, max: 4 }))
+          .toLowerCase();
+        return `${user}@${domain}.${tld}`;
+      },
     };
 
     // Try exact match first
@@ -372,14 +397,21 @@ export class StringGenerator extends DataGenerator {
     schema: StringSchema,
     fakerInstance: any
   ): string | null {
-    // Match patterns like: ^prefix[charclass]+suffix$ or ^prefix[charclass]*suffix$
+    // Match patterns like: ^prefix[charclass]+suffix$, ^prefix[charclass]*suffix$, or ^prefix[charclass]{n,m}suffix$
     const prefixSuffixMatch = pattern.match(
-      /^\^([^[]*)\[([^\]]+)\]([*+])([^$]*)\$$/
+      /^\^([^[]*)\[([^\]]+)\]([*+]|\{(\d+)(?:,(\d+))?\})([^$]*)\$$/
     );
 
     if (prefixSuffixMatch) {
-      const [, prefix = '', charClass, quantifier, suffix = ''] =
-        prefixSuffixMatch;
+      const [
+        ,
+        prefix = '',
+        charClass,
+        quantifier,
+        exactCount,
+        maxCount,
+        suffix = '',
+      ] = prefixSuffixMatch;
 
       // Determine character generator based on character class
       let charGenerator: (n: number) => string;
@@ -388,29 +420,60 @@ export class StringGenerator extends DataGenerator {
         charGenerator = (n) => fakerInstance.string.numeric(n);
       } else if (charClass === 'a-zA-Z') {
         charGenerator = (n) => fakerInstance.string.alpha(n);
+      } else if (charClass === 'A-Z') {
+        charGenerator = (n) => fakerInstance.string.alpha(n).toUpperCase();
+      } else if (charClass === 'a-z') {
+        charGenerator = (n) => fakerInstance.string.alpha(n).toLowerCase();
       } else if (charClass === 'a-zA-Z0-9' || charClass === '\\w') {
         charGenerator = (n) => fakerInstance.string.alphanumeric(n);
       } else {
         return null; // Unsupported character class
       }
 
-      const minVariableLength = quantifier === '+' ? 1 : 0;
+      // Determine variable length based on quantifier
+      let minVariableLength: number;
+      let maxVariableLength: number;
+
+      if (quantifier === '*') {
+        minVariableLength = 0;
+        maxVariableLength = 10;
+      } else if (quantifier === '+') {
+        minVariableLength = 1;
+        maxVariableLength = 10;
+      } else if (exactCount) {
+        // Handle {n} or {n,m} patterns
+        const min = Number.parseInt(exactCount, 10);
+        const max = maxCount ? Number.parseInt(maxCount, 10) : min;
+        minVariableLength = min;
+        maxVariableLength = max;
+      } else {
+        return null;
+      }
+
       const fixedLength = prefix.length + suffix.length;
-      const maxLength = schema.maxLength ?? 20;
-      const minLength = Math.max(
-        schema.minLength ?? 0,
-        fixedLength + minVariableLength
+      const schemaMaxLength = schema.maxLength ?? 50;
+      const schemaMinLength = schema.minLength ?? 0;
+
+      // Calculate actual variable length respecting schema constraints
+      const actualMinLength = Math.max(
+        minVariableLength,
+        schemaMinLength - fixedLength
+      );
+      const actualMaxLength = Math.min(
+        maxVariableLength,
+        schemaMaxLength - fixedLength
       );
 
-      if (minLength > maxLength) return null;
+      if (actualMinLength > actualMaxLength || actualMinLength < 0) return null;
 
-      const variableLength = Math.max(
-        0,
-        Math.min(
-          maxLength - fixedLength,
-          minLength - fixedLength + fakerInstance.number.int({ min: 0, max: 3 })
-        )
-      );
+      // Generate appropriate length
+      const variableLength =
+        actualMinLength === actualMaxLength
+          ? actualMinLength
+          : fakerInstance.number.int({
+              min: actualMinLength,
+              max: actualMaxLength,
+            });
 
       try {
         const variablePart =

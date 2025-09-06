@@ -44,15 +44,15 @@ export const LIMITATIONS_REGISTRY: Record<LimitationKey, Limitation> = {
   },
   regexPatterns: {
     key: 'regexPatterns',
-    title: 'Regex Patterns Not Supported',
-    errorCode: ErrorCode.REGEX_PATTERNS_NOT_SUPPORTED,
+    title: 'Complex Regex Patterns Not Supported',
+    errorCode: ErrorCode.COMPLEX_REGEX_PATTERNS_NOT_SUPPORTED,
     availableIn: '0.2.0',
     workaround:
-      'Use enum or supported format constraints instead of custom regex patterns.',
+      'Use basic patterns, enum, or format constraints. Basic patterns like ^[A-Z]{3}$ are supported in v0.1.',
     workaroundExample:
-      "Use { format: 'email' } or an explicit enum instead of a 'pattern'.",
+      "Use '^[A-Z]{3}$' instead of complex lookaheads like '(?=.*[A-Z])', or prefer { format: 'email' }.",
     docsAnchor: 'keywords-not-supported',
-    featureExamples: ["{ type: 'string', pattern: '^[A-Z]{3}$' }"],
+    featureExamples: ["{ type: 'string', pattern: '(?=.*[A-Z])(?=.*\\d)' }"],
   },
   schemaComposition: {
     key: 'schemaComposition',

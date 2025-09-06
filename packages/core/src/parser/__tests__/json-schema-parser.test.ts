@@ -170,17 +170,107 @@ describe('JSONSchemaParser', () => {
       }
     });
 
-    it('should return error for pattern/regex', () => {
-      const input = { type: 'string', pattern: '^[a-z]+$' };
-      const result = parser.parse(input);
+    describe('pattern support', () => {
+      it('should accept basic patterns', () => {
+        const input = { type: 'string', pattern: '^[a-z]+$' };
+        const result = parser.parse(input);
 
-      expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toContain('Pattern/regex not supported');
-        expect(result.error.context?.suggestion).toContain(
-          'Replace pattern with format'
-        );
-      }
+        expect(result.isOk()).toBe(true);
+        if (result.isOk()) {
+          const schema = result.value as StringSchema;
+          expect(schema.pattern).toBe('^[a-z]+$');
+        }
+      });
+
+      it('should accept simple patterns with character classes', () => {
+        const patterns = [
+          '^[A-Z]{3}$',
+          '^[0-9]{4}$',
+          '^[a-zA-Z0-9-]+$',
+          '^[A-Z]{3}-[0-9]{4}$',
+        ];
+
+        for (const pattern of patterns) {
+          const input = { type: 'string', pattern };
+          const result = parser.parse(input);
+
+          expect(result.isOk()).toBe(true);
+          if (result.isOk()) {
+            const schema = result.value as StringSchema;
+            expect(schema.pattern).toBe(pattern);
+          }
+        }
+      });
+
+      it('should reject patterns with ReDoS vulnerabilities', () => {
+        const dangerousPatterns = [
+          '(a+)+',
+          '(a*)*',
+          '(a+)*',
+          '(a*)+',
+          '(a|a)+',
+        ];
+
+        for (const pattern of dangerousPatterns) {
+          const input = { type: 'string', pattern };
+          const result = parser.parse(input);
+
+          expect(result.isErr()).toBe(true);
+          if (result.isErr()) {
+            expect(result.error.message).toContain('ReDoS-prone construct');
+          }
+        }
+      });
+
+      it('should reject patterns with complex features', () => {
+        const complexPatterns = [
+          '(?=.*[A-Z])', // positive lookahead
+          '(?!foo)', // negative lookahead
+          '(?<=\\d)', // positive lookbehind
+          '(?<!\\w)', // negative lookbehind
+          'test\\1', // backreferences
+        ];
+
+        for (const pattern of complexPatterns) {
+          const input = { type: 'string', pattern };
+          const result = parser.parse(input);
+
+          expect(result.isErr()).toBe(true);
+          if (result.isErr()) {
+            expect(result.error.message).toContain('unsupported feature');
+          }
+        }
+      });
+
+      it('should reject patterns that are too long', () => {
+        const longPattern = 'a'.repeat(1001);
+        const input = { type: 'string', pattern: longPattern };
+        const result = parser.parse(input);
+
+        expect(result.isErr()).toBe(true);
+        if (result.isErr()) {
+          expect(result.error.message).toContain('too long');
+        }
+      });
+
+      it('should reject patterns with invalid syntax', () => {
+        const invalidPatterns = [
+          '[', // unclosed bracket
+          '(', // unclosed group
+          '?', // invalid quantifier
+          '*', // invalid quantifier
+        ];
+
+        for (const pattern of invalidPatterns) {
+          const input = { type: 'string', pattern };
+          const result = parser.parse(input);
+
+          expect(result.isErr()).toBe(true);
+          if (result.isErr()) {
+            expect(result.error.message).toContain('Invalid regex pattern');
+          }
+        }
+      });
     });
 
     it('should return error for $ref', () => {
