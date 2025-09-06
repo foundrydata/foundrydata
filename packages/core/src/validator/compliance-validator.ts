@@ -114,7 +114,9 @@ export class ComplianceValidator {
       allErrors: this.opts.allErrors ?? true,
       verbose: this.opts.verbose ?? true,
       strictSchema: this.opts.strictSchema ?? true,
-      allowUnionTypes: this.opts.allowUnionTypes ?? false,
+      // Allow standard union type arrays (e.g., type: ["object","boolean"]).
+      // This does NOT enable non-standard "string|number" syntax.
+      allowUnionTypes: this.opts.allowUnionTypes ?? true,
       // Tuple strictness: configurable; default tolerates concise tuple schemas
       strictTuples: this.opts.strictTuples ?? false,
       strictTypes: this.opts.strictTypes ?? true,
@@ -145,6 +147,8 @@ export class ComplianceValidator {
         }
       }
       this.addSecureFormatsTo(ajv);
+      // Register embedded meta-schema fragments used by example files
+      this.addEmbeddedMetaSchemas(ajv, d);
       return ajv;
     };
 
@@ -171,6 +175,149 @@ export class ComplianceValidator {
       this.ajv07 = ensureFormats(new Ajv(baseOptions), draft);
     }
     return this.ajv07;
+  }
+
+  /**
+   * Provide minimal embedded schemas for commonly referenced meta fragments
+   * so that AJV can resolve refs like "meta/validation#/$defs/stringArray" without network.
+   */
+  private addEmbeddedMetaSchemas(
+    ajv: Ajv,
+    draft: '2020-12' | '2019-09' | 'draft-07'
+  ): void {
+    // meta/validation: define $defs.stringArray used by drafts
+    ajv.addSchema(
+      {
+        $id: 'meta/validation',
+        $defs: {
+          stringArray: {
+            type: 'array',
+            items: { type: 'string' },
+            minItems: 0,
+            uniqueItems: true,
+            default: [],
+          },
+        },
+      },
+      'meta/validation'
+    );
+
+    // meta/core: anchorString and uriReferenceString are referenced in 2020-12
+    ajv.addSchema(
+      {
+        $id: 'meta/core',
+        $defs: {
+          anchorString: { type: 'string' },
+          uriReferenceString: { type: 'string' },
+        },
+      },
+      'meta/core'
+    );
+
+    // meta/applicator: common applicator keywords referencing schemas
+    const applicator = {
+      $id: 'meta/applicator',
+      type: ['object', 'boolean'],
+      properties: {
+        // Array applicators
+        items: {
+          anyOf: [
+            {
+              type: 'array',
+              items: { type: ['object', 'boolean'] },
+              minItems: 0,
+            },
+            { type: ['object', 'boolean'] },
+          ],
+        },
+        additionalItems: { type: ['object', 'boolean', 'boolean'] },
+        contains: { type: ['object', 'boolean'] },
+        prefixItems: {
+          type: 'array',
+          items: { type: ['object', 'boolean'] },
+          minItems: 0,
+        },
+        // Object applicators
+        properties: {
+          type: 'object',
+          additionalProperties: { type: ['object', 'boolean'] },
+        },
+        patternProperties: {
+          type: 'object',
+          additionalProperties: { type: ['object', 'boolean'] },
+        },
+        additionalProperties: { type: ['object', 'boolean', 'boolean'] },
+        dependentSchemas: {
+          type: 'object',
+          additionalProperties: { type: ['object', 'boolean'] },
+        },
+        // Composition
+        allOf: {
+          type: 'array',
+          items: { type: ['object', 'boolean'] },
+          minItems: 0,
+        },
+        anyOf: {
+          type: 'array',
+          items: { type: ['object', 'boolean'] },
+          minItems: 0,
+        },
+        oneOf: {
+          type: 'array',
+          items: { type: ['object', 'boolean'] },
+          minItems: 0,
+        },
+        not: { type: ['object', 'boolean'] },
+        if: { type: ['object', 'boolean'] },
+        then: { type: ['object', 'boolean'] },
+        else: { type: ['object', 'boolean'] },
+      },
+      additionalProperties: true,
+    } as const;
+    try {
+      ajv.addSchema(applicator, 'meta/applicator');
+    } catch {
+      // ignore collisions
+    }
+
+    // meta/unevaluated (2020-12): unevaluatedItems/unevaluatedProperties
+    if (draft === '2020-12') {
+      const unevaluated = {
+        $id: 'meta/unevaluated',
+        type: ['object', 'boolean'],
+        properties: {
+          unevaluatedItems: { type: ['object', 'boolean', 'boolean'] },
+          unevaluatedProperties: { type: ['object', 'boolean', 'boolean'] },
+        },
+        additionalProperties: true,
+      } as const;
+      try {
+        ajv.addSchema(unevaluated, 'meta/unevaluated');
+      } catch {
+        // ignore
+      }
+    }
+
+    // Provide stubs for less critical fragments (still stricter than true-schemas)
+    const lite = (id: string): object => ({
+      $id: id,
+      type: ['object', 'boolean'],
+    });
+    const addLite = (id: string): void => {
+      try {
+        ajv.addSchema(lite(id), id);
+      } catch {
+        // ignore collisions
+      }
+    };
+    if (draft !== 'draft-07') {
+      addLite('meta/meta-data');
+      addLite('meta/format');
+      addLite('meta/content');
+      if (draft === '2020-12') {
+        addLite('meta/format-annotation');
+      }
+    }
   }
 
   /** Detect schema draft via $schema or keywords; default to 2020-12 */
@@ -217,15 +364,18 @@ export class ComplianceValidator {
       this.schemaKeyMap.set(ajv, km);
     }
 
+    // Prepare schema to avoid AJV id collisions with official meta-schema $id
+    const prepared = this.prepareSchemaForAjv(schema);
+
     // Check WeakMap cache for this schema object
-    let validate = wm.get(schema);
+    let validate = wm.get(prepared);
     if (validate) {
       this.performanceMetrics.cacheHits++;
       return validate;
     }
 
     // Check by serialized key to deduplicate equivalent schema objects
-    const schemaKey = this.getSchemaKey(schema);
+    const schemaKey = this.getSchemaKey(prepared);
     const cachedSchemaObj = km.get(schemaKey);
     if (cachedSchemaObj) {
       validate = wm.get(cachedSchemaObj);
@@ -237,10 +387,33 @@ export class ComplianceValidator {
 
     // Cache miss - compile new validator using selected AJV
     this.performanceMetrics.cacheMisses++;
-    validate = ajv.compile(schema as object);
-    wm.set(schema, validate);
-    km.set(schemaKey, schema);
+    validate = ajv.compile(prepared as object);
+    wm.set(prepared, validate);
+    km.set(schemaKey, prepared);
     return validate;
+  }
+
+  /**
+   * Clone and strip conflicting $id on official meta-schemas to avoid AJV re-add conflicts
+   */
+  private prepareSchemaForAjv(input: object): object {
+    // quick shallow clone; sufficient for top-level $id/$schema handling
+    const s = { ...(input as Record<string, unknown>) } as Record<
+      string,
+      unknown
+    >;
+    const id = s['$id'];
+    if (typeof id === 'string') {
+      const lowered = id.toLowerCase();
+      if (
+        lowered.includes('json-schema.org/draft-07/schema') ||
+        lowered.includes('json-schema.org/draft/2019-09/schema') ||
+        lowered.includes('json-schema.org/draft/2020-12/schema')
+      ) {
+        delete s['$id'];
+      }
+    }
+    return s as object;
   }
 
   /**

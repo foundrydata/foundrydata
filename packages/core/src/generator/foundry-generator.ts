@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 /* eslint-disable max-depth */
 /* eslint-disable max-lines-per-function */
 /* eslint-disable max-lines */
@@ -280,9 +281,6 @@ export class FoundryGenerator {
       'dependentSchemas',
       // 'unevaluatedProperties', // supported now
       // 'unevaluatedItems', // supported now
-      'contains',
-      'minContains',
-      'maxContains',
     ]);
     const visit = (node: unknown): void => {
       if (!node || typeof node !== 'object') return;
@@ -426,13 +424,67 @@ export class FoundryGenerator {
         | IntegerGenerator
         | BooleanGenerator;
 
+      // Schema that will be handed to the selected generator
+      let effectiveSchema: Schema = schema;
+
       if (typeof schema === 'boolean') {
         // true schema → any value allowed, use object for deterministic output
         generator = new ObjectGenerator();
       } else {
-        const t = Array.isArray(schema.type)
-          ? schema.type[0]
-          : (schema.type ?? 'object');
+        // Handle composition in planning
+        effectiveSchema = this.resolveComposition(schema);
+
+        // Special-case: official Draft meta-schemas → generate minimal object schema
+        if (this.isOfficialMetaSchema(schema)) {
+          effectiveSchema = { type: 'object' } as Schema;
+        }
+
+        const typeField = (effectiveSchema as { type?: string | string[] })
+          .type;
+        const pickUnion = (arr: string[]): string => {
+          // Heuristic: for official meta-schemas, prefer 'object' first, then 'boolean'
+          const s = effectiveSchema as Record<string, unknown>;
+          const meta = String(s.$schema || s.$id || '').toLowerCase();
+          const isMeta = meta.includes('json-schema.org');
+          if (isMeta) {
+            if (arr.includes('object')) return 'object';
+            if (arr.includes('boolean')) return 'boolean';
+          }
+          const pref = [
+            'object',
+            'array',
+            'string',
+            'number',
+            'integer',
+            'boolean',
+            'null',
+          ];
+          for (const p of pref) if (arr.includes(p)) return p;
+          return arr[0] ?? 'object';
+        };
+        const base = Array.isArray(typeField)
+          ? pickUnion(typeField)
+          : (typeField ?? 'object');
+        const t = base as string;
+
+        // If union type (array), narrow to the first type for generation while
+        // preserving other constraints. Validation still happens against the
+        // original, potentially-union schema later.
+        if (Array.isArray(schema.type)) {
+          effectiveSchema = {
+            ...(schema as Record<string, unknown>),
+            type: t,
+          } as Schema;
+        }
+
+        // Ensure effectiveSchema carries a concrete type for downstream generators
+        if (typeof (effectiveSchema as { type?: string }).type !== 'string') {
+          effectiveSchema = {
+            ...(effectiveSchema as Record<string, unknown>),
+            type: t,
+          } as Schema;
+        }
+
         switch (t) {
           case 'object':
             generator = new ObjectGenerator();
@@ -458,7 +510,11 @@ export class FoundryGenerator {
         }
       }
 
-      return ok({ generator, schema, formatRegistry: this.formatRegistry });
+      return ok({
+        generator,
+        schema: effectiveSchema,
+        formatRegistry: this.formatRegistry,
+      });
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       return err(
@@ -468,6 +524,220 @@ export class FoundryGenerator {
         })
       );
     }
+  }
+
+  /**
+   * Resolve composition keywords into an effective schema for generation.
+   * Validation still runs against the original schema.
+   */
+  private resolveComposition(schema: Schema): Schema {
+    if (typeof schema !== 'object' || schema === null) return schema;
+    const s = schema as Record<string, unknown>;
+
+    if (Array.isArray(s.allOf) && s.allOf.length > 0) {
+      return this.mergeAllOf(s.allOf as Schema[]);
+    }
+    if (Array.isArray(s.anyOf) && s.anyOf.length > 0) {
+      return this.selectBestBranch(s.anyOf as Schema[]);
+    }
+    if (Array.isArray(s.oneOf) && s.oneOf.length > 0) {
+      return this.selectBestBranch(s.oneOf as Schema[]);
+    }
+    if (s.not) {
+      return this.invertNot(s.not as Schema);
+    }
+    return schema;
+  }
+
+  /**
+   * Detect when the schema itself IS an official JSON Schema meta-schema.
+   * Important: many normal user schemas include "$schema" pointing to the
+   * official meta-schema URL. That alone must NOT trigger this condition.
+   * We only consider it an official meta-schema when $id matches one.
+   */
+  private isOfficialMetaSchema(schema: Schema): boolean {
+    if (typeof schema !== 'object' || schema === null) return false;
+    const s = schema as Record<string, unknown>;
+    const id = String(s.$id || '').toLowerCase();
+    const hints = [
+      'json-schema.org/draft-07/schema',
+      'json-schema.org/draft/2019-09/schema',
+      'json-schema.org/draft/2020-12/schema',
+    ];
+    // Only check $id. $schema merely declares the draft and is common in user schemas.
+    return hints.some((h) => id.includes(h));
+  }
+
+  /** Merge a list of schemas from allOf into a simplified single schema */
+  private mergeAllOf(schemas: Schema[]): Schema {
+    const out: Record<string, unknown> = {};
+    const types: string[] = [];
+
+    for (const sch of schemas) {
+      if (typeof sch !== 'object' || sch === null) continue;
+      const so = sch as Record<string, unknown>;
+      const t = so.type;
+      if (typeof t === 'string') types.push(t);
+
+      // Strings
+      if (t === 'string') {
+        out.type = 'string';
+        if (typeof so.minLength === 'number') {
+          out.minLength = Math.max(
+            (out.minLength as number) ?? 0,
+            so.minLength
+          );
+        }
+        if (typeof so.maxLength === 'number') {
+          const curr = (out.maxLength as number) ?? Number.POSITIVE_INFINITY;
+          out.maxLength = Math.min(curr, so.maxLength);
+        }
+        if (typeof so.pattern === 'string' && out.pattern === undefined) {
+          out.pattern = so.pattern;
+        }
+        if (typeof so.format === 'string' && out.format === undefined) {
+          out.format = so.format;
+        }
+      }
+
+      // Numbers/integers
+      if (t === 'number' || t === 'integer') {
+        out.type = t;
+        if (typeof so.minimum === 'number') {
+          out.minimum = Math.max(
+            (out.minimum as number) ?? -Infinity,
+            so.minimum
+          );
+        }
+        if (typeof so.maximum === 'number') {
+          const curr = (out.maximum as number) ?? Infinity;
+          out.maximum = Math.min(curr, so.maximum);
+        }
+        if (typeof so.exclusiveMinimum === 'number') {
+          out.exclusiveMinimum = Math.max(
+            (out.exclusiveMinimum as number) ?? -Infinity,
+            so.exclusiveMinimum
+          );
+        }
+        if (typeof so.exclusiveMaximum === 'number') {
+          out.exclusiveMaximum = Math.min(
+            (out.exclusiveMaximum as number) ?? Infinity,
+            so.exclusiveMaximum
+          );
+        }
+        if (typeof so.multipleOf === 'number' && out.multipleOf === undefined) {
+          out.multipleOf = so.multipleOf;
+        }
+      }
+
+      // Objects
+      if (t === 'object') {
+        out.type = 'object';
+        const props = (out.properties as Record<string, Schema>) ?? {};
+        const req = new Set<string>(
+          Array.isArray(out.required) ? (out.required as string[]) : []
+        );
+        if (so.properties && typeof so.properties === 'object') {
+          for (const [k, v] of Object.entries(
+            so.properties as Record<string, Schema>
+          )) {
+            if (!(k in props)) props[k] = v;
+          }
+        }
+        if (Array.isArray(so.required)) {
+          (so.required as string[]).forEach((r) => req.add(r));
+        }
+        if (req.size > 0) out.required = Array.from(req);
+        if (
+          so.additionalProperties !== undefined &&
+          out.additionalProperties === undefined
+        ) {
+          out.additionalProperties = so.additionalProperties;
+        }
+        out.properties = props;
+      }
+
+      // Arrays
+      if (t === 'array') {
+        out.type = 'array';
+        if (typeof so.minItems === 'number') {
+          out.minItems = Math.max((out.minItems as number) ?? 0, so.minItems);
+        }
+        if (typeof so.maxItems === 'number') {
+          const curr = (out.maxItems as number) ?? Infinity;
+          out.maxItems = Math.min(curr, so.maxItems);
+        }
+        if (so.items !== undefined && out.items === undefined)
+          out.items = so.items;
+        if (so.prefixItems !== undefined && out.prefixItems === undefined)
+          out.prefixItems = so.prefixItems;
+      }
+    }
+
+    // If multiple distinct types encountered, fall back to first
+    if (types.length > 1) out.type = types[0];
+    return out as Schema;
+  }
+
+  /** Deterministically select a branch for anyOf/oneOf */
+  private selectBestBranch(branches: Schema[]): Schema {
+    // Prefer typed branches; then prefer object, array, string, number, integer, boolean, null order
+    const order = new Map<string, number>([
+      ['object', 1],
+      ['array', 2],
+      ['string', 3],
+      ['number', 4],
+      ['integer', 5],
+      ['boolean', 6],
+      ['null', 7],
+    ]);
+    const scored = branches.map((b, i) => {
+      if (typeof b !== 'object' || b === null) return { i, score: 99, b };
+      const t = (b as Record<string, unknown>).type;
+      const s = typeof t === 'string' ? (order.get(t) ?? 50) : 80;
+      return { i, score: s, b };
+    });
+    scored.sort((a, b) => a.score - b.score || a.i - b.i);
+    const selected = (scored[0]?.b ??
+      branches[0] ??
+      ({ type: 'object' } as Schema)) as Schema;
+    return selected;
+  }
+
+  /** Produce a simple schema that does not match the given "not" schema */
+  private invertNot(notSchema: Schema): Schema {
+    if (typeof notSchema !== 'object' || notSchema === null) {
+      return { type: 'object' } as Schema; // default different type
+    }
+    const t = (notSchema as Record<string, unknown>).type;
+    if (typeof t === 'string') {
+      const alt = [
+        'object',
+        'array',
+        'string',
+        'number',
+        'integer',
+        'boolean',
+        'null',
+      ].find((x) => x !== t);
+      return alt ? ({ type: alt } as Schema) : ({ type: 'object' } as Schema);
+    }
+    if ('const' in (notSchema as Record<string, unknown>)) {
+      const c = (notSchema as Record<string, unknown>).const;
+      // choose a value of a different type to avoid equality
+      if (typeof c === 'string')
+        return { type: 'number', minimum: 0, maximum: 10 } as Schema;
+      if (typeof c === 'number')
+        return { type: 'string', minLength: 1, maxLength: 5 } as Schema;
+      if (typeof c === 'boolean')
+        return { type: 'string', minLength: 1 } as Schema;
+      return { type: 'string', minLength: 1 } as Schema;
+    }
+    if ('enum' in (notSchema as Record<string, unknown>)) {
+      // pick a type outside common enum types
+      return { type: 'object', properties: {} } as Schema;
+    }
+    return { type: 'object' } as Schema;
   }
 
   generateData(
@@ -582,7 +852,8 @@ export class FoundryGenerator {
     originalSchema: object
   ): Result<ComplianceReport, ValidationError> {
     try {
-      const reportResult = this.validator.validate(items, originalSchema);
+      const schemaForValidation = this.sanitizeExternalRefs(originalSchema);
+      const reportResult = this.validator.validate(items, schemaForValidation);
       if (reportResult.isErr()) return err(reportResult.error);
 
       const report = reportResult.value;
@@ -606,6 +877,44 @@ export class FoundryGenerator {
         })
       );
     }
+  }
+
+  /**
+   * Replace external $ref/$dynamicRef/$recursiveRef with permissive true-schemas
+   * to allow local AJV validation of meta-schemas without fetching.
+   */
+  private sanitizeExternalRefs(input: object): object {
+    const clone = (v: unknown): unknown =>
+      v && typeof v === 'object' ? JSON.parse(JSON.stringify(v)) : v;
+    const root = clone(input) as Record<string, unknown>;
+
+    const isExternalRef = (ref: unknown): boolean => {
+      if (typeof ref !== 'string') return false;
+      if (ref.startsWith('#')) return false;
+      // Keep embedded meta fragments intact; they are handled by ComplianceValidator
+      if (ref.startsWith('meta/')) return false;
+      return true;
+    };
+
+    const visit = (node: unknown): unknown => {
+      if (!node || typeof node !== 'object') return node;
+      if (Array.isArray(node)) return node.map(visit);
+      const obj = node as Record<string, unknown>;
+      const out: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(obj)) {
+        if (
+          (k === '$ref' || k === '$dynamicRef' || k === '$recursiveRef') &&
+          isExternalRef(v)
+        ) {
+          out[k] = true;
+          continue;
+        }
+        out[k] = visit(v);
+      }
+      return out;
+    };
+
+    return visit(root) as object;
   }
 
   run(

@@ -73,9 +73,6 @@ program
             'patternProperties',
             'propertyNames',
             'dependentSchemas',
-            'contains',
-            'minContains',
-            'maxContains',
           ]);
           const visit = (node: unknown): void => {
             if (!node || typeof node !== 'object') return;

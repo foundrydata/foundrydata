@@ -17,16 +17,17 @@ This directory contains real-world schema examples and usage patterns for Foundr
 
 ## 📋 JSON Schema Compatibility
 
-FoundryData supports modern JSON Schema versions:
-- ✅ **Draft-07** (2017) - Default, most compatible
-- ✅ **Draft 2019-09** - Enhanced validation
-- ✅ **Draft 2020-12** - Latest features, OpenAPI 3.1
+FoundryData targets modern JSON Schema versions for core keywords:
+- ✅ **Draft-07** (default)
+- ✅ **Draft 2019-09**
+- ✅ **Draft 2020-12** (OpenAPI 3.1)
 
-**Not supported:**
-- ❌ Draft-04 (too old, use migration tools)
-- ❌ Draft-03 (ancient)
+Notes:
+- Core validation keywords are supported; advanced composition (`allOf/anyOf/oneOf/not`) and references (`$ref/$defs`) are under active development.
+- The tool auto-detects your schema version from `$schema`.
 
-The tool auto-detects your schema version from the `$schema` property.
+Not supported:
+- ❌ Draft-04 and older (use migration tools)
 
 ## 🚀 Basic Usage
 
@@ -112,6 +113,7 @@ curl -X POST https://api.foundrydata.dev/generate \
 
 ### Constraints
 - `minimum/maximum` - Number ranges (inclusive)
+- `exclusiveMinimum/exclusiveMaximum` - Strict bounds (Draft‑07+ numeric form)
 - `minLength/maxLength` - String length
 - `enum` - Pick from list (cached for consistency)
 - `const` - Constant values (any JSON type)
@@ -122,7 +124,15 @@ curl -X POST https://api.foundrydata.dev/generate \
 - `type: array` with `items` of primitives (string, number, boolean)
 - Arrays of nested objects (objects with nested properties up to depth 2)
 - `prefixItems` - Tuple validation (Draft 2019-09/2020-12)
+- `items: false` or `unevaluatedItems: false` (2020‑12) to forbid suffix items
 - `minItems/maxItems` - Array length constraints
+- `uniqueItems` - For scalar items (string/number/boolean)
+
+### Objects
+- `additionalProperties` - Allowed/forbidden or schema for extras
+- `unevaluatedProperties: false` (2019‑09/2020‑12)
+- `minProperties/maxProperties`, `required`
+- `dependencies` (Draft‑07) and `dependentRequired` (2019‑09+)
 
 ## ❌ Not Supported Yet
 
@@ -130,13 +140,16 @@ curl -X POST https://api.foundrydata.dev/generate \
 |---------|--------|------------|
 | Deep nested objects (depth > 2) | Coming v0.3 | Restructure schema |
 | Objects nested beyond depth 2 | Coming v0.3 | Restructure with intermediate objects |
-| `pattern` (regex) | ✅ Basic patterns | Complex patterns v0.2 |
-| `allOf/oneOf` | Coming v0.3 | Pick one type |
-| `$ref` | Coming v0.3 | Inline definitions |
-| `exclusiveMinimum/exclusiveMaximum` | Coming v0.2 | Use inclusive ranges |
-| `additionalItems` | Coming v0.2 | Use `prefixItems` instead |
-| `contains` | Coming v0.3 | Use array items validation |
-| `unevaluatedItems` | Not planned | Use supported array keywords |
+| `pattern` (regex) | ✅ Basic patterns | Complex patterns planned |
+| `allOf/anyOf/oneOf/not` | Coming v0.3 | Flatten constraints where possible |
+| `$ref`, `$defs`, `$id` | Coming v0.3 | Inline definitions temporarily |
+| Tuple (Draft‑07 `items: [...]` + `additionalItems`) | Not yet | Prefer 2020‑12 `prefixItems` + `items: false` |
+| `contains`, `minContains`, `maxContains` | Supported | Use to require occurrences of a sub-schema |
+| `patternProperties`, `propertyNames` | Supported (phase 1) | Keys generated from patterns; names validated by pattern |
+| `dependentSchemas` | Supported (phase 1) | Applies required/properties of dependent schema |
+| Union types `type: [ ... ]` | Coming v0.3 | Model as `anyOf` once available |
+| `uniqueItems` deep equality for objects | Planned | Keep items scalar or add IDs |
+| `contentEncoding`, `contentMediaType` | Planned | Generate plain strings, validate externally |
 
 ## 💬 Error Messages
 

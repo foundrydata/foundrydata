@@ -428,7 +428,12 @@ export class EnumGenerator extends DataGenerator {
     const results: any[] = [];
 
     for (let i = 0; i < count; i++) {
-      const result = this.generate(schema, context, config);
+      const newContext: GeneratorContext = {
+        ...context,
+        seed: (context.seed ?? 0) + i,
+        cache: new Map(),
+      };
+      const result = this.generate(schema, newContext, config);
       if (result.isErr()) {
         return result as Result<any[], GenerationError>;
       }

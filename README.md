@@ -290,7 +290,7 @@ foundrydata generate \
 Notes
 - Validation still runs against your original schema; outputs are guaranteed to be 100% compliant.
 - `--compat lax` is best-effort: a summary of unsupported features is recorded in the internal plan.
- - In CLI, `--compat lax` also logs detected unsupported features to stderr (e.g., `[foundrydata] compat=lax unsupported: ["anyOf","contains"]`).
+ - In CLI, `--compat lax` also logs detected unsupported features to stderr (e.g., `[foundrydata] compat=lax unsupported: ["anyOf","dependentSchemas"]`).
 
 ### 📊 Metrics (CLI)
 
