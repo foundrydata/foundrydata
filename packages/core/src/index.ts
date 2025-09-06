@@ -13,6 +13,12 @@ export {
   getExitCode,
   getHttpStatus,
 } from './errors/codes';
+export {
+  ErrorPresenter,
+  type CLIErrorView,
+  type APIErrorView,
+  type ProductionView,
+} from './errors/presenter';
 
 // Initialize built-in formats to avoid circular dependencies
 import {
