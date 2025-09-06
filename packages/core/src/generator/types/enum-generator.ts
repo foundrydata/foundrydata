@@ -9,7 +9,6 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { faker } from '@faker-js/faker';
 import { Result, ok, err } from '../../types/result';
 import { GenerationError } from '../../types/errors';
 import type { Schema } from '../../types/schema';
@@ -199,7 +198,7 @@ export class EnumGenerator extends DataGenerator {
   private generateWeighted(
     enumValues: any[],
     weights: number[],
-    fakerInstance: typeof faker
+    fakerInstance: any
   ): any {
     // Normalize weights to ensure they sum to 1
     const totalWeight = weights.reduce(

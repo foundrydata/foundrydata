@@ -285,6 +285,29 @@
 - Verify determinism across full pipeline
 ```
 
+### Per-Context PRNG Determinism
+
+- Rationale: ensure deterministic, reproducible generation per context without global state.
+- Implementation:
+  - Each generator uses a per-context RNG (mulberry32) stored in `context.cache`.
+  - `prepareFaker(context)` exposes a minimal, deterministic API (helpers/number/string/internet/date, etc.).
+  - No `faker.seed` calls; no reliance on global faker state.
+  - Seed flows via `createGeneratorContext(schema, formatRegistry, { seed })`.
+- Properties verified (see tests in `packages/core/src/generator/__tests__/prng-determinism.test.ts`):
+  - Determinism: same seed + same schema ⇒ identical sequences.
+  - Prefix-stability: `generate(seed, N)[0:M] === generate(seed, M)`.
+  - Concurrency: multiple independent contexts with same seed produce identical sequences.
+  - Invariant: repository source contains no `faker.seed(` calls (build/test dirs excluded).
+- Micro-benchmark reporting:
+  - Logs p95 overhead vs baseline (`Math.random`) with warmup and multiple runs.
+  - Informational by default. CI guardrail can be enabled via env var:
+    - Set `PRNG_P95_OVERHEAD_MAX="0.05"` (5%) to assert `overhead < max` in CI.
+  - Keep the threshold slightly above target initially (e.g., 0.07) to avoid flakiness, then tighten.
+- Migration notes for contributors:
+  - Do not add `@faker-js/faker` seeding or global RNG usage.
+  - When a generator needs randomness, call `this.prepareFaker(context)` and use the provided API.
+  - If a missing helper is needed, add a deterministic version under `prepareFaker` only.
+
 ## Phase 5: CI/CD & Documentation
 
 ```markdown

@@ -9,7 +9,6 @@
 
 /* eslint-disable max-lines, max-lines-per-function, complexity, @typescript-eslint/no-explicit-any */
 
-import { faker } from '@faker-js/faker';
 import { Result, ok, err } from '../../types/result';
 import { GenerationError } from '../../types/errors';
 import type { Schema, IntegerSchema } from '../../types/schema';
@@ -367,7 +366,7 @@ export class IntegerGenerator extends DataGenerator {
     min: number,
     max: number,
     schema: IntegerSchema,
-    fakerInstance: typeof faker
+    fakerInstance: any
   ): number {
     const edgeCases: number[] = [];
 
@@ -426,7 +425,7 @@ export class IntegerGenerator extends DataGenerator {
   private generateNormalValue(
     min: number,
     max: number,
-    fakerInstance: typeof faker
+    fakerInstance: any
   ): number {
     // Use the actual bounds - don't artificially restrict them
     // If min/max are extreme values, faker can handle them
