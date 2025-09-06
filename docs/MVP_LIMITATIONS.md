@@ -20,8 +20,27 @@ This document lists the known limitations and unsupported features in the MVP re
 - Use single schema for `items` instead of array of schemas
 
 ### Nested Objects
-- Objects nested within object properties are not supported in MVP
-- Maximum nesting depth: 1 level
+- ✅ **Supported**: Objects nested within object properties up to **depth 2**
+- ❌ **Not supported**: Nesting beyond depth 2 (will be expanded in future versions)
+- **Example supported**:
+  ```json
+  {
+    "type": "object",
+    "properties": {
+      "user": {
+        "type": "object", 
+        "properties": {
+          "profile": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"}
+            }
+          }
+        }
+      }
+    }
+  }
+  ```
 
 ### String Formats Not Supported
 - `uri`, `uri-reference`, `url` (except basic URL generation)
@@ -77,7 +96,7 @@ Remove or replace unsupported features before testing:
 
 ### v0.3.0 (Planned)
 - Contains validation
-- Nested objects (1 level)
+- Deeper nested objects (beyond depth 2)
 - More string formats
 
 ### v1.0 (Planned)

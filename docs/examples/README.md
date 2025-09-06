@@ -11,7 +11,7 @@ This directory contains real-world schema examples and usage patterns for Foundr
 | [`ecommerce-schema.json`](./ecommerce-schema.json) | Complete product catalog | E-commerce product data |
 | [`saas-user-schema.json`](./saas-user-schema.json) | SaaS user management | User profiles, subscriptions |
 | [`api-transaction-schema.json`](./api-transaction-schema.json) | Payment transactions | Financial API responses |
-| [`team-with-users-schema.json`](./team-with-users-schema.json) | Team with member arrays | Arrays of flat objects example |
+| [`team-with-users-schema.json`](./team-with-users-schema.json) | Team with member arrays | Arrays of nested objects example |
 | [`quick-test-schema.json`](./quick-test-schema.json) | Simple test schema | Quick testing & demos |
 
 
@@ -118,15 +118,15 @@ curl -X POST https://api.foundrydata.dev/generate \
 
 ### Arrays
 - `type: array` with `items` of primitives (string, number, boolean)
-- Arrays of flat objects (objects with only primitive properties)
+- Arrays of nested objects (objects with nested properties up to depth 2)
 - `minItems/maxItems` - Array length constraints
 
 ## ❌ Not Supported Yet
 
 | Feature | Status | Workaround |
 |---------|--------|------------|
-| Nested objects (in properties) | Coming v0.3 | Flatten schema |
-| Objects nested 2+ levels deep | Coming v0.3 | Use arrays of flat objects |
+| Deep nested objects (depth > 2) | Coming v0.3 | Restructure schema |
+| Objects nested beyond depth 2 | Coming v0.3 | Restructure with intermediate objects |
 | `pattern` (regex) | Coming v0.3 | Use formats |
 | `allOf/oneOf` | Coming v0.3 | Pick one type |
 | `$ref` | Coming v0.3 | Inline definitions |
@@ -139,7 +139,7 @@ FoundryData gives clear, helpful errors:
 ```bash
 # Unsupported feature
 ❌ Error: Feature 'nested objects' not supported in MVP
-💡 Suggestion: Flatten your schema structure
+💡 Suggestion: Restructure deeply nested schemas (depth > 2)
 📅 Expected in: v0.3 (based on demand)
 📧 Request priority: github.com/foundrydata/foundrydata/issues
 
@@ -202,7 +202,7 @@ Generates: Users, plans, subscriptions, usage limits
 ```bash
 foundrydata generate --schema team-with-users-schema.json --rows 10
 ```
-Generates: Teams with arrays of flat user objects (demonstrates arrays of objects)
+Generates: Teams with arrays of nested user objects (demonstrates arrays of objects up to depth 2)
 
 ### API Transaction Data
 ```bash
@@ -213,9 +213,9 @@ Generates: Payment transactions, statuses, fees, timestamps
 ## 🎯 Schema Compatibility Check
 
 **✅ Will work (v0.1):**
-- Flat objects with basic types
+- Nested objects with basic types (up to depth 2)
 - Arrays of primitives (string, number, boolean)
-- Arrays of flat objects (objects with only primitive properties)
+- Arrays of nested objects (objects with nested properties up to depth 2)
 - String formats (uuid, email, date, date-time)
 - Number constraints (min/max inclusive only)
 - String constraints (minLength/maxLength)
