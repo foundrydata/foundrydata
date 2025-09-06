@@ -142,6 +142,49 @@ foundrydata generate --schema examples/ecommerce-schema.json --rows 1000 --outpu
 # }
 ```
 
+## ❗ Error Handling
+
+- Stable error codes: all errors expose a durable `error.errorCode` (see `docs/errors/README.md`).
+- Mappings: `getExitCode(error.errorCode)` and `getHttpStatus(error.errorCode)` are exported from `@foundrydata/core`.
+- Presentation layer: use `ErrorPresenter` to format errors for CLI, API, or production logs.
+
+Example (CLI):
+```ts
+import { ErrorPresenter, ErrorCode, FoundryError } from '@foundrydata/core';
+
+const env = process.env.NODE_ENV === 'production' ? 'prod' : 'dev';
+const presenter = new ErrorPresenter(env, { colors: true });
+
+// Wrap unknown errors safely
+function toFoundryError(err: unknown) {
+  return err instanceof FoundryError
+    ? err
+    : new (class extends FoundryError {})({
+        message: err instanceof Error ? err.message : String(err),
+        errorCode: ErrorCode.INTERNAL_ERROR,
+      });
+}
+
+try {
+  // ... your code
+} catch (e) {
+  const error = toFoundryError(e);
+  const view = presenter.formatForCLI(error);
+  // render view.title/code/location/etc.
+  process.exit(error.getExitCode());
+}
+```
+
+Example (API-style):
+```ts
+const view = presenter.formatForAPI(error);
+// Send RFC 7807-like response:
+// status = view.status
+// body = { type: view.type, title: view.title, detail: view.detail, code: view.code, path: view.path }
+```
+
+Documentation pages for each error code are linked via `type: https://foundrydata.dev/errors/{CODE}`.
+
 **SaaS User Management**
 ```bash
 # Generate test users for your SaaS dashboard

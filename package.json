@@ -24,6 +24,7 @@
     "typecheck:build": "tsc -b --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "guard:no-error-reporter": "node scripts/assert-no-error-reporter.mjs",
     "clean": "rm -rf packages/*/dist",
     "prepublish": "npm run build",
     "prepare": "husky",
