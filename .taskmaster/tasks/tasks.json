@@ -2136,7 +2136,7 @@
         "description": "Implement presentation layer for formatting errors across different environments (CLI, API, production)",
         "details": "Create packages/core/src/errors/presenter.ts:\n\nErrorPresenter class:\n- Constructor(env: 'dev'|'prod', options: {colors?, terminalWidth?, locale?, redactKeys?})\n- formatForCLI(error): CLIErrorView with color support, NO_COLOR/FORCE_COLOR respect\n- formatForAPI(error): APIErrorView with RFC7807 structure\n- formatForProduction(error): ProductionView with PII redaction\n\nKey features:\n- NO business logic - pure presentation\n- Terminal width awareness for text wrapping\n- Automatic PII redaction for configured keys\n- Environment-specific stack trace handling\n- Returns view objects, not formatted strings\n\nDefault redact keys: password, apiKey, secret, token, ssn, creditCard\n\nReplace existing ErrorReporter functionality.",
         "testStrategy": "Create packages/core/src/errors/__tests__/presenter.test.ts:\n- Test dev vs prod formatting differences\n- Test PII redaction in production\n- Test NO_COLOR and FORCE_COLOR env variables\n- Test terminal width text wrapping\n- Test CLI snapshot outputs (with strip-ansi)\n- Test API format compliance\n- Verify no stack traces in production",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           1
         ],
@@ -2147,7 +2147,7 @@
             "title": "Implement formatForCLI method",
             "description": "Create CLI formatting with color support and terminal awareness",
             "details": "In ErrorPresenter.formatForCLI():\n- Return CLIErrorView object (not string)\n- Respect NO_COLOR and FORCE_COLOR env variables\n- Use terminal width for text wrapping\n- Include error code, location (JSON Pointer), workaround, documentation link\n- Format sections: title, location, excerpt, workaround, documentation, ETA\n- Handle colors through options.colors flag",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 5
           },
@@ -2156,7 +2156,7 @@
             "title": "Implement formatForAPI method",
             "description": "Create API error formatting following RFC7807 problem details",
             "details": "In ErrorPresenter.formatForAPI():\n- Return APIErrorView object\n- Include: status (HTTP code), type (error doc URL), title, detail, instance (request ID)\n- Add: code (ErrorCode), path (JSON Pointer), suggestions array\n- Map error code to HTTP status using HTTP_STATUS_BY_CODE\n- Format type as: https://foundrydata.dev/errors/{code}",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 5
           },
@@ -2165,7 +2165,7 @@
             "title": "Implement PII redaction system",
             "description": "Create secure redaction for sensitive data in production environments",
             "details": "Implement in ErrorPresenter:\n- Default redact keys: password, apiKey, secret, token, ssn, creditCard\n- redact() method to apply redaction rules to context.value\n- Replace sensitive values with '[REDACTED]'\n- formatForProduction() method: no stack traces, redacted values, include requestId\n- Ensure redaction is recursive for nested objects\n<info added on 2025-09-05T21:56:36.910Z>\nTests pour redaction profonde: \n- Objets imbriqués multi-niveaux avec clés sensibles\n- Arrays contenant des objets avec données PII\n- Combinaisons objets/arrays imbriqués complexes\n- Vérification que toutes les clés par défaut (password, apiKey, secret, token, ssn, creditCard) sont détectées récursivement\n- Cas limites: propriétés null/undefined dans structures imbriquées\n- Test performance sur structures profondes (>5 niveaux)\n- Validation que la structure originale reste intacte après redaction\n</info added on 2025-09-05T21:56:36.910Z>",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 5
           },
@@ -2174,7 +2174,7 @@
             "title": "Replace ErrorReporter with ErrorPresenter",
             "description": "Migrate from ErrorReporter to ErrorPresenter to avoid duplication",
             "details": "Replace or adapt ErrorReporter:\n- Option A: Remove ErrorReporter completely, replace with ErrorPresenter\n- Option B: Make ErrorReporter a thin shim that delegates to ErrorPresenter\n- Ensure no direct ErrorReporter usage in production code\n- All CLI/API outputs must come from ErrorPresenter\n- Update imports across the codebase",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 5
           }
@@ -2331,7 +2331,7 @@
     ],
     "metadata": {
       "created": "2025-09-05T21:37:48.791Z",
-      "updated": "2025-09-06T09:58:47.775Z",
+      "updated": "2025-09-06T10:32:26.107Z",
       "description": "Implementation of comprehensive error system with user-friendly messages, stable error codes, JSON Pointer localization, and PII redaction for FoundryData MVP"
     }
   }
