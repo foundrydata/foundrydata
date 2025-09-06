@@ -200,30 +200,60 @@ export abstract class FoundryError extends Error {
  * Schema-related errors (parsing, validation, format issues)
  */
 export class SchemaError extends FoundryError {
+  // Legacy overload
   constructor(
     message: string,
-    public readonly path: string,
-    public readonly suggestion?: string,
+    path: string,
+    suggestion?: string,
+    context?: Record<string, any>
+  );
+  constructor(params: {
+    message: string;
+    errorCode?: ErrorCode;
+    context: ErrorContext & { schemaPath: string; ref?: string };
+    severity?: Severity;
+    cause?: Error;
+  });
+  constructor(
+    arg1:
+      | string
+      | {
+          message: string;
+          errorCode?: ErrorCode;
+          context: ErrorContext & { schemaPath: string; ref?: string };
+          severity?: Severity;
+          cause?: Error;
+        },
+    path?: string,
+    suggestion?: string,
     context?: Record<string, any>
   ) {
-    super(message, 'SCHEMA_ERROR', { path, suggestion, ...context });
-  }
-
-  getUserMessage(): string {
-    return `Schema error at "${this.path}": ${this.message}`;
-  }
-
-  getSuggestions(): string[] {
-    const suggestions: string[] = [];
-
-    if (this.suggestion) {
-      suggestions.push(this.suggestion);
+    if (typeof arg1 === 'string') {
+      const message = arg1;
+      super({
+        message,
+        errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
+        context: { schemaPath: path as string, suggestion, ...(context ?? {}) },
+      });
+      (this as any).code = 'SCHEMA_ERROR';
+      return;
     }
+    const params = arg1;
+    super({
+      message: params.message,
+      errorCode: params.errorCode ?? ErrorCode.INVALID_SCHEMA_STRUCTURE,
+      context: params.context,
+      severity: params.severity,
+      cause: params.cause,
+    });
+  }
 
-    suggestions.push('Check the JSON Schema specification for valid syntax');
-    suggestions.push('Validate your schema using a JSON Schema validator');
-
-    return suggestions;
+  // Backward-compatible getters
+  get path(): string | undefined {
+    return this.context?.schemaPath as string | undefined;
+  }
+  get suggestion(): string | undefined {
+    return this.context?.suggestion as string | undefined;
   }
 }
 
@@ -231,57 +261,65 @@ export class SchemaError extends FoundryError {
  * Data generation errors (constraints, type mismatches, impossible requirements)
  */
 export class GenerationError extends FoundryError {
+  // Legacy overload
   constructor(
     message: string,
-    public readonly suggestion?: string,
-    public readonly field?: string,
-    public readonly constraint?: string,
+    suggestion?: string,
+    field?: string,
+    constraint?: string,
+    context?: Record<string, any>
+  );
+  constructor(params: {
+    message: string;
+    errorCode?: ErrorCode;
+    context?: ErrorContext & { field?: string; constraint?: string };
+    severity?: Severity;
+    cause?: Error;
+  });
+  constructor(
+    arg1:
+      | string
+      | {
+          message: string;
+          errorCode?: ErrorCode;
+          context?: ErrorContext & { field?: string; constraint?: string };
+          severity?: Severity;
+          cause?: Error;
+        },
+    suggestion?: string,
+    field?: string,
+    constraint?: string,
     context?: Record<string, any>
   ) {
-    super(message, 'GENERATION_ERROR', {
-      field,
-      constraint,
-      suggestion,
-      ...context,
+    if (typeof arg1 === 'string') {
+      const message = arg1;
+      super({
+        message,
+        errorCode: ErrorCode.CONSTRAINT_VIOLATION,
+        context: { field, constraint, suggestion, ...(context ?? {}) },
+      });
+      (this as any).code = 'GENERATION_ERROR';
+      return;
+    }
+    const params = arg1;
+    super({
+      message: params.message,
+      errorCode: params.errorCode ?? ErrorCode.CONSTRAINT_VIOLATION,
+      context: params.context,
+      severity: params.severity,
+      cause: params.cause,
     });
   }
 
-  getUserMessage(): string {
-    const fieldPart = this.field ? ` for field "${this.field}"` : '';
-    const constraintPart = this.constraint
-      ? ` (constraint: ${this.constraint})`
-      : '';
-    return `Generation failed${fieldPart}: ${this.message}${constraintPart}`;
+  // Backward-compatible getters
+  get field(): string | undefined {
+    return this.context?.field as string | undefined;
   }
-
-  getSuggestions(): string[] {
-    const suggestions: string[] = [];
-
-    // Add explicit suggestion if provided
-    if (this.suggestion) {
-      suggestions.push(this.suggestion);
-    }
-
-    if (this.constraint === 'minLength' || this.constraint === 'maxLength') {
-      suggestions.push(
-        'Check that minLength <= maxLength for string constraints'
-      );
-    }
-
-    if (this.constraint === 'minimum' || this.constraint === 'maximum') {
-      suggestions.push('Check that minimum <= maximum for number constraints');
-    }
-
-    if (this.constraint === 'pattern') {
-      suggestions.push(
-        'Verify that the regex pattern is valid and not too restrictive'
-      );
-    }
-
-    suggestions.push('Review your schema constraints for conflicts');
-    suggestions.push('Consider using more flexible constraints or formats');
-
-    return suggestions;
+  get constraint(): string | undefined {
+    return this.context?.constraint as string | undefined;
+  }
+  get suggestion(): string | undefined {
+    return this.context?.suggestion as string | undefined;
   }
 }
 
@@ -289,52 +327,59 @@ export class GenerationError extends FoundryError {
  * Validation errors (compliance checking, AJV errors, data integrity)
  */
 export class ValidationError extends FoundryError {
+  public readonly failures: ValidationFailure[];
+  // Legacy overload
   constructor(
     message: string,
-    public readonly failures: ValidationFailure[],
+    failures: ValidationFailure[],
+    context?: Record<string, any>
+  );
+  constructor(params: {
+    message: string;
+    failures: ValidationFailure[];
+    errorCode?: ErrorCode;
+    context?: ErrorContext;
+    severity?: Severity;
+    cause?: Error;
+  });
+  constructor(
+    arg1:
+      | string
+      | {
+          message: string;
+          failures: ValidationFailure[];
+          errorCode?: ErrorCode;
+          context?: ErrorContext;
+          severity?: Severity;
+          cause?: Error;
+        },
+    failures?: ValidationFailure[],
     context?: Record<string, any>
   ) {
-    super(message, 'VALIDATION_ERROR', {
-      failureCount: failures.length,
-      ...context,
+    if (typeof arg1 === 'string') {
+      const message = arg1;
+      const f = failures ?? [];
+      super({
+        message,
+        errorCode: ErrorCode.COMPLIANCE_VALIDATION_FAILED,
+        context: { failureCount: f.length, ...(context ?? {}) },
+      });
+      (this as any).code = 'VALIDATION_ERROR';
+      this.failures = f;
+      return;
+    }
+    const params = arg1;
+    super({
+      message: params.message,
+      errorCode: params.errorCode ?? ErrorCode.COMPLIANCE_VALIDATION_FAILED,
+      context: {
+        failureCount: params.failures.length,
+        ...(params.context ?? {}),
+      },
+      severity: params.severity,
+      cause: params.cause,
     });
-    this.failures = failures;
-  }
-
-  getUserMessage(): string {
-    const count = this.failures.length;
-    const plural = count === 1 ? 'failure' : 'failures';
-    return `Validation failed with ${count} ${plural}: ${this.message}`;
-  }
-
-  getSuggestions(): string[] {
-    const suggestions: string[] = [];
-
-    // Analyze common failure patterns
-    const errorTypes = new Set(this.failures.map((f) => f.keyword));
-
-    if (errorTypes.has('required')) {
-      suggestions.push(
-        'Ensure all required fields are present in the generated data'
-      );
-    }
-
-    if (errorTypes.has('type')) {
-      suggestions.push('Check that generated values match the expected types');
-    }
-
-    if (errorTypes.has('format')) {
-      suggestions.push('Verify that format generators produce valid values');
-    }
-
-    if (errorTypes.has('minimum') || errorTypes.has('maximum')) {
-      suggestions.push('Check numeric constraints and ranges');
-    }
-
-    suggestions.push('Review the first few validation failures for patterns');
-    suggestions.push('Test with a smaller dataset to isolate issues');
-
-    return suggestions;
+    this.failures = params.failures;
   }
 }
 
@@ -342,25 +387,51 @@ export class ValidationError extends FoundryError {
  * Configuration and setup errors
  */
 export class ConfigError extends FoundryError {
+  // Legacy overload
+  constructor(message: string, setting?: string, context?: Record<string, any>);
+  constructor(params: {
+    message: string;
+    errorCode?: ErrorCode;
+    context?: ErrorContext & { setting?: string };
+    severity?: Severity;
+    cause?: Error;
+  });
   constructor(
-    message: string,
-    public readonly setting?: string,
+    arg1:
+      | string
+      | {
+          message: string;
+          errorCode?: ErrorCode;
+          context?: ErrorContext & { setting?: string };
+          severity?: Severity;
+          cause?: Error;
+        },
+    setting?: string,
     context?: Record<string, any>
   ) {
-    super(message, 'CONFIG_ERROR', { setting, ...context });
+    if (typeof arg1 === 'string') {
+      const message = arg1;
+      super({
+        message,
+        errorCode: ErrorCode.CONFIGURATION_ERROR,
+        context: { setting, ...(context ?? {}) },
+      });
+      (this as any).code = 'CONFIG_ERROR';
+      return;
+    }
+    const params = arg1;
+    super({
+      message: params.message,
+      errorCode: params.errorCode ?? ErrorCode.CONFIGURATION_ERROR,
+      context: params.context,
+      severity: params.severity,
+      cause: params.cause,
+    });
   }
 
-  getUserMessage(): string {
-    const settingPart = this.setting ? ` (setting: ${this.setting})` : '';
-    return `Configuration error${settingPart}: ${this.message}`;
-  }
-
-  getSuggestions(): string[] {
-    return [
-      'Check your configuration file syntax',
-      'Verify all required settings are provided',
-      'Consult the documentation for valid configuration options',
-    ];
+  // Backward-compatible getter
+  get setting(): string | undefined {
+    return this.context?.setting as string | undefined;
   }
 }
 
@@ -368,27 +439,60 @@ export class ConfigError extends FoundryError {
  * Parser errors (JSON Schema parsing, OpenAPI conversion)
  */
 export class ParseError extends FoundryError {
+  // Legacy overload
   constructor(
     message: string,
-    public readonly input?: string,
-    public readonly position?: number,
+    input?: string,
+    position?: number,
+    context?: Record<string, any>
+  );
+  constructor(params: {
+    message: string;
+    errorCode?: ErrorCode;
+    context?: ErrorContext & { input?: string; position?: number };
+    severity?: Severity;
+    cause?: Error;
+  });
+  constructor(
+    arg1:
+      | string
+      | {
+          message: string;
+          errorCode?: ErrorCode;
+          context?: ErrorContext & { input?: string; position?: number };
+          severity?: Severity;
+          cause?: Error;
+        },
+    input?: string,
+    position?: number,
     context?: Record<string, any>
   ) {
-    super(message, 'PARSE_ERROR', { input, position, ...context });
+    if (typeof arg1 === 'string') {
+      const message = arg1;
+      super({
+        message,
+        errorCode: ErrorCode.PARSE_ERROR,
+        context: { input, position, ...(context ?? {}) },
+      });
+      (this as any).code = 'PARSE_ERROR';
+      return;
+    }
+    const params = arg1;
+    super({
+      message: params.message,
+      errorCode: params.errorCode ?? ErrorCode.PARSE_ERROR,
+      context: params.context,
+      severity: params.severity,
+      cause: params.cause,
+    });
   }
 
-  getUserMessage(): string {
-    const positionPart =
-      this.position !== undefined ? ` at position ${this.position}` : '';
-    return `Parse error${positionPart}: ${this.message}`;
+  // Backward-compatible getters
+  get input(): string | undefined {
+    return this.context?.input as string | undefined;
   }
-
-  getSuggestions(): string[] {
-    return [
-      'Validate your JSON syntax',
-      'Check for missing commas, brackets, or quotes',
-      'Use a JSON formatter to identify syntax issues',
-    ];
+  get position(): number | undefined {
+    return this.context?.position as number | undefined;
   }
 }
 
