@@ -403,9 +403,24 @@ describe('Full Pipeline Integration Tests', () => {
         { type: 'invalid' }, // Invalid type - should be rejected
         { type: 'string', pattern: '[' }, // Pattern not supported - should be rejected
         {
-          type: 'array',
-          items: { type: 'object', properties: { nested: { type: 'object' } } },
-        }, // Nested objects - should be rejected
+          type: 'object',
+          properties: {
+            user: {
+              type: 'object',
+              properties: {
+                profile: {
+                  type: 'object',
+                  properties: {
+                    settings: {
+                      type: 'object',
+                      properties: { theme: { type: 'string' } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        }, // Deep nested objects (depth > 2) - should be rejected
         { type: 'string', multipleOf: 0.5 }, // multipleOf on wrong type - should be rejected as unsupported
       ];
 

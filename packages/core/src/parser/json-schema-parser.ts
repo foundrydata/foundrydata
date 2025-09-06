@@ -566,9 +566,9 @@ export class JSONSchemaParser implements SchemaParser {
   private checkObjectFeatures(
     schema: Record<string, unknown>
   ): Result<void, ParseError> {
-    // Check for nested objects (MVP limitation)
+    // Check for nested objects depth limit (depth > 2 not supported)
     if (schema.type === 'object' && schema.properties) {
-      return this.checkForNestedObjects(schema);
+      return this.checkForDeepNestedObjects(schema, 0); // Start at depth 0 (root)
     }
     return ok(undefined);
   }
@@ -596,30 +596,56 @@ export class JSONSchemaParser implements SchemaParser {
   }
 
   /**
-   * Check for nested objects (MVP limitation)
+   * Check for deep nested objects beyond depth limit
+   * @param schema - Schema to check
+   * @param currentDepth - Current nesting depth (starts at 0 for root)
+   * @param maxDepth - Maximum allowed depth (default: 2)
    */
-  private checkForNestedObjects(
-    schema: Record<string, unknown>
+  private checkForDeepNestedObjects(
+    schema: Record<string, unknown>,
+    currentDepth = 0,
+    maxDepth = 2
   ): Result<void, ParseError> {
+    if (!schema.properties || typeof schema.properties !== 'object') {
+      return ok(undefined);
+    }
+
     const props = schema.properties as Record<string, unknown>;
+
     for (const [key, propSchema] of Object.entries(props)) {
       if (typeof propSchema === 'object' && propSchema !== null) {
         const prop = propSchema as Record<string, unknown>;
+
         if (prop.type === 'object') {
-          return err(
-            new ParseError({
-              message: `Nested objects not supported at properties.${key}`,
-              errorCode: ErrorCode.NESTED_OBJECTS_NOT_SUPPORTED,
-              context: {
-                schemaPath: `#/properties/${key}`,
-                suggestion:
-                  'Flatten the object structure or use separate schemas',
-              },
-            })
+          const nextDepth = currentDepth + 1;
+
+          // If we would exceed the max depth with this nested object
+          if (nextDepth > maxDepth) {
+            return err(
+              new ParseError({
+                message: `Deep nested objects (depth > ${maxDepth}) not supported at properties.${key}`,
+                errorCode: ErrorCode.NESTED_OBJECTS_NOT_SUPPORTED,
+                context: {
+                  schemaPath: `#/properties/${key}`,
+                  suggestion: `Nested objects are supported up to depth ${maxDepth}. Restructure deeper objects into separate schemas or flatten properties.`,
+                },
+              })
+            );
+          }
+
+          // Recursively check nested object properties
+          const nestedCheck = this.checkForDeepNestedObjects(
+            prop,
+            nextDepth,
+            maxDepth
           );
+          if (nestedCheck.isErr()) {
+            return nestedCheck;
+          }
         }
       }
     }
+
     return ok(undefined);
   }
 

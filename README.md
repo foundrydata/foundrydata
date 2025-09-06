@@ -259,9 +259,22 @@ foundrydata --help
           "level": {"type": "integer"}
         }
       }
+    },
+    
+    // ✅ Nested objects (depth ≤ 2) supported
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" },
+        "details": {
+          "type": "object",
+          "properties": {
+            "unit": { "type": "string" }
+          }
+        }
+      }
     }
-    // ❌ Nested objects - Coming in v0.3
-    // "address": { "type": "object" }
   },
   "required": ["id", "email"]
 }
@@ -276,10 +289,10 @@ foundrydata generate --schema complex.json
 # ❌ Error: Schema features not supported in v0.1
 # 
 # Unsupported features detected:
-#   - Nested objects at: properties.address
+#   - Pattern validation at: properties.email.pattern
 # 
-# 💡 Workaround: Restructure objects deeper than depth 2
-# 📅 Nested objects: v0.3
+# 💡 Workaround: Use format validation instead of patterns
+# 📅 Pattern support: v0.2
 # 
 # Want them sooner? Vote or contribute:
 # https://github.com/foundrydata/foundrydata/issues

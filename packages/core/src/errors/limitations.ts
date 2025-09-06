@@ -32,7 +32,7 @@ export const LIMITATIONS_REGISTRY: Record<LimitationKey, Limitation> = {
     key: 'nestedObjects',
     title: 'Deep Nested Objects Not Supported',
     errorCode: ErrorCode.NESTED_OBJECTS_NOT_SUPPORTED,
-    availableIn: '0.3.0',
+    availableIn: '0.1.0', // Already supported up to depth 2 in v0.1
     workaround:
       'Nested objects are supported up to depth 2. For deeper nesting, flatten into intermediate objects or top-level properties.',
     workaroundExample:

@@ -67,7 +67,7 @@ describe('Example Schemas', () => {
     }
   });
 
-  it('should parse complex user schema', () => {
+  it('should parse complex user schema with nested objects', () => {
     const schemaJson = {
       type: 'object',
       properties: {
@@ -86,10 +86,14 @@ describe('Example Schemas', () => {
     };
 
     const result = parser.parse(schemaJson);
-    expect(result.isErr()).toBe(true); // Should fail due to nested objects
+    expect(result.isOk()).toBe(true); // Should now pass with nested objects support
 
-    if (result.isErr()) {
-      expect(result.error.message).toContain('Nested objects not supported');
+    if (result.isOk()) {
+      const schema = result.value as ObjectSchema;
+      expect(schema.type).toBe('object');
+      expect(schema.properties!.userId).toBeDefined();
+      expect(schema.properties!.profile).toBeDefined();
+      expect(schema.required).toEqual(['userId']);
     }
   });
 });

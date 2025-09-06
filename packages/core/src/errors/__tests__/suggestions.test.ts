@@ -36,8 +36,8 @@ describe('Suggestion Helpers', () => {
   it('getWorkaround returns description and availableIn for known limitation', () => {
     const res = getWorkaround('nestedObjects');
     expect(res).not.toBeNull();
-    expect(res?.description).toContain('Flatten nested objects');
-    expect(res?.availableIn).toBe('0.3.0');
+    expect(res?.description).toContain('supported up to depth 2');
+    expect(res?.availableIn).toBe('0.1.0');
   });
 
   it('proposeSchemaFix uses limitationKey in error context', () => {
