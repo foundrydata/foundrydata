@@ -21,6 +21,7 @@ import type {
   StringFormat,
 } from '../types/schema';
 import { ParseError } from '../types/errors';
+import { ErrorCode } from '../errors/codes';
 import { ok, err } from '../types/result';
 import type { SchemaParser } from './schema-parser';
 
@@ -83,7 +84,13 @@ export class JSONSchemaParser implements SchemaParser {
 
   parse(input: unknown): Result<Schema, ParseError> {
     if (!this.supports(input)) {
-      return err(new ParseError('Input is not a valid JSON Schema'));
+      return err(
+        new ParseError({
+          message: 'Input is not a valid JSON Schema',
+          errorCode: ErrorCode.SCHEMA_PARSE_FAILED,
+          context: { schemaPath: '#' },
+        })
+      );
     }
 
     try {
@@ -97,7 +104,13 @@ export class JSONSchemaParser implements SchemaParser {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Unknown parsing error';
-      return err(new ParseError(`Failed to parse JSON Schema: ${message}`));
+      return err(
+        new ParseError({
+          message: `Failed to parse JSON Schema: ${message}`,
+          errorCode: ErrorCode.SCHEMA_PARSE_FAILED,
+          context: { schemaPath: '#' },
+        })
+      );
     }
   }
 
@@ -140,14 +153,14 @@ export class JSONSchemaParser implements SchemaParser {
         return this.parseNullSchema(schema, path);
       default:
         return err(
-          new ParseError(
-            `Unknown type: ${type} at ${path || 'root'}`,
-            undefined,
-            undefined,
-            {
+          new ParseError({
+            message: `Unknown type: ${type} at ${path || 'root'}`,
+            errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
+            context: {
+              schemaPath: this.toSchemaPointer(path),
               suggestion: `Supported types: ${Array.from(JSONSchemaParser.SUPPORTED_TYPES).join(', ')}`,
-            }
-          )
+            },
+          })
         );
     }
   }
@@ -251,15 +264,17 @@ export class JSONSchemaParser implements SchemaParser {
     // Parse pattern - check for unsupported regex
     if (typeof schema.pattern === 'string') {
       return err(
-        new ParseError(
-          `Pattern/regex not supported at ${path || 'root'}. Use format constraints instead.`,
-          undefined,
-          undefined,
-          {
+        new ParseError({
+          message: `Pattern/regex not supported at ${path || 'root'}. Use format constraints instead.`,
+          errorCode: ErrorCode.REGEX_PATTERNS_NOT_SUPPORTED,
+          context: {
+            schemaPath: this.toSchemaPointer(
+              path ? `${path}.pattern` : 'pattern'
+            ),
             suggestion:
               'Replace pattern with format like "email", "uuid", "date", etc.',
-          }
-        )
+          },
+        })
       );
     }
 
@@ -378,14 +393,14 @@ export class JSONSchemaParser implements SchemaParser {
       const type = schema.type;
       if (typeof type !== 'string') {
         return err(
-          new ParseError(
-            `Invalid type at ${path || 'root'}`,
-            undefined,
-            undefined,
-            {
+          new ParseError({
+            message: `Invalid type at ${path || 'root'}`,
+            errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
+            context: {
+              schemaPath: this.toSchemaPointer(path),
               suggestion: `Type must be a string, found: ${typeof type}`,
-            }
-          )
+            },
+          })
         );
       }
       return ok(type);
@@ -411,15 +426,15 @@ export class JSONSchemaParser implements SchemaParser {
     }
 
     return err(
-      new ParseError(
-        `Cannot determine type at ${path || 'root'}`,
-        undefined,
-        undefined,
-        {
+      new ParseError({
+        message: `Cannot determine type at ${path || 'root'}`,
+        errorCode: ErrorCode.SCHEMA_PARSE_FAILED,
+        context: {
+          schemaPath: this.toSchemaPointer(path),
           suggestion:
             'Schema must have a "type" property or be inferrable from structure',
-        }
-      )
+        },
+      })
     );
   }
 
@@ -468,15 +483,18 @@ export class JSONSchemaParser implements SchemaParser {
     )) {
       if (feature in schema && feature !== 'const') {
         // const is actually supported
+        const code =
+          feature === 'allOf' || feature === 'anyOf' || feature === 'oneOf'
+            ? ErrorCode.SCHEMA_COMPOSITION_NOT_SUPPORTED
+            : ErrorCode.INVALID_SCHEMA_STRUCTURE;
         return err(
-          new ParseError(
-            `Unsupported feature: "${feature}"`,
-            undefined,
-            undefined,
-            {
+          new ParseError({
+            message: `Unsupported feature: "${feature}"`,
+            errorCode: code,
+            context: {
               suggestion: `${message}. Consider removing "${feature}" or wait for the update`,
-            }
-          )
+            },
+          })
         );
       }
     }
@@ -492,14 +510,13 @@ export class JSONSchemaParser implements SchemaParser {
     if (schema.type && typeof schema.type === 'string') {
       if (!JSONSchemaParser.SUPPORTED_TYPES.has(schema.type)) {
         return err(
-          new ParseError(
-            `Unsupported type: "${schema.type}"`,
-            undefined,
-            undefined,
-            {
+          new ParseError({
+            message: `Unsupported type: "${schema.type}"`,
+            errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
+            context: {
               suggestion: `Supported types: ${Array.from(JSONSchemaParser.SUPPORTED_TYPES).join(', ')}`,
-            }
-          )
+            },
+          })
         );
       }
     }
@@ -515,30 +532,28 @@ export class JSONSchemaParser implements SchemaParser {
     // Check for mixed type arrays (not supported yet)
     if (Array.isArray(schema.type)) {
       return err(
-        new ParseError(
-          'Union types are not yet supported',
-          undefined,
-          undefined,
-          {
+        new ParseError({
+          message: 'Union types are not yet supported',
+          errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
+          context: {
             suggestion:
               'Use a single type instead of an array of types. This feature will be added in v0.3.0',
-          }
-        )
+          },
+        })
       );
     }
 
     // Check for complex array items (tuple validation)
     if (Array.isArray(schema.items)) {
       return err(
-        new ParseError(
-          'Tuple validation is not yet supported',
-          undefined,
-          undefined,
-          {
+        new ParseError({
+          message: 'Tuple validation is not yet supported',
+          errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
+          context: {
             suggestion:
               'Use a single schema for all array items. This feature will be added in v0.3.0',
-          }
-        )
+          },
+        })
       );
     }
 
@@ -592,19 +607,26 @@ export class JSONSchemaParser implements SchemaParser {
         const prop = propSchema as Record<string, unknown>;
         if (prop.type === 'object') {
           return err(
-            new ParseError(
-              `Nested objects not supported at properties.${key}`,
-              undefined,
-              undefined,
-              {
+            new ParseError({
+              message: `Nested objects not supported at properties.${key}`,
+              errorCode: ErrorCode.NESTED_OBJECTS_NOT_SUPPORTED,
+              context: {
+                schemaPath: `#/properties/${key}`,
                 suggestion:
                   'Flatten the object structure or use separate schemas',
-              }
-            )
+              },
+            })
           );
         }
       }
     }
     return ok(undefined);
+  }
+
+  // Convert dot path used internally to JSON Pointer with '#/' prefix
+  private toSchemaPointer(path: string): string {
+    if (!path) return '#';
+    const trimmed = path.replace(/^\.+/, '');
+    return `#/${trimmed.replace(/\./g, '/')}`;
   }
 }

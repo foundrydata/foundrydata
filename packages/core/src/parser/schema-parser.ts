@@ -7,6 +7,7 @@ import type { Result } from '../types/result';
 import type { Schema } from '../types/schema';
 import { ParseError } from '../types/errors';
 import { err } from '../types/result';
+import { ErrorCode } from '../errors/codes';
 
 /**
  * Base interface for schema parsers
@@ -29,7 +30,13 @@ export class ParserRegistry {
   parse(input: unknown): Result<Schema, ParseError> {
     const parser = this.parsers.find((p) => p.supports(input));
     if (!parser) {
-      return err(new ParseError('No suitable parser found'));
+      return err(
+        new ParseError({
+          message: 'No suitable parser found',
+          errorCode: ErrorCode.SCHEMA_PARSE_FAILED,
+          context: { schemaPath: '#' },
+        })
+      );
     }
     return parser.parse(input);
   }
