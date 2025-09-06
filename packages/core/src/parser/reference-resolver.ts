@@ -8,6 +8,7 @@
 
 import type { Schema, BaseSchema } from '../types/schema';
 import { SchemaError } from '../types/errors';
+import { ErrorCode } from '../errors/codes';
 import { Result, ok, err } from '../types/result';
 
 /**
@@ -116,11 +117,14 @@ export class ReferenceResolver {
         return err(error);
       }
       return err(
-        new SchemaError(
-          error instanceof Error ? error.message : String(error),
-          '#',
-          'Failed to resolve schema references'
-        )
+        new SchemaError({
+          message: error instanceof Error ? error.message : String(error),
+          errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
+          context: {
+            schemaPath: '#',
+            suggestion: 'Failed to resolve schema references',
+          },
+        })
       );
     }
   }
@@ -138,11 +142,15 @@ export class ReferenceResolver {
     // Check for circular reference
     if (context.refPath.has(ref)) {
       if (this.options.circularHandling === 'error') {
-        throw new SchemaError(
-          `Circular reference detected: ${ref}`,
-          ref,
-          'Break the circular dependency or use lazy resolution'
-        );
+        throw new SchemaError({
+          message: `Circular reference detected: ${ref}`,
+          errorCode: ErrorCode.CIRCULAR_REFERENCE_DETECTED,
+          context: {
+            schemaPath: ref,
+            ref,
+            suggestion: 'Break the circular dependency or use lazy resolution',
+          },
+        });
       }
       return { schema: context.schema, circular: true };
     }
@@ -157,11 +165,15 @@ export class ReferenceResolver {
 
     // Check depth limit
     if (context.depth >= this.options.maxDepth) {
-      throw new SchemaError(
-        `Maximum reference depth (${this.options.maxDepth}) exceeded`,
-        ref,
-        'Increase maxDepth option or reduce schema nesting'
-      );
+      throw new SchemaError({
+        message: `Maximum reference depth (${this.options.maxDepth}) exceeded`,
+        errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
+        context: {
+          schemaPath: ref,
+          ref,
+          suggestion: 'Increase maxDepth option or reduce schema nesting',
+        },
+      });
     }
 
     // Parse the reference
@@ -171,11 +183,15 @@ export class ReferenceResolver {
     // This preserves the original $ref when circularHandling is 'ignore' or 'lazy'
     if (!uri && (pointer === '#' || pointer === '')) {
       if (this.options.circularHandling === 'error') {
-        throw new SchemaError(
-          `Circular reference detected: ${ref}`,
-          ref,
-          'Break the circular dependency or use lazy/ignore mode'
-        );
+        throw new SchemaError({
+          message: `Circular reference detected: ${ref}`,
+          errorCode: ErrorCode.CIRCULAR_REFERENCE_DETECTED,
+          context: {
+            schemaPath: ref,
+            ref,
+            suggestion: 'Break the circular dependency or use lazy/ignore mode',
+          },
+        });
       }
       return { schema: context.schema, circular: true };
     }
@@ -190,11 +206,15 @@ export class ReferenceResolver {
     }
 
     if (!baseSchema) {
-      throw new SchemaError(
-        `Cannot resolve reference: ${ref}`,
-        ref,
-        'Ensure the referenced schema exists'
-      );
+      throw new SchemaError({
+        message: `Cannot resolve reference: ${ref}`,
+        errorCode: ErrorCode.SCHEMA_PARSE_FAILED,
+        context: {
+          schemaPath: ref,
+          ref,
+          suggestion: 'Ensure the referenced schema exists',
+        },
+      });
     }
 
     // Apply JSON Pointer if present
@@ -247,20 +267,26 @@ export class ReferenceResolver {
     let current: unknown = schema;
     for (const token of tokens) {
       if (typeof current !== 'object' || current === null) {
-        throw new SchemaError(
-          `Invalid JSON Pointer reference: ${pointer}`,
-          pointer,
-          'Ensure the pointer path exists in the schema'
-        );
+        throw new SchemaError({
+          message: `Invalid JSON Pointer reference: ${pointer}`,
+          errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
+          context: {
+            schemaPath: pointer,
+            suggestion: 'Ensure the pointer path exists in the schema',
+          },
+        });
       }
       const obj = current as Record<string, unknown>;
       current = obj[token as keyof typeof obj];
       if (current === undefined) {
-        throw new SchemaError(
-          `JSON Pointer reference not found: ${pointer}`,
-          pointer,
-          `Property "${token}" does not exist`
-        );
+        throw new SchemaError({
+          message: `JSON Pointer reference not found: ${pointer}`,
+          errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
+          context: {
+            schemaPath: pointer,
+            suggestion: `Property "${token}" does not exist`,
+          },
+        });
       }
     }
 
@@ -619,11 +645,15 @@ export class ReferenceResolver {
   ): Promise<ResolvedReference> {
     // Check depth limit
     if (context.depth >= this.options.maxDepth) {
-      throw new SchemaError(
-        `Maximum reference depth (${this.options.maxDepth}) exceeded`,
-        ref,
-        'Increase maxDepth option or reduce schema nesting'
-      );
+      throw new SchemaError({
+        message: `Maximum reference depth (${this.options.maxDepth}) exceeded`,
+        errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
+        context: {
+          schemaPath: ref,
+          ref,
+          suggestion: 'Increase maxDepth option or reduce schema nesting',
+        },
+      });
     }
     const { uri, pointer } = this.parseReference(ref);
 
@@ -639,11 +669,15 @@ export class ReferenceResolver {
     const refKey = `$recursiveRef|${context.baseUri ?? 'local'}|${ref}`;
     if (context.refPath.has(refKey)) {
       if (this.options.circularHandling === 'error') {
-        throw new SchemaError(
-          `Circular reference detected: ${ref}`,
-          ref,
-          'Break the circular dependency or use lazy resolution'
-        );
+        throw new SchemaError({
+          message: `Circular reference detected: ${ref}`,
+          errorCode: ErrorCode.CIRCULAR_REFERENCE_DETECTED,
+          context: {
+            schemaPath: ref,
+            ref,
+            suggestion: 'Break the circular dependency or use lazy resolution',
+          },
+        });
       }
       return { schema: base, circular: true };
     }
@@ -651,11 +685,15 @@ export class ReferenceResolver {
     // If referring to current recursive anchor (no URI, pointer to '#'), treat as circular in ignore/lazy
     if (!uri && (!pointer || pointer === '#')) {
       if (this.options.circularHandling === 'error') {
-        throw new SchemaError(
-          `Circular reference detected: ${ref}`,
-          ref,
-          'Break the circular dependency or use lazy/ignore'
-        );
+        throw new SchemaError({
+          message: `Circular reference detected: ${ref}`,
+          errorCode: ErrorCode.CIRCULAR_REFERENCE_DETECTED,
+          context: {
+            schemaPath: ref,
+            ref,
+            suggestion: 'Break the circular dependency or use lazy/ignore',
+          },
+        });
       }
       return { schema: base, circular: true };
     }
@@ -666,11 +704,15 @@ export class ReferenceResolver {
       const absoluteUri = this.resolveUri(uri, context.baseUri);
       baseSchema = await this.loadSchema(absoluteUri, context);
       if (!baseSchema) {
-        throw new SchemaError(
-          `Cannot resolve recursive reference: ${ref}`,
-          '$recursiveRef',
-          'External schema not found'
-        );
+        throw new SchemaError({
+          message: `Cannot resolve recursive reference: ${ref}`,
+          errorCode: ErrorCode.SCHEMA_PARSE_FAILED,
+          context: {
+            schemaPath: '$recursiveRef',
+            ref,
+            suggestion: 'External schema not found',
+          },
+        });
       }
     }
 
@@ -698,21 +740,29 @@ export class ReferenceResolver {
   ): Promise<ResolvedReference> {
     // Check depth limit
     if (context.depth >= this.options.maxDepth) {
-      throw new SchemaError(
-        `Maximum reference depth (${this.options.maxDepth}) exceeded`,
-        ref,
-        'Increase maxDepth option or reduce schema nesting'
-      );
+      throw new SchemaError({
+        message: `Maximum reference depth (${this.options.maxDepth}) exceeded`,
+        errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
+        context: {
+          schemaPath: ref,
+          ref,
+          suggestion: 'Increase maxDepth option or reduce schema nesting',
+        },
+      });
     }
     const { uri, pointer } = this.parseReference(ref);
     const refKey = `$dynamicRef|${context.baseUri ?? 'local'}|${ref}`;
     if (context.refPath.has(refKey)) {
       if (this.options.circularHandling === 'error') {
-        throw new SchemaError(
-          `Circular reference detected: ${ref}`,
-          ref,
-          'Break the circular dependency or use lazy resolution'
-        );
+        throw new SchemaError({
+          message: `Circular reference detected: ${ref}`,
+          errorCode: ErrorCode.CIRCULAR_REFERENCE_DETECTED,
+          context: {
+            schemaPath: ref,
+            ref,
+            suggestion: 'Break the circular dependency or use lazy resolution',
+          },
+        });
       }
       return { schema: context.schema, circular: true };
     }
@@ -761,21 +811,29 @@ export class ReferenceResolver {
     // If resolving to a dynamic anchor in current scope with no further pointer, treat as circular in ignore/lazy
     if (fromDynamicAnchor && !remainingPointer) {
       if (this.options.circularHandling === 'error') {
-        throw new SchemaError(
-          `Circular reference detected: ${ref}`,
-          ref,
-          'Break the circular dependency or use lazy/ignore'
-        );
+        throw new SchemaError({
+          message: `Circular reference detected: ${ref}`,
+          errorCode: ErrorCode.CIRCULAR_REFERENCE_DETECTED,
+          context: {
+            schemaPath: ref,
+            ref,
+            suggestion: 'Break the circular dependency or use lazy/ignore',
+          },
+        });
       }
       return { schema: baseSchema as Schema, circular: true };
     }
 
     if (!baseSchema) {
-      throw new SchemaError(
-        `Cannot resolve dynamic reference: ${ref}`,
-        '$dynamicRef',
-        'No dynamic or static anchor found'
-      );
+      throw new SchemaError({
+        message: `Cannot resolve dynamic reference: ${ref}`,
+        errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
+        context: {
+          schemaPath: '$dynamicRef',
+          ref,
+          suggestion: 'No dynamic or static anchor found',
+        },
+      });
     }
 
     let resolvedSchema = baseSchema as Schema;

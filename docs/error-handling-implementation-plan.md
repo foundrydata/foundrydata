@@ -127,6 +127,22 @@ import { ErrorCode, getExitCode, getHttpStatus, type Severity } from '@foundryda
 import { EXIT_CODES, HTTP_STATUS_BY_CODE } from '@foundrydata/core/errors/codes';
 ```
 
+#### Task 4 Alignment: Error Emission Points (2025-09-06)
+- Reference resolver now emits `SchemaError` with params constructor and precise context.
+  - Circular reference: `ErrorCode.CIRCULAR_REFERENCE_DETECTED` with `schemaPath` set to the `$ref`/fragment and `ref` set to the URI when present.
+  - Max depth exceeded: `ErrorCode.INVALID_SCHEMA_STRUCTURE` with `schemaPath` set to the active `$ref`.
+  - Invalid/missing JSON Pointer: `ErrorCode.INVALID_SCHEMA_STRUCTURE` with `schemaPath` set to the pointer.
+  - Missing external schema: `ErrorCode.SCHEMA_PARSE_FAILED` with `schemaPath` reflecting the reference location and `ref` set.
+  - Semantics: For `SchemaError`, only `schemaPath`/`ref` are populated (leave `path` undefined).
+- JSON Schema parser now emits `ParseError` via params constructor with codes and JSON Pointers.
+  - Unsupported regex `pattern`: `ErrorCode.REGEX_PATTERNS_NOT_SUPPORTED` at `schemaPath` `#/.../pattern`.
+  - Nested objects not supported: `ErrorCode.NESTED_OBJECTS_NOT_SUPPORTED` at `schemaPath` `#/properties/<key>`.
+  - Unsupported/invalid type: `ErrorCode.INVALID_SCHEMA_STRUCTURE` with `schemaPath` for the node.
+  - Cannot determine type / no suitable parser / generic parse failure: `ErrorCode.SCHEMA_PARSE_FAILED` at `schemaPath` `#`.
+- Helper added to convert internal paths to JSON Pointer: `toSchemaPointer()` in the JSON Schema parser.
+- Suggestions moved into `context.suggestion`; message remains user-friendly and descriptive.
+- Tests not yet migrated; tracked in Task 8.
+
 #### Refactored Error Classes (`packages/core/src/types/errors.ts`)
 
 ##### New Constructor Signatures
