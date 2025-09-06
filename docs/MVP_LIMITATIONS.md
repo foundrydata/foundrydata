@@ -8,6 +8,7 @@ This document lists the known limitations and unsupported features in the MVP re
 - **`const`** - Constant value validation for all primitive types
 - **`multipleOf`** - Number divisibility validation (Draft-07+ compliance)
 - **`prefixItems`** - Tuple validation (Draft 2019-09/2020-12)
+- **`contains`** / `minContains` / `maxContains` - Array content constraints (Draft‑07+ / 2019‑09+)
 - **`$ref`** - Schema references with full resolution support
 - **`$recursiveRef`**/`$recursiveAnchor`** - Recursive references (Draft 2019-09)
 - **`$dynamicRef`**/`$dynamicAnchor`** - Dynamic references (Draft 2020-12)
@@ -23,13 +24,14 @@ This document lists the known limitations and unsupported features in the MVP re
   - ❌ Advanced regex features (lookaheads, backreferences)
 - **`readOnly`**/**`writeOnly`** - Annotation-only (no generation impact)
 - **`contentEncoding`**/**`contentMediaType`** - Annotation-only (no validation)
+- **`patternProperties` / `propertyNames`** - Key generation from patterns; propertyNames with `{pattern}` supported
+- **`dependentSchemas`** - Applies `required` and `properties` from dependent schema (phase 1)
 
 ### ❌ Keywords Not Supported  
 - **Schema Composition**: `allOf`, `anyOf`, `oneOf`, `not`
 - **Conditional Application**: `if`, `then`, `else`
-- **Advanced Property Validation**: `patternProperties`, `propertyNames`, `dependentSchemas`
-- **Array Contains**: `contains`, `minContains`, `maxContains`, `additionalItems`
-- **Unevaluated Keywords**: `unevaluatedItems`, `unevaluatedProperties` (Draft 2019-09+)
+- **Additional Items**: `additionalItems` (tuple suffix handling beyond items:false is partial)
+- **Unevaluated Keywords**: `unevaluatedItems`, `unevaluatedProperties` (Draft 2019-09+) — partial
 - **Content Validation**: `contentSchema`
 - **Legacy Extensions**: `$data` references
 
@@ -108,7 +110,6 @@ Remove or replace unsupported features before testing:
 - Better tuple array support
 
 ### v0.3.0 (Planned)
-- Contains validation
 - Schema composition (allOf, anyOf, oneOf)
 - Deeper nested objects (beyond depth 2)
 - More string formats

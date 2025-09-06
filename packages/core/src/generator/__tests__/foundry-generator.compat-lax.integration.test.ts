@@ -3,14 +3,19 @@ import { FoundryGenerator } from '../foundry-generator';
 import { isErr } from '../../types/result';
 
 describe('FoundryGenerator – compat=lax vs strict (unsupported features)', () => {
-  it('strict fails fast on unsupported features (contains), lax proceeds and validates 100%', () => {
-    // Array schema with "contains" (unsupported for planning) but easy to satisfy given items are strings
+  it('strict fails fast on unsupported features (if/then/else), lax proceeds and validates 100%', () => {
+    // conditionals (not supported for planning)
     const schema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
-      type: 'array',
-      items: { type: 'string' },
-      minItems: 1,
-      contains: { type: 'string', minLength: 1 },
+      type: 'object',
+      if: { properties: { flag: { const: true } }, required: ['flag'] },
+      then: {
+        properties: { foo: { type: 'string', minLength: 1 } },
+      },
+      else: {
+        properties: { bar: { type: 'integer', minimum: 0 } },
+      },
+      properties: { flag: { type: 'boolean' } },
     } as const;
 
     const gen = new FoundryGenerator();

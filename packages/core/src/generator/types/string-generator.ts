@@ -19,6 +19,37 @@ import {
 } from '../data-generator';
 
 export class StringGenerator extends DataGenerator {
+  /**
+   * Count Unicode code points in a string (not UTF-16 code units)
+   */
+  private codePointLength(value: string): number {
+    // Using spread to correctly count surrogate pairs as single code points
+    return [...value].length;
+  }
+
+  /**
+   * Truncate a string to a maximum number of Unicode code points
+   */
+  private truncateToCodePoints(value: string, maxCodePoints: number): string {
+    if (maxCodePoints < 0) return '';
+    const arr = [...value];
+    if (arr.length <= maxCodePoints) return value;
+    return arr.slice(0, maxCodePoints).join('');
+  }
+
+  /**
+   * Pad a string with simple ASCII letters to reach a minimum number of code points
+   */
+  private padToCodePoints(value: string, minCodePoints: number): string {
+    const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+    const current = this.codePointLength(value);
+    if (current >= minCodePoints) return value;
+    const needed = minCodePoints - current;
+    const padding = alphabet
+      .repeat(Math.ceil(needed / alphabet.length))
+      .slice(0, needed);
+    return value + padding;
+  }
   supports(schema: Schema): boolean {
     return (
       typeof schema === 'object' && schema !== null && schema.type === 'string'
@@ -647,7 +678,7 @@ export class StringGenerator extends DataGenerator {
    * Check if string meets length constraints
    */
   private meetsLengthConstraints(value: string, schema: StringSchema): boolean {
-    const length = value.length;
+    const length = this.codePointLength(value);
 
     if (schema.minLength !== undefined && length < schema.minLength) {
       return false;
@@ -669,17 +700,14 @@ export class StringGenerator extends DataGenerator {
   ): string {
     let result = value;
 
-    // Handle minLength constraint
-    if (schema.minLength !== undefined && result.length < schema.minLength) {
-      const padding = 'abcdefghijklmnopqrstuvwxyz'.repeat(
-        Math.ceil(schema.minLength / 26)
-      );
-      result = (result + padding).substring(0, schema.minLength);
+    // Handle minLength constraint using code point length
+    if (schema.minLength !== undefined) {
+      result = this.padToCodePoints(result, schema.minLength);
     }
 
-    // Handle maxLength constraint
-    if (schema.maxLength !== undefined && result.length > schema.maxLength) {
-      result = result.substring(0, schema.maxLength);
+    // Handle maxLength constraint using code point length
+    if (schema.maxLength !== undefined) {
+      result = this.truncateToCodePoints(result, schema.maxLength);
     }
 
     return result;
@@ -693,7 +721,7 @@ export class StringGenerator extends DataGenerator {
     schema: StringSchema,
     regex?: RegExp
   ): boolean {
-    const len = value.length;
+    const len = this.codePointLength(value);
 
     // Check length constraints
     if (schema.minLength !== undefined && len < schema.minLength) {

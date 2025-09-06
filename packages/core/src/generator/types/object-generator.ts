@@ -261,6 +261,33 @@ export class ObjectGenerator extends DataGenerator {
       }
     }
 
+    // Early application of dependentSchemas (Phase 1) to ensure required deps are present
+    if (
+      schema.dependentSchemas &&
+      typeof schema.dependentSchemas === 'object'
+    ) {
+      for (const [prop, depSch] of Object.entries(schema.dependentSchemas)) {
+        if (!(prop in result)) continue;
+        const depSchema = depSch as unknown as ObjectSchema;
+        const depReq = (depSchema as any).required as string[] | undefined;
+        if (Array.isArray(depReq)) {
+          for (const d of depReq) {
+            if (!(d in result)) {
+              const dSchema =
+                (schema.properties && (schema.properties[d] as Schema)) ||
+                ((depSchema as any).properties &&
+                  ((depSchema as any).properties[d] as Schema));
+              if (dSchema) {
+                const dRes = this.generatePropertyValue(dSchema, d, context);
+                if (dRes.isErr()) return dRes as Result<never, GenerationError>;
+                result[d] = dRes.value;
+              }
+            }
+          }
+        }
+      }
+    }
+
     // Get optional properties (not in required)
     const optionalProps = Object.keys(properties).filter(
       (p) => !required.includes(p)
@@ -298,6 +325,43 @@ export class ObjectGenerator extends DataGenerator {
       }
     }
 
+    // If we still need properties to reach minProperties, try patternProperties/propertyNames
+    const needAfterOptionals = Math.max(
+      0,
+      minProperties - Object.keys(result).length
+    );
+    if (needAfterOptionals > 0) {
+      const existing = new Set(Object.keys(result));
+      const active = this.collectActiveObjectConstraints(schema, result);
+      const patterns = Object.keys(active.patterns);
+      if (patterns.length > 0) {
+        let idx = 0;
+        let attempts = 0;
+        const maxAttempts = 100 * needAfterOptionals;
+        while (
+          Object.keys(result).length < minProperties &&
+          attempts < maxAttempts
+        ) {
+          attempts++;
+          const pattern = patterns[idx % patterns.length]!;
+          idx++;
+          const valueSchema = active.patterns[pattern]! as Schema;
+          const key = this.generatePropertyKey(
+            pattern,
+            active.propertyNameSchemas,
+            existing,
+            context
+          );
+          if (!key) continue;
+          const vRes = this.generatePropertyValue(valueSchema, key, context);
+          if (vRes.isOk()) {
+            result[key] = vRes.value;
+            existing.add(key);
+          }
+        }
+      }
+    }
+
     // Handle dependencies/dependentRequired
     const dependencies = schema.dependencies || schema.dependentRequired;
     if (dependencies) {
@@ -319,10 +383,89 @@ export class ObjectGenerator extends DataGenerator {
                 result[dep] = depResult.value;
               }
             }
-          } else if (typeof deps === 'object') {
-            // dependentSchemas style (schema object)
-            // For MVP, we skip complex dependent schemas
-            continue;
+          } else if (typeof deps === 'object' && deps !== null) {
+            // Draft-07 dependencies with schema
+            const depSchema = deps as unknown as ObjectSchema;
+            // Apply required
+            const req = (depSchema as any).required as string[] | undefined;
+            if (Array.isArray(req)) {
+              for (const d of req) {
+                if (!(d in result)) {
+                  const dSchema =
+                    (schema.properties && (schema.properties[d] as Schema)) ||
+                    ((depSchema as any).properties &&
+                      ((depSchema as any).properties[d] as Schema));
+                  if (dSchema) {
+                    const dRes = this.generatePropertyValue(
+                      dSchema,
+                      d,
+                      context
+                    );
+                    if (dRes.isErr())
+                      return dRes as Result<never, GenerationError>;
+                    result[d] = dRes.value;
+                  }
+                }
+              }
+            }
+            // Apply properties from dependency schema
+            const depProps = (depSchema as any).properties as
+              | Record<string, Schema>
+              | undefined;
+            if (depProps) {
+              for (const [k, kSchema] of Object.entries(depProps)) {
+                if (!(k in result)) {
+                  const kRes = this.generatePropertyValue(
+                    kSchema as Schema,
+                    k,
+                    context
+                  );
+                  if (kRes.isOk()) result[k] = kRes.value;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Handle dependentSchemas (Phase 1: required + properties)
+    if (
+      schema.dependentSchemas &&
+      typeof schema.dependentSchemas === 'object'
+    ) {
+      for (const [prop, depSch] of Object.entries(schema.dependentSchemas)) {
+        if (!(prop in result)) continue;
+        const depSchema = depSch as unknown as ObjectSchema;
+        const depReq = (depSchema as any).required as string[] | undefined;
+        if (Array.isArray(depReq)) {
+          for (const d of depReq) {
+            if (!(d in result)) {
+              const dSchema =
+                (schema.properties && (schema.properties[d] as Schema)) ||
+                ((depSchema as any).properties &&
+                  ((depSchema as any).properties[d] as Schema));
+              if (dSchema) {
+                const dRes = this.generatePropertyValue(dSchema, d, context);
+                if (dRes.isErr()) return dRes as Result<never, GenerationError>;
+                result[d] = dRes.value;
+              }
+            }
+          }
+        }
+        const depProps = (depSchema as any).properties as
+          | Record<string, Schema>
+          | undefined;
+        if (depProps) {
+          for (const [k, kSchema] of Object.entries(depProps)) {
+            if (!(k in result)) {
+              const kRes = this.generatePropertyValue(
+                kSchema as Schema,
+                k,
+                context
+              );
+              if (kRes.isOk()) result[k] = kRes.value;
+            }
           }
         }
       }
@@ -331,8 +474,7 @@ export class ObjectGenerator extends DataGenerator {
     // Handle additionalProperties if needed (for edge cases)
     if (
       context.scenario === 'edge' &&
-      schema.additionalProperties !== false &&
-      (schema as any).unevaluatedProperties !== false
+      this.areAdditionalPropertiesAllowed(schema, result)
     ) {
       const currentPropCount = Object.keys(result).length;
       if (currentPropCount < maxProperties) {
@@ -365,6 +507,134 @@ export class ObjectGenerator extends DataGenerator {
     }
 
     return ok(result);
+  }
+
+  /**
+   * Determine if additional properties are allowed, considering parent schema and triggered dependentSchemas
+   */
+  private areAdditionalPropertiesAllowed(
+    schema: ObjectSchema,
+    current: Record<string, unknown>
+  ): boolean {
+    if (schema.additionalProperties === false) return false;
+    if ((schema as any).unevaluatedProperties === false) return false;
+    if (
+      schema.dependentSchemas &&
+      typeof schema.dependentSchemas === 'object'
+    ) {
+      for (const k of Object.keys(current)) {
+        const dep = schema.dependentSchemas[k] as ObjectSchema | undefined;
+        if (dep) {
+          if (dep.additionalProperties === false) return false;
+          if ((dep as any).unevaluatedProperties === false) return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Collect active patternProperties and propertyNames from parent and triggered dependentSchemas
+   */
+  private collectActiveObjectConstraints(
+    schema: ObjectSchema,
+    current: Record<string, unknown>
+  ): { patterns: Record<string, Schema>; propertyNameSchemas: Schema[] } {
+    const patterns: Record<string, Schema> = {};
+    const propertyNameSchemas: Schema[] = [];
+    if (schema.patternProperties) {
+      for (const [pat, sub] of Object.entries(schema.patternProperties)) {
+        if (!(pat in patterns)) patterns[pat] = sub as Schema;
+      }
+    }
+    if (schema.propertyNames)
+      propertyNameSchemas.push(schema.propertyNames as Schema);
+    if (
+      schema.dependentSchemas &&
+      typeof schema.dependentSchemas === 'object'
+    ) {
+      for (const k of Object.keys(current)) {
+        const dep = schema.dependentSchemas[k] as ObjectSchema | undefined;
+        if (dep) {
+          if (dep.patternProperties) {
+            for (const [pat, sub] of Object.entries(dep.patternProperties)) {
+              if (!(pat in patterns)) patterns[pat] = sub as Schema;
+            }
+          }
+          if (dep.propertyNames)
+            propertyNameSchemas.push(dep.propertyNames as Schema);
+        }
+      }
+    }
+    return { patterns, propertyNameSchemas };
+  }
+
+  /** Generate a property key that matches both patternProperties regex and optional propertyNames schema */
+  private generatePropertyKey(
+    pattern: string,
+    propertyNamesSchemas: Schema[] | undefined,
+    existing: Set<string>,
+    context: GeneratorContext
+  ): string | null {
+    let re: RegExp;
+    try {
+      re = new RegExp(pattern);
+    } catch {
+      return null;
+    }
+    const faker = this.prepareFaker(context);
+    for (let i = 0; i < 50; i++) {
+      const len = faker.number.int({ min: 1, max: 8 });
+      // alpha lower-case to better match common patterns
+      let candidate = faker.string.alpha(len).toLowerCase();
+      // Occasionally include digits for broader patterns
+      if (faker.datatype.boolean({ probability: 0.3 })) {
+        candidate = candidate + String(faker.number.int({ min: 0, max: 99 }));
+      }
+      if (existing.has(candidate)) continue;
+      if (!re.test(candidate)) continue;
+      if (propertyNamesSchemas && propertyNamesSchemas.length > 0) {
+        if (!this.validatePropertyName(candidate, propertyNamesSchemas))
+          continue;
+      }
+      return candidate;
+    }
+    return null;
+  }
+
+  /** Validate a candidate property name against propertyNames schema */
+  private validatePropertyName(
+    name: string,
+    schemas: Schema | Schema[]
+  ): boolean {
+    const list = Array.isArray(schemas) ? schemas : [schemas];
+    for (const schema of list) {
+      // Boolean schemas
+      if (schema === true) continue;
+      if (schema === false) return false;
+      if (typeof schema !== 'object' || schema === null) continue;
+
+      // Handle common constraints on strings: pattern, minLength, maxLength, enum
+      const s = schema as Record<string, unknown>;
+      if (typeof s.pattern === 'string') {
+        try {
+          const re = new RegExp(s.pattern);
+          if (!re.test(name)) return false;
+        } catch {
+          // ignore invalid regex in propertyNames; let AJV decide later
+        }
+      }
+      if (typeof s.minLength === 'number') {
+        if ([...name].length < (s.minLength as number)) return false;
+      }
+      if (typeof s.maxLength === 'number') {
+        if ([...name].length > (s.maxLength as number)) return false;
+      }
+      if (Array.isArray(s.enum)) {
+        if (!(s.enum as unknown[]).includes(name)) return false;
+      }
+    }
+    return true;
   }
 
   /**
@@ -683,7 +953,14 @@ export class ObjectGenerator extends DataGenerator {
     const results: unknown[] = [];
 
     for (let i = 0; i < count; i++) {
-      const result = this.generate(schema, context);
+      const newContext: GeneratorContext = {
+        ...context,
+        // Derive per-item seed to align with pipeline determinism
+        seed: (context.seed ?? 0) + i,
+        // Fresh cache per item to avoid cross-item state
+        cache: new Map(),
+      };
+      const result = this.generate(schema, newContext);
       if (result.isErr()) {
         return result;
       }

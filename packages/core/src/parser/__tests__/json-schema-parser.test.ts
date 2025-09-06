@@ -389,16 +389,15 @@ describe('JSONSchemaParser', () => {
       }
     });
 
-    it('should return error for composition keywords', () => {
-      const input = { allOf: [{ type: 'string' }, { minLength: 5 }] };
+    it('should accept composition keywords (parsed, resolved in planning)', () => {
+      const input = { allOf: [{ type: 'string' }, { minLength: 5 }] } as const;
       const result = parser.parse(input);
 
-      expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toContain('Unsupported feature: "allOf"');
-        expect(result.error.context?.suggestion).toContain(
-          'Schema composition will be supported'
-        );
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        const v = result.value as any;
+        expect(Array.isArray(v.allOf)).toBe(true);
+        expect(v.allOf.length).toBe(2);
       }
     });
 

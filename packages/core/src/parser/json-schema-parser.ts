@@ -41,27 +41,15 @@ export class JSONSchemaParser implements SchemaParser {
 
   // JSON Schema keywords not yet supported (only truly unsupported features)
   private static readonly PLANNED_FEATURES = {
-    // Schema composition keywords (truly not implemented)
-    allOf: 'Schema composition will be supported in v0.3.0',
-    anyOf: 'Schema composition will be supported in v0.3.0',
-    oneOf: 'Schema composition will be supported in v0.3.0',
-    not: 'Negation will be supported in v0.4.0',
-
-    // Conditional application keywords (truly not implemented)
+    // Conditional application keywords (remaining)
     if: 'Conditional schemas will be supported in v0.4.0',
     then: 'Conditional schemas will be supported in v0.4.0',
     else: 'Conditional schemas will be supported in v0.4.0',
 
-    // Advanced property validation (truly not implemented)
-    patternProperties: 'Pattern properties validation not supported in MVP',
-    propertyNames: 'Property names validation not supported in MVP',
-    dependentSchemas: 'Dependent schemas (Draft 2019-09+) not supported in MVP',
+    // Advanced property validation (remaining)
 
-    // Array validation keywords (truly not implemented)
+    // Array validation keywords (remaining)
     additionalItems: 'Additional items will be supported in v0.2.0',
-    contains: 'Contains validation will be supported in v0.3.0',
-    minContains: 'Min contains validation not supported in MVP',
-    maxContains: 'Max contains validation not supported in MVP',
 
     // Unevaluated keywords (unevaluatedProperties now supported)
 
@@ -96,6 +84,7 @@ export class JSONSchemaParser implements SchemaParser {
         obj.allOf ||
         obj.anyOf ||
         obj.oneOf ||
+        obj.not ||
         obj.if ||
         obj.then ||
         obj.else
@@ -149,6 +138,17 @@ export class JSONSchemaParser implements SchemaParser {
         $ref: schema.$ref,
         ...this.parseBaseProperties(schema),
       } as Schema);
+    }
+
+    // Handle composition-first schemas (no top-level type is required)
+    if (
+      Array.isArray(schema.allOf) ||
+      Array.isArray(schema.anyOf) ||
+      Array.isArray(schema.oneOf) ||
+      (schema.not && typeof schema.not === 'object')
+    ) {
+      // parseBaseProperties preserves composition keywords via recursive parse
+      return ok({ ...this.parseBaseProperties(schema) } as Schema);
     }
 
     // Extract and validate type
@@ -217,6 +217,60 @@ export class JSONSchemaParser implements SchemaParser {
         }
         result.properties[key] = propResult.value;
       }
+    }
+
+    // Parse patternProperties (map of regex -> schema)
+    if (
+      schema.patternProperties &&
+      typeof schema.patternProperties === 'object'
+    ) {
+      const ppRaw = schema.patternProperties as Record<string, unknown>;
+      const pp: Record<string, Schema> = {};
+      for (const [pattern, sub] of Object.entries(ppRaw)) {
+        const subRes = this.parseSchema(
+          sub as Record<string, unknown> | boolean,
+          `${path}.patternProperties[${pattern}]`
+        );
+        if (subRes.isErr())
+          return subRes as unknown as Result<ObjectSchema, ParseError>;
+        pp[pattern] = subRes.value as Schema;
+      }
+      result.patternProperties = pp;
+    }
+
+    // Parse propertyNames (schema applied to all property names)
+    if ('propertyNames' in schema) {
+      const pn = schema.propertyNames as unknown;
+      if (typeof pn === 'boolean') {
+        result.propertyNames = pn;
+      } else if (pn && typeof pn === 'object') {
+        const pnRes = this.parseSchema(
+          pn as Record<string, unknown> | boolean,
+          `${path}.propertyNames`
+        );
+        if (pnRes.isErr())
+          return pnRes as unknown as Result<ObjectSchema, ParseError>;
+        result.propertyNames = pnRes.value as Schema;
+      }
+    }
+
+    // Parse dependentSchemas (Draft 2019-09+)
+    if (
+      schema.dependentSchemas &&
+      typeof schema.dependentSchemas === 'object'
+    ) {
+      const dsRaw = schema.dependentSchemas as Record<string, unknown>;
+      const ds: Record<string, Schema> = {};
+      for (const [key, dep] of Object.entries(dsRaw)) {
+        const depRes = this.parseSchema(
+          dep as Record<string, unknown> | boolean,
+          `${path}.dependentSchemas.${key}`
+        );
+        if (depRes.isErr())
+          return depRes as unknown as Result<ObjectSchema, ParseError>;
+        ds[key] = depRes.value as Schema;
+      }
+      result.dependentSchemas = ds;
     }
 
     // Parse required array
@@ -337,6 +391,29 @@ export class JSONSchemaParser implements SchemaParser {
     }
     if (typeof schema.uniqueItems === 'boolean') {
       result.uniqueItems = schema.uniqueItems;
+    }
+
+    // Parse contains (Draft-07+) and min/maxContains (2019-09+)
+    if ('contains' in schema) {
+      const c = schema.contains as unknown;
+      if (typeof c === 'boolean') {
+        // Boolean schemas allowed
+        result.contains = c;
+      } else if (c && typeof c === 'object') {
+        const cRes = this.parseSchema(
+          c as Record<string, unknown> | boolean,
+          `${path}.contains`
+        );
+        if (cRes.isErr())
+          return cRes as unknown as Result<ArraySchema, ParseError>;
+        result.contains = cRes.value as Schema;
+      }
+    }
+    if (typeof schema.minContains === 'number') {
+      result.minContains = schema.minContains;
+    }
+    if (typeof schema.maxContains === 'number') {
+      result.maxContains = schema.maxContains;
     }
 
     // Parse unevaluatedItems (Draft 2019-09/2020-12)
@@ -524,6 +601,48 @@ export class JSONSchemaParser implements SchemaParser {
       base.$comment = schema.$comment;
     }
 
+    // Composition keywords: carry through recursively
+    if (Array.isArray(schema.allOf)) {
+      base.allOf = (schema.allOf as unknown[])
+        .map((s, i) => {
+          const r = this.parseSchema(
+            s as Record<string, unknown> | boolean,
+            `allOf[${i}]`
+          );
+          return r.isOk() ? r.value : s;
+        })
+        .filter(Boolean);
+    }
+    if (Array.isArray(schema.anyOf)) {
+      base.anyOf = (schema.anyOf as unknown[])
+        .map((s, i) => {
+          const r = this.parseSchema(
+            s as Record<string, unknown> | boolean,
+            `anyOf[${i}]`
+          );
+          return r.isOk() ? r.value : s;
+        })
+        .filter(Boolean);
+    }
+    if (Array.isArray(schema.oneOf)) {
+      base.oneOf = (schema.oneOf as unknown[])
+        .map((s, i) => {
+          const r = this.parseSchema(
+            s as Record<string, unknown> | boolean,
+            `oneOf[${i}]`
+          );
+          return r.isOk() ? r.value : s;
+        })
+        .filter(Boolean);
+    }
+    if (schema.not && typeof schema.not === 'object') {
+      const r = this.parseSchema(
+        schema.not as Record<string, unknown> | boolean,
+        `not`
+      );
+      if (r.isOk()) base.not = r.value;
+    }
+
     return base;
   }
 
@@ -536,20 +655,34 @@ export class JSONSchemaParser implements SchemaParser {
   ): Result<string, ParseError> {
     // Type can be explicitly defined or inferred
     if ('type' in schema) {
-      const type = schema.type;
-      if (typeof type !== 'string') {
+      const t = schema.type as unknown;
+      if (typeof t === 'string') return ok(t);
+      if (Array.isArray(t)) {
+        const first = t.find((x) => typeof x === 'string') as
+          | string
+          | undefined;
+        if (first) return ok(first);
         return err(
           new ParseError({
-            message: `Invalid type at ${path || 'root'}`,
+            message: `Invalid union type at ${path || 'root'}`,
             errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
             context: {
               schemaPath: this.toSchemaPointer(path),
-              suggestion: `Type must be a string, found: ${typeof type}`,
+              suggestion: 'Type array must contain at least one string type',
             },
           })
         );
       }
-      return ok(type);
+      return err(
+        new ParseError({
+          message: `Invalid type at ${path || 'root'}`,
+          errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
+          context: {
+            schemaPath: this.toSchemaPointer(path),
+            suggestion: `Type must be a string or array of strings, found: ${typeof t}`,
+          },
+        })
+      );
     }
 
     // Try to infer type from structure
@@ -559,6 +692,29 @@ export class JSONSchemaParser implements SchemaParser {
 
     if ('items' in schema) {
       return ok('array');
+    }
+
+    // Heuristics: infer from common constraint keywords
+    if (
+      typeof schema.format === 'string' ||
+      typeof schema.pattern === 'string'
+    ) {
+      return ok('string');
+    }
+    if (
+      typeof schema.minLength === 'number' ||
+      typeof schema.maxLength === 'number'
+    ) {
+      return ok('string');
+    }
+    if (
+      typeof schema.minimum === 'number' ||
+      typeof schema.maximum === 'number' ||
+      typeof schema.exclusiveMinimum === 'number' ||
+      typeof schema.exclusiveMaximum === 'number' ||
+      typeof schema.multipleOf === 'number'
+    ) {
+      return ok('number');
     }
 
     // For schemas with only constraints, try to infer type from enum values
@@ -622,6 +778,16 @@ export class JSONSchemaParser implements SchemaParser {
     }
 
     const schema = input as Record<string, unknown>;
+
+    // Composition at root: accept and defer to planning stage
+    if (
+      Array.isArray(schema.allOf) ||
+      Array.isArray(schema.anyOf) ||
+      Array.isArray(schema.oneOf) ||
+      (schema.not && typeof schema.not === 'object')
+    ) {
+      return ok(undefined);
+    }
 
     // Run individual feature checks
     const featureCheck = this.checkPlannedFeatures(schema);
@@ -697,19 +863,7 @@ export class JSONSchemaParser implements SchemaParser {
   private checkArrayFeatures(
     schema: Record<string, unknown>
   ): Result<void, ParseError> {
-    // Check for mixed type arrays (not supported yet)
-    if (Array.isArray(schema.type)) {
-      return err(
-        new ParseError({
-          message: 'Union types are not yet supported',
-          errorCode: ErrorCode.INVALID_SCHEMA_STRUCTURE,
-          context: {
-            suggestion:
-              'Use a single type instead of an array of types. This feature will be added in v0.3.0',
-          },
-        })
-      );
-    }
+    // Union types are allowed; generator will narrow deterministically and validation uses the original schema
 
     // Check for complex array items (tuple validation)
     if (Array.isArray(schema.items)) {
@@ -734,6 +888,10 @@ export class JSONSchemaParser implements SchemaParser {
   private checkObjectFeatures(
     schema: Record<string, unknown>
   ): Result<void, ParseError> {
+    // Skip deep-nesting guard for meta-schemas or core vocabularies
+    if (schema.$schema || schema.$vocabulary) {
+      return ok(undefined);
+    }
     // Check for nested objects depth limit (depth > 2 not supported)
     if (schema.type === 'object' && schema.properties) {
       return this.checkForDeepNestedObjects(schema, 0); // Start at depth 0 (root)
