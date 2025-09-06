@@ -1,21 +1,123 @@
+/* eslint-disable max-lines */
 /**
  * Error hierarchy for FoundryData
  * Provides structured error handling with context and suggestions
  */
 
+import {
+  ErrorCode,
+  type Severity,
+  getExitCode as _getExitCode,
+} from '../errors/codes';
+
+/**
+ * Typed error context shared across error types
+ * Note: path vs schemaPath semantics are enforced by subclasses (next tasks)
+ */
+export interface ErrorContext {
+  path?: string; // JSON Pointer for instance data (e.g., '/users/0/name')
+  schemaPath?: string; // JSON Schema pointer (e.g., '#/properties/name')
+  ref?: string; // External reference URI
+  value?: unknown; // Problematic value (may contain PII)
+  valueExcerpt?: string; // Safe excerpt of value
+  limitationKey?: string; // Registry key for known limitations
+  availableIn?: string; // Version when feature becomes available
+  // Allow unknown extras for backward-compatibility with existing callers
+  [key: string]: unknown;
+}
+
+export interface SerializedError {
+  name: string;
+  message: string;
+  code?: string; // legacy code
+  errorCode: ErrorCode; // stable error code
+  severity: Severity;
+  context?: ErrorContext;
+  stack?: string;
+  cause?: { name: string; message: string } | undefined;
+}
+
+export interface UserError {
+  message: string;
+  code: ErrorCode;
+  severity: Severity;
+  path?: string;
+  schemaPath?: string;
+}
+
 /**
  * Base error class for all FoundryData errors
  */
 export abstract class FoundryError extends Error {
-  constructor(
-    message: string,
-    public readonly code: string,
-    public readonly context?: Record<string, any>
-  ) {
-    super(message);
-    this.name = this.constructor.name;
+  // Legacy string code (kept for backward-compatibility until subclasses are refactored)
+  public readonly code!: string;
+  // New stable error code
+  public readonly errorCode: ErrorCode;
+  public readonly severity: Severity;
+  public readonly context?: ErrorContext;
+  public readonly cause?: Error;
 
-    // Maintain proper stack trace in V8 environments
+  // Optional enrichment fields (populated by future systems like limitations registry)
+  public suggestions?: string[];
+  public documentation?: string;
+  public limitationKey?: string;
+  public availableIn?: string;
+
+  // Overloads: keep legacy signature while introducing the new params object
+  constructor(message: string, code: string, context?: Record<string, any>);
+  constructor(params: {
+    message: string;
+    errorCode: ErrorCode;
+    severity?: Severity;
+    context?: ErrorContext;
+    cause?: Error;
+  });
+  constructor(
+    arg1:
+      | string
+      | {
+          message: string;
+          errorCode: ErrorCode;
+          severity?: Severity;
+          context?: ErrorContext;
+          cause?: Error;
+        },
+    arg2?: string,
+    arg3?: Record<string, any>
+  ) {
+    // Determine which overload we are using
+    if (typeof arg1 === 'string') {
+      // Legacy signature
+      const message = arg1;
+      const legacyCode = arg2 ?? 'INTERNAL_ERROR';
+      const legacyContext = (arg3 ?? {}) as ErrorContext;
+
+      super(message);
+      this.name = this.constructor.name;
+      // Preserve legacy string code
+      (this as any).code = legacyCode;
+      // Map to stable code conservatively (default to INTERNAL_ERROR)
+      this.errorCode = ErrorCode.INTERNAL_ERROR;
+      this.severity = 'error';
+      this.context = legacyContext;
+
+      if (Error.captureStackTrace) {
+        Error.captureStackTrace(this, this.constructor);
+      }
+      return;
+    }
+
+    // New params object signature
+    const { message, errorCode, severity = 'error', context, cause } = arg1;
+    super(message, { cause });
+    this.name = this.constructor.name;
+    // Keep a legacy code string for compatibility until subclasses are updated
+    (this as any).code = (this as any).code ?? undefined;
+    this.errorCode = errorCode;
+    this.severity = severity;
+    this.context = context;
+    this.cause = cause;
+
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);
     }
@@ -23,26 +125,75 @@ export abstract class FoundryError extends Error {
 
   /**
    * Serialize error to JSON for logging and debugging
+   * - dev: includes stack and full context
+   * - prod: excludes stack and applies basic PII redaction to context.value
    */
-  toJSON(): Record<string, any> {
-    return {
+  toJSON(env: 'dev' | 'prod' = 'dev'): SerializedError {
+    const base: SerializedError = {
       name: this.name,
       message: this.message,
-      code: this.code,
-      context: this.context,
-      stack: this.stack,
+      code: (this as any).code,
+      errorCode: this.errorCode,
+      severity: this.severity,
+      context:
+        env === 'prod' ? this.#redactContext(this.context) : this.context,
+      cause: this.cause
+        ? { name: this.cause.name, message: this.cause.message }
+        : undefined,
+    };
+
+    if (env !== 'prod') {
+      base.stack = this.stack;
+    }
+    return base;
+  }
+
+  /** Return a minimal, safe structure for external exposure */
+  toUserError(): UserError {
+    return {
+      message: this.message,
+      code: this.errorCode,
+      severity: this.severity,
+      path: this.context?.path as string | undefined,
+      schemaPath: this.context?.schemaPath as string | undefined,
     };
   }
 
-  /**
-   * Get a user-friendly error message
-   */
-  abstract getUserMessage(): string;
+  /** Resolve the process exit code associated with this error */
+  getExitCode(): number {
+    return _getExitCode(this.errorCode);
+  }
 
-  /**
-   * Get suggestions for fixing the error
-   */
-  abstract getSuggestions(): string[];
+  // Basic PII redaction for production serialization
+  #redactContext(context?: ErrorContext): ErrorContext | undefined {
+    if (!context) return context;
+    const SENSITIVE_KEYS = new Set([
+      'password',
+      'apiKey',
+      'secret',
+      'token',
+      'ssn',
+      'creditCard',
+    ]);
+
+    const redactValue = (val: unknown): unknown => {
+      if (val && typeof val === 'object') {
+        if (Array.isArray(val)) return val.map(redactValue);
+        const out: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+          out[k] = SENSITIVE_KEYS.has(k) ? '[REDACTED]' : redactValue(v);
+        }
+        return out;
+      }
+      return val;
+    };
+
+    const redacted: ErrorContext = { ...context };
+    if ('value' in redacted) {
+      redacted.value = redactValue(redacted.value);
+    }
+    return redacted;
+  }
 }
 
 /**
@@ -265,7 +416,8 @@ export class ErrorReporter {
 
     // Error header with emoji
     const emoji = this.getErrorEmoji(error);
-    lines.push(`${emoji} ${error.getUserMessage()}`);
+    const userMessage = (error as any).getUserMessage?.() ?? error.message;
+    lines.push(`${emoji} ${userMessage}`);
 
     // Context information
     if (error.context && Object.keys(error.context).length > 0) {
@@ -279,7 +431,8 @@ export class ErrorReporter {
     }
 
     // Suggestions
-    const suggestions = error.getSuggestions();
+    const suggestions =
+      (error as any).getSuggestions?.() ?? error.suggestions ?? [];
     if (suggestions.length > 0) {
       lines.push('');
       lines.push('💡 Suggestions:');
@@ -369,7 +522,9 @@ export class ErrorReporter {
       summary.byType[type] = (summary.byType[type] || 0) + 1;
 
       // Collect suggestions
-      for (const suggestion of error.getSuggestions()) {
+      const suggs =
+        (error as any).getSuggestions?.() ?? error.suggestions ?? [];
+      for (const suggestion of suggs) {
         summary.suggestions.add(suggestion);
       }
     }
