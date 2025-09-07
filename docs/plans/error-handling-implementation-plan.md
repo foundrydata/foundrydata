@@ -459,7 +459,6 @@ export function calculateDistance(a: string, b: string): number {
 
 **Design Principles (Applied)**:
 - **Pure functions only** - no side effects, fully testable
-- **Simple algorithms for MVP** - optimize in v0.2
 - **Registry-based** - centralized limitation knowledge
 - **Null-safe** - always return null for unknown features
 
