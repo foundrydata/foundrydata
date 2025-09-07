@@ -531,7 +531,7 @@ foundrydata/
 └── docs/                    # Documentation & guides
 ```
 
-**Simple but solid:** Clean code that's easy to understand, extend, and debug. Built to last without the bloat.
+**Clean and solid:** Clean code that's easy to understand, extend, and debug. Built to last without the bloat.
 
 ## 📈 Stats
 
