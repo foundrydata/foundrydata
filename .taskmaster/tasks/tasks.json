@@ -3173,7 +3173,7 @@
         ],
         "status": "pending",
         "complexityScore": 7,
-        "details": "[Context]\nContext need: 4/5\nMust read:\n- CONTRIBUTING.md#tests\n- docs/feature-simplification/Features.md#testing-strategy\n- docs/feature-simplification/Invariants.md#core-invariants\nNice to read:\n- docs/feature-simplification/error.md#diagnostics-catalog\n- docs/feature-simplification/Features.md#benchmarks-and-ci\n---\nSection 20 — Testing\n- Normalizer golden tests (notes asserted).\n- Composer: numbers (rational), objects (AP:false must-cover), arrays (tuples/items:false), contains bag with min/maxContains and uniqueItems, early UNSAT extensions including the single-need rule.\n- Branch selector scoring determinism & Top‑K.\n- Repair actions idempotence and error reduction; stagnation guard.\n- Utilities: ptr-map reverse walk; struct-hash collision buckets then deepEqual; rng reproducibility.\n",
+        "details": "[Context]\nContext need: 4/5\nMust read:\n- docs/feature-simplification/Features.md#testing-strategy\n- docs/feature-simplification/Invariants.md#core-invariants\nNice to read:\n- docs/feature-simplification/error.md#diagnostics-catalog\n- docs/feature-simplification/Features.md#benchmarks-and-ci\n---\nSection 20 — Testing\n- Normalizer golden tests (notes asserted).\n- Composer: numbers (rational), objects (AP:false must-cover), arrays (tuples/items:false), contains bag with min/maxContains and uniqueItems, early UNSAT extensions including the single-need rule.\n- Branch selector scoring determinism & Top‑K.\n- Repair actions idempotence and error reduction; stagnation guard.\n- Utilities: ptr-map reverse walk; struct-hash collision buckets then deepEqual; rng reproducibility.\n",
         "testStrategy": "Mocha/Jest suites per module; high coverage; snapshot diagnostics; fuzz small random schemas.",
         "subtasks": [
           {
@@ -3237,7 +3237,7 @@
       {
         "id": 23,
         "title": "Documentation Set",
-        "description": "README, errors reference, Invariants.md, Known-Limits.md, Contributing.md, Features Matrix, Strict vs Lax table.",
+        "description": "README, errors reference, Invariants.md, Known-Limits.md, Features Matrix, Strict vs Lax table.",
         "priority": "medium",
         "estimatedHours": 16,
         "dependencies": [
@@ -3254,7 +3254,7 @@
         ],
         "status": "pending",
         "complexityScore": 4,
-        "details": "[Context]\nContext need: 5/5\nMust read:\n- docs/feature-simplification/README.md#pipeline\n- docs/feature-simplification/Invariants.md#core-invariants\n- docs/feature-simplification/Features.md#matrix\n- docs/feature-simplification/Known-Limits.md#overview\nNice to read:\n- docs/feature-simplification/error.md#diagnostics-catalog\n- docs/feature-simplification/Phasing.md\n---\nSections 17, 18\n- README: pipeline overview; quickstart; policies.\n- docs/feature-simplification/error.md: diagnostics catalog with examples.\n- Invariants.md: cross-phase rules (validate original schema; enum/const > type; AP:false must-cover; bagged contains; no mutation of canonical schema).\n- Known-Limits.md: dynamic refs partial; pattern approximations; performance caveats.\n- Contributing.md: tests, diagnostics, perf budgets, AJV compatibility, code style.\n- Features Matrix: ✓/ status per feature as in plan.\n- Strict vs Lax table.\n",
+        "details": "[Context]\nContext need: 5/5\nMust read:\n- docs/feature-simplification/README.md#pipeline\n- docs/feature-simplification/Invariants.md#core-invariants\n- docs/feature-simplification/Features.md#matrix\n- docs/feature-simplification/Known-Limits.md#overview\nNice to read:\n- docs/feature-simplification/error.md#diagnostics-catalog\n- docs/feature-simplification/Phasing.md\n---\nSections 17, 18\n- README: pipeline overview; quickstart; policies.\n- docs/feature-simplification/error.md: diagnostics catalog with examples.\n- Invariants.md: cross-phase rules (validate original schema; enum/const > type; AP:false must-cover; bagged contains; no mutation of canonical schema).\n- Known-Limits.md: dynamic refs partial; pattern approximations; performance caveats.\n- Features Matrix: ✓/ status per feature as in plan.\n- Strict vs Lax table.\n",
         "testStrategy": "Manual editorial review (no CI). Validate examples by running minimal local code snippets; ensure cross-links resolve when clicked locally.",
         "subtasks": [
           {
@@ -3303,7 +3303,7 @@
         ],
         "status": "pending",
         "complexityScore": 3,
-        "details": "[Context]\nContext need: 1/5\nMust read:\n- CHANGELOG.md\n- docs/feature-simplification/Phasing.md\nNice to read:\n- CONTRIBUTING.md#release\n- docs/feature-simplification/README.md#pipeline\n---\nSections 22 — Deliverables\n- Update CHANGELOG with highlights (if-aware-lite, AP:false must-cover, contains bag semantics, caps/degradation, metrics SLI/SLO).\n- Version bump; tag; release notes.\n- Publish packages; verify MIT license headers.\n",
+        "details": "[Context]\nContext need: 1/5\nMust read:\n- CHANGELOG.md\n- docs/feature-simplification/Phasing.md\nNice to read:\n- docs/feature-simplification/README.md#pipeline\n---\nSections 22 — Deliverables\n- Update CHANGELOG with highlights (if-aware-lite, AP:false must-cover, contains bag semantics, caps/degradation, metrics SLI/SLO).\n- Version bump; tag; release notes.\n- Publish packages; verify MIT license headers.\n",
         "testStrategy": "Smoke tests on published package; verify CLI and API entrypoints; documentation links.",
         "subtasks": [
           {

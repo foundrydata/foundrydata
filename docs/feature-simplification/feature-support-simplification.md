@@ -535,7 +535,7 @@ Hierarchical:
 
 * Contains bag subsumption improvements.
 * Pattern approximation improvements for must‑cover (anchored unions, simple char classes).
-* Diagnostic message hygiene; `Contributing.md` authoring rules.
+* Diagnostic message hygiene.
 
 ---
 
@@ -543,7 +543,6 @@ Hierarchical:
 
 * **Invariants.md** — Cross‑phase invariants (e.g., “validate against original schema”, “`enum/const` > `type`”, “must‑cover for `AP:false`”, “bag semantics for `contains`”).
 * **Known‑Limits.md** — Partial features/approximations (non‑anchored patterns under `AP:false`, `$dynamicRef`).
-* **Contributing.md** — Tests, diagnostics, perf budgets, AJV compatibility rules.
 * **Features Matrix** — See §18.
 
 ---
@@ -641,7 +640,7 @@ Hierarchical:
 * `packages/core/src/util/struct-hash.ts` (structural hashing for `uniqueItems`)
 * `packages/core/src/util/metrics.ts` (per‑phase timings, counters, validations/row)
 * `packages/core/src/util/stable-hash.ts` (optional; size‑gated)
-* Docs: `README.md`, `docs/errors/README.md`, `CHANGELOG.md`, `docs/Invariants.md`, `docs/Known-Limits.md`, `CONTRIBUTING.md`
+* Docs: `README.md`, `error.md`, `CHANGELOG.md`, `Invariants.md`, `Known-Limits.md`
 
 ---
 
