@@ -1,4 +1,4 @@
-# Feature Support Simplification Plan
+# Feature Support Simplification Plan - Canonical Spec 
 
 **Status:** Implementation spec
 **Audience:** JSON Schema & AJV practitioners, library contributors
@@ -44,26 +44,26 @@ All knobs are optional; defaults are conservative.
 ```ts
 type PlanOptions = {
   // Normalization
-  rewriteConditionals?: 'never' | 'safe' | 'aggressive'; // default: 'safe'
+  rewriteConditionals?: 'never' | 'safe' | 'aggressive'; // default: 'never'
   debugFreeze?: boolean;                                  // default: false
 
   // Composition / numeric math
   rational?: {
-    maxRatBits?: number;          // cap on bit-length of numerator/denominator; default: 128
-    maxLcmBits?: number;          // cap on bit-length of LCM; default: 128
-    qCap?: number;                // optional denominator cap; default: undefined
-    fallback?: 'decimal' | 'float'; // default: 'decimal' (controlled rounding)
-    decimalPrecision?: number;    // digits for decimal fallback; default: 12
+    maxRatBits?: number;           // cap on bit-length of numerator/denominator; default: 128
+    maxLcmBits?: number;           // cap on bit-length of LCM; default: 128
+    qCap?: number;                 // optional denominator cap; default: undefined
+    fallback?: 'decimal' | 'float';// default: 'decimal' (controlled rounding)
+    decimalPrecision?: number;     // digits for decimal fallback; default: 12 (aligns with AJV tolerance)
   };
 
   // Output encoding
   encoding?: {
-    bigintJSON?: 'string' | 'number' | 'error'; // default: 'string'
+    bigintJSON?: 'string' | 'number' | 'error'; // default: 'string' (applies to data outputs, not logs)
   };
 
   // Branch trials
   trials?: {
-    perBranch?: number;                // default: 1..2
+    perBranch?: number;                // default: 2
     maxBranchesToTry?: number;         // default: 12 (Top‑K)
     skipTrialsIfBranchesGt?: number;   // default: 50 (score-only selection)
     skipTrials?: boolean;              // default: false
@@ -72,7 +72,6 @@ type PlanOptions = {
   // Guards
   guards?: {
     maxGeneratedNotNesting?: number;   // default: 2 (normalizer)
-    maxEffectiveNotNesting?: number;   // default: 3 (composer hints)
   };
 
   // Cache
@@ -96,7 +95,7 @@ type PlanOptions = {
     maxEnumCardinality?: number;     // default: 10_000
     maxContainsNeeds?: number;       // default: 16  // after bagging
     maxSchemaBytes?: number;         // default: 2_000_000 // ~2MB
-    bailOnUnsatAfter?: number;       // default: 12 // gen→repair→validate cycles
+    bailOnUnsatAfter?: number;       // default: 12 // gen→repair→validate cycles (stagnation guard)
   };
   failFast?: {
     externalRefStrict?: 'error'|'warn'|'ignore'; // default: 'error'
@@ -105,11 +104,18 @@ type PlanOptions = {
 
   // Conditionals generation behavior
   conditionals?: {
-    strategy?: 'rewrite' | 'if-aware-lite' | 'repair-only'; // default: tied to rewriteConditionals
+    // Default is coupled to `rewriteConditionals` (see mapping below).
+    strategy?: 'rewrite' | 'if-aware-lite' | 'repair-only';
     minThenSatisfaction?: 'discriminants-only'|'required-only'|'required+bounds'; // default: 'required-only'
   };
 };
 ```
+
+**Default mapping between `rewriteConditionals` and `conditionals.strategy`:**
+
+* `rewriteConditionals: 'never'`  ⇒ `conditionals.strategy: 'if-aware-lite'`
+* `rewriteConditionals: 'safe' | 'aggressive'` ⇒ `conditionals.strategy: 'rewrite'`
+* An explicit `conditionals.strategy` overrides this mapping.
 
 ---
 
@@ -160,7 +166,7 @@ type PlanOptions = {
 
 4. **Conditionals (`if/then/else`)**
 
-   * **Default**: no rewrite.
+   * **Default**: no rewrite (`rewriteConditionals:'never'`).
    * **`safe` rewrite** (double negation) only when strictly safe:
 
      * **Block** if any `unevaluatedProperties/unevaluatedItems` is in scope or ancestor scope.
@@ -224,7 +230,7 @@ type PlanOptions = {
     overlaps?: { patterns?: Array<{ key: string, patterns: string[] }> },
     scoreDetails?: unknown,
     budget?: { tried: number, limit: number, skipped?: boolean, reason?: string },
-    metrics?: { /* see §13 */ },
+    metrics?: { /* see §15 */ },
     caps?: string[] // triggers of complexity caps
   }
 }
@@ -258,9 +264,9 @@ type PlanOptions = {
     * For each conjunct `Ci` with `additionalProperties:false`, compute a recognizer of keys it covers:
 
       * Named keys from `properties`.
-      * Names accepted by anchored `patternProperties` (conservative recognition).
+      * Names accepted by **anchored** `patternProperties` (conservative recognition).
     * The globally safe set of generable keys is the **intersection** of recognizers across all such `Ci`.
-    * For complex, non‑anchored patterns, apply conservative approximation and note `AP_FALSE_INTERSECTION_APPROX`.
+    * For complex or non‑anchored patterns, apply conservative approximation and note `AP_FALSE_INTERSECTION_APPROX`.
   * If a conjunct supplies a schema (not `false`) for extras, enforce that schema **in addition** to the must‑cover restriction.
 
 * **Objects — other**
@@ -327,9 +333,9 @@ type PlanOptions = {
 
 * **Trials policy**:
 
-  * Score all branches; try Top‑K `maxBranchesToTry`.
+  * Score all branches; try Top‑K `maxBranchesToTry`. Attempt generation up to `trials.perBranch` times per branch (default 2).
   * If branch count > `skipTrialsIfBranchesGt` or `skipTrials=true` ⇒ choose by score only.
-  * Record trial budget in `diag.budget`.
+  * Record trial budget in `diag.budget`. Emit `TRIALS_SKIPPED_LARGE_ONEOF` when `oneOf.length > skipTrialsIfBranchesGt` **or** `trials.skipTrials === true`.
 
 * **`oneOf` exclusivity**:
 
@@ -349,15 +355,21 @@ type PlanOptions = {
 ## 9) Generator
 
 * Consume the effective view; honor type constraints, lengths, patterns, enums.
+
 * **`enum/const` outrank `type`** when both present.
+
 * **Strings** — Measure length in Unicode code points; regex in Unicode mode (`unicodeRegExp:true`).
+
 * **Formats** — Default annotate‑only (`validateFormats:false`). Optional `validateFormats:true` + `ajv-formats` for (email|uri|uuid|date‑time) minimal generators.
+
 * **Objects** —
 
   * When any conjunct has `additionalProperties:false`, respect the **must‑cover intersection** from Compose.
   * With `unevaluatedProperties:false` in the effective view, generate only keys evaluated by `properties|patternProperties|dependentSchemas`.
   * Stable property order: required first, then lexical.
+
 * **Numbers** — Prefer `type:"integer"` over `number+multipleOf:1`.
+
 * **Arrays** —
 
   * Respect tuple semantics and implicit max length from `items:false`.
@@ -365,13 +377,14 @@ type PlanOptions = {
 
 ### Conditionals strategy when not rewriting
 
-* **`conditionals.strategy = 'if-aware-lite'`** (default when `rewriteConditionals:'never'`):
+* **Default when `rewriteConditionals:'never'` is in effect:** `conditionals.strategy = 'if-aware-lite'`.
 
   1. **Pre‑evaluate** `if` on the **partial instance** being built (best‑effort).
   2. If `if` appears satisfied, bias generation to satisfy a **minimal subset** of `then` according to `minThenSatisfaction`
      (`'discriminants-only' | 'required-only' | 'required+bounds'`, default `'required-only'`).
   3. If `if` appears unsatisfied, prefer choices that avoid activating `then` (e.g., omit discriminant).
   4. No heavy backtracking; rely on Repair if AJV still raises `then` violations.
+
 * Diagnostics: `IF_AWARE_HINT_APPLIED`, `IF_AWARE_HINT_SKIPPED_INSUFFICIENT_INFO`.
 
 ---
@@ -398,7 +411,7 @@ type PlanOptions = {
 
 * **Order** — shape (`type`/`required`) → bounds (`min*`/`max*`) → semantics (`pattern`/`multipleOf`/`format`) → sweep (`additional*`/`unevaluated*`).
 * **Budgets** — per‑node attempt counter (1–3) + seen‑set `(instancePath, keyword, normalizedParams)` to avoid loops.
-* **Stagnation guard** — If over `complexity.bailOnUnsatAfter` cycles errors **don’t decrease** or oscillate on the same keys ⇒ `UNSAT_BUDGET_EXHAUSTED`.
+* **Stagnation guard** — If over `complexity.bailOnUnsatAfter` gen→repair→validate **cycles** errors don’t decrease or oscillate on the same keys ⇒ `UNSAT_BUDGET_EXHAUSTED`.
 * **Idempotence** — Repeating the same action is a no‑op.
 * **Logging** — Optional `{ item, changed, actions:[...] }`.
 
@@ -416,17 +429,18 @@ type PlanOptions = {
 ### Lax
 
 * Proceed best‑effort even when some features are partial; still validate with AJV.
-* `$ref` external: default `warn` then attempt generation; `$dynamic*` noted.
+* External `$ref`: default `warn` **then attempt generation without resolving remote refs** (no network I/O). Generation proceeds on local parts only; final AJV validation still runs against the original schema and may fail when unresolved refs are structurally required.
+* `$dynamic*` noted.
 
 ### Strict vs Lax (summary)
 
-| Situation                     | Strict                          | Lax                    |
-| ----------------------------- | ------------------------------- | ---------------------- |
-| External `$ref`               | `error` \*                      | `warn` then attempt    |
-| `$dynamicRef` present         | `note DYNAMIC_PRESENT`          | `note DYNAMIC_PRESENT` |
-| Complexity caps               | Degrade + diagnostics           | Degrade + diagnostics  |
-| `rewriteConditionals:'never'` | `if-aware-lite`                 | `repair-only` allowed  |
-| Budget exhausted              | `UNSAT_BUDGET_EXHAUSTED` (fail) | Same                   |
+| Situation                                                  | Strict                          | Lax                            |
+| ---------------------------------------------------------- | ------------------------------- | ------------------------------ |
+| External `$ref`                                            | `error` \*                      | `warn` then attempt (no deref) |
+| `$dynamicRef` present                                      | `note DYNAMIC_PRESENT`          | `note DYNAMIC_PRESENT`         |
+| Complexity caps                                            | Degrade + diagnostics           | Degrade + diagnostics          |
+| Conditionals strategy (when `rewriteConditionals:'never'`) | `if-aware-lite`                 | Same                           |
+| Budget exhausted                                           | `UNSAT_BUDGET_EXHAUSTED` (fail) | Same                           |
 
 \* configurable via `failFast.externalRefStrict`.
 
@@ -436,8 +450,9 @@ type PlanOptions = {
 
 * **Detection** — `$schema` + AJV draft settings.
 * **Internal canon** — 2020‑12‑like shape; **always** validate against the original schema.
-* **Refs** — Only in‑document refs resolved; no network I/O.
+* **Refs** — Only in‑document refs resolved; **no network I/O**.
 * **Dynamic refs** — `$dynamicRef/$dynamicAnchor/$recursiveRef` preserved; generation conservative. Note `DYNAMIC_PRESENT`.
+* **Effective view** — Preserves `unevaluated*` semantics for the final validation stage.
 
 ---
 
@@ -469,7 +484,9 @@ Hierarchical:
 1. `WeakMap` by object identity
 2. `$id` when present and trusted
 3. `stableHash(schema)` **only if** estimated size < `hashIfBytesLt` (skip hashing otherwise)
-   LRU bounded by `lruSize`. Include AJV version + critical flags in the cache key.
+
+LRU bounded by `lruSize`. Include AJV version + critical flags in the cache key.
+(Clarification: separate LRU spaces for the two AJV instances are recommended.)
 
 ---
 
@@ -480,7 +497,7 @@ Hierarchical:
 * **Pattern overlap** — Heuristic; can be disabled.
 * **Complexity caps** — Trigger degradations (score‑only selection, analysis skips) with explicit diagnostics.
 
-### Metrics (reported in `diag.metrics`)
+### Metrics (reported in `diag.metrics` — subset of this shape)
 
 ```ts
 {
@@ -503,6 +520,7 @@ Hierarchical:
 * **Simple/medium schemas** (typical web/API models):
 
   * `~1000 rows`: p50 ≈ 200–400 ms; `validationsPerRow ≤ 3`; `repairPassesPerRow ≤ 1`.
+
 * **Pathological schemas** (deep `allOf`, large `oneOf`, heavy regex/patterns):
 
   * Degradation paths engaged; may trigger `UNSAT_BUDGET_EXHAUSTED` when appropriate.
@@ -557,7 +575,7 @@ Hierarchical:
 * **`contains`** ✓ (**bag semantics** across `allOf`; independent needs)
 * `multipleOf` ✓ (exact rational with caps and fallbacks)
 * `unevaluated*` ✓ (conservative effective view; preserved for validation)
-* In‑document `$ref` ✓; external `$ref` ✗/warn (configurable)
+* In‑document `$ref` ✓; external `$ref` ✗/warn (configurable; **no remote resolution**, generation on local parts only)
 * `$dynamicRef/$dynamicAnchor/$recursiveRef` \~ (pass‑through; generation conservative; AJV decides)
 
 ---
@@ -568,7 +586,7 @@ Hierarchical:
 `ANNOTATION_IN_SCOPE_IF_REWRITE_SKIPPED`, `PNAMES_COMPLEX`, `DEPENDENCY_GUARDED`, `DYNAMIC_PRESENT`,
 `DEFS_TARGET_MISSING`, `EXCLMIN_IGNORED_NO_MIN`, `EXCLMAX_IGNORED_NO_MAX`, `OAS_NULLABLE_KEEP_ANNOT`,
 `NOT_DEPTH_CAPPED`, `RAT_LCM_BITS_CAPPED`, `RAT_DEN_CAPPED`, `RAT_FALLBACK_DECIMAL`, `RAT_FALLBACK_FLOAT`,
-`TRIALS_SKIPPED_LARGE_ONEOF`, `AP_FALSE_INTERSECTION_APPROX`, `CONTAINS_BAG_COMBINED`, `CONTAINS_UNSAT_BY_SUM`.
+`TRIALS_SKIPPED_LARGE_ONEOF`, `AP_FALSE_INTERSECTION_APPROX`, `CONTAINS_BAG_COMBINED`, `CONTAINS_UNSAT_BY_SUM`,
 `COMPLEXITY_CAP_ONEOF`, `COMPLEXITY_CAP_ANYOF`, `COMPLEXITY_CAP_PATTERNS`,
 `COMPLEXITY_CAP_ENUM`, `COMPLEXITY_CAP_CONTAINS`, `COMPLEXITY_CAP_SCHEMA_SIZE`,
 `UNSAT_PATTERN_PNAMES`, `UNSAT_DEPENDENT_REQUIRED_AP_FALSE`, `UNSAT_BUDGET_EXHAUSTED`,
@@ -581,15 +599,21 @@ Hierarchical:
 ### Unit
 
 * Normalizer transforms (golden tests, asserted `notes`).
+
 * Composition merges:
 
   * Arrays: tuples, `items:false`, **bagged `contains`** with `min/maxContains` and `uniqueItems`.
   * Numbers: rational `multipleOf` with caps/fallbacks (aligned to AJV tolerance).
   * Objects: **must‑cover** for `AP:false` across `allOf`, pattern overlaps, pattern vs `propertyNames`.
+
 * Early unsat detection (incl. `sum(min_i) > maxItems`, tuple maxLen, pattern/name contradictions).
+
 * Branch selector scoring; determinism; Top‑K selection; skip‑trials path.
+
 * Repair actions (idempotence; error reduction; rational snapping).
+
 * Pointer mapping (longest‑prefix reverse map).
+
 * Structural hashing for `uniqueItems` (collision buckets + `deepEqual`).
 
 ### Integration
@@ -616,7 +640,7 @@ Hierarchical:
 
 ## 21) Risks & Mitigations
 
-* **Conditional rewrite semantics** → Default no‑rewrite; strict guards; limited `not` depth; AJV final validation.
+* **Conditional rewrite semantics** → Default no‑rewrite (`rewriteConditionals:'never'`); strict guards; limited `not` depth; AJV final validation.
 * **Trials on large `oneOf`** → Top‑K, skip‑trials threshold, budgets/metrics.
 * **Rational arithmetic growth** → Bit/LCM/denominator caps; documented fallbacks; diagnostics.
 * **Cache hashing cost** → WeakMap → `$id` → size‑gated stableHash; LRU.
@@ -649,36 +673,49 @@ Hierarchical:
 ```ts
 // Plan options 
 export interface PlanOptions {
-  rewriteConditionals?: 'never' | 'safe' | 'aggressive';
+  // Normalization
+  rewriteConditionals?: 'never' | 'safe' | 'aggressive'; // default: 'never'
   debugFreeze?: boolean;
+
+  // Arithmetic
   rational?: {
     maxRatBits?: number;
     maxLcmBits?: number;
     qCap?: number;
     fallback?: 'decimal' | 'float';
-    decimalPrecision?: number;
+    decimalPrecision?: number; // default: 12
   };
+
+  // Output encoding
   encoding?: { bigintJSON?: 'string' | 'number' | 'error' };
+
+  // Trials
   trials?: {
-    perBranch?: number;
-    maxBranchesToTry?: number;
-    skipTrialsIfBranchesGt?: number;
-    skipTrials?: boolean;
+    perBranch?: number;              // default: 2
+    maxBranchesToTry?: number;       // default: 12
+    skipTrialsIfBranchesGt?: number; // default: 50
+    skipTrials?: boolean;            // default: false
   };
+
+  // Guards
   guards?: {
-    maxGeneratedNotNesting?: number;
-    maxEffectiveNotNesting?: number;
+    maxGeneratedNotNesting?: number; // default: 2
   };
+
+  // Cache
   cache?: {
     preferWeakMap?: boolean;
     useId?: boolean;
     hashIfBytesLt?: number;
     lruSize?: number;
   };
+
+  // Metrics/toggles
   metrics?: boolean;
   disablePatternOverlapAnalysis?: boolean;
   disableDeepFreeze?: boolean;
 
+  // Complexity & fail-fast
   complexity?: {
     maxOneOfBranches?: number;
     maxAnyOfBranches?: number;
@@ -686,12 +723,14 @@ export interface PlanOptions {
     maxEnumCardinality?: number;
     maxContainsNeeds?: number;
     maxSchemaBytes?: number;
-    bailOnUnsatAfter?: number;
+    bailOnUnsatAfter?: number; // gen→repair→validate cycles
   };
   failFast?: {
     externalRefStrict?: 'error'|'warn'|'ignore';
     dynamicRefStrict?: 'warn'|'note';
   };
+
+  // Conditionals
   conditionals?: {
     strategy?: 'rewrite' | 'if-aware-lite' | 'repair-only';
     minThenSatisfaction?: 'discriminants-only'|'required-only'|'required+bounds';
@@ -763,7 +802,7 @@ export function compose(schema: any, opts?: ComposeOptions): {
     overlaps?: { patterns?: Array<{ key: string, patterns: string[] }> };
     scoreDetails?: unknown;
     budget?: { tried: number; limit: number; skipped?: boolean; reason?: string };
-    metrics?: Record<string, number>;
+    metrics?: Record<string, number>; // see §15
     caps?: string[];
   };
 };
@@ -796,6 +835,7 @@ export function repair(
 
 ```ts
 // BigInt‑safe JSON (diagnostics/logs)
+// Note: logging always stringifies BigInt regardless of `encoding.bigintJSON`.
 export function jsonSafeReplacer(_k: string, v: unknown) {
   return typeof v === 'bigint' ? v.toString() : v;
 }

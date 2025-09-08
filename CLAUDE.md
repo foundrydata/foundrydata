@@ -1,18 +1,24 @@
-# Claude AI Development Guide - FoundryData Project
+# Claude AI Development Guide — FoundryData Project
 
-> **Purpose**: This document provides comprehensive instructions for Claude AI when assisting with FoundryData development. 
-> It can be used in any Claude interface (web, API, or Claude Code CLI).
+> **Purpose**: Practical instructions for Claude AI when assisting with FoundryData development.
+> **Canonical Spec**: **Feature Support Simplification Plan** — single source of truth for pipeline, options, and SLO/SLI.
+> This guide complements the spec and also includes non-functional guidance (workflow, testing, quality gates).
 
-## 🚀 TL;DR - FoundryData in 30 seconds
-- **What**: JSON Schema → Test Data Generator with 100% compliance guarantee
-- **Why**: Generate 10,000 perfectly valid records in <200ms, including edge cases
-- **How**: `foundrydata generate --schema user.json --rows 10000`
-- **Unique**: **Only OSS tool with scenario-based generation for edge cases and stress tests**
-- **Philosophy**: "Generate deterministic, schema-true data with explicit limits"
+---
 
-## 🎯 Killer Feature: Scenario-Based Generation
+## 🚀 TL;DR — FoundryData in 30 seconds
 
-**The ONLY open source tool with built-in scenario generation:**
+* **What**: JSON Schema → Test Data Generator with a compliance guarantee (AJV as oracle)
+* **Why**: Generate thousands of valid records fast (targets per spec)
+* **How**: `foundrydata generate --schema user.json --rows 10000`
+* **Unique**: Built‑in scenario‑based generation for edge cases and stress tests
+* **Philosophy**: Deterministic, schema‑true data with explicit limits
+
+---
+
+## 🎯 Scenario‑Based Generation
+
+Generate targeted datasets for different testing aims:
 
 ```bash
 # Standard generation - realistic data
@@ -21,522 +27,325 @@ foundrydata generate --schema user.json --rows 100
 # Edge cases - min/max values, boundary conditions, empty arrays
 foundrydata generate --schema user.json --rows 100 --scenario edge-cases
 
-# Stress test - uncommon values, max arrays, near-boundary values  
+# Stress test - uncommon values, max arrays, near-boundary values
 foundrydata generate --schema user.json --rows 100 --scenario stress-test
 
 # Error conditions - invalid formats, missing required fields (for testing error handlers)
 foundrydata generate --schema user.json --rows 100 --scenario errors
 ```
 
-**Why this matters**: Stop manually creating edge cases. Find bugs before production.
-
 ---
 
 ## 📋 Project Overview
 
 ### Core Value Proposition
-> "Stop wasting hours on test data that breaks your API. Generate 10,000 perfectly valid records in 1 second. Plus edge cases and stress tests that actually break things."
 
-### Target User (Crystal Clear)
-**Frontend/Backend Developer at Small Startup**
-- 2-5 years experience, 10-50 employee company
-- **Pain**: Wastes 2+ hours/week creating test fixtures
-- **Budget**: €0-100/month for dev tools  
-- **Current solution**: Manual JSON files or broken Faker.js scripts
-- **Trust factor**: Prefers open source tools
+> Generate valid test data quickly and deterministically. Targets and limits follow the canonical spec.
+
+### Target User
+
+**Frontend/Backend Developer at a small team**
+
+* 2–5 years experience
+* Pain: Time spent creating fixtures
+* Budget: €0–100/month
+* Prefers open source tools
 
 ### MVP Constraints (v0.1)
-- **Performance**: <200ms for 1000 rows, <100MB for 10,000 records
-- **Bundle**: <1MB (core package)
-- **Architecture**: Single Node.js process, works offline
 
-### What Works 100% (v0.1)
-✅ **Fully Supported**
-```json
-{
-  "type": "object",
-  "properties": {
-    "id": {"type": "string", "format": "uuid"},
-    "name": {"type": "string", "minLength": 1, "maxLength": 100},
-    "age": {"type": "integer", "minimum": 18, "maximum": 99},
-    "active": {"type": "boolean"},
-    "role": {"type": "string", "enum": ["admin", "user"]},
-    "tags": {
-      "type": "array",
-      "items": {"type": "string"},
-      "minItems": 1, "maxItems": 5
-    }
-  },
-  "required": ["id", "name"]
-}
-```
+* **Performance**: Adhere to spec SLO/SLI (e.g., \~1K simple/medium rows p50 ≈ 200–400 ms).
+* **Bundle**: <1 MB (core package)
+* **Runtime**: Single Node.js process, offline‑friendly
 
-Note: Arrays of nested objects (up to depth 2) are supported; nested object properties are supported up to depth 2.
+### JSON Schema Support (high‑level)
 
-✅ **NEW in v0.1**: Bounded nested objects (up to depth 2)
-```json
-{
-  "type": "object",
-  "properties": {
-    "user": {
-      "type": "object",
-      "properties": {
-        "profile": {
-          "type": "object",
-          "properties": {
-            "name": {"type": "string"}
-          }
-        }
-      }
-    }
-  }
-}
-```
-
-✅ **Supported (v0.1)**
-- Basic patterns (regex validation) - Simple to moderate complexity patterns
-- **References ($ref, $recursiveRef, $dynamicRef)** - Full resolution with cycle detection
-- **Schema definitions (definitions, $defs)** - Legacy and modern support
-- **Property dependencies (dependencies, dependentRequired)** - Conditional requirements
-- **Advanced constraints (const, multipleOf, prefixItems, additionalProperties)**
-
-❌ **NOT Supported (v0.1)**
-- Schema composition (allOf, oneOf, anyOf)
-- Schema identifiers ($id) - References work, but schema IDs not processed
-- Advanced formats (uri, hostname, ipv4, ipv6, json-pointer)
-- Complex regex patterns with ReDoS risk
+* `allOf` / `anyOf` / `oneOf` / `not` with deterministic branch selection
+* Conditionals (`if/then/else`): **no rewrite by default**; safe rewrite opt‑in; if‑aware‑lite generation
+* Objects: `properties`, `patternProperties`, `additionalProperties` (must‑cover), `propertyNames`, `dependent*`, `unevaluated*`
+* Arrays: tuples (`prefixItems`), `items`, `additionalItems`, `contains` (bag semantics), `uniqueItems`
+* Numbers: exact rational `multipleOf` with documented caps/fallbacks
+* Refs: in‑document `$ref` supported; external `$ref` error by default (configurable); `$dynamicRef/*` preserved
+  All guarantees and limits mirror the canonical spec.
 
 ---
 
 ## 🏗️ Technical Architecture
 
 ### Core Principles
-1. **Functional Core, Imperative Shell** - Pure functions in core, I/O at boundaries
-2. **Parse, Don't Validate** - Transform inputs into strongly-typed domain models
-3. **Make Invalid States Unrepresentable** - Use TypeScript's type system fully
-4. **Fail Fast with Context** - Early validation with helpful error messages
 
-### Package Structure (Monorepo)
+1. **AJV is the oracle** — validate against the original schema (not transforms).
+2. **Pipeline simplicity** — `Normalize → Compose → Generate → Repair → Validate`.
+3. **Determinism** — same seed ⇒ same data.
+4. **Performance** — meet documented SLO/SLI with budgets and graceful degradation.
+5. **Developer‑friendly** — clear diagnostics.
+
+### 5‑Stage Generation Pipeline
+
+```mermaid
+flowchart LR
+  A[Normalize] --> B[Compose] --> C[Generate] --> D[Repair] --> E[Validate]
+```
+
+* **Normalize**: Draft‑aware canonicalization; keep original for AJV.
+* **Compose**: Build effective view (must‑cover `AP:false`, bag `contains`, rational math).
+* **Generate**: Deterministic, seeded; `enum/const` outrank `type`; if‑aware‑lite.
+* **Repair**: AJV‑driven corrections (keyword→action), idempotent, budgeted.
+* **Validate**: Final AJV validation against the **original** schema.
+  Contracts and behaviors follow the spec.
+
+---
+
+## 📦 Package Structure (Monorepo)
+
 ```
 packages/
-├── core/                    # Domain logic (AJV, Faker only)
-│   ├── generator/           # Generation engine (types, formats, constraints)
-│   ├── validator/           # Schema validation
-│   ├── parser/              # Schema parsing (JSON Schema, OpenAPI)
-│   ├── registry/            # Extensibility (format, type, validator registries)
-│   └── types/               # Core types (Schema, Result, errors)
-├── cli/                     # CLI application (Commander.js)
-├── shared/                  # Shared utilities and types
+├── core/                    # Domain logic (AJV, generator, repair)
+│   ├── transform/           # Normalizer + Composition Engine
+│   ├── generator/           # Stage 3
+│   ├── repair/              # Stage 4
+│   ├── validator/           # Stage 5
+│   ├── util/                # RNG, hashing, metrics, rational, ptr-map
+│   └── types/
+├── cli/                     # CLI (Commander.js)
+├── shared/                  # Shared utilities
 └── api/                     # REST API (future)
 ```
 
-### Generation Pipeline
-```typescript
-parse(input) -> validate(schema) -> plan() -> generate() -> verify() -> format()
-```
-
 ### Module System & TypeScript
-- **ESM only**: `"type": "module"` in all package.json
-- **TypeScript**: `"module": "ESNext"` targeting ES2022
-- **Imports**: Always use explicit extensions (.js for compiled)
-- **Build**: `npm run build` builds all workspace packages
-- **Typecheck**: `npm run typecheck` validates with test config (tsconfig.test.json)
-- **Typecheck Build**: `npm run typecheck:build` validates build config only
+
+* ESM only (`"type":"module"`)
+* TS target ES2022; explicit `.js` extensions in compiled imports
+* Scripts: `npm run build`, `npm run typecheck`, `npm run test`, …
 
 ### Error Handling
-```typescript
+
+```ts
 abstract class FoundryError extends Error
-├── SchemaError      // Invalid schema structure
-├── GenerationError  // Data generation failures  
-├── ValidationError  // Compliance validation failures
-└── ParseError       // Input parsing failures
+├── SchemaError
+├── GenerationError
+├── ValidationError
+└── ParseError
 ```
 
-#### Error Codes (v0.1)
-Recommended public API usage for stable error codes and mappings.
+---
+
+## ⚙️ Configuration & Tuning
+
+### PlanOptions (canonical reference)
+
+The authoritative `PlanOptions` shape and defaults live in the **Feature Support Simplification Plan** (§5 “Configuration Overview”). Defer to the spec for exact fields and defaults (including `guards`, `cache`, `failFast`, `encoding`, `rational`, `trials`, `complexity`, and conditional strategy mapping).
+
+### Configuration Strategies (presets)
+
+**Development (Strict)**
 
 ```ts
-// Preferred: root helpers and enum
-import { ErrorCode, getExitCode, getHttpStatus } from '@foundrydata/core';
-
-const code = ErrorCode.NESTED_OBJECTS_NOT_SUPPORTED; // 'E001'
-const exit = getExitCode(code);   // e.g., 10
-const http = getHttpStatus(code); // e.g., 400
+const devConfig: PlanOptions = {
+  rewriteConditionals: 'never',            // Preserve original semantics
+  debugFreeze: true,                       // Catch mutations early
+  conditionals: { strategy: 'if-aware-lite' },
+  complexity: { bailOnUnsatAfter: 8 },     // Fail fast on complex schemas
+  failFast: { externalRefStrict: 'error', dynamicRefStrict: 'note' },
+  guards: { maxGeneratedNotNesting: 1 },   // per spec
+  cache: { lruSize: 32 },                  // smaller cache to reduce dev memory
+};
 ```
 
-Advanced (internal) access to raw mappings if needed:
+**Production (Performance)**
 
 ```ts
-import { EXIT_CODES, HTTP_STATUS_BY_CODE } from '@foundrydata/core/errors/codes';
-
-EXIT_CODES[ErrorCode.INTERNAL_ERROR];      // 99
-HTTP_STATUS_BY_CODE[ErrorCode.PARSE_ERROR]; // 400
+const prodConfig: PlanOptions = {
+  rewriteConditionals: 'safe',             // Enable safe optimizations
+  trials: { skipTrialsIfBranchesGt: 25 },  // Reduce trials on large oneOf
+  disablePatternOverlapAnalysis: true,     // Skip expensive analysis
+  complexity: { bailOnUnsatAfter: 20 },    // More repair attempts
+  failFast: { externalRefStrict: 'warn' }, // warn + attempt generation
+  guards: { maxGeneratedNotNesting: 2 },   // per spec
+  cache: { lruSize: 128 },                 // larger cache for throughput
+};
 ```
 
-Notes:
-- Root API only exposes `ErrorCode`, `Severity`, `getExitCode`, `getHttpStatus` to keep the public surface stable.
-- Raw mappings are subject to change; prefer helpers in application code.
+**Testing (Deterministic)**
+
+```ts
+const testConfig: PlanOptions = {
+  trials: { perBranch: 1, skipTrials: true }, // Stable branch selection
+  metrics: false,                             
+  debugFreeze: false,                         
+  failFast: { externalRefStrict: 'error' },   
+  cache: { lruSize: 16 },                     
+};
+```
 
 ---
 
 ## 🧪 Testing Architecture
 
-### Zero Tolerance Testing Philosophy
-- **100% schema compliance** via AJV oracle validation
-- **Deterministic generation** with fixed seed (424242)
-- **No retries** - tests must pass consistently
-- **Multi-draft support** - Draft-07, 2019-09, 2020-12
+**Principle**: AJV is the oracle — always validate against the **original** schema (not internal transforms).
 
-### Test Structure
-```
-test/
-├── arbitraries/             # Fast-check generators
-├── fixtures/                # Test data
-├── helpers/                 # AJV factory by draft
-├── matchers/                # Custom Vitest matchers (toMatchJsonSchema, etc.)
-├── patterns/                # Property-based test patterns
-│   ├── invariant-testing.test.ts
-│   ├── metamorphic-testing.test.ts
-│   └── stateful-testing.test.ts
-├── performance/             # Benchmarks (p50, p95, p99 targets)
-└── setup.ts                 # Global configuration
+### Unit (per stage)
+
+* **Normalizer**: golden tests + diagnostics
+* **Composition**: must‑cover for `AP:false`; bagged `contains`; rational `multipleOf`
+* **Generator**: deterministic output; `enum/const` precedence
+* **Repair**: idempotence; rational snapping; structural de‑dup for `uniqueItems`
+* **Validator**: pointer mapping; caching
+
+### Integration
+
+* Multi‑draft validation (07, 2019‑09, 2020‑12)
+* Conditionals: no drift when not rewriting; safe rewrite behavior
+* Composition suites: `oneOf` exclusivity after refinement
+* Performance regression: SLO/SLI adherence with complexity budgets (targets per spec).
+
+### Property‑Based
+
+* Deterministic equivalence by seed
+* Repair idempotence
+* AJV compliance
+* Stable branch selection
+
+### Bench/CI
+
+* Profiles: simple, medium, pathological
+* Metrics: `validationsPerRow`, `repairPassesPerRow`, phase timings
+* Complexity caps: graceful degradation (skip trials, lower Top‑K)
+
+---
+
+## 📈 Performance Metrics & SLO/SLI Targets
+
+**Metrics captured per generation** (subset):
+
+```ts
+{
+  normalizeMs: number;
+  composeMs: number;
+  generateMs: number;
+  repairMs: number;
+  validateMs: number;
+  validationsPerRow: number;   // AJV validations / row
+  repairPassesPerRow: number;  // repair loops / row
+  branchTrialsTried: number;
+  memoryPeakMB?: number;
+  p50LatencyMs?: number;
+  p95LatencyMs?: number;
+}
 ```
 
-### Test Commands
-```bash
-npm run test                 # All tests (root Vitest config)
-npm run test:matchers        # test/**/* only (test config)
-npm run test:watch           # Watch mode (root)
-npm run test:watch:matchers  # Watch mode for matchers
-npm run test:benchmarks      # Performance benchmarks
-npm run test:regression      # Regression suite
-npm run test:performance     # All performance tests
-npm run test:gen:compliance  # Generator compliance tests
-npm run test:gen:compliance:extra # Generator compliance with extra assertions
-npm run test:coverage        # Run tests with coverage
-```
+**Targets (documented, not hard guarantees)**
+For **simple/medium schemas (\~1000 rows)**, the spec sets **p50 ≈ 200–400 ms**, `validationsPerRow ≤ 3`, `repairPassesPerRow ≤ 1`.
 
-### Performance Targets
-| Records | Time | Memory | Percentile |
-|---------|------|--------|------------|
-| 100     | <20ms | <10MB | p95 |
-| 1,000   | <200ms | <50MB | p95 |
-| 10,000  | <2s | <100MB | p95 |
+**Performance Budgets by Schema Complexity (aligned to p50)**
+
+| Schema Type  | \~1K rows (**p50**) | Validations/Row | Repair/Row | Memory  |
+| ------------ | ------------------- | --------------- | ---------- | ------- |
+| Simple       | ≈200–400 ms         | ≤3              | ≤1         | <50 MB  |
+| Medium       | ≈200–400 ms         | ≤3              | ≤1         | <75 MB  |
+| Complex      | Varies              | ≤5              | ≤2         | <100 MB |
+| Pathological | Degraded            | Capped          | Capped     | Capped  |
+
+> The previous table header used p95 with too‑tight numbers; it is now p50 to match the spec’s normative target.
 
 ---
 
 ## 🔧 Development Workflow
 
-### Scripts Overview
-- **`npm run build`** - Build all workspace packages
-- **`npm run dev`** - Development mode for all workspaces
-- **`npm run clean`** - Remove dist directories
-- **`npm run format`** - Format code with Prettier
-- **`npm run prepare`** - Setup Husky for git hooks
+### Scripts
+
+* `npm run build` — Build all packages
+* `npm run dev` — Dev mode
+* `npm run clean` — Remove dist
+* `npm run format` — Prettier
+* `npm run prepare` — Husky hooks
 
 ### External Documentation Access
-**Context7 MCP** provides latest documentation for:
-- AJV JSON Schema validation
-- @faker-js/faker v10.0.0+ API
-- JSON Schema specification
-- TypeScript patterns
-- Commander.js CLI development
-- Jest/Vitest testing frameworks
 
-**Note**: If using Claude Code CLI, these dependencies are automatically accessible through the MCP integration.
+If using Claude Code with MCP, you can access:
+
+* AJV / JSON Schema references
+* @faker‑js/faker API
+* TypeScript patterns
+* Commander.js CLI
+* Jest/Vitest testing frameworks
 
 ### Task Master Integration
-**Import TaskMaster workflow:** @./.taskmaster/CLAUDE.md
 
-**CRITICAL: Task Completion Protocol**
-- **ALWAYS** use `/complete-task <id>` command
-- **NEVER** use `task-master set-status --status=done` directly
-- Quality checks (lint, typecheck, tests) must pass before completion
+**Import workflow**: `@./.taskmaster/CLAUDE.md`
+**Completion protocol**: Always use `/complete-task <id>`; do **not** call low‑level status commands directly.
 
-### Quality Gates
+**Reading Task Requirements**
+
+* Grep anchors first, then read sections by offset; complete all anchors before implementation.
+
+**Quality Gates**
+
 ```bash
-npm run task-ready           # Full validation suite (lint + typecheck + build + test)
-npm run task-complete        # Same as task-ready with success message
-npm run typecheck            # TypeScript validation (no emit, test config)
-npm run typecheck:build      # TypeScript build validation
-npm run lint                 # ESLint check
-npm run lint:fix             # ESLint with auto-fix
-npm run test                 # All tests must pass
+npm run task-ready     # lint + typecheck + build + test
+npm run task-complete  # same as above, with success message
+npm run typecheck
+npm run typecheck:build
+npm run lint
+npm run lint:fix
+npm run test
 ```
 
 ---
 
 ## 📐 Code Quality Standards
 
-### 🚫 Absolute Bans
+### Bans
 
-#### TypeScript Hacks = BANNED
-```typescript
-❌ (schema as any).type      // Masks type issues
-❌ // @ts-ignore              // Hides problems  
-❌ value!                     // Unsafe assertions
+* Avoid TypeScript escape hatches (`as any`, `// @ts-ignore`, non‑null assertions) unless justified and documented.
+* Don’t delete failing code/tests to “green” the suite; fix root causes.
 
-✅ // Instead: Fix root causes, use proper type guards
-```
+### Implementation Bias Prevention
 
-#### Deletion Without Investigation = BANNED
-```typescript
-❌ // See unused variable → Delete immediately
-✅ // Instead: Understand purpose → Fix implementation → Then evaluate
-```
-
-### 🧠 Implementation Bias Prevention
-
-#### Framework Bypass = CRITICAL ANTI-PATTERN
-**Scenario**: TypeScript errors with existing framework functions
-
-```typescript
-❌ BAD REFLEX: "Fix" by avoiding the framework
-// TypeScript error with getSchemaArbitrary().filter()?
-// → Create manual arbitraries instead
-const customArbitrary = fc.oneof(...)  // WRONG!
-
-✅ CORRECT APPROACH: Fix the framework integration
-// Understand WHY the framework has type issues
-// → Add proper type guards or improve the framework
-getSchemaArbitrary().filter().map(schema => schema as unknown as SpecificType)
-```
-
-**Root Cause**: Cognitive bias toward "easy local fix" instead of "correct architectural fix"
-
-**Prevention Protocol**:
-1. **STOP** when bypassing existing framework
-2. **ASK**: "Why does the framework have this limitation?"
-3. **INVESTIGATE**: Read framework docs and existing usage patterns
-4. **FIX**: Improve framework integration, don't replace it
-5. **VERIFY**: Check if other similar code has the same pattern
-
-**Example**: Task 19 Boolean Generator
-- ❌ Created manual `fc.oneof()` arbitraries
-- ✅ Should use `getSchemaArbitrary().filter()` as prescribed
-- **Lesson**: Framework patterns exist for multi-draft support and consistency
-
-#### Framework Performance = CRITICAL UNDERSTANDING
-**Scenario**: Overusing `getSchemaArbitrary().filter()` for simple constants
-
-```typescript
-❌ PERFORMANCE KILLER: Over-filtering for constants
-getSchemaArbitrary()
-  .filter(s => s.type === 'number' && s.multipleOf > 0)  // 0.7% success rate
-  .chain(() => fc.constantFrom(0.1, 0.01, 1))           // Ignores generated schema!
-// Result: 14,300 schema generations for 100 test runs = MINUTES
-
-✅ CORRECT: Use simple patterns for simple values
-fc.oneof(fc.constant(0.1), fc.constant(0.01), fc.constant(1))
-// Result: 100 constant generations for 100 test runs = MILLISECONDS
-```
-
-**Performance Rules**:
-1. **`getSchemaArbitrary()` only for complex schema testing** - Multi-draft validation, full schema properties
-2. **`fc.oneof()` for simple constants** - Known values like `0.1, 1, 2.5`
-3. **Filter probability matters** - `type === 'number'` (14%) vs `type + multipleOf + > 0` (0.7%)
-4. **Use generated schemas** - Don't filter then ignore with `.chain(() => constants)`
-
-**Example**: Number Generator Performance Fix
-- ❌ Added framework pattern everywhere → Tests took minutes
-- ✅ Rollback to simple patterns → Tests take 522ms  
-- **Lesson**: Framework complexity requires framework-appropriate problems
+Prefer improving the framework integration over bypassing it. Examples and performance notes retained from previous guidance.
 
 ### ESLint Guidelines
-**DO NOT blindly follow ESLint** - use judgment:
 
-**IGNORE ESLint when:**
-- Critical components need cohesion over line limits
-- Performance requires single-pass algorithms
-- Complex business logic belongs together
-- Generic utilities need `any` types
-
-**FOLLOW ESLint for:**
-- Simple utility functions
-- UI components
-- Test files
-- Documentation
-
-**Principle**: Optimize for readability and performance, not ESLint compliance.
-
-### 🚨 Hiding Problems = CRITICAL ANTI-PATTERN
-
-**Never modify tests to pass instead of fixing the actual problem**
-
-```typescript
-❌ BAD: Test fails → Remove/simplify the failing part
-❌ BAD: Parser rejects valid schema → Change schema to avoid the issue
-❌ BAD: Feature doesn't work → Remove feature from tests
-
-✅ CORRECT: Test fails → Investigate root cause → Fix implementation
-✅ CORRECT: Parser rejects valid schema → Fix parser or document limitation
-✅ CORRECT: Feature doesn't work → Fix it or explicitly mark as unsupported
-```
-
-**Protocol when tests fail:**
-1. **INVESTIGATE** - Understand exactly what's failing and why
-2. **DOCUMENT** - If it's a known limitation, document it clearly
-3. **FIX** - Either fix the implementation or the test expectations
-4. **NEVER HIDE** - Don't sweep problems under the rug
-
-**Example**: Integration tests failing
-- ❌ Removed `multipleOf: 0.5` and `additionalProperties: false` to make tests pass
-- ✅ Should investigate why parser rejects these valid JSON Schema features
-- ✅ Should fix parser or document these as unsupported in MVP
+Use judgment; balance readability, cohesion, and performance.
 
 ---
 
-## 📚 JSON Schema Support
+## 📚 JSON Schema Support Matrix (summary)
 
-### Version Compatibility
-| Version | Status | Notes |
-|---------|--------|-------|
-| **Draft-07** | ✅ Full | Primary (OpenAPI 3.0) |
-| **Draft 2019-09** | ✅ Full | Modern (AsyncAPI) |
-| **Draft 2020-12** | ✅ Full | Latest (OpenAPI 3.1) |
-| **Draft-04** | ❌ None | Use `npx swagger2openapi` |
-| **Draft-06** | ⚠️ Partial | Via Draft-07 compatibility |
+**Drafts**: Draft‑07 / 2019‑09 / 2020‑12 fully supported via AJV; Draft‑04 compat via normalizer; always validate against the original schema.
 
-### String Formats (v0.1)
-- ✅ **Supported**: uuid, email, date, date-time, basic regex patterns
-- ❌ **Not supported**: uri, hostname, ipv4, ipv6, complex regex patterns with ReDoS risk
+**Core logic**: `allOf` / `anyOf` / `oneOf` / `not`; deterministic branch selection; early‑unsat; graceful degradation under caps.
+**Conditionals**: default no‑rewrite; safe rewrite optional; if‑aware‑lite generation.
+**Objects**: must‑cover for `additionalProperties:false`; `patternProperties` overlap analysis; `propertyNames`; `dependent*`; `unevaluated*`.
+**Arrays**: tuples; implicit max length with `items:false`; bagged `contains` across `allOf`; `uniqueItems`.
+**Numbers**: exact rational `multipleOf` with caps + decimal/float fallbacks.
+**Refs**: in‑document `$ref` supported; external `$ref` error by default (configurable); `$dynamicRef/*` preserved.
+Semantics, caps, and fallbacks are governed by the spec.
 
 ---
 
 ## 📖 Technical References
 
-### Testing Documentation
-When working on testing (tag: testing-v2), reference:
-- **`docs/tests/foundrydata-complete-testing-guide-en.ts.txt`** - Implementation guide with Vitest config, Fast-check setup, AJV patterns
-- **`docs/tests/foundrydata-testing-architecture-doc-en.md`** - Testing philosophy and strategy
-
-For concrete fast-check configuration and the unified `propertyTest` wrapper (timeouts, shrinking, failure context), see the section “Property-Based Testing v2.1 (Fast-check + Vitest)” below.
-
-### Format Handling (Normative)
-For JSON Schema format validation:
-- **`docs/tests/policy_json_schema_formats_by_draft_v_2.md`** - Single source of truth for Assertive vs Annotative behavior
-- **`docs/tests/reference_json_schema_format_v_2.md`** - Technical specification (non-normative)
-
-**Critical Rules:**
-1. Policy document is normative
-2. Different drafts have different format rules
-3. Never assume format validation behavior
-4. Unknown formats degrade to Annotative with logging
+* Testing documentation, CI/bench strategy, and property‑based testing wrappers as previously documented in project docs.
+* Format handling policy and draft‑specific behavior live in the testing policy doc set.
 
 ---
 
-## 🧪 Property-Based Testing v2.1 (Fast-check + Vitest)
+## 🚀 Implementation Roadmap (excerpt)
 
-### Global Configuration
-- Deterministic seed: `TEST_SEED=424242`
-- Fast-check global: `endOnFailure: true`, `interruptAfterTimeLimit: 10000`, `markInterruptAsFailure: true`
-- Verbosity: CI=0 (minimal), Dev=2 (detailed), otherwise 1
-- Test timeout: 30s global (covers properties and shrinking)
-
-Sources:
-- `test/setup.ts` → `configureFastCheck()`, `propertyTest()`, and utilities
-- `vitest.config.ts` → timeouts and projects (packages + test/)
-
-### Wrapper `propertyTest`
-Purpose: enforce timeouts/shrinking, log complete failure context, and keep tests deterministic.
-
-Signature:
-```ts
-propertyTest(
-  name: string,
-  property: fc.IProperty<any>,
-  options?: {
-    parameters?: fc.Parameters<any>; // seed, numRuns, verbose, etc.
-    samples?: fc.Arbitrary<unknown>[]; // samples for logs
-    context?: Record<string, unknown>; // debug metadata
-  }
-): Promise<void>
-```
-
-Example:
-```ts
-import fc from 'fast-check';
-import { propertyTest } from '../setup';
-
-test('string length respects bounds', () => {
-  return propertyTest(
-    'bounds:string',
-    fc.property(fc.tuple(fc.integer({min:0,max:5}), fc.integer({min:5,max:10})), ([min,max]) => {
-      const s = 'a'.repeat(min);
-      expect(s.length).toBeGreaterThanOrEqual(min);
-      expect(s.length).toBeLessThanOrEqual(max);
-    }),
-    { parameters: { seed: 424242, numRuns: 50 }, context: { invariant: 'bounds', type: 'string' } }
-  );
-});
-```
-
-### Failure context and metrics
-- Logs: seed, numRuns, counterexample, shrinking path, duration, timeout breach, samples.
-- Soft cap for shrinking: CI=1000, Dev=500 (noted in failure context when exceeded).
-- Shrinking time‑guard: 10s via `interruptAfterTimeLimit` (prevents infinite loops).
-
-### Shrinking progress (optional)
-- For fine-grained progress, use `fc.asyncProperty` and pass `parameters.asyncReporter` to `propertyTest`.
-- Note: do not use `asyncReporter` with synchronous properties (fast-check forbids it).
-
-### CI vs Local
-- CI: strict (verbosity 0, shrinking caps, strict performance thresholds)
-- Local: relaxed performance thresholds to avoid machine variability; everything else is identical.
-
----
-
-## 🚀 Roadmap (If We Get Traction)
-
-| Version | Timeline | Features | Success Metric |
-|---------|----------|----------|----------------|
-| **v0.1** | Now | Basic types, CLI, basic patterns, 100% compliance | MVP Launch |
-| **v0.2** | Month 2 | Complex patterns, more formats | 100+ users |
-| **v0.3** | Month 4 | Deep nesting (depth > 2), CSV, API | 10+ paying |
-| **v1.0** | Month 6 | Full nesting, schema composition | 25+ paying |
+* **P0 (Foundation)**: 5‑stage pipeline; complexity caps + diagnostics; stagnation guard; if‑aware‑lite; early‑unsat extensions.
+  Success criteria include `validationsPerRow ≤ 3`, `repairPassesPerRow ≤ 1` (p50), matching the spec.
+* **P1 (Observability)**: Bench metrics in CI; p50/p95 tracking; docs for invariants/limits.
+* **P2 (Optimization)**: Contains bag subsumption; pattern approximations; scoring refinements.
 
 ---
 
 ## ✅ Compliance Guarantee
 
-### What We Guarantee
-- ✅ **100% schema compliance** for supported features
-- ✅ **AJV strict mode validation**
-- ✅ **Deterministic generation** with --seed
-
-### What We DON'T Guarantee
-- ❌ Realistic looking data (might be "Lorem ipsum")
-- ❌ Business logic validation
-- ❌ Performance for complex schemas
-- ❌ Support for all JSON Schema features
-
----
-
-## 📝 Implementation Details
-
-### Registry Pattern for Extensibility
-- **FormatRegistry**: Custom string formats
-- **TypeRegistry**: Custom type generators
-- **ValidatorRegistry**: Custom validation rules
-
-### Core Types
-```typescript
-// Result type for error handling (no exceptions)
-type Result<T, E> = Ok<T> | Err<E>;
-
-// Core schema types
-type Schema = ObjectSchema | ArraySchema | StringSchema | NumberSchema | BooleanSchema;
-```
-
-### Complete Architecture Reference
-**For full implementation details:** See `foundrydata-strategy/MVP/foundrydata-architecture.md`
+* **We guarantee**: AJV validation against the original schema; deterministic generation with seed; adherence to documented behavior and limits.
+* **We don’t guarantee**: Business semantics; realism of synthetic data; top performance on pathological schemas.
 
 ---
 
 ## 💡 About This Document
 
-This is a **project-specific guide** for Claude AI to assist with FoundryData development. It contains:
-- Business context and technical constraints
-- Architecture decisions and code standards  
-- Testing philosophy and quality gates
-- Task management integration
+This guide consolidates engineering practices for Claude assistance and aligns them with the **Feature Support Simplification Plan**. Where differences existed (notably performance table p95 vs p50 and a non‑canonical options key), they have been resolved to match the spec and avoid ambiguity. 

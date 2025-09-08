@@ -19,11 +19,12 @@ Comprehensive documentation of FoundryData's supported JSON Schema features and 
 ### Example
 ```typescript
 const options: PlanOptions = {
-  rewriteConditionals: 'safe',
+  // Default is 'never' (no rewrite)
+  rewriteConditionals: 'never',
   rational: {
     maxRatBits: 128,
     fallback: 'decimal',
-    decimalPrecision: 12
+    decimalPrecision: 12 // aligns with AJV tolerance
   },
   trials: {
     maxBranchesToTry: 12,
@@ -31,10 +32,15 @@ const options: PlanOptions = {
   },
   complexity: {
     maxOneOfBranches: 200,
-    bailOnUnsatAfter: 12
+    bailOnUnsatAfter: 12 // stagnation guard
   }
 };
 ```
+
+Default mapping between `rewriteConditionals` and `conditionals.strategy`:
+- `rewriteConditionals: 'never'` ⇒ `conditionals.strategy: 'if-aware-lite'`
+- `rewriteConditionals: 'safe' | 'aggressive'` ⇒ `conditionals.strategy: 'rewrite'`
+- An explicit `conditionals.strategy` overrides this mapping.
 
 ### Diagnostics
 - **Config Validation**: Reports invalid option combinations

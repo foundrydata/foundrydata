@@ -1,259 +1,161 @@
-# FoundryData Examples & Usage Guide
+Voici d’abord un **contrôle de cohérence** concis du README des *examples*, puis un **nouveau README complet** en anglais qui intègre les corrections.
 
-This directory contains real-world schema examples and usage patterns for FoundryData.
+---
 
-## 📋 Available Schemas
+## Coherence check (summary)
 
-### ✅ Fully Supported (MVP v0.1)
+**Inconsistencies or misleading items vs. the canonical plan:**
 
-| Schema | Description | Use Case |
-|--------|-------------|----------|
-| [`ecommerce-schema.json`](./ecommerce-schema.json) | Complete product catalog | E-commerce product data |
-| [`saas-user-schema.json`](./saas-user-schema.json) | SaaS user management | User profiles, subscriptions |
-| [`api-transaction-schema.json`](./api-transaction-schema.json) | Payment transactions | Financial API responses |
-| [`team-with-users-schema.json`](./team-with-users-schema.json) | Team with member arrays | Arrays of nested objects example |
-| [`quick-test-schema.json`](./quick-test-schema.json) | Simple test schema | Quick testing & demos |
+1. **External `$ref` handling / CLI flag** — The examples mention `--resolve-externals` (and suggest “bundle externals”). The spec states **no network dereferencing**; behavior is controlled by a **policy** (e.g., `externalRefStrict`) and validation is always against the original schema. Replace with an option that expresses **policy only** and explicitly say “no remote resolution.” &#x20;
 
+2. **Fixed nesting-depth limits** — The examples claim deep nesting “depth > 2” as unsupported. The spec uses **complexity caps with graceful degradation**, not a hard maximum depth. Remove fixed-depth statements and keep to caps/diagnostics framing. &#x20;
 
-## 📋 JSON Schema Compatibility
+3. **`uniqueItems` scope** — One section limits `uniqueItems` to scalars, another later claims deep equality for objects is supported. Align to spec: structural hashing + deep equality are supported for objects. &#x20;
 
-FoundryData targets modern JSON Schema versions for core keywords:
-- ✅ **Draft-07** (default)
-- ✅ **Draft 2019-09**
-- ✅ **Draft 2020-12** (OpenAPI 3.1)
+4. **Draft support** — The examples say Draft‑04 “not supported.” The spec allows Draft‑04 **via the normalizer** (compat layer), with validation still against the original; keep this nuance instead of a blanket “not supported.” &#x20;
 
-Notes:
-- Core validation keywords are supported; advanced composition (`allOf/anyOf/oneOf/not`) and references (`$ref/$defs`) are under active development.
-- The tool auto-detects your schema version from `$schema`.
+5. **Number constraints wording** — One bullet implies only inclusive `min/max`; the spec covers exclusive bounds too (per draft). Adjust wording to include exclusive forms. &#x20;
 
-Not supported:
-- ❌ Draft-04 and older (use migration tools)
+6. **Output option** — The examples show `--output <file>`. The core contract is **data → stdout**, **metrics/errors → stderr**; demonstrate redirection rather than a bespoke output flag (unless the CLI truly implements it). &#x20;
 
-## 🚀 Basic Usage
+7. **API/CSV forward‑looking claims** — “API in month 3+”, “CSV API‑only” are outside the plan’s normative scope. Remove or clearly mark as future/non‑normative.&#x20;
 
-### Installation
+8. **Guarantee scope** — Keep the “100% compliance” statement but add that it applies to the **full pipeline**; stage‑only usage or unresolved external `$ref` do not carry the guarantee.&#x20;
 
-```bash
-# Install globally
-npm install -g foundrydata
+9. **SLO/SLI reminders** — It helps to restate the documented targets used in examples (`~1K rows simple/medium: p50 ≈ 200–400 ms; validationsPerRow ≤ 3; repairPassesPerRow ≤ 1`).&#x20;
 
-# Or use npx (no installation)
-npx foundrydata generate --schema user.json --rows 10
-```
+---
 
-### Generate Data
+## **New README (examples) — drop‑in replacement (English)**
+
+````markdown
+# FoundryData — Examples
+
+This directory contains real‑world schemas and usage patterns you can run locally to understand how FoundryData behaves on typical web/API models.  
+**Canonical spec:** Feature Support Simplification Plan (this file aligns terminology and limits with the spec). :contentReference[oaicite:15]{index=15}
+
+---
+
+## Available example schemas
+
+| File | Scenario it illustrates |
+|------|-------------------------|
+| `ecommerce-schema.json` | Product catalog (objects + patternProperties + enums) |
+| `saas-user-schema.json` | Users, plans, dependent fields, formats (uuid/email) |
+| `api-transaction-schema.json` | Transactions with date‑time, numbers, and oneOf |
+| `team-with-users-schema.json` | Arrays of objects, `uniqueItems`, tuple-ish shapes |
+| `quick-test-schema.json` | Minimal schema for smoke tests |
+
+> These schemas are intentionally small and focused on one or two mechanics each. :contentReference[oaicite:16]{index=16}
+
+---
+
+## Quick start
 
 ```bash
 # Generate 100 products
 foundrydata generate --schema ecommerce-schema.json --rows 100
 
-# Deterministic output (same seed = same data)
+# Deterministic — same seed => same data
 foundrydata generate --schema saas-user-schema.json --rows 50 --seed 42
 
 # Arrays of objects example
 foundrydata generate --schema team-with-users-schema.json --rows 10
 
-# Output to file
-foundrydata generate --schema api-transaction-schema.json --rows 200 --output transactions.json
+# Print metrics (timings, validations/row, etc.) to stderr
+foundrydata generate --schema api-transaction-schema.json --rows 200 --print-metrics
 
-# Quick test
-foundrydata generate --schema quick-test-schema.json --rows 5
-```
+# Write output to a file (stdout -> redirect)
+foundrydata generate --schema quick-test-schema.json --rows 5 > out.json
+````
 
-## 💻 CLI Commands
-
-| Command | Description |
-|---------|-------------|
-| `foundrydata generate --schema <file> --rows <num>` | Generate test data |
-| `foundrydata generate --schema <file> --rows <num> --seed <num>` | Deterministic generation |
-| `foundrydata generate --schema <file> --rows <num> --output <file>` | Output to file |
-| `foundrydata help` | Show help |
-| `foundrydata version` | Show version |
-
-## ☁️ API Usage (Coming Month 3+ if requested)
-
-**Note:** API is not yet available in MVP. CLI only for now.
-
-**Note:** API architecture designed but not yet implemented.
-
-```bash
-# Future API usage (when built)
-curl -X POST https://api.foundrydata.dev/generate \
-  -H 'X-API-Key: foundry_live_your_key' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "schema": {
-      "type": "object", 
-      "properties": {
-        "id": {"type": "string", "format": "uuid"},
-        "email": {"type": "string", "format": "email"}
-      },
-      "required": ["id", "email"]
-    },
-    "rows": 10
-  }'
-
-# CSV format will be API-only feature
-# JSON is the only MVP format
-```
-
-## ✅ What's Supported in MVP
-
-### Basic Types
-- `type: string` - Any string
-- `type: number` - Decimal numbers
-- `type: integer` - Whole numbers
-- `type: boolean` - true/false
-
-### String Formats
-- `format: uuid` - UUID v4
-- `format: email` - Valid emails
-- `format: date` - YYYY-MM-DD format
-- `format: date-time` - ISO 8601 with timezone
-
-### Constraints
-- `minimum/maximum` - Number ranges (inclusive)
-- `exclusiveMinimum/exclusiveMaximum` - Strict bounds (Draft‑07+ numeric form)
-- `minLength/maxLength` - String length
-- `enum` - Pick from list (cached for consistency)
-- `const` - Constant values (any JSON type)
-- `multipleOf` - Divisibility constraint (numbers/integers)
-- `required` - Required fields
-
-### Arrays
-- `type: array` with `items` of primitives (string, number, boolean)
-- Arrays of nested objects (objects with nested properties up to depth 2)
-- `prefixItems` - Tuple validation (Draft 2019-09/2020-12)
-- `items: false` or `unevaluatedItems: false` (2020‑12) to forbid suffix items
-- `minItems/maxItems` - Array length constraints
-- `uniqueItems` - For scalar items (string/number/boolean)
-
-### Objects
-- `additionalProperties` - Allowed/forbidden or schema for extras
-- `unevaluatedProperties: false` (2019‑09/2020‑12)
-- `minProperties/maxProperties`, `required`
-- `dependencies` (Draft‑07) and `dependentRequired` (2019‑09+)
-
-## ❌ Not Supported Yet
-
-| Feature | Status | Workaround |
-|---------|--------|------------|
-| Deep nested objects (depth > 2) | Coming v0.3 | Restructure schema |
-| Objects nested beyond depth 2 | Coming v0.3 | Restructure with intermediate objects |
-| `pattern` (regex) | ✅ Basic patterns | Complex patterns planned |
-| `allOf/anyOf/oneOf/not` | Coming v0.3 | Flatten constraints where possible |
-| `$ref`, `$defs`, `$id` | Coming v0.3 | Inline definitions temporarily |
-| Tuple (Draft‑07 `items: [...]` + `additionalItems`) | Not yet | Prefer 2020‑12 `prefixItems` + `items: false` |
-| `contains`, `minContains`, `maxContains` | Supported | Use to require occurrences of a sub-schema |
-| `patternProperties`, `propertyNames` | Supported (phase 1) | Keys generated from patterns; names validated by pattern |
-| `dependentSchemas` | Supported (phase 1) | Applies required/properties of dependent schema |
-| Union types `type: [ ... ]` | Coming v0.3 | Model as `anyOf` once available |
-| `uniqueItems` deep equality for objects | Planned | Keep items scalar or add IDs |
-| `contentEncoding`, `contentMediaType` | Planned | Generate plain strings, validate externally |
-
-## 💬 Error Messages
-
-FoundryData gives clear, helpful errors:
-
-```bash
-# Unsupported feature
-❌ Error: Feature 'nested objects' not supported in MVP
-💡 Suggestion: Restructure deeply nested schemas (depth > 2)
-📅 Expected in: v0.3 (based on demand)
-📧 Request priority: github.com/foundrydata/foundrydata/issues
-
-# Invalid schema
-❌ Error: Schema validation failed
-🔍 Issue: Property 'type' is required at root level
-💡 Fix: Add "type": "object" to your schema
-
-# Unsupported format
-❌ Error: Format 'sql' not supported in MVP
-✅ Supported formats: json, csv
-💡 Suggestion: Use JSON and convert later
-```
-
-## 🧪 Quick Test
-
-Want to try FoundryData right now? Copy this schema to `test.json`:
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "id": {"type": "string", "format": "uuid"},
-    "name": {"type": "string", "minLength": 2, "maxLength": 30},
-    "email": {"type": "string", "format": "email"},
-    "age": {"type": "integer", "minimum": 18, "maximum": 65},
-    "premium": {"type": "boolean"},
-    "tags": {
-      "type": "array",
-      "items": {"type": "string"},
-      "minItems": 1,
-      "maxItems": 3
-    }
-  },
-  "required": ["id", "email"]
-}
-```
-
-Then run:
-```bash
-npm install -g foundrydata
-foundrydata generate --schema test.json --rows 5
-```
-
-## 📖 Real-World Examples
-
-### E-commerce Product
-```bash
-foundrydata generate --schema ecommerce-schema.json --rows 100
-```
-Generates: SKUs, prices, categories, stock levels, ratings
-
-### SaaS User Management
-```bash
-foundrydata generate --schema saas-user-schema.json --rows 50
-```
-Generates: Users, plans, subscriptions, usage limits
-
-### Team with Member Arrays
-```bash
-foundrydata generate --schema team-with-users-schema.json --rows 10
-```
-Generates: Teams with arrays of nested user objects (demonstrates arrays of objects up to depth 2)
-
-### API Transaction Data
-```bash
-foundrydata generate --schema api-transaction-schema.json --rows 200
-```
-Generates: Payment transactions, statuses, fees, timestamps
-
-## 🎯 Schema Compatibility Check
-
-**✅ Will work (v0.1):**
-- Nested objects with basic types (up to depth 2)
-- Arrays of primitives (string, number, boolean)
-- Arrays of nested objects (objects with nested properties up to depth 2)
-- String formats (uuid, email, date, date-time)
-- Number constraints (min/max inclusive only)
-- String constraints (minLength/maxLength)
-- Enums and required fields
-- Schema references ($ref)
-
-**❌ Won't work (v0.1):**
-- Nested objects (object properties with object type)
-- Objects nested 2+ levels deep
-- Complex regex patterns (basic patterns are supported)
-- Exclusive minimum/maximum ranges
-
-## 🆘 Need Help?
-
-- 🐛 **Bug?** [Open an issue](https://github.com/foundrydata/foundrydata/issues)
-- 💡 **Feature request?** [Start a discussion](https://github.com/foundrydata/foundrydata/discussions)
-- 💬 **Questions?** Check existing issues first
-- 💰 **Need API access?** [foundrydata.dev](https://foundrydata.dev)
+**Streams:** generated data goes to **stdout**; metrics/errors to **stderr**. This enables simple piping in CI.&#x20;
 
 ---
 
-**Remember:** FoundryData guarantees 100% schema compliance or tells you exactly why it can't generate your data. No surprises, no broken validation!
+## JSON Schema drafts (what these examples expect)
+
+* ✅ **Draft‑07**, **2019‑09**, **2020‑12** (auto‑detected via `$schema`).
+* ⚠️ **Draft‑04**: accepted via the **normalizer** compatibility path; validation still runs against the original schema; behavior can differ for corner cases.&#x20;
+
+**References:** in‑document `$ref` supported. **External `$ref`** are **not dereferenced** (no network I/O). Use policy flags to decide how to proceed when such refs are present (see below). `$dynamicRef/*` are preserved and validated by AJV at the end.&#x20;
+
+---
+
+## CLI tips for these examples
+
+```bash
+# External refs policy (no remote resolution; policy only)
+# Values: error | warn | ignore   (default: error)
+foundrydata generate --schema api-transaction-schema.json --rows 50 --external-ref-strict warn
+```
+
+* There is **no** `--resolve-externals` flag and **no remote dereferencing**. The flag above only sets the policy for encountering external `$ref`; output is still validated against the original schema.&#x20;
+
+---
+
+## What each example highlights
+
+* **Composition & branches:** `api-transaction-schema.json` shows `oneOf/anyOf` with deterministic branch scoring and post‑check for `oneOf` exclusivity.&#x20;
+* **Objects under `additionalProperties:false`:** `ecommerce-schema.json` demonstrates the **must‑cover** intersection across `allOf`.&#x20;
+* **Arrays with `contains`:** `team-with-users-schema.json` exercises **bag semantics** (`min/maxContains`) and `uniqueItems` interaction.&#x20;
+* **Numbers:** `api-transaction-schema.json` includes `multipleOf` cases (exact rational with documented caps/fallbacks).&#x20;
+* **Formats:** `saas-user-schema.json` uses `uuid`, `email`, `date-time`. By default, formats are **annotative** (assertive validation is opt‑in).&#x20;
+
+---
+
+## Capability notes (scoped to examples)
+
+* **`uniqueItems`** applies to scalars **and** objects via structural hashing + deep equality.&#x20;
+* **`contains`** uses **bag semantics** across `allOf`; examples may include `minContains`/`maxContains` combinations. Unsat cases are detected early (`sum(min_i) > maxItems`, etc.).&#x20;
+* **Bounds** support both inclusive and exclusive forms, per draft rules.&#x20;
+* **Conditionals:** default **no rewrite**; generation uses an **if‑aware‑lite** strategy (safe rewrite is opt‑in).&#x20;
+
+---
+
+## Known limits relevant to examples
+
+* **External `$ref`**: no remote dereferencing; control behavior via policy (strict/warn/ignore). Validation still targets the original schema.&#x20;
+* **Complex regex/patterns**: generation is heuristic and Unicode‑aware; very heavy patterns may trigger degradations.&#x20;
+* **Large `oneOf`/`anyOf`**: trials are bounded; beyond thresholds the selector may switch to score‑only mode (with diagnostics).&#x20;
+
+---
+
+## Quality and performance (for orientation)
+
+* Typical target for **\~1000 rows (simple/medium)**: **p50 ≈ 200–400 ms**, with `validationsPerRow ≤ 3` and `repairPassesPerRow ≤ 1`. These are **documented targets**, not hard guarantees. Use `--print-metrics` to observe.&#x20;
+
+---
+
+## Troubleshooting the examples
+
+* **“External ref” error/warning** — The schema points to an external `$ref`. There is no remote deref; set `--external-ref-strict warn` to proceed best‑effort (still validated against the original).&#x20;
+* **Unsatisfiable `contains`** — Check `minContains/maxContains` against `maxItems` and whether needs are mutually exclusive.&#x20;
+* **Format assertions** — If you need strict format validation, use an AJV setup that enables assertive formats; the default is annotative.&#x20;
+
+---
+
+## Contributing new examples
+
+Prefer small schemas that each highlight a single mechanism:
+
+* `allOf` with `additionalProperties:false` (must‑cover)
+* `oneOf` discriminants and exclusivity refinement
+* `contains` with `min/maxContains` and `uniqueItems` interaction
+
+When in doubt, mirror the spec’s behavior and limits and add a short comment atop the schema explaining the focus area.&#x20;
+
+```
+
+---
+
+### Why these changes
+
+- Remove `--resolve-externals` and clarify **policy‑only** behavior for external refs (no network deref), per the spec. :contentReference[oaicite:38]{index=38} :contentReference[oaicite:39]{index=39}  
+- Avoid hard “depth>2” limits; reflect **caps + graceful degradation** instead. :contentReference[oaicite:40]{index=40} :contentReference[oaicite:41]{index=41}  
+- Make `uniqueItems` guidance consistent (object deep equality supported). :contentReference[oaicite:42]{index=42} :contentReference[oaicite:43]{index=43}  
+- Align draft support wording (Draft‑04 via normalizer) and bounds semantics (exclusive supported). :contentReference[oaicite:44]{index=44} :contentReference[oaicite:45]{index=45}  
+- Emphasize stdout/stderr split and use redirection in examples instead of a bespoke `--output` flag. :contentReference[oaicite:46]{index=46} :contentReference[oaicite:47]{index=47}
+
+If you want, I can also generate a minimal PR diff that replaces the existing `examples/README.md` with the version above.
+```

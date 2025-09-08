@@ -36,7 +36,7 @@ export interface EncodingOptions {
  * Branch selection trial configuration
  */
 export interface TrialsOptions {
-  /** Number of trials per branch (default: 1..2) */
+  /** Number of trials per branch (default: 2) */
   perBranch?: number;
   /** Maximum branches to try in Top-K selection (default: 12) */
   maxBranchesToTry?: number;
@@ -52,8 +52,6 @@ export interface TrialsOptions {
 export interface GuardsOptions {
   /** Maximum NOT nesting depth allowed during normalization (default: 2) */
   maxGeneratedNotNesting?: number;
-  /** Maximum effective NOT nesting for composer hints (default: 3) */
-  maxEffectiveNotNesting?: number;
 }
 
 /**
@@ -120,7 +118,7 @@ export interface ConditionalsOptions {
  * See individual option interfaces for detailed descriptions.
  */
 export interface PlanOptions {
-  /** Normalization behavior for conditional schemas (default: 'safe') */
+  /** Normalization behavior for conditional schemas (default: 'never') */
   rewriteConditionals?: 'never' | 'safe' | 'aggressive';
   /** Deep freeze schemas in debug mode to catch mutations (default: false) */
   debugFreeze?: boolean;
@@ -167,7 +165,8 @@ export interface ResolvedOptions {
   rewriteConditionals: 'never' | 'safe' | 'aggressive';
   debugFreeze: boolean;
 
-  rational: Required<RationalOptions>;
+  // All rational fields required except qCap remains optional
+  rational: Required<Omit<RationalOptions, 'qCap'>> & { qCap?: number };
   encoding: Required<EncodingOptions>;
   trials: Required<TrialsOptions>;
   guards: Required<GuardsOptions>;
@@ -189,18 +188,18 @@ export interface ResolvedOptions {
  * All defaults are designed to be safe and performant for typical use cases.
  */
 export const DEFAULT_OPTIONS: ResolvedOptions = {
-  rewriteConditionals: 'safe',
+  rewriteConditionals: 'never',
   debugFreeze: false,
 
   rational: {
     maxRatBits: 128,
     maxLcmBits: 128,
     fallback: 'decimal',
-    decimalPrecision: 12,
-  } as Required<RationalOptions>,
+    decimalPrecision: 12, // aligns with AJV tolerance
+  },
 
   encoding: {
-    bigintJSON: 'string',
+    bigintJSON: 'string', // applies to data outputs, not logs
   },
 
   trials: {
@@ -212,7 +211,6 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
 
   guards: {
     maxGeneratedNotNesting: 2,
-    maxEffectiveNotNesting: 3,
   },
 
   cache: {
@@ -242,7 +240,7 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
   },
 
   conditionals: {
-    strategy: 'if-aware-lite', // Aligned with 'safe' rewriteConditionals default
+    strategy: 'if-aware-lite', // default mapping for rewriteConditionals:'never'
     minThenSatisfaction: 'required-only',
   },
 };
@@ -281,7 +279,7 @@ export function resolveOptions(
   // Validate option combinations
   validateOptions(resolved);
 
-  // Apply conditional strategy alignment
+  // Apply conditional strategy alignment when user set rewriteConditionals but did not set strategy
   if (userOptions.rewriteConditionals && !userOptions.conditionals?.strategy) {
     resolved.conditionals.strategy = deriveConditionalsStrategy(
       resolved.rewriteConditionals
@@ -302,9 +300,9 @@ function deriveConditionalsStrategy(
 ): ResolvedOptions['conditionals']['strategy'] {
   switch (rewriteConditionals) {
     case 'never':
-      return 'repair-only';
-    case 'safe':
       return 'if-aware-lite';
+    case 'safe':
+      return 'rewrite';
     case 'aggressive':
       return 'rewrite';
     default:
@@ -350,9 +348,6 @@ function validateOptions(options: ResolvedOptions): void {
   // Validate guards options
   if (options.guards.maxGeneratedNotNesting < 0) {
     throw new Error('guards.maxGeneratedNotNesting must be non-negative');
-  }
-  if (options.guards.maxEffectiveNotNesting < 0) {
-    throw new Error('guards.maxEffectiveNotNesting must be non-negative');
   }
 
   // Validate cache options
