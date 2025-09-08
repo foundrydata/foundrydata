@@ -12,8 +12,10 @@ import {
   isFoundryError,
   FoundryError,
   ErrorCode,
+  resolveOptions,
 } from '@foundrydata/core';
 import { renderCLIView } from './render';
+import { parsePlanOptions } from './flags';
 
 const program = new Command();
 
@@ -42,6 +44,43 @@ program
   )
   .option('--print-metrics', 'Print pipeline metrics as JSON to stderr', false)
   .option('--compat <mode>', 'Compatibility mode: strict|lax', 'strict')
+  .option(
+    '--rewrite-conditionals <mode>',
+    'Conditional rewriting: never|safe|aggressive',
+    'safe'
+  )
+  .option('--debug-freeze', 'Enable debug freeze for development')
+  .option('--skip-trials', 'Skip branch trials, use score-only selection')
+  .option('--trials-per-branch <number>', 'Number of trials per branch', (v) =>
+    parseInt(v, 10)
+  )
+  .option(
+    '--max-branches-to-try <number>',
+    'Maximum branches in Top-K selection',
+    (v) => parseInt(v, 10)
+  )
+  .option(
+    '--skip-trials-if-branches-gt <number>',
+    'Skip trials when branch count exceeds this',
+    (v) => parseInt(v, 10)
+  )
+  .option(
+    '--external-ref-strict <mode>',
+    'External $ref handling: error|warn|ignore',
+    'error'
+  )
+  .option(
+    '--dynamic-ref-strict <mode>',
+    'Dynamic $ref handling: warn|note',
+    'note'
+  )
+  .option(
+    '--encoding-bigint-json <mode>',
+    'BigInt JSON encoding: string|number|error',
+    'string'
+  )
+  .option('--no-metrics', 'Disable metrics collection')
+  .option('--debug-passes', 'Print effective configuration to stderr')
   .action(async (options) => {
     try {
       const schemaPath = options.schema as string | undefined;
@@ -106,7 +145,18 @@ program
       const locale = String(options.locale ?? 'en');
       const repairAttempts = Number(options.repairAttempts ?? 1);
 
-      const gen = new FoundryGenerator();
+      // Parse CLI options into PlanOptions
+      const planOptions = parsePlanOptions(options);
+      const resolvedOptions = resolveOptions(planOptions);
+
+      // Print effective configuration if requested
+      if (options.debugPasses) {
+        process.stderr.write(
+          `[foundrydata] effective config: ${JSON.stringify(resolvedOptions, null, 2)}\n`
+        );
+      }
+
+      const gen = new FoundryGenerator({ options: planOptions });
       const result = gen.run(schemaForGen as object, {
         count,
         seed,

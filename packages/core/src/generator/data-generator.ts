@@ -11,6 +11,8 @@ import type { Result } from '../types/result';
 import type { GenerationError } from '../types/errors';
 import type { Schema } from '../types/schema';
 import type { FormatRegistry } from '../registry/format-registry';
+import type { ResolvedOptions } from '../types/options';
+import { resolveOptions } from '../types/options';
 
 /**
  * Generation context passed to all generators
@@ -43,6 +45,9 @@ export interface GeneratorContext {
 
   /** Current depth in generation */
   currentDepth: number;
+
+  /** Resolved configuration options */
+  options: ResolvedOptions;
 }
 
 /**
@@ -497,6 +502,7 @@ export function createGeneratorContext(
     scenario?: 'normal' | 'edge' | 'peak' | 'error';
     maxDepth?: number;
     path?: string;
+    resolvedOptions?: ResolvedOptions;
   } = {}
 ): GeneratorContext {
   return {
@@ -509,6 +515,7 @@ export function createGeneratorContext(
     path: options.path || '$',
     maxDepth: options.maxDepth || 10,
     currentDepth: 0,
+    options: options.resolvedOptions || resolveOptions(),
   };
 }
 
