@@ -9,7 +9,7 @@ import {
   LIMITATIONS_REGISTRY,
   type LimitationKey,
   type Limitation,
-} from './limitations';
+} from './limitations-deprecated';
 
 // Public helper types
 export interface Alternative {

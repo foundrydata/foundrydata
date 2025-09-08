@@ -31,7 +31,7 @@ export {
   compareVersions,
   isSupported,
   enrichErrorWithLimitation,
-} from './errors/limitations';
+} from './errors/limitations-deprecated';
 
 // Suggestion system helpers (Task 7)
 export {

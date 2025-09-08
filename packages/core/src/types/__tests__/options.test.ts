@@ -7,7 +7,7 @@ describe('PlanOptions', () => {
       const resolved = resolveOptions();
 
       // Normalization defaults
-      expect(resolved.rewriteConditionals).toBe('safe');
+      expect(resolved.rewriteConditionals).toBe('never');
       expect(resolved.debugFreeze).toBe(false);
 
       // Rational defaults
@@ -28,7 +28,6 @@ describe('PlanOptions', () => {
 
       // Guards defaults
       expect(resolved.guards.maxGeneratedNotNesting).toBe(2);
-      expect(resolved.guards.maxEffectiveNotNesting).toBe(3);
 
       // Cache defaults
       expect(resolved.cache.preferWeakMap).toBe(true);
@@ -66,6 +65,7 @@ describe('PlanOptions', () => {
         rational: {
           maxRatBits: 256,
           fallback: 'float',
+          qCap: 1_000_000,
         },
         trials: {
           skipTrials: true,
@@ -80,6 +80,7 @@ describe('PlanOptions', () => {
       expect(resolved.debugFreeze).toBe(true);
       expect(resolved.rational.maxRatBits).toBe(256);
       expect(resolved.rational.fallback).toBe('float');
+      expect(resolved.rational.qCap).toBe(1_000_000);
       expect(resolved.trials.skipTrials).toBe(true);
       expect(resolved.metrics).toBe(false);
 
@@ -93,10 +94,10 @@ describe('PlanOptions', () => {
     it('should derive conditionals.strategy from rewriteConditionals', () => {
       expect(
         resolveOptions({ rewriteConditionals: 'never' }).conditionals.strategy
-      ).toBe('repair-only');
+      ).toBe('if-aware-lite');
       expect(
         resolveOptions({ rewriteConditionals: 'safe' }).conditionals.strategy
-      ).toBe('if-aware-lite');
+      ).toBe('rewrite');
       expect(
         resolveOptions({ rewriteConditionals: 'aggressive' }).conditionals
           .strategy
@@ -141,10 +142,6 @@ describe('PlanOptions', () => {
       expect(() =>
         resolveOptions({ guards: { maxGeneratedNotNesting: -1 } })
       ).toThrow('guards.maxGeneratedNotNesting must be non-negative');
-
-      expect(() =>
-        resolveOptions({ guards: { maxEffectiveNotNesting: -1 } })
-      ).toThrow('guards.maxEffectiveNotNesting must be non-negative');
     });
 
     it('should reject invalid cache options', () => {

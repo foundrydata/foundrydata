@@ -9,11 +9,12 @@ This directory contains technical documentation for FoundryData's feature simpli
 - **Deterministic**: Same schema + seed → same output across runs and platforms  
 - **No Mutation**: Original schema is never modified; internal canonical form is separate
 - **Pipeline Integrity**: Each stage preserves validation guarantees while transforming representation
+- **Effective View Conservatism**: Arrays use bag semantics for `contains`; objects enforce must‑cover intersection when `additionalProperties:false` across `allOf`
 
 ### Algorithm
 1. **Parse** - Detect JSON Schema draft, validate structure, reject malformed inputs
 2. **Normalize** - Convert to canonical 2020-12-like internal form with pointer mapping
-3. **Compose** - Build effective view by resolving composition (`allOf`/`anyOf`/`oneOf`), handle constraints
+3. **Compose** - Build effective view by resolving composition (`allOf`/`anyOf`/`oneOf`), handle constraints (bagged `contains`, AP:false must‑cover)
 4. **Generate** - Create instances using effective constraints with seeded deterministic RNG
 5. **Repair** - AJV-driven corrections when generation doesn't perfectly satisfy original schema
 6. **Validate** - Final AJV validation against original schema (fail pipeline if non-compliant)
@@ -106,6 +107,7 @@ const advancedResult = await generate({
   rows: 1000,
   validator,
   options: { 
+    // Default: no rewrite; generation uses if‑aware‑lite
     rewriteConditionals: 'safe', 
     metrics: true,
     trials: { maxBranchesToTry: 8 }
