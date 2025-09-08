@@ -274,9 +274,16 @@ If using Claude Code with MCP, you can access:
 **Import workflow**: `@./.taskmaster/CLAUDE.md`
 **Completion protocol**: Always use `/complete-task <id>`; do **not** call low‑level status commands directly.
 
-**Reading Task Requirements**
+**IMPORTANT: Reading Task Requirements**
+* **ALWAYS read the task's Implementation Details first** - Get task details with `get_task` to see the [Context] section
+* **For subtasks: Read parent task's Implementation Details** - The context requirements are in the parent task
+* **ALWAYS use Grep to find anchors first**, then read sections by offset
+* **MANDATORY: Complete ALL context requirements before implementation:**
+  - Read ALL "Must read" sections listed in the [Context] section
+  - Read ALL "Nice to read" sections for comprehensive understanding
+* **Never use direct Read on large docs without grep anchors first**
+* Confirm you had read the entire doc if asked
 
-* Grep anchors first, then read sections by offset; complete all anchors before implementation.
 
 **Quality Gates**
 
