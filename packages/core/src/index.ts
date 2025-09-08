@@ -45,6 +45,36 @@ export {
   type Workaround,
 } from './errors/suggestions';
 
+// High-level generation API with options support
+import {
+  FoundryGenerator,
+  type GenerationOptions,
+  type GenerationOutput,
+} from './generator/foundry-generator';
+import { type PlanOptions } from './types/options';
+import { type FoundryError } from './types/errors';
+import { type Result } from './types/result';
+
+/**
+ * High-level generation function with comprehensive options support
+ *
+ * @param schema - JSON Schema object to generate data from
+ * @param options - Generation options (rows, seed, etc.)
+ * @param planOptions - Configuration options for the generation pipeline
+ * @returns Generation result with data, metrics, and compliance report
+ */
+export async function generate(
+  schema: object,
+  options: GenerationOptions & { count?: number } = {},
+  planOptions?: Partial<PlanOptions>
+): Promise<Result<GenerationOutput, FoundryError>> {
+  const generator = new FoundryGenerator({
+    options: planOptions,
+  });
+
+  return generator.run(schema, options);
+}
+
 // Initialize built-in formats to avoid circular dependencies
 import {
   defaultFormatRegistry,

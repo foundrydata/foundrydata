@@ -14,6 +14,11 @@ import {
   ConfigError,
   type FoundryError,
 } from '../types/errors';
+import {
+  type ResolvedOptions,
+  resolveOptions,
+  type PlanOptions,
+} from '../types/options';
 import type { Schema } from '../types/schema';
 import {
   ParserRegistry,
@@ -74,6 +79,7 @@ export interface PipelineMetrics {
   memory?: { rss: number; heapUsed: number };
   itemsRepaired?: number;
   repairAttemptsUsed?: number;
+  optionsSnapshot?: ResolvedOptions;
 }
 
 export interface GenerationPlan {
@@ -167,12 +173,19 @@ class MetricsCollector {
     validateMs: 0,
     totalMs: 0,
   };
+  private enabled: boolean;
+
+  constructor(enabled = true) {
+    this.enabled = enabled;
+  }
 
   start(stage: PipelineStage): void {
+    if (!this.enabled) return;
     this.marks.set(stage, Date.now());
   }
 
   end(stage: PipelineStage): void {
+    if (!this.enabled) return;
     const start = this.marks.get(stage) ?? Date.now();
     const delta = Date.now() - start;
     switch (stage) {
@@ -210,12 +223,17 @@ export class FoundryGenerator {
   private readonly formatRegistry: FormatRegistryWithMetrics;
   private readonly validator: ComplianceValidator;
   private readonly seedManager = new SeedManager();
+  private readonly options: ResolvedOptions;
 
   constructor(opts?: {
     parserRegistry?: ParserRegistry;
     formatRegistry?: FormatRegistry;
     validator?: ComplianceValidator;
+    options?: Partial<PlanOptions>;
   }) {
+    // Resolve options with defaults first
+    this.options = resolveOptions(opts?.options);
+
     this.parserRegistry = opts?.parserRegistry ?? createDefaultParserRegistry();
     // Ensure JSONSchemaParser is registered when using a fresh registry
     type MaybeGet = { getRegisteredParsers?: () => string[] };
@@ -250,7 +268,13 @@ export class FoundryGenerator {
     }
 
     this.formatRegistry = new FormatRegistryWithMetrics(innerRegistry);
-    this.validator = opts?.validator ?? new ComplianceValidator();
+    this.validator =
+      opts?.validator ??
+      new ComplianceValidator({
+        // Map ResolvedOptions to ComplianceValidator options
+        strictSchema: this.options.failFast.externalRefStrict === 'error',
+        validateFormats: true, // Always validate formats for compliance
+      });
   }
 
   parseSchema(input: unknown): Result<Schema, ParseError> {
@@ -901,6 +925,7 @@ export class FoundryGenerator {
         locale,
         path: '$',
         scenario,
+        resolvedOptions: this.options,
       });
 
       for (let i = 0; i < count; i++) {
@@ -1127,6 +1152,7 @@ export class FoundryGenerator {
       path,
       scenario: baseContext.scenario,
       maxDepth: baseContext.maxDepth,
+      resolvedOptions: baseContext.options,
     });
 
     try {
@@ -1252,7 +1278,7 @@ export class FoundryGenerator {
     schemaInput: object,
     options: GenerationOptions & { count?: number }
   ): Result<GenerationOutput, FoundryError> {
-    const metrics = new MetricsCollector();
+    const metrics = new MetricsCollector(this.options.metrics);
 
     // Parse original (early feature checks / errors)
     metrics.start(PipelineStage.Parse);
@@ -1365,6 +1391,7 @@ export class FoundryGenerator {
       memory,
       itemsRepaired: gen.value.repairs.itemsRepaired,
       repairAttemptsUsed: gen.value.repairs.attemptsUsed,
+      optionsSnapshot: this.options,
     };
 
     return ok({

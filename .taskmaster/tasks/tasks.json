@@ -2360,7 +2360,7 @@
         "dependencies": [
           27
         ],
-        "status": "pending",
+        "status": "done",
         "complexityScore": 6,
         "details": "[Context]\nContext need: 3/5\nMust read:\n- docs/feature-simplification/README.md#pipeline\n- docs/feature-simplification/Features.md#configuration\n- docs/feature-simplification/Invariants.md#core-invariants\nNice to read:\n- docs/feature-simplification/Phasing.md\n- docs/feature-simplification/Features.md#modes\n- docs/feature-simplification/Features.md#metrics\n---\nSection 5 — Configuration Overview\n\nPRINCIPLE: All knobs are optional; defaults are conservative.\n\nComplete PlanOptions type (TypeScript sketch):\ntypescript\nexport type PlanOptions = {\n // Normalization\n rewriteConditionals?: 'never' | 'safe' | 'aggressive'; // default: 'safe'\n debugFreeze?: boolean; // default: false\n\n // Composition / numeric math\n rational?: {\n maxRatBits?: number; // default: 128 (bit-length cap for p and q)\n maxLcmBits?: number; // default: 128 (cap on LCM intermediate)\n qCap?: number; // default: undefined (denominator cap)\n fallback?: 'decimal' | 'float'; // default: 'decimal'\n decimalPrecision?: number; // default: 12\n };\n\n // Output encoding\n encoding?: { bigintJSON?: 'string' | 'number' | 'error' }; // default: 'string'\n\n // Branch trials\n trials?: {\n perBranch?: number; // default: 1..2\n maxBranchesToTry?: number; // default: 12 (Top‑K)\n skipTrialsIfBranchesGt?: number; // default: 50 (score‑only selection)\n skipTrials?: boolean; // default: false\n };\n\n // Guards\n guards?: {\n maxGeneratedNotNesting?: number; // default: 2 (normalizer)\n maxEffectiveNotNesting?: number; // default: 3 (composer hints)\n };\n\n // Cache\n cache?: {\n preferWeakMap?: boolean; // default: true\n useId?: boolean; // default: true ($id if present)\n hashIfBytesLt?: number; // default: 1_000_000\n lruSize?: number; // default: 64\n };\n\n // Metrics & toggles\n metrics?: boolean; // default: true\n disablePatternOverlapAnalysis?: boolean; // default: false\n disableDeepFreeze?: boolean; // default: false\n\n — Complexity caps & fail-fast\n complexity?: {\n maxOneOfBranches?: number; // default: 200\n maxAnyOfBranches?: number; // default: 500\n maxPatternProps?: number; // default: 64\n maxEnumCardinality?: number; // default: 10_000\n maxContainsNeeds?: number; // default: 16\n maxSchemaBytes?: number; // default: 2_000_000\n bailOnUnsatAfter?: number; // default: 12\n };\n\n failFast?: {\n externalRefStrict?: 'error'|'warn'|'ignore'; // default: 'error'\n dynamicRefStrict?: 'warn'|'note'; // default: 'note'\n };\n\n — Conditionals generation behavior\n conditionals?: {\n strategy?: 'rewrite' | 'if-aware-lite' | 'repair-only'; // default: tied to rewriteConditionals\n minThenSatisfaction?: 'discriminants-only'|'required-only'|'required+bounds'; // default: 'required-only'\n };\n};\n\n\nModes (Section 11):\n- Strict (default): fail early only on non‑normalizable constructs or explicit policy cases.\n- Lax: proceed best‑effort even when some features are partial.\n\nConfig plumbing:\n- Source of truth: packages/core/src/types/options.ts.\n- Provide resolveOptions(user?: Partial<PlanOptions>): ResolvedOptions with defaults and shallow validation.\n- Expose flags in CLI (see Task 19) and programmatic API.\n- Include options snapshot in diag.metrics for reproducibility.\n",
         "testStrategy": "Unit tests for each option with defaulting behavior; invalid combinations rejected. Snapshot tests for resolved options in Strict vs Lax modes.",
@@ -2368,7 +2368,7 @@
           {
             "id": 1,
             "title": "Define PlanOptions and ResolvedOptions",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/types/options.ts",
             "checklist": [
@@ -2381,7 +2381,7 @@
           {
             "id": 2,
             "title": "Wire options into subsystems",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 5,
             "dependencies": [
               1
@@ -2392,7 +2392,7 @@
           {
             "id": 3,
             "title": "CLI flags mapping",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/cli/src/flags.ts",
             "details": "Map flags to PlanOptions; print effective config when --debug-passes."
@@ -3445,7 +3445,7 @@
       "totalTasks": 27,
       "completedTasks": 0,
       "created": "2025-09-07T19:54:27.048Z",
-      "updated": "2025-09-07T20:26:24.123Z"
+      "updated": "2025-09-08T18:35:33.055Z"
     }
   }
 }
