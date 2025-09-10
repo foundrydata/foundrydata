@@ -56,7 +56,8 @@ foundrydata generate --schema user.json --rows 100
 foundrydata generate --schema user.json --rows 1000 --seed 42 --output users.json --print-metrics
 
 # External refs and compatibility mode
-foundrydata generate --schema api-schema.json --resolve-externals --compat lax --rows 50
+# External $ref: no remote dereferencing. In 'lax' mode, generation attempts use local constraints only.
+foundrydata generate --schema api-schema.json --compat lax --rows 50
 ```
 
 ### Diagnostics

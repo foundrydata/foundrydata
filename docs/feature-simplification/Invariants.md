@@ -201,8 +201,8 @@ const run2 = generate({ schema, rows: 10, seed });
 ```
 
 ### Diagnostics
-- **Bag Composition**: How needs are extracted and combined
-- **Capacity Analysis**: Whether needs fit within array size constraints
+- **Bag Composition**: How needs are extracted and combined (`CONTAINS_BAG_COMBINED`)
+- **Capacity Analysis**: Early unsat when `Σ min_i > (maxItems ?? +∞)` (`CONTAINS_UNSAT_BY_SUM`); unsat if any `min > maxItems`; unsat when provably disjoint needs include `max=0` alongside another `min>0`
 - **Satisfaction Tracking**: Which generated items satisfy which needs
 
 ## 👑 Enum/Const Over Type {#enum-const-over-type}
@@ -244,6 +244,8 @@ const run2 = generate({ schema, rows: 10, seed });
 - **Planning Config**: Internal canonical schema compilation with strict settings
 - **Validation Authority**: Source config AJV is authoritative for final validation
 - **Cache Separation**: Separate caches for different AJV configurations
+- **Cache Keys**: Include AJV major version and critical flags; include relevant `PlanOptions`
+- **No Data Cache**: Never cache generated data across runs; optional memoization only for branch selection keyed by `(schemaPath, seed, PlanOptions)`
 
 ### Algorithm
 1. **Source AJV Setup** - Configure for original schema with `strictSchema:false`, `allowUnionTypes:true`
@@ -319,6 +321,7 @@ const effective = {
 - **Validation Consistency**: Both modes maintain 100% AJV compliance guarantee
 - **Clear Boundaries**: Well-defined differences in behavior between modes
 - **Feature Availability**: Strict mode may reject schemas that lax mode accepts
+- **No Remote Deref**: Only in‑document `$ref` are resolved; external `$ref` are not dereferenced and incur diagnostics
 
 *See also: [Features → Conditionals Generation](Features.md#conditionals-generation)*
 
@@ -347,6 +350,7 @@ const laxResult = generate({ schema, mode: 'lax' }); // succeeds with repair
 - **Mode Impact**: How mode selection affects generation behavior
 - **Feature Gates**: Which features are available in each mode
 - **Success Rates**: Comparative success rates between strict and lax modes
+- **External Refs**: `EXTERNAL_REF_UNRESOLVED` (strict=error, lax=warn) when external `$ref` is present
 
 ## 📋 Diagnostics are First Class {#diagnostics-are-first-class}
 
@@ -445,7 +449,7 @@ const ptrMap = new Map([
 ### Diagnostics
 - **Mapping Coverage**: Percentage of paths with explicit mappings
 - **Prefix Resolution**: Frequency of longest-prefix lookups
-- **Error Attribution**: Success rate of mapping errors to original locations
+- **Error Attribution**: Success rate of mapping errors to original locations; repair logs reference both `canonPath` and `origPath`
 
 ## 🛡️ Graceful Degradation {#graceful-degradation}
 

@@ -25,6 +25,12 @@ Parser, normalization, composition/planning, generation, repair, validation, doc
 * **Open Source First** — MIT. Auditable. Contributable. Runnable offline.
 * **Correctness over Features** — Add complexity only when guarantees hold.
 
+### Invariants (MUST)
+* **AP:false must‑cover** — When any conjunct in `allOf` sets `additionalProperties:false`, the set of generable keys is the **intersection** of keys recognized by **all** such conjuncts (named keys in `properties` + keys matched by **anchored** `patternProperties`, conservatively approximated). Approximations MUST emit `AP_FALSE_INTERSECTION_APPROX`. See §8.
+* **Contains bag semantics** — `contains` across `allOf` is modeled as an independent bag of needs `{schema,min,max}` with early unsat checks (Σmin > maxItems; min > maxItems; disjoint needs with max=0 vs min>0). See §8–§9.
+* **No remote deref** — No network I/O to resolve external `$ref`. In **Strict**, fail with `EXTERNAL_REF_UNRESOLVED`. In **Lax**, warn and attempt local generation; final AJV validation still runs against the original schema and may fail. See §11–§12, §19.
+* **Determinism boundaries** — No caching of **generated data** across runs. Caches are limited to schema/compose/validator artifacts and MUST key on AJV major + relevant flags + PlanOptions (and `seed` when memoizing branch picks). Branch selection is deterministic; see §8, §14–§15.
+
 ---
 
 ## 4) Guiding Principles
@@ -167,9 +173,9 @@ type PlanOptions = {
 4. **Conditionals (`if/then/else`)**
 
    * **Default**: no rewrite (`rewriteConditionals:'never'`).
-   * **`safe` rewrite** (double negation) only when strictly safe:
+   * **`safe` rewrite** (double negation) only when strictly safe (normative):
 
-     * **Block** if any `unevaluatedProperties/unevaluatedItems` is in scope or ancestor scope.
+     * **Block** if any `unevaluatedProperties/unevaluatedItems` is in scope or ancestor scope. **MUST NOT** rewrite and **MUST** emit `IF_REWRITE_SKIPPED_UNEVALUATED` at the conditional's canonical path.
      * **Block** if evaluation‑affecting keywords are present at the nearest object/array or inside `then/else`:
        `unevaluated*`, `properties`, `patternProperties`, `additionalProperties`,
        `items`, `prefixItems`, `contains`, `propertyNames`, `dependentSchemas`.
@@ -183,6 +189,17 @@ type PlanOptions = {
        ```
 
        Note `IF_REWRITE_DOUBLE_NOT`.
+   * **Normative example (no‑rewrite)**
+     Given:
+     ```json
+     { "type":"object",
+       "unevaluatedProperties": false,
+       "if": { "properties": { "kind": { "const":"A" } }, "required":["kind"] },
+       "then": { "required": ["a1"] },
+       "else": { "required": ["a2"] }
+     }
+     ```
+     Even with `rewriteConditionals: "safe"`, the conditional **is not** rewritten; a note `IF_REWRITE_SKIPPED_UNEVALUATED` is recorded.
    * Partial forms: keep `if`‑only and `then`/`else`‑only as‑is.
    * Cap nested `not` by `guards.maxGeneratedNotNesting` (note `NOT_DEPTH_CAPPED`).
 
@@ -259,14 +276,14 @@ type PlanOptions = {
 
   * If **any** conjunct has `additionalProperties:false`, then any key **not covered** by that conjunct’s
     `properties/patternProperties` is forbidden, regardless of others.
-  * **Must‑cover** algorithm:
+  * **Must‑cover (MUST)**:
 
     * For each conjunct `Ci` with `additionalProperties:false`, compute a recognizer of keys it covers:
 
       * Named keys from `properties`.
       * Names accepted by **anchored** `patternProperties` (conservative recognition).
     * The globally safe set of generable keys is the **intersection** of recognizers across all such `Ci`.
-    * For complex or non‑anchored patterns, apply conservative approximation and note `AP_FALSE_INTERSECTION_APPROX`.
+    * For complex or non‑anchored patterns, apply conservative approximation and **emit** `AP_FALSE_INTERSECTION_APPROX`.
   * If a conjunct supplies a schema (not `false`) for extras, enforce that schema **in addition** to the must‑cover restriction.
 
 * **Objects — other**
@@ -299,11 +316,10 @@ type PlanOptions = {
       type ContainsBag = ContainsNeed[];
       ```
     * In `allOf`, **concatenate** bags; optional subsumption (if `schemaA ⊆ schemaB`).
-    * **Unsat checks**:
-
-      * `sum(min_i) > (maxItems ?? +∞)` ⇒ `CONTAINS_UNSAT_BY_SUM`.
-      * Need with `min > maxItems` ⇒ unsat.
-      * If needs are provably disjoint and a need has `max=0` while another has `min>0` ⇒ unsat.
+    * **Unsat checks (MUST)**:
+      * `Σ min_i > (maxItems ?? +∞)` ⇒ emit `CONTAINS_UNSAT_BY_SUM` and short‑circuit as unsat.
+      * Any need with `min > (maxItems ?? +∞)` ⇒ unsat.
+      * If needs are **provably disjoint** and one has `max=0` while another has `min>0` ⇒ unsat.
     * Diagnostics: `CONTAINS_BAG_COMBINED`.
 
 ### Early unsat checks (short‑circuit)
@@ -334,7 +350,7 @@ type PlanOptions = {
 * **Trials policy**:
 
   * Score all branches; try Top‑K `maxBranchesToTry`. Attempt generation up to `trials.perBranch` times per branch (default 2).
-  * If branch count > `skipTrialsIfBranchesGt` or `skipTrials=true` ⇒ choose by score only.
+  * If branch count > `skipTrialsIfBranchesGt` or `skipTrials=true` ⇒ **score‑only** selection: deterministic stable sort by score, then by stable index; final tie‑break uses RNG seeded by `(globalSeed ⊕ hash(schemaPath))`. No trials are attempted in this path.
   * Record trial budget in `diag.budget`. Emit `TRIALS_SKIPPED_LARGE_ONEOF` when `oneOf.length > skipTrialsIfBranchesGt` **or** `trials.skipTrials === true`.
 
 * **`oneOf` exclusivity**:
@@ -413,7 +429,7 @@ type PlanOptions = {
 * **Budgets** — per‑node attempt counter (1–3) + seen‑set `(instancePath, keyword, normalizedParams)` to avoid loops.
 * **Stagnation guard** — If over `complexity.bailOnUnsatAfter` gen→repair→validate **cycles** errors don’t decrease or oscillate on the same keys ⇒ `UNSAT_BUDGET_EXHAUSTED`.
 * **Idempotence** — Repeating the same action is a no‑op.
-* **Logging** — Optional `{ item, changed, actions:[...] }`.
+* **Logging** — `{ item, changed, actions:[...] }` where each action records `keyword`, `canonPath` and `origPath` (derived via `toOriginalByWalk` and `ptrMap`), plus `details` when applicable.
 
 ---
 
@@ -422,7 +438,7 @@ type PlanOptions = {
 ### Strict (default)
 
 * Fail early only on non‑normalizable constructs or explicit policy cases.
-* `$ref` external: behavior controlled by `failFast.externalRefStrict` (default `error`).
+* `$ref` external: behavior controlled by `failFast.externalRefStrict` (default `error`). On failure, **emit** diagnostic `EXTERNAL_REF_UNRESOLVED`.
 * `$dynamic*`: note `DYNAMIC_PRESENT` (no error).
 * Compose & object keywords proceed without feature gates; complexity caps may degrade behavior but never skip validation.
 
@@ -450,7 +466,7 @@ type PlanOptions = {
 
 * **Detection** — `$schema` + AJV draft settings.
 * **Internal canon** — 2020‑12‑like shape; **always** validate against the original schema.
-* **Refs** — Only in‑document refs resolved; **no network I/O**.
+* **Refs** — Only in‑document refs resolved; **no network I/O**. External `$ref` are not dereferenced; see §11 and diagnostic `EXTERNAL_REF_UNRESOLVED`.
 * **Dynamic refs** — `$dynamicRef/$dynamicAnchor/$recursiveRef` preserved; generation conservative. Note `DYNAMIC_PRESENT`.
 * **Effective view** — Preserves `unevaluated*` semantics for the final validation stage.
 
@@ -485,7 +501,8 @@ Hierarchical:
 2. `$id` when present and trusted
 3. `stableHash(schema)` **only if** estimated size < `hashIfBytesLt` (skip hashing otherwise)
 
-LRU bounded by `lruSize`. Include AJV version + critical flags in the cache key.
+LRU bounded by `lruSize`. Cache keys **must** include AJV **major version** and critical flags (`validateFormats`, `allowUnionTypes`, `strictTypes`) and relevant `PlanOptions`.
+**Non‑goal**: no cache of **generated data** across runs. Memoization is allowed only for **branch selection** decisions at compose‑time and MUST key on `(schemaPath, seed, PlanOptions)`.
 (Clarification: separate LRU spaces for the two AJV instances are recommended.)
 
 ---
@@ -512,6 +529,10 @@ LRU bounded by `lruSize`. Include AJV version + critical flags in the cache key.
   memoryPeakMB?: number;        // optional, from bench harness
   p50LatencyMs?: number;        // optional, CI only
   p95LatencyMs?: number;        // optional, CI only
+  // added observability
+  branchCoverageOneOf?: Record<string, { visited: number[]; total: number }>;
+  enumUsage?: Record<string, Record<string, number>>;
+  repairActionsPerRow?: number; // total repair actions / row
 }
 ```
 
@@ -542,12 +563,17 @@ LRU bounded by `lruSize`. Include AJV version + critical flags in the cache key.
 * On simple/medium profiles: `validationsPerRow ≤ 3`, `repairPassesPerRow ≤ 1` (p50).
 * If‑aware‑lite reduces validations/row vs repair‑only on at least three conditional suites.
 * Caps trigger degradations (no crashes); diagnostics emitted.
+* `AP:false × allOf` must‑cover enforced with `AP_FALSE_INTERSECTION_APPROX` on non‑anchored patterns; no generated key outside the must‑cover set in unit/integration suites.
+* `contains` bag unsat rules enforced with `CONTAINS_UNSAT_BY_SUM` when applicable; generation re‑satisfies needs after `uniqueItems` de‑dup.
+* External `$ref` produce `EXTERNAL_REF_UNRESOLVED` (strict=error, lax=warn).
+* When `skipTrials` is active (or `oneOf` length exceeds threshold), branch selection is deterministic **score‑only** (stable index + seeded tie‑break); no trials attempted.
 
 ### Phase P1
 
 * Extra metrics (`validationsPerRow`, `repairPassesPerRow`) wired to bench harness.
 * Bench CI: simple/medium/pathological profiles; track p50/p95.
 * Docs: `Invariants.md`, `Known‑Limits.md`, Strict vs Lax table.
+* Metrics extended: `branchCoverageOneOf`, `enumUsage`, `repairActionsPerRow` exported by bench harness.
 
 ### Phase P2
 
@@ -562,6 +588,7 @@ LRU bounded by `lruSize`. Include AJV version + critical flags in the cache key.
 * **Invariants.md** — Cross‑phase invariants (e.g., “validate against original schema”, “`enum/const` > `type`”, “must‑cover for `AP:false`”, “bag semantics for `contains`”).
 * **Known‑Limits.md** — Partial features/approximations (non‑anchored patterns under `AP:false`, `$dynamicRef`).
 * **Features Matrix** — See §18.
+* **Non‑Goals** — No remote deref of external `$ref`; no caching of generated data; scenario‑based / learned distributions are opt‑in extensions outside core guarantees (deterministic, AJV‑validated).
 
 ---
 
@@ -590,7 +617,8 @@ LRU bounded by `lruSize`. Include AJV version + critical flags in the cache key.
 `COMPLEXITY_CAP_ONEOF`, `COMPLEXITY_CAP_ANYOF`, `COMPLEXITY_CAP_PATTERNS`,
 `COMPLEXITY_CAP_ENUM`, `COMPLEXITY_CAP_CONTAINS`, `COMPLEXITY_CAP_SCHEMA_SIZE`,
 `UNSAT_PATTERN_PNAMES`, `UNSAT_DEPENDENT_REQUIRED_AP_FALSE`, `UNSAT_BUDGET_EXHAUSTED`,
-`IF_AWARE_HINT_APPLIED`, `IF_AWARE_HINT_SKIPPED_INSUFFICIENT_INFO`.
+`IF_AWARE_HINT_APPLIED`, `IF_AWARE_HINT_SKIPPED_INSUFFICIENT_INFO`,
+`EXTERNAL_REF_UNRESOLVED`.
 
 ---
 
@@ -621,7 +649,12 @@ LRU bounded by `lruSize`. Include AJV version + critical flags in the cache key.
 * Conditionals (with/without `unevaluated*`), nested; verify **no semantic drift** when not rewriting.
 * Composition suites validated by AJV (original schema).
 * Objects: `patternProperties` / `propertyNames` / `dependentSchemas` / `additionalProperties:false` across `allOf`.
+  - Include cases with non‑anchored patterns: expect `AP_FALSE_INTERSECTION_APPROX` and no keys outside must‑cover.
 * `oneOf` overlap: selected branch ends exclusive after refinement.
+* External `$ref` (strict vs lax): validate emission of `EXTERNAL_REF_UNRESOLVED` and mode‑specific behavior (error vs warn + attempt).
+* Score‑only path: `skipTrials=true` or large `oneOf` ⇒ deterministic pick (stable index + seeded tie‑break), zero trials attempted.
+* Repair logs include `origPath` derived from `ptrMap` for each action.
+* Conditionals with `unevaluated*` in scope: safe rewrite is blocked; `IF_REWRITE_SKIPPED_UNEVALUATED` present.
 
 ### Bench / CI
 
@@ -657,12 +690,14 @@ LRU bounded by `lruSize`. Include AJV version + critical flags in the cache key.
 * `packages/core/src/transform/composition-engine.ts`
 * `packages/core/src/generator/foundry-generator.ts` (wire‑in)
 * `packages/core/src/repair/repair-engine.ts`
+  - emits repair actions with `canonPath` and `origPath` (via `ptrMap`).
 * `packages/core/src/parser/json-schema-parser.ts` (lean checks)
 * `packages/core/src/util/ptr-map.ts` (ptr map + reverse map by path walk)
 * `packages/core/src/util/rational.ts` (exact rational helpers with caps/fallback + BigInt‑safe JSON)
 * `packages/core/src/util/rng.ts` (seeded RNG; no global state)
 * `packages/core/src/util/struct-hash.ts` (structural hashing for `uniqueItems`)
 * `packages/core/src/util/metrics.ts` (per‑phase timings, counters, validations/row)
+  - exports counters for `branchCoverageOneOf`, `enumUsage`, `repairActionsPerRow`.
 * `packages/core/src/util/stable-hash.ts` (optional; size‑gated)
 * Docs: `README.md`, `error.md`, `CHANGELOG.md`, `Invariants.md`, `Known-Limits.md`
 
@@ -790,6 +825,11 @@ export interface ComposeOptions {
   rational?: PlanOptions['rational'];
   disablePatternOverlapAnalysis?: boolean;
   complexity?: PlanOptions['complexity'];
+  /**
+   * Optional memoization key for deterministic branch selection without trials.
+   * If provided, implementations MAY memoize the pick for (schemaPath, seed, opts).
+   */
+  selectorMemoKeyFn?: (schemaPath: string, seed: number, opts?: PlanOptions) => string;
 }
 
 export function compose(schema: any, opts?: ComposeOptions): {
@@ -830,7 +870,17 @@ export function repair(
   schema: any,
   errors: AjvErr[],
   ctx: RepairCtx
-): { item: unknown; changed: boolean; actions?: any[]; diag?: { budgetExhausted?: boolean } };
+): {
+  item: unknown;
+  changed: boolean;
+  actions?: Array<{
+    keyword: string;
+    canonPath: string;
+    origPath?: string; // mapped via ptrMap
+    details?: any;
+  }>;
+  diag?: { budgetExhausted?: boolean }
+};
 ```
 
 ```ts
@@ -867,3 +917,4 @@ export function toOriginalByWalk(canonPtr: string, mapCanonToOrig: Map<string,st
   }
 }
 ```
+![alt text](pipeline_schema_driven_v2.svg)

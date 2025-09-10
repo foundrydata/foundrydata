@@ -90,16 +90,16 @@ Documentation of current limitations and partial feature support in FoundryData,
 ## 🌐 External Refs {#external-refs}
 
 ### Invariants
-- **Strict Mode Default**: External `$ref` causes error by default in strict mode
+- **No Remote Deref**: Only in‑document `$ref` are resolved; no network I/O
+- **Strict Mode Default**: External `$ref` produces an error by default in strict mode
 - **Configurable Behavior**: `failFast.externalRefStrict` controls error vs warning vs ignore
-- **Resolution Required**: External refs must be resolved before generation if strict enforcement disabled
-- **Network Isolation**: No automatic network requests to resolve external references
+- **Local‑Only Generation**: In lax mode, generation proceeds on local parts only; final AJV validation may fail
 
 ### Algorithm
 1. **External Detection** - Identify `$ref` pointing outside current document
-2. **Policy Application** - Apply configured external reference policy
-3. **Error/Warning Generation** - Produce appropriate diagnostic based on policy
-4. **Resolution Check** - Verify external refs resolved if generation proceeds
+2. **Policy Application** - Apply configured external reference policy (strict=error, lax=warn)
+3. **No Deref** - Do not perform network resolution; leave external `$ref` unresolved
+4. **Proceed Locally** - If allowed, generate from local constraints only; validate with AJV against original schema
 
 ### Example
 ```javascript
@@ -110,26 +110,16 @@ Documentation of current limitations and partial feature support in FoundryData,
   }
 }
 
-// Strict mode (default): Fails immediately
-// Error: "External $ref not supported in strict mode"
+// Strict mode (default): emits EXTERNAL_REF_UNRESOLVED and fails
 
-// Warning mode: Proceeds if reference resolved
-{
-  failFast: { externalRefStrict: 'warn' }
-}
-// Warning: "External $ref detected, ensure resolution before generation"
-
-// Ignore mode: Proceeds without checking
-{
-  failFast: { externalRefStrict: 'ignore' }  
-}
-// Proceeds, may fail during generation if unresolved
+// Lax mode: emits EXTERNAL_REF_UNRESOLVED (warn), attempts local generation; 
+// final AJV validation may fail if unresolved ref is structurally required
 ```
 
 ### Diagnostics
 - **External Detection**: Count and locations of external references found
 - **Policy Application**: Which external reference policy was applied
-- **Resolution Status**: Whether external references were resolved before generation
+- **External Refs**: `EXTERNAL_REF_UNRESOLVED` (strict=error, lax=warn)
 
 ## 🔄 Schema Composition Limitations {#schema-composition-limitations}
 
@@ -171,6 +161,20 @@ Documentation of current limitations and partial feature support in FoundryData,
   "not": { "not": { "not": { "type": "string" } } }
 }
 // Error: "Maximum 'not' depth exceeded - use simpler logic"
+```
+
+#### Large oneOf Behavior
+
+```javascript
+// Large oneOf triggers degradation
+{
+  "oneOf": [/* 300+ schemas */]  // Exceeds maxOneOfBranches
+}
+
+// Degradation applied:
+// - Trials skipped; deterministic score‑only selection (stable sort by score, then stable index; seeded tie‑break)
+// - Diagnostic: TRIALS_SKIPPED_LARGE_ONEOF
+// - Result: Still generates valid data; no branch trials attempted
 ```
 
 ### Diagnostics

@@ -2528,7 +2528,7 @@
         ],
         "status": "pending",
         "complexityScore": 6,
-        "details": "[Context]\nContext need: 2/5\nMust read:\n- docs/feature-simplification/Features.md#cache-and-compiler\nNice to read:\n- docs/feature-simplification/Invariants.md#cache-keys-include-ajv-flags\n- docs/feature-simplification/README.md#pipeline\n---\nSections 14, 13\n- stableHash(schema) only if estimated bytes < hashIfBytesLt.\n- Cache key must include: AJV major version, validateFormats, allowUnionTypes, strictTypes, and PlanOptions affecting compilation.\n- LRU with capacity lruSize; identity cache via WeakMap prioritized, then $id, then hash.\n",
+        "details": "[Context]\nContext need: 2/5\nMust read:\n- docs/feature-simplification/Features.md#cache-and-compiler\nNice to read:\n- docs/feature-simplification/Invariants.md#two-ajv-configs\n- docs/feature-simplification/README.md#pipeline\n---\nSections 14, 13\n- stableHash(schema) only if estimated bytes < hashIfBytesLt.\n- Cache key must include: AJV major version, validateFormats, allowUnionTypes, strictTypes, and PlanOptions affecting compilation.\n- LRU with capacity lruSize; identity cache via WeakMap prioritized, then $id, then hash.\n- Separate LRU spaces recommended for the two AJV instances (source vs planning).\n- Non-goal: never cache generated data across runs.\n- Optional memoization allowed only for branch selection decisions at compose-time; key strictly on (schemaPath, seed, PlanOptions).\n",
         "testStrategy": "Unit: cache hit/miss behavior; eviction order; key stability across runs; hashing skipped for large schemas.",
         "subtasks": [
           {
@@ -2648,6 +2648,7 @@
         "estimatedHours": 36,
         "dependencies": [
           2,
+          3,
           4,
           5,
           7,
@@ -2655,7 +2656,7 @@
         ],
         "status": "pending",
         "complexityScore": 9,
-        "details": "[Context]\nContext need: 5/5\nMust read:\n- docs/feature-simplification/Invariants.md#ap-false-must-cover\n- docs/feature-simplification/Invariants.md#contains-bag-semantics\n- docs/feature-simplification/Invariants.md#enum-const-over-type\n- docs/feature-simplification/Features.md#composition\nNice to read:\n- docs/feature-simplification/error.md#diagnostics-catalog\n- docs/feature-simplification/Features.md#arrays-and-tuples\n---\n[Normative context]\nScope: Build an effective view for generation without mutating the canonical schema; AJV validates against the original schema.\n\nInvariants:\n- additionalProperties:false across allOf ⇒ generate only keys covered by all recognizers (properties + anchored patternProperties).\n- contains ⇒ represent as a bag of needs; in allOf concatenate needs; early‑UNSAT if sum(min_i) > maxItems, or any single need has maxContains===0 && minContains>0.\n- enum/const outrank type; empty enum intersection ⇒ UNSAT.\n- multipleOf intersection uses exact rational math; apply caps and fallbacks with RAT_* diagnostics.\n- Do not collapse items/additionalProperties too aggressively; take intersections where schemas are provided.\n\nAlgorithm (high‑level):\n1) Types: set intersection; empty ⇒ UNSAT. Enums/consts: set intersection; conflicting const ⇒ UNSAT.\n2) Numbers: intersect bounds; multipleOf via reduced rationals L = lcm(p1,p2)/gcd(q1,q2); apply caps & fallbacks; record diagnostics.\n3) Objects: compute must‑cover keyset; merge properties; conjunct patternProperties; record overlaps (when enabled).\n4) Arrays: tuple semantics; items:false induces implicit max length; merge contains bag; run early‑UNSAT checks.\n5) Record diag: overlaps, caps, unsatHints, chosenBranch score when applicable.\n\nDiagnostics in scope:\n- AP_FALSE_INTERSECTION_APPROX, CONTAINS_BAG_COMBINED, CONTAINS_UNSAT_BY_SUM,\n COMPLEXITY_CAP_ONEOF|ANYOF|PATTERNS|ENUM|CONTAINS|SCHEMA_SIZE,\n UNSAT_PATTERN_PNAMES, UNSAT_DEPENDENT_REQUIRED_AP_FALSE, RAT_.\n\nExample:\n- allOf where one conjunct sets items:false with 2 prefixItems and another sets minItems:3 ⇒ early UNSAT.\n- allOf of two multipleOf: 2/3 and 3/10 ⇒ intersection multipleOf = 1/5; if caps exceeded, fallback to decimal and emit RAT_FALLBACK_DECIMAL.\n\nKnown limits:\n- Non‑anchored regex patterns may require conservative approximations; emit AP_FALSE_INTERSECTION_APPROX.\n---\nSection 8 — Composition\n- Type: intersect sets; empty ⇒ UNSAT.\n- Enum/Const: intersect enum; conflicting const ⇒ UNSAT; enums outrank type in generation.\n- Numbers: bounds intersection; multipleOf via exact rationals (Task 2) with caps → fallbacks; emit RAT_ diagnostics.\n- Objects: AP:false semantics across allOf via must‑cover intersection of recognizers (properties + anchored patternProperties). Approximate non-anchored patterns conservatively; emit AP_FALSE_INTERSECTION_APPROX. Merge properties; union required; conjunct patternProperties; record overlaps when enabled.\n- Arrays: tuple semantics with items:false inducing implicit max length; items merged via allOf.\n- 'contains' bag semantics: represent each need independently (schema, min, max). In allOf, concatenate; optional subsumption. Early UNSAT checks:\n • sum(min_i) > maxItems ⇒ CONTAINS_UNSAT_BY_SUM\n • any need with min_i > maxItems ⇒ UNSAT\n • provably disjoint needs with conflicting min/max ⇒ UNSAT\n • single-need rule: if a need has maxContains === 0 and minContains > 0 ⇒ UNSAT (explicit).\n Emit CONTAINS_BAG_COMBINED when bags merge.\n- Early UNSAT extensions: UNSAT_PATTERN_PNAMES (closed propertyNames vs patterns); UNSAT_DEPENDENT_REQUIRED_AP_FALSE (dependents impossible under must-cover).\n- Complexity caps & degradation: COMPLEXITY_CAP_* diagnostics; switch to score-only, skip overlap analysis, reduce Top‑K.\n- Diagnostics surface: diag = { unsatHints, chosenBranch, overlap, overlaps.patterns, scoreDetails, budget, metrics, caps }.\n",
+        "details": "[Context]\nContext need: 5/5\nMust read:\n- docs/feature-simplification/Invariants.md#ap-false-must-cover\n- docs/feature-simplification/Invariants.md#contains-bag-semantics\n- docs/feature-simplification/Invariants.md#enum-const-over-type\n- docs/feature-simplification/Features.md#composition\nNice to read:\n- docs/feature-simplification/error.md#diagnostics-catalog\n- docs/feature-simplification/Features.md#arrays-and-tuples\n---\n[Normative context]\nScope: Build an effective view for generation without mutating the canonical schema; AJV validates against the original schema.\n\nInvariants:\n- additionalProperties:false across allOf ⇒ generate only keys covered by all recognizers (properties + anchored patternProperties).\n- contains ⇒ represent as a bag of needs; in allOf concatenate needs; early‑UNSAT if Σ min_i > maxItems, or any single need has min > maxItems, or provably disjoint needs include a max=0 alongside another with min>0.\n- enum/const outrank type; empty enum intersection ⇒ UNSAT.\n- multipleOf intersection uses exact rational math; apply caps and fallbacks with RAT_* diagnostics.\n- Do not collapse items/additionalProperties too aggressively; take intersections where schemas are provided.\n\nAlgorithm (high‑level):\n1) Types: set intersection; empty ⇒ UNSAT. Enums/consts: set intersection; conflicting const ⇒ UNSAT.\n2) Numbers: intersect bounds; multipleOf via reduced rationals L = lcm(p1,p2)/gcd(q1,q2); apply caps & fallbacks; record diagnostics.\n3) Objects: compute must‑cover keyset; merge properties; conjunct patternProperties; record overlaps (when enabled).\n4) Arrays: tuple semantics; items:false induces implicit max length; merge contains bag; run early‑UNSAT checks.\n5) Record diag: overlaps, caps, unsatHints, chosenBranch score when applicable.\n\nBranch selection:\n- Deterministic, discriminant‑first scoring. If branch count > skipTrialsIfBranchesGt or skipTrials=true ⇒ score‑only selection: stable sort by score, then stable index; final tie‑break via RNG seeded by (globalSeed ⊕ hash(schemaPath)); no trials attempted.\n\nDiagnostics in scope:\n- AP_FALSE_INTERSECTION_APPROX, CONTAINS_BAG_COMBINED, CONTAINS_UNSAT_BY_SUM,\n COMPLEXITY_CAP_ONEOF|ANYOF|PATTERNS|ENUM|CONTAINS|SCHEMA_SIZE,\n UNSAT_PATTERN_PNAMES, UNSAT_DEPENDENT_REQUIRED_AP_FALSE, RAT_.\n\nExample:\n- allOf where one conjunct sets items:false with 2 prefixItems and another sets minItems:3 ⇒ early UNSAT.\n- allOf of two multipleOf: 2/3 and 3/10 ⇒ intersection multipleOf = 1/5; if caps exceeded, fallback to decimal and emit RAT_FALLBACK_DECIMAL.\n\nKnown limits:\n- Non‑anchored regex patterns may require conservative approximations; emit AP_FALSE_INTERSECTION_APPROX.\n---\nSection 8 — Composition\n- Type: intersect sets; empty ⇒ UNSAT.\n- Enum/Const: intersect enum; conflicting const ⇒ UNSAT; enums outrank type in generation.\n- Numbers: bounds intersection; multipleOf via exact rationals (Task 2) with caps → fallbacks; emit RAT_ diagnostics.\n- Objects: AP:false semantics across allOf via must‑cover intersection of recognizers (properties + anchored patternProperties). Approximate non-anchored patterns conservatively; emit AP_FALSE_INTERSECTION_APPROX. Merge properties; union required; conjunct patternProperties; record overlaps when enabled.\n- Arrays: tuple semantics with items:false inducing implicit max length; items merged via allOf.\n- 'contains' bag semantics: represent each need independently (schema, min, max). In allOf, concatenate; optional subsumption. Early UNSAT checks:\n • Σ min_i > maxItems ⇒ CONTAINS_UNSAT_BY_SUM\n • any need with min > maxItems ⇒ UNSAT\n • provably disjoint needs with conflicting min/max (e.g., one has max=0 alongside another min>0) ⇒ UNSAT\n • single-need rule: if a need has maxContains === 0 and minContains > 0 ⇒ UNSAT (explicit).\n Emit CONTAINS_BAG_COMBINED when bags merge.\n- Early UNSAT extensions: UNSAT_PATTERN_PNAMES (closed propertyNames vs patterns); UNSAT_DEPENDENT_REQUIRED_AP_FALSE (dependents impossible under must-cover).\n- Complexity caps & degradation: COMPLEXITY_CAP_* diagnostics; switch to score‑only (deterministic as above), skip overlap analysis, reduce Top‑K.\n- Diagnostics surface: diag = { unsatHints, chosenBranch, overlap, overlaps.patterns, scoreDetails, budget, metrics, caps }.\n",
         "testStrategy": "Unit: targeted merges (numbers, objects AP:false, arrays, contains bag). Early UNSAT scenarios including single-need (maxContains===0 && minContains>0). Approximation diagnostics. Integration: AJV parity on composed effective view vs original validation.",
         "subtasks": [
           {
@@ -2671,7 +2672,7 @@
             "status": "pending",
             "estimatedHours": 6,
             "dependencies": [
-              1
+              2
             ]
           },
           {
@@ -2713,12 +2714,13 @@
         "priority": "high",
         "estimatedHours": 12,
         "dependencies": [
+          3,
           8,
           27
         ],
         "status": "pending",
         "complexityScore": 7,
-        "details": "[Context]\nContext need: 4/5\nMust read:\n- docs/feature-simplification/Features.md#branch-selection\n- docs/feature-simplification/Invariants.md#determinism-and-seeding\nNice to read:\n- docs/feature-simplification/error.md#trials_skipped_large_oneof\n- docs/feature-simplification/Features.md#composition\n---\n[Normative context]\nScope: Deterministically pick branches for anyOf/oneOf using discriminant‑first scoring and bounded trials. Enforce oneOf exclusivity post‑generation via validation and refinement; no mutation of canonical schema.\n\nInvariants:\n- Scoring prioritizes clear discriminants: const/enum tags, required+const, anchored disjoint patterns, disjoint types.\n- Trials are bounded (Top‑K only). Large fan‑out ⇒ score‑only selection; emit TRIALS_SKIPPED_LARGE_ONEOF.\n- oneOf exclusivity enforced after instance generation: refine discriminants or apply bounded tweaks; must end with exactly one passing branch.\n- Ties: stable index, then RNG(seed ⊕ pathHash).\n\nAlgorithm (high‑level):\n1) Compute score for each branch.\n2) Select Top‑K; for each, attempt up to perBranch generation+validation attempts.\n3) If no trials (skipped/threshold), choose highest score deterministically.\n4) For oneOf, validate instance against all branches; if >1 pass, attempt non‑destructive refinement (fix discriminant), then minimal tweaks (numeric nudge, inject char).\n\nDiagnostics:\n- TRIALS_SKIPPED_LARGE_ONEOF, diag.budget (tried/limit/skipped), diag.overlap (passing branches).\n\nExample:\n- oneOf tagged by kind const values ⇒ scoring picks branch with matching const; exclusivity passes with no tweaks.\n\nKnown limits:\n- Heuristics may over‑ or under‑estimate discriminants when patterns overlap heavily; rely on AJV validation and refinement step.\n---\nSection 8 — Branch Selection\n- Scoring weights: +1000 (disjoint const/enum on same key), +200 (required+const/enum), +50 (anchored disjoint patterns), +10 (disjoint type), negatives for overlaps. Tie-breaker: stable index then RNG(seed ⊕ pathHash).\n- Trials: compute scores for all branches, try Top‑K; if branches > skipTrialsIfBranchesGt or skipTrials: score-only; record diag.budget.\n- oneOf exclusivity: after generation, validate against all branches; if >1 pass, do non-destructive refinement (fix discriminant) then bounded tweaks (numeric nudge, inject char). Record diag.overlap.\n",
+        "details": "[Context]\nContext need: 4/5\nMust read:\n- docs/feature-simplification/Features.md#branch-selection\n- docs/feature-simplification/Invariants.md#determinism-and-seeding\nNice to read:\n- docs/feature-simplification/error.md#trials_skipped_large_oneof\n- docs/feature-simplification/Features.md#composition\n---\n[Normative context]\nScope: Deterministically pick branches for anyOf/oneOf using discriminant‑first scoring and bounded trials. Enforce oneOf exclusivity post‑generation via validation and refinement; no mutation of canonical schema.\n\nInvariants:\n- Scoring prioritizes clear discriminants: const/enum tags, required+const, anchored disjoint patterns, disjoint types.\n- Trials are bounded (Top‑K only). Large fan‑out ⇒ score‑only selection; emit TRIALS_SKIPPED_LARGE_ONEOF.\n- oneOf exclusivity enforced after instance generation: refine discriminants or apply bounded tweaks; must end with exactly one passing branch.\n- Ties: stable index, then RNG(seed ⊕ pathHash).\n\nAlgorithm (high‑level):\n1) Compute score for each branch.\n2) Select Top‑K; for each, attempt up to perBranch generation+validation attempts.\n3) If no trials (skipped/threshold), choose highest score deterministically.\n4) For oneOf, validate instance against all branches; if >1 pass, attempt non‑destructive refinement (fix discriminant), then bounded tweaks (numeric nudge, inject char).\n\nDiagnostics:\n- TRIALS_SKIPPED_LARGE_ONEOF, diag.budget (tried/limit/skipped), diag.overlap (passing branches).\n\nExample:\n- oneOf tagged by kind const values ⇒ scoring picks branch with matching const; exclusivity passes with no tweaks.\n\nKnown limits:\n- Heuristics may over‑ or under‑estimate discriminants when patterns overlap heavily; rely on AJV validation and refinement step.\n---\nSection 8 — Branch Selection\n- Scoring weights: +1000 (disjoint const/enum on same key), +200 (required+const/enum), +50 (anchored disjoint patterns), +10 (disjoint type), negatives for overlaps. Tie-breaker: stable index then RNG(seed ⊕ pathHash).\n- Trials: compute scores for all branches, try Top‑K; if branches > skipTrialsIfBranchesGt or skipTrials: score-only; record diag.budget.\n- oneOf exclusivity: after generation, validate against all branches; if >1 pass, do non-destructive refinement (fix discriminant) then bounded tweaks (numeric nudge, inject char). Record diag.overlap.\n",
         "testStrategy": "Unit: scoring determinism; Top‑K selection; skip-trials path. Integration: exclusive final instances for oneOf with overlap introduced.",
         "subtasks": [
           {
@@ -2795,6 +2797,7 @@
         ],
         "status": "pending",
         "complexityScore": 8,
+        "file": "packages/core/src/generator/foundry-generator.ts",
         "details": "[Context]\nContext need: 5/5\nMust read:\n- docs/feature-simplification/Invariants.md#effective-view-consumption\n- docs/feature-simplification/Features.md#generator\n- docs/feature-simplification/Invariants.md#ap-false-must-cover\n- docs/feature-simplification/Invariants.md#contains-bag-semantics\nNice to read:\n- docs/feature-simplification/Known-Limits.md#pattern-approximations\n- docs/feature-simplification/Features.md#formats\n---\n[Normative context]\nScope: Generate values that satisfy the effective view from the Composition engine, under determinism (seed ⇒ same data), without mutating canonical schema.\n\nInvariants:\n- enum/const selection takes precedence over broad type unions; deterministic by index.\n- Strings measured in Unicode code points; regex in Unicode mode.\n- With unevaluatedProperties:false or AP:false in any conjunct, generate only evaluated keys (must‑cover intersection).\n- Arrays: respect tuple semantics; items:false implies implicit max length; satisfy contains bag with distinct items as needed.\n- Numbers: prefer type:'integer' over number+multipleOf:1; use rational helpers for multipleOf.\n\nAlgorithm (type‑level):\n- String: pick deterministic sample satisfying min/max length and patterns; fallback pattern synthesis when necessary.\n- Number/Integer: sample within bounds; snap to multiples; handle exclusive bounds via nudge.\n- Array: build prefixItems; fill additional per items constraints; satisfy contains counts; coordinate with uniqueItems (ensure distinctness where needed).\n- Object: emit required first then lexical order; only keys recognized by properties|patternProperties|dependentSchemas under AP:false/unevaluated false.\n\nDiagnostics:\n- None specific to generator beyond metrics; constraint failures flow to Repair/AJV.\n\nExample:\n- Schema with oneOf tagged union and unevaluatedProperties:false ⇒ generator emits only tag + required keys for selected branch; no extras.\n\nKnown limits:\n- Complex regex may require fallback synthesis that is conservative; final compliance enforced by AJV + Repair.\n---\nSection 9 — Generator\n- Respect enum/const over broad type unions; pick deterministically by index.\n- Strings: code-point length, Unicode regex; min/max length; pattern synthesis fallback.\n- Formats: annotate-only by default; optional minimal generators for email/uri/uuid/date-time when validateFormats=true.\n- Numbers: prefer type 'integer' to number+multipleOf:1; honor bounds and multipleOf using rational helpers.\n- Arrays: tuple semantics; implicit max length via items:false; satisfy contains bag with distinct items; coordinate with uniqueItems.\n- Objects: stable property order (required first then lexical); with unevaluatedProperties:false, generate only evaluated keys; with AP:false present in any conjunct, enforce must-cover intersection.\n",
         "testStrategy": "Unit: each type-level generator with corner cases (surrogate pairs, long patterns, rational snapping). Integration: end-to-end generate→validate on mixed schemas.",
         "subtasks": [
@@ -2837,6 +2840,7 @@
         "priority": "high",
         "estimatedHours": 28,
         "dependencies": [
+          4,
           5,
           6,
           11,
@@ -2845,7 +2849,7 @@
         ],
         "status": "pending",
         "complexityScore": 8,
-        "details": "[Context]\nContext need: 5/5\nMust read:\n- docs/feature-simplification/Invariants.md#ajv-is-the-oracle\n- docs/feature-simplification/Features.md#repair\n- docs/feature-simplification/Features.md#order-of-operations\nNice to read:\n- docs/feature-simplification/error.md#unsat_budget_exhausted\n- docs/feature-simplification/Features.md#generator\n---\n[Normative context]\nScope: Guided by AJV errors on the instance, apply minimal, idempotent changes that monotonically reduce error count, respecting budgets and invariants.\n\nInvariants:\n- Idempotence: applying the same repair twice is a no‑op.\n- Monotonicity: error count must strictly decrease per pass or stop; enforce stagnation guard.\n- No schema mutation; only instance changes.\n- Respect uniqueItems via structural hashing; preserve order.\n- For AP:false/unevaluated false, remove extras; never rename required keys from dependents.\n\nAlgorithm (order):\n1) Shape: satisfy type/required (use defaults or minimal generation for missing props).\n2) Bounds: numeric/string/array bounds, including exclusive bounds via ε‑nudges.\n3) Semantics: pattern, format (if enabled), multipleOf rational snapping.\n4) Sweep: additionalProperties:false / unevaluatedProperties:false cleanup; ensure contains min/max counts.\n5) Budgets: track per (instancePath, keyword, normalizedParams); stop on stagnation (UNSAT_BUDGET_EXHAUSTED).\n\nDiagnostics:\n- UNSAT_BUDGET_EXHAUSTED (when progress stalls), RAT_* from numeric snapping.\n\nExample:\n- Missing required prop under then ⇒ add property with minimal valid value; subsequent AJV pass succeeds.\n\nKnown limits:\n- Highly tangled oneOf with deep interdependencies may require multiple cycles; budgets limit worst‑case time.\n---\nSection 10 — Repair\n- Mapping: required, type, enum, const, min/max Length, pattern, numeric bounds, exclusive bounds (±ε), multipleOf (rational snap), min/maxItems (respect tuples/items/contains), uniqueItems (struct hash), AP:false/unevaluated false sweeps, propertyNames safe renames.\n- Process order: shape → bounds → semantics → sweep.\n- Budgets: per-node attempts (1–3) + seen-set (instancePath, keyword, normalizedParams) to avoid loops.\n- Stagnation guard: if over bailOnUnsatAfter cycles error count does not decrease or oscillates, raise UNSAT_BUDGET_EXHAUSTED.\n- Logging: return { item, changed, actions[] } optionally.\n",
+        "details": "[Context]\nContext need: 5/5\nMust read:\n- docs/feature-simplification/Invariants.md#ajv-is-the-oracle\n- docs/feature-simplification/Features.md#repair\n- docs/feature-simplification/Features.md#order-of-operations\nNice to read:\n- docs/feature-simplification/error.md#unsat_budget_exhausted\n- docs/feature-simplification/Features.md#generator\n---\n[Normative context]\nScope: Guided by AJV errors on the instance, apply minimal, idempotent changes that monotonically reduce error count, respecting budgets and invariants.\n\nInvariants:\n- Idempotence: applying the same repair twice is a no‑op.\n- Monotonicity: error count must strictly decrease per pass or stop; enforce stagnation guard.\n- No schema mutation; only instance changes.\n- Respect uniqueItems via structural hashing; preserve order; if de‑dup removes items needed for contains, re‑satisfy contains needs afterwards.\n- For AP:false/unevaluated false, remove extras; never rename required keys from dependents.\n\nAlgorithm (order):\n1) Shape: satisfy type/required (use defaults or minimal generation for missing props).\n2) Bounds: numeric/string/array bounds, including exclusive bounds via ε‑nudges.\n3) Semantics: pattern, format (if enabled), multipleOf rational snapping.\n4) Sweep: additionalProperties:false / unevaluatedProperties:false cleanup; ensure contains min/max counts (re‑satisfy after uniqueItems if needed).\n5) Budgets: track per (instancePath, keyword, normalizedParams); stop on stagnation (UNSAT_BUDGET_EXHAUSTED).\n\nDiagnostics:\n- UNSAT_BUDGET_EXHAUSTED (when progress stalls), RAT_* from numeric snapping.\n\nExample:\n- Missing required prop under then ⇒ add property with minimal valid value; subsequent AJV pass succeeds.\n\nKnown limits:\n- Highly tangled oneOf with deep interdependencies may require multiple cycles; budgets limit worst‑case time.\n---\nSection 10 — Repair\n- Mapping: required, type, enum, const, min/max Length, pattern, numeric bounds, exclusive bounds (±ε), multipleOf (rational snap), min/maxItems (respect tuples/items/contains), uniqueItems (struct hash; re‑satisfy contains), AP:false/unevaluated false sweeps, propertyNames safe renames.\n- Process order: shape → bounds → semantics → sweep.\n- Budgets: per-node attempts (1–3) + seen-set (instancePath, keyword, normalizedParams) to avoid loops.\n- Stagnation guard: if over bailOnUnsatAfter cycles error count does not decrease or oscillates, raise UNSAT_BUDGET_EXHAUSTED.\n- Logging: return { item, changed, actions[] } where each action records keyword, canonPath, origPath (via ptrMap), and optional details.\n",
         "testStrategy": "Unit per keyword action (idempotence, error reduction). Integration with generator misfires (intentionally violate then). Metamorphic: repeated repair is no-op.",
         "subtasks": [
           {
@@ -2963,7 +2967,7 @@
         ],
         "status": "pending",
         "complexityScore": 5,
-        "details": "[Context]\nContext need: 4/5\nMust read:\n- docs/feature-simplification/Features.md#metrics\n- docs/feature-simplification/Invariants.md#observability\nNice to read:\n- docs/feature-simplification/Features.md#benchmarks-and-ci\n- docs/feature-simplification/README.md#pipeline\n---\nSections 4, 15\n- Metrics struct on diag: normalizeMs, composeMs, generateMs, repairMs, validateMs, validationsPerRow, repairPassesPerRow, branchTrialsTried, memoryPeakMB, p50LatencyMs, p95LatencyMs.\n- Hook counters at validation calls; increment repair loops; expose options snapshot for reproducibility.\n",
+        "details": "[Context]\nContext need: 4/5\nMust read:\n- docs/feature-simplification/Features.md#metrics\n- docs/feature-simplification/Invariants.md#observability\nNice to read:\n- docs/feature-simplification/Features.md#benchmarks-and-ci\n- docs/feature-simplification/README.md#pipeline\n---\nSections 4, 15\n- Metrics struct on diag: normalizeMs, composeMs, generateMs, repairMs, validateMs, validationsPerRow, repairPassesPerRow, branchTrialsTried, memoryPeakMB, p50LatencyMs, p95LatencyMs.\n- Extended observability: branchCoverageOneOf, enumUsage, repairActionsPerRow.\n- Hook counters at validation calls; increment repair loops and repair action counts; expose options snapshot for reproducibility.\n",
         "testStrategy": "Unit: metrics captured under mocked timers; Integration: numbers make sense on sample runs; Bench harness reports p50/p95.",
         "subtasks": [
           {
@@ -2997,8 +3001,8 @@
         ],
         "status": "pending",
         "complexityScore": 4,
-        "details": "[Context]\nContext need: 3/5\nMust read:\n- docs/feature-simplification/Features.md#modes\n- docs/feature-simplification/Invariants.md#strict-vs-lax\nNice to read:\n- docs/feature-simplification/Known-Limits.md#dynamic-refs\n- docs/feature-simplification/Features.md#configuration\n---\nSection 11 — Modes\n- Strict (default): fail early only when impossible or policy forbids; external $ref error (configurable); dynamic refs noted.\n- Lax: warn for external $ref then attempt; same for dynamic refs.\n- With rewriteConditionals:'never': Strict uses 'if-aware-lite'; Lax may use 'repair-only'.\n- Budget exhaustion: UNSAT_BUDGET_EXHAUSTED in both modes.\n",
-        "testStrategy": "Matrix tests: Strict vs Lax for external $ref; conditional strategies; ensure consistent diagnostics.",
+        "details": "[Context]\nContext need: 3/5\nMust read:\n- docs/feature-simplification/Features.md#modes\n- docs/feature-simplification/Invariants.md#strict-vs-lax\nNice to read:\n- docs/feature-simplification/Known-Limits.md#external-refs\n- docs/feature-simplification/Features.md#configuration\n---\nSection 11 — Modes\n- Strict (default): fail early only when impossible or policy forbids; external $ref emits EXTERNAL_REF_UNRESOLVED (configurable error); dynamic refs noted (DYNAMIC_PRESENT).\n- Lax: warn for external $ref (EXTERNAL_REF_UNRESOLVED) then attempt local-only generation; final AJV validation may fail when unresolved refs are required.\n- With rewriteConditionals:'never': **Strict and Lax both use 'if-aware-lite' by default** (override only via explicit `conditionals.strategy`).\n- Budget exhaustion: UNSAT_BUDGET_EXHAUSTED in both modes.\n",
+        "testStrategy": "Matrix tests: Strict vs Lax for external $ref verify EXTERNAL_REF_UNRESOLVED emission and behavior; conditional strategies; ensure consistent diagnostics.",
         "subtasks": [
           {
             "id": 1,
@@ -3062,7 +3066,7 @@
         ],
         "status": "pending",
         "complexityScore": 5,
-        "details": "[Context]\nContext need: 4/5\nMust read:\n- docs/feature-simplification/error.md#diagnostics-catalog\n- docs/feature-simplification/Invariants.md#diagnostics-are-first-class\nNice to read:\n- docs/feature-simplification/Features.md#metrics\n- docs/feature-simplification/Features.md#composition\n---\nSections 8, 19\n- Codes: IF_REWRITE_DOUBLE_NOT, IF_REWRITE_SKIPPED_UNEVALUATED, IF_REWRITE_DISABLED_ANNOTATION_RISK, ANNOTATION_IN_SCOPE_IF_REWRITE_SKIPPED, PNAMES_COMPLEX, DEPENDENCY_GUARDED, DYNAMIC_PRESENT, DEFS_TARGET_MISSING, EXCLMIN_IGNORED_NO_MIN, EXCLMAX_IGNORED_NO_MAX, OAS_NULLABLE_KEEP_ANNOT, NOT_DEPTH_CAPPED, RAT_LCM_BITS_CAPPED, RAT_DEN_CAPPED, RAT_FALLBACK_DECIMAL, RAT_FALLBACK_FLOAT, TRIALS_SKIPPED_LARGE_ONEOF, AP_FALSE_INTERSECTION_APPROX, CONTAINS_BAG_COMBINED, CONTAINS_UNSAT_BY_SUM, COMPLEXITY_CAP_ONEOF, COMPLEXITY_CAP_ANYOF, COMPLEXITY_CAP_PATTERNS, COMPLEXITY_CAP_ENUM, COMPLEXITY_CAP_CONTAINS, COMPLEXITY_CAP_SCHEMA_SIZE, UNSAT_PATTERN_PNAMES, UNSAT_DEPENDENT_REQUIRED_AP_FALSE, UNSAT_BUDGET_EXHAUSTED, IF_AWARE_HINT_APPLIED, IF_AWARE_HINT_SKIPPED_INSUFFICIENT_INFO.\n- Provide message templates and structured payload (path, details).\n- Ensure every emission site includes enough context for debugging.\n",
+        "details": "[Context]\nContext need: 4/5\nMust read:\n- docs/feature-simplification/error.md#diagnostics-catalog\n- docs/feature-simplification/Invariants.md#diagnostics-are-first-class\nNice to read:\n- docs/feature-simplification/Features.md#metrics\n- docs/feature-simplification/Features.md#composition\n---\nSections 8, 19\n- Codes: IF_REWRITE_DOUBLE_NOT, IF_REWRITE_SKIPPED_UNEVALUATED, IF_REWRITE_DISABLED_ANNOTATION_RISK, ANNOTATION_IN_SCOPE_IF_REWRITE_SKIPPED, PNAMES_COMPLEX, DEPENDENCY_GUARDED, DYNAMIC_PRESENT, DEFS_TARGET_MISSING, EXCLMIN_IGNORED_NO_MIN, EXCLMAX_IGNORED_NO_MAX, OAS_NULLABLE_KEEP_ANNOT, NOT_DEPTH_CAPPED, RAT_LCM_BITS_CAPPED, RAT_DEN_CAPPED, RAT_FALLBACK_DECIMAL, RAT_FALLBACK_FLOAT, TRIALS_SKIPPED_LARGE_ONEOF, AP_FALSE_INTERSECTION_APPROX, CONTAINS_BAG_COMBINED, CONTAINS_UNSAT_BY_SUM, COMPLEXITY_CAP_ONEOF, COMPLEXITY_CAP_ANYOF, COMPLEXITY_CAP_PATTERNS, COMPLEXITY_CAP_ENUM, COMPLEXITY_CAP_CONTAINS, COMPLEXITY_CAP_SCHEMA_SIZE, UNSAT_PATTERN_PNAMES, UNSAT_DEPENDENT_REQUIRED_AP_FALSE, UNSAT_BUDGET_EXHAUSTED, IF_AWARE_HINT_APPLIED, IF_AWARE_HINT_SKIPPED_INSUFFICIENT_INFO, EXTERNAL_REF_UNRESOLVED.\n- Provide message templates and structured payload (path, details).\n- Ensure every emission site includes enough context for debugging.\n",
         "testStrategy": "Unit: each code emitted at least once in tests; snapshot message formatting. Docs cross-check: codes listed in docs/feature-simplification/errors.",
         "subtasks": [
           {
@@ -3097,7 +3101,7 @@
         ],
         "status": "pending",
         "complexityScore": 4,
-        "details": "[Context]\nContext need: 2/5\nMust read:\n- docs/feature-simplification/README.md#cli\n- docs/feature-simplification/Features.md#debug-flags\nNice to read:\n- docs/feature-simplification/Features.md#metrics\n- docs/feature-simplification/Invariants.md#observability\n---\nSections 17 (Docs), Debug Flags list\n- Flags: --debug-passes, --rewrite-conditionals=never|safe|aggressive, --seed=<int>, --budget-branch-trials=<int>, --debug-freeze, --skip-trials, --max-branches-to-try=<int>, --skip-trials-if-branches-gt=<int>.\n- Print effective options and metrics summary on completion.\n- JSON diagnostics output with BigInt-safe replacer when requested.\n",
+        "details": "[Context]\nContext need: 2/5\nMust read:\n- docs/feature-simplification/README.md#cli\n- docs/feature-simplification/Features.md#debug-flags\nNice to read:\n- docs/feature-simplification/Features.md#metrics\n- docs/feature-simplification/Invariants.md#observability\n---\nSections 17 (Docs), Debug Flags list\n- Flags: --debug-passes, --rewrite-conditionals=never|safe|aggressive, --seed=<int>, --budget-branch-trials=<int>, --debug-freeze, --skip-trials, --max-branches-to-try=<int>, --skip-trials-if-branches-gt=<int>, --validate-formats[=true|false], --external-ref-strict=error|warn|ignore, --mode=strict|lax.\n- Print effective options and metrics summary on completion.\n- JSON diagnostics output with BigInt-safe replacer when requested.\n",
         "testStrategy": "CLI e2e tests: flags parsing; smoke runs with diagnostics and metrics; invalid combos error out.",
         "subtasks": [
           {
@@ -3186,19 +3190,22 @@
             "id": 2,
             "title": "Composer tests",
             "status": "pending",
-            "estimatedHours": 8
+            "estimatedHours": 8,
+            "details": "Include AP:false×allOf must-cover with non-anchored patterns (expect AP_FALSE_INTERSECTION_APPROX); contains bag unsat checks (Σ min_i > maxItems, any min > maxItems, provably disjoint max=0 vs min>0). Verify score-only branch selection determinism (stable sort + seeded tie-break) when skipTrials path engaged."
           },
           {
             "id": 3,
             "title": "Generator tests",
             "status": "pending",
-            "estimatedHours": 6
+            "estimatedHours": 6,
+            "details": "Satisfy contains needs then enforce uniqueItems; re-satisfy contains after de-dup if needed."
           },
           {
             "id": 4,
             "title": "Repair tests",
             "status": "pending",
-            "estimatedHours": 4
+            "estimatedHours": 4,
+            "details": "Assert logging actions include keyword, canonPath, origPath; assert re-satisfy contains after uniqueItems; stagnation guard."
           }
         ]
       },
@@ -3217,7 +3224,7 @@
         ],
         "status": "pending",
         "complexityScore": 6,
-        "details": "[Context]\nContext need: 5/5\nMust read:\n- docs/feature-simplification/Features.md#integration-and-metamorphic\n- docs/feature-simplification/Invariants.md#metamorphic-invariants\nNice to read:\n- docs/feature-simplification/README.md#pipeline\n- docs/feature-simplification/Features.md#modes\n---\nSection 20 — Integration/Metamorphic\n- Cross-draft conditionals with/without unevaluated*; ensure no semantic drift when not rewriting.\n- Mixed features: patternProperties/propertyNames/dependentSchemas/AP:false across allOf.\n- oneOf overlap: ensure exclusivity via refinement/tweaks.\n- Metamorphic: compare 'if-aware-lite' vs 'repair-only' on the same seed; final validity invariant; metrics differences allowed.\n",
+        "details": "[Context]\nContext need: 5/5\nMust read:\n- docs/feature-simplification/Features.md#integration-and-metamorphic\n- docs/feature-simplification/Invariants.md#metamorphic-invariants\nNice to read:\n- docs/feature-simplification/README.md#pipeline\n- docs/feature-simplification/Features.md#modes\n---\nSection 20 — Integration/Metamorphic\n- Cross-draft conditionals with/without unevaluated*; ensure no semantic drift when not rewriting.\n- Mixed features: patternProperties/propertyNames/dependentSchemas/AP:false across allOf.\n- oneOf overlap: ensure exclusivity via refinement/tweaks.\n- External $ref: Strict vs Lax behavior and diagnostics (EXTERNAL_REF_UNRESOLVED).\n- Deterministic score-only path when skipTrials=true or large oneOf; verify stable index + seeded tie-break; zero trials attempted.\n- Metamorphic: compare 'if-aware-lite' vs 'repair-only' on the same seed; final validity invariant; metrics differences allowed.\n- Metrics: branchCoverageOneOf present, enumUsage aggregated, repairActionsPerRow tracked.\n",
         "testStrategy": "Integration harness that runs AJV as oracle; differential testing across strategies and seeds.",
         "subtasks": [
           {
@@ -3254,7 +3261,7 @@
         ],
         "status": "pending",
         "complexityScore": 4,
-        "details": "[Context]\nContext need: 5/5\nMust read:\n- docs/feature-simplification/README.md#pipeline\n- docs/feature-simplification/Invariants.md#core-invariants\n- docs/feature-simplification/Features.md#matrix\n- docs/feature-simplification/Known-Limits.md#overview\nNice to read:\n- docs/feature-simplification/error.md#diagnostics-catalog\n- docs/feature-simplification/Phasing.md\n---\nSections 17, 18\n- README: pipeline overview; quickstart; policies.\n- docs/feature-simplification/error.md: diagnostics catalog with examples.\n- Invariants.md: cross-phase rules (validate original schema; enum/const > type; AP:false must-cover; bagged contains; no mutation of canonical schema).\n- Known-Limits.md: dynamic refs partial; pattern approximations; performance caveats.\n- Features Matrix: ✓/ status per feature as in plan.\n- Strict vs Lax table.\n",
+        "details": "[Context]\nContext need: 5/5\nMust read:\n- docs/feature-simplification/README.md#pipeline\n- docs/feature-simplification/Invariants.md#core-invariants\n- docs/feature-simplification/Features.md#matrix\n- docs/feature-simplification/Known-Limits.md#overview\nNice to read:\n- docs/feature-simplification/error.md#diagnostics-catalog\n- docs/feature-simplification/Phasing.md\n---\nSections 17, 18\n- README: pipeline overview; quickstart; policies.\n- docs/feature-simplification/error.md: diagnostics catalog with examples.\n- Invariants.md: cross-phase rules (validate original schema; enum/const > type; AP:false must-cover; bagged contains; no mutation of canonical schema; no caching of generated data).\n- Known-Limits.md: dynamic refs partial; pattern approximations; external $ref non-goal (no remote deref); performance caveats.\n- Features Matrix: ✓/ status per feature as in plan.\n- Strict vs Lax table.\n- Deliverables include code paths referenced in §22 and utilities: e.g. `packages/core/src/generator/foundry-generator.ts`, `packages/core/src/parser/json-schema-parser.ts`, and `packages/core/src/util/json-safe.ts` (BigInt-safe JSON replacer) for diagnostics/logging.\n",
         "testStrategy": "Manual editorial review (no CI). Validate examples by running minimal local code snippets; ensure cross-links resolve when clicked locally.",
         "subtasks": [
           {
@@ -3283,7 +3290,7 @@
             "title": "Features Matrix & Modes table",
             "status": "pending",
             "estimatedHours": 4,
-            "file": "docs/Features.md"
+            "file": "docs/feature-simplification/Features.md"
           }
         ]
       },
@@ -3336,7 +3343,7 @@
         ],
         "status": "pending",
         "complexityScore": 4,
-        "details": "[Context]\nContext need: 3/5\nMust read:\n- docs/feature-simplification/README.md#api\n- docs/feature-simplification/Features.md#api\nNice to read:\n- docs/feature-simplification/Invariants.md#no-mutation-of-canonical\n- docs/feature-simplification/Features.md#composition\n---\nAppendix — Minimal Interfaces\n- normalize(schema, opts): returns { schema, ptrMap, revPtrMap, notes } with note codes.\n- compose(schema, opts): returns { schema (effective), containsBag?, diag? }.\n- repair(item, schema, errors, ctx): returns { item, changed, actions?, diag? }.\n- AjvErr, RepairCtx, BranchSelector, ContainsNeed types.\n- BigInt-safe JSON replacer and rational toJSONSafe.\n",
+        "details": "[Context]\nContext need: 3/5\nMust read:\n- docs/feature-simplification/README.md#api\n- docs/feature-simplification/Features.md#api\nNice to read:\n- docs/feature-simplification/Invariants.md#no-mutation-of-canonical\n- docs/feature-simplification/Features.md#composition\n---\nAppendix — Minimal Interfaces\n- normalize(schema, opts): returns { schema, ptrMap, revPtrMap, notes } with note codes.\n- compose(schema, opts): returns { schema (effective), containsBag?, diag? }.\n- compose opts include optional selectorMemoKeyFn(schemaPath, seed, opts) for deterministic score-only memoization.\n- repair(item, schema, errors, ctx): returns { item, changed, actions?, diag? } where actions are typed entries { keyword, canonPath, origPath?, details? }.\n- AjvErr, RepairCtx, BranchSelector, ContainsNeed types.\n- BigInt-safe JSON replacer and rational toJSONSafe.\n",
         "testStrategy": "Type tests (tsd) to ensure exported types are correct; sample usage compiled.",
         "subtasks": [
           {
@@ -3436,14 +3443,45 @@
             "details": "Map each anchor to owning task(s), e.g., 'Invariants#ap-false-must-cover → #8, #11'."
           }
         ]
+      },
+      {
+        "id": 28,
+        "title": "Parser: Lean JSON Schema Parser (sanity checks)",
+        "description": "Lightweight parser/guards for schema shapes before normalization; no cross-document deref.",
+        "priority": "medium",
+        "estimatedHours": 6,
+        "dependencies": [
+          1,
+          7
+        ],
+        "status": "pending",
+        "complexityScore": 3,
+        "details": "Section 22 — Deliverables. File: packages/core/src/parser/json-schema-parser.ts. Minimal structural checks + error surfaces that feed normalizer/ajv factory.",
+        "testStrategy": "Unit: invalid forms surface clear errors without crashing; pass-through for valid schemas.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement json-schema-parser.ts",
+            "status": "pending",
+            "estimatedHours": 4,
+            "file": "packages/core/src/parser/json-schema-parser.ts"
+          },
+          {
+            "id": 2,
+            "title": "Unit tests",
+            "status": "pending",
+            "estimatedHours": 2,
+            "file": "packages/core/test/json-schema-parser.spec.ts"
+          }
+        ]
       }
     ],
     "metadata": {
       "createdAt": "2025-09-07T00:00:00Z",
-      "updatedAt": "2025-09-07T00:55:00Z",
+      "updatedAt": "2025-09-08T18:54:17.830Z",
       "description": "Tag 'feature-simplification' — FoundryData Feature Support Simplification Plan.\n\nGuiding philosophy (applies to all tasks):\n- 100% Schema Compliance: every generated instance is validated against the original schema by AJV.\n- Guaranteed or Transparent: if guarantees cannot be met, emit clear diagnostics explaining why and when support is expected.\n- Deterministic: same seed ⇒ same data; no global RNG; bounded attempts.\n- Simplicity: pipeline Normalize → Compose → Generate → Repair → Validate; avoid scattered per-feature gates.\n- Separation of Concerns: each phase owns a narrow, testable responsibility; canonical schema never mutated by Compose/Generate/Repair.\n- Observability: first‑class diagnostics, budgets, and per‑phase metrics (validationsPerRow, repairPassesPerRow, p50/p95 when available).\n- Correctness over Features: add complexity only when guarantees hold; use conservative approximations when necessary and document limits.\n- Performance: meet SLO/SLI targets with graceful degradation under explicit complexity caps.\n- Open Source First: MIT, auditable, contributable, runnable offline.",
-      "totalTasks": 27,
-      "completedTasks": 0,
+      "totalTasks": 28,
+      "completedTasks": 2,
       "created": "2025-09-07T19:54:27.048Z",
       "updated": "2025-09-08T18:54:17.830Z"
     }
