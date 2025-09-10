@@ -17,6 +17,7 @@ Comprehensive catalog of error codes, diagnostic messages, and troubleshooting i
 
 | Numeric Code | Named Code                                | Description                                                       |
 | ------------ | ----------------------------------------- | ----------------------------------------------------------------- |
+| `E012`       | `EXTERNAL_REF_UNRESOLVED`                  | External `$ref` cannot be dereferenced (no network); Strict=error, Lax=warn |
 | `E311`       | `CONTAINS_UNSAT_BY_SUM`                   | Contains needs exceed maxItems capacity                           |
 | `E550`       | `UNSAT_BUDGET_EXHAUSTED`                  | No repair progress after configured cycles                        |
 | `E221`       | `UNSAT_PATTERN_PNAMES`                    | Pattern properties incompatible with property names               |
@@ -115,7 +116,9 @@ Comprehensive catalog of error codes, diagnostic messages, and troubleshooting i
 * **Description**: External `$ref` not supported in current mode
 * **Algorithm**: `$ref` analysis → external reference detection
 * **Example**: `{ "$ref": "https://example.com/schema.json" }`
-* **Resolution**: Use `--resolve-externals` or switch to lax mode
+* **Resolution**: Switch to lax mode (policy: `failFast.externalRefStrict: 'warn'|'ignore'`)
+  or vendor-resolve external refs offline before running.
+  Remote dereferencing is not supported.
 
 **E011: REF\_RESOLUTION\_FAILED**
 
@@ -541,3 +544,11 @@ Comprehensive catalog of error codes, diagnostic messages, and troubleshooting i
 2. Check for platform-specific dependencies
 3. Verify no global state interference
 4. Use fixed Node.js version for consistency
+**E012: EXTERNAL\_REF\_UNRESOLVED** (`EXTERNAL_REF_UNRESOLVED`)
+
+* Description: External `$ref` cannot be dereferenced (no network I/O). Severity depends on mode.
+  - Strict: Error (default). Generation aborts.
+  - Lax: Warning. Generation attempts proceed using only local constraints; final AJV validation may fail.
+* Algorithm: `$ref` analysis → detect external target → apply policy (`failFast.externalRefStrict`) → emit diagnostic
+* Example: `{ "$ref": "https://example.com/schemas/address.json" }`
+* Resolution: Replace with in‑document refs, vendor-resolve externally before running, or adjust policy to `warn`/`ignore` understanding validation may still fail.

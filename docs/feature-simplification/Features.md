@@ -123,6 +123,8 @@ Default mapping between `rewriteConditionals` and `conditionals.strategy`:
 ### Diagnostics
 - **Merge Results**: Domain-specific constraint combinations
 - **Unsat Reasons**: `UNSAT_PATTERN_PNAMES`, `UNSAT_DEPENDENT_REQUIRED_AP_FALSE`
+- **Must‑Cover Notes**: `AP_FALSE_INTERSECTION_APPROX` on conservative pattern approximations
+- **Contains Bag**: `CONTAINS_BAG_COMBINED`, `CONTAINS_UNSAT_BY_SUM`
 - **Branch Choices**: Selected `anyOf`/`oneOf` branches with scores
 
 ## 🎯 Branch Selection {#branch-selection}
@@ -136,8 +138,9 @@ Default mapping between `rewriteConditionals` and `conditionals.strategy`:
 ### Algorithm
 1. **Score Calculation** - Assign scores based on discriminant quality
 2. **Ranking** - Sort branches by score (discriminants > types > overlap penalties)
-3. **Trial Selection** - Choose Top-K branches for generation attempts
-4. **Fallback Logic** - Handle budget exhaustion and complexity caps
+3. **Trial Selection** - Choose Top‑K branches for generation attempts
+4. **Score‑Only Path** - If `skipTrials=true` or branch count exceeds `skipTrialsIfBranchesGt`: use deterministic score‑only selection (stable sort by score, then stable index; tie‑break via RNG seeded by `(globalSeed ⊕ hash(schemaPath))`); no trials attempted
+5. **Fallback Logic** - Handle budget exhaustion and complexity caps
 
 ### Example
 ```javascript
@@ -157,6 +160,7 @@ Default mapping between `rewriteConditionals` and `conditionals.strategy`:
 - **Score Details**: Breakdown of scoring factors per branch
 - **Trial Budget**: `tried`, `limit`, `skipped` counts
 - **Selection Reason**: Why specific branches were chosen/rejected
+- **Trials Skipped**: `TRIALS_SKIPPED_LARGE_ONEOF` when score‑only path engaged
 
 ## 🏭 Generator {#generator}
 
@@ -255,7 +259,7 @@ Default mapping between `rewriteConditionals` and `conditionals.strategy`:
 ```
 
 ### Diagnostics
-- **Repair Actions**: Log of applied repairs per validation error
+- **Repair Actions**: Log of applied repairs per validation error; each action records `keyword`, `canonPath`, and `origPath` (via pointer map), plus optional `details`
 - **Budget Usage**: Attempts per path, stagnation detection
 - **Success Rate**: Percentage of errors successfully repaired
 
@@ -279,6 +283,14 @@ Default mapping between `rewriteConditionals` and `conditionals.strategy`:
   "durations": { "generateMs": 45, "repairMs": 8, "validateMs": 12 },
   "validationsPerRow": 1.2,
   "repairPassesPerRow": 0.008,
+  "branchTrialsTried": 6,
+  "branchCoverageOneOf": { 
+    "/path/to/oneOf": { "visited": [0,2], "total": 3 }
+  },
+  "enumUsage": { 
+    "/path/to/enum": { "A": 10, "B": 5 }
+  },
+  "repairActionsPerRow": 0.04,
   "validatorCacheHitRate": 0.95
 }
 ```
@@ -353,7 +365,7 @@ const options = {
 }
 
 // Degradation applied:
-// - Score-only selection (skip trials)
+// - Score‑only selection (skip trials) — deterministic stable sort + seeded tie‑break
 // - Diagnostic: "COMPLEXITY_CAP_ONEOF - reduced to score-only selection"
 // - Result: Still generates valid data, reduced optimization
 ```
@@ -369,8 +381,10 @@ const options = {
 ### Invariants
 - **Identity-First**: WeakMap caching by schema object reference
 - **Multi-Level**: ID-based and hash-based fallback strategies
-- **Version-Aware**: Cache keys include AJV version and critical flags
+- **Version-Aware**: Cache keys include AJV major version and critical flags
 - **Size-Bounded**: LRU eviction prevents unbounded memory growth
+- **No Data Cache**: Generated data is never cached across runs
+- **Scoped Memoization**: Optional memoization for branch selection only, keyed by `(schemaPath, seed, PlanOptions)`
 
 ### Algorithm
 1. **Identity Check** - WeakMap lookup by schema object reference
@@ -401,6 +415,7 @@ const cacheKey = {
 - **Conservative Generation**: Safe handling of unresolved dynamic references
 - **Validation Integrity**: Always validate against original schema draft
 - **Clear Limitations**: Explicit documentation of dynamic ref constraints
+- **No Remote Deref**: Only in‑document `$ref` resolved; no network I/O. External `$ref` left unresolved.
 
 ### Algorithm
 1. **Draft Detection** - Identify schema draft from `$schema` field
@@ -423,6 +438,7 @@ const cacheKey = {
 ### Diagnostics
 - **Draft Detection**: Identified schema draft and confidence
 - **Dynamic Presence**: `DYNAMIC_PRESENT` notes for unresolved references  
+- **External Refs**: `EXTERNAL_REF_UNRESOLVED` when external `$ref` cannot be dereferenced (strict=error, lax=warn)
 - **Compatibility Issues**: Draft-specific feature availability
 
 ## 🧪 Benchmarks and CI {#benchmarks-and-ci}
@@ -689,7 +705,7 @@ property('normalization preserves validation', fc.jsonSchema(), schema => {
 // Strict mode (default)
 const strictResult = await generate({
   schema: conditionalSchema,
-  mode: 'strict'  // Fails on unsupported conditionals
+  mode: 'strict'  // Uses if‑aware‑lite; conditionals are supported without rewrite
 });
 
 // Lax mode
@@ -729,7 +745,7 @@ const laxResult = await generate({
 | **multipleOf** | ✓ | Exact rational with caps and fallbacks |
 | **unevaluated*** | ✓ | Conservative effective view; preserved for validation |
 | **$ref (in-document)** | ✓ | Full resolution with cycle detection |
-| **$ref (external)** | ✗ | Warns (configurable) |
+| **$ref (external)** | ✗ | No remote deref; `EXTERNAL_REF_UNRESOLVED` (strict=error, lax=warn); local generation only |
 | **$dynamicRef/$dynamicAnchor/$recursiveRef** | ~ | Pass-through; generation conservative; AJV decides |
 
 ### Legend
