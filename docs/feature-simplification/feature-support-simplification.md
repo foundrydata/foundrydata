@@ -7,131 +7,118 @@
 
 ## 1) Goal
 
-Broaden supported JSON Schema features while simplifying code paths and avoiding scattered “is this supported?” branches.
+Extend JSON Schema feature coverage **without** scattering per‑feature branches in code paths, while **always** validating each generated **instance** against the **original schema** with AJV. Keep the pipeline deterministic, observable, and budget‑aware.
+
+**Acceptance at a glance (see §15/§16 for full targets):**
+
+* Every generated instance is AJV‑validated against the original schema.
+* No network I/O for external `$ref` (strict by default).
+* Deterministic outcomes for a given seed and options (no global state).
+* Documented latency/memory budgets with graceful degradations when exceeded.
+
+> **Conventions.** RFC2119/8174 keywords (MUST/SHOULD/MAY) are normative. “Instance” = generated JSON value validated against the schema.
 
 ## 2) Scope
 
-Parser, normalization, composition/planning, generation, repair, validation, documentation, benchmarking.
+**In‑scope.** Parser, normalization (**canonical view**), composition/planning (**effective view**), generation, repair, validation, documentation, benchmarking.
 
----
+**Non‑goals (core):**
+
+* Remote dereferencing of external `$ref` (no network/filesystem I/O).
+* Caching of **generated instances** across runs.
+* Learned or scenario‑based distributions (optional extensions outside core guarantees).
+
+**Environment & drafts.**
+
+* Runtime: Node.js ≥ 18.
+* Validator: AJV v8 with `unicodeRegExp:true`.
+* Drafts: input schemas may use draft‑04..2020‑12+; internal canonicalization targets a 2020‑12‑like shape; validation always runs against the **original** schema.
+
+**Audience.** JSON Schema & AJV practitioners, library contributors.
 
 ## 3) Project Philosophy (Core Values)
 
-* **100% Schema Compliance** — Every generated row is validated against the **original** schema by AJV.
-* **Guaranteed or Transparent** — If we can’t guarantee compliance, we say why and when support is expected.
-* **Deterministic** — Same seed ⇒ same data. Reproducible and CI‑friendly.
-* **Performance** — Meet documented SLO/SLI targets with budgets and graceful degradation.
-* **Developer Friendly** — Clear errors and diagnostics. No hidden magic.
-* **Open Source First** — MIT. Auditable. Contributable. Runnable offline.
-* **Correctness over Features** — Add complexity only when guarantees hold.
+* **AJV is the oracle.** Validate against the **original** schema, not internal transforms.
+* **Deterministic.** Seeded RNG, bounded attempts, no global state; reproducible and CI‑friendly.
+* **Correctness over features.** Add features only when guarantees are clear and testable.
+* **Simplicity first.** A small number of predictable phases; narrow responsibilities per phase.
+* **No remote deref.** External `$ref` never trigger I/O (strict=error by default).
+* **Observability by default.** Metrics, budgets, and diagnostics are first‑class.
 
-### Invariants (MUST)
-* **AP:false must‑cover** — When any conjunct in `allOf` sets `additionalProperties:false`, the set of generable keys is the **intersection** of keys recognized by **all** such conjuncts **from** named keys in `properties` **and** names matched by **anchored‑safe** `patternProperties`. When `propertyNames` is present, it acts **only as a filter**: intersect the result with the set of names permitted by `propertyNames` (enum or anchored‑safe `pattern`). **Exception (canonical view only):** if and only if the normalizer has applied the §7 `propertyNames` rewrite and recorded `PNAMES_REWRITE_APPLIED` at the same object, the **synthetic** anchored‑safe patterns introduced by the rewrite **MAY** contribute to coverage recognition (§8). Otherwise, **`propertyNames` MUST NOT enlarge coverage.** Approximations MUST emit `AP_FALSE_INTERSECTION_APPROX`. See §8.
-* **Contains bag semantics** — `contains` across `allOf` is modeled as an independent bag of needs `{schema,min,max}` with early unsat checks (Σmin > maxItems; min > maxItems; **subset‑contradiction** where ∃A,B with `A.min>0`, `B.max=0` and `schemaA ⊆ schemaB`). See §8–§9.
-* **No remote deref** — No network I/O to resolve external `$ref`. In **Strict**, fail with `EXTERNAL_REF_UNRESOLVED`. In **Lax**, warn and attempt local generation; final AJV validation still runs against the original schema and may fail. See §11–§12, §19.
-* **Determinism boundaries** — No caching of **generated data** across runs. Caches are limited to schema/compose/validator artifacts and MUST key on AJV major + relevant flags + **PlanOptionsSubKey** (and `seed` when memoizing branch picks). Branch selection is deterministic; see §8, §14–§15.
+**Invariants (introductory form — details in §7–§9):**
 
----
+* **Must‑cover under `additionalProperties:false`.** When any conjunct sets `additionalProperties:false`, keys are drawn from **provable coverage** only (named `properties` plus **anchored‑safe** `patternProperties`; `propertyNames` acts as a **filter**, not a source). See §7–§8.
+* **`contains` across `allOf` uses bag semantics.** Independent needs `{schema,min,max}` with early unsat checks. See §8–§9.
+* **Determinism boundaries.** No caching of generated data; caching is limited to compiled/plan artifacts and keyed by AJV version/flags and plan options. See §14–§15.
+
+> **Note.** The precise definition of **anchored‑safe** regex and the rules for when `propertyNames` can contribute to coverage are normative in §8.
 
 ## 4) Guiding Principles
 
-* **AJV is the oracle** — Validate against the original schema, not internal transforms.
-* **Pipeline simplicity** — `Normalize → Compose → Generate → Repair → Validate`.
-* **Separation of concerns** — Narrow, testable responsibilities per phase.
-* **Determinism** — Bounded attempts, local seeded RNG, no global state.
-* **Observability** — Metrics, budgets, diagnostics are first‑class.
+* **Pipeline clarity.** `Normalize → Compose → Generate → Repair → Validate`.
+* **Separation of concerns.** Each phase has a narrow, testable contract.
+* **Determinism.** Same seed ⇒ same choices; no wall‑clock or locale dependence.
+* **Fail early when provable, degrade gracefully when not.**
+* **Observability.** Expose per‑phase timings and counts (e.g., validations/instance, repairs/instance) for CI and tuning.
 
----
+## 5) Configuration Overview (reader’s map)
 
-## 5) Configuration Overview
+Defaults are conservative. Full option types and defaults are in **§23**. Mode behavior is in **§11**.
+This table summarizes the “big knobs” and their intent (details and edge‑cases in the referenced sections).
 
-All knobs are optional; defaults are conservative.
+| Area                 | Key option (default)                                 | Intent (one‑liner)                                                                    | Details |
+| -------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------- | ------- |
+| Conditionals         | `rewriteConditionals: 'never'`                       | Do not rewrite `if/then/else`; generator is **if‑aware‑lite**                         | §7, §9  |
+| Trials & selection   | `trials.perBranch=2`, `maxBranchesToTry=12`          | Deterministic scoring + bounded attempts; score‑only when large                       | §8, §15 |
+| Numbers / multipleOf | `rational.decimalPrecision=12`, `fallback:'decimal'` | Exact rationals with caps; AJV‑aligned tolerance on fallback                          | §8      |
+| Output encoding      | `encoding.bigintJSON:'string'`                       | Control BigInt in **data outputs** (logs always stringify)                            | §9, §10 |
+| Guards & caps        | `complexity.*` (various)                             | Bound search/analysis; emit diagnostics when capping                                  | §8, §15 |
+| Modes                | **Strict** (default)                                 | External `$ref`: error (no I/O). **Lax**: warn then attempt local generation          | §11     |
+| Caching              | `cache.*`                                            | Cache compiles/plans (not instances); keys include AJV major + flags + options subkey | §14     |
 
-```ts
-type PlanOptions = {
-  // Normalization
-  rewriteConditionals?: 'never' | 'safe' | 'aggressive'; // default: 'never'
-  debugFreeze?: boolean;                                  // default: false
-
-  // Composition / numeric math
-  rational?: {
-    maxRatBits?: number;           // cap on bit-length of numerator/denominator; default: 128
-    maxLcmBits?: number;           // cap on bit-length of LCM; default: 128
-    qCap?: number;                 // optional denominator cap; default: undefined
-    fallback?: 'decimal' | 'float';// default: 'decimal' (controlled rounding)
-    decimalPrecision?: number;     // digits for decimal fallback; default: 12 (aligns with AJV tolerance)
-  };
-
-  // Output encoding
-  encoding?: {
-    bigintJSON?: 'string' | 'number' | 'error'; // default: 'string' (applies to data outputs, not logs)
-  };
-
-  // Branch trials
-  trials?: {
-    perBranch?: number;                // default: 2
-    maxBranchesToTry?: number;         // default: 12 (Top‑K)
-    skipTrialsIfBranchesGt?: number;   // default: 50 (score-only selection)
-    skipTrials?: boolean;              // default: false
-  };
-
-  // Guards
-  guards?: {
-    maxGeneratedNotNesting?: number;   // default: 2 (normalizer)
-  };
-
-  // Cache
-  cache?: {
-    preferWeakMap?: boolean;      // default: true
-    useId?: boolean;              // default: true ($id if present)
-    hashIfBytesLt?: number;       // default: 1_000_000
-    lruSize?: number;             // default: 64 compiled validators
-  };
-
-  // Metrics & toggles
-  metrics?: boolean;                 // default: true
-  disablePatternOverlapAnalysis?: boolean; // default: false
-  disableDeepFreeze?: boolean;       // default: false (overrides debugFreeze)
-
-  // Complexity caps & fail-fast
-  complexity?: {
-    maxOneOfBranches?: number;       // default: 200
-    maxAnyOfBranches?: number;       // default: 500
-    maxPatternProps?: number;        // default: 64
-    maxEnumCardinality?: number;     // default: 10_000
-    maxContainsNeeds?: number;       // default: 16  // after bagging
-    maxSchemaBytes?: number;         // default: 2_000_000 // ~2MB
-    bailOnUnsatAfter?: number;       // default: 12 // gen→repair→validate cycles (stagnation guard)
-  };
-  failFast?: {
-    externalRefStrict?: 'error'|'warn'|'ignore'; // default: 'error'
-    dynamicRefStrict?: 'warn'|'note';            // default: 'note'
-  };
-
-  // Conditionals generation behavior
-  conditionals?: {
-    // Default is coupled to `rewriteConditionals` (see mapping below).
-    strategy?: 'rewrite' | 'if-aware-lite' | 'repair-only';
-    minThenSatisfaction?: 'discriminants-only'|'required-only'|'required+bounds'; // default: 'required-only'
-  };
-};
-```
-
-**Default mapping between `rewriteConditionals` and `conditionals.strategy`:**
-
-* `rewriteConditionals: 'never'`  ⇒ `conditionals.strategy: 'if-aware-lite'`
-* `rewriteConditionals: 'safe' | 'aggressive'` ⇒ `conditionals.strategy: 'rewrite'`
-* An explicit `conditionals.strategy` overrides this mapping.
-
----
+**Precedence & compatibility.** Mode (Strict/Lax) defines the baseline; specific `failFast` overrides refine it (see §11).
+**Note on “aggressive”.** The legacy `rewriteConditionals:'aggressive'` is treated as the same as `'safe'` and is kept for compatibility; the default remains `'never'` (see §7/§23).
 
 ## 6) High‑Level Architecture
 
-* **Normalize** — Draft‑aware canonicalization; keep original for AJV.
-* **Compose** — Build an **effective view** by resolving composition (merge/select/invert) without mutating canonical.
-* **Generate** — Consume effective constraints and discriminants; deterministic seeded generation.
-* **Repair** — AJV‑driven corrections via `(keyword → action)` registry; idempotent and budgeted.
-* **Validate** — AJV (cached) validation against the original schema; pipeline fails on non‑compliance.
+**Phases.**
+
+* **Normalize** — Draft‑aware canonicalization to a 2020‑12‑like **canonical view**. The original schema is preserved for validation.
+* **Compose** — Build an **effective view** used by the generator: resolve composition, apply must‑cover (`AP:false`) and bag `contains`; do not mutate the canonical view.
+* **Generate** — Produce a minimal instance that satisfies the effective constraints; deterministic (seeded) choices.
+* **Repair** — AJV‑driven, budgeted corrections with a `(keyword → action)` registry; idempotent.
+* **Validate** — Final AJV validation against the **original** schema; the pipeline fails on non‑compliance.
+
+**Mini example (illustrative):**
+
+```json
+// Original (validated by AJV)
+{
+  "type": "object",
+  "allOf": [
+    { "properties": { "kind": { "enum": ["A","B"] } }, "required": ["kind"] },
+    { "additionalProperties": false,
+      "patternProperties": { "^(?:a1|b1)$": {} } }
+  ],
+  "if": { "properties": { "kind": { "const": "A" } }, "required": ["kind"] },
+  "then": { "required": ["a1"] },
+  "else": { "required": ["b1"] }
+}
+```
+
+* **Normalize** keeps the original and prepares a canonical form (no conditional rewrite by default).
+* **Compose** recognizes `AP:false` and computes the **must‑cover** keys `{a1,b1}` from the anchored pattern.
+* **Generate** picks `kind` and the matching required key (`a1` or `b1`) deterministically.
+* **Validate** runs on the original schema; any drift is caught and repaired within budget.
+
+**Glossary (summary).**
+
+* **Original schema** — Source of truth for AJV validation.
+* **Canonical view** — Internal 2020‑12‑like shape produced by Normalize; non‑destructive.
+* **Effective view** — Composition/planning result used by the generator (must‑cover and `contains` bagging applied).
+* **Anchored‑safe pattern** — Regex with unescaped `^…$` and no look‑around/back‑references (textual test; full rule in §8).
+* **Presence pressure** — A situation where `minProperties > 0` or some `required` keys must appear; used by early‑unsat rules (see §8).
+* **Seeded RNG** — Local, deterministic tie‑breaks; no global mutable state (see §15).
 
 ---
 
