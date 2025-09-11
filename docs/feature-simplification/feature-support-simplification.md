@@ -1,7 +1,18 @@
-# Feature Support Simplification Plan - Canonical Spec 
+# Feature Support Simplification Plan — Canonical Spec
 
-**Status:** Implementation spec
+**Status:** Implementation spec  
+**Version:** 0.9.0 (2025‑09‑11)  
 **Audience:** JSON Schema & AJV practitioners, library contributors
+
+---
+
+## Terminology (preamble — quick ref)
+
+- **Original schema** — Source of truth for AJV validation. Generation never replaces it.
+- **Canonical view** — Internal 2020‑12‑like shape produced by *Normalize*; non‑destructive.
+- **Effective view** — Planning view produced by *Compose*; applies must‑cover under `additionalProperties:false` and “bag `contains`”.
+- **AP:false** — Shorthand for `additionalProperties:false`.
+- **Anchored‑safe pattern** — Regex with unescaped `^…$` and no look‑around/back‑references (normative test in §8).
 
 ---
 
@@ -9,57 +20,75 @@
 
 Extend JSON Schema feature coverage **without** scattering per‑feature branches in code paths, while **always** validating each generated **instance** against the **original schema** with AJV. Keep the pipeline deterministic, observable, and budget‑aware.
 
-**Acceptance at a glance (see §15/§16 for full targets):**
+### Acceptance (observable)
 
-* Every generated instance is AJV‑validated against the original schema.
-* No network I/O for external `$ref` (strict by default).
-* Deterministic outcomes for a given seed and options (no global state).
-* Documented latency/memory budgets with graceful degradations when exceeded.
+- **AJV validation on the original schema** for every instance.  
+  *Signal:* final validation passes; `diag.metrics.validationsPerRow ≥ 1`.
+- **No network I/O for external `$ref`** (strict by default).  
+  *Signal:* `EXTERNAL_REF_UNRESOLVED` (Strict = error; Lax = warn).
+- **Deterministic outcomes for a given `(seed, options)`**.  
+  *Signal:* stable `diag.chosenBranch`, `diag.scoreDetails.tiebreakRand` at the same canonical pointers.
+- **Documented budgets with explicit degradations**.  
+  *Signal:* `COMPLEXITY_CAP_*` diagnostics and populated `diag.budget`.
 
-> **Conventions.** RFC2119/8174 keywords (MUST/SHOULD/MAY) are normative. “Instance” = generated JSON value validated against the schema.
+> **Conventions.** RFC2119/8174 keywords (MUST/SHOULD/MAY) are normative.  
+> “Instance” = generated JSON value validated against the schema.
+
+---
 
 ## 2) Scope
 
 **In‑scope.** Parser, normalization (**canonical view**), composition/planning (**effective view**), generation, repair, validation, documentation, benchmarking.
 
-**Non‑goals (core):**
+**Non‑goals (core).**
 
-* Remote dereferencing of external `$ref` (no network/filesystem I/O).
-* Caching of **generated instances** across runs.
-* Learned or scenario‑based distributions (optional extensions outside core guarantees).
+- Remote dereferencing of external `$ref` (no network/filesystem I/O).
+- Caching of **generated instances** across runs.
+- Learned/scenario‑based distributions (optional extensions outside core guarantees).
 
 **Environment & drafts.**
 
-* Runtime: Node.js ≥ 18.
-* Validator: AJV v8 with `unicodeRegExp:true`.
-* Drafts: input schemas may use draft‑04..2020‑12+; internal canonicalization targets a 2020‑12‑like shape; validation always runs against the **original** schema.
+- Runtime: Node.js ≥ 18.  
+- Validator: AJV v8 with `unicodeRegExp:true`.  
+- Drafts: input schemas may use draft‑04..2020‑12+; internal canonicalization targets a 2020‑12‑like shape; validation always runs against the **original** schema.
 
-**Audience.** JSON Schema & AJV practitioners, library contributors.
+**Modes (quick view; details §11).**
 
-## 3) Project Philosophy (Core Values)
+| Mode   | External `$ref`             | Behavior & signal                         |
+|--------|-----------------------------|-------------------------------------------|
+| Strict | No I/O; unresolved ⇒ error  | Emit `EXTERNAL_REF_UNRESOLVED`            |
+| Lax    | No I/O; unresolved ⇒ warn   | Emit `EXTERNAL_REF_UNRESOLVED` (warn) and attempt local generation |
 
-* **AJV is the oracle.** Validate against the **original** schema, not internal transforms.
-* **Deterministic.** Seeded RNG, bounded attempts, no global state; reproducible and CI‑friendly.
-* **Correctness over features.** Add features only when guarantees are clear and testable.
-* **Simplicity first.** A small number of predictable phases; narrow responsibilities per phase.
-* **No remote deref.** External `$ref` never trigger I/O (strict=error by default).
-* **Observability by default.** Metrics, budgets, and diagnostics are first‑class.
+---
 
-**Invariants (introductory form — details in §7–§9):**
+## 3) Principles & Invariants (summary)
 
-* **Must‑cover under `additionalProperties:false`.** When any conjunct sets `additionalProperties:false`, keys are drawn from **provable coverage** only (named `properties` plus **anchored‑safe** `patternProperties`; `propertyNames` acts as a **filter**, not a source). See §7–§8.
-* **`contains` across `allOf` uses bag semantics.** Independent needs `{schema,min,max}` with early unsat checks. See §8–§9.
-* **Determinism boundaries.** No caching of generated data; caching is limited to compiled/plan artifacts and keyed by AJV version/flags and plan options. See §14–§15.
+**Core principles (normative).**
+
+- **AJV is the oracle (MUST).** Validate against the **original** schema, not internal transforms.  
+- **Deterministic (MUST).** Seeded RNG, bounded attempts, no global state.  
+- **No remote deref (MUST).** External `$ref` never trigger I/O.  
+- **Simplicity & separation.** A small number of predictable phases; narrow responsibilities per phase.  
+- **Observability by default.** Metrics, budgets, and diagnostics are first‑class.
+
+**Invariants (introductory; details in §7–§9).**
+
+- **Must‑cover under `additionalProperties:false`.** When any conjunct sets `additionalProperties:false`, keys are drawn from **provable coverage** only (named `properties` plus **anchored‑safe** `patternProperties`). `propertyNames` acts as a **filter** and **only becomes a coverage source when** the §7 rewrite has been applied (`PNAMES_REWRITE_APPLIED`) **and** `additionalProperties` is **absent/true/{ }** at that object (never when it is `false`). See §7–§8.
+- **`contains` across `allOf` uses bag semantics.** Independent needs `{schema,min,max}` with early unsat checks. See §8–§9.
+- **Determinism boundaries.** No caching of generated data; caching is limited to compiled/plan artifacts and keyed by AJV version/flags and plan options. See §14–§15.
 
 > **Note.** The precise definition of **anchored‑safe** regex and the rules for when `propertyNames` can contribute to coverage are normative in §8.
 
-## 4) Guiding Principles
+---
 
-* **Pipeline clarity.** `Normalize → Compose → Generate → Repair → Validate`.
-* **Separation of concerns.** Each phase has a narrow, testable contract.
-* **Determinism.** Same seed ⇒ same choices; no wall‑clock or locale dependence.
-* **Fail early when provable, degrade gracefully when not.**
-* **Observability.** Expose per‑phase timings and counts (e.g., validations/instance, repairs/instance) for CI and tuning.
+## 4) Operational guidance
+
+- **Pipeline clarity.** `Normalize → Compose → Generate → Repair → Validate`.
+- **Fail early when provable, degrade gracefully when not.**
+- **Expose observability.** Per‑phase timings and counts (e.g., validations/instance, repairs/instance).
+- **Keep outcomes independent of wall‑clock, locale, and environment.** (See §15.)
+
+---
 
 ## 5) Configuration Overview (reader’s map)
 
@@ -67,7 +96,7 @@ Defaults are conservative. Full option types and defaults are in **§23**. Mode 
 This table summarizes the “big knobs” and their intent (details and edge‑cases in the referenced sections).
 
 | Area                 | Key option (default)                                 | Intent (one‑liner)                                                                    | Details |
-| -------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------- | ------- |
+|----------------------|------------------------------------------------------|---------------------------------------------------------------------------------------|---------|
 | Conditionals         | `rewriteConditionals: 'never'`                       | Do not rewrite `if/then/else`; generator is **if‑aware‑lite**                         | §7, §9  |
 | Trials & selection   | `trials.perBranch=2`, `maxBranchesToTry=12`          | Deterministic scoring + bounded attempts; score‑only when large                       | §8, §15 |
 | Numbers / multipleOf | `rational.decimalPrecision=12`, `fallback:'decimal'` | Exact rationals with caps; AJV‑aligned tolerance on fallback                          | §8      |
@@ -76,20 +105,22 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
 | Modes                | **Strict** (default)                                 | External `$ref`: error (no I/O). **Lax**: warn then attempt local generation          | §11     |
 | Caching              | `cache.*`                                            | Cache compiles/plans (not instances); keys include AJV major + flags + options subkey | §14     |
 
-**Precedence & compatibility.** Mode (Strict/Lax) defines the baseline; specific `failFast` overrides refine it (see §11).
+**Precedence & compatibility.** Mode (Strict/Lax) defines the baseline; specific `failFast` overrides refine it (see §11).  
 **Note on “aggressive”.** The legacy `rewriteConditionals:'aggressive'` is treated as the same as `'safe'` and is kept for compatibility; the default remains `'never'` (see §7/§23).
+
+---
 
 ## 6) High‑Level Architecture
 
 **Phases.**
 
-* **Normalize** — Draft‑aware canonicalization to a 2020‑12‑like **canonical view**. The original schema is preserved for validation.
-* **Compose** — Build an **effective view** used by the generator: resolve composition, apply must‑cover (`AP:false`) and bag `contains`; do not mutate the canonical view.
-* **Generate** — Produce a minimal instance that satisfies the effective constraints; deterministic (seeded) choices.
-* **Repair** — AJV‑driven, budgeted corrections with a `(keyword → action)` registry; idempotent.
-* **Validate** — Final AJV validation against the **original** schema; the pipeline fails on non‑compliance.
+- **Normalize** — Draft‑aware canonicalization to a 2020‑12‑like **canonical view**. The original schema is preserved for validation.
+- **Compose** — Build an **effective view** used by the generator: resolve composition, apply must‑cover (`AP:false`) and bag `contains`; do not mutate the canonical view.
+- **Generate** — Produce a minimal instance that satisfies the effective constraints; deterministic (seeded) choices.
+- **Repair** — AJV‑driven, budgeted corrections with a `(keyword → action)` registry; idempotent.
+- **Validate** — Final AJV validation against the **original** schema; the pipeline fails on non‑compliance.
 
-**Mini example (illustrative):**
+**Mini example (illustrative — AP:false + conditionals).**
 
 ```json
 // Original (validated by AJV)
@@ -104,12 +135,32 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
   "then": { "required": ["a1"] },
   "else": { "required": ["b1"] }
 }
-```
+````
 
 * **Normalize** keeps the original and prepares a canonical form (no conditional rewrite by default).
 * **Compose** recognizes `AP:false` and computes the **must‑cover** keys `{a1,b1}` from the anchored pattern.
 * **Generate** picks `kind` and the matching required key (`a1` or `b1`) deterministically.
 * **Validate** runs on the original schema; any drift is caught and repaired within budget.
+
+**Mini example (illustrative — `propertyNames` as a gate, not a source).**
+
+```json
+{
+  "type": "object",
+  "allOf": [
+    {
+      "additionalProperties": false,
+      "properties": { "a": {}, "b": {} },
+      "propertyNames": { "enum": ["a","b","c"] } // gate superset
+    },
+    { "required": ["a"] }
+  ]
+}
+```
+
+* **Compose**: must‑cover = `{"a","b"}` (coverage comes from `properties`; `propertyNames` only filters).
+* **Normalize**: **no rewrite** because `additionalProperties:false` is present at this object (preconditions in §7 fail); an implementation may log `PNAMES_COMPLEX`.
+* **Generate**: emits `a` (required). Adds `b` **only if** needed by `minProperties`. `c` is **never** selected under `AP:false`.
 
 **Glossary (summary).**
 
@@ -117,7 +168,7 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
 * **Canonical view** — Internal 2020‑12‑like shape produced by Normalize; non‑destructive.
 * **Effective view** — Composition/planning result used by the generator (must‑cover and `contains` bagging applied).
 * **Anchored‑safe pattern** — Regex with unescaped `^…$` and no look‑around/back‑references (textual test; full rule in §8).
-* **Presence pressure** — A situation where `minProperties > 0` or some `required` keys must appear; used by early‑unsat rules (see §8).
+* **Presence pressure** — Situation where `minProperties > 0` or some `required` keys must appear; used by early‑unsat rules (see §8).
 * **Seeded RNG** — Local, deterministic tie‑breaks; no global mutable state (see §15).
 
 ---
