@@ -1135,3 +1135,58 @@ export function toOriginalByWalk(canonPtr: string, mapCanonToOrig: Map<string,st
   }
 }
 ```
+
+## 24) Norms & References
+
+### 24.1 Normative References
+
+* **\[RFC2119] / \[RFC8174]** — *Key words for use in RFCs to Indicate Requirement Levels.*
+  **Used for:** requirement language MUST / SHOULD / MAY.
+
+* **\[RFC8259]** — *The JavaScript Object Notation (JSON) Data Interchange Format.*
+  **Used for:** definition of JSON for inputs/outputs and diagnostic payloads.
+
+* **\[JSON-SCHEMA-2020-12]** — *JSON Schema draft 2020-12* (Core, Validation, Applicator, Unevaluated, Format Annotation vocabularies).
+  **Used for:** keyword semantics and the target dialect (`allOf/anyOf/oneOf/not`, `if/then/else`, `unevaluated*`, `properties/patternProperties/additionalProperties`, `contains`, `dependent*`, `$id/$anchor`, `format`).
+
+* **\[RFC6901]** — *JSON Pointer.*
+  **Used for:** pointer syntax (`/…`) in `canonPath` and diagnostics.
+  *Note:* `ptrMap` and `revPtrMap` are constructs defined by this specification, not by RFC6901.
+
+* **\[RFC3986]** — *Uniform Resource Identifier (URI): Generic Syntax.*
+  **Used for:** resolution rules of `$id` and `$ref` (internal vs external). No network I/O.
+
+* **\[RFC8785]** — *JSON Canonicalization Scheme (JCS).*
+  **Used for:** canonical key ordering and deterministic content hashing.
+
+* **\[FIPS-180-4]** — *Secure Hash Standard (SHS).*
+  **Used for:** SHA-256 in `contentHash` and structural de-duplication.
+
+* **\[ECMA-262]** — *ECMAScript Language Specification (latest edition).*
+  **Used for:** RegExp Unicode semantics (`u` flag, `unicodeRegExp:true`) and lexicographic ordering by UTF-16 code units.
+
+* **\[SemVer-2.0.0]** — *Semantic Versioning 2.0.0.*
+  **Used for:** versioning of this specification and the software.
+
+### 24.2 Informative References
+
+* **\[ECMA-404]** — *The JSON Data Interchange Syntax.* (complements RFC8259)
+* **\[UTS-18]** — *Unicode Technical Standard #18: Unicode Regular Expressions.* (background)
+* **\[UAX-15]** — *Unicode Normalization Forms.* (background)
+* **\[AJV-v8]** — AJV v8.x documentation (background on flags such as `unicodeRegExp`, `validateFormats`)
+* **\[FNV-1a]** — Fowler–Noll–Vo hash, 1a variant (background; `fnv1a32` is restated normatively in this spec)
+
+### 24.3 Reference-to-Section Alignment
+
+| Ref                 | Applies to                                                                          |
+| ------------------- | ----------------------------------------------------------------------------------- |
+| RFC2119/8174        | global requirement language (keywords)                                              |
+| RFC8259             | §§5, 7, 8–10, 14–15 (JSON I/O, diagnostics, structural hashing inputs)              |
+| JSON-SCHEMA-2020-12 | §§6–13, 18 (keyword semantics, dialect, metaschemas)                                |
+| RFC6901             | §§7, 8, 10, 19 (pointer syntax in `canonPath`; `ptrMap`/`revPtrMap` are spec-local) |
+| RFC3986             | §§11–12 (`$ref` URI resolution; no external I/O)                                    |
+| RFC8785             | §§7.1, 7.4, 15 (canonicalization, content hash)                                     |
+| FIPS-180-4          | §§7.4, 10, 15 (SHA-256 usage)                                                       |
+| ECMA-262            | §9 (strings/RegExp), lexicographic sort rules                                       |
+| SemVer-2.0.0        | document header, versioning                                                         |
+
