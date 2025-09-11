@@ -1,18 +1,24 @@
 # Feature Support Simplification Plan — Canonical Spec
 
-**Status:** Implementation spec  
-**Version:** 0.9.0 (2025‑09‑11)  
+**Status:** Implementation spec
 **Audience:** JSON Schema & AJV practitioners, library contributors
 
 ---
 
 ## Terminology (preamble — quick ref)
 
-- **Original schema** — Source of truth for AJV validation. Generation never replaces it.
-- **Canonical view** — Internal 2020‑12‑like shape produced by *Normalize*; non‑destructive.
-- **Effective view** — Planning view produced by *Compose*; applies must‑cover under `additionalProperties:false` and “bag `contains`”.
-- **AP:false** — Shorthand for `additionalProperties:false`.
-- **Anchored‑safe pattern** — Regex with unescaped `^…$` and no look‑around/back‑references (normative test in §8).
+* **AP** — Shorthand for `additionalProperties`.
+* **AP\:false** — Shorthand for `additionalProperties:false`.
+* **Original schema** — Source of truth for AJV validation. Generation never replaces it.
+* **Canonical (2020‑12) view** — Internal 2020‑12‑like shape produced by *Normalize*; non‑destructive.
+* **Effective view** — Planning view produced by *Compose*; applies must‑cover under `additionalProperties:false` and “bag `contains`”.
+* **Conjunct** — An operand of `allOf`.
+* **Must‑cover** — The set of property names considered generable when at least one conjunct imposes `additionalProperties:false`, computed from `properties` plus **anchored‑safe** `patternProperties`. When `PNAMES_REWRITE_APPLIED` is present, also include the **synthetic** anchored‑safe patterns introduced from `propertyNames` by §7. Otherwise, `propertyNames` never increases coverage (it only gates).
+* **Anchored‑safe pattern** — Regex whose JSON‑unescaped `source` starts with an unescaped `^` and ends with an unescaped `$`, and contains **no** look‑around and **no** back‑references. Full rule and complexity caps in §8.
+* **Bag `contains`** — Models `contains`/`minContains`/`maxContains` as independent needs `{schema,min?,max?}` that **concatenate** across `allOf` (see §8).
+* **Presence pressure** — `minProperties > 0` or a non‑empty `required` set.
+* **Seeded RNG** — Local, deterministic tie‑breaks; no global mutable state (see §15).
+* **canonPath** — Canonical JSON Pointer string for a node. Historical alias: \*canonPtr\*. The spec uses \*canonPath\* uniformly; implementations MAY accept \*canonPtr\* as an internal alias.
 
 ---
 
@@ -22,16 +28,20 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
 
 ### Acceptance (observable)
 
-- **AJV validation on the original schema** for every instance.  
+* **AJV validation on the original schema** for every instance.
   *Signal:* final validation passes; `diag.metrics.validationsPerRow ≥ 1`.
-- **No network I/O for external `$ref`** (strict by default).  
+* **No network I/O for external `$ref`** (strict by default).
   *Signal:* `EXTERNAL_REF_UNRESOLVED` (Strict = error; Lax = warn).
-- **Deterministic outcomes for a given `(seed, options)`**.  
+* **Deterministic outcomes for a given `(seed, options, AJV.major, AJV.flags)`**.
   *Signal:* stable `diag.chosenBranch`, `diag.scoreDetails.tiebreakRand` at the same canonical pointers.
-- **Documented budgets with explicit degradations**.  
+* **Documented budgets with explicit degradations**.
   *Signal:* `COMPLEXITY_CAP_*` diagnostics and populated `diag.budget`.
 
-> **Conventions.** RFC2119/8174 keywords (MUST/SHOULD/MAY) are normative.  
+* **Config gate (normative).**
+  Both AJV instances **MUST** satisfy the required flags enumerated in §13 (including `unicodeRegExp:true` for both).
+  Any deviation is a hard failure with diagnostic **`AJV_FLAGS_MISMATCH`**.
+
+> **Conventions.** RFC2119/8174 keywords (MUST/SHOULD/MAY) are normative.
 > “Instance” = generated JSON value validated against the schema.
 
 ---
@@ -42,22 +52,24 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
 
 **Non‑goals (core).**
 
-- Remote dereferencing of external `$ref` (no network/filesystem I/O).
-- Caching of **generated instances** across runs.
-- Learned/scenario‑based distributions (optional extensions outside core guarantees).
+* Remote dereferencing of external `$ref` (no network/filesystem I/O).
+* Caching of **generated instances** across runs.
+* Learned/scenario‑based distributions (optional extensions outside core guarantees).
 
 **Environment & drafts.**
 
-- Runtime: Node.js ≥ 18.  
-- Validator: AJV v8 with `unicodeRegExp:true`.  
-- Drafts: input schemas may use draft‑04..2020‑12+; internal canonicalization targets a 2020‑12‑like shape; validation always runs against the **original** schema.
+* Runtime: Node.js ≥ 18.
+* Validator: AJV v8 with `unicodeRegExp:true`.
+* Drafts: input schemas may use draft‑04..2020‑12+; internal canonicalization targets a 2020‑12‑like shape; validation always runs against the **original** schema.
 
 **Modes (quick view; details §11).**
 
-| Mode   | External `$ref`             | Behavior & signal                         |
-|--------|-----------------------------|-------------------------------------------|
-| Strict | No I/O; unresolved ⇒ error  | Emit `EXTERNAL_REF_UNRESOLVED`            |
-| Lax    | No I/O; unresolved ⇒ warn   | Emit `EXTERNAL_REF_UNRESOLVED` (warn) and attempt local generation |
+| Mode   | External `$ref`            | Behavior & signal                                                  |
+| ------ | -------------------------- | ------------------------------------------------------------------ |
+| Strict | No I/O; unresolved ⇒ error | Emit `EXTERNAL_REF_UNRESOLVED`                                     |
+| Lax    | No I/O; unresolved ⇒ warn  | Emit `EXTERNAL_REF_UNRESOLVED` (warn) and attempt local generation |
+
+*Note.* *External* means any `$ref` that is **not** fragment‑only (`#...`) after resolving against the current `$id` base (§11/§12). **No I/O** is performed in any mode.
 
 ---
 
@@ -65,17 +77,22 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
 
 **Core principles (normative).**
 
-- **AJV is the oracle (MUST).** Validate against the **original** schema, not internal transforms.  
-- **Deterministic (MUST).** Seeded RNG, bounded attempts, no global state.  
-- **No remote deref (MUST).** External `$ref` never trigger I/O.  
-- **Simplicity & separation.** A small number of predictable phases; narrow responsibilities per phase.  
-- **Observability by default.** Metrics, budgets, and diagnostics are first‑class.
+* **AJV is the oracle (MUST).** Validate against the **original** schema, not internal transforms.
+* **Deterministic (MUST).** Seeded RNG, bounded attempts, no global state.
+* **No remote deref (MUST).** External `$ref` never trigger I/O.
+* **Simplicity & separation.** A small number of predictable phases; narrow responsibilities per phase.
+* **Observability by default.** Metrics, budgets, and diagnostics are first‑class.
 
 **Invariants (introductory; details in §7–§9).**
 
-- **Must‑cover under `additionalProperties:false`.** When any conjunct sets `additionalProperties:false`, keys are drawn from **provable coverage** only (named `properties` plus **anchored‑safe** `patternProperties`). `propertyNames` acts as a **filter** and **only becomes a coverage source when** the §7 rewrite has been applied (`PNAMES_REWRITE_APPLIED`) **and** `additionalProperties` is **absent/true/{ }** at that object (never when it is `false`). See §7–§8.
-- **`contains` across `allOf` uses bag semantics.** Independent needs `{schema,min,max}` with early unsat checks. See §8–§9.
-- **Determinism boundaries.** No caching of generated data; caching is limited to compiled/plan artifacts and keyed by AJV version/flags and plan options. See §14–§15.
+* **Must‑cover under `additionalProperties:false`.** When any conjunct sets `additionalProperties:false`, keys are drawn from **provable coverage** only: named `properties` plus **anchored‑safe** `patternProperties`. `propertyNames` acts as a **filter** and **only increases coverage via** the §7 additive rewrite when `PNAMES_REWRITE_APPLIED` is present (the rewrite injects **synthetic** anchored‑safe patterns that may be used for coverage). Otherwise, `propertyNames` never increases coverage. See §7–§8.
+* **`contains` across `allOf` uses bag semantics.** Independent needs `{schema,min,max}` with early unsat checks. See §8–§9.
+* **Determinism boundaries.** No caching of generated data; caching is limited to compiled/plan artifacts and keyed by AJV version/flags and plan options. See §14–§15.
+
+* **AP:false unsafe‑pattern policy (Strict).**
+  When any conjunct enforces `additionalProperties:false` and the must‑cover proof would rely on a pattern that is
+  **not anchored‑safe** or is **capped by regex complexity**, implementations **MUST** fail‑fast before generation with
+  **`AP_FALSE_UNSAFE_PATTERN`**. In Lax mode, emit a warning and continue conservatively (§8).
 
 > **Note.** The precise definition of **anchored‑safe** regex and the rules for when `propertyNames` can contribute to coverage are normative in §8.
 
@@ -83,10 +100,26 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
 
 ## 4) Operational guidance
 
-- **Pipeline clarity.** `Normalize → Compose → Generate → Repair → Validate`.
-- **Fail early when provable, degrade gracefully when not.**
-- **Expose observability.** Per‑phase timings and counts (e.g., validations/instance, repairs/instance).
-- **Keep outcomes independent of wall‑clock, locale, and environment.** (See §15.)
+* **Pipeline clarity.** `Normalize → Compose → Generate → Repair → Validate`.
+
+  ```
+  Original
+     │
+     ▼
+  Normalize (canonical 2020‑12 view)
+     │
+     ▼
+  Compose (effective view: must‑cover, bagged contains)
+     │
+     ▼
+  Generate ──► Repair (budgeted, AJV‑driven) ──► Validate (AJV on original)
+  ```
+
+* **Fail early when provable, degrade gracefully when not.**
+
+* **Expose observability.** Per‑phase timings and counts (e.g., validations/instance, repairs/instance).
+
+* **Keep outcomes independent of wall‑clock, locale, and environment.** (See §15.)
 
 ---
 
@@ -96,16 +129,18 @@ Defaults are conservative. Full option types and defaults are in **§23**. Mode 
 This table summarizes the “big knobs” and their intent (details and edge‑cases in the referenced sections).
 
 | Area                 | Key option (default)                                 | Intent (one‑liner)                                                                    | Details |
-|----------------------|------------------------------------------------------|---------------------------------------------------------------------------------------|---------|
+| -------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------- | ------- |
 | Conditionals         | `rewriteConditionals: 'never'`                       | Do not rewrite `if/then/else`; generator is **if‑aware‑lite**                         | §7, §9  |
-| Trials & selection   | `trials.perBranch=2`, `maxBranchesToTry=12`          | Deterministic scoring + bounded attempts; score‑only when large                       | §8, §15 |
-| Numbers / multipleOf | `rational.decimalPrecision=12`, `fallback:'decimal'` | Exact rationals with caps; AJV‑aligned tolerance on fallback                          | §8      |
+| Trials & selection   | `trials.perBranch=2`, `maxBranchesToTry=12`, `skipTrialsIfBranchesGt=50` | Deterministic scoring + bounded attempts; tie‑break via seeded RNG                    | §8, §15 |
+| Numbers / multipleOf | `rational.decimalPrecision=12`, `fallback:'decimal'` | Exact rationals with caps; AJV‑aligned tolerance on fallback (**`multipleOf` > 0**)   | §8      |
 | Output encoding      | `encoding.bigintJSON:'string'`                       | Control BigInt in **data outputs** (logs always stringify)                            | §9, §10 |
 | Guards & caps        | `complexity.*` (various)                             | Bound search/analysis; emit diagnostics when capping                                  | §8, §15 |
 | Modes                | **Strict** (default)                                 | External `$ref`: error (no I/O). **Lax**: warn then attempt local generation          | §11     |
 | Caching              | `cache.*`                                            | Cache compiles/plans (not instances); keys include AJV major + flags + options subkey | §14     |
+| Patterns under AP:false | `patternPolicy.unsafeUnderApFalse:'error'`        | Strict: fail-fast on non-anchored/complex patterns in must-cover; Lax: warn           | §8      |
+| Validator config gate    | *(normative, no option)*                    | Enforce AJV flags per §13; fail with `AJV_FLAGS_MISMATCH` on deviation      | §13 |
 
-**Precedence & compatibility.** Mode (Strict/Lax) defines the baseline; specific `failFast` overrides refine it (see §11).  
+**Precedence & compatibility.** Mode (Strict/Lax) defines the baseline; specific `failFast` overrides refine it (see §11).
 **Note on “aggressive”.** The legacy `rewriteConditionals:'aggressive'` is treated as the same as `'safe'` and is kept for compatibility; the default remains `'never'` (see §7/§23).
 
 ---
@@ -114,13 +149,13 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
 
 **Phases.**
 
-- **Normalize** — Draft‑aware canonicalization to a 2020‑12‑like **canonical view**. The original schema is preserved for validation.
-- **Compose** — Build an **effective view** used by the generator: resolve composition, apply must‑cover (`AP:false`) and bag `contains`; do not mutate the canonical view.
-- **Generate** — Produce a minimal instance that satisfies the effective constraints; deterministic (seeded) choices.
-- **Repair** — AJV‑driven, budgeted corrections with a `(keyword → action)` registry; idempotent.
-- **Validate** — Final AJV validation against the **original** schema; the pipeline fails on non‑compliance.
+* **Normalize** — Draft‑aware canonicalization to a 2020‑12‑like **canonical view**. The original schema is preserved for validation.
+* **Compose** — Build an **effective view** used by the generator: resolve composition, apply must‑cover (`AP:false`) and bag `contains`; do not mutate the canonical view.
+* **Generate** — Produce a minimal instance that satisfies the effective constraints; deterministic (seeded) choices.
+* **Repair** — AJV‑driven, budgeted corrections with a `(keyword → action)` registry; idempotent.
+* **Validate** — Final AJV validation against the **original** schema; the pipeline fails on non‑compliance.
 
-**Mini example (illustrative — AP:false + conditionals).**
+**Mini example (illustrative — AP\:false + conditionals).**
 
 ```json
 // Original (validated by AJV)
@@ -135,7 +170,7 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
   "then": { "required": ["a1"] },
   "else": { "required": ["b1"] }
 }
-````
+```
 
 * **Normalize** keeps the original and prepares a canonical form (no conditional rewrite by default).
 * **Compose** recognizes `AP:false` and computes the **must‑cover** keys `{a1,b1}` from the anchored pattern.
@@ -162,14 +197,30 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
 * **Normalize**: **no rewrite** because `additionalProperties:false` is present at this object (preconditions in §7 fail); an implementation may log `PNAMES_COMPLEX`.
 * **Generate**: emits `a` (required). Adds `b` **only if** needed by `minProperties`. `c` is **never** selected under `AP:false`.
 
+**Mini example (illustrative — `contains` bag).**
+
+```json
+{
+  "type": "array",
+  "allOf": [
+    { "contains": { "const": 1 }, "minContains": 2 },
+    { "contains": { "type": "integer" }, "maxContains": 3 }
+  ]
+}
+```
+
+* **Compose**: `containsBag = [{schema:{const:1},min:2},{schema:{type:"integer"},max:3}]` with early unsat checks per §8.
+* **Generate/Repair**: satisfy needs deterministically; with `uniqueItems:true`, de‑duplicate first, then re‑satisfy (see §8–§9).
+
 **Glossary (summary).**
 
 * **Original schema** — Source of truth for AJV validation.
-* **Canonical view** — Internal 2020‑12‑like shape produced by Normalize; non‑destructive.
+* **Canonical (2020‑12) view** — Internal shape produced by Normalize; non‑destructive.
 * **Effective view** — Composition/planning result used by the generator (must‑cover and `contains` bagging applied).
-* **Anchored‑safe pattern** — Regex with unescaped `^…$` and no look‑around/back‑references (textual test; full rule in §8).
-* **Presence pressure** — Situation where `minProperties > 0` or some `required` keys must appear; used by early‑unsat rules (see §8).
+* **Anchored‑safe pattern** — `^…$` (unescaped) and no look‑around/back‑references (see §8).
+* **Presence pressure** — `minProperties > 0` or some `required` keys must appear; used by early‑unsat rules (see §8).
 * **Seeded RNG** — Local, deterministic tie‑breaks; no global mutable state (see §15).
+* **Exact‑literal‑alternatives** — A regex of the exact form `^(?:L1|...|Lk)$` where each `Li` is a literal string with all metacharacters escaped (no character classes, groups, or quantifiers). Used in §7 to prove that `patternProperties` are a subset of a finite `propertyNames.enum`.
 
 ---
 
@@ -217,7 +268,7 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
    * **Default**: no rewrite (`rewriteConditionals:'never'`).
    * **`safe` rewrite** (double negation) only when strictly safe (normative):
 
-     * **Block** if any `unevaluatedProperties/unevaluatedItems` is in scope or ancestor scope. **MUST NOT** rewrite and **MUST** emit `IF_REWRITE_SKIPPED_UNEVALUATED` at the conditional's canonical path.
+     * **Block** if any `unevaluatedProperties/unevaluatedItems` applies to the **same instance location** as the conditional or to any JSON Pointer **prefix** of that location (ancestor objects/arrays). **MUST NOT** rewrite and **MUST** emit `IF_REWRITE_SKIPPED_UNEVALUATED` at the conditional's canonical path.
      * **Block** if evaluation‑affecting keywords are present at the nearest object/array or inside `then/else`:
        `unevaluated*`, `properties`, `patternProperties`, `additionalProperties`,
        `items`, `prefixItems`, `contains`, `propertyNames`, `dependentSchemas`, `dependentRequired`.
@@ -271,7 +322,9 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
        ```json
        { "patternProperties": { "^(?:n1|...|nk)$": {} }, "additionalProperties": false }
        ```
-     where each `ni` is escaped as a literal in the regex. Values remain unconstrained by this rewrite.
+     where each `ni` is escaped using **escapeRegexLiteral(ni)** (normative) and the pattern string is JSON‑escaped as needed. Values remain unconstrained by this rewrite.
+     
+     **Definition — `escapeRegexLiteral(s)` (normative):** return `s.replace(/[\\^$.*+?()[\\]{}|]/g, '\\\\$&')`. No other transformations are applied. The resulting source is interpreted by JS `RegExp` with the `u` flag (see §13).
        **Equivalence note:** Under preconditions (2)–(4), `propertyNames` already forbids any non‑member key; adding `additionalProperties:false` is semantically redundant for key admission and enables must‑cover analysis (§8) without affecting AJV validation (original schema preserved). The added `patternProperties` entry is **synthetic** and only considered for coverage when `PNAMES_REWRITE_APPLIED` is present.
      * **Anchored‑safe pattern** form (additive canonicalization):
      Given `{"propertyNames":{"pattern": P}}` with `P` anchored‑safe (see §8 “Anchored pattern”), rewrite to:
@@ -283,6 +336,7 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
        a naive rewrite to `{ "patternProperties": { "^foo$": {} }, "additionalProperties": false }` **narrows** admitted names by
        excluding `"foobar"`, which the original permits. Because the pattern is **not anchored‑safe**, preconditions fail and the rewrite
        **MUST NOT** occur; emit `PNAMES_COMPLEX`.
+     * **Cross‑reference (normative):** Under `additionalProperties:false`, if must‑cover would rely on a **non‑anchored** or **complexity‑capped** pattern (including those from `propertyNames`), §8 requires **fail‑fast** in Strict mode with `AP_FALSE_UNSAFE_PATTERN`. Lax mode warns and proceeds conservatively.
      * **Do not rewrite** if any `unevaluated*` applies at or above the object **or** any precondition above fails: emit `PNAMES_COMPLEX` (with detail when available).
      * The rewrite is additive **only** under the stated preconditions; the original schema is preserved for AJV validation.
 
@@ -331,7 +385,9 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
     scoreDetails?: {
       orderedIndices: number[];       // branches by score desc / index asc
       topScoreIndices: number[];      // tie set BEFORE RNG
-      tiebreakRand?: number;          // MUST be present whenever RNG is used (ties OR oneOf step‑4)
+      // Normative: MUST be present in **score‑only** paths (always) and whenever RNG is used
+      // (ties OR oneOf step‑4). MAY be omitted only when RNG is not used and trials occurred.
+      tiebreakRand?: number;
       scoresByIndex?: Record<string, number>; // OPTIONAL: map "i" -> score
     },
     budget?: { tried: number, limit: number, skipped?: boolean, reason?: string },
@@ -353,7 +409,7 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
   * `multipleOf` — Exact rational:
 
     * Integers: intersection multiple is `lcm(a,b)`.
-    * Rationals (reduced `p/q`): intersection multiple is `lcm(p1,p2)/gcd(q1,q2)`.
+    * Rationals (reduced `p/q`, with `p,q ∈ ℕ⁺`): intersection multiple is `lcm(p1,p2)/gcd(q1,q2)`.
     * **Caps** — If `bitLen(p|q)` > `maxRatBits`, or `bitLen(lcm)` > `maxLcmBits`, or `qCap` exceeded:
 
       * `fallback:'decimal'` ⇒ quantize to `decimalPrecision` digits; **then apply the same ε‑based acceptance rule as below**; note `RAT_FALLBACK_DECIMAL`.
@@ -369,30 +425,39 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
     matched by **anchored‑safe** `patternProperties`. When `propertyNames` is present at that conjunct, it acts
     **only as a gating filter** over the coverage set: intersect with the finite set (for `enum`) or with the
     names admitted by its **anchored‑safe** `pattern`. **Coverage may increase only** when the normalizer has applied the §7 rewrite and recorded `PNAMES_REWRITE_APPLIED` for this object; in that case, the **synthetic** anchored‑safe patterns introduced by the rewrite **are treated as part of** `patternProperties` for coverage. Otherwise, `propertyNames` **never** increases coverage. When coverage depends on non‑anchored or
-    complexity‑capped patterns, treat coverage as unknown (see below) and exclude such keys conservatively.
+    complexity‑capped patterns, treat coverage as **unknown**. **Mode‑specific:** **Strict:** do not proceed; escalate per the fail‑fast rule in this section and emit **`AP_FALSE_UNSAFE_PATTERN`**. **Lax:** proceed by **conservative exclusion** of such keys. See **Fail‑fast rule (Strict; normative)** below.
   * **Must‑cover (MUST)**:
+
+    * **Restatement:** `propertyNames` **never increases coverage**; it only gates recognition. Coverage may increase **only** via the §7 additive rewrite, signaled by `PNAMES_REWRITE_APPLIED`.
 
     * For each conjunct `Ci` with `additionalProperties:false`, compute a recognizer of keys it **covers**:
 
       * Named keys from `properties`.
-      * Names matched by **anchored‑safe** `patternProperties` **including any synthetic entries created by the §7 rewrite when `PNAMES_REWRITE_APPLIED` is present** (conservative recognition).
+      * Names matched by **anchored‑safe** `patternProperties`, **including any synthetic entries created by the §7 rewrite only when `PNAMES_REWRITE_APPLIED` is present** (conservative recognition).
     * If `Ci.propertyNames` is present, further **intersect** the coverage for `Ci` with the set of names permitted
       by `propertyNames` — either the exact **enum** set or those matched by its **anchored‑safe** `pattern`. **Any other form of `propertyNames` (e.g., using `minLength`, `maxLength`, `format`, or composite keywords) MUST NOT contribute to coverage recognition; treat its effect as unknown gating. Implementations MUST emit `PNAMES_COMPLEX` and, when this reduces provable coverage, also `AP_FALSE_INTERSECTION_APPROX`.**
     * The globally safe set of generable keys is the **intersection** of these (possibly filtered) recognizers
       across all such `Ci`.
-    * **Anchored pattern (normative):** Assume AJV is configured with `unicodeRegExp:true` (§13). Detection is **purely textual**: regex `p` is anchored‑safe iff it starts with unescaped `^` and ends with unescaped `$`, and contains **no** look‑around (`?=`, `?!`, `?<=`, `?<!`) or back‑references (`\\1`, `\\k<...>`). Other constructs are allowed.
+    * **Anchored pattern (normative):** Assume AJV is configured with `unicodeRegExp:true` (§13). Detection is **purely textual**: regex `p` is anchored‑safe iff it starts with unescaped `^` and ends with unescaped `$`, contains **no** look‑around (`?=`, `?!`, `?<=`, `?<!`) or back‑references (`\\1`, `\\k<...>`), **and is not flagged by the Complexity cap rule below**. Other constructs are allowed.
       **Detection operates on the JSON‑unescaped regex `source`.** The same anchored‑safe test applies to `propertyNames.pattern`, also using the JSON‑unescaped `source`.
     * **Algorithm (normative):** Treat a pattern as anchored‑safe if and only if:
       (a) in the JSON‑unescaped `source` the first code unit is `^` not preceded by `\\`, and the last code unit is `$` not preceded by an odd number of `\\`;
       (b) the JSON‑unescaped `source` contains **no back‑references of any form** and **no look‑around** — i.e., it contains none of `(?=`, `(?!`, `(?<=`, `(?<!)`, and it contains neither named back‑references (`\\k<...>`) **nor numeric back‑references** (any `\\[1-9]\\d*`);
       (c) flag letters are not present in JSON Schema; assume JS RegExp with `u` only (per §13).
-    * **Complexity cap (normative):** For coverage analysis only, if a pattern's source length exceeds **4096** code units or a textual scan detects **nested quantifiers** (a parenthesized group immediately followed by `*`, `+`, `?`, or `{m,n}` whose body contains an unescaped `*`, `+`, or `{m,n}`), treat it as **non‑anchored**. Emit `REGEX_COMPLEXITY_CAPPED`, and when this affects must‑cover, also emit `AP_FALSE_INTERSECTION_APPROX`. This cap also applies to `propertyNames.pattern` when evaluating rewrites in §7.
+    * **Complexity cap (normative):** For coverage analysis only, if a pattern's source length exceeds **4096 UTF‑16 code units** or a textual scan detects **nested quantifiers** (a parenthesized group immediately followed by `*`, `+`, `?`, or `{m,n}` whose body contains an unescaped `*`, `+`, or `{m,n}`), treat it as **non‑anchored**. Emit `REGEX_COMPLEXITY_CAPPED`, and when this affects must‑cover, also emit `AP_FALSE_INTERSECTION_APPROX`. This cap also applies to `propertyNames.pattern` when evaluating rewrites in §7.
     * **Safe key predicate (normative):** key `k` is safe under conjunct `Ci` iff `k ∈ Ci.properties`, or `∃` anchored‑safe pattern in `Ci.patternProperties` that matches `k`.
       If `Ci.propertyNames` **is an enum of strings**, further intersect the safe set with exactly that finite set (literal equality on names).
-      If `Ci.propertyNames` **uses `pattern`**, apply the **same anchored‑safe rules** as for `patternProperties` and intersect accordingly.
+      If `Ci.propertyNames` **uses `pattern`**, it **MUST** be **anchored‑safe and not complexity‑capped** to participate in recognition; otherwise it **MUST NOT** affect must‑cover recognition or early‑unsat proofs (treat as **unknown gating**; AJV remains the oracle at validation).
       If any `Ci` has only **non‑anchored** patterns or patterns **capped by complexity** (either in `patternProperties` or `propertyNames`) covering `k`, treat coverage as **unknown** ⇒ `k` is **not safe`.
-      Emit `REGEX_COMPLEXITY_CAPPED` when applicable, and `PNAMES_COMPLEX` and/or `AP_FALSE_INTERSECTION_APPROX` when unknown coverage causes exclusion.
+      Emit `REGEX_COMPLEXITY_CAPPED` when applicable, and `PNAMES_COMPLEX` and/or `AP_FALSE_INTERSECTION_APPROX` when unknown coverage causes exclusion. **In Lax only:** unknown coverage leads to conservative exclusion. **In Strict:** the conservative‑exclusion rule is overridden by the fail‑fast policy below; implementations **MUST** abort planning/generation for that node with `AP_FALSE_UNSAFE_PATTERN`.
   * When **no** conjunct has `additionalProperties:false`, keys not covered by **that conjunct’s** `properties/patternProperties` MUST satisfy **that conjunct’s** `additionalProperties` schema (**per‑conjunct evaluation** as in AJV). If **any** conjunct has `additionalProperties:false`, extras are globally forbidden and such schemas have no effect on extras for generation (they remain in the original schema for AJV validation but are irrelevant to generation).
+  
+  * **Fail‑fast rule (Strict; normative).**
+    If a must‑cover proof for an object under `additionalProperties:false` depends on a pattern that is
+    **not anchored‑safe** (per §8 definition) or whose analysis is **capped** by the regex complexity rule,
+    the implementation **MUST** abort planning/generation for that node with diagnostic **`AP_FALSE_UNSAFE_PATTERN`** and details `{ canonPath, sourceKind:'patternProperties'|'propertyNames', patternSource?:string }` (JSON‑unescaped when available). **This failure is fatal for the affected object node:** Compose MUST return an error for that node, the Generator MUST NOT attempt key synthesis there, and the diagnostic MUST bubble to the top‑level run result.
+    In **Lax** mode, emit **`AP_FALSE_UNSAFE_PATTERN`** as a warning and proceed conservatively (keys not proven safe are excluded),
+    preserving the existing **`AP_FALSE_INTERSECTION_APPROX`** hints where applicable.
 
 * **Objects — other**
 
@@ -430,8 +495,19 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
       * `contains: S` alone ⇒ one need `{ schema: S, min: 1 }`.
       * `minContains`/`maxContains` apply only when `contains` is present at the same location. If `contains` is absent, they are ignored (no bag entry).
     * In `allOf`, **concatenate** bags; optional subsumption (if `schemaA ⊆ schemaB`).
-    * **Unsat checks (MUST)**:
-      * `Σ min_i > (effectiveMaxItems ?? +∞)` ⇒ emit `CONTAINS_UNSAT_BY_SUM` and short‑circuit as unsat.
+    * **Unsat checks (MUST, sound)**:
+      * If `Σ min_i > (effectiveMaxItems ?? +∞)` **and** no single array element can satisfy two distinct needs
+        (i.e., the needs are pairwise‑disjoint under the disjointness rules below) ⇒ emit `CONTAINS_UNSAT_BY_SUM`
+        and short‑circuit as unsat.
+      * Otherwise (**overlap unknown or possible**), **MUST NOT** short‑circuit: record
+        `diag.unsatHints.push({ code:'CONTAINS_UNSAT_BY_SUM', canonPath, provable:false, reason:'overlapUnknown', details:{ sumMin: Σ min_i, maxItems: effectiveMaxItems } })`
+        and proceed (AJV remains the oracle at validation).
+      * **For any need:** if a bag entry has `max = 0` and `min > 0` ⇒ unsat.
+    * **Disjointness (sound, incomplete):** treat two needs `A` and `B` as **disjoint** when any of:
+      1) both have `const` and `!deepEqual(A.const, B.const)`;
+      2) both have `enum` and `A.enum ∩ B.enum = ∅`;
+      3) their `type` sets are disjoint (e.g., `'integer'` vs `'string'`);
+      4) the subset checks listed below imply `A ⊆ ¬B` or `B ⊆ ¬A`.
       * Any need with `min > (maxItems ?? +∞)` ⇒ unsat.
       * **Definition (normative):** `effectiveMaxItems` is the post‑merge bound after `allOf`
         (including tuple‑implied caps where `items:false` ⇒ `maxLen = len(prefixItems)`).
@@ -488,8 +564,8 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
 * **`required` + `additionalProperties:false` across `allOf` (provable)**:
 
     * **Short‑circuit unsat only when** there exists `r ∈ effectiveRequiredKeys` that is **provably not covered** by the
-      must‑cover intersection computed from `properties`, **anchored‑safe** `patternProperties` and `propertyNames`
-      (enum or anchored‑safe `pattern`), using the same anchored/complexity rules as §8.
+      must‑cover intersection computed from `properties` and **anchored‑safe** `patternProperties` (including any **synthetic** entries introduced by the §7 `propertyNames` rewrite **only when** `PNAMES_REWRITE_APPLIED` is present), using the same anchored/complexity rules as §8.
+      `propertyNames` acts **only as a gate** here; cases where `propertyNames` alone forbids `r` are handled by `UNSAT_REQUIRED_PNAMES`.
       Emit `UNSAT_REQUIRED_AP_FALSE` naming `r`.
     * If non‑anchored or complexity‑capped patterns are involved in the proof, **MUST NOT** short‑circuit: emit
       `AP_FALSE_INTERSECTION_APPROX` (and `REGEX_COMPLEXITY_CAPPED` when applicable) and record
@@ -507,8 +583,8 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
   * −5: estimated overlaps (wide unions, non‑anchored patterns).
   * **Top‑score ties (normative):** let `Smax` be the maximum score and `T` be the ascending‑sorted array of indices `i` where `score[i] = Smax`.
     * If `T.length = 1`, pick `T[0]`.
-    * If `T.length > 1`, pick deterministically from `T` using the §15 RNG with state `s0 = (seed >>> 0) ^ fnv1a32(canonPtr)`: choose index `T[Math.floor((next()/2**32) * T.length)]`.
-    **Normative:** `fnv1a32` is FNV‑1a over the canonical JSON Pointer string `canonPtr`
+    * If `T.length > 1`, pick deterministically from `T` using the §15 RNG with state `s0 = (seed >>> 0) ^ fnv1a32(canonPath)`: choose index `T[Math.floor((next()/2**32) * T.length)]`.
+    **Normative:** `fnv1a32` is FNV‑1a over the canonical JSON Pointer string `canonPath`
     (offset‑basis `2166136261`, prime `16777619`, modulo `2^32`).
 
 * **Trials policy**:
@@ -516,13 +592,17 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
   * Score all branches; try Top‑K `maxBranchesToTry`. Attempt generation up to `trials.perBranch` times per branch (default 2).
   * If branch count > `skipTrialsIfBranchesGt` or `skipTrials=true` ⇒ **score‑only** selection:
     compute `Smax` and tie set `T` as above and pick from `T` with the seeded RNG. No trials are attempted in this path.
-  * **Normative (observability):** in score‑only, `diag.scoreDetails` **MUST** include:
+  * **Normative (observability):** in score‑only, implementations **MUST invoke the RNG exactly once** and record the resulting float as `tiebreakRand`. `diag.scoreDetails` **MUST** include:
     * `orderedIndices:number[]` — branch indices ordered by score desc, index asc;
     * `topScoreIndices:number[]` — the tie set `T` in ascending index order before RNG;
-    * `tiebreakRand:number` — the RNG float (`next()/2^32`).
+    * `tiebreakRand:number` — the RNG float (`next()/2^32`). Record it even when `|T| = 1` (no tie); in that case it is not used for selection but remains part of the deterministic trace.
   * **Normative (general):** whenever RNG is used (tie‑break OR oneOf exclusivity resolution step‑4), `diag.scoreDetails.tiebreakRand`
     **MUST** be populated with the exact float value used.
-  * Record trial budget in `diag.budget`. Emit `TRIALS_SKIPPED_LARGE_ONEOF` when `oneOf.length > skipTrialsIfBranchesGt`. Emit `TRIALS_SKIPPED_LARGE_ANYOF` when `anyOf.length > skipTrialsIfBranchesGt`. In all score‑only cases (including `trials.skipTrials === true`), emit the relevant code and set `diag.budget.reason` to one of `"skipTrialsFlag"`, `"largeOneOf"`, `"largeAnyOf"`, or `"complexityCap"`.
+  * Record trial budget in `diag.budget`. **In score‑only paths MUST set `diag.budget.skipped = true` and `diag.budget.tried = 0` (normative).**
+    Emit `TRIALS_SKIPPED_LARGE_ONEOF` when `oneOf.length > skipTrialsIfBranchesGt`. Emit `TRIALS_SKIPPED_LARGE_ANYOF` when `anyOf.length > skipTrialsIfBranchesGt`.
+    In all score‑only cases (including `trials.skipTrials === true`), emit the relevant code and set `diag.budget.reason`
+    to one of `"skipTrialsFlag"`, `"largeOneOf"`, `"largeAnyOf"`, or `"complexityCap"`. **When trials are skipped because
+    `trials.skipTrials === true`, also emit `TRIALS_SKIPPED_SCORE_ONLY`.**
 
 * **`oneOf` exclusivity**:
 
@@ -530,9 +610,9 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
   * If >1 pass, resolve deterministically with the following order:
     1) Keep the selected branch `b* = diag.chosenBranch.index` as the target; all refinements aim to keep `b*` passing and make all others fail.
     2) Non‑destructive refinement: prefer adjustments that set/strengthen discriminants already present in `b*` (e.g., enforce `const/enum` on the same keys) without altering unrelated fields.
-    3) Bounded tweaks (stable order): apply, in order, (a) numeric nudges, lowest canonical pointer first; (b) string single‑char injections, lowest canonical pointer first. Each tweak uses the minimal change that breaks the highest‑index conflicting branch first; ties are broken by the §15 RNG seeded with the canonical JSON Pointer of this `oneOf` node.
+    3) Bounded tweaks (stable order): apply, in order, (a) numeric nudges, lowest canonical pointer first; (b) string single‑char injections, lowest canonical pointer first. Each tweak uses the minimal change that breaks the highest‑index conflicting branch first; when multiple tweaks are possible, pick deterministically by (i) lowest `canonPath` of the tweak target, then (ii) lowest branch index. **No RNG is used in step 3.**
     4) If, after (2)–(3), >1 branch still passes, pick deterministically from the passing set using the same seeded RNG policy as for ties (§8), and apply a final minimal tweak to exclude the others.
-  * Record `diag.overlap.passing` and `diag.overlap.resolvedTo = b*` (or to the chosen index in step 4). **Normative:** the RNG used in steps (3)–(4) MUST use the same canonical pointer as branch selection at this `oneOf` location.
+  * Record `diag.overlap.passing` and `diag.overlap.resolvedTo = b*` (or to the chosen index in step 4). **Normative:** the RNG used in steps (3)–(4) MUST use the same canonical pointer (**canonPath**) as branch selection at this `oneOf` location.
 
 ### Complexity caps & degradation
 
@@ -549,6 +629,7 @@ Implementations SHOULD populate `details` with small, code‑specific objects:
 * `UNSAT_PATTERN_PNAMES`: `{ enumSize:number, patterns?:string[] }`
 * `UNSAT_REQUIRED_PNAMES`: `{ requiredOut:string[], enumSample?:string[] }`
 * `UNSAT_MINPROPS_PNAMES`: `{ minProperties:number }`
+* `CONTAINS_UNSAT_BY_SUM`: `{ sumMin:number, maxItems?:number, disjointness:'provable'|'overlapUnknown' }`
 
 ---
 
@@ -587,10 +668,14 @@ Implementations SHOULD populate `details` with small, code‑specific objects:
   * When `minProperties` requires extras, choose them deterministically from the must‑cover set in lexicographic order; if insufficient, extend with admitted `additionalProperties`/`patternProperties`. For `patternProperties`, selection is defined below.
 
   * **Pattern‑witness selection (normative):**
-    1) Iterate `patternProperties` keys in **lexicographic order of their JSON‑unescaped regex `source`**; skip any pattern flagged by `REGEX_COMPLEXITY_CAPPED`.
-    2) For a candidate anchored‑safe pattern `P`, generate the **shortest** string accepted by `P`; if multiple, pick the **lexicographically smallest** (UTF‑16 code‑unit order). Use the §9 string generator with the §15 RNG seeded by the property’s canonical pointer to break internal construction ties deterministically.
+    1) Iterate `patternProperties` keys in **lexicographic order of their JSON‑unescaped regex `source`**; **consider only anchored‑safe patterns** per §8 and skip any pattern flagged by `REGEX_COMPLEXITY_CAPPED`.
+    2) For each anchored‑safe pattern `P`, generate the **shortest** string accepted by `P`; if multiple, pick the **lexicographically smallest** (UTF‑16 code‑unit order). **No RNG is used** in this step.
     3) Allocate at most **one** new key per pattern per pass, continue to the next pattern, and repeat the cycle until the needed count is met or all patterns are exhausted.
-    4) If no admissible patterns remain and `propertyNames.enum` exists, draw remaining keys from the enum in lexicographic order excluding already‑present names. If neither source can supply enough names, leave generation to fail AJV with `minProperties` and record diagnostics already defined in §8 (unsat hints).
+    4) If no admissible patterns remain and `propertyNames.enum` exists:
+       • **Under `additionalProperties:false`**, you **MUST NOT** expand coverage from `propertyNames` alone. Only names that are members of the **must‑cover intersection** computed in Compose MAY be used. Expansion via `propertyNames` is permitted **only** when the normalizer recorded `PNAMES_REWRITE_APPLIED`; in that case, use **only** those enum members proven by the **synthetic anchored‑safe patterns** introduced by the rewrite.
+       • **When `additionalProperties` is not `false`** at this object, you MAY draw remaining keys from the enum in lexicographic order excluding already‑present names.
+       If neither source can supply enough names, leave generation to fail AJV with `minProperties` and record diagnostics already defined in §8 (unsat hints).
+    5) **Non‑anchored patterns are non‑generative for witnesses.** Under `AP:false`, non‑anchored or complexity‑capped patterns would already have triggered the §8 fail‑fast or approximation path; do not use them to synthesize keys.
 
 * **Arrays — minimal‑length policy (normative)** —
   * Choose the smallest length `len` satisfying all bounds and needs: `len ≥ max(minItems, |prefixItems|, Σ min_i)` and, when `items:false`, `len ≤ |prefixItems|`.
@@ -626,9 +711,10 @@ Implementations SHOULD populate `details` with small, code‑specific objects:
 * `minimum`/`maximum` → clamp.
 * `exclusiveMinimum`/`exclusiveMaximum` → nudge to `bound ± ε` (rational or ±1 for integers).
 * `multipleOf` → rational snap; align fallback tolerance with AJV version.
+  Implementations **MAY** include `{ epsilon: string }` in action `details` when a snap or tolerance check occurs.
 * `minItems`/`maxItems` → grow/shrink arrays respecting `prefixItems/items` and **all** bagged `contains` needs.
 * `uniqueItems` → de‑duplicate via **structural hashing** (hash→bucket→`deepEqual`); re‑satisfy contains needs if de‑dup breaks them.
-  * **Normative hashing**: hash by canonical JSON: stringify with sorted object keys (depth‑first), arrays in order, and `jsonSafeReplacer` for BigInt; normalize `-0` to `0`. Collisions **must** be validated by `deepEqual` before de‑dup.
+  * **Normative hashing**: compute **SHA‑256** over the UTF‑8 bytes of the canonical JSON (RFC8785‑like): stringify with lexicographically sorted object keys (depth‑first), arrays in order, and apply `jsonSafeReplacer` for BigInt; normalize `-0` to `0`. Use the 32‑byte digest as the hash key. Collisions **must** be confirmed by `deepEqual` before de‑dup.
 * `additionalProperties:false` / `unevaluatedProperties:false` → remove extras; rename only when safe; never rename keys required by `dependent*`.
 * `propertyNames` →
   * **Order & safety:** run before `additionalProperties/unevaluated*` sweep; never rename keys that are `required` or keys referenced by any `dependent*` antecedent/depender.
@@ -705,11 +791,22 @@ Two distinct AJV instances/configs:
 
 2. **Planning/Generation**
 
-   * `strictSchema:true`, `strictTypes:true`, `allErrors:false`, `unicodeRegExp:true`
+   * `strictSchema:true`, `strictTypes:true`, `allErrors:false`, `unicodeRegExp:true`, `coerceTypes:false`
    * `validateFormats` aligned with the policy above
    * **Normative:** Both AJV instances MUST enable `unicodeRegExp:true` so that pattern semantics match the anchored‑safe test (§8) and string handling in §9.
 
-Cache keys must include AJV **major version** and flags (`validateFormats`, `allowUnionTypes`, `strictTypes`, `unicodeRegExp`).
+**Startup config check (normative).**
+Implementations **MUST** verify at initialization that:
+  1) **Source AJV** has the required flags listed above for “Source (original schema) compilation”;
+  2) **Planning/Generation AJV** has the required flags listed above for “Planning/Generation”;
+  3) **Both** instances have `unicodeRegExp:true`.
+
+**Clarification (normative):** The gate MUST NOT consider `allErrors`, which MAY be toggled per validation (e.g., `true` during Repair, `false` otherwise) without altering schema semantics. The gate MUST consider at least: `unicodeRegExp`, `validateFormats`, `allowUnionTypes`, `strictTypes`, `strictSchema`, and `coerceTypes`.
+
+If any required flag deviates from these prescriptions, the run **MUST** fail with diagnostic **`AJV_FLAGS_MISMATCH`**.
+The check is part of the acceptance gate in §1 and does not alter cache key semantics (§14).
+
+Cache keys must include AJV **major version** and flags (`validateFormats`, `allowUnionTypes`, `strictTypes`, `strictSchema`, `unicodeRegExp`, `coerceTypes`).
 
 ---
 
@@ -725,9 +822,9 @@ Hierarchical:
    **Normative:** estimated size = UTF‑8 byte length of `JSON.stringify(schema, jsonSafeReplacer)`.
 
 LRU bounded by `lruSize`. Cache keys **MUST** include AJV **major version** and flags
-(`validateFormats`, `allowUnionTypes`, `strictTypes`, `unicodeRegExp`) and the **PlanOptionsSubKey** (defined below).
+(`validateFormats`, `allowUnionTypes`, `strictTypes`, `unicodeRegExp`, `coerceTypes`) and the **PlanOptionsSubKey** (defined below).
 **Non‑goal**: no cache of **generated data** across runs. Memoization is allowed only for **branch selection**
-decisions at compose‑time and **MUST** key on `(canonPtr, seed, AJV.major, AJV.flags, PlanOptionsSubKey)`.
+decisions at compose‑time and **MUST** key on `(canonPath, seed, AJV.major, AJV.flags, PlanOptionsSubKey)`.
 (ε := `10^(−decimalPrecision)` is implied by `rational.decimalPrecision` within `PlanOptionsSubKey`.)
 
 **PlanOptionsSubKey (normative)** — JSON string of the following fields only, with keys sorted lexicographically:
@@ -736,6 +833,7 @@ decisions at compose‑time and **MUST** key on `(canonPtr, seed, AJV.major, AJV
 `complexity.maxAnyOfBranches`, `complexity.maxEnumCardinality`, `complexity.maxPatternProps`, `complexity.maxContainsNeeds`,
 `guards.maxGeneratedNotNesting`, `rational.decimalPrecision`, `rational.fallback`, `rational.maxRatBits`, `rational.maxLcmBits`, `rational.qCap` (affects numeric math, caps, and tolerance semantics).
 Omitted/undefined fields are not serialized.
+(**Canonicalization**) When computing `PlanOptionsSubKey`, treat `conditionals.strategy: 'rewrite'` as `'if-aware-lite'` to avoid cache divergence. The behavior of rewriting remains controlled solely by `NormalizeOptions.rewriteConditionals` in §7.
 (Clarification: separate LRU spaces for the two AJV instances are recommended.)
 
 ---
@@ -743,9 +841,9 @@ Omitted/undefined fields are not serialized.
 ## 15) Performance, Determinism & Metrics
 
 * **RNG (normative)** — **xorshift32** with state `uint32`, initialized as
-  `s0 = (seed >>> 0) ^ fnv1a32(canonPtr)`. On each `next()`:
+  `s0 = (seed >>> 0) ^ fnv1a32(canonPath)`. On each `next()`:
   `x ^= x << 13; x ^= x >>> 17; x ^= x << 5;` (all `>>> 0`). The return value is `x >>> 0`.
-  No global state. Tie‑breakers use `next() / 2^32` as a deterministic float in `[0,1)`.
+  No global state. Tie‑breakers use `tiebreakRand = next() / 4294967296` (IEEE‑754 double) as a deterministic float in `[0,1)`. The same `tiebreakRand` value MUST be recorded in diagnostics when RNG is used.
 * **Trials** — Bounded by `trials`; Top‑K; optional skip on large `oneOf`.
 * **Pattern overlap** — Heuristic; can be disabled.
 * **Complexity caps** — Trigger degradations (score‑only selection, analysis skips) with explicit diagnostics.
@@ -802,7 +900,9 @@ Omitted/undefined fields are not serialized.
 * On simple/medium profiles: `validationsPerRow ≤ 3`, `repairPassesPerRow ≤ 1` (p50).
 * If‑aware‑lite reduces validations/row vs repair‑only on at least three conditional suites.
 * Caps trigger degradations (no crashes); diagnostics emitted.
-* `AP:false × allOf` must‑cover enforced with `AP_FALSE_INTERSECTION_APPROX` on non‑anchored patterns; no generated key outside the must‑cover set in unit/integration suites.
+* `AP:false × allOf` must‑cover enforced :
+  - **Strict :** non-anchored patterns or patterns capped by complexity ⇒ fail‑fast `AP_FALSE_UNSAFE_PATTERN`.
+  - **Lax :** warn `AP_FALSE_UNSAFE_PATTERN` + `AP_FALSE_INTERSECTION_APPROX` ; proceed conservatively, and do not generate any key outside the must-cover set.
 * `contains` bag unsat rules enforced with `CONTAINS_UNSAT_BY_SUM` when applicable; generation re‑satisfies needs after `uniqueItems` de‑dup.
 * External `$ref` produce `EXTERNAL_REF_UNRESOLVED` (strict=error, lax=warn).
 * When `skipTrials` is active (or `oneOf` length exceeds threshold), branch selection is deterministic **score‑only** (stable index + seeded tie‑break); no trials attempted.
@@ -852,13 +952,14 @@ Omitted/undefined fields are not serialized.
 `ANNOTATION_IN_SCOPE_IF_REWRITE_SKIPPED`, `PNAMES_COMPLEX`, `DEPENDENCY_GUARDED`, `DYNAMIC_PRESENT`,
 `DEFS_TARGET_MISSING`, `EXCLMIN_IGNORED_NO_MIN`, `EXCLMAX_IGNORED_NO_MAX`, `OAS_NULLABLE_KEEP_ANNOT`,
 `NOT_DEPTH_CAPPED`, `RAT_LCM_BITS_CAPPED`, `RAT_DEN_CAPPED`, `RAT_FALLBACK_DECIMAL`, `RAT_FALLBACK_FLOAT`,
-`TRIALS_SKIPPED_LARGE_ONEOF`, `TRIALS_SKIPPED_LARGE_ANYOF`, `AP_FALSE_INTERSECTION_APPROX`, `CONTAINS_BAG_COMBINED`, `CONTAINS_UNSAT_BY_SUM`,
+`TRIALS_SKIPPED_LARGE_ONEOF`, `TRIALS_SKIPPED_LARGE_ANYOF`, `TRIALS_SKIPPED_SCORE_ONLY`, `AP_FALSE_INTERSECTION_APPROX`, `CONTAINS_BAG_COMBINED`, `CONTAINS_UNSAT_BY_SUM`,
 `COMPLEXITY_CAP_ONEOF`, `COMPLEXITY_CAP_ANYOF`, `COMPLEXITY_CAP_PATTERNS`,
 `COMPLEXITY_CAP_ENUM`, `COMPLEXITY_CAP_CONTAINS`, `COMPLEXITY_CAP_SCHEMA_SIZE`, `REGEX_COMPLEXITY_CAPPED`,
 `UNSAT_PATTERN_PNAMES`, `UNSAT_DEPENDENT_REQUIRED_AP_FALSE`, `UNSAT_BUDGET_EXHAUSTED`,
 `IF_AWARE_HINT_APPLIED`, `IF_AWARE_HINT_SKIPPED_INSUFFICIENT_INFO`,
 `EXTERNAL_REF_UNRESOLVED`, `UNSAT_REQUIRED_PNAMES`, `UNSAT_MINPROPS_PNAMES`, `UNSAT_REQUIRED_AP_FALSE`,
-`UNSAT_AP_FALSE_EMPTY_COVERAGE`, `PNAMES_REWRITE_APPLIED`, `EVIDENCE_GAP`.
+`UNSAT_AP_FALSE_EMPTY_COVERAGE`, `PNAMES_REWRITE_APPLIED`,
+`AJV_FLAGS_MISMATCH`, `AP_FALSE_UNSAFE_PATTERN`.
 
 ---
 
@@ -889,12 +990,20 @@ Omitted/undefined fields are not serialized.
 * Conditionals (with/without `unevaluated*`), nested; verify **no semantic drift** when not rewriting.
 * Composition suites validated by AJV (original schema).
 * Objects: `patternProperties` / `propertyNames` / `dependentSchemas` / `additionalProperties:false` across `allOf`.
-  - Include cases with non‑anchored patterns: expect `AP_FALSE_INTERSECTION_APPROX` and no keys outside must‑cover.
-* `oneOf` overlap: selected branch ends exclusive after refinement.
-* External `$ref` (strict vs lax): validate emission of `EXTERNAL_REF_UNRESOLVED` and mode‑specific behavior (error vs warn + attempt).
-* Score‑only path: `skipTrials=true` or large `oneOf` ⇒ deterministic pick (stable index + seeded tie‑break), zero trials attempted.
+  - Non-anchored patterns / patterns capped by complexity under `AP:false`:
+    • **Strict:** hard failure with `AP_FALSE_UNSAFE_PATTERN`.
+    • **Lax:** warn `AP_FALSE_UNSAFE_PATTERN` + `AP_FALSE_INTERSECTION_APPROX`, and no key generated outside must-cover.
+* `oneOf` overlap: after refinement, the selected branch is exclusive.
+* External `$ref` (strict vs lax): validate emission of `EXTERNAL_REF_UNRESOLVED` and mode-specific behavior (error vs warn + attempt).
+* Score-only path: when `skipTrials=true` or for large `oneOf`, selection is deterministic (stable index + seeded tie-break), with zero trials attempted.
 * Repair logs include `origPath` derived from `ptrMap` for each action.
 * Conditionals with `unevaluated*` in scope: safe rewrite is blocked; `IF_REWRITE_SKIPPED_UNEVALUATED` present.
+
+* **Negative config test (AJV flags):** force `unicodeRegExp:false` on either AJV instance ⇒ hard failure with `AJV_FLAGS_MISMATCH`.
+* **AP:false unsafe‑pattern tests:**
+  - `AP:false` + non‑anchored pattern (e.g., `"^foo"`) in coverage ⇒ Strict: fail with `AP_FALSE_UNSAFE_PATTERN`;  
+    Lax: warn `AP_FALSE_UNSAFE_PATTERN`, continue conservatively with `AP_FALSE_INTERSECTION_APPROX`.
+  - `AP:false` + pattern exceeding regex complexity cap (length/nested quantifiers) ⇒ same expectations as above.
 
 ### Bench / CI
 
@@ -1005,9 +1114,18 @@ export interface PlanOptions {
     dynamicRefStrict?: 'warn'|'note';
   };
 
+  // Patterns under AP:false
+  patternPolicy?: {
+    /**
+     * Reaction to non-anchored/complex patterns when they would be required for must-cover proofs under AP:false.
+     * Strict default: 'error'; Lax default: 'warn'.
+     */
+    unsafeUnderApFalse?: 'error' | 'warn';
+  };
+
   // Conditionals
   conditionals?: {
-    strategy?: 'rewrite' | 'if-aware-lite' | 'repair-only';
+    strategy?: 'if-aware-lite' | 'repair-only' | 'rewrite'; // 'rewrite' DEPRECATED alias of 'if-aware-lite'
     minThenSatisfaction?: 'discriminants-only'|'required-only'|'required+bounds';
   };
 }
@@ -1069,9 +1187,9 @@ export interface ComposeOptions {
   /**
    * Optional memoization key for deterministic branch selection without trials.
    * If provided, implementations MAY memoize the pick and the key MUST incorporate
-   * (schemaPath/canonPtr, seed, AJV.major, AJV.flags, PlanOptionsSubKey).
+   * (canonPath, seed, AJV.major, AJV.flags, PlanOptionsSubKey).
    */
-  selectorMemoKeyFn?: (schemaPath: string, seed: number, opts?: PlanOptions) => string;
+  selectorMemoKeyFn?: (canonPath: string, seed: number, opts?: PlanOptions) => string; // canonical JSON Pointer
 }
 
 export function compose(schema: any, opts?: ComposeOptions): {
@@ -1163,8 +1281,8 @@ function branchesToTry(scored: {idx:number; score:number}[], k: number) {
 ```ts
 // Longest‑prefix reverse pointer mapping (O(depth))
 // mapCanonToOrig: Map<string /* canonical ptr */, string /* original ptr */>
-export function toOriginalByWalk(canonPtr: string, mapCanonToOrig: Map<string,string>): string|undefined {
-  let p = canonPtr;
+export function toOriginalByWalk(canonPath: string, mapCanonToOrig: Map<string,string>): string|undefined {
+  let p = canonPath;
   while (true) {
     if (mapCanonToOrig.has(p)) return mapCanonToOrig.get(p)!;
     const i = p.lastIndexOf('/');
@@ -1227,4 +1345,3 @@ export function toOriginalByWalk(canonPtr: string, mapCanonToOrig: Map<string,st
 | FIPS-180-4          | §§7.4, 10, 15 (SHA-256 usage)                                                       |
 | ECMA-262            | §9 (strings/RegExp), lexicographic sort rules                                       |
 | SemVer-2.0.0        | document header, versioning                                                         |
-
