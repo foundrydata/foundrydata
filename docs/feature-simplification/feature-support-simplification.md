@@ -228,7 +228,7 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
 
 ### Contract
 
-**Input**: JSON Schema (draft‑04..2020‑12+). Local `$ref` only.
+**Input**: JSON Schema (draft‑04..2020‑12+). `$ref` MAY be local (`#…`) or external; external refs are not dereferenced and are handled per §11/§12 (no I/O).
 **Output**:
 
 ```ts
@@ -252,6 +252,8 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
 2. **References**
 
    * Preserve local `#...`; rewrite `#/definitions/...`→`#/$defs/...` if target exists; note `DEFS_TARGET_MISSING` otherwise.
+   * Preserve **external** `$ref` values verbatim; do **not** dereference or rewrite them. Compose/Validate emit `EXTERNAL_REF_UNRESOLVED`
+     per §11/§12 (Strict=error, Lax=warn). No network or filesystem I/O is performed.
    * Don’t cross `$id` boundaries; keep anchors/dynamic anchors intact; no cycle expansion.
 
 3. **Boolean / trivial simplifications (normative)**
@@ -314,7 +316,7 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
      1) **Global guard:** No `unevaluated*` applies at or above the object (unchanged).
     2) **Closed‑enum form:** Every key in `properties` **and in `required`** is a member of the enum **and** there are no `patternProperties` **or** each existing `patternProperties` pattern is anchored‑safe and provably a subset of the enum via **exact‑literal‑alternatives** (see Glossary): the pattern source, after JSON unescape, is exactly `^(?:L1|...|Lk)$` with each `Li` a literal alternative (metacharacters escaped) and `{L1,...,Lk} ⊆ enum`. If this cannot be proven, **do not rewrite** and emit `PNAMES_COMPLEX` (detail: `REQUIRED_KEYS_NOT_COVERED` when applicable).
     3) **Anchored‑pattern form:** `P` is anchored‑safe per §8 and not capped by the regex complexity rule; every key in `properties` **and in `required`** matches `P`, and there are **no** `patternProperties`. Otherwise, **do not rewrite** and emit `PNAMES_COMPLEX`; when the failure is due to complexity capping also emit `REGEX_COMPLEXITY_CAPPED`.
-    4) **AdditionalProperties safety:** `additionalProperties` at this object is absent, `true`, or `{}`. If `additionalProperties` is a non‑trivial schema, **do not rewrite** and emit `PNAMES_COMPLEX` with detail `'ADDITIONAL_PROPERTIES_SCHEMA'`.
+    4) **AdditionalProperties safety:** `additionalProperties` at this object is absent, `true`, or `{}`. If `additionalProperties` is present and **not** one of `true` or `{}` (i.e., it is a constraining schema), **do not rewrite** and emit `PNAMES_COMPLEX` with detail `'ADDITIONAL_PROPERTIES_SCHEMA'`.
     5) When the above hold, the rewrite is **additive in the canonical view** (the original `propertyNames` remains alongside the added constraints); otherwise preserve the original `propertyNames` only.
     6) **Logging (normative):** On successful rewrite the normalizer **MUST** record a note `PNAMES_REWRITE_APPLIED` at this object’s canonical path with `details:{ kind:'enum'|'pattern', source?:string }`. Implementations **MAY** include the JSON‑unescaped regex `source` in `details.source` for the pattern case. This signal gates coverage usage in §8.
      * **Closed enum** form (additive canonicalization):
@@ -455,7 +457,10 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
   * **Fail‑fast rule (Strict; normative).**
     If a must‑cover proof for an object under `additionalProperties:false` depends on a pattern that is
     **not anchored‑safe** (per §8 definition) or whose analysis is **capped** by the regex complexity rule,
-    the implementation **MUST** abort planning/generation for that node with diagnostic **`AP_FALSE_UNSAFE_PATTERN`** and details `{ canonPath, sourceKind:'patternProperties'|'propertyNames', patternSource?:string }` (JSON‑unescaped when available). **This failure is fatal for the affected object node:** Compose MUST return an error for that node, the Generator MUST NOT attempt key synthesis there, and the diagnostic MUST bubble to the top‑level run result.
+    the implementation **MUST** abort planning/generation for that node with diagnostic **`AP_FALSE_UNSAFE_PATTERN`** and the following **normative** payload:
+    `details:{ canonPath:string, sourceKind:'patternProperties'|'propertyNames', patternSource?:string /* JSON‑unescaped */ }`.
+    Implementations **MUST** include `canonPath` and `sourceKind`; `patternSource` is OPTIONAL.
+    **This failure is fatal for the affected object node:** Compose MUST return an error for that node, the Generator MUST NOT attempt key synthesis there, and the diagnostic MUST bubble to the top‑level run result.
     In **Lax** mode, emit **`AP_FALSE_UNSAFE_PATTERN`** as a warning and proceed conservatively (keys not proven safe are excluded),
     preserving the existing **`AP_FALSE_INTERSECTION_APPROX`** hints where applicable.
 
@@ -592,10 +597,11 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
   * Score all branches; try Top‑K `maxBranchesToTry`. Attempt generation up to `trials.perBranch` times per branch (default 2).
   * If branch count > `skipTrialsIfBranchesGt` or `skipTrials=true` ⇒ **score‑only** selection:
     compute `Smax` and tie set `T` as above and pick from `T` with the seeded RNG. No trials are attempted in this path.
-  * **Normative (observability):** in score‑only, implementations **MUST invoke the RNG exactly once** and record the resulting float as `tiebreakRand`. `diag.scoreDetails` **MUST** include:
+  * **Normative (observability):** in score‑only, implementations **MUST invoke the RNG exactly once** and record the resulting float as `tiebreakRand` **even when `|T| = 1`** (not used for selection, but recorded for auditability). `diag.scoreDetails` **MUST** include:
     * `orderedIndices:number[]` — branch indices ordered by score desc, index asc;
     * `topScoreIndices:number[]` — the tie set `T` in ascending index order before RNG;
-    * `tiebreakRand:number` — the RNG float (`next()/2^32`). Record it even when `|T| = 1` (no tie); in that case it is not used for selection but remains part of the deterministic trace.
+    * `tiebreakRand:number` — the RNG float (`next()/2^32`).
+    Outside of score‑only, `tiebreakRand` MAY be omitted only when RNG is not used and trials occurred.
   * **Normative (general):** whenever RNG is used (tie‑break OR oneOf exclusivity resolution step‑4), `diag.scoreDetails.tiebreakRand`
     **MUST** be populated with the exact float value used.
   * Record trial budget in `diag.budget`. **In score‑only paths MUST set `diag.budget.skipped = true` and `diag.budget.tried = 0` (normative).**
