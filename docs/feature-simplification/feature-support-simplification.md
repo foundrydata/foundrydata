@@ -20,7 +20,8 @@
 * **Must‑cover** — The set of property names considered generable when at least one conjunct imposes `additionalProperties:false`, computed from `properties` plus **anchored‑safe** `patternProperties`. When `PNAMES_REWRITE_APPLIED` is present, also include the **synthetic** anchored‑safe patterns introduced from `propertyNames` by §7. Otherwise, `propertyNames` never increases coverage (it only gates).
 * **Anchored‑safe pattern** — Regex whose JSON‑unescaped `source` starts with an unescaped `^` and ends with an unescaped `$`, contains **no** look‑around and **no** back‑references, **and passes the §8 regex complexity cap** (patterns capped are **not** anchored‑safe for coverage). Full rule in §8.
 * **Bag `contains`** — Models `contains`/`minContains`/`maxContains` as independent needs `{schema,min?,max?}` that **concatenate** across `allOf` (see §8).
-* **Presence pressure** — `minProperties > 0` or a non‑empty `required` set.
+* **Presence pressure** — `effectiveMinProperties > 0` or `effectiveRequiredKeys ≠ ∅`, or a `dependentRequired` antecedent is **forced present** in the **effective view** (post‑`allOf` merge).
+  See Glossary for `effectiveMinProperties` / `effectiveRequiredKeys`.
 * **Seeded RNG** — Local, deterministic tie‑breaks; no global mutable state (see §15).
 * **canonPath** — Canonical JSON Pointer string for a node. Historical alias: \*canonPtr\*. The spec uses \*canonPath\* uniformly; implementations MAY accept \*canonPtr\* as an internal alias.
 
@@ -275,6 +276,9 @@ Cache‑key canonicalization for this alias is defined in §14.
 * **Exact‑literal‑alternatives** — A regex of the exact form `^(?:L1|...|Lk)$` where each `Li` is a literal string with all metacharacters escaped (no character classes, groups, or quantifiers). Used in §7 to prove that `patternProperties` are a subset of a finite `propertyNames.enum`.
 * **propertyNamesSynthetic** — Synthetic anchored‑safe `patternProperties` entries injected by the §7 **propertyNames rewrite** when `PNAMES_REWRITE_APPLIED` is recorded. They exist only in the canonical/effective views to enable must‑cover analysis and early‑unsat proofs; AJV validation always uses the original schema. Diagnostics referring to synthetic patterns MUST name `sourceKind:'propertyNamesSynthetic'`.
 * **deepEqual** — Structural equality on JSON values used by this spec: recursive comparison of types and values with number normalization `-0 === 0` (no NaN in JSON). Used in §8 disjointness and as the collision check for `uniqueItems` de‑duplication in §10; aligned with the structural hashing confirmation step.
+* **effectiveMinProperties** — The object’s `minProperties` after `allOf` merge (Compose), i.e., the most restrictive bound proven at that canonPath.
+* **effectiveRequiredKeys** — The union of `required` across all conjuncts after `allOf` merge at that canonPath.
+
 * **pass (pattern‑witness cycle)** — One full iteration over the **current** ordered set of eligible `patternProperties`
   at an object node during witness synthesis (§9). In each pass, visit patterns in lexicographic order of their
   JSON‑unescaped sources and allocate **at most one** new key per pattern. Subsequent passes re‑evaluate eligibility
@@ -614,7 +618,7 @@ Cache‑key canonicalization for this alias is defined in §14.
       * **Policy note (normative).** The `ε = 10^(−decimalPrecision)` tolerance used in decimal/float fallbacks is a **generation/repair policy** adopted for deterministic alignment with common validator behavior. It is **not** mandated by the JSON Schema specification.
       * **Normative (both decimal & float fallbacks):** `multipleOf` **MUST** have a positive divisor `m > 0` (schemas with `m ≤ 0` are invalid and are expected to be rejected by AJV at compile time). Let `ε = 10^(−decimalPrecision)` (default `1e‑12`);
         accept `multipleOf(m)` when `abs((x/m) − round(x/m)) < ε`.
-      * **Normative note.** The acceptance inequality above governs both `'decimal'` and `'float'` fallbacks. The only difference is the arithmetic path (decimal quantization vs IEEE‑754 double); the tolerance `ε` is identical to ensure deterministic cross‑engine behavior.
+      * **Normative note.** The acceptance inequality above governs both `'decimal'` and `'float'` fallbacks. **Boundary:** when `abs((x/m) − round(x/m)) === ε`, the value **does not** satisfy `multipleOf(m)`. The only difference is the arithmetic path (decimal quantization vs IEEE‑754 double); the tolerance `ε` is identical to ensure deterministic cross‑engine behavior.
       
       **Ajv alignment (normative).** When the Source/Planning Ajv is configured with `multipleOfPrecision = N`, implementations **MUST** set `N === rational.decimalPrecision` so that the ε‑based acceptance rule (`ε = 10^(−decimalPrecision)`) used in generation/repair **uses the same ε tolerance as** Ajv’s validator. **Caveat:** the decimal fallback quantizes operands before division, whereas Ajv computes the ratio `x/m` in IEEE‑754 double; boundary cases may differ. Ajv remains the oracle at validation time. If `multipleOfPrecision` is left `undefined` (Ajv default), implementations **MUST NOT** claim Ajv‑alignment; Ajv remains the oracle at validation time, and generation/repair **MUST** accept Ajv rejection and proceed deterministically within the existing budget.
       * Note `RAT_LCM_BITS_CAPPED` / `RAT_DEN_CAPPED` as applicable.
@@ -964,7 +968,7 @@ Implementations SHOULD populate `details` with small, code‑specific objects:
   * When any conjunct has `additionalProperties:false`, respect the **must‑cover intersection** from Compose.
   * **`unevaluatedProperties:false` (normative).** When `unevaluatedProperties:false` applies at an object **instance location**, the generator **MUST** emit only property names that are guaranteed to be **evaluated** by **some applicator at that same instance location**, after taking into account all applicators that are actually applied.
 
-    A property is “evaluated” if it is matched by `properties`, `patternProperties`, or `additionalProperties` that are (a) present directly at this location, **or** (b) reachable through a subschema that is **applied to the same instance location** — for example through an `allOf` conjunct, **for `oneOf`: the branch that is finally valid; for `anyOf`: any branch that validates the final instance**, the **active** `then`/`else` branch of `if`, or a `$ref` target. `dependentSchemas` does not evaluate by itself; only applicators inside its **active** subschema mark properties as evaluated. If the active subschema has no such applicators, keys introduced solely to satisfy it **MUST NOT** be considered evaluated for the purposes of `unevaluatedProperties:false`.
+    A property is “evaluated” if it is matched by `properties`, `patternProperties`, or `additionalProperties` that are (a) present directly at this location, **or** (b) reachable through a subschema that is **applied to the same instance location** — for example through an `allOf` conjunct, **for `oneOf`: the branch that is finally valid; for `anyOf`: the union of evaluated locations across all branches that validate the final instance (all passing branches)**, the **active** `then`/`else` branch of `if`, or a `$ref` target. `dependentSchemas` does not evaluate by itself; only applicators inside its **active** subschema mark properties as evaluated. If the active subschema has no such applicators, keys introduced solely to satisfy it **MUST NOT** be considered evaluated for the purposes of `unevaluatedProperties:false`.
 
     **Planning only.** This rule is a planning constraint; AJV remains the oracle at validation time.
   * Stable property order: **(1) required keys sorted lexicographically (UTF‑16 code‑unit ascending; JS `<` comparator)**, then **(2) optional keys sorted lexicographically**. Do not use `localeCompare`.
@@ -1437,7 +1441,7 @@ Provide the following minimal JSON‑Schema‑like shapes for major codes. Only 
 // AP_FALSE_UNSAFE_PATTERN (Compose fail‑fast)
 { "type":"object", "required":["sourceKind"],
   "properties":{
-    "sourceKind":{"enum":["patternProperties","propertyNamesSynthetic"]},
+    "sourceKind":{"enum":["patternProperties","propertyNamesSynthetic"]}, // 'propertyNamesSynthetic' refers to §7 rewrite
     "patternSource":{"type":"string"}
 }}
 
