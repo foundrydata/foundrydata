@@ -533,9 +533,12 @@ Cache‑key canonicalization for this alias is defined in §14.
  type CoverageEntry = {
    has: (name: string) => boolean;
    enumerate?: () => string[];
-   /** Object‑level provenance: which source families contributed to the **global** must‑cover intersection at this object.
-    *  This is coarse metadata; it MUST NOT be interpreted as per‑name proof. */
-   provenance?: ('properties'|'patternProperties'|'propertyNamesSynthetic')[];
+  /** Object‑level provenance: which source families contributed to the **global** must‑cover intersection at this object.
+   *  Normative: 'patternProperties' lists only user-authored entries present in the original schema.
+   *  Normative: §7 synthetic additions (from a propertyNames rewrite) MUST be attributed solely as
+   *  'propertyNamesSynthetic' and MUST NOT be co-counted as 'patternProperties'.
+   *  This is coarse metadata; it MUST NOT be interpreted as a per‑name proof. */
+  provenance?: ('properties'|'patternProperties'|'propertyNamesSynthetic')[];
  };
  type CoverageIndex = Map<canonPath, CoverageEntry>;
  ```
@@ -554,7 +557,7 @@ Cache‑key canonicalization for this alias is defined in §14.
   flags (to avoid stateful matching), so that matching semantics align with
   AJV’s `unicodeRegExp:true` requirement (§13). Detection of anchored‑safe patterns remains textual on the
   **JSON‑unescaped** `source` as specified below.
-  **Compile‑error rule (normative).** If `new RegExp(source, 'u')` throws, the implementation **MUST** treat the pattern as **unknown gating** (it never expands coverage and never triggers fail‑fast) and **MUST** emit `PNAMES_COMPLEX` at the corresponding `canonPath` with `details.reason:"REGEX_COMPILE_ERROR"`. This rule also applies when evaluating §7 `propertyNames` rewrite preconditions: a compile error under `u` prevents the rewrite and MUST log `PNAMES_COMPLEX{reason:"REGEX_COMPILE_ERROR"}` (and any other applicable diagnostics). AJV remains the oracle at validation time. No other recovery is permitted.
+  **Compile‑error rule (normative).** If `new RegExp(source, 'u')` throws, the implementation **MUST** treat the pattern as **unknown gating** and **MUST NOT** use it to expand coverage **or** to trigger `AP_FALSE_UNSAFE_PATTERN`. Emit `PNAMES_COMPLEX` at the corresponding `canonPath` with `details.reason:"REGEX_COMPILE_ERROR"`. This rule also applies when evaluating §7 `propertyNames` rewrite preconditions: a compile error under `u` prevents the rewrite and MUST log `PNAMES_COMPLEX{reason:"REGEX_COMPILE_ERROR"}` (and any other applicable diagnostics). AJV remains the oracle at validation time. No other recovery is permitted.
   **Clarification (normative).** JSON Schema does not use inline flags; with `u` only, `^` and `$` anchor the entire string.
   Multi‑line or sticky semantics are not in play; implementations **MUST NOT** assume such flags when assessing
   anchored‑safety or executing patterns for coverage.
@@ -890,8 +893,9 @@ assumption.
     compute `Smax` and tie set `T` as above and pick from `T` with the seeded RNG. No trials are attempted in this path.
 * **Normative (observability & locus):** in score‑only, implementations **MUST invoke the RNG exactly once** and record the resulting float as `tiebreakRand` **even when `|T| = 1`** (not used for selection, but recorded for auditability). `diag.chosenBranch`, `diag.scoreDetails`, `diag.budget` and `diag.overlap` refer to the **branch operator at the Compose entry `canonPath`**. When Compose is invoked on a non‑branch node these fields MAY be absent. When invoked on a branch node, `diag.scoreDetails` **MUST** be present and include the fields below.
     `diag.scoreDetails` **MUST** include in **all** cases (score‑only **and** trial paths)—**including when `branches.length = 1`**:
-    * `orderedIndices:number[]` — branch indices ordered by score desc, index asc;
-    * `topScoreIndices:number[]` — the tie set `T` in ascending index order **before** RNG.
+    * `orderedIndices:number[]` — branch indices ordered by score desc, index asc; **when `branches.length === 1`, this MUST be `[0]`.**
+    * `topScoreIndices:number[]` — the tie set `T` in ascending index order **before** RNG; **when `branches.length === 1`, this MUST be `[0]`.**
+    In score‑only, `tiebreakRand` **MUST** be recorded even when `|T|=1`.
     Additionally, include:
     * `tiebreakRand:number` — the RNG float (`next()/4294967296`) **whenever RNG is used** (ties or oneOf step‑4) and **always in score‑only** (even when `|T|=1`). Outside of score‑only, `tiebreakRand` MAY be omitted only when RNG is not used and trials occurred.
     **Operational recommendation.** When `PlanOptions.metrics === true` (e.g., CI runs), implementations **SHOULD** populate `scoreDetails.scoresByIndex` for auditability.
