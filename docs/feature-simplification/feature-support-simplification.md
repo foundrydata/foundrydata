@@ -869,7 +869,8 @@ assumption.
 <a id="s8-branch-selection"></a>
 ### Branch selection (`anyOf` / `oneOf`)
 
-* **Deterministic, discriminant‑first scoring**:
+* **Deterministic, discriminant‑first scoring (integer domain)**:
+  **Normative:** Implement scores as sums of the integer constants shown below. Use 32‑bit signed arithmetic; do not use floating‑point for scoring. This avoids FP instability and guarantees stable ordering across engines.
 
   * +1000: same property across branches with disjoint `const/enum` (tag).
   * +200: `required + const/enum` on same key.
@@ -920,7 +921,8 @@ assumption.
        **Immediate re‑validation (normative).** After each numeric nudge or string tweak in step 3, the implementation **MUST** re‑validate against the **original schema** with the **Source Ajv**. Keep a change only if the target branch `b*` still passes and the tweaked change excludes the intended conflicting branch(es); otherwise deterministically try the alternative sign/next minimal tweak, or revert. Ajv remains the oracle.
     4) If, after (2)–(3), >1 branch still passes and **b*** is among them, **keep `b*`** and apply a final minimal tweak to exclude the others. Only when **`b*` no longer passes** (e.g., due to capped refinements) pick deterministically from the passing set using the same seeded RNG policy as for ties (§8), then apply a minimal tweak to exclude the rest.
 * **Normative:** No RNG is used in step‑4 when **`b*`** still passes.
-* Record `diag.overlap.passing` and `diag.overlap.resolvedTo = b*` (or to the chosen index only in the fallback RNG case). **Normative:** any RNG used in step‑4 MUST use the same canonical pointer (**canonPath**) as branch selection at this `oneOf` location, **and record the resulting float in `diag.scoreDetails.exclusivityRand`**. This is **in addition to** `tiebreakRand` used for ties/score‑only in selection.
+* Record `diag.overlap.passing` and `diag.overlap.resolvedTo = b*` (or to the chosen index only in the fallback RNG case). **Normative:** any RNG used in step‑4 MUST use the same canonical pointer (**canonPath**) as branch selection at this `oneOf` location, and **MUST record the resulting float in the run's diagnostics at this canonPath under `scoreDetails.exclusivityRand`**. This is **in addition to** `tiebreakRand` used for ties/score‑only in selection.
+* **Cross‑phase (normative):** `exclusivityRand` is produced during Generate/Repair. Compose **SHALL** leave `scoreDetails.exclusivityRand` `undefined`; later phases **SHALL** populate it at the same `canonPath`.
 * **Consolidated requirement (normative).** Implementations **MUST** populate `diag.scoreDetails.tiebreakRand` with the exact RNG float **whenever** RNG is used at this canonPath — in score‑only selection (always), tie‑breaks, and `oneOf` step‑4 resolution.
 
 <a id="s8-complexity-caps"></a>
@@ -1357,7 +1359,7 @@ Use separate LRU spaces for the two AJV instances (planning vs source) to avoid 
   with seeds `{1,42,4242}` (5 warmups + 20 runs). Failure ⇒ run failure.
 * `AP:false × allOf` must‑cover enforced :
   - **Safe‑proof preference (Strict & Lax).** If the **Safe** set computed per §8 (ignoring non‑anchored and complexity‑capped patterns, including synthetic ones) is **non‑empty**, **do not** emit `AP_FALSE_UNSAFE_PATTERN`; restrict generation to **Safe**.
-  - **Strict (otherwise).** When **Safe is empty**, and must‑cover would require a non‑anchored or regex‑complexity‑capped pattern (including §7 synthetic), **fail‑fast** with `AP_FALSE_UNSAFE_PATTERN`.
+  - **Strict (otherwise).** When **Safe is empty _and presence pressure holds_**, and must‑cover would require a non‑anchored or regex‑complexity‑capped pattern (including §7 synthetic), **fail‑fast** with `AP_FALSE_UNSAFE_PATTERN`.
   - **Lax.** Warn `AP_FALSE_UNSAFE_PATTERN` and `AP_FALSE_INTERSECTION_APPROX`; proceed conservatively and do not generate keys outside the must‑cover set. **Raw `propertyNames.pattern` never triggers fail‑fast and remains gating‑only** (see §8).
 * `contains` bag unsat rules enforced with `CONTAINS_UNSAT_BY_SUM` when applicable; generation re‑satisfies needs after `uniqueItems` de‑dup.
 * External `$ref` produce `EXTERNAL_REF_UNRESOLVED` (strict=error, lax=warn).
@@ -1985,7 +1987,7 @@ export function compose(schema: any, opts?: ComposeOptions): {
        * See §8 “Branch selection”.
        */
       tiebreakRand: number | undefined;
-      exclusivityRand?: number;
+      exclusivityRand?: number; // produced by Generate/Repair during oneOf step‑4; Compose sets undefined
       scoresByIndex?: Record<string, number>;
     };
     budget?: { tried: number; limit: number; skipped?: boolean; reason?: string };
