@@ -406,8 +406,8 @@ Cache‑key canonicalization for this alias is defined in §14.
      **Diagnostics (normative):** The emission **MUST** use the §19.1 payload shape with
      `details:{ context:'rewrite', patternSource:P }`, where `P` is the JSON‑unescaped regex source considered.
      
-     **Definition — `escapeRegexLiteral(s)` (normative):** return `s.replace(/[\\^$.*+?()[\\]{}|]/g, '\\\\$&')`. No other transformations are applied. The resulting source is interpreted by JS `RegExp` with the `u` flag (see §13).
-       **Equivalence note (validation semantics):** Under preconditions (2)–(4), `propertyNames` already forbids any non‑member key; adding `additionalProperties:false` is semantically redundant **for AJV validation (key admission)** and exists only to enable must‑cover analysis (§8). The original schema is preserved and validation always runs against it. The added `patternProperties` entry is **synthetic** and only considered for coverage when `PNAMES_REWRITE_APPLIED` is present.
+     **Definition — `escapeRegexLiteral(s)` (normative):** return `s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')`. No other transformations are applied. The resulting source is interpreted by JS `RegExp` with the `u` flag (see §13).
+        **Equivalence note (validation semantics):** Under preconditions (2)–(4), `propertyNames` already forbids any non‑member key; adding `additionalProperties:false` is semantically redundant **for AJV validation (key admission)** and exists only to enable must‑cover analysis (§8). The original schema is preserved and validation always runs against the **original schema**. The added `patternProperties` entry is **synthetic** and only considered for coverage when `PNAMES_REWRITE_APPLIED` is present.
      * **Anchored‑safe pattern** form (additive canonicalization; **apply only when preconditions (1), (3) & (4) hold and `P` is not complexity‑capped**):
      Given `{"propertyNames":{"pattern": P}}` with `P` anchored‑safe (see §8 “Anchored pattern”) and **not** flagged by the §8 regex complexity cap,
      **add** in the **canonical view** (retain the original `propertyNames`):
@@ -554,6 +554,7 @@ Cache‑key canonicalization for this alias is defined in §14.
   flags (to avoid stateful matching), so that matching semantics align with
   AJV’s `unicodeRegExp:true` requirement (§13). Detection of anchored‑safe patterns remains textual on the
   **JSON‑unescaped** `source` as specified below.
+  **Compile‑error rule (normative).** If `new RegExp(source, 'u')` throws, the implementation **MUST** treat the pattern as **unknown gating** (it never expands coverage and never triggers fail‑fast) and **MUST** emit `PNAMES_COMPLEX` at the corresponding `canonPath` with `details.reason:"REGEX_COMPILE_ERROR"`. This rule also applies when evaluating §7 `propertyNames` rewrite preconditions: a compile error under `u` prevents the rewrite and MUST log `PNAMES_COMPLEX{reason:"REGEX_COMPILE_ERROR"}` (and any other applicable diagnostics). AJV remains the oracle at validation time. No other recovery is permitted.
   **Clarification (normative).** JSON Schema does not use inline flags; with `u` only, `^` and `$` anchor the entire string.
   Multi‑line or sticky semantics are not in play; implementations **MUST NOT** assume such flags when assessing
   anchored‑safety or executing patterns for coverage.
@@ -1496,7 +1497,7 @@ Provide the following minimal JSON‑Schema‑like shapes for major codes. Only 
 }}
 
 // REGEX_COMPLEXITY_CAPPED (coverage analysis / §7 rewrite only)
-{ "type":"object", "properties":{
+{ "type":"object", "required":["patternSource","context"], "properties":{
   "patternSource":{"type":"string"},
   "context":{"enum":["coverage","rewrite"]}
 }}
