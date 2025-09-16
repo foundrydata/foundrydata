@@ -406,7 +406,7 @@ Cache‑key canonicalization for this alias is defined in §14.
      **Diagnostics (normative):** The emission **MUST** use the §19.1 payload shape with
      `details:{ context:'rewrite', patternSource:P }`, where `P` is the JSON‑unescaped regex source considered.
      
-     **Definition — `escapeRegexLiteral(s)` (normative):** return `s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')`. No other transformations are applied. The resulting source is interpreted by JS `RegExp` with the `u` flag (see §13).
+     **Definition — `escapeRegexLiteral(s)` (normative):** return `s.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')`. No other transformations are applied. The resulting source is interpreted by JS `RegExp` with the `u` flag (see §13).
         **Equivalence note (validation semantics):** Under preconditions (2)–(4), `propertyNames` already forbids any non‑member key; adding `additionalProperties:false` is semantically redundant **for AJV validation (key admission)** and exists only to enable must‑cover analysis (§8). The original schema is preserved and validation always runs against the **original schema**. The added `patternProperties` entry is **synthetic** and only considered for coverage when `PNAMES_REWRITE_APPLIED` is present.
      * **Anchored‑safe pattern** form (additive canonicalization; **apply only when preconditions (1), (3) & (4) hold and `P` is not complexity‑capped**):
      Given `{"propertyNames":{"pattern": P}}` with `P` anchored‑safe (see §8 “Anchored pattern”) and **not** flagged by the §8 regex complexity cap,
@@ -673,8 +673,8 @@ Cache‑key canonicalization for this alias is defined in §14.
       • While scanning, **ignore** ranges inside character classes `[...]` (from an **unescaped** `[` to its matching **unescaped** `]`). ECMAScript does not support nested character classes.
       • A backslash escapes the **next** code unit only when the count of consecutive preceding backslashes is **odd**.
       • The leading anchor `^` is recognized only when it is the **first** code unit of `S` and **unescaped**. The trailing anchor `$` is recognized only when it is the **last** code unit of `S` and **unescaped**.
-      • Back‑references are present if and only if an **unescaped** `\k<...>` or an **unescaped** `\\[1-9]\\d*` occurs **outside** character classes.
-        Clarification: treat these as unescaped backslash sequences in the JSON‑unescaped `source` — either a single `\` followed by `k<...>`, or a single `\` followed by a non‑zero digit and optional more digits. All tests operate on the JSON‑unescaped `source` where backslashes are single code units.
+      • Back‑references are present if and only if an **unescaped** `\k<...>` or an **unescaped** `\[1-9]\d*` (e.g., `\1`, `\2`, …) occurs **outside** character classes.
+         Clarification: treat these as unescaped backslash sequences in the JSON‑unescaped `source` — either a single `\` followed by `k<...>`, or a single `\` followed by a non‑zero digit and optional more digits. All tests operate on the JSON‑unescaped `source` where backslashes are single code units.
     <a id="s8-regex-complexity-cap"></a>
     * **Complexity cap (normative):** For coverage analysis only, if a pattern's source length exceeds **4096 UTF‑16 code units** or a textual scan detects a **quantified group**: In the JSON‑unescaped `source` `S`, detect a quantified group via a single left‑to‑right pass that (1) ignores character classes `[...]` and escaped parentheses; (2) maintains a stack of opener indices for **unescaped** `(`; and (3) on an **unescaped** `)` at index `i`, pops its opener and examines index `k = i + 1`. If `k < |S|` and `S[k]` is one of `*`, `+`, `?`, or starts a quantifier `{m}`, `{m,}`, `{m,n}` **adjacent in UTF‑16 (no intervening code units)**, then a quantified group is detected and the pattern is **capped**. Escaped parentheses `\(` and `\)` are ignored, **and text inside bracket character classes `[...]` is not considered** when searching for quantified groups. Treat it as **non‑anchored**. Emit `REGEX_COMPLEXITY_CAPPED` **with** `details:{ context:'coverage', patternSource }` (pattern source = JSON‑unescaped), and when this affects must‑cover, also emit `AP_FALSE_INTERSECTION_APPROX`. This cap also applies to `propertyNames.pattern` when evaluating rewrites in §7. **Note (normative):** this is a conservative over‑approximation used only for must‑cover analysis; patterns flagged by this cap are treated as **non‑anchored** for all must‑cover purposes and emit `REGEX_COMPLEXITY_CAPPED`.
     * **Safe key predicate (normative):** key `k` is safe under conjunct `Ci` iff `k ∈ Ci.properties`, or `∃` anchored‑safe pattern in `Ci.patternProperties` that matches `k`.
@@ -1547,9 +1547,9 @@ Provide the following minimal JSON‑Schema‑like shapes for major codes. Only 
 
 // AP_FALSE_INTERSECTION_APPROX
 { "type":"object", "properties":{
-  "reason":{"enum":["coverageUnknown","nonAnchoredPattern","regexComplexityCap"]},
-  "requiredOut":{"type":"array","items":{"type":"string"}},
-  "enumSize":{"type":"number"}
+  "reason":{"enum":["coverageUnknown","nonAnchoredPattern","regexComplexityCap","presencePressure"]},
+   "requiredOut":{"type":"array","items":{"type":"string"}},
+   "enumSize":{"type":"number"}
 }}
 
 // CONTAINS_BAG_COMBINED
