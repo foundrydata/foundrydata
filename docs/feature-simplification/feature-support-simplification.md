@@ -428,6 +428,7 @@ Cache‑key canonicalization for this alias is defined in §14.
        **MUST NOT** occur; emit `PNAMES_COMPLEX`.
      * **Cross‑reference (normative):** Under `additionalProperties:false`, if must‑cover would rely on a **non‑anchored** or **complexity‑capped** pattern from `patternProperties` or from the §7 rewrite (**synthetic entries**; `sourceKind:'propertyNamesSynthetic'`), §8 requires **fail‑fast** in Strict mode with `AP_FALSE_UNSAFE_PATTERN`. Raw `propertyNames.pattern` (no `PNAMES_REWRITE_APPLIED`) **never** triggers fail‑fast **and never increases coverage**; treat it as unknown gating. Lax mode warns and proceeds conservatively.
     * **Do not rewrite** if any `unevaluated*` applies at or above the object **or** any precondition above fails: emit `PNAMES_COMPLEX` (with detail when available).
+      **Compile‑error guard (normative).** If the `propertyNames.pattern` fails to compile under `new RegExp(source,'u')`, the normalizer **MUST** emit **both** `REGEX_COMPILE_ERROR{patternSource:source, context:'rewrite'}` and `PNAMES_COMPLEX{reason:'REGEX_COMPILE_ERROR'}` and skip the rewrite.
       **Diagnostics (normative extension).** When a `propertyNames` rewrite is skipped **because** an `unevaluated*` keyword applies at or above the same instance location, the normalizer **MUST** emit `PNAMES_COMPLEX` with `details.reason:"UNEVALUATED_IN_SCOPE"`, in addition to any existing notes (e.g., `IF_REWRITE_SKIPPED_UNEVALUATED` when relevant).
 
     **Planning‑only effect (normative).** All constraints added by the `propertyNames` rewrite (synthetic `patternProperties` entries and the additive `additionalProperties:false`) exist **only** in the **canonical/effective view** to enable must‑cover analysis. They do not change AJV’s final validation, which always runs against the **original schema**. Implementations **MUST NOT** rely on these additive constraints to claim that the original schema has changed semantics.
@@ -558,7 +559,8 @@ Cache‑key canonicalization for this alias is defined in §14.
   flags (to avoid stateful matching), so that matching semantics align with
   AJV’s `unicodeRegExp:true` requirement (§13). Detection of anchored‑safe patterns remains textual on the
   **JSON‑unescaped** `source` as specified below.
-  **Compile‑error rule (normative).** If `new RegExp(source, 'u')` throws, the implementation **MUST** treat the pattern as **unknown gating** and **MUST NOT** use it to expand coverage **or** to trigger `AP_FALSE_UNSAFE_PATTERN`. Emit `PNAMES_COMPLEX` at the corresponding `canonPath` with `details.reason:"REGEX_COMPILE_ERROR"`. This rule also applies when evaluating §7 `propertyNames` rewrite preconditions: a compile error under `u` prevents the rewrite and MUST log `PNAMES_COMPLEX{reason:"REGEX_COMPILE_ERROR"}` (and any other applicable diagnostics). AJV remains the oracle at validation time. No other recovery is permitted.
+  **Compile‑error rule (normative).** If `new RegExp(source, 'u')` throws, the implementation **MUST** treat the pattern as **unknown gating** and **MUST NOT** use it to expand coverage **or** to trigger `AP_FALSE_UNSAFE_PATTERN`. Emit **`REGEX_COMPILE_ERROR`** at the corresponding `canonPath` with `details:{ patternSource: source, context:"coverage" }`.  
+  This rule also applies when evaluating §7 `propertyNames` rewrite preconditions: a compile error under `u` prevents the rewrite and **MUST** log **both** `REGEX_COMPILE_ERROR{patternSource: source, context:"rewrite"}` and `PNAMES_COMPLEX{reason:"REGEX_COMPILE_ERROR"}` (and any other applicable diagnostics). AJV remains the oracle at validation time. No other recovery is permitted.
   **Clarification (normative).** JSON Schema does not use inline flags; with `u` only, `^` and `$` anchor the entire string.
   Multi‑line or sticky semantics are not in play; implementations **MUST NOT** assume such flags when assessing
   anchored‑safety or executing patterns for coverage.
@@ -714,6 +716,9 @@ Cache‑key canonicalization for this alias is defined in §14.
     **Restriction (normative):** Do **not** emit `AP_FALSE_UNSAFE_PATTERN` when the global must‑cover intersection can be computed **without** such patterns—i.e., exclusively from named `properties` and anchored‑safe patterns (including **synthetic** entries from §7). The mere presence of unsafe or complexity‑capped patterns that are **unused** in that proof MUST NOT trigger fail‑fast.
 
     **Exception (normative):** a raw `propertyNames.pattern` (i.e., without the §7 additive rewrite signaled by `PNAMES_REWRITE_APPLIED`) **MUST NOT** trigger this fail‑fast; treat it as **unknown gating** and use `AP_FALSE_INTERSECTION_APPROX`. Only **synthetic** patterns introduced by §7 participate in fail‑fast, and such cases **MUST** report `sourceKind:'propertyNamesSynthetic'` in the payload.
+
+    **Compile‑error exception (normative).** Patterns that **fail to compile** under JavaScript `RegExp` with the `u` flag are treated as **unknown gating** for all must‑cover and early‑unsat purposes and **MUST NOT** cause `AP_FALSE_UNSAFE_PATTERN` in Strict. Implementations **MUST** emit `REGEX_COMPILE_ERROR` with `details:{ patternSource, context:"coverage" }` (and, when this reduces provable coverage under presence pressure, also emit `AP_FALSE_INTERSECTION_APPROX`). For `propertyNames` rewrites, also log `PNAMES_COMPLEX{reason:"REGEX_COMPILE_ERROR"}` per §7.
+
     **Clarification:** Raw `propertyNames.pattern` participates **only** as a gate for intersection (when anchored‑safe) and **never** as a coverage source.
     Consequently it **cannot** cause `AP_FALSE_UNSAFE_PATTERN` by itself.
 
@@ -1438,7 +1443,7 @@ Entries in `diag.warn` carry the same `code`/`details` schema as their fatal cou
 <a id="s19-phase-separation"></a>
 ### Phase separation
 
-Compose/coverage vs Generator: `REGEX_COMPLEXITY_CAPPED` is emitted during coverage analysis and §7 rewrites; `COMPLEXITY_CAP_PATTERNS` is emitted only by the Generator during pattern‑witness search. Ne pas mélanger les deux; les charges utiles et phases sont distinctes.
+Compose/coverage vs Generator: `REGEX_COMPLEXITY_CAPPED` **and `REGEX_COMPILE_ERROR`** are emitted during coverage analysis and §7 rewrites; `COMPLEXITY_CAP_PATTERNS` is emitted only by the Generator during pattern‑witness search. Ne pas mélanger les deux; les charges utiles et phases sont distinctes.
 
 <a id="s19-payloads"></a>
 ### 19.1 Details payloads (normative)
@@ -1502,8 +1507,13 @@ Provide the following minimal JSON‑Schema‑like shapes for major codes. Only 
     "maxLength":{"type":"number"},
     "tried":{"type":"number"}
 }}
+ // REGEX_COMPLEXITY_CAPPED (coverage analysis / §7 rewrite only)
+{ "type":"object", "required":["patternSource","context"], "properties":{
+  "patternSource":{"type":"string"},
+  "context":{"enum":["coverage","rewrite"]}
+}}
 
-// REGEX_COMPLEXITY_CAPPED (coverage analysis / §7 rewrite only)
+// REGEX_COMPILE_ERROR (coverage analysis / §7 rewrite only)
 { "type":"object", "required":["patternSource","context"], "properties":{
   "patternSource":{"type":"string"},
   "context":{"enum":["coverage","rewrite"]}
@@ -1643,7 +1653,7 @@ Provide the following minimal JSON‑Schema‑like shapes for major codes. Only 
 `NOT_DEPTH_CAPPED`, `RAT_LCM_BITS_CAPPED`, `RAT_DEN_CAPPED`, `RAT_FALLBACK_DECIMAL`, `RAT_FALLBACK_FLOAT`,
 `TRIALS_SKIPPED_LARGE_ONEOF`, `TRIALS_SKIPPED_LARGE_ANYOF`, `TRIALS_SKIPPED_SCORE_ONLY`, `AP_FALSE_INTERSECTION_APPROX`, `CONTAINS_BAG_COMBINED`, `CONTAINS_UNSAT_BY_SUM`,
 `COMPLEXITY_CAP_ONEOF`, `COMPLEXITY_CAP_ANYOF`, `COMPLEXITY_CAP_PATTERNS`,
-`COMPLEXITY_CAP_ENUM`, `COMPLEXITY_CAP_CONTAINS`, `COMPLEXITY_CAP_SCHEMA_SIZE`, `REGEX_COMPLEXITY_CAPPED`,
+`COMPLEXITY_CAP_ENUM`, `COMPLEXITY_CAP_CONTAINS`, `COMPLEXITY_CAP_SCHEMA_SIZE`, `REGEX_COMPLEXITY_CAPPED`, `REGEX_COMPILE_ERROR`,
 `CONTAINS_NEED_MIN_GT_MAX`,
 `UNSAT_PATTERN_PNAMES`, `UNSAT_DEPENDENT_REQUIRED_AP_FALSE`, `UNSAT_BUDGET_EXHAUSTED`,
 `IF_AWARE_HINT_APPLIED`, `IF_AWARE_HINT_SKIPPED_INSUFFICIENT_INFO`,
