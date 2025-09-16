@@ -175,7 +175,7 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
 | Guards & caps        | `complexity.*` (various)                             | Bound search/analysis; emit diagnostics when capping                                  | §8, §15 |
 | Modes                | **Strict** (default)                                 | External `$ref`: error (no I/O). **Lax**: warn then attempt local generation          | §11     |
 | Caching              | `cache.*`                                            | Cache compiles/plans (not instances); keys include AJV major + flags + options subkey | §14     |
-| Patterns under AP:false | `patternPolicy.unsafeUnderApFalse:'error'`        | Strict: fail-fast on non-anchored/complex patterns in must-cover; Lax: warn           | §8      |
+| Patterns under AP:false | `patternPolicy.unsafeUnderApFalse:'error'`        | **Subject to §8**: Strict fail‑fast **only** under **presence pressure** and only when the **Safe** set is empty; otherwise restrict to Safe. Raw `propertyNames.pattern` never triggers fail‑fast. Lax: warn + conservative exclusion. | §8      |
 | Validator config gate    | *(normative, no option)*                    | Enforce AJV flags per §13; fail with `AJV_FLAGS_MISMATCH` on deviation      | §13 |
 | Patterns (witness)         | `patternWitness.{alphabet,maxLength,maxCandidates}` | Bounded and deterministic search domain for pattern witness generation            | §9, §23 |
 | Repair (must‑cover guard)  | `repair.mustCoverGuard` (default: true)             | Deterministic policy for renaming under AP:false; see §10 and cache key in §14    | §10, §14, §23 |
@@ -406,7 +406,8 @@ Cache‑key canonicalization for this alias is defined in §14.
      **Diagnostics (normative):** The emission **MUST** use the §19.1 payload shape with
      `details:{ context:'rewrite', patternSource:P }`, where `P` is the JSON‑unescaped regex source considered.
      
-     **Definition — `escapeRegexLiteral(s)` (normative):** return `s.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')`. No other transformations are applied. The resulting source is interpreted by JS `RegExp` with the `u` flag (see §13).
+     **Definition — `escapeRegexLiteral(s)` (normative):** return `s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')`. 
+     (Canonical form: `/[.*+?^${}()|[\\]\\\\]/g`.) No other transformations are applied. The resulting source is interpreted by JS `RegExp` with the `u` flag (see §13).
         **Equivalence note (validation semantics):** Under preconditions (2)–(4), `propertyNames` already forbids any non‑member key; adding `additionalProperties:false` is semantically redundant **for AJV validation (key admission)** and exists only to enable must‑cover analysis (§8). The original schema is preserved and validation always runs against the **original schema**. The added `patternProperties` entry is **synthetic** and only considered for coverage when `PNAMES_REWRITE_APPLIED` is present.
      * **Anchored‑safe pattern** form (additive canonicalization; **apply only when preconditions (1), (3) & (4) hold and `P` is not complexity‑capped**):
      Given `{"propertyNames":{"pattern": P}}` with `P` anchored‑safe (see §8 “Anchored pattern”) and **not** flagged by the §8 regex complexity cap,
@@ -1977,7 +1978,7 @@ export function compose(schema: any, opts?: ComposeOptions): {
     overlap?: { kind:'oneOf', passing: number[], resolvedTo?: number };
     overlaps?: { patterns?: Array<{ key: string, patterns: string[] }> };
     // **Normative:** When compose() is invoked at a branch node (anyOf/oneOf),
-    // `scoreDetails` **MUST** be present. It MUST include `orderedIndices` and `topScoreIndices`
+    // `scoreDetails` **MUST** be present (non‑undefined at runtime). It MUST include `orderedIndices` and `topScoreIndices`
     // even when `branches.length === 1`. `tiebreakRand` is REQUIRED in score‑only (always, even
     // when |T|=1) and whenever RNG is used (ties or oneOf step‑4); it MAY be undefined only when
     // RNG was not used and trials occurred. When invoked on a non‑branch node,
