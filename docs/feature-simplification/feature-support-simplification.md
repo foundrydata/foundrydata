@@ -430,6 +430,7 @@ Cache‑key canonicalization for this alias is defined in §14.
         "additionalProperties": false
       }
       ```
+  **Normative (string identity).** The synthetic pattern key **MUST** use the **exact JSON string value** of `propertyNames.pattern` as authored (normal JSON string serialization). Do **not** substitute the JSON‑unescaped source; anchored‑safe detection still operates on the JSON‑unescaped source per §8.
      **Clarification (normative).** The original `propertyNames` node remains unchanged in place. The additive
      constraints above do not re‑emit or clone `propertyNames`; they only add synthetic coverage metadata
      in the canonical/effective views.
@@ -511,17 +512,17 @@ Cache‑key canonicalization for this alias is defined in §14.
   // **MUST** be present when the `canonPath` is a branch node (anyOf/oneOf);
   // **MUST** be omitted at non‑branch nodes (property absent; aligns with §23).
     scoreDetails?: {
-      orderedIndices: number[];       // branches by score desc / index asc
-      topScoreIndices: number[];      // tie set BEFORE RNG
+  orderedIndices: number[];       // branches by score desc / index asc; when branches.length===1, MUST be [0]
+  topScoreIndices: number[];      // tie set BEFORE RNG; when branches.length===1, MUST be [0]
       // Normative: At any branch node, `scoreDetails` MUST be present; it MUST include
       // `orderedIndices` and `topScoreIndices` in all cases (including when branches.length === 1).
-      /**
-       * REQUIRED in score‑only (always, even when |T|=1) and whenever RNG is used for SELECTION (tie‑breaks).
-       * When RNG is used only for oneOf step‑4 exclusivity, leave undefined and record `exclusivityRand` instead.
-       * MAY be undefined only when RNG was not used and trials occurred.
+      /** JSON contract: present ONLY when required. REQUIRED in score‑only (always, even when |T|=1)
+       * and whenever RNG is used for SELECTION (tie‑breaks). MUST be omitted otherwise; do not serialize
+       * undefined/null. When RNG is used only for oneOf step‑4 exclusivity, leave this omitted and record
+       * `exclusivityRand` instead (populated by later phases).
        */
-      tiebreakRand: number | undefined;
-      /** RNG used by oneOf step‑4 when `b*` no longer passes; omitted otherwise. */
+      tiebreakRand?: number;
+      /** RNG used by oneOf step‑4 when `b*` no longer passes; Compose MUST omit this; later phases populate. */
       exclusivityRand?: number;
       scoresByIndex?: Record<string, number>; // OPTIONAL: map "i" -> score
     },
@@ -657,6 +658,7 @@ Let `propertyNamesSynthetic_Ci` be the set of **synthetic** anchored‑safe patt
       * **Normative (both decimal & float fallbacks):** `multipleOf` **MUST** have a positive divisor `m > 0` (schemas with `m ≤ 0` are invalid and are expected to be rejected by AJV at compile time). Let `ε = 10^(−decimalPrecision)` (default `1e‑12`);
         accept `multipleOf(m)` when `abs((x/m) − round(x/m)) < ε`.
       * **Normative note.** The acceptance inequality above governs both `'decimal'` and `'float'` fallbacks. **Boundary:** when `abs((x/m) − round(x/m)) === ε`, the value **does not** satisfy `multipleOf(m)`. The only difference is the arithmetic path (decimal quantization vs IEEE‑754 double); the tolerance `ε` is identical to ensure deterministic cross‑engine behavior.
+  **Clarification (normative).** Final acceptance always relies on **AJV as the oracle** (§1, §13). **When `rational.fallback ∈ {'decimal','float'}` is in effect**, implementations **MUST** configure `multipleOfPrecision = rational.decimalPrecision` on **both** AJV instances (§13). If AJV accepts equality at ε under its tolerance, Repair/Validate governs the outcome; the generation/repair policy here uses the stricter `< ε` predicate.
       
       **Ajv alignment (normative).** When `rational.fallback ∈ {'decimal','float'}` is used, **both** the Source and Planning Ajv **MUST** set `multipleOfPrecision = rational.decimalPrecision` so that the ε‑based acceptance rule (`ε = 10^(−decimalPrecision)`) matches Ajv’s validator. **Caveat:** the decimal fallback quantizes operands before division, whereas Ajv computes the ratio `x/m` in IEEE‑754 double; boundary cases may differ. Ajv remains the oracle at validation time. **Startup gate:** if either Ajv instance lacks this setting or the values differ, the run **MUST** fail with `AJV_FLAGS_MISMATCH` per §13.
       * Note `RAT_LCM_BITS_CAPPED` / `RAT_DEN_CAPPED` as applicable.
@@ -815,6 +817,7 @@ Let `propertyNamesSynthetic_Ci` be the set of **synthetic** anchored‑safe patt
       * If `Σ min_i > (effectiveMaxItems ?? +∞)` **and** no single array element can satisfy two distinct needs
         (i.e., the needs are pairwise‑disjoint under the disjointness rules below) ⇒ emit `CONTAINS_UNSAT_BY_SUM`
         and short‑circuit as unsat.
+      * **Definition (normative) — `+∞` sentinel.** Treat an absent/undefined `effectiveMaxItems` as mathematical infinity for this comparison. Implementations **MUST** use IEEE‑754 `Infinity` when evaluating `Σ min_i > (effectiveMaxItems ?? +∞)`.
       * Otherwise (**overlap unknown or possible**), **MUST NOT** short‑circuit: record
         `diag.unsatHints.push({ code:'CONTAINS_UNSAT_BY_SUM', canonPath, provable:false, reason:'overlapUnknown', details:{ sumMin: Σ min_i, maxItems: effectiveMaxItems } })`
         and proceed (AJV remains the oracle at validation).
@@ -925,7 +928,7 @@ assumption.
   * **Top‑score ties (normative):** let `Smax` be the maximum score and `T` be the ascending‑sorted array of indices `i` where `score[i] = Smax`.
     * If `T.length = 1`, pick `T[0]`.
     * If `T.length > 1`, pick deterministically from `T` using the §15 RNG with state `s0 = (seed >>> 0) ^ fnv1a32(canonPath)`: choose index `T[Math.floor((next()/4294967296) * T.length)]`, and **record the exact float** as `diag.scoreDetails.tiebreakRand` at this canonPath.
-    * **Score‑only clarity (normative):** In **score‑only** selection, the RNG **MUST** be invoked once and `diag.scoreDetails.tiebreakRand` **MUST** be recorded **even when `|T| = 1`**. The value does not affect selection in this case but is required for auditability and determinism.
+  * **Score‑only clarity (normative):** In **score‑only** selection, the RNG **MUST** be invoked once and `diag.scoreDetails.tiebreakRand` **MUST** be recorded **even when `|T| = 1`**. The value does not affect selection in this case but is required for auditability and determinism. **JSON representation (normative):** when `tiebreakRand` is not required by these rules, the property **MUST be omitted**; implementations **MUST NOT** serialize `undefined` or `null` for this field.
     **Normative:** `fnv1a32` is FNV‑1a over the canonical JSON Pointer string `canonPath`
     (offset‑basis `2166136261`, prime `16777619`, modulo `2^32`).
 
@@ -970,7 +973,7 @@ assumption.
     4) If, after (2)–(3), >1 branch still passes and **b*** is among them, **keep `b*`** and apply a final minimal tweak **restricted to the same operations and ordering as step 3** (numeric ±1 for integers, ±ε for non‑integer numbers with ε from §8/§10; string single‑code‑point injection U+0000 or, if rejected, "a"; lowest `canonPath`, then lowest branch index). **No additional tweak kinds or RNG are permitted while `b*` still passes.** Only when **`b*` no longer passes** (e.g., due to capped refinements) pick deterministically from the passing set using the same seeded RNG policy as for ties (§8), then apply a minimal tweak (again confined to the step‑3 operations) to exclude the rest.
 * **Normative:** No RNG is used in step‑4 when **`b*`** still passes.
 * Record `diag.overlap.passing` and `diag.overlap.resolvedTo = b*` (or to the chosen index only in the fallback RNG case). **Normative:** any RNG used in step‑4 MUST use the same canonical pointer (**canonPath**) as branch selection at this `oneOf` location, and **MUST record the resulting float in the run's diagnostics at this canonPath under `scoreDetails.exclusivityRand`**. This is **in addition to** `tiebreakRand` used for ties/score‑only in selection.
-* **Cross‑phase (normative):** `exclusivityRand` is produced during Generate/Repair. Compose **SHALL** leave `scoreDetails.exclusivityRand` `undefined`; later phases **SHALL** populate it at the same `canonPath`.
+* **Cross‑phase (normative):** `exclusivityRand` is produced during Generate/Repair. Compose **SHALL** **omit** the `scoreDetails.exclusivityRand` property entirely; later phases **SHALL** populate it at the same `canonPath`.
 * **Consolidated requirement (normative).** Implementations **MUST** populate `diag.scoreDetails.tiebreakRand` **only** when RNG is used for **selection** (score‑only or tie‑breaks). When RNG is used for **`oneOf` step‑4**, implementations **MUST** populate `diag.scoreDetails.exclusivityRand` with the exact float used and **MUST NOT** synthesize or overwrite `tiebreakRand` if selection did not use RNG.
 
 <a id="s8-complexity-caps"></a>
@@ -1149,7 +1152,8 @@ Implementations SHOULD populate `details` with small, code‑specific objects:
 * `propertyNames` →
   * **Order & safety (unchanged reminders).** Run before `additionalProperties/unevaluated*` sweeps; never rename keys that are `required` or referenced by any `dependent*` antecedent/depender.
   * **Closed enum rename (deterministic; AP:false guard).**
-    When `propertyNames` is an **enum** `E`, for each offending key `k` choose the **lexicographically smallest** name `n ∈ E` (**UTF‑16 code‑unit order; do not use `localeCompare`**) such that `n` is not currently present and:
+    When `propertyNames` is an **enum** `E`, define **`E_str`** as the sequence of **string** members of `E` with duplicates removed by first occurrence while **preserving input order**. Non‑string members are ignored for renaming.
+    For each offending key `k`, choose the **lexicographically smallest** name `n ∈ E_str` (**UTF‑16 code‑unit order; do not use `localeCompare`**) such that `n` is not currently present and:
     - if `additionalProperties:false` applies at the object **and** `PlanOptions.repair.mustCoverGuard !== false`, then **`ctx.isNameInMustCover?.(canonPath,n) === true`**;
     - otherwise (no AP:false, or guard disabled) the must‑cover restriction does not apply.
     **Binding & scope (normative clarification).** When `repair.mustCoverGuard !== false` and `additionalProperties:false` applies at the object, the implementation **MUST** query `ctx.isNameInMustCover(canonPath, n)` **with the exact canonPath of the same object** (neither an ancestor nor a descendant). If `ctx.isNameInMustCover` is absent in this situation, the implementation **MUST NOT** perform a rename and **MUST** emit `MUSTCOVER_INDEX_MISSING{guard:true}` (existing behavior), handling the violation by safe deletion (respecting `required`/`dependent*`) or by leaving it for AJV to fail.
@@ -2067,20 +2071,17 @@ export function compose(schema: any, opts?: ComposeOptions): {
   // **Normative (contract).** At any branch node (anyOf/oneOf), implementations **MUST** set `scoreDetails`
   // to a concrete object (not `undefined`) that includes `orderedIndices` and `topScoreIndices`. When
   // `branches.length === 1`, both arrays **MUST** equal `[0]`. `tiebreakRand` is REQUIRED in score‑only (always, even when |T|=1)
-  // and whenever RNG is used for **selection** (tie‑breaks). It MAY be undefined only when RNG was not used for selection
-  // and trials occurred. RNG used in `oneOf` step‑4 is recorded in `exclusivityRand`; Compose sets it `undefined`.
+  // and whenever RNG is used for **selection** (tie‑breaks). It MUST be omitted when not required; never serialize undefined/null.
+  // RNG used in `oneOf` step‑4 is recorded in `exclusivityRand`; Compose MUST omit it (later phases fill).
   // When invoked on a non‑branch node, implementations **MUST** omit the `scoreDetails` field entirely.
     // **Normative echo of §8:** In score‑only, record `tiebreakRand` even when `|T|=1`.
     scoreDetails?: {
       orderedIndices: number[];
       topScoreIndices: number[];
-      /**
-       * Normative: REQUIRED in score‑only (always, even when |T|=1) and REQUIRED whenever RNG is used for
-       * SELECTION (tie‑breaks). If RNG is used only for oneOf step‑4, record `exclusivityRand` and keep
-       * this undefined. MAY be omitted only when RNG was not used and trials occurred. See §8.
-       */
-      tiebreakRand: number | undefined;
-      exclusivityRand?: number; // produced by Generate/Repair during oneOf step‑4; Compose sets undefined
+      /** JSON: present ONLY when required (see contract above). */
+      tiebreakRand?: number;
+      /** JSON: omitted by Compose; emitted only by later phases. */
+      exclusivityRand?: number; // produced by Generate/Repair during oneOf step‑4
       scoresByIndex?: Record<string, number>;
     };
     budget?: { tried: number; limit: number; skipped?: boolean; reason?: string };
