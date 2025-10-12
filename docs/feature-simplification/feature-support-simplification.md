@@ -824,6 +824,7 @@ Let `propertyNamesSynthetic_Ci` be the set of **synthetic** anchored‑safe patt
      • PLUS keys matched by **anchored‑safe & non‑capped** patterns in `Ci.patternProperties`,
        including §7 synthetic entries **only when** `PNAMES_REWRITE_APPLIED` was recorded at O.
      • If `Ci.propertyNames` is an enum of strings: intersect with exactly that finite set.
+       **If any member of the enum is not a JSON string, treat `propertyNames` as unknown gating at Compose time** (no intersection); AJV remains the oracle at validation. This mirrors the §7 rewrite precondition that refuses non‑string enums.
      • If `Ci.propertyNames` is a pattern: intersect **only** when the pattern is anchored‑safe & non‑capped;
        otherwise treat it as **unknown gating** (no intersection).
   2) Safe := ⋂ safeRecognizers(Ci) over all Ci with AP:false.
@@ -1527,7 +1528,7 @@ Note (normative): No network or filesystem I/O is performed in any mode.
     On successful bounded binding (with or without substitution), Compose **MUST** record
     `DYNAMIC_SCOPE_BOUNDED` at the `$dynamicRef`’s `canonPath` with `details:{ name:string, depth:number }`, where `name` is the anchor name and `depth` is the number of dynamic‑scope hops used (≥ 1).
     When no bounded binding is performed, Compose **SHOULD** continue to note `DYNAMIC_PRESENT` as today; no error is raised.
-  * **Determinism.** Binding outcomes **MUST** be deterministic for a fixed `(AJV.major, AJV.flags)` and schema; no RNG and no wall‑clock dependence.
+  * **Determinism.** Binding outcomes **MUST** be deterministic for a fixed `(AJV.major, AJV.flags, PlanOptionsSubKey)` and schema; no RNG and no wall‑clock dependence. (The hop bound `guards.maxDynamicScopeHops` is part of `PlanOptionsSubKey`, see §14.)
 
   Idempotence (normative).
   For fixed inputs `(schema, AJV.major, AJV.flags)`, two consecutive runs of `Normalize → Compose` **MUST** produce the same `$dynamicRef → $ref` substitution (or no substitution) at the same `canonPath`s. The substitution is planning‑only and **MUST NOT** evolve across passes on the same inputs.
@@ -1617,9 +1618,10 @@ LRU bounded by `lruSize`. Cache keys **MUST** include AJV **major version**, the
 (`validateFormats`, `allowUnionTypes`, `strictTypes`, `strictSchema`, `unicodeRegExp`, `coerceTypes`, `multipleOfPrecision`, `discriminator`) and the **PlanOptionsSubKey** (defined below).
 <a id="s14-memoization-branch-selection"></a>
 **Non‑goal**: no cache of **generated data** across runs. Memoization is allowed only for **branch selection**
-decisions at compose‑time and **MUST** key on `(canonPath, seed, AJV.major, AJV.flags, PlanOptionsSubKey)`.  
+decisions at compose‑time and **MUST** key on `(canonPath, seed, AJV.major, AJV.flags, PlanOptionsSubKey)`. This includes the dynamic‑scope hop bound via `guards.maxDynamicScopeHops` (see §12).  
 **Normative:** the **pointer component** of the composite key **MUST** be the canonical JSON Pointer `canonPath` (not `canonPtr`). The other components (**seed, AJV.major, AJV.flags, PlanOptionsSubKey**) **MUST** also be included; implementations MAY encode them as separate fields or as a serialized tuple.
 (ε := `10^(−decimalPrecision)` and the **round‑half‑even** rounding mode for `fallback:'decimal'` are implied by `rational.decimalPrecision` within `PlanOptionsSubKey`.)
+**Determinism note (normative).** Dynamic‑ref bounded binding in §12 depends on `guards.maxDynamicScopeHops`; including it in `PlanOptionsSubKey` guarantees cache/memo safety when this bound changes.
 **Final memoization key (normative clarification).** When `ComposeOptions.selectorMemoKeyFn` is provided, implementations **MUST NOT** use the function’s return value as the complete key. Let `userKey := selectorMemoKeyFn(canonPath, seed, opts)`. The final memo key **MUST** be derived from the tuple `(canonPath, seed, AJV.major, AJV.flags, PlanOptionsSubKey, userKey)`. Implementations **MUST** append/merge the AJV fields and `PlanOptionsSubKey` even if `userKey` repeats them. For the AJV flags component, use a stable JSON encoding with lexicographically sorted keys.
 
 <a id="s14-planoptionssubkey"></a>
