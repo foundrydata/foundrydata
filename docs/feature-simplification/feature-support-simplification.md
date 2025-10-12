@@ -579,8 +579,10 @@ Implementations **MUST NOT** include generator‑only `COMPLEXITY_CAP_PATTERNS` 
  `Compose` **MUST** produce a coverage index **entry for every object node** and return the map as `coverageIndex` in the API result.
  Implementations **MUST NOT** elide entries based on mode or guard configuration. The map MAY be empty **only when the schema contains no object nodes**; consumers
  **MAY** ignore it when not needed. Implementations MUST NOT elide `enumerate()` due to budgets or PlanOptions. Its presence depends only on whether
- the global must‑cover intersection is provably finite per this section. When finite, `enumerate()` MUST be provided;
- otherwise it MUST be absent. This preserves determinism and the Purity requirement below.
+ the global must‑cover intersection is provably finite per this section. When finite, `enumerate()` MUST be provided
+ **except when** the `COMPLEXITY_CAP_ENUM` cap applies (see below). In that case `enumerate()` **MUST** be absent and
+ `COMPLEXITY_CAP_ENUM{ limit, observed }` **MUST** be emitted. Otherwise it MUST be absent. This preserves determinism
+ and the Purity requirement below.
 
 
  ```ts
@@ -636,6 +638,7 @@ Implementations **MUST NOT** include generator‑only `COMPLEXITY_CAP_PATTERNS` 
    • with duplicates removed; and
    • in **UTF‑16 lexicographic** order (ascending).
   **Cardinality cap (normative).** When the derived finite universe size (post‑intersection) **exceeds** `complexity.maxEnumCardinality`, Compose **MUST NOT** provide `enumerate()` and **MUST** emit `COMPLEXITY_CAP_ENUM` with `details:{ limit:number, observed:number }`.
+  **Cross‑reference (normative):** This rule is an explicit exception to the earlier `enumerate()` obligation in this subsection.
   **Enumeration vs `propertyNames.enum` (normative clarification).** Even when the global must‑cover intersection becomes
   finite **solely** because a raw `propertyNames.enum` is present (i.e., without a §7 rewrite at the same object),
   `enumerate()` **MUST NOT** be provided. A raw `propertyNames.enum` remains a **gate** and **does not** contribute generative
