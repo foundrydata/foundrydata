@@ -271,6 +271,7 @@ Run this checklist before marking any task as complete:
 
 ### Commands
 
+Using pnpm (generic projects):
 ```bash
 # Install dependencies
 pnpm i
@@ -289,6 +290,27 @@ pnpm -w typecheck
 
 # Lint
 pnpm -w lint
+```
+
+Using npm workspaces (this repo):
+```bash
+# Install dependencies
+npm i
+
+# Build all packages (workspace-aware script defined at root)
+npm run build
+
+# Run tests
+npm run test
+
+# Run benchmarks (until dedicated bench harness is wired, use perf tests)
+npm run test:benchmarks
+
+# Typecheck
+npm run typecheck
+
+# Lint
+npm run lint
 ```
 
 ---
@@ -673,15 +695,16 @@ Task Master is also available through MCP tools for programmatic access:
 
 **MANDATORY workflow for reading task requirements**:
 
-1. **Get task details** with `get_task` or `/project:tm/show <id>`
-2. **Read Implementation Details** from the [Context] section
-3. **For subtasks**: Read parent task's Implementation Details
-4. **Use Grep to find anchors first** before reading large documents
-5. **Complete ALL context requirements**:
-   - Read ALL "Must read" sections
-   - Read ALL "Nice to read" sections for comprehensive understanding
-6. **Never use direct Read** on large docs without grep anchors first
-7. **Confirm reading completion** if asked
+1. OPEN THE TASK AND SET IN-PROGRESS — REQUIRED
+   - Command: `/project:tm/show <id>` then (if applicable) `/project:tm/set-status/to-in-progress <id>`
+   - Verify the [Context]/Implementation Details and the REFONLY anchors list for this task
+2. LOAD THE SPEC BY ANCHORS (REFONLY) — REQUIRED
+   - Find anchors with: `rg -n "<slug>" docs/feature-simplification/feature-support-simplification.md`
+   - Read by limited offset window (no full-doc reads): `nl -ba docs/feature-simplification/feature-support-simplification.md | sed -n '<start>,<end>p'`
+3. For subtasks: also read the parent task’s Implementation Details
+4. Complete ALL context requirements (Must/Nice to read)
+5. Never read large docs directly without grepping anchors first
+6. Confirm reading completion when prompted
 
 ### Natural Language Support
 
