@@ -1,7 +1,3 @@
-Voici le **prompt modifié “spec-only”** prêt à copier-coller.
-
----
-
 # Évaluer la viabilité d’une spécification — **SPEC-ONLY (sans mesures d’implémentation)**
 
 **But.** Attribuer une **note de viabilité** à la spécification, centrée sur son périmètre fonctionnel (JSON Schema, AJV v8, pipeline **Normalize→Compose→Generate→Repair→Validate**, déterminisme, diagnostics, budgets/caps) **en se basant uniquement sur le contenu explicite de la spec**.
