@@ -21,7 +21,7 @@ Audit and fix SPECIFICATION INPUT. Propose minimal, testable, normative patches 
 **POLICY (tie‑breaking)**
 
 * **Priorities:** Correctness > Determinism > Simplicity > Performance > Features.
-* **Default budgets (p95):** gen_latency ≤ 120 ms, memory ≤ 512 MB.  
+* **Default budgets (p95):** p95LatencyMs ≤ 120 ms, memoryPeakMB ≤ 512 MB.  
   `compileMs ≤ 1000 ms` is a **tracked SLI (non‑blocking)**.
 * **Fallback order on budget breach:** (1) reduce optional repairs, (2) cap trials/Top‑K (score‑only if needed), (3) relax non‑normative heuristics.
 * On cap/degradation, emit the corresponding diagnostics and show the deterministic score‑only path when trials are skipped, with `diag.budget.skipped=true`, `diag.budget.tried=0`, an appropriate `reason`, and `scoreDetails.tiebreakRand` recorded **even when |T|=1**.
@@ -38,9 +38,11 @@ Audit and fix SPECIFICATION INPUT. Propose minimal, testable, normative patches 
 1. **Summary (≤10 lines):** top risks + fixes to prioritize.
 2. **Mitigation coverage table (Markdown):** each identified risk → coverage {full|partial|none}, residual risks, and side effects.
 3. **Decision log (Markdown table):** id | choice | rationale | impact on correctness/determinism/perf | acceptance tests.
-4. **Issues JSON** (strict schema below). Each issue MUST cite section (§) and line range (Lx–Ly) from the SPECIFICATION INPUT and include a ≤200‑char excerpt from those lines. When exact lines are unavailable, use the nearest heading (§) and bullet index and state the approximation in "explanation".
+4. **Issues JSON** (strict schema below). Each issue MUST cite the section (§). If exact lines are unavailable, use the nearest heading (§) and bullet index and state the approximation in "explanation". Include a ≤200‑char excerpt from those lines.
 5. **Patches** (unified diffs) with only the proposed corrections.
-6. **Acceptance tests:** for each correction, ≥2 cases (schema/input/expected AJV result). Include at least one failure‑path test when a rewrite is refused. **Add Strict vs Lax variants** when `AP_FALSE_UNSAFE_PATTERN` or external `$ref` behavior is relevant. Tests MUST print seed, AJV major+flags, and numeric ε when `multipleOf` is involved, MUST assert presence of `diag.scoreDetails.tiebreakRand` whenever RNG is used (ties or oneOf step‑4), demonstrate `uniqueItems` de‑dup via structural hashing with deepEqual collision checks, and include a negative AJV‑flags test showing `AJV_FLAGS_MISMATCH` when `unicodeRegExp:true` is not set. Also assert `diag.scoreDetails.orderedIndices` and `topScoreIndices` in score‑only paths; and verify `diag.budget.*` plus `TRIALS_SKIPPED_LARGE_ONEOF/ANYOF` when trials are skipped due to caps.
+6. **Acceptance tests:** for each correction, ≥2 cases (schema/input/expected AJV result). Include at least one failure‑path test when a rewrite is refused. **Add Strict vs Lax variants** when `AP_FALSE_UNSAFE_PATTERN` or external `$ref` behavior is relevant. Tests MUST print seed, AJV major+flags, and numeric ε when `multipleOf` is involved, MUST assert presence of `diag.scoreDetails.tiebreakRand` whenever RNG is used for SELECTION
+   (score‑only or tie‑breaks). For oneOf step‑4 exclusivity, assert presence of
+   `diag.scoreDetails.exclusivityRand` instead, and MUST NOT expect `tiebreakRand` unless selection used RNG; demonstrate `uniqueItems` de‑dup via structural hashing with deepEqual collision checks, and include a negative AJV‑flags test showing `AJV_FLAGS_MISMATCH` when `unicodeRegExp:true` is not set. Also assert `diag.scoreDetails.orderedIndices` and `topScoreIndices` in score‑only paths; and verify `diag.budget.*` plus `TRIALS_SKIPPED_LARGE_ONEOF/ANYOF` when trials are skipped due to caps.
 7. **Glossary** additions/clarifications if needed (term → definition → impacted sections).
 8. **Scoring (GLOBAL):**
    * **GSV — Global Spec Viability (0–100):** score the state of the entire SPECIFICATION INPUT **before** applying the proposed patches of this round. Do **not** score the quality of your answer. The GSV MUST be computed strictly on the unmodified SPECIFICATION INPUT (exact bytes as received). Do not factor patches, NOTES, or example tests into the score.
@@ -137,7 +139,7 @@ Anchored‑safe per §8: JSON‑unescaped regex with leading `^` and trailing `$
 
 * **AJV flags gate** — set `unicodeRegExp:false` on either AJV instance ⇒ hard failure with `AJV_FLAGS_MISMATCH`.
 
-* **uniqueItems hashing** — show structural hashing with collision bucket then deepEqual confirmation before de‑dup.
+* **uniqueItems hashing** — show structural hashing buckets are followed by deepEqual confirmation before de‑dup (it is acceptable to use identical values to exercise the bucket+confirmation path; a cryptographic collision is not required).
 
 * **Property order & witnesses** — object with required/optional keys: assert lexicographic order; anchored pattern `^(?:a1|a2)$` ⇒ witness = shortest, lexicographically smallest; one per pattern per pass.
 
