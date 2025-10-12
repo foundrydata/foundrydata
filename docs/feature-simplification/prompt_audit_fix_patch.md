@@ -22,7 +22,7 @@ Audit and fix SPECIFICATION INPUT. Propose minimal, testable, normative patches 
 
 * **Priorities:** Correctness > Determinism > Simplicity > Performance > Features.
 * **Default budgets (p95):** gen_latency ≤ 120 ms, memory ≤ 512 MB.  
-  `compile_time ≤ 1000 ms` is a **tracked SLI (non‑blocking)**.
+  `compileMs ≤ 1000 ms` is a **tracked SLI (non‑blocking)**.
 * **Fallback order on budget breach:** (1) reduce optional repairs, (2) cap trials/Top‑K (score‑only if needed), (3) relax non‑normative heuristics.
 * On cap/degradation, emit the corresponding diagnostics and show the deterministic score‑only path when trials are skipped, with `diag.budget.skipped=true`, `diag.budget.tried=0`, an appropriate `reason`, and `scoreDetails.tiebreakRand` recorded **even when |T|=1**.
 * Mandatory decision log for each material choice (id, rationale, impact, tests).
