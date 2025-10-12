@@ -646,7 +646,7 @@ Implementations **MUST NOT** include generator‑only `COMPLEXITY_CAP_PATTERNS` 
   may participate in a finite, enumerable intersection.
   **Provenance (normative).** When `enumerate()` is provided, `provenance` **MUST** be present and list the
   source families that contributed to the enumerated set. It **MUST** include `'propertyNamesSynthetic'`
-  whenever §7 injected synthetic patterns were used (`PNAMES_REWRITE_APPLIED`) and **MAY** include `'patternProperties'` when user‑authored exact‑literal alternations contributed. `provenance` remains coarse and
+  whenever §7 injected synthetic patterns were used (`PNAMES_REWRITE_APPLIED`) and **MUST** include `'patternProperties'` when user‑authored exact‑literal alternations contributed. `provenance` remains coarse and
   **MUST NOT** be interpreted as a per‑name proof.
 
   **Algorithm (normative) — enumerate()**
@@ -1199,7 +1199,7 @@ Implementations SHOULD populate `details` with small, code‑specific objects:
     1) Active‑applicator set at `O`.
        • `allOf`: include all conjuncts.
        • `oneOf`: include only the selected branch `b*` (per §8).
-       • `anyOf`: include the union of branches that are known to validate the current candidate. Implementations **MAY** discover these via a quick Source‑Ajv re‑validation during Repair (§10 Repair‑only validator). Branches not known to validate are **unknown gating** and **MUST NOT** be used to prove evaluation.
+       • `anyOf`: include exactly the set of branch indices that **validate the current candidate** when each branch schema is validated **independently** with the **Source Ajv** (same class/flags as §13 “Source”, `allErrors:false`) against the **original schema context** at the same instance location. This check is performed **at the moment `isEvaluated` is queried** and MAY be cached ephemerally for the current candidate only. Branches not proven to validate by this test are **unknown gating** and **MUST NOT** be used to prove evaluation.
        • Conditionals: include only the active `then` or `else` for which `if` is known to hold (per §9 if‑aware‑lite; use only facts derivable from already chosen keys).
        • `$ref` / `$dynamicRef` (in‑document only): include applicators reachable through the referenced subschema at the same instance location. For `$dynamicRef`, §12 bounded in‑document resolution applies; if no bounded binding is available, treat it as **unknown gating**.
 
@@ -1634,6 +1634,7 @@ decisions at compose‑time and **MUST** key on `(canonPath, seed, AJV.major, AJ
 'conditionals.strategy',
 'disablePatternOverlapAnalysis',
 'guards.maxGeneratedNotNesting',
+'guards.maxDynamicScopeHops',
 'patternWitness.alphabet',
 'patternWitness.maxCandidates',
 'patternWitness.maxLength',
