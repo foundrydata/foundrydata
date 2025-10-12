@@ -1045,7 +1045,7 @@ assumption.
   * +200: `required + const/enum` on same key.
   * +50: anchored, disjoint `patternProperties` (e.g., `^foo$` vs `^bar$`).
   * +10: disjoint `type`.
-  * −5: estimated overlaps (wide unions, non‑anchored patterns).
+  * −5: estimated overlaps, **deterministically** defined as present for a branch **iff** any of the following holds in the canonical view of that branch at this canonPath: (i) it contains at least one `patternProperties` entry whose JSON‑unescaped source is **not** anchored‑safe per §8; or (ii) it declares `type` as an array with **cardinality ≥ 3**; or (iii) it is an object schema with `additionalProperties:true` and **no** `properties`. Apply the −5 at most once per branch when any condition holds. No RNG or sampling is permitted.
   * **Top‑score ties (normative):** let `Smax` be the maximum score and `T` be the ascending‑sorted array of indices `i` where `score[i] = Smax`.
     * If `T.length = 1`, pick `T[0]`.
     * If `T.length > 1`, pick deterministically from `T` using the §15 RNG with state `s0 = (seed >>> 0) ^ fnv1a32(canonPath)`: choose index `T[Math.floor((next()/4294967296) * T.length)]`, and **record the exact float** as `diag.scoreDetails.tiebreakRand` at this canonPath.
@@ -1072,10 +1072,7 @@ assumption.
   * Record trial budget in `diag.budget`. **In score‑only paths MUST set `diag.budget.skipped = true` and `diag.budget.tried = 0` (normative).**
     **Normative:** In score‑only, `diag.budget.limit` **MUST** equal
     `trials.perBranch × K_effective` for the node, where **`K_effective = min(maxBranchesToTry, branches.length)` after applying any Compose‑time caps** that reduce Top‑K (e.g., `COMPLEXITY_CAP_ONEOF`/`COMPLEXITY_CAP_ANYOF`).
-    Emit `TRIALS_SKIPPED_LARGE_ONEOF` when `oneOf.length > skipTrialsIfBranchesGt`. Emit `TRIALS_SKIPPED_LARGE_ANYOF` when `anyOf.length > skipTrialsIfBranchesGt`.
-    In all score‑only cases (including `trials.skipTrials === true`), emit the relevant code and set `diag.budget.reason`
-    to one of `"skipTrialsFlag"`, `"largeOneOf"`, `"largeAnyOf"`, or `"complexityCap"`. **When trials are skipped because
-    `trials.skipTrials === true`, also emit `TRIALS_SKIPPED_SCORE_ONLY`.**
+    Emit `TRIALS_SKIPPED_LARGE_ONEOF` when `oneOf.length > skipTrialsIfBranchesGt`. Emit `TRIALS_SKIPPED_LARGE_ANYOF` when `anyOf.length > skipTrialsIfBranchesGt`. When trials are skipped because `trials.skipTrials === true`, emit `TRIALS_SKIPPED_SCORE_ONLY`. **When score‑only is entered because a complexity cap applied, emit `TRIALS_SKIPPED_COMPLEXITY_CAP`.** In all score‑only cases, set `diag.budget.reason` to one of `"skipTrialsFlag"`, `"largeOneOf"`, `"largeAnyOf"`, or `"complexityCap"`.
     **Deterministic precedence (normative).** When multiple conditions hold simultaneously, choose exactly one reason/code
     with this fixed order: (1) `skipTrialsFlag` ⇒ `TRIALS_SKIPPED_SCORE_ONLY`; else (2) `largeOneOf` ⇒ `TRIALS_SKIPPED_LARGE_ONEOF`;
     else (3) `largeAnyOf` ⇒ `TRIALS_SKIPPED_LARGE_ANYOF`; else (4) `complexityCap`. Apply the **first** matching case only.
@@ -1468,7 +1465,7 @@ Input: original schema S; Source Ajv class/dialect matched per §12.
 1) Determine ExtRefs := all `$ref` values classified as **external** by §11/§12.
 2) Attempt compile(S). If it succeeds ⇒ do **not** skip; run final validation normally.
 3) If compile(S) fails:
-   a) Require: every compile error is for keyword `'$ref'` and its failing reference value is an element of ExtRefs (use the validator’s exposed reference value).
+   a) Require: every compile error is for keyword `'$ref'` and its failing reference value is an element of ExtRefs (use the validator’s exposed reference value). **If the validator does not expose the failing reference value for any error, the skip path MUST NOT be taken.**
    b) Build probe schema S': in-memory copy of S where each external `$ref` subtree is replaced by `{}` (no other changes).
    c) Attempt compile(S'). If it succeeds **and** ExtRefs.size > 0:
         set `skippedValidation:true`,
@@ -1879,7 +1876,7 @@ Provide the following minimal JSON‑Schema‑like shapes for major codes. Only 
     "disjointness":{"enum":["provable","overlapUnknown"]}
 }}
 
-// TRIALS_SKIPPED_LARGE_ONEOF / TRIALS_SKIPPED_LARGE_ANYOF / TRIALS_SKIPPED_SCORE_ONLY
+// TRIALS_SKIPPED_LARGE_ONEOF / TRIALS_SKIPPED_LARGE_ANYOF / TRIALS_SKIPPED_SCORE_ONLY / TRIALS_SKIPPED_COMPLEXITY_CAP
 { "type":"object", "properties":{
   "reason":{"enum":["largeOneOf","largeAnyOf","skipTrialsFlag","complexityCap"]}
 }}
@@ -2418,6 +2415,7 @@ export type ContainsNeed = { schema: any; min?: number; max?: number };
 export interface ComposeOptions {
   selector?: BranchSelector;
   seed?: number; // default: 1 (deterministic; see §15 RNG)
+  /** RESERVED — MUST be ignored. Compose MUST derive trial budgets exclusively from `trials.*` and §8 complexity caps. */
   budget?: number;
   trials?: PlanOptions['trials'];
   guards?: PlanOptions['guards'];
