@@ -842,6 +842,9 @@ Let `propertyNamesSynthetic_Ci` be the set of **synthetic** anchored‑safe patt
 
     **Precondition — presence pressure (normative).** This fail‑fast applies **only** when there is **presence pressure** at the object: `effectiveMinProperties > 0` **or** `effectiveRequiredKeys ≠ ∅` **or** some `dependentRequired` antecedent is forced present in the effective view. When no presence pressure exists, implementations **MUST NOT** emit `AP_FALSE_UNSAFE_PATTERN`; proceed with **conservative exclusion** (defined below) and continue.
 
+    **Example (informative).**
+    Let `effectiveRequiredKeys = {"k"}` after the `allOf` merge, with `dependentRequired: { k: ["d1"] }` and `additionalProperties:false`. If the provable must‑cover intersection cannot include `d1`, Strict mode may short‑circuit via `UNSAT_DEPENDENT_REQUIRED_AP_FALSE`. Conversely, if the presence of `k` depends only on a selected `oneOf` branch or on an active `then` branch of a conditional, do not treat `k` as “forced present” for early‑unsat; leave the decision to AJV at validation time.
+
     If a must‑cover proof for an object under `additionalProperties:false` depends on a pattern that is
     **not anchored‑safe** (per §8 definition) or whose analysis is **capped** by the regex complexity rule,
     the implementation **MUST** abort planning/generation for that node with diagnostic **`AP_FALSE_UNSAFE_PATTERN`** and the following **normative** payload:
@@ -1210,6 +1213,9 @@ Implementations SHOULD populate `details` with small, code‑specific objects:
     4) Predicate vs. cache.
        `isEvaluated` **MAY** be implemented using an internal cache (“E‑Trace”) mapping each `O` to a set of proven names and their evidence for the **current candidate instance**. This cache is **ephemeral**, seed‑independent, and **MUST NOT** influence Compose results or cache keys (§14). Recompute or invalidate deterministically as the candidate changes during Repair.
 
+    5) Replay after mutations (normative).
+       Whenever a Generate/Repair action may change the set of `anyOf` branches known to validate at the same instance location `O`, the implementation **MUST** invalidate and recompute the evaluation proof for `O`. Any evaluation proof that depends exclusively on an `anyOf` branch that is no longer known to validate **MUST NOT** be used to introduce or rename properties at `O`. Before any introduction or rename at `O`, `isEvaluated(O, name)` **MUST** be recomputed against the current candidate state.
+
     **Emission rule (normative).** At any object location `O` where `unevaluatedProperties:false` applies, the generator **MUST** check `isEvaluated(O, name) === true` **before** introducing `name`. If the check fails, the generator **MUST NOT** introduce that key.
 
     **Interplay with `additionalProperties:false` (normative).** When `additionalProperties:false` is effective at `O` (per §8), E‑Trace **does not expand coverage**. Emission **MUST** satisfy **both**: (1) membership in the **must‑cover intersection** computed by Compose (e.g., `coverageIndex.has(name) === true`), and (2) `isEvaluated(O, name) === true`. If either condition fails, the key **MUST NOT** be emitted.
@@ -1520,6 +1526,9 @@ Note (normative): No network or filesystem I/O is performed in any mode.
     When no bounded binding is performed, Compose **SHOULD** continue to note `DYNAMIC_PRESENT` as today; no error is raised.
   * **Determinism.** Binding outcomes **MUST** be deterministic for a fixed `(AJV.major, AJV.flags)` and schema; no RNG and no wall‑clock dependence.
 
+  Idempotence (normative).
+  For fixed inputs `(schema, AJV.major, AJV.flags)`, two consecutive runs of `Normalize → Compose` **MUST** produce the same `$dynamicRef → $ref` substitution (or no substitution) at the same `canonPath`s. The substitution is planning‑only and **MUST NOT** evolve across passes on the same inputs.
+
   **Cross‑references.** This bounded resolution does **not** alter §11 mode behavior; external `$ref` remain non‑dereferenced (no I/O) and are handled per §11. Final validation still runs on the **original schema**.
 * **Effective view** — Preserves `unevaluated*` semantics for the final validation stage.
 
@@ -1800,6 +1809,9 @@ Rappels rapides: couverture stricte sans résolution distante des refs; `contain
 
 **Envelope (normative).** All diagnostics exported by **Normalize / Compose / Repair / Validate** have the shape `{ code:string, canonPath:string, details?:unknown }`.
 The mini‑schemas in §19.1 constrain only the `details` payload. `canonPath` **MUST NOT** be duplicated inside `details`.
+
+Public pointer key (normative).
+All public outputs and diagnostics **MUST** use the `canonPath` key exclusively. The historical alias `canonPtr` **MUST NOT** appear in public outputs; implementations **MAY** accept it as an internal alias only.
 
 **Severity (Compose only; normative).** Severity is conveyed by the container:
 `diag.fatal[]` (hard errors that prevent generation at that `canonPath`) and `diag.warn[]` (non‑fatal notices; generation proceeds).
@@ -2420,6 +2432,11 @@ export function compose(schema: any, opts?: ComposeOptions): {
   containsBag?: ContainsNeed[];
   coverageIndex: Map<string, {
     has: (name: string) => boolean;
+    /** Provided iff the global must‑cover intersection is provably finite using only:
+     *  (a) named `properties`,
+     *  (b) exact‑literal anchored‑safe patterns (user‑authored), and/or
+     *  (c) §7 synthetic exact‑literal patterns when PNAMES_REWRITE_APPLIED is recorded.
+     *  MUST NOT be provided when finiteness stems solely from a raw `propertyNames.enum`. */
     enumerate?: () => string[];
     /** When present, **MUST** be de‑duplicated and sorted in UTF‑16 lexicographic order before export (see §8). */
     provenance?: ('properties'|'patternProperties'|'propertyNamesSynthetic')[];
