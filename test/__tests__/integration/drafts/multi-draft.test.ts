@@ -1,5 +1,5 @@
 /* eslint-disable max-depth */
-import { describe, test, expect } from '../setup';
+import { describe, test, expect, expectParseOk } from '../setup';
 import {
   INTEGRATION_TEST_SEED,
   INTEGRATION_SCHEMAS,
@@ -27,14 +27,14 @@ describe('Multi-Draft End-to-End Tests', () => {
         const parser = new JSONSchemaParser();
 
         const parseResult = parser.parse(schema);
-        expect(parseResult.isOk()).toBe(true);
-        if (!parseResult.isOk()) return;
+        const normalized = expectParseOk(parseResult);
+        const canonicalSchema = normalized.schema as Schema;
 
         // Generate using ObjectGenerator
         const generator = new ObjectGenerator();
         const formatRegistry = new FormatRegistry();
         const context = createGeneratorContext(
-          parseResult.value as Schema,
+          canonicalSchema,
           formatRegistry,
           { seed: INTEGRATION_TEST_SEED }
         );
@@ -42,7 +42,7 @@ describe('Multi-Draft End-to-End Tests', () => {
         const items: unknown[] = [];
         for (let i = 0; i < 10; i++) {
           const result = generator.generate(
-            parseResult.value as ObjectSchema,
+            canonicalSchema as ObjectSchema,
             context
           );
           expect(result.isOk()).toBe(true);
@@ -108,15 +108,13 @@ describe('Multi-Draft End-to-End Tests', () => {
         const schema = draftSpecificSchemas[draft];
         const parser = new JSONSchemaParser();
 
-        const parseResult = parser.parse(schema);
-        expect(parseResult.isOk()).toBe(true);
-        if (!parseResult.isOk()) continue;
-
+        const normalized = expectParseOk(parser.parse(schema));
+        const canonicalSchema = normalized.schema as Schema;
         // Generate using ObjectGenerator
         const generator = new ObjectGenerator();
         const formatRegistry = new FormatRegistry();
         const context = createGeneratorContext(
-          parseResult.value as Schema,
+          canonicalSchema,
           formatRegistry,
           { seed: INTEGRATION_TEST_SEED }
         );
@@ -124,7 +122,7 @@ describe('Multi-Draft End-to-End Tests', () => {
         const items: unknown[] = [];
         for (let i = 0; i < 5; i++) {
           const result = generator.generate(
-            parseResult.value as ObjectSchema,
+            canonicalSchema as ObjectSchema,
             context
           );
           if (result.isOk()) {
@@ -159,15 +157,14 @@ describe('Multi-Draft End-to-End Tests', () => {
       for (const draft of DRAFT_VERSIONS) {
         const parser = new JSONSchemaParser();
 
-        const parseResult = parser.parse(formatSchema);
-        expect(parseResult.isOk()).toBe(true);
-        if (!parseResult.isOk()) continue;
+        const normalized = expectParseOk(parser.parse(formatSchema));
+        const canonicalSchema = normalized.schema as Schema;
 
         // Generate using ObjectGenerator
         const generator = new ObjectGenerator();
         const formatRegistry = new FormatRegistry();
         const context = createGeneratorContext(
-          parseResult.value as Schema,
+          canonicalSchema,
           formatRegistry,
           { seed: INTEGRATION_TEST_SEED }
         );
@@ -175,7 +172,7 @@ describe('Multi-Draft End-to-End Tests', () => {
         const items: unknown[] = [];
         for (let i = 0; i < 10; i++) {
           const result = generator.generate(
-            parseResult.value as ObjectSchema,
+            canonicalSchema as ObjectSchema,
             context
           );
           if (result.isOk()) {
@@ -252,12 +249,12 @@ describe('Multi-Draft End-to-End Tests', () => {
         const parser = new JSONSchemaParser();
 
         const parseResult = parser.parse(schema);
-        expect(parseResult.isOk()).toBe(true);
-        if (!parseResult.isOk()) continue;
+        const normalized = expectParseOk(parseResult);
+        const canonicalSchema = normalized.schema as Schema;
 
         // Create custom context with our format registry
         const context = createGeneratorContext(
-          parseResult.value as Schema,
+          canonicalSchema,
           formatRegistry,
           { seed: INTEGRATION_TEST_SEED }
         );
@@ -267,7 +264,7 @@ describe('Multi-Draft End-to-End Tests', () => {
         const items: unknown[] = [];
         for (let i = 0; i < 5; i++) {
           const result = generator.generate(
-            parseResult.value as ObjectSchema,
+            canonicalSchema as ObjectSchema,
             context
           );
           if (result.isOk()) {
@@ -315,15 +312,14 @@ describe('Multi-Draft End-to-End Tests', () => {
       for (const draft of DRAFT_VERSIONS) {
         const parser = new JSONSchemaParser();
 
-        const parseResult = parser.parse(schema);
-        expect(parseResult.isOk()).toBe(true);
-        if (!parseResult.isOk()) continue;
+        const normalized = expectParseOk(parser.parse(schema));
+        const canonicalSchema = normalized.schema as Schema;
 
         // Generate using ObjectGenerator
         const generator = new ObjectGenerator();
         const formatRegistry = new FormatRegistry();
         const context = createGeneratorContext(
-          parseResult.value as Schema,
+          canonicalSchema,
           formatRegistry,
           { seed: INTEGRATION_TEST_SEED }
         );
@@ -331,7 +327,7 @@ describe('Multi-Draft End-to-End Tests', () => {
         const items: unknown[] = [];
         for (let i = 0; i < 5; i++) {
           const result = generator.generate(
-            parseResult.value as ObjectSchema,
+            canonicalSchema as ObjectSchema,
             context
           );
           if (result.isOk()) {
@@ -372,15 +368,14 @@ describe('Multi-Draft End-to-End Tests', () => {
       for (const draft of DRAFT_VERSIONS) {
         const parser = new JSONSchemaParser();
 
-        const parseResult = parser.parse(schema);
-        expect(parseResult.isOk()).toBe(true);
-        if (!parseResult.isOk()) continue;
+        const normalized = expectParseOk(parser.parse(schema));
+        const canonicalSchema = normalized.schema as Schema;
 
         // Generate using ObjectGenerator
         const generator = new ObjectGenerator();
         const formatRegistry = new FormatRegistry();
         const context = createGeneratorContext(
-          parseResult.value as Schema,
+          canonicalSchema,
           formatRegistry,
           { seed: INTEGRATION_TEST_SEED }
         );
@@ -388,7 +383,7 @@ describe('Multi-Draft End-to-End Tests', () => {
         const items: unknown[] = [];
         for (let i = 0; i < 5; i++) {
           const result = generator.generate(
-            parseResult.value as ObjectSchema,
+            canonicalSchema as ObjectSchema,
             context
           );
           if (result.isOk()) {
@@ -449,23 +444,20 @@ describe('Multi-Draft End-to-End Tests', () => {
 
       const parser = new JSONSchemaParser();
 
-      const parseResult = parser.parse(draft07Schema);
-      expect(parseResult.isOk()).toBe(true);
-      if (!parseResult.isOk()) return;
+      const normalized = expectParseOk(parser.parse(draft07Schema));
+      const canonicalSchema = normalized.schema as Schema;
 
       // Generate using ObjectGenerator
       const generator = new ObjectGenerator();
       const formatRegistry = new FormatRegistry();
-      const context = createGeneratorContext(
-        parseResult.value as Schema,
-        formatRegistry,
-        { seed: INTEGRATION_TEST_SEED }
-      );
+      const context = createGeneratorContext(canonicalSchema, formatRegistry, {
+        seed: INTEGRATION_TEST_SEED,
+      });
 
       const items: unknown[] = [];
       for (let i = 0; i < 10; i++) {
         const result = generator.generate(
-          parseResult.value as ObjectSchema,
+          canonicalSchema as ObjectSchema,
           context
         );
         if (result.isOk()) {

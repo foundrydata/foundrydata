@@ -36,6 +36,9 @@ describe('ParserRegistry', () => {
     const schema = { type: 'string' };
     const result = registry.parse(schema);
     expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value.schema).toEqual({ type: 'string' });
+    }
   });
 });
 

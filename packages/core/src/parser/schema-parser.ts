@@ -4,17 +4,17 @@
  */
 
 import type { Result } from '../types/result';
-import type { Schema } from '../types/schema';
 import { ParseError } from '../types/errors';
 import { err } from '../types/result';
 import { ErrorCode } from '../errors/codes';
+import type { NormalizeResult } from '../transform/schema-normalizer';
 
 /**
  * Base interface for schema parsers
  */
 export interface SchemaParser {
   supports(input: unknown): boolean;
-  parse(input: unknown): Result<Schema, ParseError>;
+  parse(input: unknown): Result<NormalizeResult, ParseError>;
 }
 
 /**
@@ -27,7 +27,7 @@ export class ParserRegistry {
     this.parsers.push(parser);
   }
 
-  parse(input: unknown): Result<Schema, ParseError> {
+  parse(input: unknown): Result<NormalizeResult, ParseError> {
     const parser = this.parsers.find((p) => p.supports(input));
     if (!parser) {
       return err(

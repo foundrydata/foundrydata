@@ -1,4 +1,4 @@
-import { describe, test, expect } from '../setup';
+import { describe, test, expect, expectParseOk } from '../setup';
 import '../../../matchers/index';
 import { JSONSchemaParser } from '../../../../packages/core/src/parser/json-schema-parser';
 import { ObjectGenerator } from '../../../../packages/core/src/generator/types/object-generator';
@@ -46,24 +46,21 @@ describe('Business Scenario Integration (real example schemas)', () => {
 
       // Parse
       const parser = new JSONSchemaParser();
-      const parseResult = parser.parse(schema);
-      expect(parseResult.isOk()).toBe(true);
-      if (!parseResult.isOk()) return;
+      const normalized = expectParseOk(parser.parse(schema));
+      const canonicalSchema = normalized.schema as Schema;
 
       // Generate a moderate batch deterministically
       const generator = new ObjectGenerator();
       const formatRegistry = new FormatRegistry();
-      const context = createGeneratorContext(
-        parseResult.value as Schema,
-        formatRegistry,
-        { seed: INTEGRATION_TEST_SEED }
-      );
+      const context = createGeneratorContext(canonicalSchema, formatRegistry, {
+        seed: INTEGRATION_TEST_SEED,
+      });
 
       const count = 100; // balanced for integration
       const items: unknown[] = [];
       for (let i = 0; i < count; i++) {
         const result = generator.generate(
-          parseResult.value as ObjectSchema,
+          canonicalSchema as ObjectSchema,
           context
         );
         if (result.isOk()) items.push(result.value);

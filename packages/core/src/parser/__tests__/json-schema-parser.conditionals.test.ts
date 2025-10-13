@@ -16,7 +16,7 @@ describe('JSONSchemaParser - conditionals if/then/else (strict)', () => {
     const r = parser.parse(input);
     expect(r.isOk()).toBe(true);
     if (!r.isOk()) return;
-    const out = r.value as any;
+    const out = r.value.schema as any;
     expect(out.if).toBeDefined();
     expect(out.then).toBeDefined();
     expect(out.else).toBeUndefined();
@@ -37,7 +37,7 @@ describe('JSONSchemaParser - conditionals if/then/else (strict)', () => {
     const r = parser.parse(input);
     expect(r.isOk()).toBe(true);
     if (!r.isOk()) return;
-    const out = r.value as any;
+    const out = r.value.schema as any;
     expect(out.if).toBeDefined();
     expect(out.then).toBeDefined();
     expect(out.else).toBeDefined();

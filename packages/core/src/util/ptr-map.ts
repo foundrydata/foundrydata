@@ -114,7 +114,7 @@ function insertSorted(list: string[], value: string): void {
   let hi = list.length;
   while (lo < hi) {
     const mid = (lo + hi) >>> 1;
-    const current = list[mid];
+    const current = list[mid]!;
     if (current === value) return;
     if (current < value) {
       lo = mid + 1;

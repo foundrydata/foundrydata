@@ -20,6 +20,7 @@ import {
   type PlanOptions,
 } from '../types/options';
 import type { Schema } from '../types/schema';
+import type { NormalizeResult } from '../transform/schema-normalizer';
 import {
   ParserRegistry,
   JSONSchemaParser,
@@ -277,7 +278,7 @@ export class FoundryGenerator {
       });
   }
 
-  parseSchema(input: unknown): Result<Schema, ParseError> {
+  parseSchema(input: unknown): Result<NormalizeResult, ParseError> {
     try {
       return this.parserRegistry.parse(input);
     } catch (e) {
@@ -1322,7 +1323,8 @@ export class FoundryGenerator {
     const parsed = this.parseSchema(resolvedInput);
     let genSchema: Schema;
     if (parsed.isOk()) {
-      genSchema = parsed.value;
+      const normalization = parsed.value;
+      genSchema = normalization.schema as Schema;
     } else if (compat === 'lax') {
       // Soft-accept: proceed with the original resolved object as Schema
       genSchema = resolvedInput as Schema;
