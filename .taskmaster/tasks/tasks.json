@@ -3571,7 +3571,7 @@
         "id": 4,
         "title": "Structural hashing & stable-hash",
         "description": "Implement structural hashing for uniqueItems and stable schema hashing for cache.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "8000",
           "9000",
@@ -3589,7 +3589,7 @@
             "description": "Implement structural hashing utility for JavaScript values used in uniqueItems deduplication",
             "dependencies": [],
             "details": "Create packages/core/src/util/struct-hash.ts with SHA-256 based structural hashing for JavaScript values. Must handle canonical JSON normalization (sorted keys, arrays in order, -0→0, BigInt stringified). Include collision detection with deepEqual confirmation. Replace JSON.stringify usage in array-generator.ts lines 364, 603-607 with this implementation.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for deterministic hashing, collision handling, edge cases with -0, BigInt, deep objects/arrays"
           },
           {
@@ -3598,7 +3598,7 @@
             "description": "Implement stable schema hashing for cache system used by Composition Engine",
             "dependencies": [],
             "details": "Create packages/core/src/util/stable-hash.ts for deterministic schema digest generation. Must integrate with CacheOptions.hashIfBytesLt setting in types/options.ts. Provide consistent hashing for schema objects to enable efficient caching in the composition engine pipeline stage.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for schema hashing consistency, deterministic output across runs, integration with cache options"
           }
         ]
@@ -4398,7 +4398,7 @@
       ],
       "created": "2025-10-13T11:26:34.120Z",
       "description": "Tasks for feature-simplification context",
-      "updated": "2025-10-13T20:54:25.647Z"
+      "updated": "2025-10-13T21:21:47.948Z"
     }
   }
 }

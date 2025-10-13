@@ -32,6 +32,7 @@ import { NumberGenerator } from './number-generator';
 import { IntegerGenerator } from './integer-generator';
 import { BooleanGenerator } from './boolean-generator';
 import { ObjectGenerator } from './object-generator';
+import { structuralHash, bucketsEqual } from '../../util/struct-hash';
 
 // Type guard to check if schema is an object (not boolean)
 function isSchemaObject(schema: Schema): schema is Exclude<Schema, boolean> {
@@ -249,7 +250,7 @@ export class ArrayGenerator extends DataGenerator {
 
     // Generate array items
     const result: unknown[] = [];
-    const usedValues = new Set<string>();
+    const usedHashes = uniqueItems ? new Map<string, unknown[]>() : undefined;
 
     // Special-case uniqueItems for boolean/null with strict bounds
     if (
@@ -360,14 +361,19 @@ export class ArrayGenerator extends DataGenerator {
       }
       let value = itemResult.value;
 
-      if (uniqueItems) {
-        const key = JSON.stringify(value);
-        if (usedValues.has(key)) {
-          attempts++;
-          if (attempts > maxAttempts) break;
-          continue;
+      if (uniqueItems && usedHashes) {
+        const { digest } = structuralHash(value);
+        const bucket = usedHashes.get(digest);
+        if (bucket) {
+          if (bucketsEqual(bucket, value)) {
+            attempts++;
+            if (attempts > maxAttempts) break;
+            continue;
+          }
+          bucket.push(value);
+        } else {
+          usedHashes.set(digest, [value]);
         }
-        usedValues.add(key);
       }
 
       // Track and enforce maxContains by avoiding extra matches on non-contains positions
@@ -600,11 +606,16 @@ export class ArrayGenerator extends DataGenerator {
 
     // Check uniqueItems
     if (uniqueItems) {
-      const seen = new Set<string>();
+      const seen = new Map<string, unknown[]>();
       for (const item of value) {
-        const key = JSON.stringify(item);
-        if (seen.has(key)) return false;
-        seen.add(key);
+        const { digest } = structuralHash(item);
+        const bucket = seen.get(digest);
+        if (bucket) {
+          if (bucketsEqual(bucket, item)) return false;
+          bucket.push(item);
+        } else {
+          seen.set(digest, [item]);
+        }
       }
     }
 
