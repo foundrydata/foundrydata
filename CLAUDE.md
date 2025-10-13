@@ -6,6 +6,39 @@
 
 ---
 
+## ⚠️ CRITICAL: Complete Refactor Context
+
+**This is a complete ground-up refactor of an existing legacy codebase.**
+
+### Legacy vs. Refactor
+
+- **Legacy code exists** in the `main` branch with a different architecture
+- **`feature-simplification` branch**: Complete rewrite following the new SPEC
+- **Do NOT reference legacy implementation** for feature behavior or design decisions
+- **Do NOT port legacy code patterns** unless explicitly specified in SPEC
+- **Do NOT assume legacy features should be preserved** unless documented in SPEC
+
+### What This Means for Implementation
+
+1. **SPEC is the ONLY authority** — Legacy code is NOT a reference
+2. **Clean slate implementation** — Build from scratch per SPEC architecture
+3. **No legacy debt** — Don't preserve old patterns, workarounds, or technical debt
+4. **New pipeline** — 5-stage architecture (Normalize → Compose → Generate → Repair → Validate)
+5. **Breaking changes expected** — This is intentional and documented
+
+### Branch Strategy
+
+```
+main (legacy)
+└── feature-simplification (complete refactor)
+    ├── tasks 1..24 (new implementation per SPEC)
+    └── clean architecture, no legacy carryover
+```
+
+**When reviewing code**: If you find legacy patterns or old architecture remnants in the `feature-simplification` branch, they should be removed and replaced with SPEC-compliant implementation.
+
+---
+
 ## 🚀 TL;DR — FoundryData in 30 seconds
 
 * **What**: JSON Schema → Test Data Generator with a compliance guarantee (AJV as oracle)
@@ -274,6 +307,59 @@ If using Claude Code with MCP, you can access:
 **Import workflow**: `@./.taskmaster/CLAUDE.md`
 **Completion protocol**: Always use `/complete-task <id>`; do **not** call low‑level status commands directly.
 
+#### Task Access Policy — Use CLI, Not JSON
+
+**CRITICAL**: Never directly read or parse `.taskmaster/tasks/tasks.json` or task files.
+
+**Why**:
+- Task structure is an implementation detail that may change
+- CLI commands handle JSON parsing, validation, and error handling
+- MCP tools provide structured, type-safe access
+- Direct JSON parsing bypasses business logic and validation
+
+**Always use**:
+- Slash commands: `/project:tm/show <id>`, `/project:tm/list`, etc.
+- MCP tools: `mcp__task-master-ai__get_task`, `mcp__task-master-ai__get_tasks`
+
+**Never**:
+- ❌ Read `.taskmaster/tasks/tasks.json` directly
+- ❌ Parse task files with `jq`, `cat`, or manual JSON parsing
+- ❌ Access `.taskmaster/state.json` directly
+- ❌ Modify task files without Task Master commands
+
+**Example**:
+
+```bash
+# ✅ CORRECT: Use CLI
+/project:tm/show 9100
+
+# ❌ WRONG: Direct file access
+cat .taskmaster/tasks/tasks.json | jq '.tasks[] | select(.id=="9100")'
+
+# ✅ CORRECT: Use MCP tool
+mcp__task-master-ai__get_task(id: "9100")
+
+# ❌ WRONG: Parse manually
+Read(.taskmaster/tasks/tasks.json)
+```
+
+#### REFONLY Policy — Anchor-Based SPEC References
+
+**REFONLY**: Reference SPEC sections by anchor only; do not duplicate SPEC prose.
+
+**Anchor Mapping**:
+```
+spec://§<n>#<slug> → docs/feature-simplification/feature-support-simplification.md#s<n>-<slug>
+```
+
+**Example**:
+- `spec://§8#branch-selection-algorithm` maps to `docs/feature-simplification/feature-support-simplification.md#s8-branch-selection-algorithm`
+
+**Working Context**:
+- **Keep working context small**: Load only anchors required by the current task
+- Use `Grep` to find anchors, then `Read` with offset to load specific sections
+- Do NOT read entire SPEC document into context unless absolutely necessary
+
 **IMPORTANT: Reading Task Requirements**
 * **ALWAYS read the task's Implementation Details first** - Get task details with `get_task` to see the [Context] section
 * **For subtasks: Read parent task's Implementation Details** - The context requirements are in the parent task
@@ -304,7 +390,8 @@ npm run test
 ### Bans
 
 * Avoid TypeScript escape hatches (`as any`, `// @ts-ignore`, non‑null assertions) unless justified and documented.
-* Don’t delete failing code/tests to “green” the suite; fix root causes.
+* Don't delete failing code/tests to "green" the suite; fix root causes.
+* **NEVER reference or port legacy code patterns** — This is a complete refactor.
 
 ### Implementation Bias Prevention
 
@@ -313,6 +400,48 @@ Prefer improving the framework integration over bypassing it. Examples and perfo
 ### ESLint Guidelines
 
 Use judgment; balance readability, cohesion, and performance.
+
+---
+
+## 🚫 Common Pitfalls — Critical Violations to Avoid
+
+### Legacy Code References (CRITICAL)
+
+- ❌ Referencing legacy implementation for feature behavior
+- ❌ Porting legacy code patterns or architecture
+- ❌ Preserving legacy features not documented in SPEC
+- ❌ Assuming legacy behavior should be maintained
+- ❌ Using legacy code as a reference for design decisions
+- ✅ **SPEC is the ONLY authority for implementation**
+
+### Task Master Access Violations
+
+- ❌ Reading `.taskmaster/tasks/tasks.json` directly
+- ❌ Parsing task files with `jq`, `cat`, or bash commands
+- ❌ Accessing `.taskmaster/state.json` directly
+- ❌ Modifying task files without Task Master commands
+- ✅ **Always use `/project:tm/` slash commands or MCP tools**
+
+### Implementation Scope Creep
+
+- ❌ Adding features not in SPEC because "they seem useful"
+- ❌ Implementing pattern-form `propertyNames` rewrite in P0 (deferred to P2)
+- ❌ Expanding coverage from `propertyNames.enum` without rewrite flag
+- ✅ **Do NOT enlarge feature scope beyond what SPEC mandates**
+
+### SPEC Context Violations
+
+- ❌ Copying SPEC text verbatim into code comments or task records
+- ❌ Reading entire SPEC document into context
+- ❌ Ignoring REFONLY anchor protocol
+- ✅ **Reference SPEC sections by anchor only**
+
+### Test Suite Manipulation
+
+- ❌ Deleting failing tests to "green" the suite
+- ❌ Commenting out failing assertions
+- ❌ Lowering coverage thresholds to pass CI
+- ✅ **Fix root causes; maintain ≥80% coverage on touched files**
 
 ---
 
@@ -353,6 +482,34 @@ Semantics, caps, and fallbacks are governed by the spec.
 
 ---
 
+## ✨ Golden Rules — Quick Reference
+
+When implementing features on the `feature-simplification` branch, always follow these rules:
+
+1. **Complete refactor** — Legacy code is NOT a reference; SPEC is the ONLY authority
+2. **SPEC is truth** — Do not enlarge scope beyond what SPEC mandates
+3. **REFONLY anchors** — Reference SPEC sections by anchor only; no text duplication
+4. **Small context** — Load only anchors required by current task via Grep + Read with offset
+5. **Numeric order** — Implement tasks 1..24 in sequence, respecting dependencies
+6. **Clean slate** — Build from scratch per SPEC architecture; no legacy carryover
+7. **AJV is oracle** — Validate against original schema (not transforms)
+8. **Pipeline integrity** — Normalize → Compose → Generate → Repair → Validate
+9. **80% coverage** — Maintain test coverage on all touched files
+10. **Bench gates** — Adhere to p50 ≈ 200-400ms for simple/medium schemas (~1K rows)
+11. **Task Master CLI** — Use `/project:tm/` commands or MCP tools; never parse `.taskmaster/tasks/tasks.json` directly
+12. **No scope creep** — Do not add features, edge cases, or behaviors not specified in SPEC
+13. **Quality first** — Run `npm run task-ready` before marking tasks complete
+
+**When in doubt, refer to SPEC. When SPEC is unclear, escalate.**
+**Never reference legacy code — this is a complete refactor.**
+
+---
+
 ## 💡 About This Document
 
-This guide consolidates engineering practices for Claude assistance and aligns them with the **Feature Support Simplification Plan**. Where differences existed (notably performance table p95 vs p50 and a non‑canonical options key), they have been resolved to match the spec and avoid ambiguity. 
+This guide consolidates engineering practices for Claude assistance and aligns them with the **Feature Support Simplification Plan**. Where differences existed (notably performance table p95 vs p50 and a non‑canonical options key), they have been resolved to match the spec and avoid ambiguity.
+
+**Related Documentation**:
+- **AGENTS.md** — Detailed agent runbook with execution discipline, guardrails, and self-audit checklists
+- **Feature Support Simplification Plan** — Canonical SPEC (single source of truth for all semantics)
+- **.taskmaster/CLAUDE.md** — Task Master workflow integration guide
