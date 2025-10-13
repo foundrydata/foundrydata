@@ -1,0 +1,37 @@
+# Task ID: 9120
+# Title: §20 Testing Strategy
+# Status: done
+# Dependencies: 9000
+# Priority: low
+# Description: Reference-only: section §20.
+# Details:
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§20","anchors":["spec://§20#unit","spec://§20#integration","spec://§20#bench-ci","spec://§20#metamorphic"],"notes":"no-embed; fetch-on-demand"}
+
+# Test Strategy:
+None.
+
+# Subtasks:
+## 9120001. Index anchor — unit tests [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9120002. Index anchor — integration tests [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9120003. Index anchor — bench/CI [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9120004. Index anchor — metamorphic/equivalence [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

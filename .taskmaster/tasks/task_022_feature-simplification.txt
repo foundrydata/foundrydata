@@ -1,0 +1,33 @@
+# Task ID: 22
+# Title: CI pipelines (lint, test, bench)
+# Status: pending
+# Dependencies: 8000, 9000, 9101, 9115, 9120, 17, 18
+# Priority: high
+# Description: Set up CI with linting, unit/integration tests, and bench gates.
+# Details:
+[Context] §1 acceptance gates; §15 bench protocol.
+- spec://§1#bench-sli-gate, spec://§15#bench-protocol
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§1","anchors":["spec://§1#bench-sli-gate"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Jobs: lint → unit → integration → bench; fail on SLO breaches.
+- Requires completed unit test suite (task 17) and integration test suite (task 18) to execute
+- CI pipeline must validate test implementations before proceeding to bench gates
+[Deliverables]
+- .github/workflows/ci.yml
+[Commands]
+- n/a (CI runs)
+[Definition of Done]
+- CI green on baseline; bench gate enforced.
+- Unit and integration test suites execute successfully in CI pipeline
+
+# Test Strategy:
+CI dry-run with reduced iterations; verify failure on forced breach. Test that CI correctly executes unit tests from task 17 and integration tests from task 18.
+
+# Subtasks:
+## 1. Create CI workflow with test dependencies [pending]
+### Dependencies: None
+### Description: Set up GitHub Actions workflow that executes lint, unit tests, integration tests, and bench gates in sequence
+### Details:
+Create .github/workflows/ci.yml that runs the test suites implemented in tasks 17 and 18. Pipeline must fail if unit or integration tests fail, before proceeding to bench gates. Include proper job dependencies and failure handling.
+

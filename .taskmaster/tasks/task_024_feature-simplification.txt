@@ -1,0 +1,30 @@
+# Task ID: 24
+# Title: Packaging & Release
+# Status: pending
+# Dependencies: 8000, 9000, 9124, 9117
+# Priority: medium
+# Description: Prepare versioning, changelog, and publish configuration; SemVer alignment.
+# Details:
+[Context] §24 references (SemVer); §17 docs.
+- spec://§24#normative
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§24","anchors":["spec://§24#normative"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Changelog and release scripts; version tags; license headers.
+[Deliverables]
+- package.json versioning scripts; docs/CHANGELOG.md
+[Commands]
+- pnpm version <x.y.z>
+[Definition of Done]
+- Release artifact builds; changelog updated; tagged commit.
+
+# Test Strategy:
+Dry-run publish; verify files included.
+
+# Subtasks:
+## 24001. Prepare release artifacts and changelog [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+

@@ -1,0 +1,90 @@
+# Task ID: 3
+# Title: Utils: RNG, rationals, JSON-safe
+# Status: done
+# Dependencies: 8000, 9000, 9115, 9123, 9108
+# Priority: high
+# Description: Provide deterministic RNG, exact rational helpers with fallbacks, and JSON-safe logging.
+# Details:
+[Context] §15 RNG; §8 numbers/multipleOf; §23 interfaces.
+- spec://§15#rng
+- spec://§8#numbers-multipleof
+- spec://§23#plan-options
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§15","anchors":["spec://§15#rng"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§8","anchors":["spec://§8#numbers-multipleof"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- xorshift32 seeded with (seed >>> 0) ^ fnv1a32(canonPath); export next() and float in [0,1).
+- Rationals: exact math with caps; decimal/float fallback with ε = 10^(−decimalPrecision). Log RAT_* diagnostics via caller.
+- jsonSafeReplacer for BigInt.
+[Deliverables]
+- packages/core/src/util/rng.ts
+- packages/core/src/util/rational.ts
+- packages/core/src/util/json-safe.ts
+[Commands]
+- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench
+[Definition of Done]
+- Deterministic RNG across runs; rational unit tests for lcm/gcd and epsilon tolerance; JSON-safe logs stringify BigInt.
+<info added on 2025-10-13T11:31:12.703Z>
+I'll analyze the codebase first to understand the current state and then provide the update based on the user's request.Based on my analysis of the codebase, the user request indicates that the rational helpers, JSON-safe replacer, and RNG utilities have been successfully implemented. The files I examined confirm this:
+
+- `/packages/core/src/util/rng.ts`: Contains XorShift32 class with fnv1a32 hashing and deterministic float generation
+- `/packages/core/src/util/rational.ts`: Implements gcd/lcm, reduce, quantizeDecimal, and epsilon tolerance functions
+- `/packages/core/src/util/json-safe.ts`: Provides jsonSafeReplacer for BigInt serialization
+
+[Progress Update]
+Implementation completed with deliverables at expected locations. RNG utility (packages/core/src/util/rng.ts) provides xorshift32 with fnv1a32 seeding as specified. Rational helpers (packages/core/src/util/rational.ts) deliver exact arithmetic with gcd/lcm/reduce functions plus decimal fallback mechanisms with configurable epsilon tolerance. JSON-safe utilities (packages/core/src/util/json-safe.ts) handle BigInt serialization and rational number display formatting. All modules align with §8 multipleOf semantics, §15 RNG determinism requirements, and §23 interface specifications.
+</info added on 2025-10-13T11:31:12.703Z>
+<info added on 2025-10-13T11:39:35.206Z>
+I'll analyze the codebase first to understand the current implementation and then provide the update.Based on my analysis of the codebase, I can see that the implementation is indeed complete with all deliverables in place and comprehensive test coverage. Here's the new text that should be appended to the task details:
+
+[Final Implementation Status - 2025-10-13]
+TASK COMPLETED - All implementation and testing objectives achieved:
+
+**Delivered Files:**
+✅ packages/core/src/util/rng.ts - XorShift32 with fnv1a32 seeding per §15
+✅ packages/core/src/util/rational.ts - gcd/lcm/reduce + epsilon tolerance helpers per §8  
+✅ packages/core/src/util/json-safe.ts - BigInt replacer + rational serialization
+
+**Test Coverage (33 total tests):**
+✅ packages/core/src/util/__tests__/rng.test.ts - 19 tests (hash accuracy, determinism, edge cases, distribution)
+✅ packages/core/src/util/__tests__/rational.test.ts - 6 tests (gcd/lcm/reduce + epsilon tolerance)
+✅ packages/core/src/util/__tests__/json-safe.test.ts - 2 tests (BigInt serialization)
+✅ packages/core/src/util/__tests__/ajv-gate.test.ts - 6 existing tests continue to pass
+
+**Quality Gates Passed:**
+✅ TypeScript compilation clean (tsc --noEmit)
+✅ All 33 tests pass in test suite
+✅ Deterministic RNG verified across runs with fixed seeds
+✅ Rational arithmetic with exact gcd/lcm and epsilon boundary testing
+✅ JSON-safe BigInt stringification confirmed
+
+**Spec Compliance Verified:**
+✅ §15 RNG requirements: fnv1a32 + XorShift32 deterministic seeding
+✅ §8 multipleOf: exact rational math with epsilon fallback mechanisms  
+✅ §23 interfaces: proper TypeScript exports and function signatures
+
+Ready for integration with downstream tasks requiring deterministic utilities.
+</info added on 2025-10-13T11:39:35.206Z>
+
+# Test Strategy:
+Property tests for RNG distribution determinism given fixed seed; unit tests for multipleOf tolerance boundaries; JSON-safe replacer snapshot tests.
+
+# Subtasks:
+## 3001. Implement RNG (xorshift32 + fnv1a32) [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3002. Implement rational helpers [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3003. JSON-safe replacer [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
