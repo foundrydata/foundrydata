@@ -3685,7 +3685,9 @@
           "9000",
           "9107",
           "9112",
-          "9108"
+          "9108",
+          "5",
+          "6"
         ],
         "status": "pending",
         "complexityScore": 5,
@@ -3724,7 +3726,9 @@
           "9113",
           "9111",
           "9115",
-          "9114"
+          "9114",
+          "3",
+          "6"
         ],
         "priority": "high",
         "details": "[Context] §8 coverage-index-export/enumerate; AP:false must-cover and fail-fast; branch-selection; oneOf exclusivity (Compose side); regex caps; §14 memo keys.\n- spec://§8#coverage-index-export, spec://§8#coverage-index-enumerate, spec://§8#apfalse-must-cover, spec://§8#branch-selection, spec://§8#oneof-exclusivity, spec://§8#regex-complexity-cap\n- spec://§14#planoptionssubkey\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§8\",\"anchors\":[\"spec://§8#coverage-index-export\",\"spec://§8#coverage-index-enumerate\",\"spec://§8#apfalse-must-cover\",\"spec://§8#branch-selection\",\"spec://§8#oneof-exclusivity\",\"spec://§8#regex-complexity-cap\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Export CoverageIndex for every object; enumerate only when provably finite by allowed sources; provenance sorted.\n- Strict fail-fast AP_FALSE_UNSAFE_PATTERN only under presence pressure and only when Safe set is empty; Lax warns.\n- Score-only invariants: always record tiebreakRand (even when |T|=1); budget.skipped=true; limit per Top-K calc.\n- **DEPENDENCY**: Requires normalized schema output from Normalizer (task 7) to build effective view and CoverageIndex.\n[Deliverables]\n- packages/core/src/transform/composition-engine.ts\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench\n[Definition of Done]\n- Deterministic branch selection; CoverageIndex.has/enumerate pure; diagnostics emitted with correct locus; caps limited to compose-time set.",
@@ -3764,7 +3768,9 @@
           "9109",
           "9108",
           "9113",
-          "9115"
+          "9115",
+          "3",
+          "6"
         ],
         "priority": "high",
         "details": "[Context] §9 generator, if-aware-lite, pattern-witness-selection; arrays contains; §8 oneOf exclusivity (later step logs exclusivityRand in Repair phase). Requires dependency on task 8 (Composition Engine) to access effective view and CoverageIndex from the Composition Engine for generating data that honors schema constraints.\n- spec://§9#if-aware-lite, spec://§9#pattern-witness-selection, spec://§9#arrays-contains\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§9\",\"anchors\":[\"spec://§9#if-aware-lite\",\"spec://§9#pattern-witness-selection\",\"spec://§9#arrays-contains\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Pattern witness bounded search; emit COMPLEXITY_CAP_PATTERNS when capped; Unicode code point length.\n- Minimal-width objects with must-cover + unevaluated guards.\n- Access to effective view and CoverageIndex from Composition Engine (task 8) for constraint-aware generation.\n[Deliverables]\n- packages/core/src/generator/foundry-generator.ts\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench\n[Definition of Done]\n- Deterministic outputs for fixed (seed, options); metrics.patternWitnessTried increments when enabled.\n- Integration with Composition Engine outputs for effective schema processing.",
@@ -3793,7 +3799,10 @@
           "9000",
           "9110",
           "9108",
-          "9113"
+          "9113",
+          "3",
+          "4",
+          "6"
         ],
         "priority": "high",
         "details": "[Context] §10 mapping; epsilon logging; propertyNames rename guard; MUSTCOVER index missing; §9 unevaluated evaluation guard.\n- spec://§10#mapping, spec://§10#epsilon-logging, spec://§10#propertynames-rename-guard, spec://§10#mustcover-index-missing\n- spec://§9#objects-minimal-width (guard interplay) [contextual]\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§10\",\"anchors\":[\"spec://§10#mapping\",\"spec://§10#epsilon-logging\",\"spec://§10#propertynames-rename-guard\",\"spec://§10#mustcover-index-missing\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Log epsilon exactly as \"1e-<decimalPrecision>\" for non-integer nudges; optional delta for integers.\n- Under AP:false + guard true, require ctx.isNameInMustCover(canonPath,n) before rename; else emit MUSTCOVER_INDEX_MISSING{guard:true}.\n- Evaluation guard for additions/renames when unevaluatedProperties:false applies.\n- Integration with Composition Engine's CoverageIndex API for AP:false rename guard implementation.\n[Deliverables]\n- packages/core/src/repair/repair-engine.ts\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test\n[Definition of Done]\n- Repairs idempotent; logs include canonPath and origPath; rename preflight per §10 and diagnostics conform to §19.1.\n- CoverageIndex integration for must-cover property name validation under additionalProperties:false constraints.",
@@ -3827,7 +3836,9 @@
           "9106",
           "9101",
           "9113",
-          "9115"
+          "9115",
+          "5",
+          "6"
         ],
         "priority": "high",
         "details": "[Context] §4 pipeline; §6 phases; §1 acceptance; §15 metrics.\n- spec://§4#pipeline, spec://§6#phases, spec://§1#acceptance, spec://§15#metrics\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§4\",\"anchors\":[\"spec://§4#pipeline\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Final AJV validate against original; support Lax/Strict behaviors routed by Modes task.\n- Wire together Normalize → Compose → Generate → Repair → Validate stages from dependency tasks.\n- Integrate with existing FoundryGenerator structure in packages/core/src/generator/foundry-generator.ts\n- Preserve existing PipelineStage enum and metrics collection patterns\n[Deliverables]\n- packages/core/src/index.ts (main orchestrator entry point)\n- Enhanced packages/core/src/generator/foundry-generator.ts with new pipeline stages\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench\n[Definition of Done]\n- End-to-end run returns diagnostics+metrics and valid instances on simple cases; errors propagate with correct codes.\n- All five pipeline stages (Normalize, Compose, Generate, Repair, Validate) are wired together\n- Integration with task 2 (Dual AJV), task 7 (Normalizer), task 8 (Composition Engine), task 9 (Generator), and task 10 (Repair Engine)",
@@ -3992,7 +4003,9 @@
           "8000",
           "9000",
           "9114",
-          "9115"
+          "9115",
+          "3",
+          "4"
         ],
         "status": "pending",
         "complexityScore": 3,
@@ -4020,7 +4033,8 @@
           "9115",
           "9101",
           "9122",
-          "11"
+          "11",
+          "6"
         ],
         "priority": "high",
         "details": "[Context] §15 bench protocol & SLO/SLI; §1 bench SLI gate.\n- spec://§15#bench-protocol, spec://§15#slo-sli, spec://§1#bench-sli-gate\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§15\",\"anchors\":[\"spec://§15#bench-protocol\",\"spec://§15#slo-sli\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Profiles simple/medium/pathological; seeds {1,42,4242}; fail CI when thresholds exceeded.\n- Depends on Pipeline Orchestrator (task 11) for complete pipeline benchmarking.\n[Deliverables]\n- scripts/bench.ts (wired), CI job to run harness\n[Commands]\n- pnpm -w bench\n[Definition of Done]\n- Bench reports p50/p95 & memory; CI job enforces gates; measures complete pipeline performance.",
