@@ -3976,25 +3976,35 @@
         "id": 13,
         "title": "Draft handling & $dynamic*",
         "description": "Dialect detection, Ajv class selection, bounded in-document $dynamicRef binding (planning-only).",
-        "priority": "medium",
-        "estimatedHours": 12,
+        "status": "done",
         "dependencies": [
           "8000",
           "9000",
           "9112"
         ],
-        "status": "pending",
-        "complexityScore": 3,
-        "details": "[Context] §12 Ajv class selection; bounded in-document dynamic scope.\n- spec://§12#ajv-class-selection\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§12\",\"anchors\":[\"spec://§12#ajv-class-selection\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Match Ajv class to dialect; optional bounded dynamic binding (depth ≤ guards.maxDynamicScopeHops), planning-only substitution to fragment $ref.\n[Deliverables]\n- packages/core/src/util/draft.ts\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test\n[Definition of Done]\n- Emits DYNAMIC_SCOPE_BOUNDED when bound; otherwise DYNAMIC_PRESENT; no cross-document I/O.",
-        "testStrategy": "Unit: binding success/failure cases (with/without $ref on ancestor path); depth bound respected.",
+        "priority": "medium",
+        "details": "[Context] §12 Ajv class selection; bounded in-document dynamic scope.\n- spec://§12#ajv-class-selection\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§12\",\"anchors\":[\"spec://§12#ajv-class-selection\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Match Ajv class to dialect; optional bounded dynamic binding (depth ≤ guards.maxDynamicScopeHops), planning-only substitution to fragment $ref.\n- Leverage existing dialect detection system in packages/core/src/util/ajv-source.ts with JsonSchemaDialect type and createAjvByDialect function\n- Integrate with current GuardsOptions structure in packages/core/src/types/options.ts for depth bounds\n[Deliverables]\n- packages/core/src/util/draft.ts\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test\n[Definition of Done]\n- Emits DYNAMIC_SCOPE_BOUNDED when bound; otherwise DYNAMIC_PRESENT; no cross-document I/O.\n- Unit tests pass with existing vitest framework\n- TypeScript compilation succeeds with existing tsconfig",
+        "testStrategy": "Unit: binding success/failure cases (with/without $ref on ancestor path); depth bound respected. Use vitest framework matching existing test structure in packages/core/src/**/__tests__/ directories. Test against all supported dialects (draft-07, 2019-09, 2020-12, draft-04).",
         "subtasks": [
           {
-            "id": 13001,
-            "title": "Dialect selection and dynamic scope binder",
-            "status": "pending",
-            "estimatedHours": 12,
-            "file": "packages/core/src/util/draft.ts",
-            "parentId": "undefined"
+            "id": 1,
+            "title": "Create draft detection and Ajv class selector",
+            "description": "Implement functions to detect JSON Schema dialect and select appropriate Ajv class, building on existing ajv-source.ts infrastructure.",
+            "dependencies": [],
+            "details": "Create packages/core/src/util/draft.ts with functions that leverage the existing JsonSchemaDialect type, createAjvByDialect, and getAjvClassLabel functions from ajv-source.ts. Implement dialect detection from schema $schema property and provide Ajv class selection interface that integrates with the current architecture.",
+            "status": "done",
+            "testStrategy": "Unit tests for each supported dialect detection and corresponding Ajv class selection"
+          },
+          {
+            "id": 2,
+            "title": "Implement bounded $dynamicRef scope resolver",
+            "description": "Add bounded in-document $dynamicRef binding with configurable depth limits using existing GuardsOptions.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement bounded dynamic scope resolution that respects depth limits from GuardsOptions.maxDynamicScopeHops (add this field to GuardsOptions interface in types/options.ts if not present). Provide planning-only substitution to fragment $ref without cross-document I/O. Emit DYNAMIC_SCOPE_BOUNDED when successfully bound within limits, DYNAMIC_PRESENT otherwise.",
+            "status": "done",
+            "testStrategy": "Unit tests covering depth boundary conditions, successful/failed binding scenarios, and ancestor path resolution with/without $ref"
           }
         ]
       },
@@ -4344,7 +4354,7 @@
       ],
       "created": "2025-10-13T11:26:34.120Z",
       "description": "Tasks for feature-simplification context",
-      "updated": "2025-10-13T15:32:43.016Z"
+      "updated": "2025-10-13T16:06:32.136Z"
     }
   }
 }
