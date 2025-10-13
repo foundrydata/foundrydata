@@ -3499,7 +3499,7 @@
           {
             "id": 2001,
             "title": "Source AJV factory",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 6,
             "file": "packages/core/src/util/ajv-source.ts",
             "parentId": "undefined"
@@ -3507,7 +3507,7 @@
           {
             "id": 2002,
             "title": "Planning AJV factory",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 8,
             "file": "packages/core/src/util/ajv-planning.ts",
             "parentId": "undefined"
@@ -3515,7 +3515,7 @@
           {
             "id": 2003,
             "title": "Startup config checker",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 10,
             "file": "packages/core/src/util/ajv-gate.ts",
             "parentId": "undefined"
