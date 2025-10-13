@@ -339,10 +339,18 @@ describe('ArrayGenerator', () => {
     });
 
     it('should meet performance benchmarks p95 < 2ms', () => {
-      const testCases = [
-        { size: 100, iterations: 1000 },
-        { size: 1000, iterations: 100 },
-      ];
+      const isCoverageRun = Boolean(
+        process.env.NODE_V8_COVERAGE || process.env.VITEST_COVERAGE
+      );
+      const testCases = isCoverageRun
+        ? [
+            { size: 100, iterations: 200 },
+            { size: 1000, iterations: 40 },
+          ]
+        : [
+            { size: 100, iterations: 1000 },
+            { size: 1000, iterations: 100 },
+          ];
 
       testCases.forEach(({ size, iterations }) => {
         const schema: ArraySchema = {
@@ -372,9 +380,60 @@ describe('ArrayGenerator', () => {
         const p95Index = Math.floor(times.length * 0.95);
         const p95Time = times[p95Index];
 
-        // Performance target: p95 < 2ms
-        expect(p95Time).toBeLessThan(2);
+        const target = isCoverageRun ? 5 : 2;
+        expect(p95Time).toBeLessThan(target);
       });
+    });
+
+    it('should return error when schema is not an array', () => {
+      const schema: Schema = { type: 'string' };
+      const context = createGeneratorContext(schema, formatRegistry, {
+        seed: 123,
+      });
+      const result = generator.generate(schema, context);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.message).toContain('does not support schema type');
+      }
+    });
+
+    it('should reject contains constraints with invalid bounds', () => {
+      const schema: ArraySchema = {
+        type: 'array',
+        contains: { type: 'string' },
+        minContains: 2,
+        maxContains: 1,
+      };
+      const context = createGeneratorContext(schema, formatRegistry, {
+        seed: 77,
+      });
+      const result = generator.generate(schema, context);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.message).toContain(
+          'minContains (2) > maxContains (1)'
+        );
+      }
+    });
+
+    it('should flag minContains larger than feasible array length', () => {
+      const schema: ArraySchema = {
+        type: 'array',
+        contains: { type: 'number' },
+        minContains: 2,
+        maxContains: 2,
+        maxItems: 1,
+      };
+      const context = createGeneratorContext(schema, formatRegistry, {
+        seed: 88,
+      });
+      const result = generator.generate(schema, context);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.message).toContain(
+          'minContains (2) > effectiveMaxItems (1)'
+        );
+      }
     });
   });
 
@@ -436,6 +495,17 @@ describe('ArrayGenerator', () => {
       // Validate with toBeDistinct matcher
       expect(unique).toBeDistinct();
       expect(() => expect(withDuplicates).toBeDistinct()).toThrow();
+    });
+
+    it('should treat bigint duplicates as violations under uniqueItems', () => {
+      const schema: ArraySchema = { type: 'array', uniqueItems: true };
+      const values = [42n, 42n];
+
+      expect(() => generator.validate(values, schema)).not.toThrow();
+      expect(generator.validate(values, schema)).toBe(false);
+
+      const uniqueValues = [1n, 2n];
+      expect(generator.validate(uniqueValues, schema)).toBe(true);
     });
 
     it('should reject non-arrays', () => {
