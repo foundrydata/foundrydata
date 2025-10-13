@@ -106,3 +106,26 @@ export {
 } from './util/ajv-source';
 export { createPlanningAjv, clonePlanningAjvWith } from './util/ajv-planning';
 export { checkAjvStartupParity, AjvFlagsMismatchError } from './util/ajv-gate';
+
+// Diagnostics & metrics helpers (Task 6)
+export {
+  MetricsCollector,
+  METRIC_PHASES,
+  type MetricPhase,
+  type MetricsVerbosity,
+  type MetricsSnapshot,
+  type BranchCoverageOneOfEntry,
+} from './util/metrics';
+export {
+  DIAGNOSTIC_CODES,
+  type DiagnosticCode,
+  type KnownDiagnosticCode,
+  getDiagnosticPhase,
+  isGeneratorOnlyCode,
+  isComposeOnlyCode,
+  isKnownDiagnosticCode,
+} from './diag/codes';
+export {
+  assertDiagnosticEnvelope,
+  type DiagnosticEnvelope,
+} from './diag/validate';
