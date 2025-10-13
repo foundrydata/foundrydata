@@ -1,0 +1,40 @@
+# Task ID: 13
+# Title: Draft handling & $dynamic*
+# Status: done
+# Dependencies: 8000, 9000, 9112
+# Priority: medium
+# Description: Dialect detection, Ajv class selection, bounded in-document $dynamicRef binding (planning-only).
+# Details:
+[Context] §12 Ajv class selection; bounded in-document dynamic scope.
+- spec://§12#ajv-class-selection
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§12","anchors":["spec://§12#ajv-class-selection"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Match Ajv class to dialect; optional bounded dynamic binding (depth ≤ guards.maxDynamicScopeHops), planning-only substitution to fragment $ref.
+- Leverage existing dialect detection system in packages/core/src/util/ajv-source.ts with JsonSchemaDialect type and createAjvByDialect function
+- Integrate with current GuardsOptions structure in packages/core/src/types/options.ts for depth bounds
+[Deliverables]
+- packages/core/src/util/draft.ts
+[Commands]
+- pnpm i; pnpm -w build; pnpm -w test
+[Definition of Done]
+- Emits DYNAMIC_SCOPE_BOUNDED when bound; otherwise DYNAMIC_PRESENT; no cross-document I/O.
+- Unit tests pass with existing vitest framework
+- TypeScript compilation succeeds with existing tsconfig
+
+# Test Strategy:
+Unit: binding success/failure cases (with/without $ref on ancestor path); depth bound respected. Use vitest framework matching existing test structure in packages/core/src/**/__tests__/ directories. Test against all supported dialects (draft-07, 2019-09, 2020-12, draft-04).
+
+# Subtasks:
+## 1. Create draft detection and Ajv class selector [done]
+### Dependencies: None
+### Description: Implement functions to detect JSON Schema dialect and select appropriate Ajv class, building on existing ajv-source.ts infrastructure.
+### Details:
+Create packages/core/src/util/draft.ts with functions that leverage the existing JsonSchemaDialect type, createAjvByDialect, and getAjvClassLabel functions from ajv-source.ts. Implement dialect detection from schema $schema property and provide Ajv class selection interface that integrates with the current architecture.
+
+## 2. Implement bounded $dynamicRef scope resolver [done]
+### Dependencies: 13.1
+### Description: Add bounded in-document $dynamicRef binding with configurable depth limits using existing GuardsOptions.
+### Details:
+Implement bounded dynamic scope resolution that respects depth limits from GuardsOptions.maxDynamicScopeHops (add this field to GuardsOptions interface in types/options.ts if not present). Provide planning-only substitution to fragment $ref without cross-document I/O. Emit DYNAMIC_SCOPE_BOUNDED when successfully bound within limits, DYNAMIC_PRESENT otherwise.
+

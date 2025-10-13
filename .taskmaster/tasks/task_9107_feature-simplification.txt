@@ -1,0 +1,37 @@
+# Task ID: 9107
+# Title: §7 Schema Normalizer (Canonicalization)
+# Status: done
+# Dependencies: 9000
+# Priority: low
+# Description: Reference-only: section §7.
+# Details:
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§7","anchors":["spec://§7#object-keywords-pnames-rewrite","spec://§7#conditionals-rewrite","spec://§7#pass-order","spec://§7#note-codes"],"notes":"no-embed; fetch-on-demand"}
+
+# Test Strategy:
+None.
+
+# Subtasks:
+## 9107001. Index anchor — propertyNames rewrite [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9107002. Index anchor — conditionals rewrite [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9107003. Index anchor — pass order [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9107004. Index anchor — normalizer note codes [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

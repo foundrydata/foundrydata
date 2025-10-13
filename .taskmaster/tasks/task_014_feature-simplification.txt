@@ -1,0 +1,30 @@
+# Task ID: 14
+# Title: Cache Strategy
+# Status: pending
+# Dependencies: 2, 3, 4, 8000, 9000, 9114, 9115
+# Priority: high
+# Description: Implement hierarchical caches and memo keys including PlanOptionsSubKey and AJV flags.
+# Details:
+[Context] §14 hierarchy; cache keys; PlanOptionsSubKey canonicalization.
+- spec://§14#hierarchy, spec://§14#cache-keys, spec://§14#planoptionssubkey
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§14","anchors":["spec://§14#planoptionssubkey"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Include AJV.major, class/dialect, full flag set, and PlanOptionsSubKey in keys. Canonicalize conditionals.strategy:'rewrite' → 'if-aware-lite'.
+[Deliverables]
+- packages/core/src/util/cache.ts
+[Commands]
+- pnpm i; pnpm -w build; pnpm -w test
+[Definition of Done]
+- Deterministic keys; separate LRU spaces for instances; memoized branch picks keyed on (canonPath, seed, AJV.major, AJV.flags, PlanOptionsSubKey[, user salt]).
+
+# Test Strategy:
+Unit: key stability, PlanOptionsSubKey canonicalization, collisions avoided between source/planning instances.
+
+# Subtasks:
+## 14001. Implement caches and memoization [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+

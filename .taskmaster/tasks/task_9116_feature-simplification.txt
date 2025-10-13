@@ -1,0 +1,37 @@
+# Task ID: 9116
+# Title: §16 Implementation Plan
+# Status: done
+# Dependencies: 9000
+# Priority: low
+# Description: Reference-only: section §16.
+# Details:
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§16","anchors":["spec://§16#phase-p0","spec://§16#acceptance-p0","spec://§16#phase-p1","spec://§16#phase-p2"],"notes":"no-embed; fetch-on-demand"}
+
+# Test Strategy:
+None.
+
+# Subtasks:
+## 9116001. Index anchor — Phase P0 [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9116002. Index anchor — Acceptance P0 [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9116003. Index anchor — Phase P1 [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9116004. Index anchor — Phase P2 [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

@@ -1,0 +1,33 @@
+# Task ID: 9
+# Title: Generator
+# Status: pending
+# Dependencies: 8, 8000, 9000, 9109, 9108, 9113, 9115, 3, 6
+# Priority: high
+# Description: Foundry generator honoring effective view, pattern witness, minimal width/length, if-aware-lite.
+# Details:
+[Context] §9 generator, if-aware-lite, pattern-witness-selection; arrays contains; §8 oneOf exclusivity (later step logs exclusivityRand in Repair phase). Requires dependency on task 8 (Composition Engine) to access effective view and CoverageIndex from the Composition Engine for generating data that honors schema constraints.
+- spec://§9#if-aware-lite, spec://§9#pattern-witness-selection, spec://§9#arrays-contains
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§9","anchors":["spec://§9#if-aware-lite","spec://§9#pattern-witness-selection","spec://§9#arrays-contains"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Pattern witness bounded search; emit COMPLEXITY_CAP_PATTERNS when capped; Unicode code point length.
+- Minimal-width objects with must-cover + unevaluated guards.
+- Access to effective view and CoverageIndex from Composition Engine (task 8) for constraint-aware generation.
+[Deliverables]
+- packages/core/src/generator/foundry-generator.ts
+[Commands]
+- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench
+[Definition of Done]
+- Deterministic outputs for fixed (seed, options); metrics.patternWitnessTried increments when enabled.
+- Integration with Composition Engine outputs for effective schema processing.
+
+# Test Strategy:
+Unit: witness ordering/capping; object property order (required then optional, UTF-16); arrays contains with uniqueItems handling.
+
+# Subtasks:
+## 1. Implement generator core [pending]
+### Dependencies: None
+### Description: Core generator implementation that integrates with Composition Engine effective view
+### Details:
+Implement the foundry generator that consumes the effective view and CoverageIndex from the Composition Engine to generate schema-compliant data. Must honor pattern witness selection, minimal width/length constraints, and if-aware-lite processing.
+

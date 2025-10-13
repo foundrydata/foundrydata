@@ -1,0 +1,30 @@
+# Task ID: 23
+# Title: P2 refinements
+# Status: pending
+# Dependencies: 8000, 9000, 9116, 9108
+# Priority: medium
+# Description: Deferred features: propertyNames pattern-form rewrite; pattern approximations for must-cover; contains subsumption.
+# Details:
+[Context] §16 Phase P2; §7 propertyNames pattern-form; §8 pattern approximations.
+- spec://§16#phase-p2, spec://§7#object-keywords-pnames-rewrite
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§16","anchors":["spec://§16#phase-p2"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Implement anchored-safe pattern-form rewrite with all guards; keep phase separation diagnostics.
+[Deliverables]
+- Extend schema-normalizer.ts and composition-engine.ts
+[Commands]
+- pnpm -w build; pnpm -w test
+[Definition of Done]
+- New rewrite gated by unevaluated*, complexity cap, and anchored-safe rules; tests added.
+
+# Test Strategy:
+Unit: acceptance/refusal for pattern-form; integration: must-cover finite enumeration updated when PNAMES_REWRITE_APPLIED present.
+
+# Subtasks:
+## 23001. Enable pattern-form rewrite [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+

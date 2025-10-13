@@ -1,0 +1,37 @@
+# Task ID: 17
+# Title: Unit Tests (per section)
+# Status: pending
+# Dependencies: 7, 8, 9, 10, 8000, 9000, 9120
+# Priority: high
+# Description: Unit test suites mirroring SPEC sections, including fuzzing for oneOf exclusivity and must-cover.
+# Details:
+[Context] §20 unit coverage plan.
+- spec://§20#unit
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§20","anchors":["spec://§20#unit"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Property-based tests using AJV as oracle for oneOf exclusivity, AP:false must-cover, contains bag.
+- Tests must validate against the original schema (not transforms)
+- Fixed RNG seeds for deterministic testing
+- Coverage should target core implementation in packages/core/src/
+[Deliverables]
+- packages/core/test/*.spec.ts
+- Unit tests for normalizer (task 7), composition engine (task 8), generator (task 9), and repair engine (task 10)
+- Property-based tests for exclusivity validation and must-cover scenarios
+[Commands]
+- pnpm -w test
+[Definition of Done]
+- ≥80% coverage on touched files; fuzz tests run deterministically with fixed seeds.
+- All core implementation modules have corresponding unit test files
+- Tests pass AJV validation against original schemas
+
+# Test Strategy:
+Organize by section; include tests IDs suggested in §20 where applicable; use fixed RNG seeds. Target existing source files in packages/core/src/ including generator/, validator/, parser/, and types/. Build tests around current implementation structure.
+
+# Subtasks:
+## 1. Author core unit tests [pending]
+### Dependencies: None
+### Description: Create comprehensive unit test suites for core modules including generator, validator, parser, and types
+### Details:
+Build unit tests targeting the existing source structure in packages/core/src/. Focus on modules that support the 5-stage pipeline: generator/, validator/, parser/, and types/. Ensure tests use AJV as oracle and fixed RNG seeds for determinism.
+

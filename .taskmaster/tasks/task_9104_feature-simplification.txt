@@ -1,0 +1,31 @@
+# Task ID: 9104
+# Title: §4 Operational guidance
+# Status: done
+# Dependencies: 9000
+# Priority: low
+# Description: Reference-only: section §4.
+# Details:
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§4","anchors":["spec://§4#pipeline","spec://§4#observability","spec://§4#fail-early"],"notes":"no-embed; fetch-on-demand"}
+
+# Test Strategy:
+None.
+
+# Subtasks:
+## 9104001. Index anchor — pipeline [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9104002. Index anchor — observability [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9104003. Index anchor — fail-early [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

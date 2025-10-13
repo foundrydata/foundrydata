@@ -1,0 +1,31 @@
+# Task ID: 9119
+# Title: §19 Diagnostics (codes)
+# Status: done
+# Dependencies: 9000
+# Priority: low
+# Description: Reference-only: section §19.
+# Details:
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§19","anchors":["spec://§19#envelope","spec://§19#payloads","spec://§19#phase-separation"],"notes":"no-embed; fetch-on-demand"}
+
+# Test Strategy:
+None.
+
+# Subtasks:
+## 9119001. Index anchor — diagnostics envelope [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9119002. Index anchor — details payloads [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9119003. Index anchor — phase separation [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

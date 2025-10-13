@@ -1,0 +1,19 @@
+# Task ID: 9113
+# Title: §13 AJV Configuration
+# Status: done
+# Dependencies: 9000
+# Priority: low
+# Description: Reference-only: section §13.
+# Details:
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§13","anchors":["spec://§13#startup-config-check"],"notes":"no-embed; fetch-on-demand"}
+
+# Test Strategy:
+None.
+
+# Subtasks:
+## 9113001. Index anchor — startup config check [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

@@ -1,0 +1,30 @@
+# Task ID: 12
+# Title: Modes & External $ref
+# Status: pending
+# Dependencies: 13, 8000, 9000, 9111, 9112
+# Priority: medium
+# Description: Implement Strict vs Lax behaviors and external $ref skip-eligibility probe.
+# Details:
+[Context] §11 modes; external-ref-probe; draft classification for internal vs external.
+- spec://§11#external-ref-probe
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§11","anchors":["spec://§11#external-ref-probe"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Strict: error EXTERNAL_REF_UNRESOLVED; Lax: warn + attempt; heuristic probe to skip validation only when all conditions met; set validationsPerRow=0 when skipped.
+[Deliverables]
+- packages/core/src/util/modes.ts
+[Commands]
+- pnpm i; pnpm -w build; pnpm -w test
+[Definition of Done]
+- Unit tests cover skip eligibility and ref exemplar selection; Strict path aborts planning.
+
+# Test Strategy:
+Unit: compile fail solely due to external refs triggers skip in Lax with metrics set; negative case with mixed errors does not skip.
+
+# Subtasks:
+## 12001. Implement mode switch and external-ref handling [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
