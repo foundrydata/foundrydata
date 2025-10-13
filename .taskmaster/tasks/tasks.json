@@ -2352,7 +2352,7 @@
   "feature-simplification": {
     "tasks": [
       {
-        "id": "8000",
+        "id": 8000,
         "title": "AGENT — Operating mode for Claude Code",
         "description": "Execution discipline and guardrails for building from SPEC via anchors only.",
         "priority": "medium",
@@ -2374,7 +2374,7 @@
         ]
       },
       {
-        "id": "9000",
+        "id": 9000,
         "title": "SPEC — Canonical Source (header & metadata)",
         "description": "Reference-only: section §0.",
         "priority": "low",
@@ -2404,7 +2404,7 @@
         ]
       },
       {
-        "id": "9050",
+        "id": 9050,
         "title": "SPEC — Maintenance / Evolution",
         "description": "Reference-only: section §24.",
         "priority": "low",
@@ -2436,7 +2436,7 @@
         ]
       },
       {
-        "id": "9100",
+        "id": 9100,
         "title": "Terminology (preamble — quick ref)",
         "description": "Reference-only: section §0.",
         "priority": "low",
@@ -2468,7 +2468,7 @@
         ]
       },
       {
-        "id": "9101",
+        "id": 9101,
         "title": "§1 Goal",
         "description": "Reference-only: section §1.",
         "priority": "low",
@@ -2516,7 +2516,7 @@
         ]
       },
       {
-        "id": "9102",
+        "id": 9102,
         "title": "§2 Scope",
         "description": "Reference-only: section §2.",
         "priority": "low",
@@ -2564,7 +2564,7 @@
         ]
       },
       {
-        "id": "9103",
+        "id": 9103,
         "title": "§3 Principles & Invariants",
         "description": "Reference-only: section §3.",
         "priority": "low",
@@ -2604,7 +2604,7 @@
         ]
       },
       {
-        "id": "9104",
+        "id": 9104,
         "title": "§4 Operational guidance",
         "description": "Reference-only: section §4.",
         "priority": "low",
@@ -2644,7 +2644,7 @@
         ]
       },
       {
-        "id": "9105",
+        "id": 9105,
         "title": "§5 Configuration Overview",
         "description": "Reference-only: section §5.",
         "priority": "low",
@@ -2684,7 +2684,7 @@
         ]
       },
       {
-        "id": "9106",
+        "id": 9106,
         "title": "§6 High-Level Architecture",
         "description": "Reference-only: section §6.",
         "priority": "low",
@@ -2708,7 +2708,7 @@
         ]
       },
       {
-        "id": "9107",
+        "id": 9107,
         "title": "§7 Schema Normalizer (Canonicalization)",
         "description": "Reference-only: section §7.",
         "priority": "low",
@@ -2756,7 +2756,7 @@
         ]
       },
       {
-        "id": "9108",
+        "id": 9108,
         "title": "§8 Composition Engine",
         "description": "Reference-only: section §8.",
         "priority": "low",
@@ -2828,7 +2828,7 @@
         ]
       },
       {
-        "id": "9109",
+        "id": 9109,
         "title": "§9 Generator",
         "description": "Reference-only: section §9.",
         "priority": "low",
@@ -2868,7 +2868,7 @@
         ]
       },
       {
-        "id": "9110",
+        "id": 9110,
         "title": "§10 Repair Engine (AJV-Driven)",
         "description": "Reference-only: section §10.",
         "priority": "low",
@@ -2932,7 +2932,7 @@
         ]
       },
       {
-        "id": "9111",
+        "id": 9111,
         "title": "§11 Modes",
         "description": "Reference-only: section §11.",
         "priority": "low",
@@ -2956,7 +2956,7 @@
         ]
       },
       {
-        "id": "9112",
+        "id": 9112,
         "title": "§12 Draft Handling",
         "description": "Reference-only: section §12.",
         "priority": "low",
@@ -2988,7 +2988,7 @@
         ]
       },
       {
-        "id": "9113",
+        "id": 9113,
         "title": "§13 AJV Configuration",
         "description": "Reference-only: section §13.",
         "priority": "low",
@@ -3012,7 +3012,7 @@
         ]
       },
       {
-        "id": "9114",
+        "id": 9114,
         "title": "§14 Cache Strategy",
         "description": "Reference-only: section §14.",
         "priority": "low",
@@ -3044,7 +3044,7 @@
         ]
       },
       {
-        "id": "9115",
+        "id": 9115,
         "title": "§15 Performance, Determinism & Metrics",
         "description": "Reference-only: section §15.",
         "priority": "low",
@@ -3084,7 +3084,7 @@
         ]
       },
       {
-        "id": "9116",
+        "id": 9116,
         "title": "§16 Implementation Plan",
         "description": "Reference-only: section §16.",
         "priority": "low",
@@ -3132,7 +3132,7 @@
         ]
       },
       {
-        "id": "9117",
+        "id": 9117,
         "title": "§17 Documentation Additions",
         "description": "Reference-only: section §17.",
         "priority": "low",
@@ -3172,7 +3172,7 @@
         ]
       },
       {
-        "id": "9118",
+        "id": 9118,
         "title": "§18 Features Matrix",
         "description": "Reference-only: section §18.",
         "priority": "low",
@@ -3196,7 +3196,7 @@
         ]
       },
       {
-        "id": "9119",
+        "id": 9119,
         "title": "§19 Diagnostics (codes)",
         "description": "Reference-only: section §19.",
         "priority": "low",
@@ -3236,7 +3236,7 @@
         ]
       },
       {
-        "id": "9120",
+        "id": 9120,
         "title": "§20 Testing Strategy",
         "description": "Reference-only: section §20.",
         "priority": "low",
@@ -3284,7 +3284,7 @@
         ]
       },
       {
-        "id": "9121",
+        "id": 9121,
         "title": "§21 Risks & Mitigations",
         "description": "Reference-only: section §21.",
         "priority": "low",
@@ -3308,7 +3308,7 @@
         ]
       },
       {
-        "id": "9122",
+        "id": 9122,
         "title": "§22 Deliverables (Code)",
         "description": "Reference-only: section §22.",
         "priority": "low",
@@ -3348,7 +3348,7 @@
         ]
       },
       {
-        "id": "9123",
+        "id": 9123,
         "title": "§23 Appendix — Minimal Interfaces",
         "description": "Reference-only: section §23.",
         "priority": "low",
@@ -3388,7 +3388,7 @@
         ]
       },
       {
-        "id": "9124",
+        "id": 9124,
         "title": "§24 Norms & References",
         "description": "Reference-only: section §24.",
         "priority": "low",
@@ -3428,7 +3428,7 @@
         ]
       },
       {
-        "id": "1",
+        "id": 1,
         "title": "Scaffolding & Monorepo",
         "description": "Initialize monorepo, packages, basic build/test/bench harness, and docs skeleton.",
         "priority": "high",
@@ -3479,7 +3479,7 @@
         ]
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "Dual AJV & Config Gate",
         "description": "Introduce Source vs Planning AJV instances and enforce startup parity gates.",
         "priority": "high",
@@ -3524,7 +3524,7 @@
         "updatedAt": "2025-10-12T20:00:58.449Z"
       },
       {
-        "id": "3",
+        "id": 3,
         "title": "Utils: RNG, rationals, JSON-safe",
         "description": "Provide deterministic RNG, exact rational helpers with fallbacks, and JSON-safe logging.",
         "priority": "high",
@@ -3536,15 +3536,15 @@
           "9123",
           "9108"
         ],
-        "status": "pending",
+        "status": "done",
         "complexityScore": 3,
-        "details": "[Context] §15 RNG; §8 numbers/multipleOf; §23 interfaces.\n- spec://§15#rng\n- spec://§8#numbers-multipleof\n- spec://§23#plan-options\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§15\",\"anchors\":[\"spec://§15#rng\"],\"notes\":\"no-embed; fetch-on-demand\"}\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§8\",\"anchors\":[\"spec://§8#numbers-multipleof\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- xorshift32 seeded with (seed >>> 0) ^ fnv1a32(canonPath); export next() and float in [0,1).\n- Rationals: exact math with caps; decimal/float fallback with ε = 10^(−decimalPrecision). Log RAT_* diagnostics via caller.\n- jsonSafeReplacer for BigInt.\n[Deliverables]\n- packages/core/src/util/rng.ts\n- packages/core/src/util/rational.ts\n- packages/core/src/util/json-safe.ts\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench\n[Definition of Done]\n- Deterministic RNG across runs; rational unit tests for lcm/gcd and epsilon tolerance; JSON-safe logs stringify BigInt.",
+        "details": "[Context] §15 RNG; §8 numbers/multipleOf; §23 interfaces.\n- spec://§15#rng\n- spec://§8#numbers-multipleof\n- spec://§23#plan-options\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§15\",\"anchors\":[\"spec://§15#rng\"],\"notes\":\"no-embed; fetch-on-demand\"}\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§8\",\"anchors\":[\"spec://§8#numbers-multipleof\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- xorshift32 seeded with (seed >>> 0) ^ fnv1a32(canonPath); export next() and float in [0,1).\n- Rationals: exact math with caps; decimal/float fallback with ε = 10^(−decimalPrecision). Log RAT_* diagnostics via caller.\n- jsonSafeReplacer for BigInt.\n[Deliverables]\n- packages/core/src/util/rng.ts\n- packages/core/src/util/rational.ts\n- packages/core/src/util/json-safe.ts\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench\n[Definition of Done]\n- Deterministic RNG across runs; rational unit tests for lcm/gcd and epsilon tolerance; JSON-safe logs stringify BigInt.\n<info added on 2025-10-13T11:31:12.703Z>\nI'll analyze the codebase first to understand the current state and then provide the update based on the user's request.Based on my analysis of the codebase, the user request indicates that the rational helpers, JSON-safe replacer, and RNG utilities have been successfully implemented. The files I examined confirm this:\n\n- `/packages/core/src/util/rng.ts`: Contains XorShift32 class with fnv1a32 hashing and deterministic float generation\n- `/packages/core/src/util/rational.ts`: Implements gcd/lcm, reduce, quantizeDecimal, and epsilon tolerance functions\n- `/packages/core/src/util/json-safe.ts`: Provides jsonSafeReplacer for BigInt serialization\n\n[Progress Update]\nImplementation completed with deliverables at expected locations. RNG utility (packages/core/src/util/rng.ts) provides xorshift32 with fnv1a32 seeding as specified. Rational helpers (packages/core/src/util/rational.ts) deliver exact arithmetic with gcd/lcm/reduce functions plus decimal fallback mechanisms with configurable epsilon tolerance. JSON-safe utilities (packages/core/src/util/json-safe.ts) handle BigInt serialization and rational number display formatting. All modules align with §8 multipleOf semantics, §15 RNG determinism requirements, and §23 interface specifications.\n</info added on 2025-10-13T11:31:12.703Z>\n<info added on 2025-10-13T11:39:35.206Z>\nI'll analyze the codebase first to understand the current implementation and then provide the update.Based on my analysis of the codebase, I can see that the implementation is indeed complete with all deliverables in place and comprehensive test coverage. Here's the new text that should be appended to the task details:\n\n[Final Implementation Status - 2025-10-13]\nTASK COMPLETED - All implementation and testing objectives achieved:\n\n**Delivered Files:**\n✅ packages/core/src/util/rng.ts - XorShift32 with fnv1a32 seeding per §15\n✅ packages/core/src/util/rational.ts - gcd/lcm/reduce + epsilon tolerance helpers per §8  \n✅ packages/core/src/util/json-safe.ts - BigInt replacer + rational serialization\n\n**Test Coverage (33 total tests):**\n✅ packages/core/src/util/__tests__/rng.test.ts - 19 tests (hash accuracy, determinism, edge cases, distribution)\n✅ packages/core/src/util/__tests__/rational.test.ts - 6 tests (gcd/lcm/reduce + epsilon tolerance)\n✅ packages/core/src/util/__tests__/json-safe.test.ts - 2 tests (BigInt serialization)\n✅ packages/core/src/util/__tests__/ajv-gate.test.ts - 6 existing tests continue to pass\n\n**Quality Gates Passed:**\n✅ TypeScript compilation clean (tsc --noEmit)\n✅ All 33 tests pass in test suite\n✅ Deterministic RNG verified across runs with fixed seeds\n✅ Rational arithmetic with exact gcd/lcm and epsilon boundary testing\n✅ JSON-safe BigInt stringification confirmed\n\n**Spec Compliance Verified:**\n✅ §15 RNG requirements: fnv1a32 + XorShift32 deterministic seeding\n✅ §8 multipleOf: exact rational math with epsilon fallback mechanisms  \n✅ §23 interfaces: proper TypeScript exports and function signatures\n\nReady for integration with downstream tasks requiring deterministic utilities.\n</info added on 2025-10-13T11:39:35.206Z>",
         "testStrategy": "Property tests for RNG distribution determinism given fixed seed; unit tests for multipleOf tolerance boundaries; JSON-safe replacer snapshot tests.",
         "subtasks": [
           {
             "id": 3001,
             "title": "Implement RNG (xorshift32 + fnv1a32)",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/util/rng.ts",
             "parentId": "undefined"
@@ -3552,7 +3552,7 @@
           {
             "id": 3002,
             "title": "Implement rational helpers",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 6,
             "file": "packages/core/src/util/rational.ts",
             "parentId": "undefined"
@@ -3560,7 +3560,7 @@
           {
             "id": 3003,
             "title": "JSON-safe replacer",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 2,
             "file": "packages/core/src/util/json-safe.ts",
             "parentId": "undefined"
@@ -3568,7 +3568,7 @@
         ]
       },
       {
-        "id": "4",
+        "id": 4,
         "title": "Structural hashing & stable-hash",
         "description": "Implement structural hashing for uniqueItems and stable schema hashing for cache.",
         "priority": "medium",
@@ -3604,7 +3604,7 @@
         ]
       },
       {
-        "id": "5",
+        "id": 5,
         "title": "PtrMap canon→original",
         "description": "Bidirectional pointer mapping between canonical and original schema pointers.",
         "priority": "medium",
@@ -3631,7 +3631,7 @@
         ]
       },
       {
-        "id": "6",
+        "id": 6,
         "title": "Metrics & diagnostic envelope",
         "description": "Diagnostics envelope `{code, canonPath, details?}`, metrics collection, verbosity toggle.",
         "priority": "high",
@@ -3675,7 +3675,7 @@
         ]
       },
       {
-        "id": "7",
+        "id": 7,
         "title": "Normalizer",
         "description": "Draft unification, boolean/trivial simplifications with unevaluated guards, conditional rewrite (safe), propertyNames rewrite (P0: enum-only).",
         "priority": "high",
@@ -3713,7 +3713,7 @@
         ]
       },
       {
-        "id": "8",
+        "id": 8,
         "title": "Composition Engine",
         "description": "Build effective view, CoverageIndex (has/enumerate), branch selection, early-unsat hints, caps; AP:false must-cover and Strict/Lax behaviors.",
         "status": "pending",
@@ -3757,7 +3757,7 @@
         ]
       },
       {
-        "id": "9",
+        "id": 9,
         "title": "Generator",
         "description": "Foundry generator honoring effective view, pattern witness, minimal width/length, if-aware-lite.",
         "status": "pending",
@@ -3789,7 +3789,7 @@
         ]
       },
       {
-        "id": "10",
+        "id": 10,
         "title": "Repair Engine",
         "description": "AJV-driven repairs, epsilon logging, AP:false rename guard with CoverageIndex, unevaluated evaluation guard.",
         "status": "pending",
@@ -3821,7 +3821,7 @@
         ]
       },
       {
-        "id": "11",
+        "id": 11,
         "title": "Pipeline Orchestrator",
         "description": "Wire Normalize → Compose → Generate → Repair → Validate; pass metrics and diagnostics through.",
         "status": "pending",
@@ -3941,7 +3941,7 @@
         ]
       },
       {
-        "id": "12",
+        "id": 12,
         "title": "Modes & External $ref",
         "description": "Implement Strict vs Lax behaviors and external $ref skip-eligibility probe.",
         "priority": "medium",
@@ -3968,7 +3968,7 @@
         ]
       },
       {
-        "id": "13",
+        "id": 13,
         "title": "Draft handling & $dynamic*",
         "description": "Dialect detection, Ajv class selection, bounded in-document $dynamicRef binding (planning-only).",
         "priority": "medium",
@@ -3994,7 +3994,7 @@
         ]
       },
       {
-        "id": "14",
+        "id": 14,
         "title": "Cache Strategy",
         "description": "Implement hierarchical caches and memo keys including PlanOptionsSubKey and AJV flags.",
         "priority": "high",
@@ -4023,7 +4023,7 @@
         ]
       },
       {
-        "id": "15",
+        "id": 15,
         "title": "Bench Harness & Gates",
         "description": "Benchmark harness and CI gates for p95 latency and memory peaks; metrics wiring.",
         "status": "pending",
@@ -4053,7 +4053,7 @@
         ]
       },
       {
-        "id": "16",
+        "id": 16,
         "title": "Diagnostics payload conformance",
         "description": "Enforce §19.1 mini-schemas, phase separation, and verbosity toggle exposure.",
         "status": "pending",
@@ -4104,7 +4104,7 @@
         ]
       },
       {
-        "id": "17",
+        "id": 17,
         "title": "Unit Tests (per section)",
         "description": "Unit test suites mirroring SPEC sections, including fuzzing for oneOf exclusivity and must-cover.",
         "status": "pending",
@@ -4134,7 +4134,7 @@
         ]
       },
       {
-        "id": "18",
+        "id": 18,
         "title": "Integration & e2e",
         "description": "End-to-end scenarios covering modes, AP:false unsafe patterns, oneOf exclusivity refinement.",
         "status": "pending",
@@ -4163,7 +4163,7 @@
         ]
       },
       {
-        "id": "19",
+        "id": 19,
         "title": "Documentation",
         "description": "Author Invariants, Known-Limits, and Features docs; update README and error catalog.",
         "priority": "medium",
@@ -4190,7 +4190,7 @@
         ]
       },
       {
-        "id": "20",
+        "id": 20,
         "title": "Fixtures & Bench profiles",
         "description": "Provide test fixtures and bench profiles (simple/medium/pathological); property-based generators for fuzzing.",
         "priority": "medium",
@@ -4217,7 +4217,7 @@
         ]
       },
       {
-        "id": "21",
+        "id": 21,
         "title": "Public API & TS types",
         "description": "Exported functions and types for normalize/compose/generate/repair; stable signatures.",
         "priority": "medium",
@@ -4244,7 +4244,7 @@
         ]
       },
       {
-        "id": "22",
+        "id": 22,
         "title": "CI pipelines (lint, test, bench)",
         "description": "Set up CI with linting, unit/integration tests, and bench gates.",
         "status": "pending",
@@ -4274,7 +4274,7 @@
         ]
       },
       {
-        "id": "23",
+        "id": 23,
         "title": "P2 refinements",
         "description": "Deferred features: propertyNames pattern-form rewrite; pattern approximations for must-cover; contains subsumption.",
         "priority": "medium",
@@ -4301,7 +4301,7 @@
         ]
       },
       {
-        "id": "24",
+        "id": 24,
         "title": "Packaging & Release",
         "description": "Prepare versioning, changelog, and publish configuration; SemVer alignment.",
         "priority": "medium",
@@ -4335,7 +4335,10 @@
       "completedCount": 30,
       "tags": [
         "feature-simplification"
-      ]
+      ],
+      "created": "2025-10-13T11:26:34.120Z",
+      "description": "Tasks for feature-simplification context",
+      "updated": "2025-10-13T11:40:19.484Z"
     }
   }
 }
