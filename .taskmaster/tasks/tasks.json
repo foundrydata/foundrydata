@@ -3690,7 +3690,7 @@
           "9108",
           "9112"
         ],
-        "status": "in-progress",
+        "status": "done",
         "complexityScore": 5,
         "details": "[Context] §7 pass order; conditionals rewrite; propertyNames rewrite; note codes; §8 interplay.\n- spec://§7#pass-order, spec://§7#conditionals-rewrite, spec://§7#object-keywords-pnames-rewrite, spec://§7#note-codes\n- spec://§8#regex-complexity-cap\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§7\",\"anchors\":[\"spec://§7#pass-order\",\"spec://§7#conditionals-rewrite\",\"spec://§7#object-keywords-pnames-rewrite\",\"spec://§7#note-codes\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Unevaluated* guard blocks simplifications and conditional rewrites where specified.\n- PropertyNames rewrite: **P0 implements enum-only**; anchored-pattern form is deferred to **P2 (#23)**.\n- When rewrite applies, log PNAMES_REWRITE_APPLIED and keep original node; add-only synthetic entries.\n[Deliverables]\n- packages/core/src/transform/schema-normalizer.ts\n- packages/core/src/parser/json-schema-parser.ts\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test\n[Definition of Done]\n- Notes emitted per §7; enum-based rewrite adds synthetic patternProperties + AP:false in canonical view; no semantic drift in AJV final validation.",
         "testStrategy": "Golden tests on notes; rewrite acceptance/refusal; guard with unevaluated*; draft conversions; size-1 enum→const in canonical view only.",
@@ -4182,26 +4182,70 @@
         "id": 19,
         "title": "Documentation",
         "description": "Author Invariants, Known-Limits, and Features docs; update README and error catalog.",
-        "priority": "medium",
-        "estimatedHours": 8,
+        "status": "pending",
         "dependencies": [
+          4,
+          7,
+          8,
+          9,
+          10,
+          11,
+          14,
+          17,
+          18,
           "8000",
           "9000",
           "9117",
           "9118"
         ],
-        "status": "pending",
-        "complexityScore": 2,
-        "details": "[Context] §17 documentation additions; §18 matrix.\n- spec://§17#invariants-doc, spec://§17#known-limits, spec://§17#features-matrix\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§17\",\"anchors\":[\"spec://§17#invariants-doc\",\"spec://§17#known-limits\",\"spec://§17#features-matrix\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Document cross-phase invariants; limits for patterns and external refs; feature table.\n[Deliverables]\n- docs/Invariants.md, docs/Known-Limits.md, docs/Features.md, docs/error.md, docs/README.md\n[Commands]\n- pnpm -w build\n[Definition of Done]\n- Docs build and lint; cross-referenced anchors consistent with SPEC.",
-        "testStrategy": "Doc linting; link check; quick human review checklist.",
+        "priority": "medium",
+        "details": "[Context] §17 documentation additions; §18 matrix.\n- spec://§17#invariants-doc, spec://§17#known-limits, spec://§17#features-matrix\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§17\",\"anchors\":[\"spec://§17#invariants-doc\",\"spec://§17#known-limits\",\"spec://§17#features-matrix\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Document cross-phase invariants implemented in Tasks 4-18; limits for patterns and external refs established in core pipeline; feature matrix reflecting actual implementation status.\n[Deliverables]\n- docs/Invariants.md (documenting structural hashing, normalizer guards, composition engine invariants)\n- docs/Known-Limits.md (documenting cache limits, complexity caps, pattern witness caps)\n- docs/Features.md (matrix reflecting implemented features from Tasks 4-18)\n- docs/error.md (error catalog from diagnostic envelope implementation)\n- docs/README.md (updated with actual implementation details)\n[Commands]\n- pnpm -w build\n[Definition of Done]\n- Docs build and lint; cross-referenced anchors consistent with SPEC; documentation accurately reflects implemented features from core tasks.",
+        "testStrategy": "Doc linting; link check; quick human review checklist; validation that documented features match implementation in packages/core/src/*.",
         "subtasks": [
           {
-            "id": 19001,
-            "title": "Write documentation files",
+            "id": 1,
+            "title": "Write Invariants.md documenting cross-phase guarantees",
+            "description": "Document invariants from implemented core tasks: structural hashing uniqueness guarantees, normalizer guard behaviors, composition engine coverage guarantees, pipeline metrics consistency.",
+            "dependencies": [],
+            "details": "Create comprehensive invariants documentation based on completed implementations in Tasks 4 (structural hashing), 7 (normalizer), 8 (composition engine), and pipeline orchestration. Reference actual code behaviors and guarantee definitions from packages/core/src/ modules.",
             "status": "pending",
-            "estimatedHours": 8,
-            "file": "docs/Invariants.md",
-            "parentId": "undefined"
+            "testStrategy": "Verify invariants match implementation behavior through code review and example validation."
+          },
+          {
+            "id": 2,
+            "title": "Write Known-Limits.md documenting implementation caps",
+            "description": "Document limits and caps from core implementations: cache size limits, complexity thresholds, pattern witness generation caps, repair attempt limits, memory usage bounds.",
+            "dependencies": [],
+            "details": "Document specific limits enforced by implemented features: Task 14 cache limits, Task 8 composition complexity caps, Task 10 repair engine bounds, Task 9 generator limits. Include performance implications and degradation behaviors.",
+            "status": "pending",
+            "testStrategy": "Validate limits against actual implementation configurations and bench profile constraints."
+          },
+          {
+            "id": 3,
+            "title": "Write Features.md matrix reflecting actual implementation",
+            "description": "Create comprehensive feature support matrix reflecting implementation status of Tasks 4-18: which JSON Schema features are implemented, their support level, and any known limitations.",
+            "dependencies": [],
+            "details": "Build feature matrix based on actual implementation coverage from core tasks. Include schema support levels, conditional handling, array/object support, numeric handling, and ref resolution capabilities implemented in the pipeline.",
+            "status": "pending",
+            "testStrategy": "Cross-reference feature claims with unit test coverage and integration test scenarios."
+          },
+          {
+            "id": 4,
+            "title": "Update error.md catalog with diagnostic codes",
+            "description": "Document error catalog based on implemented diagnostic envelope from Task 6 and phase-specific error codes from Tasks 7-11.",
+            "dependencies": [],
+            "details": "Create comprehensive error documentation reflecting actual diagnostic codes, error propagation patterns, and recovery mechanisms implemented across the 5-stage pipeline. Reference Task 6 diagnostic envelope structure.",
+            "status": "pending",
+            "testStrategy": "Verify error codes match implementation and are properly categorized by pipeline phase."
+          },
+          {
+            "id": 5,
+            "title": "Update docs/README.md with implementation details",
+            "description": "Update project README with accurate implementation details reflecting completed core tasks, actual performance characteristics, and usage examples based on implemented API.",
+            "dependencies": [],
+            "details": "Revise README to reflect actual implementation from Tasks 1-18: monorepo structure, pipeline architecture, performance characteristics from bench harness, API examples from Task 21 public API.",
+            "status": "pending",
+            "testStrategy": "Validate README accuracy against actual package structure and API signatures."
           }
         ]
       },
@@ -4354,7 +4398,7 @@
       ],
       "created": "2025-10-13T11:26:34.120Z",
       "description": "Tasks for feature-simplification context",
-      "updated": "2025-10-13T20:49:57.267Z"
+      "updated": "2025-10-13T20:54:25.647Z"
     }
   }
 }
