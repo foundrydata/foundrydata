@@ -96,3 +96,13 @@ defaultFormatRegistry.setInitializer(() => {
     new DateTimeGenerator(),
   ]);
 });
+
+// AJV utilities (Task 2)
+export {
+  createSourceAjv,
+  createRepairOnlyValidatorAjv,
+  getAjvClassLabel,
+  extractAjvFlags,
+} from './util/ajv-source';
+export { createPlanningAjv, clonePlanningAjvWith } from './util/ajv-planning';
+export { checkAjvStartupParity, AjvFlagsMismatchError } from './util/ajv-gate';
