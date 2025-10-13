@@ -3643,7 +3643,7 @@
           "9119",
           "9101"
         ],
-        "status": "pending",
+        "status": "done",
         "complexityScore": 3,
         "details": "[Context] §19 envelope & payloads; §15 metrics; §1 acceptance signals.\n- spec://§19#envelope, spec://§19#payloads\n- spec://§15#metrics, spec://§1#acceptance\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§19\",\"anchors\":[\"spec://§19#envelope\",\"spec://§19#payloads\"],\"notes\":\"no-embed; fetch-on-demand\"}\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§15\",\"anchors\":[\"spec://§15#metrics\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Envelope must never duplicate canonPath inside details.\n- Implement metrics fields (normalizeMs..p95LatencyMs) and counters; support verbosity toggle (CI verbose vs runtime normal) without changing shapes.\n[Deliverables]\n- packages/core/src/util/metrics.ts\n- packages/core/src/diag/codes.ts (type tags)\n- packages/core/src/diag/validate.ts (mini-schema assertions for §19.1 where practical)\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench\n[Definition of Done]\n- Diagnostics serialize with correct envelope; metrics accumulate across phases; toggle reduces payload volume but fields exist.",
         "testStrategy": "Unit: envelope guard (no canonPath duplication in details); metrics counters increments; snapshot tests for verbosity modes.",
@@ -3651,7 +3651,7 @@
           {
             "id": 6001,
             "title": "Metrics utility",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 8,
             "file": "packages/core/src/util/metrics.ts",
             "parentId": "undefined"
@@ -3659,7 +3659,7 @@
           {
             "id": 6002,
             "title": "Diagnostics code schema helpers",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/diag/codes.ts",
             "parentId": "undefined"
@@ -3667,7 +3667,7 @@
           {
             "id": 6003,
             "title": "Diagnostics validator (payload spot-checks)",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/diag/validate.ts",
             "parentId": "undefined"
@@ -4338,7 +4338,7 @@
       ],
       "created": "2025-10-13T11:26:34.120Z",
       "description": "Tasks for feature-simplification context",
-      "updated": "2025-10-13T11:40:19.484Z"
+      "updated": "2025-10-13T14:53:55.936Z"
     }
   }
 }
