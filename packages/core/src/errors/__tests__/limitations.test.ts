@@ -6,7 +6,7 @@ import {
   compareVersions,
   enrichErrorWithLimitation,
   CURRENT_VERSION,
-} from '../../errors/limitations';
+} from '../../errors/limitations-deprecated';
 import { ErrorCode } from '../../errors/codes';
 import { FoundryError } from '../../types/errors';
 
