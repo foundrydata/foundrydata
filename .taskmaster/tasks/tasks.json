@@ -3719,17 +3719,18 @@
         "description": "Build effective view, CoverageIndex (has/enumerate), branch selection, early-unsat hints, caps; AP:false must-cover and Strict/Lax behaviors.",
         "status": "pending",
         "dependencies": [
+          "2",
+          "3",
+          "6",
           "7",
           "8000",
           "9000",
-          "9108",
           "9107",
-          "9113",
+          "9108",
           "9111",
-          "9115",
+          "9113",
           "9114",
-          "3",
-          "6"
+          "9115"
         ],
         "priority": "high",
         "details": "[Context] §8 coverage-index-export/enumerate; AP:false must-cover and fail-fast; branch-selection; oneOf exclusivity (Compose side); regex caps; §14 memo keys.\n- spec://§8#coverage-index-export, spec://§8#coverage-index-enumerate, spec://§8#apfalse-must-cover, spec://§8#branch-selection, spec://§8#oneof-exclusivity, spec://§8#regex-complexity-cap\n- spec://§14#planoptionssubkey\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§8\",\"anchors\":[\"spec://§8#coverage-index-export\",\"spec://§8#coverage-index-enumerate\",\"spec://§8#apfalse-must-cover\",\"spec://§8#branch-selection\",\"spec://§8#oneof-exclusivity\",\"spec://§8#regex-complexity-cap\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Export CoverageIndex for every object; enumerate only when provably finite by allowed sources; provenance sorted.\n- Strict fail-fast AP_FALSE_UNSAFE_PATTERN only under presence pressure and only when Safe set is empty; Lax warns.\n- Score-only invariants: always record tiebreakRand (even when |T|=1); budget.skipped=true; limit per Top-K calc.\n- **DEPENDENCY**: Requires normalized schema output from Normalizer (task 7) to build effective view and CoverageIndex.\n[Deliverables]\n- packages/core/src/transform/composition-engine.ts\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench\n[Definition of Done]\n- Deterministic branch selection; CoverageIndex.has/enumerate pure; diagnostics emitted with correct locus; caps limited to compose-time set.",
@@ -3795,15 +3796,16 @@
         "description": "AJV-driven repairs, epsilon logging, AP:false rename guard with CoverageIndex, unevaluated evaluation guard.",
         "status": "pending",
         "dependencies": [
+          "2",
+          "3",
+          "4",
+          "6",
           "8",
           "8000",
           "9000",
-          "9110",
           "9108",
-          "9113",
-          "3",
-          "4",
-          "6"
+          "9110",
+          "9113"
         ],
         "priority": "high",
         "details": "[Context] §10 mapping; epsilon logging; propertyNames rename guard; MUSTCOVER index missing; §9 unevaluated evaluation guard.\n- spec://§10#mapping, spec://§10#epsilon-logging, spec://§10#propertynames-rename-guard, spec://§10#mustcover-index-missing\n- spec://§9#objects-minimal-width (guard interplay) [contextual]\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§10\",\"anchors\":[\"spec://§10#mapping\",\"spec://§10#epsilon-logging\",\"spec://§10#propertynames-rename-guard\",\"spec://§10#mustcover-index-missing\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Log epsilon exactly as \"1e-<decimalPrecision>\" for non-integer nudges; optional delta for integers.\n- Under AP:false + guard true, require ctx.isNameInMustCover(canonPath,n) before rename; else emit MUSTCOVER_INDEX_MISSING{guard:true}.\n- Evaluation guard for additions/renames when unevaluatedProperties:false applies.\n- Integration with Composition Engine's CoverageIndex API for AP:false rename guard implementation.\n[Deliverables]\n- packages/core/src/repair/repair-engine.ts\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test\n[Definition of Done]\n- Repairs idempotent; logs include canonPath and origPath; rename preflight per §10 and diagnostics conform to §19.1.\n- CoverageIndex integration for must-cover property name validation under additionalProperties:false constraints.",
@@ -4002,12 +4004,13 @@
         "priority": "high",
         "estimatedHours": 16,
         "dependencies": [
+          "2",
+          "3",
+          "4",
           "8000",
           "9000",
           "9114",
-          "9115",
-          "3",
-          "4"
+          "9115"
         ],
         "status": "pending",
         "complexityScore": 3,
