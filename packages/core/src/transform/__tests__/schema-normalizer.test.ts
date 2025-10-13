@@ -213,4 +213,109 @@ describe('SchemaNormalizer – propertyNames rewrite', () => {
     expect(note?.canonPath).toBe('');
     expect(note?.details).toEqual({ reason: 'NON_STRING_ENUM_MEMBER' });
   });
+
+  it('records UNEVALUATED_IN_SCOPE when propertyNames rewrite is guarded', () => {
+    const schema = {
+      unevaluatedProperties: false,
+      propertyNames: {
+        enum: ['a'],
+      },
+    };
+
+    const result = normalize(schema);
+
+    expect(result.schema).toEqual({
+      unevaluatedProperties: false,
+      propertyNames: { const: 'a' },
+    });
+    const note = findNote(result, DIAGNOSTIC_CODES.PNAMES_COMPLEX);
+    expect(note).toBeDefined();
+    expect(note?.canonPath).toBe('');
+    expect(note?.details).toEqual({ reason: 'UNEVALUATED_IN_SCOPE' });
+  });
+});
+
+describe('SchemaNormalizer – dependentRequired guards', () => {
+  it('expands dependentRequired into allOf guards when safe', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        foo: { type: 'number' },
+        bar: { type: 'string' },
+      },
+      dependentRequired: {
+        foo: ['bar'],
+      },
+    };
+
+    const result = normalize(schema);
+
+    expect(result.schema).toEqual({
+      type: 'object',
+      properties: {
+        foo: { type: 'number' },
+        bar: { type: 'string' },
+      },
+      dependentRequired: {
+        foo: ['bar'],
+      },
+      allOf: [
+        {
+          anyOf: [
+            {
+              not: {
+                required: ['foo'],
+              },
+            },
+            {
+              required: ['foo', 'bar'],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(result.ptrMap.get('/allOf/0/anyOf/0/not/required')).toBe(
+      '/dependentRequired/foo'
+    );
+    expect(result.ptrMap.get('/allOf/0/anyOf/1/required')).toBe(
+      '/dependentRequired/foo'
+    );
+    const note = findNote(result, DIAGNOSTIC_CODES.DEPENDENCY_GUARDED);
+    expect(note).toBeUndefined();
+  });
+
+  it('skips dependentRequired rewrite under unevaluated guard', () => {
+    const schema = {
+      unevaluatedProperties: false,
+      dependentRequired: {
+        foo: ['bar'],
+      },
+    };
+
+    const result = normalize(schema);
+
+    expect(result.schema).toEqual(schema);
+    const note = findNote(result, DIAGNOSTIC_CODES.DEPENDENCY_GUARDED);
+    expect(note).toBeDefined();
+    expect(note?.canonPath).toBe('');
+    expect(note?.details).toEqual({ reason: 'UNEVALUATED_IN_SCOPE' });
+  });
+});
+
+describe('SchemaNormalizer – dynamic keywords', () => {
+  it('emits DYNAMIC_PRESENT when dynamic references are present', () => {
+    const schema = {
+      $dynamicRef: '#foo',
+      $ref: '#/defs/foo',
+      $dynamicAnchor: 'foo',
+    };
+
+    const result = normalize(schema);
+
+    expect(result.schema).toEqual(schema);
+    const note = findNote(result, DIAGNOSTIC_CODES.DYNAMIC_PRESENT);
+    expect(note).toBeDefined();
+    expect(note?.canonPath).toBe('');
+  });
 });

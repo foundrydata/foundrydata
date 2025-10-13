@@ -24,6 +24,12 @@ const CONDITIONAL_BLOCKING_KEYWORDS = new Set([
   'dependentRequired',
 ]);
 
+const DYNAMIC_KEYWORDS = new Set([
+  '$dynamicRef',
+  '$dynamicAnchor',
+  '$recursiveRef',
+]);
+
 interface CanonNodeBase {
   origin: string;
 }
@@ -106,10 +112,15 @@ class SchemaNormalizer {
         unevaluatedItems: false,
       });
     }
+    this.root = this.applyDependencyGuards(this.root, '', {
+      unevaluatedProps: false,
+      unevaluatedItems: false,
+    });
     this.root = this.applyPropertyNamesRewrite(this.root, '', {
       unevaluatedProps: false,
       unevaluatedItems: false,
     });
+    this.annotateDynamicPresence(this.root, '');
     return this.finalize();
   }
 
@@ -502,6 +513,184 @@ class SchemaNormalizer {
     );
   }
 
+  private applyDependencyGuards(
+    node: CanonNode,
+    pointer: string,
+    ctx: GuardContext
+  ): CanonNode {
+    if (node.kind === 'array') {
+      const items = node.items.map((item, index) =>
+        this.applyDependencyGuards(item, buildIndexPointer(pointer, index), ctx)
+      );
+      return createArrayNode(items, node.origin);
+    }
+
+    if (node.kind !== 'object') {
+      return node;
+    }
+
+    const guardFlags = this.gatherGuardFlags(node);
+    const mergedCtx = this.mergeGuardContext(ctx, guardFlags);
+
+    const processedEntries: ObjectEntries = [];
+    let dependentRequiredIndex = -1;
+    let dependentNode: CanonNode | undefined;
+
+    for (const entry of node.entries) {
+      const childPointer = buildPropertyPointer(pointer, entry.key);
+      const processedChild = this.applyDependencyGuards(
+        entry.node,
+        childPointer,
+        mergedCtx
+      );
+      processedEntries.push({ key: entry.key, node: processedChild });
+      if (entry.key === 'dependentRequired') {
+        dependentRequiredIndex = processedEntries.length - 1;
+        dependentNode = processedChild;
+      }
+    }
+
+    if (
+      dependentRequiredIndex !== -1 &&
+      dependentNode &&
+      isObjectNode(dependentNode)
+    ) {
+      if (this.isGuardActive(mergedCtx)) {
+        if (dependentNode.entries.length > 0) {
+          this.addNote(pointer, DIAGNOSTIC_CODES.DEPENDENCY_GUARDED, {
+            reason: 'UNEVALUATED_IN_SCOPE',
+          });
+        }
+      } else {
+        const guardNodes = this.buildDependencyGuardNodes(dependentNode);
+        if (guardNodes.length > 0) {
+          const allOfIndex = processedEntries.findIndex(
+            (entry) => entry.key === 'allOf' && isArrayNode(entry.node)
+          );
+          if (allOfIndex !== -1) {
+            const slot = processedEntries[allOfIndex];
+            if (slot && isArrayNode(slot.node)) {
+              const mergedItems = slot.node.items.concat(guardNodes);
+              processedEntries[allOfIndex] = {
+                key: 'allOf',
+                node: createArrayNode(mergedItems, slot.node.origin),
+              };
+            }
+          } else {
+            processedEntries.push({
+              key: 'allOf',
+              node: createArrayNode(guardNodes, dependentNode.origin),
+            });
+          }
+        }
+      }
+    }
+
+    return createObjectNode(processedEntries, node.origin);
+  }
+
+  private buildDependencyGuardNodes(
+    dependentNode: CanonObjectNode
+  ): CanonNode[] {
+    const guards: CanonNode[] = [];
+
+    for (const entry of dependentNode.entries) {
+      const depKey = entry.key;
+      const depNode = entry.node;
+      if (!isArrayNode(depNode)) continue;
+
+      const depValues = this.getStringArray(depNode);
+      if (!depValues) continue;
+
+      const seen = new Set<string>();
+      const uniqueDeps: string[] = [];
+      for (const value of depValues) {
+        if (!seen.has(value)) {
+          seen.add(value);
+          uniqueDeps.push(value);
+        }
+      }
+
+      const existingByValue = new Map<string, CanonValueNode>();
+      for (const item of depNode.items) {
+        if (isValueNode(item) && typeof item.value === 'string') {
+          if (!existingByValue.has(item.value)) {
+            existingByValue.set(item.value, item);
+          }
+        }
+      }
+
+      const requiredItems: CanonNode[] = [
+        createValueNode(depKey, entry.node.origin),
+      ];
+      for (const dep of uniqueDeps) {
+        if (dep === depKey) continue;
+        const existing = existingByValue.get(dep);
+        if (existing) {
+          requiredItems.push(cloneCanonNode(existing));
+        } else {
+          requiredItems.push(createValueNode(dep, entry.node.origin));
+        }
+      }
+
+      if (requiredItems.length === 1) {
+        continue;
+      }
+
+      const notRequiredArray = createArrayNode(
+        [createValueNode(depKey, entry.node.origin)],
+        entry.node.origin
+      );
+      const notRequiredObject = createObjectNode(
+        [
+          {
+            key: 'required',
+            node: notRequiredArray,
+          },
+        ],
+        entry.node.origin
+      );
+      const notContainer = createObjectNode(
+        [
+          {
+            key: 'not',
+            node: notRequiredObject,
+          },
+        ],
+        entry.node.origin
+      );
+
+      const requiredArray = createArrayNode(requiredItems, entry.node.origin);
+      const requiredObject = createObjectNode(
+        [
+          {
+            key: 'required',
+            node: requiredArray,
+          },
+        ],
+        entry.node.origin
+      );
+
+      const anyOfNode = createArrayNode(
+        [notContainer, requiredObject],
+        entry.node.origin
+      );
+      const guardObject = createObjectNode(
+        [
+          {
+            key: 'anyOf',
+            node: anyOfNode,
+          },
+        ],
+        entry.node.origin
+      );
+
+      guards.push(guardObject);
+    }
+
+    return guards;
+  }
+
   private applyPropertyNamesRewrite(
     node: CanonNode,
     pointer: string,
@@ -582,7 +771,7 @@ class SchemaNormalizer {
     const objectPointer = pointer;
 
     if (this.isGuardActive(mergedCtx)) {
-      this.recordPnamesComplex(objectPointer, 'UNEVALUATED_GUARD');
+      this.recordPnamesComplex(objectPointer, 'UNEVALUATED_IN_SCOPE');
       return createObjectNode(
         entrySlots.map((slot) => ({
           key: slot.key,
@@ -801,6 +990,32 @@ class SchemaNormalizer {
       })),
       node.origin
     );
+  }
+
+  private annotateDynamicPresence(node: CanonNode, pointer: string): void {
+    if (node.kind === 'array') {
+      node.items.forEach((item, index) =>
+        this.annotateDynamicPresence(item, buildIndexPointer(pointer, index))
+      );
+      return;
+    }
+
+    if (node.kind !== 'object') {
+      return;
+    }
+
+    let hasDynamic = false;
+    for (const entry of node.entries) {
+      if (DYNAMIC_KEYWORDS.has(entry.key)) {
+        hasDynamic = true;
+      }
+      const childPointer = buildPropertyPointer(pointer, entry.key);
+      this.annotateDynamicPresence(entry.node, childPointer);
+    }
+
+    if (hasDynamic) {
+      this.addNote(pointer, DIAGNOSTIC_CODES.DYNAMIC_PRESENT);
+    }
   }
 
   private unifyDraftKeywords(node: CanonObjectNode, pointer: string): void {
