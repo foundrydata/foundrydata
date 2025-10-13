@@ -52,6 +52,8 @@ export interface TrialsOptions {
 export interface GuardsOptions {
   /** Maximum NOT nesting depth allowed during normalization (default: 2) */
   maxGeneratedNotNesting?: number;
+  /** Maximum upward hops allowed when binding $dynamicRef scopes (default: 2) */
+  maxDynamicScopeHops?: number;
 }
 
 /**
@@ -211,6 +213,7 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
 
   guards: {
     maxGeneratedNotNesting: 2,
+    maxDynamicScopeHops: 2,
   },
 
   cache: {
@@ -348,6 +351,9 @@ function validateOptions(options: ResolvedOptions): void {
   // Validate guards options
   if (options.guards.maxGeneratedNotNesting < 0) {
     throw new Error('guards.maxGeneratedNotNesting must be non-negative');
+  }
+  if (options.guards.maxDynamicScopeHops <= 0) {
+    throw new Error('guards.maxDynamicScopeHops must be positive');
   }
 
   // Validate cache options
