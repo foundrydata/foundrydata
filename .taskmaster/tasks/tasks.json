@@ -3571,8 +3571,7 @@
         "id": 4,
         "title": "Structural hashing & stable-hash",
         "description": "Implement structural hashing for uniqueItems and stable schema hashing for cache.",
-        "priority": "medium",
-        "estimatedHours": 16,
+        "status": "pending",
         "dependencies": [
           "8000",
           "9000",
@@ -3580,26 +3579,27 @@
           "9114",
           "9124"
         ],
-        "status": "pending",
-        "complexityScore": 3,
-        "details": "[Context] §10 structural hashing; §14 stable-hash.\n- spec://§10#structural-hashing\n- spec://§14#stable-hash\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§10\",\"anchors\":[\"spec://§10#structural-hashing\"],\"notes\":\"no-embed; fetch-on-demand\"}\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§14\",\"anchors\":[\"spec://§14#stable-hash\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- SHA-256 over canonical JSON (sorted keys, arrays in order, -0→0, BigInt stringified); confirm collisions with deepEqual.\n[Deliverables]\n- packages/core/src/util/struct-hash.ts\n- packages/core/src/util/stable-hash.ts\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench\n[Definition of Done]\n- uniqueItems de-dupe via hash+confirm; stableHash returns deterministic digest; tests cover -0 normalization.",
-        "testStrategy": "Unit: hashing determinism; collision buckets with deepEqual confirmation; array/object ordering tests.",
+        "priority": "high",
+        "details": "[Context] §10 structural hashing; §14 stable-hash.\n- spec://§10#structural-hashing\n- spec://§14#stable-hash\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§10\",\"anchors\":[\"spec://§10#structural-hashing\"],\"notes\":\"no-embed; fetch-on-demand\"}\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§14\",\"anchors\":[\"spec://§14#stable-hash\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- SHA-256 over canonical JSON (sorted keys, arrays in order, -0→0, BigInt stringified); confirm collisions with deepEqual.\n[Critical Path]\n- HIGH PRIORITY: This task blocks Task 8 (Composition Engine), Task 10 (Repair Engine), and Task 11 (Pipeline Orchestrator)\n- Structural hashing is required for uniqueItems deduplication in the Repair Engine\n- Stable-hash is required for the cache system in the Composition Engine\n- Current array-generator.ts uses JSON.stringify for uniqueItems (lines 364, 603-607) - needs replacement with structural hash\n- CacheOptions in types/options.ts references hash-based caching (line 68) - needs stable-hash implementation\n[Implementation Context]\n- packages/core/src/generator/types/array-generator.ts currently implements uniqueItems using JSON.stringify\n- packages/core/src/types/options.ts defines CacheOptions with hashIfBytesLt setting\n- No repair engine or composition engine directories exist yet - this task must complete before they can be implemented\n[Deliverables]\n- packages/core/src/util/struct-hash.ts\n- packages/core/src/util/stable-hash.ts\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench\n[Definition of Done]\n- uniqueItems de-dupe via hash+confirm; stableHash returns deterministic digest; tests cover -0 normalization.",
+        "testStrategy": "Unit: hashing determinism; collision buckets with deepEqual confirmation; array/object ordering tests. Integration: replace JSON.stringify usage in array-generator.ts with structural hashing; verify cache system can use stable-hash for schema keys.",
         "subtasks": [
           {
-            "id": 4001,
+            "id": 1,
             "title": "Structural hash for instances",
+            "description": "Implement structural hashing utility for JavaScript values used in uniqueItems deduplication",
+            "dependencies": [],
+            "details": "Create packages/core/src/util/struct-hash.ts with SHA-256 based structural hashing for JavaScript values. Must handle canonical JSON normalization (sorted keys, arrays in order, -0→0, BigInt stringified). Include collision detection with deepEqual confirmation. Replace JSON.stringify usage in array-generator.ts lines 364, 603-607 with this implementation.",
             "status": "pending",
-            "estimatedHours": 8,
-            "file": "packages/core/src/util/struct-hash.ts",
-            "parentId": "undefined"
+            "testStrategy": "Unit tests for deterministic hashing, collision handling, edge cases with -0, BigInt, deep objects/arrays"
           },
           {
-            "id": 4002,
+            "id": 2,
             "title": "Stable hash for schema",
+            "description": "Implement stable schema hashing for cache system used by Composition Engine",
+            "dependencies": [],
+            "details": "Create packages/core/src/util/stable-hash.ts for deterministic schema digest generation. Must integrate with CacheOptions.hashIfBytesLt setting in types/options.ts. Provide consistent hashing for schema objects to enable efficient caching in the composition engine pipeline stage.",
             "status": "pending",
-            "estimatedHours": 8,
-            "file": "packages/core/src/util/stable-hash.ts",
-            "parentId": "undefined"
+            "testStrategy": "Unit tests for schema hashing consistency, deterministic output across runs, integration with cache options"
           }
         ]
       },
