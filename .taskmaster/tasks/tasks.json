@@ -2352,7 +2352,7 @@
   "feature-simplification": {
     "tasks": [
       {
-        "id": 8000,
+        "id": "8000",
         "title": "AGENT — Operating mode for Claude Code",
         "description": "Execution discipline and guardrails for building from SPEC via anchors only.",
         "priority": "medium",
@@ -2368,12 +2368,13 @@
             "title": "Author AGENT runbook (execution order, guardrails, DoD)",
             "status": "done",
             "estimatedHours": 0,
-            "file": "docs/AGENT_RUNBOOK.md"
+            "file": "docs/AGENT_RUNBOOK.md",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9000,
+        "id": "9000",
         "title": "SPEC — Canonical Source (header & metadata)",
         "description": "Reference-only: section §0.",
         "priority": "low",
@@ -2389,25 +2390,27 @@
             "title": "Index anchor — status",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§0#status"
+            "file": "spec://§0#status",
+            "parentId": "undefined"
           },
           {
             "id": 9000002,
             "title": "Index anchor — audience",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§0#audience"
+            "file": "spec://§0#audience",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9050,
+        "id": "9050",
         "title": "SPEC — Maintenance / Evolution",
         "description": "Reference-only: section §24.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -2419,25 +2422,27 @@
             "title": "Index anchor — normative references",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§24#normative"
+            "file": "spec://§24#normative",
+            "parentId": "undefined"
           },
           {
             "id": 9050002,
             "title": "Index anchor — reference alignment",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§24#alignment"
+            "file": "spec://§24#alignment",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9100,
+        "id": "9100",
         "title": "Terminology (preamble — quick ref)",
         "description": "Reference-only: section §0.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -2449,25 +2454,27 @@
             "title": "Index anchor — terminology",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§0#terminology"
+            "file": "spec://§0#terminology",
+            "parentId": "undefined"
           },
           {
             "id": 9100002,
             "title": "Index anchor — definitions",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§0#definitions"
+            "file": "spec://§0#definitions",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9101,
+        "id": "9101",
         "title": "§1 Goal",
         "description": "Reference-only: section §1.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -2479,39 +2486,43 @@
             "title": "Index anchor — goal",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§1#goal"
+            "file": "spec://§1#goal",
+            "parentId": "undefined"
           },
           {
             "id": 9101002,
             "title": "Index anchor — acceptance",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§1#acceptance"
+            "file": "spec://§1#acceptance",
+            "parentId": "undefined"
           },
           {
             "id": 9101003,
             "title": "Index anchor — bench SLI gate",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§1#bench-sli-gate"
+            "file": "spec://§1#bench-sli-gate",
+            "parentId": "undefined"
           },
           {
             "id": 9101004,
             "title": "Index anchor — config gate",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§1#config-gate"
+            "file": "spec://§1#config-gate",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9102,
+        "id": "9102",
         "title": "§2 Scope",
         "description": "Reference-only: section §2.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -2523,39 +2534,43 @@
             "title": "Index anchor — in-scope",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§2#in-scope"
+            "file": "spec://§2#in-scope",
+            "parentId": "undefined"
           },
           {
             "id": 9102002,
             "title": "Index anchor — non-goals",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§2#non-goals"
+            "file": "spec://§2#non-goals",
+            "parentId": "undefined"
           },
           {
             "id": 9102003,
             "title": "Index anchor — environment & drafts",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§2#environment"
+            "file": "spec://§2#environment",
+            "parentId": "undefined"
           },
           {
             "id": 9102004,
             "title": "Index anchor — modes",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§2#modes"
+            "file": "spec://§2#modes",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9103,
+        "id": "9103",
         "title": "§3 Principles & Invariants",
         "description": "Reference-only: section §3.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -2567,32 +2582,35 @@
             "title": "Index anchor — core principles",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§3#core-principles"
+            "file": "spec://§3#core-principles",
+            "parentId": "undefined"
           },
           {
             "id": 9103002,
             "title": "Index anchor — invariants",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§3#invariants"
+            "file": "spec://§3#invariants",
+            "parentId": "undefined"
           },
           {
             "id": 9103003,
             "title": "Index anchor — AP:false unsafe-pattern policy",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§3#apfalse-unsafe-pattern-policy"
+            "file": "spec://§3#apfalse-unsafe-pattern-policy",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9104,
+        "id": "9104",
         "title": "§4 Operational guidance",
         "description": "Reference-only: section §4.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -2604,32 +2622,35 @@
             "title": "Index anchor — pipeline",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§4#pipeline"
+            "file": "spec://§4#pipeline",
+            "parentId": "undefined"
           },
           {
             "id": 9104002,
             "title": "Index anchor — observability",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§4#observability"
+            "file": "spec://§4#observability",
+            "parentId": "undefined"
           },
           {
             "id": 9104003,
             "title": "Index anchor — fail-early",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§4#fail-early"
+            "file": "spec://§4#fail-early",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9105,
+        "id": "9105",
         "title": "§5 Configuration Overview",
         "description": "Reference-only: section §5.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -2641,32 +2662,35 @@
             "title": "Index anchor — options table",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§5#options-table"
+            "file": "spec://§5#options-table",
+            "parentId": "undefined"
           },
           {
             "id": 9105002,
             "title": "Index anchor — pattern witness options",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§5#pattern-witness"
+            "file": "spec://§5#pattern-witness",
+            "parentId": "undefined"
           },
           {
             "id": 9105003,
             "title": "Index anchor — precedence & compatibility",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§5#precedence"
+            "file": "spec://§5#precedence",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9106,
+        "id": "9106",
         "title": "§6 High-Level Architecture",
         "description": "Reference-only: section §6.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -2678,18 +2702,19 @@
             "title": "Index anchor — phases",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§6#phases"
+            "file": "spec://§6#phases",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9107,
+        "id": "9107",
         "title": "§7 Schema Normalizer (Canonicalization)",
         "description": "Reference-only: section §7.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -2701,39 +2726,43 @@
             "title": "Index anchor — propertyNames rewrite",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§7#object-keywords-pnames-rewrite"
+            "file": "spec://§7#object-keywords-pnames-rewrite",
+            "parentId": "undefined"
           },
           {
             "id": 9107002,
             "title": "Index anchor — conditionals rewrite",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§7#conditionals-rewrite"
+            "file": "spec://§7#conditionals-rewrite",
+            "parentId": "undefined"
           },
           {
             "id": 9107003,
             "title": "Index anchor — pass order",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§7#pass-order"
+            "file": "spec://§7#pass-order",
+            "parentId": "undefined"
           },
           {
             "id": 9107004,
             "title": "Index anchor — normalizer note codes",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§7#note-codes"
+            "file": "spec://§7#note-codes",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9108,
+        "id": "9108",
         "title": "§8 Composition Engine",
         "description": "Reference-only: section §8.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -2745,60 +2774,67 @@
             "title": "Index anchor — Coverage Index export",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§8#coverage-index-export"
+            "file": "spec://§8#coverage-index-export",
+            "parentId": "undefined"
           },
           {
             "id": 9108002,
             "title": "Index anchor — enumerate order",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§8#coverage-index-enumerate"
+            "file": "spec://§8#coverage-index-enumerate",
+            "parentId": "undefined"
           },
           {
             "id": 9108003,
             "title": "Index anchor — branch selection",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§8#branch-selection"
+            "file": "spec://§8#branch-selection",
+            "parentId": "undefined"
           },
           {
             "id": 9108004,
             "title": "Index anchor — oneOf exclusivity",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§8#oneof-exclusivity"
+            "file": "spec://§8#oneof-exclusivity",
+            "parentId": "undefined"
           },
           {
             "id": 9108005,
             "title": "Index anchor — anchored-safe definition",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§8#anchored-safe-definition"
+            "file": "spec://§8#anchored-safe-definition",
+            "parentId": "undefined"
           },
           {
             "id": 9108006,
             "title": "Index anchor — regex complexity cap",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§8#regex-complexity-cap"
+            "file": "spec://§8#regex-complexity-cap",
+            "parentId": "undefined"
           },
           {
             "id": 9108007,
             "title": "Index anchor — AP:false must-cover",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§8#apfalse-must-cover"
+            "file": "spec://§8#apfalse-must-cover",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9109,
+        "id": "9109",
         "title": "§9 Generator",
         "description": "Reference-only: section §9.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -2810,32 +2846,35 @@
             "title": "Index anchor — if-aware-lite",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§9#if-aware-lite"
+            "file": "spec://§9#if-aware-lite",
+            "parentId": "undefined"
           },
           {
             "id": 9109002,
             "title": "Index anchor — pattern witness selection",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§9#pattern-witness-selection"
+            "file": "spec://§9#pattern-witness-selection",
+            "parentId": "undefined"
           },
           {
             "id": 9109003,
             "title": "Index anchor — arrays contains (bag)",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§9#arrays-contains"
+            "file": "spec://§9#arrays-contains",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9110,
+        "id": "9110",
         "title": "§10 Repair Engine (AJV-Driven)",
         "description": "Reference-only: section §10.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -2847,53 +2886,59 @@
             "title": "Index anchor — mapping",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§10#mapping"
+            "file": "spec://§10#mapping",
+            "parentId": "undefined"
           },
           {
             "id": 9110002,
             "title": "Index anchor — propertyNames rename guard",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§10#propertynames-rename-guard"
+            "file": "spec://§10#propertynames-rename-guard",
+            "parentId": "undefined"
           },
           {
             "id": 9110003,
             "title": "Index anchor — structural hashing",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§10#structural-hashing"
+            "file": "spec://§10#structural-hashing",
+            "parentId": "undefined"
           },
           {
             "id": 9110004,
             "title": "Index anchor — epsilon logging",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§10#epsilon-logging"
+            "file": "spec://§10#epsilon-logging",
+            "parentId": "undefined"
           },
           {
             "id": 9110005,
             "title": "Index anchor — property order",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§10#property-order"
+            "file": "spec://§10#property-order",
+            "parentId": "undefined"
           },
           {
             "id": 9110006,
             "title": "Index anchor — MUSTCOVER index missing",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§10#mustcover-index-missing"
+            "file": "spec://§10#mustcover-index-missing",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9111,
+        "id": "9111",
         "title": "§11 Modes",
         "description": "Reference-only: section §11.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -2905,18 +2950,19 @@
             "title": "Index anchor — external ref probe (Lax eligibility)",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§11#external-ref-probe"
+            "file": "spec://§11#external-ref-probe",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9112,
+        "id": "9112",
         "title": "§12 Draft Handling",
         "description": "Reference-only: section §12.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -2928,25 +2974,27 @@
             "title": "Index anchor — Ajv class selection",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§12#ajv-class-selection"
+            "file": "spec://§12#ajv-class-selection",
+            "parentId": "undefined"
           },
           {
             "id": 9112002,
             "title": "Index anchor — refs and dynamic refs",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§12#refs-and-dynamic"
+            "file": "spec://§12#refs-and-dynamic",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9113,
+        "id": "9113",
         "title": "§13 AJV Configuration",
         "description": "Reference-only: section §13.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -2958,18 +3006,19 @@
             "title": "Index anchor — startup config check",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§13#startup-config-check"
+            "file": "spec://§13#startup-config-check",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9114,
+        "id": "9114",
         "title": "§14 Cache Strategy",
         "description": "Reference-only: section §14.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -2981,25 +3030,27 @@
             "title": "Index anchor — stable hash",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§14#stable-hash"
+            "file": "spec://§14#stable-hash",
+            "parentId": "undefined"
           },
           {
             "id": 9114002,
             "title": "Index anchor — PlanOptionsSubKey",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§14#planoptionssubkey"
+            "file": "spec://§14#planoptionssubkey",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9115,
+        "id": "9115",
         "title": "§15 Performance, Determinism & Metrics",
         "description": "Reference-only: section §15.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -3011,32 +3062,35 @@
             "title": "Index anchor — RNG",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§15#rng"
+            "file": "spec://§15#rng",
+            "parentId": "undefined"
           },
           {
             "id": 9115002,
             "title": "Index anchor — metrics fields",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§15#metrics"
+            "file": "spec://§15#metrics",
+            "parentId": "undefined"
           },
           {
             "id": 9115003,
             "title": "Index anchor — SLO/SLI gates",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§15#slo-sli"
+            "file": "spec://§15#slo-sli",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9116,
+        "id": "9116",
         "title": "§16 Implementation Plan",
         "description": "Reference-only: section §16.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -3048,39 +3102,43 @@
             "title": "Index anchor — Phase P0",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§16#phase-p0"
+            "file": "spec://§16#phase-p0",
+            "parentId": "undefined"
           },
           {
             "id": 9116002,
             "title": "Index anchor — Acceptance P0",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§16#acceptance-p0"
+            "file": "spec://§16#acceptance-p0",
+            "parentId": "undefined"
           },
           {
             "id": 9116003,
             "title": "Index anchor — Phase P1",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§16#phase-p1"
+            "file": "spec://§16#phase-p1",
+            "parentId": "undefined"
           },
           {
             "id": 9116004,
             "title": "Index anchor — Phase P2",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§16#phase-p2"
+            "file": "spec://§16#phase-p2",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9117,
+        "id": "9117",
         "title": "§17 Documentation Additions",
         "description": "Reference-only: section §17.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -3092,32 +3150,35 @@
             "title": "Index anchor — Invariants doc",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§17#invariants-doc"
+            "file": "spec://§17#invariants-doc",
+            "parentId": "undefined"
           },
           {
             "id": 9117002,
             "title": "Index anchor — Known Limits",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§17#known-limits"
+            "file": "spec://§17#known-limits",
+            "parentId": "undefined"
           },
           {
             "id": 9117003,
             "title": "Index anchor — Features Matrix",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§17#features-matrix"
+            "file": "spec://§17#features-matrix",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9118,
+        "id": "9118",
         "title": "§18 Features Matrix",
         "description": "Reference-only: section §18.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -3129,18 +3190,19 @@
             "title": "Index anchor — Features Matrix",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§18#matrix"
+            "file": "spec://§18#matrix",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9119,
+        "id": "9119",
         "title": "§19 Diagnostics (codes)",
         "description": "Reference-only: section §19.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -3152,32 +3214,35 @@
             "title": "Index anchor — diagnostics envelope",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§19#envelope"
+            "file": "spec://§19#envelope",
+            "parentId": "undefined"
           },
           {
             "id": 9119002,
             "title": "Index anchor — details payloads",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§19#payloads"
+            "file": "spec://§19#payloads",
+            "parentId": "undefined"
           },
           {
             "id": 9119003,
             "title": "Index anchor — phase separation",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§19#phase-separation"
+            "file": "spec://§19#phase-separation",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9120,
+        "id": "9120",
         "title": "§20 Testing Strategy",
         "description": "Reference-only: section §20.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -3189,39 +3254,43 @@
             "title": "Index anchor — unit tests",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§20#unit"
+            "file": "spec://§20#unit",
+            "parentId": "undefined"
           },
           {
             "id": 9120002,
             "title": "Index anchor — integration tests",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§20#integration"
+            "file": "spec://§20#integration",
+            "parentId": "undefined"
           },
           {
             "id": 9120003,
             "title": "Index anchor — bench/CI",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§20#bench-ci"
+            "file": "spec://§20#bench-ci",
+            "parentId": "undefined"
           },
           {
             "id": 9120004,
             "title": "Index anchor — metamorphic/equivalence",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§20#metamorphic"
+            "file": "spec://§20#metamorphic",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9121,
+        "id": "9121",
         "title": "§21 Risks & Mitigations",
         "description": "Reference-only: section §21.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -3233,18 +3302,19 @@
             "title": "Index anchor — mitigations",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§21#mitigations"
+            "file": "spec://§21#mitigations",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9122,
+        "id": "9122",
         "title": "§22 Deliverables (Code)",
         "description": "Reference-only: section §22.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -3256,32 +3326,35 @@
             "title": "Index anchor — packages/core list",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§22#packages-core"
+            "file": "spec://§22#packages-core",
+            "parentId": "undefined"
           },
           {
             "id": 9122002,
             "title": "Index anchor — scripts",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§22#scripts"
+            "file": "spec://§22#scripts",
+            "parentId": "undefined"
           },
           {
             "id": 9122003,
             "title": "Index anchor — docs deliverables",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§22#docs"
+            "file": "spec://§22#docs",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9123,
+        "id": "9123",
         "title": "§23 Appendix — Minimal Interfaces",
         "description": "Reference-only: section §23.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -3293,32 +3366,35 @@
             "title": "Index anchor — PlanOptions",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§23#plan-options"
+            "file": "spec://§23#plan-options",
+            "parentId": "undefined"
           },
           {
             "id": 9123002,
             "title": "Index anchor — compose interfaces",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§23#compose-interfaces"
+            "file": "spec://§23#compose-interfaces",
+            "parentId": "undefined"
           },
           {
             "id": 9123003,
             "title": "Index anchor — repair interfaces",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§23#repair-interfaces"
+            "file": "spec://§23#repair-interfaces",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9124,
+        "id": "9124",
         "title": "§24 Norms & References",
         "description": "Reference-only: section §24.",
         "priority": "low",
         "estimatedHours": 0,
         "dependencies": [
-          9000
+          "9000"
         ],
         "status": "done",
         "complexityScore": 1,
@@ -3330,35 +3406,38 @@
             "title": "Index anchor — normative refs",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§24#normative"
+            "file": "spec://§24#normative",
+            "parentId": "undefined"
           },
           {
             "id": 9124002,
             "title": "Index anchor — informative refs",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§24#informative"
+            "file": "spec://§24#informative",
+            "parentId": "undefined"
           },
           {
             "id": 9124003,
             "title": "Index anchor — alignment table",
             "status": "done",
             "estimatedHours": 0,
-            "file": "spec://§24#alignment"
+            "file": "spec://§24#alignment",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 1,
+        "id": "1",
         "title": "Scaffolding & Monorepo",
         "description": "Initialize monorepo, packages, basic build/test/bench harness, and docs skeleton.",
         "priority": "high",
         "estimatedHours": 16,
         "dependencies": [
-          8000,
-          9000,
-          9106,
-          9122
+          "8000",
+          "9000",
+          "9106",
+          "9122"
         ],
         "status": "done",
         "complexityScore": 3,
@@ -3370,45 +3449,49 @@
             "title": "Create workspace root (pnpm, TS configs)",
             "status": "done",
             "estimatedHours": 2,
-            "file": "package.json"
+            "file": "package.json",
+            "parentId": "undefined"
           },
           {
             "id": 1002,
             "title": "Init core package",
             "status": "done",
             "estimatedHours": 4,
-            "file": "packages/core/package.json"
+            "file": "packages/core/package.json",
+            "parentId": "undefined"
           },
           {
             "id": 1003,
             "title": "Bench harness entry",
             "status": "done",
             "estimatedHours": 4,
-            "file": "scripts/bench.ts"
+            "file": "scripts/bench.ts",
+            "parentId": "undefined"
           },
           {
             "id": 1004,
             "title": "Docs skeleton",
             "status": "done",
             "estimatedHours": 6,
-            "file": "docs/README.md"
+            "file": "docs/README.md",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "Dual AJV & Config Gate",
         "description": "Introduce Source vs Planning AJV instances and enforce startup parity gates.",
         "priority": "high",
         "estimatedHours": 24,
         "dependencies": [
-          8000,
-          9000,
-          9113,
-          9101,
-          9112
+          "8000",
+          "9000",
+          "9113",
+          "9101",
+          "9112"
         ],
-        "status": "pending",
+        "status": "done",
         "complexityScore": 4,
         "details": "[Context] §13 startup-config-check; §12 Ajv class selection; §1 config gate.\n- spec://§13#startup-config-check\n- spec://§12#ajv-class-selection\n- spec://§1#config-gate\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§13\",\"anchors\":[\"spec://§13#startup-config-check\"],\"notes\":\"no-embed; fetch-on-demand\"}\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§12\",\"anchors\":[\"spec://§12#ajv-class-selection\"],\"notes\":\"no-embed; fetch-on-demand\"}\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§1\",\"anchors\":[\"spec://§1#config-gate\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Two AJV instances with identical `unicodeRegExp:true` and `validateFormats` parity.\n- Align `multipleOfPrecision` to PlanOptions.rational.decimalPrecision on both instances.\n- Fail with AJV_FLAGS_MISMATCH and include diffs per §13 when deviations are detected.\n[Deliverables]\n- packages/core/src/util/ajv-source.ts\n- packages/core/src/util/ajv-planning.ts\n- packages/core/src/util/ajv-gate.ts (validation of flags; diagnostic assembly)\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench\n[Definition of Done]\n- Gate refuses mismatched flags/classes; exports include ajvMajor and diff payloads; unit tests cover unicodeRegExp and multipleOfPrecision parity.",
         "testStrategy": "Unit: simulate mismatched flags (e.g., unicodeRegExp:false) → AJV_FLAGS_MISMATCH. Draft mapping to Ajv*/Ajv2020. Integration: successful compile on simple schemas; failure on external $ref remains for modes task.",
@@ -3418,36 +3501,40 @@
             "title": "Source AJV factory",
             "status": "pending",
             "estimatedHours": 6,
-            "file": "packages/core/src/util/ajv-source.ts"
+            "file": "packages/core/src/util/ajv-source.ts",
+            "parentId": "undefined"
           },
           {
             "id": 2002,
             "title": "Planning AJV factory",
             "status": "pending",
             "estimatedHours": 8,
-            "file": "packages/core/src/util/ajv-planning.ts"
+            "file": "packages/core/src/util/ajv-planning.ts",
+            "parentId": "undefined"
           },
           {
             "id": 2003,
             "title": "Startup config checker",
             "status": "pending",
             "estimatedHours": 10,
-            "file": "packages/core/src/util/ajv-gate.ts"
+            "file": "packages/core/src/util/ajv-gate.ts",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2025-10-12T20:00:58.449Z"
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "Utils: RNG, rationals, JSON-safe",
         "description": "Provide deterministic RNG, exact rational helpers with fallbacks, and JSON-safe logging.",
         "priority": "high",
         "estimatedHours": 12,
         "dependencies": [
-          8000,
-          9000,
-          9115,
-          9123,
-          9108
+          "8000",
+          "9000",
+          "9115",
+          "9123",
+          "9108"
         ],
         "status": "pending",
         "complexityScore": 3,
@@ -3459,36 +3546,39 @@
             "title": "Implement RNG (xorshift32 + fnv1a32)",
             "status": "pending",
             "estimatedHours": 4,
-            "file": "packages/core/src/util/rng.ts"
+            "file": "packages/core/src/util/rng.ts",
+            "parentId": "undefined"
           },
           {
             "id": 3002,
             "title": "Implement rational helpers",
             "status": "pending",
             "estimatedHours": 6,
-            "file": "packages/core/src/util/rational.ts"
+            "file": "packages/core/src/util/rational.ts",
+            "parentId": "undefined"
           },
           {
             "id": 3003,
             "title": "JSON-safe replacer",
             "status": "pending",
             "estimatedHours": 2,
-            "file": "packages/core/src/util/json-safe.ts"
+            "file": "packages/core/src/util/json-safe.ts",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 4,
+        "id": "4",
         "title": "Structural hashing & stable-hash",
         "description": "Implement structural hashing for uniqueItems and stable schema hashing for cache.",
         "priority": "medium",
         "estimatedHours": 16,
         "dependencies": [
-          8000,
-          9000,
-          9110,
-          9114,
-          9124
+          "8000",
+          "9000",
+          "9110",
+          "9114",
+          "9124"
         ],
         "status": "pending",
         "complexityScore": 3,
@@ -3500,28 +3590,30 @@
             "title": "Structural hash for instances",
             "status": "pending",
             "estimatedHours": 8,
-            "file": "packages/core/src/util/struct-hash.ts"
+            "file": "packages/core/src/util/struct-hash.ts",
+            "parentId": "undefined"
           },
           {
             "id": 4002,
             "title": "Stable hash for schema",
             "status": "pending",
             "estimatedHours": 8,
-            "file": "packages/core/src/util/stable-hash.ts"
+            "file": "packages/core/src/util/stable-hash.ts",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "PtrMap canon→original",
         "description": "Bidirectional pointer mapping between canonical and original schema pointers.",
         "priority": "medium",
         "estimatedHours": 8,
         "dependencies": [
-          8000,
-          9000,
-          9107,
-          9122
+          "8000",
+          "9000",
+          "9107",
+          "9122"
         ],
         "status": "pending",
         "complexityScore": 2,
@@ -3533,22 +3625,23 @@
             "title": "Pointer maps and reverse walk",
             "status": "pending",
             "estimatedHours": 8,
-            "file": "packages/core/src/util/ptr-map.ts"
+            "file": "packages/core/src/util/ptr-map.ts",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 6,
+        "id": "6",
         "title": "Metrics & diagnostic envelope",
         "description": "Diagnostics envelope `{code, canonPath, details?}`, metrics collection, verbosity toggle.",
         "priority": "high",
         "estimatedHours": 16,
         "dependencies": [
-          8000,
-          9000,
-          9115,
-          9119,
-          9101
+          "8000",
+          "9000",
+          "9115",
+          "9119",
+          "9101"
         ],
         "status": "pending",
         "complexityScore": 3,
@@ -3560,36 +3653,39 @@
             "title": "Metrics utility",
             "status": "pending",
             "estimatedHours": 8,
-            "file": "packages/core/src/util/metrics.ts"
+            "file": "packages/core/src/util/metrics.ts",
+            "parentId": "undefined"
           },
           {
             "id": 6002,
             "title": "Diagnostics code schema helpers",
             "status": "pending",
             "estimatedHours": 4,
-            "file": "packages/core/src/diag/codes.ts"
+            "file": "packages/core/src/diag/codes.ts",
+            "parentId": "undefined"
           },
           {
             "id": 6003,
             "title": "Diagnostics validator (payload spot-checks)",
             "status": "pending",
             "estimatedHours": 4,
-            "file": "packages/core/src/diag/validate.ts"
+            "file": "packages/core/src/diag/validate.ts",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 7,
+        "id": "7",
         "title": "Normalizer",
         "description": "Draft unification, boolean/trivial simplifications with unevaluated guards, conditional rewrite (safe), propertyNames rewrite (P0: enum-only).",
         "priority": "high",
         "estimatedHours": 48,
         "dependencies": [
-          8000,
-          9000,
-          9107,
-          9112,
-          9108
+          "8000",
+          "9000",
+          "9107",
+          "9112",
+          "9108"
         ],
         "status": "pending",
         "complexityScore": 5,
@@ -3601,32 +3697,34 @@
             "title": "Normalizer core (passes, guards, notes)",
             "status": "pending",
             "estimatedHours": 32,
-            "file": "packages/core/src/transform/schema-normalizer.ts"
+            "file": "packages/core/src/transform/schema-normalizer.ts",
+            "parentId": "undefined"
           },
           {
             "id": 7002,
             "title": "Lean JSON Schema parser",
             "status": "pending",
             "estimatedHours": 16,
-            "file": "packages/core/src/parser/json-schema-parser.ts"
+            "file": "packages/core/src/parser/json-schema-parser.ts",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 8,
+        "id": "8",
         "title": "Composition Engine",
         "description": "Build effective view, CoverageIndex (has/enumerate), branch selection, early-unsat hints, caps; AP:false must-cover and Strict/Lax behaviors.",
         "status": "pending",
         "dependencies": [
-          7,
-          8000,
-          9000,
-          9108,
-          9107,
-          9113,
-          9111,
-          9115,
-          9114
+          "7",
+          "8000",
+          "9000",
+          "9108",
+          "9107",
+          "9113",
+          "9111",
+          "9115",
+          "9114"
         ],
         "priority": "high",
         "details": "[Context] §8 coverage-index-export/enumerate; AP:false must-cover and fail-fast; branch-selection; oneOf exclusivity (Compose side); regex caps; §14 memo keys.\n- spec://§8#coverage-index-export, spec://§8#coverage-index-enumerate, spec://§8#apfalse-must-cover, spec://§8#branch-selection, spec://§8#oneof-exclusivity, spec://§8#regex-complexity-cap\n- spec://§14#planoptionssubkey\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§8\",\"anchors\":[\"spec://§8#coverage-index-export\",\"spec://§8#coverage-index-enumerate\",\"spec://§8#apfalse-must-cover\",\"spec://§8#branch-selection\",\"spec://§8#oneof-exclusivity\",\"spec://§8#regex-complexity-cap\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Export CoverageIndex for every object; enumerate only when provably finite by allowed sources; provenance sorted.\n- Strict fail-fast AP_FALSE_UNSAFE_PATTERN only under presence pressure and only when Safe set is empty; Lax warns.\n- Score-only invariants: always record tiebreakRand (even when |T|=1); budget.skipped=true; limit per Top-K calc.\n- **DEPENDENCY**: Requires normalized schema output from Normalizer (task 7) to build effective view and CoverageIndex.\n[Deliverables]\n- packages/core/src/transform/composition-engine.ts\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench\n[Definition of Done]\n- Deterministic branch selection; CoverageIndex.has/enumerate pure; diagnostics emitted with correct locus; caps limited to compose-time set.",
@@ -3639,7 +3737,8 @@
             "dependencies": [],
             "details": "Build the core effective view computation that processes normalized schemas from the Normalizer (task 7). Implement CoverageIndex class with has() and enumerate() methods, ensuring enumerate only operates on provably finite sources. Handle AP:false must-cover requirements with Safe/Unsafe pattern detection. Export CoverageIndex for every object schema processed.",
             "status": "pending",
-            "testStrategy": "Unit tests for CoverageIndex.has/enumerate purity, effective view computation correctness, and finite source validation"
+            "testStrategy": "Unit tests for CoverageIndex.has/enumerate purity, effective view computation correctness, and finite source validation",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -3648,23 +3747,24 @@
             "dependencies": [],
             "details": "Implement branch selection algorithm with deterministic tiebreakRand recording (even for |T|=1 cases). Handle Strict vs Lax behaviors for AP_FALSE_UNSAFE_PATTERN routing. Implement early-unsat hints generation and diagnostic emission with correct locus information. Ensure memo keys include PlanOptionsSubKey for proper caching.",
             "status": "pending",
-            "testStrategy": "Unit tests for deterministic branch selection, tiebreakRand presence, Strict/Lax routing behavior, and diagnostic locus accuracy"
+            "testStrategy": "Unit tests for deterministic branch selection, tiebreakRand presence, Strict/Lax routing behavior, and diagnostic locus accuracy",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9,
+        "id": "9",
         "title": "Generator",
         "description": "Foundry generator honoring effective view, pattern witness, minimal width/length, if-aware-lite.",
         "status": "pending",
         "dependencies": [
-          8,
-          8000,
-          9000,
-          9109,
-          9108,
-          9113,
-          9115
+          "8",
+          "8000",
+          "9000",
+          "9109",
+          "9108",
+          "9113",
+          "9115"
         ],
         "priority": "high",
         "details": "[Context] §9 generator, if-aware-lite, pattern-witness-selection; arrays contains; §8 oneOf exclusivity (later step logs exclusivityRand in Repair phase). Requires dependency on task 8 (Composition Engine) to access effective view and CoverageIndex from the Composition Engine for generating data that honors schema constraints.\n- spec://§9#if-aware-lite, spec://§9#pattern-witness-selection, spec://§9#arrays-contains\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§9\",\"anchors\":[\"spec://§9#if-aware-lite\",\"spec://§9#pattern-witness-selection\",\"spec://§9#arrays-contains\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Pattern witness bounded search; emit COMPLEXITY_CAP_PATTERNS when capped; Unicode code point length.\n- Minimal-width objects with must-cover + unevaluated guards.\n- Access to effective view and CoverageIndex from Composition Engine (task 8) for constraint-aware generation.\n[Deliverables]\n- packages/core/src/generator/foundry-generator.ts\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench\n[Definition of Done]\n- Deterministic outputs for fixed (seed, options); metrics.patternWitnessTried increments when enabled.\n- Integration with Composition Engine outputs for effective schema processing.",
@@ -3677,22 +3777,23 @@
             "dependencies": [],
             "details": "Implement the foundry generator that consumes the effective view and CoverageIndex from the Composition Engine to generate schema-compliant data. Must honor pattern witness selection, minimal width/length constraints, and if-aware-lite processing.",
             "status": "pending",
-            "testStrategy": "Unit tests for core generation logic with deterministic seed handling"
+            "testStrategy": "Unit tests for core generation logic with deterministic seed handling",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 10,
+        "id": "10",
         "title": "Repair Engine",
         "description": "AJV-driven repairs, epsilon logging, AP:false rename guard with CoverageIndex, unevaluated evaluation guard.",
         "status": "pending",
         "dependencies": [
-          8,
-          8000,
-          9000,
-          9110,
-          9108,
-          9113
+          "8",
+          "8000",
+          "9000",
+          "9110",
+          "9108",
+          "9113"
         ],
         "priority": "high",
         "details": "[Context] §10 mapping; epsilon logging; propertyNames rename guard; MUSTCOVER index missing; §9 unevaluated evaluation guard.\n- spec://§10#mapping, spec://§10#epsilon-logging, spec://§10#propertynames-rename-guard, spec://§10#mustcover-index-missing\n- spec://§9#objects-minimal-width (guard interplay) [contextual]\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§10\",\"anchors\":[\"spec://§10#mapping\",\"spec://§10#epsilon-logging\",\"spec://§10#propertynames-rename-guard\",\"spec://§10#mustcover-index-missing\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Log epsilon exactly as \"1e-<decimalPrecision>\" for non-integer nudges; optional delta for integers.\n- Under AP:false + guard true, require ctx.isNameInMustCover(canonPath,n) before rename; else emit MUSTCOVER_INDEX_MISSING{guard:true}.\n- Evaluation guard for additions/renames when unevaluatedProperties:false applies.\n- Integration with Composition Engine's CoverageIndex API for AP:false rename guard implementation.\n[Deliverables]\n- packages/core/src/repair/repair-engine.ts\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test\n[Definition of Done]\n- Repairs idempotent; logs include canonPath and origPath; rename preflight per §10 and diagnostics conform to §19.1.\n- CoverageIndex integration for must-cover property name validation under additionalProperties:false constraints.",
@@ -3705,27 +3806,28 @@
             "dependencies": [],
             "details": "Create repair-engine.ts with AJV-driven repair logic, epsilon logging, and integration with Composition Engine's CoverageIndex for property name validation under additionalProperties:false constraints. Must implement ctx.isNameInMustCover binding and MUSTCOVER_INDEX_MISSING diagnostic emission.",
             "status": "pending",
-            "testStrategy": "Unit tests for repair actions, epsilon logging, CoverageIndex integration, and guard validation."
+            "testStrategy": "Unit tests for repair actions, epsilon logging, CoverageIndex integration, and guard validation.",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 11,
+        "id": "11",
         "title": "Pipeline Orchestrator",
         "description": "Wire Normalize → Compose → Generate → Repair → Validate; pass metrics and diagnostics through.",
         "status": "pending",
         "dependencies": [
-          2,
-          7,
-          8,
-          9,
-          10,
-          8000,
-          9000,
-          9106,
-          9101,
-          9113,
-          9115
+          "2",
+          "7",
+          "8",
+          "9",
+          "10",
+          "8000",
+          "9000",
+          "9106",
+          "9101",
+          "9113",
+          "9115"
         ],
         "priority": "high",
         "details": "[Context] §4 pipeline; §6 phases; §1 acceptance; §15 metrics.\n- spec://§4#pipeline, spec://§6#phases, spec://§1#acceptance, spec://§15#metrics\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§4\",\"anchors\":[\"spec://§4#pipeline\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Final AJV validate against original; support Lax/Strict behaviors routed by Modes task.\n- Wire together Normalize → Compose → Generate → Repair → Validate stages from dependency tasks.\n- Integrate with existing FoundryGenerator structure in packages/core/src/generator/foundry-generator.ts\n- Preserve existing PipelineStage enum and metrics collection patterns\n[Deliverables]\n- packages/core/src/index.ts (main orchestrator entry point)\n- Enhanced packages/core/src/generator/foundry-generator.ts with new pipeline stages\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench\n[Definition of Done]\n- End-to-end run returns diagnostics+metrics and valid instances on simple cases; errors propagate with correct codes.\n- All five pipeline stages (Normalize, Compose, Generate, Repair, Validate) are wired together\n- Integration with task 2 (Dual AJV), task 7 (Normalizer), task 8 (Composition Engine), task 9 (Generator), and task 10 (Repair Engine)",
@@ -3738,7 +3840,8 @@
             "dependencies": [],
             "details": "Implement the high-level orchestrator function that coordinates Normalize → Compose → Generate → Repair → Validate stages. This should integrate with the existing FoundryGenerator structure and maintain compatibility with current PipelineStage enum and metrics collection patterns. The orchestrator should handle stage dependencies, error propagation, and metrics aggregation across all pipeline stages.",
             "status": "pending",
-            "testStrategy": "Unit test for pipeline coordination logic, integration test for end-to-end execution with metrics collection"
+            "testStrategy": "Unit test for pipeline coordination logic, integration test for end-to-end execution with metrics collection",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -3749,7 +3852,8 @@
             ],
             "details": "Integrate the Normalizer from task 7 as the first stage in the pipeline. Handle draft unification, boolean/trivial simplifications, conditional rewrite options, and propertyNames rewrite. Ensure proper error handling and metrics collection for the normalization stage.",
             "status": "pending",
-            "testStrategy": "Test normalization stage integration with various schema types and conditional rewrite scenarios"
+            "testStrategy": "Test normalization stage integration with various schema types and conditional rewrite scenarios",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -3760,7 +3864,8 @@
             ],
             "details": "Integrate the Composition Engine from task 8 as the second stage in the pipeline. Handle effective view building, must-cover additionalProperties:false, bag contains semantics, and rational multipleOf calculations. Ensure proper data flow from Normalizer to Composition stage.",
             "status": "pending",
-            "testStrategy": "Test composition stage integration with complex object patterns and array constraints"
+            "testStrategy": "Test composition stage integration with complex object patterns and array constraints",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -3771,7 +3876,8 @@
             ],
             "details": "Integrate the Generator from task 9 as the third stage in the pipeline. Handle deterministic seeded generation, enum/const precedence, and if-aware-lite generation. Maintain compatibility with existing generator structure in foundry-generator.ts.",
             "status": "pending",
-            "testStrategy": "Test generator stage integration with deterministic output verification and enum precedence handling"
+            "testStrategy": "Test generator stage integration with deterministic output verification and enum precedence handling",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -3782,7 +3888,8 @@
             ],
             "details": "Integrate the Repair Engine from task 10 as the fourth stage in the pipeline. Handle AJV-driven corrections, idempotent repairs, rational snapping, and structural deduplication for uniqueItems. Implement repair budgeting and graceful degradation.",
             "status": "pending",
-            "testStrategy": "Test repair stage integration with various validation failure scenarios and repair budget limits"
+            "testStrategy": "Test repair stage integration with various validation failure scenarios and repair budget limits",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -3793,7 +3900,8 @@
             ],
             "details": "Integrate the Dual AJV system from task 2 as the final validation stage. Ensure validation against original schema, handle Source and Planning AJV instances, and implement proper error reporting with pointer mapping and caching.",
             "status": "pending",
-            "testStrategy": "Test validation stage integration with both Source and Planning AJV instances, verify validation against original schema"
+            "testStrategy": "Test validation stage integration with both Source and Planning AJV instances, verify validation against original schema",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -3804,7 +3912,8 @@
             ],
             "details": "Collect and aggregate metrics from all five pipeline stages (normalizeMs, composeMs, generateMs, repairMs, validateMs). Include validationsPerRow, repairPassesPerRow, branchTrialsTried, and memory usage. Ensure compatibility with existing PipelineMetrics interface.",
             "status": "pending",
-            "testStrategy": "Test metrics collection from all stages, verify metric accuracy and completeness"
+            "testStrategy": "Test metrics collection from all stages, verify metric accuracy and completeness",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -3815,21 +3924,22 @@
             ],
             "details": "Implement comprehensive error handling that preserves error context across pipeline stages. Handle FoundryError types from each stage, maintain error codes, and ensure diagnostic information is properly aggregated and reported.",
             "status": "pending",
-            "testStrategy": "Test error propagation from each pipeline stage, verify error context preservation and proper error codes"
+            "testStrategy": "Test error propagation from each pipeline stage, verify error context preservation and proper error codes",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 12,
+        "id": "12",
         "title": "Modes & External $ref",
         "description": "Implement Strict vs Lax behaviors and external $ref skip-eligibility probe.",
         "priority": "medium",
         "estimatedHours": 12,
         "dependencies": [
-          8000,
-          9000,
-          9111,
-          9112
+          "8000",
+          "9000",
+          "9111",
+          "9112"
         ],
         "status": "pending",
         "complexityScore": 3,
@@ -3841,20 +3951,21 @@
             "title": "Implement mode switch and external-ref handling",
             "status": "pending",
             "estimatedHours": 12,
-            "file": "packages/core/src/util/modes.ts"
+            "file": "packages/core/src/util/modes.ts",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 13,
+        "id": "13",
         "title": "Draft handling & $dynamic*",
         "description": "Dialect detection, Ajv class selection, bounded in-document $dynamicRef binding (planning-only).",
         "priority": "medium",
         "estimatedHours": 12,
         "dependencies": [
-          8000,
-          9000,
-          9112
+          "8000",
+          "9000",
+          "9112"
         ],
         "status": "pending",
         "complexityScore": 3,
@@ -3866,21 +3977,22 @@
             "title": "Dialect selection and dynamic scope binder",
             "status": "pending",
             "estimatedHours": 12,
-            "file": "packages/core/src/util/draft.ts"
+            "file": "packages/core/src/util/draft.ts",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 14,
+        "id": "14",
         "title": "Cache Strategy",
         "description": "Implement hierarchical caches and memo keys including PlanOptionsSubKey and AJV flags.",
         "priority": "high",
         "estimatedHours": 16,
         "dependencies": [
-          8000,
-          9000,
-          9114,
-          9115
+          "8000",
+          "9000",
+          "9114",
+          "9115"
         ],
         "status": "pending",
         "complexityScore": 3,
@@ -3892,22 +4004,23 @@
             "title": "Implement caches and memoization",
             "status": "pending",
             "estimatedHours": 16,
-            "file": "packages/core/src/util/cache.ts"
+            "file": "packages/core/src/util/cache.ts",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 15,
+        "id": "15",
         "title": "Bench Harness & Gates",
         "description": "Benchmark harness and CI gates for p95 latency and memory peaks; metrics wiring.",
         "status": "pending",
         "dependencies": [
-          8000,
-          9000,
-          9115,
-          9101,
-          9122,
-          11
+          "8000",
+          "9000",
+          "9115",
+          "9101",
+          "9122",
+          "11"
         ],
         "priority": "high",
         "details": "[Context] §15 bench protocol & SLO/SLI; §1 bench SLI gate.\n- spec://§15#bench-protocol, spec://§15#slo-sli, spec://§1#bench-sli-gate\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§15\",\"anchors\":[\"spec://§15#bench-protocol\",\"spec://§15#slo-sli\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Profiles simple/medium/pathological; seeds {1,42,4242}; fail CI when thresholds exceeded.\n- Depends on Pipeline Orchestrator (task 11) for complete pipeline benchmarking.\n[Deliverables]\n- scripts/bench.ts (wired), CI job to run harness\n[Commands]\n- pnpm -w bench\n[Definition of Done]\n- Bench reports p50/p95 & memory; CI job enforces gates; measures complete pipeline performance.",
@@ -3920,22 +4033,23 @@
             "dependencies": [],
             "details": "Create benchmark harness that measures the full 5-stage pipeline (Normalize → Compose → Generate → Repair → Validate) through the Pipeline Orchestrator. Include profiles for simple/medium/pathological schemas with seeds {1,42,4242}. Wire CI job to enforce performance gates and fail when thresholds exceeded.",
             "status": "pending",
-            "testStrategy": "Unit tests for harness components, integration tests with sample schemas"
+            "testStrategy": "Unit tests for harness components, integration tests with sample schemas",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 16,
+        "id": "16",
         "title": "Diagnostics payload conformance",
         "description": "Enforce §19.1 mini-schemas, phase separation, and verbosity toggle exposure.",
         "status": "pending",
         "dependencies": [
-          6,
-          8000,
-          9000,
-          9119,
-          9108,
-          9107
+          "6",
+          "8000",
+          "9000",
+          "9119",
+          "9108",
+          "9107"
         ],
         "priority": "high",
         "details": "[Context] §19 payloads & phase separation; §8 caps separation; verbosity toggle (also in task #6).\n- spec://§19#payloads, spec://§19#phase-separation\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§19\",\"anchors\":[\"spec://§19#payloads\",\"spec://§19#phase-separation\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Validate representative payloads; ensure REGEX_COMPLEXITY_CAPPED appears only from Normalize/Compose; COMPLEXITY_CAP_PATTERNS only from Generator.\n- Expose verbosity switch integrated with metrics (building on task 6 base implementation).\n- Implement phase separation validation ensuring diagnostic codes appear from correct pipeline stages.\n[Deliverables]\n- packages/core/src/diag/schemas.ts (payload mini-schemas)\n- augment packages/core/src/util/metrics.ts (verbosity - extends task 6)\n[Dependencies]\n- Depends on task 6 for base diagnostics envelope structure and metrics collection system\n[Commands]\n- pnpm -w test\n[Definition of Done]\n- Tests cover distinct phases for caps; toggle active without schema-shape drift; validates phase separation conformance.",
@@ -3948,7 +4062,8 @@
             "dependencies": [],
             "details": "Implement mini-schemas for diagnostic payloads in packages/core/src/diag/schemas.ts. This includes validating that REGEX_COMPLEXITY_CAPPED codes only appear from Normalize/Compose stages and COMPLEXITY_CAP_PATTERNS only from Generator stage. Build validation logic that ensures phase separation requirements are met.",
             "status": "pending",
-            "testStrategy": "Unit tests for schema validation, negative tests for phase violations"
+            "testStrategy": "Unit tests for schema validation, negative tests for phase violations",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -3957,7 +4072,8 @@
             "dependencies": [],
             "details": "Extend the base metrics and diagnostics envelope from task 6 by adding verbosity toggle functionality to packages/core/src/util/metrics.ts. This should integrate with the existing PlanOptions.metrics boolean and provide granular control over diagnostic output detail levels without breaking existing schema shapes.",
             "status": "pending",
-            "testStrategy": "Snapshot tests across verbosity modes, integration tests with task 6 envelope"
+            "testStrategy": "Snapshot tests across verbosity modes, integration tests with task 6 envelope",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -3968,23 +4084,24 @@
             ],
             "details": "Build enforcement mechanisms to validate that diagnostic codes follow phase separation rules. Ensure REGEX_COMPLEXITY_CAPPED appears only from Normalize/Compose phases and COMPLEXITY_CAP_PATTERNS only from Generator phase. This builds on the mini-schemas from subtask 1 and integrates with the existing pipeline stages.",
             "status": "pending",
-            "testStrategy": "Unit tests for phase routing validation, negative tests for misrouted caps"
+            "testStrategy": "Unit tests for phase routing validation, negative tests for misrouted caps",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 17,
+        "id": "17",
         "title": "Unit Tests (per section)",
         "description": "Unit test suites mirroring SPEC sections, including fuzzing for oneOf exclusivity and must-cover.",
         "status": "pending",
         "dependencies": [
-          7,
-          8,
-          9,
-          10,
-          8000,
-          9000,
-          9120
+          "7",
+          "8",
+          "9",
+          "10",
+          "8000",
+          "9000",
+          "9120"
         ],
         "priority": "high",
         "details": "[Context] §20 unit coverage plan.\n- spec://§20#unit\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§20\",\"anchors\":[\"spec://§20#unit\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Property-based tests using AJV as oracle for oneOf exclusivity, AP:false must-cover, contains bag.\n- Tests must validate against the original schema (not transforms)\n- Fixed RNG seeds for deterministic testing\n- Coverage should target core implementation in packages/core/src/\n[Deliverables]\n- packages/core/test/*.spec.ts\n- Unit tests for normalizer (task 7), composition engine (task 8), generator (task 9), and repair engine (task 10)\n- Property-based tests for exclusivity validation and must-cover scenarios\n[Commands]\n- pnpm -w test\n[Definition of Done]\n- ≥80% coverage on touched files; fuzz tests run deterministically with fixed seeds.\n- All core implementation modules have corresponding unit test files\n- Tests pass AJV validation against original schemas",
@@ -3997,22 +4114,23 @@
             "dependencies": [],
             "details": "Build unit tests targeting the existing source structure in packages/core/src/. Focus on modules that support the 5-stage pipeline: generator/, validator/, parser/, and types/. Ensure tests use AJV as oracle and fixed RNG seeds for determinism.",
             "status": "pending",
-            "testStrategy": "Target existing modules with deterministic test cases using fixed seeds"
+            "testStrategy": "Target existing modules with deterministic test cases using fixed seeds",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 18,
+        "id": "18",
         "title": "Integration & e2e",
         "description": "End-to-end scenarios covering modes, AP:false unsafe patterns, oneOf exclusivity refinement.",
         "status": "pending",
         "dependencies": [
-          8000,
-          9000,
-          9120,
-          9111,
-          9112,
-          11
+          "8000",
+          "9000",
+          "9120",
+          "9111",
+          "9112",
+          "11"
         ],
         "priority": "high",
         "details": "[Context] §20 integration; §8/§11 behaviors.\n- spec://§20#integration\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§20\",\"anchors\":[\"spec://§20#integration\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Validate Strict vs Lax external $ref handling; exclusivity tweaks logged; AP:false fail-fast vs Safe proof.\n- Test complete Pipeline Orchestrator (task 11) implementation including Normalize → Compose → Generate → Repair → Validate stages\n- Validate mode-specific behaviors routed by Modes task through Pipeline Orchestrator\n[Deliverables]\n- packages/core/test/e2e/*.spec.ts\n[Commands]\n- pnpm -w test\n[Definition of Done]\n- e2e suites pass; run logs show expected diagnostics and exclusivityRand when applicable; complete pipeline validation with all modes and AP:false patterns.",
@@ -4025,21 +4143,22 @@
             "dependencies": [],
             "details": "Implement end-to-end tests that validate the complete Pipeline Orchestrator implementation including: 1) Normalize → Compose → Generate → Repair → Validate flow; 2) Metrics collection across all stages; 3) Proper error propagation; 4) Mode-specific routing (Strict/Lax); 5) External $ref handling behaviors; 6) AP:false unsafe pattern detection and handling. Tests should reference packages/core/src/generator/foundry-generator.ts orchestration logic and validate against original schema per AJV oracle principle.",
             "status": "pending",
-            "testStrategy": "Integration smoke: simple schema end-to-end; metrics fields all present; validationsPerRow ≥ 1 unless Lax skip path applies. Test all five pipeline stages execute in sequence with proper metrics collection."
+            "testStrategy": "Integration smoke: simple schema end-to-end; metrics fields all present; validationsPerRow ≥ 1 unless Lax skip path applies. Test all five pipeline stages execute in sequence with proper metrics collection.",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 19,
+        "id": "19",
         "title": "Documentation",
         "description": "Author Invariants, Known-Limits, and Features docs; update README and error catalog.",
         "priority": "medium",
         "estimatedHours": 8,
         "dependencies": [
-          8000,
-          9000,
-          9117,
-          9118
+          "8000",
+          "9000",
+          "9117",
+          "9118"
         ],
         "status": "pending",
         "complexityScore": 2,
@@ -4051,21 +4170,22 @@
             "title": "Write documentation files",
             "status": "pending",
             "estimatedHours": 8,
-            "file": "docs/Invariants.md"
+            "file": "docs/Invariants.md",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 20,
+        "id": "20",
         "title": "Fixtures & Bench profiles",
         "description": "Provide test fixtures and bench profiles (simple/medium/pathological); property-based generators for fuzzing.",
         "priority": "medium",
         "estimatedHours": 8,
         "dependencies": [
-          8000,
-          9000,
-          9115,
-          9120
+          "8000",
+          "9000",
+          "9115",
+          "9120"
         ],
         "status": "pending",
         "complexityScore": 2,
@@ -4077,21 +4197,22 @@
             "title": "Create profiles and fixtures",
             "status": "pending",
             "estimatedHours": 8,
-            "file": "profiles/simple.json"
+            "file": "profiles/simple.json",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 21,
+        "id": "21",
         "title": "Public API & TS types",
         "description": "Exported functions and types for normalize/compose/generate/repair; stable signatures.",
         "priority": "medium",
         "estimatedHours": 12,
         "dependencies": [
-          8000,
-          9000,
-          9123,
-          9122
+          "8000",
+          "9000",
+          "9123",
+          "9122"
         ],
         "status": "pending",
         "complexityScore": 3,
@@ -4103,23 +4224,24 @@
             "title": "Export public API and types",
             "status": "pending",
             "estimatedHours": 12,
-            "file": "packages/core/src/index.ts"
+            "file": "packages/core/src/index.ts",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 22,
+        "id": "22",
         "title": "CI pipelines (lint, test, bench)",
         "description": "Set up CI with linting, unit/integration tests, and bench gates.",
         "status": "pending",
         "dependencies": [
-          8000,
-          9000,
-          9101,
-          9115,
-          9120,
-          17,
-          18
+          "8000",
+          "9000",
+          "9101",
+          "9115",
+          "9120",
+          "17",
+          "18"
         ],
         "priority": "high",
         "details": "[Context] §1 acceptance gates; §15 bench protocol.\n- spec://§1#bench-sli-gate, spec://§15#bench-protocol\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§1\",\"anchors\":[\"spec://§1#bench-sli-gate\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Jobs: lint → unit → integration → bench; fail on SLO breaches.\n- Requires completed unit test suite (task 17) and integration test suite (task 18) to execute\n- CI pipeline must validate test implementations before proceeding to bench gates\n[Deliverables]\n- .github/workflows/ci.yml\n[Commands]\n- n/a (CI runs)\n[Definition of Done]\n- CI green on baseline; bench gate enforced.\n- Unit and integration test suites execute successfully in CI pipeline",
@@ -4132,21 +4254,22 @@
             "dependencies": [],
             "details": "Create .github/workflows/ci.yml that runs the test suites implemented in tasks 17 and 18. Pipeline must fail if unit or integration tests fail, before proceeding to bench gates. Include proper job dependencies and failure handling.",
             "status": "pending",
-            "testStrategy": "Verify workflow triggers on PR/push, executes all test phases, and fails appropriately on test failures"
+            "testStrategy": "Verify workflow triggers on PR/push, executes all test phases, and fails appropriately on test failures",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 23,
+        "id": "23",
         "title": "P2 refinements",
         "description": "Deferred features: propertyNames pattern-form rewrite; pattern approximations for must-cover; contains subsumption.",
         "priority": "medium",
         "estimatedHours": 8,
         "dependencies": [
-          8000,
-          9000,
-          9116,
-          9108
+          "8000",
+          "9000",
+          "9116",
+          "9108"
         ],
         "status": "pending",
         "complexityScore": 2,
@@ -4158,21 +4281,22 @@
             "title": "Enable pattern-form rewrite",
             "status": "pending",
             "estimatedHours": 8,
-            "file": "packages/core/src/transform/schema-normalizer.ts"
+            "file": "packages/core/src/transform/schema-normalizer.ts",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 24,
+        "id": "24",
         "title": "Packaging & Release",
         "description": "Prepare versioning, changelog, and publish configuration; SemVer alignment.",
         "priority": "medium",
         "estimatedHours": 8,
         "dependencies": [
-          8000,
-          9000,
-          9124,
-          9117
+          "8000",
+          "9000",
+          "9124",
+          "9117"
         ],
         "status": "pending",
         "complexityScore": 2,
@@ -4184,19 +4308,20 @@
             "title": "Prepare release artifacts and changelog",
             "status": "pending",
             "estimatedHours": 8,
-            "file": "docs/CHANGELOG.md"
+            "file": "docs/CHANGELOG.md",
+            "parentId": "undefined"
           }
         ]
       }
     ],
     "metadata": {
-      "createdAt": "2025-09-07T00:00:00Z",
-      "updatedAt": "2025-09-08T18:54:17.830Z",
-      "description": "Tag 'feature-simplification' — FoundryData Feature Support Simplification Plan.\n\nGuiding philosophy (applies to all tasks):\n- 100% Schema Compliance: every generated instance is validated against the original schema by AJV.\n- Guaranteed or Transparent: if guarantees cannot be met, emit clear diagnostics explaining why and when support is expected.\n- Deterministic: same seed ⇒ same data; no global RNG; bounded attempts.\n- Simplicity: pipeline Normalize → Compose → Generate → Repair → Validate; avoid scattered per-feature gates.\n- Separation of Concerns: each phase owns a narrow, testable responsibility; canonical schema never mutated by Compose/Generate/Repair.\n- Observability: first‑class diagnostics, budgets, and per‑phase metrics (validationsPerRow, repairPassesPerRow, p50/p95 when available).\n- Correctness over Features: add complexity only when guarantees hold; use conservative approximations when necessary and document limits.\n- Performance: meet SLO/SLI targets with graceful degradation under explicit complexity caps.\n- Open Source First: MIT, auditable, contributable, runnable offline.",
-      "totalTasks": 28,
-      "completedTasks": 2,
-      "created": "2025-09-07T19:54:27.048Z",
-      "updated": "2025-10-12T19:13:52.177Z"
+      "version": "1.0.0",
+      "lastModified": "2025-10-12T20:00:58.450Z",
+      "taskCount": 52,
+      "completedCount": 30,
+      "tags": [
+        "feature-simplification"
+      ]
     }
   }
 }
