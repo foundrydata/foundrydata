@@ -130,6 +130,43 @@ const validateCodes = new Set<KnownDiagnosticCode>([
   DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED,
 ]);
 
+const PHASE_ALLOW_LIST = new Map<
+  KnownDiagnosticCode,
+  ReadonlySet<DiagnosticPhase>
+>();
+
+function assignPhases(
+  codes: Iterable<KnownDiagnosticCode>,
+  ...phases: DiagnosticPhase[]
+): void {
+  for (const code of codes) {
+    const existing = PHASE_ALLOW_LIST.get(code);
+    if (existing) {
+      const merged = new Set(existing);
+      for (const phase of phases) {
+        merged.add(phase);
+      }
+      PHASE_ALLOW_LIST.set(code, merged);
+    } else {
+      PHASE_ALLOW_LIST.set(code, new Set(phases));
+    }
+  }
+}
+
+assignPhases(generatorOnlyCodes, DIAGNOSTIC_PHASES.GENERATE);
+assignPhases(composeOnlyCodes, DIAGNOSTIC_PHASES.COMPOSE);
+assignPhases(normalizeCodes, DIAGNOSTIC_PHASES.NORMALIZE);
+assignPhases(repairCodes, DIAGNOSTIC_PHASES.REPAIR);
+assignPhases(validateCodes, DIAGNOSTIC_PHASES.VALIDATE);
+assignPhases(
+  [
+    DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED,
+    DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR,
+  ],
+  DIAGNOSTIC_PHASES.NORMALIZE,
+  DIAGNOSTIC_PHASES.COMPOSE
+);
+
 export function getDiagnosticPhase(
   code: DiagnosticCode
 ): DiagnosticPhase | undefined {
@@ -137,34 +174,13 @@ export function getDiagnosticPhase(
     return undefined;
   }
 
-  if (generatorOnlyCodes.has(code)) {
-    return DIAGNOSTIC_PHASES.GENERATE;
+  const allowed = PHASE_ALLOW_LIST.get(code);
+  if (!allowed || allowed.size !== 1) {
+    return undefined;
   }
 
-  if (repairCodes.has(code)) {
-    return DIAGNOSTIC_PHASES.REPAIR;
-  }
-
-  if (validateCodes.has(code)) {
-    return DIAGNOSTIC_PHASES.VALIDATE;
-  }
-
-  if (composeOnlyCodes.has(code)) {
-    return DIAGNOSTIC_PHASES.COMPOSE;
-  }
-
-  if (normalizeCodes.has(code)) {
-    return DIAGNOSTIC_PHASES.NORMALIZE;
-  }
-
-  if (
-    code === DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED ||
-    code === DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR
-  ) {
-    return DIAGNOSTIC_PHASES.COMPOSE;
-  }
-
-  return undefined;
+  const iterator = allowed.values().next();
+  return iterator.done ? undefined : iterator.value;
 }
 
 export function isGeneratorOnlyCode(code: DiagnosticCode): boolean {
@@ -179,4 +195,14 @@ export function isKnownDiagnosticCode(
   code: DiagnosticCode
 ): code is KnownDiagnosticCode {
   return ALL_KNOWN_CODES.has(code as KnownDiagnosticCode);
+}
+
+export function getAllowedDiagnosticPhases(
+  code: DiagnosticCode
+): ReadonlySet<DiagnosticPhase> | undefined {
+  if (!isKnownDiagnosticCode(code)) {
+    return undefined;
+  }
+
+  return PHASE_ALLOW_LIST.get(code);
 }

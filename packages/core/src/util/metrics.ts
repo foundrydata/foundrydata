@@ -66,16 +66,19 @@ const DEFAULT_COUNTERS: MetricsSnapshot = {
 export interface MetricsCollectorOptions {
   now?: () => number;
   verbosity?: MetricsVerbosity;
+  enabled?: boolean;
 }
 
 export class MetricsCollector {
   private readonly now: () => number;
+  private readonly enabled: boolean;
   private readonly timers: Record<MetricsPhaseKey, TimerState>;
   private snapshot: MetricsSnapshot;
   private verbosity: MetricsVerbosity;
 
   constructor(options: MetricsCollectorOptions = {}) {
     this.now = options.now ?? (() => performance.now());
+    this.enabled = options.enabled ?? true;
     this.verbosity = options.verbosity ?? 'runtime';
     this.snapshot = { ...DEFAULT_COUNTERS };
     this.timers = {
@@ -92,7 +95,23 @@ export class MetricsCollector {
     this.verbosity = mode;
   }
 
+  public getVerbosity(): MetricsVerbosity {
+    return this.verbosity;
+  }
+
+  public isVerbose(options: { verbosity?: MetricsVerbosity } = {}): boolean {
+    const mode = options.verbosity ?? this.verbosity;
+    return mode === 'ci';
+  }
+
+  public isEnabled(): boolean {
+    return this.enabled;
+  }
+
   public begin(phase: MetricPhase): void {
+    if (!this.enabled) {
+      return;
+    }
     const key = METRIC_PHASES[phase];
     const current = this.timers[key];
     if (isActiveTimerState(current)) {
@@ -103,6 +122,9 @@ export class MetricsCollector {
   }
 
   public end(phase: MetricPhase): void {
+    if (!this.enabled) {
+      return;
+    }
     const key = METRIC_PHASES[phase];
     const current = this.timers[key];
     if (!isActiveTimerState(current)) {
@@ -116,38 +138,62 @@ export class MetricsCollector {
   }
 
   public recordDuration(phase: MetricPhase, durationMs: number): void {
+    if (!this.enabled) {
+      return;
+    }
     const key = METRIC_PHASES[phase];
     this.accumulateDuration(key, durationMs);
   }
 
   public addValidationCount(count: number): void {
+    if (!this.enabled) {
+      return;
+    }
     this.snapshot.validationsPerRow += count;
   }
 
   public addRepairPasses(count: number): void {
+    if (!this.enabled) {
+      return;
+    }
     this.snapshot.repairPassesPerRow += count;
   }
 
   public addRepairActions(count: number): void {
+    if (!this.enabled) {
+      return;
+    }
     this.snapshot.repairActionsPerRow =
       (this.snapshot.repairActionsPerRow ?? 0) + count;
   }
 
   public addBranchTrial(): void {
+    if (!this.enabled) {
+      return;
+    }
     this.snapshot.branchTrialsTried =
       (this.snapshot.branchTrialsTried ?? 0) + 1;
   }
 
   public addPatternWitnessTrial(): void {
+    if (!this.enabled) {
+      return;
+    }
     this.snapshot.patternWitnessTried =
       (this.snapshot.patternWitnessTried ?? 0) + 1;
   }
 
   public setCompileMs(durationMs: number): void {
+    if (!this.enabled) {
+      return;
+    }
     this.snapshot.compileMs = durationMs;
   }
 
   public observeMemoryPeak(megabytes: number): void {
+    if (!this.enabled) {
+      return;
+    }
     this.snapshot.memoryPeakMB = Math.max(
       this.snapshot.memoryPeakMB,
       megabytes
@@ -155,6 +201,9 @@ export class MetricsCollector {
   }
 
   public setLatency(percentile: 50 | 95, latencyMs: number): void {
+    if (!this.enabled) {
+      return;
+    }
     if (percentile === 50) {
       this.snapshot.p50LatencyMs = latencyMs;
     } else {
@@ -167,6 +216,9 @@ export class MetricsCollector {
     visited: number[],
     total: number
   ): void {
+    if (!this.enabled) {
+      return;
+    }
     if (!this.snapshot.branchCoverageOneOf) {
       this.snapshot.branchCoverageOneOf = {};
     }
@@ -175,6 +227,9 @@ export class MetricsCollector {
   }
 
   public trackEnumUsage(canonPath: string, enumValue: string): void {
+    if (!this.enabled) {
+      return;
+    }
     if (!this.snapshot.enumUsage) {
       this.snapshot.enumUsage = {};
     }

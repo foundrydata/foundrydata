@@ -6,6 +6,9 @@ describe('MetricsCollector', () => {
   it('tracks phase durations using injected clock', () => {
     let now = 0;
     const collector = new MetricsCollector({ now: () => now });
+    expect(collector.isEnabled()).toBe(true);
+    expect(collector.getVerbosity()).toBe('runtime');
+    expect(collector.isVerbose()).toBe(false);
 
     collector.begin('NORMALIZE');
     now += 5;
@@ -71,6 +74,7 @@ describe('MetricsCollector', () => {
     expect(ciSnapshot.enumUsage).toEqual({
       '/properties/name': { Alice: 1, Bob: 1 },
     });
+    expect(collector.isVerbose({ verbosity: 'ci' })).toBe(true);
   });
 
   it('guards against double-start and end-before-start scenarios', () => {
@@ -81,5 +85,38 @@ describe('MetricsCollector', () => {
 
     const lateCollector = new MetricsCollector({ now: () => 0 });
     expect(() => lateCollector.end('GENERATE')).toThrow(/was not started/);
+  });
+
+  it('skips collection when disabled', () => {
+    let now = 0;
+    const collector = new MetricsCollector({
+      now: () => now,
+      enabled: false,
+      verbosity: 'ci',
+    });
+
+    expect(collector.isEnabled()).toBe(false);
+
+    collector.begin('NORMALIZE');
+    now += 10;
+    collector.end('NORMALIZE');
+    collector.addValidationCount(5);
+    collector.trackBranchCoverage('/oneOf/0', [1], 3);
+    collector.trackEnumUsage('/properties/name', 'Alice');
+
+    const snapshot = collector.snapshotMetrics();
+    expect(snapshot.normalizeMs).toBe(0);
+    expect(snapshot.validationsPerRow).toBe(0);
+    expect(snapshot.branchCoverageOneOf).toBeUndefined();
+    expect(snapshot.enumUsage).toBeUndefined();
+  });
+
+  it('exposes helper to inspect verbosity mode', () => {
+    const collector = new MetricsCollector();
+    expect(collector.isVerbose()).toBe(false);
+    collector.setVerbosity('ci');
+    expect(collector.getVerbosity()).toBe('ci');
+    expect(collector.isVerbose()).toBe(true);
+    expect(collector.isVerbose({ verbosity: 'runtime' })).toBe(false);
   });
 });

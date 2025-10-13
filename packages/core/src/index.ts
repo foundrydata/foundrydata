@@ -121,6 +121,7 @@ export {
   type DiagnosticCode,
   type KnownDiagnosticCode,
   getDiagnosticPhase,
+  getAllowedDiagnosticPhases,
   isGeneratorOnlyCode,
   isComposeOnlyCode,
   isKnownDiagnosticCode,

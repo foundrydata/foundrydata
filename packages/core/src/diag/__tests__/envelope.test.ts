@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { DIAGNOSTIC_CODES } from '../codes';
-import { assertDiagnosticEnvelope } from '../validate';
+import { DIAGNOSTIC_CODES, DIAGNOSTIC_PHASES } from '../codes';
+import {
+  assertDiagnosticEnvelope,
+  assertDiagnosticsForPhase,
+} from '../validate';
 
 describe('assertDiagnosticEnvelope', () => {
   it('accepts a valid envelope with compliant details', () => {
@@ -83,6 +86,79 @@ describe('assertDiagnosticEnvelope', () => {
         canonPath: '/custom',
         details: { info: 'ok' },
       })
+    ).not.toThrow();
+  });
+});
+
+describe('assertDiagnosticsForPhase', () => {
+  const baseRegexEnvelope = {
+    code: DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED,
+    canonPath: '/properties/name',
+    details: {
+      patternSource: '^foo$',
+      context: 'coverage',
+    },
+  };
+
+  it('allows regex diagnostics in compose and normalize with matching context', () => {
+    expect(() =>
+      assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.COMPOSE, [baseRegexEnvelope])
+    ).not.toThrow();
+
+    expect(() =>
+      assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.NORMALIZE, [
+        {
+          ...baseRegexEnvelope,
+          details: { patternSource: '^foo$', context: 'rewrite' },
+        },
+      ])
+    ).not.toThrow();
+  });
+
+  it('rejects regex diagnostics when context mismatches the phase', () => {
+    expect(() =>
+      assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.COMPOSE, [
+        {
+          ...baseRegexEnvelope,
+          details: { patternSource: '^foo$', context: 'rewrite' },
+        },
+      ])
+    ).toThrow(/context="coverage"/);
+
+    expect(() =>
+      assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.NORMALIZE, [
+        baseRegexEnvelope,
+      ])
+    ).toThrow(/context="rewrite"/);
+  });
+
+  it('rejects generator-only diagnostics in compose', () => {
+    expect(() =>
+      assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.COMPOSE, [
+        {
+          code: DIAGNOSTIC_CODES.COMPLEXITY_CAP_PATTERNS,
+          canonPath: '/pattern',
+          details: {
+            reason: 'candidateBudget',
+            tried: 5,
+          },
+        },
+      ])
+    ).toThrow(/not allowed/);
+  });
+
+  it('allows generator-only diagnostics during the generate phase', () => {
+    expect(() =>
+      assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.GENERATE, [
+        {
+          code: DIAGNOSTIC_CODES.COMPLEXITY_CAP_PATTERNS,
+          canonPath: '/pattern',
+          details: {
+            reason: 'witnessDomainExhausted',
+            tried: 1,
+          },
+        },
+      ])
     ).not.toThrow();
   });
 });

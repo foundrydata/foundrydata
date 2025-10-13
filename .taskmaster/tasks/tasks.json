@@ -4056,7 +4056,7 @@
         "id": 16,
         "title": "Diagnostics payload conformance",
         "description": "Enforce §19.1 mini-schemas, phase separation, and verbosity toggle exposure.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "6",
           "8000",
@@ -4075,7 +4075,7 @@
             "description": "Create TypeScript schemas and validators to enforce diagnostic payload conformance per §19.1",
             "dependencies": [],
             "details": "Implement mini-schemas for diagnostic payloads in packages/core/src/diag/schemas.ts. This includes validating that REGEX_COMPLEXITY_CAPPED codes only appear from Normalize/Compose stages and COMPLEXITY_CAP_PATTERNS only from Generator stage. Build validation logic that ensures phase separation requirements are met.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for schema validation, negative tests for phase violations",
             "parentId": "undefined"
           },
@@ -4085,7 +4085,7 @@
             "description": "Integrate verbosity toggle with existing metrics collection system from task 6",
             "dependencies": [],
             "details": "Extend the base metrics and diagnostics envelope from task 6 by adding verbosity toggle functionality to packages/core/src/util/metrics.ts. This should integrate with the existing PlanOptions.metrics boolean and provide granular control over diagnostic output detail levels without breaking existing schema shapes.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Snapshot tests across verbosity modes, integration tests with task 6 envelope",
             "parentId": "undefined"
           },
@@ -4097,7 +4097,7 @@
               1
             ],
             "details": "Build enforcement mechanisms to validate that diagnostic codes follow phase separation rules. Ensure REGEX_COMPLEXITY_CAPPED appears only from Normalize/Compose phases and COMPLEXITY_CAP_PATTERNS only from Generator phase. This builds on the mini-schemas from subtask 1 and integrates with the existing pipeline stages.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for phase routing validation, negative tests for misrouted caps",
             "parentId": "undefined"
           }
@@ -4338,7 +4338,7 @@
       ],
       "created": "2025-10-13T11:26:34.120Z",
       "description": "Tasks for feature-simplification context",
-      "updated": "2025-10-13T14:53:55.936Z"
+      "updated": "2025-10-13T15:32:43.016Z"
     }
   }
 }
