@@ -6,6 +6,39 @@
 
 ---
 
+## 🏗️ Project Context — Complete Refactor
+
+**IMPORTANT**: This is a **complete refactor** of an existing legacy codebase.
+
+### Legacy vs. Refactor
+
+- **Legacy code exists** in the main branch with a different architecture
+- **`feature-simplification` branch**: Complete ground-up rewrite following the new SPEC
+- **Do NOT reference legacy implementation** for feature behavior or design decisions
+- **Do NOT port legacy code patterns** unless explicitly specified in SPEC
+- **Do NOT assume legacy features should be preserved** unless documented in SPEC
+
+### What This Means
+
+1. **SPEC is the ONLY authority** — Legacy code is NOT a reference
+2. **Clean slate implementation** — Build from scratch per SPEC architecture
+3. **No legacy debt** — Don't preserve old patterns, workarounds, or technical debt
+4. **New pipeline** — 5-stage architecture (Normalize → Compose → Generate → Repair → Validate)
+5. **Breaking changes expected** — This is intentional and documented
+
+### Branch Strategy
+
+```
+main (legacy)
+└── feature-simplification (complete refactor)
+    ├── tasks 1..24 (new implementation per SPEC)
+    └── clean architecture, no legacy carryover
+```
+
+**When reviewing code**: If you find legacy patterns or old architecture remnants in the `feature-simplification` branch, they should be removed and replaced with SPEC-compliant implementation.
+
+---
+
 ## 🎯 Goal
 
 **Execute implementation tasks strictly per SPEC; SPEC is the single source of truth for semantics.**
@@ -13,6 +46,7 @@
 - Do NOT enlarge feature scope beyond what SPEC mandates.
 - Do NOT introduce features, edge cases, or behaviors not specified in SPEC.
 - Do NOT copy-paste SPEC text verbatim into code comments or task records.
+- Do NOT reference or port legacy code patterns.
 
 ---
 
@@ -342,6 +376,15 @@ Provide a verbosity toggle:
 
 ## 🚫 Common Pitfalls — Avoid These
 
+### Legacy Code References
+
+- ❌ Referencing legacy implementation for feature behavior
+- ❌ Porting legacy code patterns or architecture
+- ❌ Preserving legacy features not documented in SPEC
+- ❌ Assuming legacy behavior should be maintained
+- ❌ Using legacy code as a reference for design decisions
+- ✅ SPEC is the ONLY authority for implementation
+
 ### Implementation Bias
 
 - ❌ Adding features not in SPEC because "they seem useful"
@@ -378,6 +421,14 @@ Provide a verbosity toggle:
 - ❌ Deleting failing tests to "green" the suite
 - ❌ Commenting out failing assertions
 - ❌ Lowering coverage thresholds to pass CI
+
+### Task Master Access Violations
+
+- ❌ Reading `.taskmaster/tasks/tasks.json` directly
+- ❌ Parsing task files with `jq`, `cat`, or bash commands
+- ❌ Accessing `.taskmaster/state.json` directly
+- ❌ Modifying task files without Task Master commands
+- ✅ Always use `/project:tm/` slash commands or MCP tools
 
 ---
 
@@ -445,6 +496,16 @@ Provide a verbosity toggle:
 2. Validate against gates: p95 ≤ 120ms, memory ≤ 512MB
 3. If gates fail, optimize or defer feature
 4. Document performance characteristics in task notes
+
+### Task Master Usage
+
+1. Use `/project:tm/` slash commands for all task operations
+2. Use MCP tools (`mcp__task-master-ai__*`) for programmatic access
+3. Never read `.taskmaster/tasks/tasks.json` directly
+4. Never parse task files with bash commands or manual JSON parsing
+5. Always use `/complete-task <id>` for task completion
+6. Deploy appropriate agent based on workflow phase
+7. Follow REFONLY protocol for SPEC references
 
 ---
 
@@ -542,6 +603,44 @@ user: "Implement task 23 for user authentication"
 user: "Check if task 118 is properly implemented"
 → Deploy task-checker to verify and report
 ```
+
+### Task Access Policy — Use CLI, Not JSON
+
+**CRITICAL**: Never directly read or parse `.taskmaster/tasks/tasks.json` or task files.
+
+**Why**:
+- Task structure is an implementation detail that may change
+- CLI commands handle JSON parsing, validation, and error handling
+- MCP tools provide structured, type-safe access
+- Direct JSON parsing bypasses business logic and validation
+
+**Always use**:
+- Slash commands: `/project:tm/show <id>`, `/project:tm/list`, etc.
+- MCP tools: `mcp__task-master-ai__get_task`, `mcp__task-master-ai__get_tasks`
+
+**Never**:
+- ❌ Read `.taskmaster/tasks/tasks.json` directly
+- ❌ Parse task files with `jq`, `cat`, or manual JSON parsing
+- ❌ Access `.taskmaster/state.json` directly
+- ❌ Modify task files without Task Master commands
+
+**Example**:
+
+```bash
+# ✅ CORRECT: Use CLI
+/project:tm/show 9100
+
+# ❌ WRONG: Direct file access
+cat .taskmaster/tasks/tasks.json | jq '.tasks[] | select(.id=="9100")'
+
+# ✅ CORRECT: Use MCP tool
+mcp__task-master-ai__get_task(id: "9100")
+
+# ❌ WRONG: Parse manually
+Read(.taskmaster/tasks/tasks.json)
+```
+
+This ensures consistent behavior, proper validation, and forward compatibility.
 
 ### Task Master Commands
 
@@ -740,16 +839,19 @@ All Task Master commands understand natural language:
 
 ## ✨ Summary — The Golden Rules
 
-1. **SPEC is truth** — Do not enlarge scope
-2. **REFONLY anchors** — No SPEC text duplication
-3. **Small context** — Load only what's needed
-4. **Numeric order** — Tasks 1..24 in sequence
-5. **Phase separation** — Right diagnostic from right phase
-6. **AP:false guards** — Coverage expansion requires flag
-7. **AJV parity** — Both instances configured identically
-8. **80% coverage** — On all touched files
-9. **Bench gates** — p95 ≤ 120ms, memory ≤ 512MB
-10. **Self-audit** — Checklist before every commit
-11. **Task Master protocol** — Use proper completion workflow and agent selection
+1. **Complete refactor** — Legacy code is NOT a reference; SPEC is the ONLY authority
+2. **SPEC is truth** — Do not enlarge scope
+3. **REFONLY anchors** — No SPEC text duplication
+4. **Small context** — Load only what's needed
+5. **Numeric order** — Tasks 1..24 in sequence
+6. **Phase separation** — Right diagnostic from right phase
+7. **AP:false guards** — Coverage expansion requires flag
+8. **AJV parity** — Both instances configured identically
+9. **80% coverage** — On all touched files
+10. **Bench gates** — p95 ≤ 120ms, memory ≤ 512MB
+11. **Self-audit** — Checklist before every commit
+12. **Task Master protocol** — Use proper completion workflow and agent selection
+13. **CLI access only** — Never parse `.taskmaster/tasks/tasks.json` directly; use `/project:tm/` commands or MCP tools
 
 **When in doubt, refer to SPEC. When SPEC is unclear, escalate.**
+**Never reference legacy code — this is a complete refactor.**
