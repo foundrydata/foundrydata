@@ -3615,7 +3615,7 @@
           "9107",
           "9122"
         ],
-        "status": "pending",
+        "status": "done",
         "complexityScore": 2,
         "details": "[Context] §7 contract exports ptrMap/revPtrMap; §22 deliverables.\n- spec://§7#contract\n- spec://§22#packages-core\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§7\",\"anchors\":[\"spec://§7#contract\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Provide mapCanonToOrig and reverse, plus toOriginalByWalk (longest-prefix walk).\n[Deliverables]\n- packages/core/src/util/ptr-map.ts\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test\n[Definition of Done]\n- Unit tests cover reverse-walk across nested paths; stable behavior.",
         "testStrategy": "Unit: mapping inlining, longest-prefix reverse resolution; golden tests using tiny canonical vs original trees.",
@@ -3623,7 +3623,7 @@
           {
             "id": 5001,
             "title": "Pointer maps and reverse walk",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 8,
             "file": "packages/core/src/util/ptr-map.ts",
             "parentId": "undefined"
@@ -4354,7 +4354,7 @@
       ],
       "created": "2025-10-13T11:26:34.120Z",
       "description": "Tasks for feature-simplification context",
-      "updated": "2025-10-13T16:06:32.136Z"
+      "updated": "2025-10-13T17:06:24.492Z"
     }
   }
 }
