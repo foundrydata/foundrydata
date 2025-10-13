@@ -4023,7 +4023,7 @@
           "9114",
           "9115"
         ],
-        "status": "pending",
+        "status": "done",
         "complexityScore": 3,
         "details": "[Context] §14 hierarchy; cache keys; PlanOptionsSubKey canonicalization.\n- spec://§14#hierarchy, spec://§14#cache-keys, spec://§14#planoptionssubkey\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§14\",\"anchors\":[\"spec://§14#planoptionssubkey\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Include AJV.major, class/dialect, full flag set, and PlanOptionsSubKey in keys. Canonicalize conditionals.strategy:'rewrite' → 'if-aware-lite'.\n[Deliverables]\n- packages/core/src/util/cache.ts\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test\n[Definition of Done]\n- Deterministic keys; separate LRU spaces for instances; memoized branch picks keyed on (canonPath, seed, AJV.major, AJV.flags, PlanOptionsSubKey[, user salt]).",
         "testStrategy": "Unit: key stability, PlanOptionsSubKey canonicalization, collisions avoided between source/planning instances.",
@@ -4031,7 +4031,7 @@
           {
             "id": 14001,
             "title": "Implement caches and memoization",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 16,
             "file": "packages/core/src/util/cache.ts",
             "parentId": "undefined"
@@ -4398,7 +4398,7 @@
       ],
       "created": "2025-10-13T11:26:34.120Z",
       "description": "Tasks for feature-simplification context",
-      "updated": "2025-10-13T21:21:47.948Z"
+      "updated": "2025-10-13T21:46:21.993Z"
     }
   }
 }
