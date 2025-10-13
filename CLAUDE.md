@@ -370,6 +370,53 @@ spec://§<n>#<slug> → docs/feature-simplification/feature-support-simplificati
 * **Never use direct Read on large docs without grep anchors first**
 * Confirm you had read the entire doc if asked
 
+**SPEC Reading Protocol (for feature-support-simplification.md, 2676 lines)**
+
+The SPEC is too large (2676 lines) to read without precision. Always use this protocol:
+
+1. **Grep Section Bounds** (parallel tool calls)
+   ```typescript
+   // Find start and end of section
+   Grep({ pattern: '^<a id="s7-', '-n': true, head_limit: 1 })  // → 321
+   Grep({ pattern: '^<a id="s8-', '-n': true, head_limit: 1 })  // → 650
+   ```
+
+2. **Calculate Limit**
+   ```typescript
+   const start = 321;
+   const end = 650;
+   const limit = end - start;  // = 329 lines for §7
+   ```
+
+3. **Read Exact Section**
+   ```typescript
+   Read({ offset: start, limit: limit })
+   // Reads EXACTLY §7, no waste
+   ```
+
+**Why This Matters**:
+- ❌ `Read(offset: 321)` without limit → reads 2000 lines (§7+§8+§9+§10...) = 82% waste
+- ❌ `Read(offset: 321, limit: 100)` → truncates §7 at line 420, missing 250 critical lines
+- ✅ `Read(offset: 321, limit: 329)` → exact section, 100% efficiency
+
+**Pattern for Any Section**:
+```typescript
+// For §N, grep anchors s{N}- and s{N+1}-, calculate limit
+const readSection = (n: number) => {
+  const [start, end] = grepBounds(`s${n}-`, `s${n+1}-`);
+  return Read({ offset: start, limit: end - start || (2676 - start) });
+};
+```
+
+**For Last Section**: Use EOF (2676) as end bound.
+
+**Alternative for Short Sections** (<200 lines):
+```typescript
+// Single grep with context
+Grep({ pattern: '<a id="s7-pass-order"></a>', '-A': 350, '-n': true })
+// Trade-off: 1 tool call, but risk truncation if estimate wrong
+```
+
 
 **Quality Gates**
 
