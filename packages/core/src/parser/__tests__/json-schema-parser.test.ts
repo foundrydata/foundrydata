@@ -4,6 +4,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
  */
 
 import { JSONSchemaParser } from '../json-schema-parser';
+import type { NormalizeResult } from '../../transform/schema-normalizer';
+import type { Result } from '../../types/result';
 import { getAjv } from '../../../../../test/helpers/ajv-factory';
 import { ParseError } from '../../types/errors';
 import type {
@@ -12,6 +14,20 @@ import type {
   NumberSchema,
   ArraySchema,
 } from '../../types/schema';
+
+type ParseResult = Result<NormalizeResult, ParseError>;
+
+function expectOkNormalize(result: ParseResult): NormalizeResult {
+  expect(result.isOk()).toBe(true);
+  if (!result.isOk()) {
+    throw result.error;
+  }
+  return result.value;
+}
+
+function expectOkSchema<T>(result: ParseResult): T {
+  return expectOkNormalize(result).schema as T;
+}
 
 describe('JSONSchemaParser', () => {
   let parser: JSONSchemaParser;
@@ -49,39 +65,27 @@ describe('JSONSchemaParser', () => {
   describe('parse', () => {
     it('should parse basic string schema', () => {
       const input = { type: 'string', minLength: 5, maxLength: 10 };
-      const result = parser.parse(input);
+      const schema = expectOkSchema<StringSchema>(parser.parse(input));
 
-      expect(result.isOk()).toBe(true);
-      if (result.isOk()) {
-        const schema = result.value as StringSchema;
-        expect(schema.type).toBe('string');
-        expect(schema.minLength).toBe(5);
-        expect(schema.maxLength).toBe(10);
-      }
+      expect(schema.type).toBe('string');
+      expect(schema.minLength).toBe(5);
+      expect(schema.maxLength).toBe(10);
     });
 
     it('should parse string schema with format', () => {
       const input = { type: 'string', format: 'email' };
-      const result = parser.parse(input);
+      const schema = expectOkSchema<StringSchema>(parser.parse(input));
 
-      expect(result.isOk()).toBe(true);
-      if (result.isOk()) {
-        const schema = result.value as StringSchema;
-        expect(schema.format).toBe('email');
-      }
+      expect(schema.format).toBe('email');
     });
 
     it('should parse number schema with constraints', () => {
       const input = { type: 'integer', minimum: 0, maximum: 100 };
-      const result = parser.parse(input);
+      const schema = expectOkSchema<NumberSchema>(parser.parse(input));
 
-      expect(result.isOk()).toBe(true);
-      if (result.isOk()) {
-        const schema = result.value as NumberSchema;
-        expect(schema.type).toBe('integer');
-        expect(schema.minimum).toBe(0);
-        expect(schema.maximum).toBe(100);
-      }
+      expect(schema.type).toBe('integer');
+      expect(schema.minimum).toBe(0);
+      expect(schema.maximum).toBe(100);
     });
 
     it('should parse object schema with properties', () => {
@@ -93,16 +97,12 @@ describe('JSONSchemaParser', () => {
         },
         required: ['id'],
       };
-      const result = parser.parse(input);
+      const schema = expectOkSchema<ObjectSchema>(parser.parse(input));
 
-      expect(result.isOk()).toBe(true);
-      if (result.isOk()) {
-        const schema = result.value as ObjectSchema;
-        expect(schema.type).toBe('object');
-        expect(schema.properties).toBeDefined();
-        expect(schema.properties!.id).toBeDefined();
-        expect(schema.required).toEqual(['id']);
-      }
+      expect(schema.type).toBe('object');
+      expect(schema.properties).toBeDefined();
+      expect(schema.properties!.id).toBeDefined();
+      expect(schema.required).toEqual(['id']);
     });
 
     it('should parse additionalProperties as schema (object)', () => {
@@ -110,15 +110,11 @@ describe('JSONSchemaParser', () => {
         type: 'object',
         additionalProperties: { type: 'string', minLength: 2 },
       };
-      const result = parser.parse(input);
-      expect(result.isOk()).toBe(true);
-      if (result.isOk()) {
-        const schema = result.value as ObjectSchema;
-        expect(schema.additionalProperties).toBeDefined();
-        const ap = schema.additionalProperties as StringSchema;
-        expect(ap.type).toBe('string');
-        expect(ap.minLength).toBe(2);
-      }
+      const schema = expectOkSchema<ObjectSchema>(parser.parse(input));
+      expect(schema.additionalProperties).toBeDefined();
+      const ap = schema.additionalProperties as StringSchema;
+      expect(ap.type).toBe('string');
+      expect(ap.minLength).toBe(2);
     });
 
     it('should enforce additionalProperties schema via AJV', () => {
@@ -130,12 +126,10 @@ describe('JSONSchemaParser', () => {
         additionalProperties: { type: 'string', minLength: 2 },
       } as const;
 
-      const parsed = parser.parse(input);
-      expect(parsed.isOk()).toBe(true);
-      if (!parsed.isOk()) return;
+      const parsed = expectOkNormalize(parser.parse(input));
 
       const ajv = getAjv();
-      const validate = ajv.compile(parsed.value);
+      const validate = ajv.compile(parsed.schema as any);
 
       // valid: additional props are strings len >= 2
       expect(validate({ known: 1, extra: 'ab', another: 'xyz' })).toBe(true);
@@ -155,14 +149,11 @@ describe('JSONSchemaParser', () => {
         maxItems: 10,
       };
       const result = parser.parse(input);
+      const schema = expectOkSchema<ArraySchema>(result);
 
-      expect(result.isOk()).toBe(true);
-      if (result.isOk()) {
-        const schema = result.value as ArraySchema;
-        expect(schema.type).toBe('array');
-        expect(schema.minItems).toBe(1);
-        expect(schema.maxItems).toBe(10);
-      }
+      expect(schema.type).toBe('array');
+      expect(schema.minItems).toBe(1);
+      expect(schema.maxItems).toBe(10);
     });
 
     it('should parse unevaluatedItems (boolean and schema)', () => {
@@ -172,12 +163,8 @@ describe('JSONSchemaParser', () => {
         prefixItems: [{ type: 'string' }],
         unevaluatedItems: false,
       } as const;
-      let result = parser.parse(inputBool);
-      expect(result.isOk()).toBe(true);
-      if (result.isOk()) {
-        const schema = result.value as ArraySchema;
-        expect(schema.unevaluatedItems).toBe(false);
-      }
+      let schema = expectOkSchema<ArraySchema>(parser.parse(inputBool));
+      expect(schema.unevaluatedItems).toBe(false);
 
       // schema form
       const inputSchema = {
@@ -185,15 +172,11 @@ describe('JSONSchemaParser', () => {
         prefixItems: [{ type: 'string' }],
         unevaluatedItems: { type: 'number', minimum: 0 },
       } as const;
-      result = parser.parse(inputSchema);
-      expect(result.isOk()).toBe(true);
-      if (result.isOk()) {
-        const schema = result.value as ArraySchema;
-        expect(schema.unevaluatedItems).toBeDefined();
-        const ui = schema.unevaluatedItems as NumberSchema;
-        expect(ui.type).toBe('number');
-        expect(ui.minimum).toBe(0);
-      }
+      schema = expectOkSchema<ArraySchema>(parser.parse(inputSchema));
+      expect(schema.unevaluatedItems).toBeDefined();
+      const ui = schema.unevaluatedItems as NumberSchema;
+      expect(ui.type).toBe('number');
+      expect(ui.minimum).toBe(0);
     });
 
     it('should parse base properties', () => {
@@ -204,24 +187,16 @@ describe('JSONSchemaParser', () => {
         default: 'Anonymous',
         examples: ['John', 'Jane'],
       };
-      const result = parser.parse(input);
-
-      expect(result.isOk()).toBe(true);
-      if (result.isOk()) {
-        const schema = result.value as StringSchema;
-        expect(schema.title).toBe('Name Field');
-        expect(schema.description).toBe('User name');
-        expect(schema.default).toBe('Anonymous');
-        expect(schema.examples).toEqual(['John', 'Jane']);
-      }
+      const schema = expectOkSchema<StringSchema>(parser.parse(input));
+      expect(schema.title).toBe('Name Field');
+      expect(schema.description).toBe('User name');
+      expect(schema.default).toBe('Anonymous');
+      expect(schema.examples).toEqual(['John', 'Jane']);
     });
 
     it('should handle boolean schemas', () => {
-      const result = parser.parse(true);
-      expect(result.isOk()).toBe(true);
-      if (result.isOk()) {
-        expect(result.value).toBe(true);
-      }
+      const normalized = expectOkNormalize(parser.parse(true));
+      expect(normalized.schema).toBe(true);
     });
 
     it('should parse unevaluatedProperties (boolean and schema)', () => {
@@ -231,12 +206,8 @@ describe('JSONSchemaParser', () => {
         properties: { id: { type: 'string' } },
         unevaluatedProperties: false,
       } as const;
-      let result = parser.parse(inputBool);
-      expect(result.isOk()).toBe(true);
-      if (result.isOk()) {
-        const schema = result.value as ObjectSchema;
-        expect((schema as any).unevaluatedProperties).toBe(false);
-      }
+      let schema = expectOkSchema<ObjectSchema>(parser.parse(inputBool));
+      expect((schema as any).unevaluatedProperties).toBe(false);
 
       // schema form
       const inputSchema = {
@@ -244,14 +215,10 @@ describe('JSONSchemaParser', () => {
         properties: { id: { type: 'string' } },
         unevaluatedProperties: { type: 'number', minimum: 0 },
       } as const;
-      result = parser.parse(inputSchema);
-      expect(result.isOk()).toBe(true);
-      if (result.isOk()) {
-        const schema = result.value as ObjectSchema;
-        const up = (schema as any).unevaluatedProperties as NumberSchema;
-        expect(up.type).toBe('number');
-        expect(up.minimum).toBe(0);
-      }
+      schema = expectOkSchema<ObjectSchema>(parser.parse(inputSchema));
+      const up = (schema as any).unevaluatedProperties as NumberSchema;
+      expect(up.type).toBe('number');
+      expect(up.minimum).toBe(0);
     });
   });
 
@@ -277,13 +244,8 @@ describe('JSONSchemaParser', () => {
     describe('pattern support', () => {
       it('should accept basic patterns', () => {
         const input = { type: 'string', pattern: '^[a-z]+$' };
-        const result = parser.parse(input);
-
-        expect(result.isOk()).toBe(true);
-        if (result.isOk()) {
-          const schema = result.value as StringSchema;
-          expect(schema.pattern).toBe('^[a-z]+$');
-        }
+        const schema = expectOkSchema<StringSchema>(parser.parse(input));
+        expect(schema.pattern).toBe('^[a-z]+$');
       });
 
       it('should accept simple patterns with character classes', () => {
@@ -296,13 +258,8 @@ describe('JSONSchemaParser', () => {
 
         for (const pattern of patterns) {
           const input = { type: 'string', pattern };
-          const result = parser.parse(input);
-
-          expect(result.isOk()).toBe(true);
-          if (result.isOk()) {
-            const schema = result.value as StringSchema;
-            expect(schema.pattern).toBe(pattern);
-          }
+          const schema = expectOkSchema<StringSchema>(parser.parse(input));
+          expect(schema.pattern).toBe(pattern);
         }
       });
 
@@ -383,22 +340,17 @@ describe('JSONSchemaParser', () => {
 
       // $ref is now supported, so it should parse successfully
       // The actual resolution happens later in the pipeline
-      expect(result.isOk()).toBe(true);
-      if (result.isOk()) {
-        expect(result.value).toEqual({ $ref: '#/definitions/User' });
-      }
+      const normalized = expectOkNormalize(result);
+      expect(normalized.schema).toEqual({ $ref: '#/definitions/User' });
     });
 
     it('should accept composition keywords (parsed, resolved in planning)', () => {
       const input = { allOf: [{ type: 'string' }, { minLength: 5 }] } as const;
       const result = parser.parse(input);
 
-      expect(result.isOk()).toBe(true);
-      if (result.isOk()) {
-        const v = result.value as any;
-        expect(Array.isArray(v.allOf)).toBe(true);
-        expect(v.allOf.length).toBe(2);
-      }
+      const v = expectOkSchema<ObjectSchema>(result) as any;
+      expect(Array.isArray(v.allOf)).toBe(true);
+      expect(v.allOf.length).toBe(2);
     });
 
     it('should accept nested objects up to depth 2', () => {
@@ -420,14 +372,9 @@ describe('JSONSchemaParser', () => {
           },
         },
       };
-      const result = parser.parse(input);
-
-      expect(result.isOk()).toBe(true);
-      if (result.isOk()) {
-        const schema = result.value as ObjectSchema;
-        expect(schema.type).toBe('object');
-        expect(schema.properties!.user).toBeDefined();
-      }
+      const schema = expectOkSchema<ObjectSchema>(parser.parse(input));
+      expect(schema.type).toBe('object');
+      expect(schema.properties!.user).toBeDefined();
     });
 
     it('should return error for deep nested objects (depth > 2)', () => {
@@ -484,15 +431,10 @@ describe('JSONSchemaParser', () => {
           },
         },
       };
-      const result = parser.parse(input);
-
-      expect(result.isOk()).toBe(true);
-      if (result.isOk()) {
-        const schema = result.value as ObjectSchema;
-        expect(schema.type).toBe('object');
-        expect(schema.properties!.user).toBeDefined();
-        expect(schema.properties!.settings).toBeDefined();
-      }
+      const schema = expectOkSchema<ObjectSchema>(parser.parse(input));
+      expect(schema.type).toBe('object');
+      expect(schema.properties!.user).toBeDefined();
+      expect(schema.properties!.settings).toBeDefined();
     });
 
     it('should return error for conditional schemas', () => {
@@ -523,15 +465,10 @@ describe('JSONSchemaParser', () => {
         required: ['id', 'email'],
       };
 
-      const result = parser.parse(input);
-      expect(result.isOk()).toBe(true);
-
-      if (result.isOk()) {
-        const schema = result.value as ObjectSchema;
-        expect(schema.type).toBe('object');
-        expect(Object.keys(schema.properties!)).toHaveLength(5);
-        expect(schema.required).toEqual(['id', 'email']);
-      }
+      const schema = expectOkSchema<ObjectSchema>(parser.parse(input));
+      expect(schema.type).toBe('object');
+      expect(Object.keys(schema.properties!)).toHaveLength(5);
+      expect(schema.required).toEqual(['id', 'email']);
     });
   });
 });

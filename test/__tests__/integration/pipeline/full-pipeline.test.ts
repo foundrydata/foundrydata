@@ -1,4 +1,11 @@
-import { describe, test, expect, fc, propertyTest } from '../setup';
+import {
+  describe,
+  test,
+  expect,
+  fc,
+  propertyTest,
+  expectParseOk,
+} from '../setup';
 import '../../../matchers/index';
 import {
   INTEGRATION_TEST_SEED,
@@ -28,15 +35,14 @@ describe('Full Pipeline Integration Tests', () => {
           (schema, count) => {
             // Parse
             const parser = new JSONSchemaParser();
-            const parseResult = parser.parse(schema);
-            expect(parseResult.isOk()).toBe(true);
-            if (!parseResult.isOk()) return;
+            const normalized = expectParseOk(parser.parse(schema));
+            const canonicalSchema = normalized.schema as Schema;
 
             // Generate
             const generator = new ObjectGenerator();
             const formatRegistry = new FormatRegistry();
             const context = createGeneratorContext(
-              parseResult.value as Schema,
+              canonicalSchema,
               formatRegistry,
               { seed: INTEGRATION_TEST_SEED }
             );
@@ -44,7 +50,7 @@ describe('Full Pipeline Integration Tests', () => {
             const items: unknown[] = [];
             for (let i = 0; i < count; i++) {
               const result = generator.generate(
-                parseResult.value as ObjectSchema,
+                canonicalSchema as ObjectSchema,
                 context
               );
               if (result.isOk()) {
@@ -82,15 +88,14 @@ describe('Full Pipeline Integration Tests', () => {
           (schema, count) => {
             // Parse
             const parser = new JSONSchemaParser();
-            const parseResult = parser.parse(schema);
-            expect(parseResult.isOk()).toBe(true);
-            if (!parseResult.isOk()) throw parseResult.error;
+            const normalized = expectParseOk(parser.parse(schema));
+            const canonicalSchema = normalized.schema as Schema;
 
             // Generate
             const generator = new ObjectGenerator();
             const formatRegistry = new FormatRegistry();
             const context = createGeneratorContext(
-              parseResult.value as Schema,
+              canonicalSchema,
               formatRegistry,
               { seed: INTEGRATION_TEST_SEED }
             );
@@ -99,7 +104,7 @@ describe('Full Pipeline Integration Tests', () => {
             const items: unknown[] = [];
             for (let i = 0; i < count; i++) {
               const result = generator.generate(
-                parseResult.value as ObjectSchema,
+                canonicalSchema as ObjectSchema,
                 context
               );
               if (result.isOk()) {
@@ -207,12 +212,11 @@ describe('Full Pipeline Integration Tests', () => {
             const formatRegistry = new FormatRegistry();
             const validator = new ComplianceValidator();
 
-            const parseResult = parser.parse(schema);
-            expect(parseResult.isOk()).toBe(true);
-            if (!parseResult.isOk()) return;
+            const normalized = expectParseOk(parser.parse(schema));
+            const canonicalSchema = normalized.schema as Schema;
 
             const context = createGeneratorContext(
-              parseResult.value as Schema,
+              canonicalSchema,
               formatRegistry,
               { seed: INTEGRATION_TEST_SEED }
             );
@@ -220,7 +224,7 @@ describe('Full Pipeline Integration Tests', () => {
             const items: unknown[] = [];
             for (let i = 0; i < count; i++) {
               const result = generator.generate(
-                parseResult.value as ObjectSchema,
+                canonicalSchema as ObjectSchema,
                 context
               );
               if (result.isOk()) {
@@ -252,23 +256,20 @@ describe('Full Pipeline Integration Tests', () => {
       const schema = INTEGRATION_SCHEMAS.simple;
       const count = 10;
       const parser = new JSONSchemaParser();
-      const parseResult = parser.parse(schema);
-      expect(parseResult.isOk()).toBe(true);
-      if (!parseResult.isOk()) return;
+      const normalized = expectParseOk(parser.parse(schema));
+      const canonicalSchema = normalized.schema as Schema;
 
       // Generate twice with same seed
       const formatRegistry = new FormatRegistry();
 
       const generator1 = new ObjectGenerator();
-      const context1 = createGeneratorContext(
-        parseResult.value as Schema,
-        formatRegistry,
-        { seed: INTEGRATION_TEST_SEED }
-      );
+      const context1 = createGeneratorContext(canonicalSchema, formatRegistry, {
+        seed: INTEGRATION_TEST_SEED,
+      });
       const items1: unknown[] = [];
       for (let i = 0; i < count; i++) {
         const result = generator1.generate(
-          parseResult.value as ObjectSchema,
+          canonicalSchema as ObjectSchema,
           context1
         );
         if (result.isOk()) {
@@ -277,15 +278,13 @@ describe('Full Pipeline Integration Tests', () => {
       }
 
       const generator2 = new ObjectGenerator();
-      const context2 = createGeneratorContext(
-        parseResult.value as Schema,
-        formatRegistry,
-        { seed: INTEGRATION_TEST_SEED }
-      );
+      const context2 = createGeneratorContext(canonicalSchema, formatRegistry, {
+        seed: INTEGRATION_TEST_SEED,
+      });
       const items2: unknown[] = [];
       for (let i = 0; i < count; i++) {
         const result = generator2.generate(
-          parseResult.value as ObjectSchema,
+          canonicalSchema as ObjectSchema,
           context2
         );
         if (result.isOk()) {
@@ -333,12 +332,11 @@ describe('Full Pipeline Integration Tests', () => {
             const generator = new ObjectGenerator();
             const formatRegistry = new FormatRegistry();
 
-            const parseResult = parser.parse(schema);
-            expect(parseResult.isOk()).toBe(true);
-            if (!parseResult.isOk()) return;
+            const normalized = expectParseOk(parser.parse(schema));
+            const canonicalSchema = normalized.schema as Schema;
 
             const context = createGeneratorContext(
-              parseResult.value as Schema,
+              canonicalSchema,
               formatRegistry,
               { seed: INTEGRATION_TEST_SEED }
             );
@@ -346,7 +344,7 @@ describe('Full Pipeline Integration Tests', () => {
             const items: unknown[] = [];
             for (let i = 0; i < count; i++) {
               const result = generator.generate(
-                parseResult.value as ObjectSchema,
+                canonicalSchema as ObjectSchema,
                 context
               );
               if (result.isOk()) {
@@ -458,14 +456,16 @@ describe('Full Pipeline Integration Tests', () => {
       const parseResult = parser.parse(problematicSchema);
       // Parser might accept it, but generator should handle gracefully
       if (parseResult.isOk()) {
+        const normalized = parseResult.value;
+        const canonicalSchema = normalized.schema as Schema;
         const context = createGeneratorContext(
-          parseResult.value as Schema,
+          canonicalSchema,
           formatRegistry,
           { seed: INTEGRATION_TEST_SEED }
         );
 
         const result = generator.generate(
-          parseResult.value as ObjectSchema,
+          canonicalSchema as ObjectSchema,
           context
         );
         // Generator should either generate valid data or fail gracefully

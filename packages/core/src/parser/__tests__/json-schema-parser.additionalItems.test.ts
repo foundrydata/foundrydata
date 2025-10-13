@@ -12,10 +12,10 @@ describe('JSONSchemaParser - additionalItems (strict)', () => {
     const r = parser.parse(input);
     expect(r.isOk()).toBe(true);
     if (!r.isOk()) return;
-    const out = r.value as any;
+    const out = r.value.schema as any;
     expect(out.type).toBe('array');
-    expect(Array.isArray(out.items)).toBe(true);
-    expect(out.additionalItems).toBe(false);
+    expect(Array.isArray(out.prefixItems)).toBe(true);
+    expect(out.items).toBe(false);
   });
 
   it('parses additionalItems as schema for suffix', () => {
@@ -28,11 +28,11 @@ describe('JSONSchemaParser - additionalItems (strict)', () => {
     const r = parser.parse(input);
     expect(r.isOk()).toBe(true);
     if (!r.isOk()) return;
-    const out = r.value as any;
+    const out = r.value.schema as any;
     expect(out.type).toBe('array');
-    expect(Array.isArray(out.items)).toBe(true);
-    expect(out.additionalItems).toBeDefined();
-    expect(out.additionalItems.type).toBe('integer');
-    expect(out.additionalItems.minimum).toBe(0);
+    expect(Array.isArray(out.prefixItems)).toBe(true);
+    expect(out.items).toBeDefined();
+    expect(out.items.type).toBe('integer');
+    expect(out.items.minimum).toBe(0);
   });
 });

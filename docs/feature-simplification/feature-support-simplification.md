@@ -385,6 +385,7 @@ Examples:
    * Partial forms: keep `if`‑only and `then`/`else`‑only as‑is.
    * **`aggressive` rewrite:** **alias of** **`safe`** (identical behavior and guards; no additional rewrites; no extra diagnostics).
    * Cap nested `not` by `guards.maxGeneratedNotNesting` (note `NOT_DEPTH_CAPPED`). **Default: 2** (aligns with §23).
+   * **Origin & locus (normative).** When the safe rewrite applies, `anyOf` and the `not{not:S}` guard **MUST** carry `originPtr = "#/…/if"`, while the payloads carry `originPtr = "#/…/then"` / `"#/…/else"` respectively. When the rewrite is skipped, `IF_REWRITE_SKIPPED_UNEVALUATED` **MUST** be recorded at the `if` node’s canonical path (operator path, not an index), per §7 “Pointer binding & note locus”.
 
 <a id="s7-dependencies-guard"></a>
 5. **Dependencies / dependents**
@@ -425,6 +426,7 @@ Examples:
      **Cap:** If the constructed pattern’s JSON‑unescaped source exceeds the §8 regex complexity cap (length or quantified‑group detection, per §8), **do not rewrite**; the original `propertyNames` remains **gating‑only** for must‑cover (no coverage expansion). Emit `REGEX_COMPLEXITY_CAPPED` with `details:{ context:'rewrite', patternSource:P }` alongside `PNAMES_COMPLEX`.
      **Diagnostics (normative):** The emission **MUST** use the §19.1 payload shape with
      `details:{ context:'rewrite', patternSource:P }`, where `P` is the JSON‑unescaped regex source considered.
+     **Pointer binding (normative).** All **synthetic** constraints inserted by this rewrite **MUST** map in `ptrMap` to the `propertyNames` node of the same object (`originPtr = "#/…/propertyNames"`), and diagnostics referring to them **MUST** state `details.sourceKind:'propertyNamesSynthetic'` (see §8, §19). Notes `PNAMES_REWRITE_APPLIED` and `PNAMES_COMPLEX` **MUST** be recorded at the **owning object’s** canonical path (not at the synthetic literal/pattern).
      
      **Definition — `escapeRegexLiteral(s)` (normative):** return exactly `s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')`.
      This escapes each metacharacter so the literal name is safe inside an alternation.
@@ -496,6 +498,45 @@ Examples:
 `IF_REWRITE_DISABLED_ANNOTATION_RISK`, `PNAMES_COMPLEX`, `DEPENDENCY_GUARDED`, `DYNAMIC_PRESENT`,
 `DEFS_TARGET_MISSING`, `EXCLMIN_IGNORED_NO_MIN`, `EXCLMAX_IGNORED_NO_MAX`, `OAS_NULLABLE_KEEP_ANNOT`,
 `NOT_DEPTH_CAPPED`, `PNAMES_REWRITE_APPLIED`, `ALLOF_SIMPLIFICATION_SKIPPED_UNEVALUATED`, `ANYOF_SIMPLIFICATION_SKIPPED_UNEVALUATED`, `ONEOF_SIMPLIFICATION_SKIPPED_UNEVALUATED`.
+
+<a id="s7-pointer-binding"></a>
+### Pointer binding & note locus (normative)
+
+**Binding moment (MUST).** Implementations **MUST** compute `ptrMap` and `revPtrMap` **after all Normalize passes** (§7 Pass Order), by walking the **final canonical tree**. All `notes[].canonPath` **MUST** also be bound against this final tree.
+
+**No placeholder policy (MUST).** Implementations **MUST NOT** preserve pre‑simplification array arities by inserting identity placeholders (e.g., `true`/`false`) in the **canonical view**. Canonicalization targets a minimal, simplified shape.
+
+**Origin pointer (definition).** Each canonical node is associated to an **origin pointer** `originPtr` referencing its source in the **original schema**. The exported maps are defined as:
+```
+ptrMap[canonPath]     := originPtr(node at canonPath)
+revPtrMap[originPtr] += canonPath
+```
+When a container is structurally replaced, the replacement node receives an `originPtr` per the transformation‑specific rules below.
+
+**Locus for Normalizer notes (MUST).** Notes **MUST** attach to the smallest **stable** ancestor to avoid index drift:
+• for `allOf`/`anyOf`/`oneOf`, locus = the operator path (e.g., `#/…/allOf`), never an operand index;  
+• for `propertyNames` rewrite acceptance/refusal, locus = the **owning object** path;  
+• for `if/then/else` rewrite, locus = the **`if`** path;  
+• regex diagnostics with `context:'rewrite'` (compile/cap) attach to the **owning object** (the node that carries `propertyNames`), aligned with §8/§19.
+
+**Transformation‑specific origin rules (MUST).**
+1) **Boolean/trivial simplifications (§7.3).**
+   • Removing identity operands does **not** create `ptrMap` entries for removed nodes.  
+   • If `oneOf [S] ⇒ S`, then `originPtr(S_final) = "#/…/oneOf/0"`.  
+   • If `enum` of size 1 is normalized to `const` (canonical view only), then `originPtr(const) = "#/…/enum/0"`.  
+   • If a combinator collapses to a boolean at the operator site, the replacement node’s `originPtr` **MUST** be the operator path (e.g., `#/…/allOf`).
+2) **Conditional rewrite (§7.4).** When the safe rewrite applies:  
+   • `anyOf` root and the double‑negation guard `not{not:S}` receive `originPtr = "#/…/if"`.  
+   • The `then` payload maps to `originPtr = "#/…/then"`; the `else` payload maps to `originPtr = "#/…/else"`.  
+   If the rewrite is skipped, notes attach at the `if` path (see **Locus**).
+3) **`propertyNames` rewrite (§7.6).** When `PNAMES_REWRITE_APPLIED` is emitted:  
+   • Synthetic entries added in the canonical view **MUST** map to the `propertyNames` node:  
+     `originPtr( patternProperties["..."] ) = "#/…/propertyNames"` and  
+     `originPtr( additionalProperties:false ) = "#/…/propertyNames"`.  
+   • Diagnostics that refer to these synthetic recognizers **MUST** use `details.sourceKind:'propertyNamesSynthetic'` (cf. §8, §19) and **MUST NOT** duplicate `canonPath` inside `details`.
+4) **References (§7.2).** For in‑document rewrites `#/definitions/… → #/$defs/…`, `originPtr` **MUST** remain the **original** pointer before rewrite.
+
+**Reverse lookup for actions (MUST).** Public repair/generate logs that need the original path **MUST** derive it via the **longest‑prefix** walk over `ptrMap` (see `toOriginalByWalk` in §22), not by caching pre‑simplification indices.
 
 ---
 
@@ -2132,6 +2173,10 @@ anchoring and complexity scans and guarantees byte‑for‑byte reproducibility.
   * **Test ID: RAT_DELTA_LOG_EXCLUSIVE_INTEGER** — Given schema `{ "type":"integer","exclusiveMinimum":0 }`, when repairing input value `0`, verify a `exclusiveMinimum` repair action includes either `details.delta:1` (optional) or that `details.epsilon` is absent.
 
 * Pointer mapping (longest‑prefix reverse map).
+* **Pointer binding & locus (new).**
+  - **T‑PTR‑ALLOF‑RENORM‑01** — `allOf:[true, S, true]` ⇒ canon `allOf:[S]`; vérifier `ptrMap["#/…/allOf/0"] === "#/…/allOf/1"` et qu’aucune note n’est attachée à un index, seulement au chemin opérateur.
+  - **T‑PTR‑ONEOF‑SIZE1‑01** — `oneOf:[{const:1}]` ⇒ canon `{const:1}`; vérifier `ptrMap["#/…/const"] === "#/…/oneOf/0/const"`.
+  - **T‑PTR‑PNAMES‑SYN‑01** — rewrite `propertyNames.enum` ⇒ `patternProperties` & `additionalProperties:false` synthétiques; vérifier que leurs `ptrMap` pointent sur `#/…/propertyNames` et que les diags qui s’y réfèrent emploient `details.sourceKind:"propertyNamesSynthetic"`.
 
 * Structural hashing for `uniqueItems` (collision buckets + `deepEqual`).
 
@@ -2398,6 +2443,10 @@ export interface NormalizeResult {
   }>;
 }
 export function normalize(schema: any, opts?: NormalizeOptions): NormalizeResult;
+
+// **Normative notes (binding):**
+// • ptrMap/revPtrMap and notes[].canonPath are computed **after all Normalize passes** on the final canonical tree (see §7 “Pointer binding & note locus”).
+// • Implementations **MUST NOT** preserve pre‑simplification array indices via placeholders in the canonical view.
 ```
 
 <a id="s23-compose-interfaces"></a>

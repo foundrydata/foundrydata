@@ -26,6 +26,10 @@ import { ParseError } from '../types/errors';
 import { ErrorCode } from '../errors/codes';
 import { ok, err } from '../types/result';
 import type { SchemaParser } from './schema-parser';
+import {
+  normalize,
+  type NormalizeResult,
+} from '../transform/schema-normalizer';
 
 export class JSONSchemaParser implements SchemaParser {
   // Features we explicitly support
@@ -83,7 +87,7 @@ export class JSONSchemaParser implements SchemaParser {
     );
   }
 
-  parse(input: unknown): Result<Schema, ParseError> {
+  parse(input: unknown): Result<NormalizeResult, ParseError> {
     if (!this.supports(input)) {
       return err(
         new ParseError({
@@ -101,7 +105,14 @@ export class JSONSchemaParser implements SchemaParser {
         return featureCheck;
       }
 
-      return this.parseSchema(input as Record<string, unknown> | boolean, '');
+      const parsed = this.parseSchema(
+        input as Record<string, unknown> | boolean,
+        ''
+      );
+      if (parsed.isErr()) {
+        return parsed;
+      }
+      return ok(normalize(parsed.value));
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Unknown parsing error';

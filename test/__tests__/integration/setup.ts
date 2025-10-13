@@ -2,9 +2,22 @@ import { describe, test, expect } from 'vitest';
 import fc from 'fast-check';
 import { propertyTest } from '../../setup';
 import type { JSONSchema7 } from 'json-schema';
+import type { Result } from '../../../packages/core/src/types/result';
+import type { NormalizeResult } from '../../../packages/core/src/transform/schema-normalizer';
+import { ParseError } from '../../../packages/core/src/types/errors';
 
 // Re-export common test utilities
 export { describe, test, expect, fc, propertyTest };
+
+export function expectParseOk(
+  result: Result<NormalizeResult, ParseError>
+): NormalizeResult {
+  expect(result.isOk()).toBe(true);
+  if (!result.isOk()) {
+    throw result.error;
+  }
+  return result.value;
+}
 
 // Integration test specific constants
 export const INTEGRATION_TEST_SEED = 424242;

@@ -29,20 +29,18 @@ describe('Example Schemas', () => {
 
     const result = parser.parse(schemaJson);
     expect(result.isOk()).toBe(true);
-
-    if (result.isOk()) {
-      const schema = result.value as ObjectSchema;
-      expect(schema.type).toBe('object');
-      expect(schema.properties).toBeDefined();
-      expect(Object.keys(schema.properties!)).toEqual([
-        'id',
-        'name',
-        'email',
-        'age',
-        'premium',
-      ]);
-      expect(schema.required).toEqual(['id', 'email']);
-    }
+    if (!result.isOk()) return;
+    const schema = result.value.schema as ObjectSchema;
+    expect(schema.type).toBe('object');
+    expect(schema.properties).toBeDefined();
+    expect(Object.keys(schema.properties!)).toEqual([
+      'id',
+      'name',
+      'email',
+      'age',
+      'premium',
+    ]);
+    expect(schema.required).toEqual(['id', 'email']);
   });
 
   it('should parse simple array schema', () => {
@@ -58,13 +56,11 @@ describe('Example Schemas', () => {
 
     const result = parser.parse(schemaJson);
     expect(result.isOk()).toBe(true);
-
-    if (result.isOk()) {
-      const schema = result.value as ArraySchema;
-      expect(schema.type).toBe('array');
-      expect(schema.minItems).toBe(1);
-      expect(schema.maxItems).toBe(5);
-    }
+    if (!result.isOk()) return;
+    const schema = result.value.schema as ArraySchema;
+    expect(schema.type).toBe('array');
+    expect(schema.minItems).toBe(1);
+    expect(schema.maxItems).toBe(5);
   });
 
   it('should parse complex user schema with nested objects', () => {
@@ -87,13 +83,11 @@ describe('Example Schemas', () => {
 
     const result = parser.parse(schemaJson);
     expect(result.isOk()).toBe(true); // Should now pass with nested objects support
-
-    if (result.isOk()) {
-      const schema = result.value as ObjectSchema;
-      expect(schema.type).toBe('object');
-      expect(schema.properties!.userId).toBeDefined();
-      expect(schema.properties!.profile).toBeDefined();
-      expect(schema.required).toEqual(['userId']);
-    }
+    if (!result.isOk()) return;
+    const schema = result.value.schema as ObjectSchema;
+    expect(schema.type).toBe('object');
+    expect(schema.properties!.userId).toBeDefined();
+    expect(schema.properties!.profile).toBeDefined();
+    expect(schema.required).toEqual(['userId']);
   });
 });
