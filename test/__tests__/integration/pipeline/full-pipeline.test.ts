@@ -398,35 +398,25 @@ describe('Full Pipeline Integration Tests', () => {
   describe('error handling in pipeline', () => {
     test('should handle invalid schema gracefully', () => {
       const invalidSchemas = [
-        { type: 'invalid' }, // Invalid type - should be rejected
-        { type: 'string', pattern: '[' }, // Pattern not supported - should be rejected
-        {
-          type: 'object',
-          properties: {
-            user: {
-              type: 'object',
-              properties: {
-                profile: {
-                  type: 'object',
-                  properties: {
-                    settings: {
-                      type: 'object',
-                      properties: { theme: { type: 'string' } },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        }, // Deep nested objects (depth > 2) - should be rejected
-        { type: 'string', multipleOf: 0.5 }, // multipleOf on wrong type - should be rejected as unsupported
-      ];
+        // Function values are not JSON-serializable
+        { type: 'object', default: () => 'nope' },
+        // Undefined values are rejected early
+        { type: 'string', default: undefined },
+        // Circular references are rejected
+        (() => {
+          const root: any = { type: 'object' };
+          root.properties = { self: root };
+          return root;
+        })(),
+        // Schemas without indicators are rejected
+        { description: 'missing indicators' },
+        // BigInt values are not supported
+        { type: 'number', minimum: BigInt(0) },
+      ] as const;
 
-      for (const schema of invalidSchemas) {
+      for (const schemaCandidate of invalidSchemas) {
         const parser = new JSONSchemaParser();
-        const result = parser.parse(schema as JSONSchema7);
-        // Note: Parser doesn't validate semantic constraints like negative minLength
-        // It only validates structural validity and supported features
+        const result = parser.parse(schemaCandidate as JSONSchema7);
         expect(result.isErr()).toBe(true);
         if (result.isErr()) {
           expect(result.error).toBeDefined();

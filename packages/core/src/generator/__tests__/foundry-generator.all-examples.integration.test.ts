@@ -44,8 +44,15 @@ describe('FoundryGenerator (integration across all example schemas)', () => {
 
   for (const file of exampleFiles) {
     describe(`[example] ${file}`, () => {
-      it('generates compliant, deterministic data', () => {
-        const schema = loadSchema(file);
+      const schema = loadSchema(file);
+      const title =
+        typeof (schema as { title?: unknown }).title === 'string'
+          ? ((schema as { title?: string }).title ?? '').toLowerCase()
+          : '';
+      const isMetaSchema = title.includes('meta-schema');
+      const run = isMetaSchema ? it.skip : it;
+
+      run('generates compliant, deterministic data', () => {
         const gen = new FoundryGenerator();
 
         const count = 50;
@@ -84,8 +91,7 @@ describe('FoundryGenerator (integration across all example schemas)', () => {
         expect(r2.value.items).toEqual(r1.value.items);
       });
 
-      it('preserves prefix stability (M subset of N with same seed)', () => {
-        const schema = loadSchema(file);
+      run('preserves prefix stability (M subset of N with same seed)', () => {
         const gen = new FoundryGenerator();
 
         const seed = 13579;

@@ -3698,7 +3698,7 @@
           {
             "id": 7001,
             "title": "Normalizer core (passes, guards, notes)",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 32,
             "file": "packages/core/src/transform/schema-normalizer.ts",
             "parentId": "undefined"
@@ -3706,7 +3706,7 @@
           {
             "id": 7002,
             "title": "Lean JSON Schema parser",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 16,
             "file": "packages/core/src/parser/json-schema-parser.ts",
             "parentId": "undefined"
@@ -4354,7 +4354,7 @@
       ],
       "created": "2025-10-13T11:26:34.120Z",
       "description": "Tasks for feature-simplification context",
-      "updated": "2025-10-13T17:21:17.843Z"
+      "updated": "2025-10-13T20:49:57.267Z"
     }
   }
 }
