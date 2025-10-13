@@ -15,7 +15,7 @@
 5. **Diagnostics** : phase correcte, champs obligatoires (`tiebreakRand`, `exclusivityRand`, `budget`).
 6. **AP:false** : pas d’expansion via `propertyNames.enum` sans `PNAMES_REWRITE_APPLIED`; fail-fast uniquement sous **presence pressure**.
 7. **AJV** : deux instances, flags **identiques** (cf. SPEC §§12–13).
-8. **Quotas contexte** : ≤5 anchors/itération, ≤200 lignes par lecture d’anchor.
+8. **Quotas contexte** : ≤5 anchors/itération, ≤2 sections SPEC complètes (via Grep bornes + Read calculé).
 9. **Bench gates** : `p95 ≤ 120ms`, `mem ≤ 512MB`.
 10. **Escalade** : SPEC ambiguë/contradictoire → bloquer, produire `SPEC-QUESTION.md`.
 
@@ -51,7 +51,7 @@ Step 1  Obtenir la tâche et marquer comme en cours :
         → mcp__task-master-ai__get_task(id)
         → mcp__task-master-ai__set_task_status(id, "in-progress")
 
-Step 2  REFONLY: lister anchors (≤5). Lire fenêtres (≤200 lignes/anchor).
+Step 2  REFONLY: identifier sections requises (≤2 sections/itération). Grep bornes + Read calculé pour chaque section.
 
 Step 3  Produire PLAN.md (200–400 mots) + liste fichiers touchés (contrat ci-dessous).
 
@@ -224,36 +224,136 @@ Règles : (a) le JSON externe (si présent) doit parser ; (b) **après** suppres
 
 ## Politique REFONLY — Anchors uniquement
 
-**Mapping d’anchor**
+**Mapping d'anchor**
 
 ```
 spec://§<n>#<slug> → docs/feature-simplification/feature-support-simplification.md#s<n>-<slug>
 ```
 
-**Procédure**
+**Procédure de lecture SPEC (feature-support-simplification.md = 2676 lignes)**
 
-1. `rg -n "<slug>" docs/.../feature-support-simplification.md`
-2. Lecture **fenêtrée** : ≤200 lignes par anchor (pas de lecture intégrale).
-3. Max **5 anchors** par itération ; si >5 requis → produire un **Context Expansion Request** (objet JSON court) et s’arrêter.
+Le fichier SPEC est trop volumineux pour lecture sans précision. **Toujours** utiliser ce protocole :
+
+### Protocole Obligatoire : Grep Bornes + Read Calculé
+
+**Étape 1 : Grep Section Bounds (parallèle)**
+
+```bash
+# Pour lire §N, grep début et fin
+Grep({ pattern: '^<a id="s7-', '-n': true, head_limit: 1 })  # → ligne 321
+Grep({ pattern: '^<a id="s8-', '-n': true, head_limit: 1 })  # → ligne 650
+```
+
+**Étape 2 : Calcul Automatique**
+
+```typescript
+const start = 321;   // Premier anchor §7
+const end = 650;     // Premier anchor §8 (borne supérieure)
+const limit = end - start;  // = 329 lignes pour §7 complet
+```
+
+**Étape 3 : Read Exact**
+
+```bash
+Read({
+  file_path: 'docs/feature-simplification/feature-support-simplification.md',
+  offset: start,
+  limit: limit
+})
+# Lit EXACTEMENT §7, 100% efficacité, 0% gaspillage
+```
+
+### Justification Technique
+
+**Fichier = 2676 lignes**, sections typiques = 200-500 lignes :
+
+| Méthode | Tokens Chargés | Efficacité | Problème |
+|---------|----------------|------------|----------|
+| `Read(offset)` sans limit | ~2000 lignes | ❌ 15-20% | Charge §7+§8+§9+§10... = 82% waste |
+| `Read(offset, limit: 100)` | ~100 lignes | ❌ 30% | Tronque §7 à 30%, manque 70% du contenu |
+| **Grep bornes + Read** | ~329 lignes | ✅ 100% | Exactement §7, rien d'autre |
+
+### Pattern Universel (pour toute section §N)
+
+```typescript
+// Fonction générique
+function readSpecSection(n: number) {
+  // 1. Grep bornes (parallèle = 1 message, 2 tool calls)
+  const startLine = grep(`^<a id="s${n}-`, extract_first_line);
+  const endLine = grep(`^<a id="s${n+1}-`, extract_first_line) || 2676; // EOF si dernière section
+
+  // 2. Read calculé
+  return Read({
+    offset: startLine,
+    limit: endLine - startLine
+  });
+}
+
+// Usage
+readSpecSection(7);   // Lit exactement §7 (lignes 321-650)
+readSpecSection(19);  // Lit exactement §19 jusqu'à EOF
+```
+
+### Quotas REFONLY (inchangés)
+
+* Max **5 anchors** par itération
+* Max **2 sections complètes** par itération (si sections longues >300 lignes)
+* Si >5 anchors requis → produire **Context Expansion Request**
 
 **Context Expansion Request**
 
 ```json
 {
   "type": "context-expansion",
-  "reason": "anchors>5",
+  "reason": "anchors>5 ou sections>2",
   "proposedAnchors": ["spec://§8#branch-selection-algorithm", "..."]
 }
 ```
+
+### Exemples Concrets
+
+**✅ CORRECT : §7 Normalizer**
+
+```bash
+# Grep bornes
+Grep({ pattern: '^<a id="s7-', '-n': true })  # → 321
+Grep({ pattern: '^<a id="s8-', '-n': true })  # → 650
+
+# Read exact
+Read({ offset: 321, limit: 329 })
+# Résultat : 329 lignes, 100% §7
+```
+
+**❌ INCORRECT : Read sans calcul**
+
+```bash
+# Mauvais
+Read({ offset: 321 })  # Lit 2000 lignes = §7+§8+§9+§10... (82% waste)
+
+# Mauvais
+Read({ offset: 321, limit: 100 })  # Tronque §7 à ligne 420, manque 250 lignes (70% manquant)
+```
+
+### Alternative : Grep -A (sections courtes <200 lignes uniquement)
+
+```bash
+# Pour petites sections seulement
+Grep({ pattern: '<a id="s13-formats"></a>', '-A': 180, '-n': true })
+# Trade-off: 1 tool call, mais risque si estimation fausse
+```
+
+**Règle** : Préférer toujours **Grep bornes + Read calculé** (robuste, précis, 100% efficient).
 
 ---
 
 ## Quotas & limites
 
 * Anchors par itération : **≤5**
-* Fenêtre par anchor : **≤200 lignes**
+* Sections SPEC complètes par itération : **≤2** (si sections >300 lignes)
 * Longueur PLAN.md : **200–600 mots**
 * Trailer REFONLY `summary` : **≤240 caractères**
+
+**Note** : "Fenêtre par anchor" n'est plus applicable car on lit des **sections complètes** via Grep bornes + Read calculé. Une section §N contient plusieurs anchors et doit être lue intégralement.
 
 ---
 
