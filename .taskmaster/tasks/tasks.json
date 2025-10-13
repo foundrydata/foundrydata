@@ -3681,13 +3681,14 @@
         "priority": "high",
         "estimatedHours": 48,
         "dependencies": [
+          "5",
+          "6",
+          "13",
           "8000",
           "9000",
           "9107",
-          "9112",
           "9108",
-          "5",
-          "6"
+          "9112"
         ],
         "status": "pending",
         "complexityScore": 5,
@@ -3947,6 +3948,7 @@
         "priority": "medium",
         "estimatedHours": 12,
         "dependencies": [
+          "13",
           "8000",
           "9000",
           "9111",
