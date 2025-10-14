@@ -137,3 +137,13 @@ export {
   type CoverageEntry,
   type CoverageIndex,
 } from './transform/composition-engine';
+export { executePipeline } from './pipeline/orchestrator';
+export {
+  PipelineStageError,
+  type PipelineOptions,
+  type PipelineArtifacts,
+  type PipelineResult,
+  type PipelineStageName,
+  type PipelineStageStatus,
+  type PipelineStageOverrides,
+} from './pipeline/types';
