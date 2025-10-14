@@ -326,14 +326,35 @@ class SchemaNormalizer {
     }
 
     if (inlineOneOf) {
+      // Prefer minimal shapes when possible:
+      // - If no siblings: return S directly (already origin-adjusted by simplifyOneOf)
+      // - If S is boolean true or empty object: drop it (no effect)
+      // - If S is boolean false: collapse to false at operator locus
+      // - Otherwise: conjoin via allOf to preserve semantics without merging
+      const s = inlineOneOf.schema;
       if (processedEntries.length === 0) {
-        return cloneCanonNode(inlineOneOf.schema);
+        return cloneCanonNode(s);
+      }
+
+      if (isValueNode(s) && s.value === true) {
+        // oneOf [true] has no effect in presence of siblings
+        return createObjectNode(processedEntries, node.origin);
+      }
+
+      if (isValueNode(s) && s.value === false) {
+        // Collapse the whole object to false; origin at the operator path
+        return createValueNode(false, inlineOneOf.origin);
+      }
+
+      if (isObjectNode(s) && s.entries.length === 0) {
+        // Empty schema is a no-op
+        return createObjectNode(processedEntries, node.origin);
       }
 
       const existingAllOfIndex = processedEntries.findIndex(
         (entry) => entry.key === 'allOf' && entry.node.kind === 'array'
       );
-      const cloned = cloneCanonNode(inlineOneOf.schema);
+      const cloned = cloneCanonNode(s);
       if (existingAllOfIndex !== -1) {
         const existingSlot = processedEntries[existingAllOfIndex];
         if (existingSlot && isArrayNode(existingSlot.node)) {
@@ -1525,9 +1546,13 @@ class SchemaNormalizer {
 
     if (retained.length === 1) {
       const single = retained[0]!;
+      // Per §7 transformation-specific origin rules:
+      // If oneOf [S] ⇒ S, originPtr(S_final) = "#/…/oneOf/0"
+      const sOrigin = buildIndexPointer(pointer, 0);
+      const inlined = cloneCanonNodeWithRootOrigin(single, sOrigin);
       return {
         kind: 'inline',
-        schema: single,
+        schema: inlined,
         origin: node.origin,
       };
     }
@@ -1745,6 +1770,30 @@ function cloneCanonNode(node: CanonNode): CanonNode {
           node: cloneCanonNode(entry.node),
         })),
         node.origin
+      );
+  }
+}
+
+// Clone a canon node but override the origin at the root only.
+function cloneCanonNodeWithRootOrigin(
+  node: CanonNode,
+  newOrigin: string
+): CanonNode {
+  switch (node.kind) {
+    case 'value':
+      return createValueNode(node.value, newOrigin);
+    case 'array':
+      return createArrayNode(
+        node.items.map((item) => cloneCanonNode(item)),
+        newOrigin
+      );
+    case 'object':
+      return createObjectNode(
+        node.entries.map((entry) => ({
+          key: entry.key,
+          node: cloneCanonNode(entry.node),
+        })),
+        newOrigin
       );
   }
 }

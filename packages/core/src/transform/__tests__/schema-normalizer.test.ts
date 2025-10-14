@@ -38,6 +38,17 @@ describe('SchemaNormalizer – boolean simplifications', () => {
     expect(noteCodes(result)).toEqual([]);
   });
 
+  it('sets root origin to /oneOf/0 when oneOf reduces to single', () => {
+    const schema = {
+      oneOf: [false, { type: 'string' }],
+    };
+    const result = normalize(schema);
+
+    expect(result.schema).toEqual({ type: 'string' });
+    // Root canon path maps to the normalized index 0 origin
+    expect(result.ptrMap.get('')).toBe('/oneOf/0');
+  });
+
   it('collapses anyOf containing true to true', () => {
     const schema = {
       anyOf: [{ type: 'number' }, true],
@@ -47,6 +58,41 @@ describe('SchemaNormalizer – boolean simplifications', () => {
     expect(result.schema).toBe(true);
     expect(result.ptrMap.get('')).toBe('/anyOf');
     expect(noteCodes(result)).toEqual([]);
+  });
+
+  it('does not introduce allOf when oneOf single true has siblings', () => {
+    const schema = {
+      minLength: 1,
+      oneOf: [true],
+    };
+    const result = normalize(schema);
+
+    expect(result.schema).toEqual({ minLength: 1 });
+    // Ensure no allOf introduced
+    expect((result.schema as any).allOf).toBeUndefined();
+  });
+
+  it('collapses to false when oneOf single false has siblings', () => {
+    const schema = {
+      minLength: 1,
+      oneOf: [false],
+    } as any;
+    const result = normalize(schema);
+
+    expect(result.schema).toBe(false);
+    // Locus is the operator path
+    expect(result.ptrMap.get('')).toBe('/oneOf');
+  });
+
+  it('does not introduce allOf when oneOf single empty-object has siblings', () => {
+    const schema = {
+      minLength: 2,
+      oneOf: [{}],
+    } as any;
+    const result = normalize(schema);
+
+    expect(result.schema).toEqual({ minLength: 2 });
+    expect((result.schema as any).allOf).toBeUndefined();
   });
 
   it('collapses allOf containing false to false with operator origin', () => {
