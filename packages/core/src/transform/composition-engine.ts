@@ -25,6 +25,32 @@ export interface CoverageEntry {
 
 export type CoverageIndex = Map<string, CoverageEntry>;
 
+interface CoveragePatternInfo {
+  source: string;
+  regexp: RegExp;
+  literals?: string[];
+  sourceKind: CoverageProvenance;
+}
+
+interface CoverageGatingPattern {
+  source: string;
+  regexp: RegExp;
+  literals?: string[];
+}
+
+interface CoverageConjunctInfo {
+  pointer: string;
+  named: Set<string>;
+  patterns: CoveragePatternInfo[];
+  gatingEnum?: Set<string>;
+  gatingPattern?: CoverageGatingPattern;
+  unsafePatternIssues: PatternIssue[];
+  hasProperties: boolean;
+  hasPatternProperties: boolean;
+  hasSyntheticPatterns: boolean;
+  finiteCandidates: Set<string>;
+}
+
 export interface ContainsNeed {
   schema: unknown;
   min?: number;
@@ -501,9 +527,7 @@ class CompositionEngine {
     schema: Record<string, unknown>,
     canonPath: string
   ): void {
-    const mustCover = schema.additionalProperties === false;
-
-    if (!mustCover) {
+    if (schema.additionalProperties !== false) {
       this.coverageIndex.set(canonPath, {
         has: () => true,
         provenance: [],
@@ -511,110 +535,414 @@ class CompositionEngine {
       return;
     }
 
-    const namedProperties = new Set<string>();
-    if (schema.properties && typeof schema.properties === 'object') {
-      for (const key of Object.keys(
-        schema.properties as Record<string, unknown>
-      )) {
-        namedProperties.add(key);
+    const conjuncts = this.collectCoverageConjuncts(schema, canonPath);
+    if (conjuncts.length === 0) {
+      // No conjunct enforced AP:false in the effective view; vacuous coverage.
+      this.coverageIndex.set(canonPath, {
+        has: () => true,
+        provenance: [],
+      });
+      return;
+    }
+
+    const presencePressure = this.computePresencePressure(schema);
+    const unsafeIssues = conjuncts.flatMap((conj) => conj.unsafePatternIssues);
+    const candidateFromGating = this.intersectGatingCandidates(conjuncts);
+    const candidateNames = candidateFromGating ?? new Set<string>();
+    if (!candidateFromGating) {
+      for (const conj of conjuncts) {
+        conj.finiteCandidates.forEach((value) => candidateNames.add(value));
       }
     }
 
-    const patternCollection = this.collectPatternRecognizers(schema, canonPath);
-    const recognizers = patternCollection.recognizers;
-    const unsafePatterns = patternCollection.issues;
-    const syntheticRecognizers = recognizers.filter(
-      (entry) => entry.sourceKind === 'propertyNamesSynthetic'
-    );
-    const patternPropertyRecognizers = recognizers.filter(
-      (entry) => entry.sourceKind === 'patternProperties'
-    );
-    const patternMatchers = recognizers.map((entry) => entry.regexp);
-    const presencePressure = hasPresencePressure(schema);
-    const hasSafeCoverage =
-      namedProperties.size > 0 || patternMatchers.length > 0;
-
-    if (!hasSafeCoverage && presencePressure) {
-      this.addUnsatHint({
-        code: DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
-        canonPath,
-        provable: false,
-        reason: 'coverageUnknown',
-        details: buildUnsatDetails(schema),
-      });
+    const hasName = this.createCoveragePredicate(conjuncts);
+    let safeIntersectionExists = false;
+    for (const candidate of candidateNames) {
+      if (hasName(candidate)) {
+        safeIntersectionExists = true;
+        break;
+      }
     }
 
-    if (!hasSafeCoverage && presencePressure && unsafePatterns.length > 0) {
-      for (const issue of unsafePatterns) {
-        const details: Record<string, unknown> = {
-          sourceKind: issue.sourceKind,
-          patternSource: issue.source,
+    const hasNonLiteralPattern = conjuncts.some((conj) =>
+      conj.patterns.some((pattern) => !pattern.literals)
+    );
+    const gatingWithoutEnumeration = conjuncts.some(
+      (conj) => conj.gatingPattern && !conj.gatingPattern.literals
+    );
+    const enumerationEligible =
+      !hasNonLiteralPattern && !gatingWithoutEnumeration;
+
+    const provenance = new Set<CoverageProvenance>();
+    if (conjuncts.some((conj) => conj.hasProperties)) {
+      provenance.add('properties');
+    }
+    if (conjuncts.some((conj) => conj.hasPatternProperties)) {
+      provenance.add('patternProperties');
+    }
+    if (conjuncts.some((conj) => conj.hasSyntheticPatterns)) {
+      provenance.add('propertyNamesSynthetic');
+    }
+
+    let enumerationValues: string[] | undefined;
+    if (enumerationEligible) {
+      const enumerationCandidates = candidateFromGating ?? new Set<string>();
+      if (!candidateFromGating) {
+        for (const conj of conjuncts) {
+          conj.named.forEach((name) => enumerationCandidates.add(name));
+          for (const pattern of conj.patterns) {
+            if (pattern.literals) {
+              pattern.literals.forEach((literal) =>
+                enumerationCandidates.add(literal)
+              );
+            }
+          }
+        }
+      }
+      const filtered = Array.from(enumerationCandidates.values()).filter(
+        (candidate) => hasName(candidate)
+      );
+      const limit = this.resolvedOptions.complexity.maxEnumCardinality;
+      if (filtered.length > limit) {
+        this.recordCap(DIAGNOSTIC_CODES.COMPLEXITY_CAP_ENUM);
+        this.addWarn(canonPath, DIAGNOSTIC_CODES.COMPLEXITY_CAP_ENUM, {
+          limit,
+          observed: filtered.length,
+        });
+      } else {
+        filtered.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+        enumerationValues = filtered;
+      }
+    }
+
+    const coverageEntry: CoverageEntry = {
+      has: hasName,
+      provenance: Array.from(provenance.values()).sort(),
+    };
+    if (enumerationValues) {
+      const snapshot = enumerationValues.slice();
+      coverageEntry.enumerate = () => snapshot.slice();
+    }
+    this.coverageIndex.set(canonPath, coverageEntry);
+
+    if (!safeIntersectionExists) {
+      if (presencePressure) {
+        this.addUnsatHint({
+          code: DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
+          canonPath,
+          provable: false,
+          reason: 'coverageUnknown',
+          details: buildUnsatDetails(schema),
+        });
+      }
+      if (unsafeIssues.length > 0 && presencePressure) {
+        const distinctIssues = dedupePatternIssues(unsafeIssues);
+        const primary = distinctIssues[0];
+        const detail: Record<string, unknown> = {
+          sourceKind:
+            distinctIssues.some(
+              (issue) => issue.sourceKind === 'patternProperties'
+            ) &&
+            distinctIssues.some(
+              (issue) => issue.sourceKind === 'propertyNamesSynthetic'
+            )
+              ? 'patternProperties'
+              : (primary?.sourceKind ?? 'patternProperties'),
         };
+        if (distinctIssues.length === 1 && primary) {
+          detail.patternSource = primary.source;
+        }
         if (this.mode === 'strict') {
           this.addFatal(
             canonPath,
             DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN,
-            details
+            detail
           );
         } else {
           this.addWarn(
             canonPath,
             DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN,
-            details
+            detail
           );
         }
+      } else if (presencePressure) {
+        this.addApproximation(canonPath, 'presencePressure');
       }
-    } else if (!hasSafeCoverage && presencePressure) {
-      this.addApproximation(canonPath, 'presencePressure');
+    }
+  }
+
+  private collectCoverageConjuncts(
+    schema: Record<string, unknown>,
+    canonPath: string
+  ): CoverageConjunctInfo[] {
+    const results: CoverageConjunctInfo[] = [];
+    const rootConjunct = this.buildCoverageConjunct(schema, canonPath);
+    if (rootConjunct) {
+      results.push(rootConjunct);
     }
 
-    const provenance = new Set<CoverageProvenance>();
-    if (namedProperties.size > 0) {
-      provenance.add('properties');
-    }
-    if (patternPropertyRecognizers.length > 0) {
-      provenance.add('patternProperties');
-    }
-    if (syntheticRecognizers.length > 0) {
-      provenance.add('propertyNamesSynthetic');
+    const allOf = Array.isArray(schema.allOf) ? schema.allOf : undefined;
+    if (!allOf) {
+      return results;
     }
 
-    const enumerationCandidates = new Set<string>(namedProperties);
-    let hasInfinitePattern = false;
-    for (const recognizer of recognizers) {
-      if (recognizer.literals) {
-        for (const literal of recognizer.literals) {
-          enumerationCandidates.add(literal);
+    const allOfPtr = appendPointer(canonPath, 'allOf');
+    allOf.forEach((branch, index) => {
+      if (!branch || typeof branch !== 'object') return;
+      const branchPtr = appendPointer(allOfPtr, String(index));
+      results.push(
+        ...this.collectCoverageConjuncts(
+          branch as Record<string, unknown>,
+          branchPtr
+        )
+      );
+    });
+    return results;
+  }
+
+  private buildCoverageConjunct(
+    schema: Record<string, unknown>,
+    pointer: string
+  ): CoverageConjunctInfo | undefined {
+    if (!isObjectLikeSchema(schema)) return undefined;
+    if (schema.additionalProperties !== false) return undefined;
+
+    const named = new Set<string>();
+    const finiteCandidates = new Set<string>();
+    if (schema.properties && typeof schema.properties === 'object') {
+      for (const key of Object.keys(
+        schema.properties as Record<string, unknown>
+      )) {
+        named.add(key);
+        finiteCandidates.add(key);
+      }
+    }
+
+    const patterns: CoveragePatternInfo[] = [];
+    const unsafePatternIssues: PatternIssue[] = [];
+    const patternProps =
+      schema.patternProperties && typeof schema.patternProperties === 'object'
+        ? (schema.patternProperties as Record<string, unknown>)
+        : undefined;
+    let hasPatternProperties = false;
+    let hasSyntheticPatterns = false;
+
+    if (patternProps) {
+      const basePtr = appendPointer(pointer, 'patternProperties');
+      for (const patternSource of Object.keys(patternProps)) {
+        const patternPtr = appendPointer(basePtr, patternSource);
+        const sourceKind: CoverageProvenance = this.isPropertyNamesSynthetic(
+          patternPtr
+        )
+          ? 'propertyNamesSynthetic'
+          : 'patternProperties';
+        if (sourceKind === 'patternProperties') {
+          hasPatternProperties = true;
+        } else {
+          hasSyntheticPatterns = true;
         }
-      } else {
-        hasInfinitePattern = true;
-      }
-    }
 
-    const coverageEntry: CoverageEntry = {
-      has: createCoveragePredicate(namedProperties, patternMatchers),
-      provenance: Array.from(provenance.values()).sort(),
-    };
-
-    if (!hasInfinitePattern) {
-      const limit = this.resolvedOptions.complexity.maxEnumCardinality;
-      const observed = enumerationCandidates.size;
-      if (observed > limit) {
-        this.recordCap(DIAGNOSTIC_CODES.COMPLEXITY_CAP_ENUM);
-        this.addWarn(canonPath, DIAGNOSTIC_CODES.COMPLEXITY_CAP_ENUM, {
-          limit,
-          observed,
+        const analysis = analyzeRegexPattern(patternSource);
+        if (analysis.compileError) {
+          this.addCoverageRegexWarn(
+            pointer,
+            DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR,
+            {
+              patternSource,
+              context: 'coverage',
+            }
+          );
+          this.addApproximation(pointer, 'regexCompileError');
+          continue;
+        }
+        if (analysis.complexityCapped) {
+          this.addCoverageRegexWarn(
+            pointer,
+            DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED,
+            {
+              patternSource,
+              context: 'coverage',
+            }
+          );
+          this.addApproximation(pointer, 'regexComplexityCap');
+          unsafePatternIssues.push({
+            pointer,
+            source: patternSource,
+            sourceKind,
+            reason: 'regexComplexityCap',
+          });
+          continue;
+        }
+        if (!analysis.anchoredSafe || !analysis.compiled) {
+          this.addApproximation(pointer, 'nonAnchoredPattern');
+          unsafePatternIssues.push({
+            pointer,
+            source: patternSource,
+            sourceKind,
+            reason: 'nonAnchoredPattern',
+          });
+          continue;
+        }
+        patterns.push({
+          source: patternSource,
+          regexp: analysis.compiled,
+          literals: analysis.literalAlternatives,
+          sourceKind,
         });
-      } else {
-        const sorted = Array.from(enumerationCandidates.values()).sort(
-          (a, b) => (a < b ? -1 : a > b ? 1 : 0)
-        );
-        const snapshot = sorted.slice();
-        coverageEntry.enumerate = () => snapshot.slice();
+        if (analysis.literalAlternatives) {
+          for (const literal of analysis.literalAlternatives) {
+            finiteCandidates.add(literal);
+          }
+        }
       }
     }
 
-    this.coverageIndex.set(canonPath, coverageEntry);
+    let gatingEnum: Set<string> | undefined;
+    let gatingPattern: CoverageGatingPattern | undefined;
+    const propertyNames = schema.propertyNames;
+    if (propertyNames && typeof propertyNames === 'object') {
+      if (
+        'const' in propertyNames &&
+        typeof (propertyNames as Record<string, unknown>).const === 'string'
+      ) {
+        const value = (propertyNames as Record<string, unknown>)
+          .const as string;
+        gatingEnum = new Set([value]);
+      } else if (
+        Array.isArray((propertyNames as Record<string, unknown>).enum)
+      ) {
+        const values = extractStringArray(
+          (propertyNames as Record<string, unknown>).enum
+        );
+        if (values) {
+          gatingEnum = new Set(values);
+        }
+      }
+
+      if (
+        typeof (propertyNames as Record<string, unknown>).pattern === 'string'
+      ) {
+        const patternSource = (propertyNames as Record<string, unknown>)
+          .pattern as string;
+        const analysis = analyzeRegexPattern(patternSource);
+        if (analysis.compileError) {
+          this.addCoverageRegexWarn(
+            pointer,
+            DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR,
+            {
+              patternSource,
+              context: 'coverage',
+            }
+          );
+          this.addApproximation(pointer, 'regexCompileError');
+        } else if (analysis.complexityCapped) {
+          this.addCoverageRegexWarn(
+            pointer,
+            DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED,
+            {
+              patternSource,
+              context: 'coverage',
+            }
+          );
+          this.addApproximation(pointer, 'regexComplexityCap');
+        } else if (!analysis.anchoredSafe || !analysis.compiled) {
+          this.addApproximation(pointer, 'nonAnchoredPattern');
+        } else {
+          gatingPattern = {
+            source: patternSource,
+            regexp: analysis.compiled,
+            literals: analysis.literalAlternatives,
+          };
+        }
+      }
+    }
+
+    return {
+      pointer,
+      named,
+      patterns,
+      gatingEnum,
+      gatingPattern,
+      unsafePatternIssues,
+      hasProperties: named.size > 0,
+      hasPatternProperties,
+      hasSyntheticPatterns,
+      finiteCandidates,
+    };
+  }
+
+  private intersectGatingCandidates(
+    conjuncts: CoverageConjunctInfo[]
+  ): Set<string> | undefined {
+    let intersection: Set<string> | undefined;
+    for (const conj of conjuncts) {
+      const gatingSets: Set<string>[] = [];
+      if (conj.gatingEnum) {
+        gatingSets.push(conj.gatingEnum);
+      }
+      if (conj.gatingPattern?.literals) {
+        gatingSets.push(new Set(conj.gatingPattern.literals));
+      }
+      if (gatingSets.length === 0) continue;
+
+      let combined: Set<string> | undefined;
+      for (const set of gatingSets) {
+        combined = combined ? intersectStringSets(combined, set) : new Set(set);
+      }
+      if (!combined) continue;
+      intersection = intersection
+        ? intersectStringSets(intersection, combined)
+        : combined;
+      if (intersection.size === 0) {
+        return new Set<string>();
+      }
+    }
+    return intersection;
+  }
+
+  private createCoveragePredicate(
+    conjuncts: CoverageConjunctInfo[]
+  ): (name: string) => boolean {
+    return (name: string) => {
+      for (const conj of conjuncts) {
+        if (conj.gatingEnum && !conj.gatingEnum.has(name)) {
+          return false;
+        }
+        if (conj.gatingPattern && !conj.gatingPattern.regexp.test(name)) {
+          return false;
+        }
+        if (conj.named.has(name)) {
+          continue;
+        }
+        let matched = false;
+        for (const pattern of conj.patterns) {
+          if (pattern.regexp.test(name)) {
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) {
+          return false;
+        }
+      }
+      return true;
+    };
+  }
+
+  private computePresencePressure(schema: Record<string, unknown>): boolean {
+    if (hasPresencePressure(schema)) {
+      return true;
+    }
+    const allOf = Array.isArray(schema.allOf) ? schema.allOf : undefined;
+    if (!allOf) return false;
+    for (const branch of allOf) {
+      if (branch && typeof branch === 'object') {
+        if (this.computePresencePressure(branch as Record<string, unknown>)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   private handleBranch(
@@ -881,89 +1209,6 @@ class CompositionEngine {
     );
   }
 
-  private collectPatternRecognizers(
-    schema: Record<string, unknown>,
-    canonPath: string
-  ): PatternCollectionResult {
-    const recognizers: PatternRecognizer[] = [];
-    const issues: PatternIssue[] = [];
-
-    const patternProps = schema.patternProperties;
-    if (patternProps && typeof patternProps === 'object') {
-      const patternBasePtr = appendPointer(canonPath, 'patternProperties');
-      for (const [patternSource] of Object.entries(
-        patternProps as Record<string, unknown>
-      )) {
-        const patternPtr = appendPointer(patternBasePtr, patternSource);
-        const sourceKind: CoverageProvenance = this.isPropertyNamesSynthetic(
-          patternPtr
-        )
-          ? 'propertyNamesSynthetic'
-          : 'patternProperties';
-        const analysis = analyzeRegexPattern(patternSource);
-
-        if (analysis.compileError) {
-          this.addCoverageRegexWarn(
-            canonPath,
-            DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR,
-            {
-              patternSource,
-              context: 'coverage',
-            }
-          );
-          this.addApproximation(canonPath, 'regexCompileError');
-          issues.push({
-            pointer: canonPath,
-            source: patternSource,
-            sourceKind,
-            reason: 'regexCompileError',
-          });
-          continue;
-        }
-
-        if (analysis.complexityCapped) {
-          this.addCoverageRegexWarn(
-            canonPath,
-            DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED,
-            {
-              patternSource,
-              context: 'coverage',
-            }
-          );
-          this.addApproximation(canonPath, 'regexComplexityCap');
-          issues.push({
-            pointer: canonPath,
-            source: patternSource,
-            sourceKind,
-            reason: 'regexComplexityCap',
-          });
-          continue;
-        }
-
-        if (!analysis.anchoredSafe || !analysis.compiled) {
-          this.addApproximation(canonPath, 'nonAnchoredPattern');
-          issues.push({
-            pointer: canonPath,
-            source: patternSource,
-            sourceKind,
-            reason: 'nonAnchoredPattern',
-          });
-          continue;
-        }
-
-        recognizers.push({
-          source: patternSource,
-          regexp: analysis.compiled,
-          pointer: patternPtr,
-          sourceKind,
-          literals: analysis.literalAlternatives,
-        });
-      }
-    }
-
-    return { recognizers, issues };
-  }
-
   private addUnsatHint(hint: {
     code: DiagnosticCode;
     canonPath: string;
@@ -986,7 +1231,8 @@ interface BranchStats {
   propertyValues: Map<string, Set<string>>;
   required: Set<string>;
   types: Set<string>;
-  hasPatternProperties: boolean;
+  anchoredPatternLiterals: Set<string>;
+  hasUnsafePatternProperties: boolean;
   hasWideTypeUnion: boolean;
   additionalPropsTrueAndNoProps: boolean;
 }
@@ -995,7 +1241,8 @@ function analyzeBranch(branch: unknown, index: number): BranchStats {
   const propertyValues = new Map<string, Set<string>>();
   const required = new Set<string>();
   const types = new Set<string>();
-  let hasPatternProperties = false;
+  const anchoredPatternLiterals = new Set<string>();
+  let hasUnsafePatternProperties = false;
   let hasWideTypeUnion = false;
   let additionalPropsTrueAndNoProps = false;
 
@@ -1033,7 +1280,24 @@ function analyzeBranch(branch: unknown, index: number): BranchStats {
       typeof record.patternProperties === 'object' &&
       Object.keys(record.patternProperties as object).length > 0
     ) {
-      hasPatternProperties = true;
+      for (const patternSource of Object.keys(
+        record.patternProperties as Record<string, unknown>
+      )) {
+        const analysis = analyzeRegexPattern(patternSource);
+        if (analysis.compileError) {
+          hasUnsafePatternProperties = true;
+          continue;
+        }
+        if (analysis.complexityCapped || !analysis.anchoredSafe) {
+          hasUnsafePatternProperties = true;
+          continue;
+        }
+        if (analysis.literalAlternatives) {
+          for (const literal of analysis.literalAlternatives) {
+            anchoredPatternLiterals.add(literal);
+          }
+        }
+      }
     }
 
     const additional = record.additionalProperties;
@@ -1047,7 +1311,8 @@ function analyzeBranch(branch: unknown, index: number): BranchStats {
     propertyValues,
     required,
     types,
-    hasPatternProperties,
+    anchoredPatternLiterals,
+    hasUnsafePatternProperties,
     hasWideTypeUnion,
     additionalPropsTrueAndNoProps,
   };
@@ -1086,8 +1351,28 @@ function scoreBranch(branch: BranchStats, all: BranchStats[]): number {
     }
   }
 
+  if (branch.anchoredPatternLiterals.size > 0) {
+    let disjoint = true;
+    for (const peer of all) {
+      if (peer.index === branch.index) continue;
+      if (
+        peer.anchoredPatternLiterals.size > 0 &&
+        !areSetsDisjoint(
+          branch.anchoredPatternLiterals,
+          peer.anchoredPatternLiterals
+        )
+      ) {
+        disjoint = false;
+        break;
+      }
+    }
+    if (disjoint) {
+      score = (score + 50) | 0;
+    }
+  }
+
   if (
-    branch.hasPatternProperties ||
+    branch.hasUnsafePatternProperties ||
     branch.hasWideTypeUnion ||
     branch.additionalPropsTrueAndNoProps
   ) {
@@ -1119,14 +1404,6 @@ function extractLiteralValues(value: unknown): Set<string> | undefined {
   return literals.size > 0 ? literals : undefined;
 }
 
-interface PatternRecognizer {
-  source: string;
-  regexp: RegExp;
-  pointer: string;
-  sourceKind: CoverageProvenance;
-  literals?: string[];
-}
-
 type PatternIssueReason =
   | 'nonAnchoredPattern'
   | 'regexComplexityCap'
@@ -1137,11 +1414,6 @@ interface PatternIssue {
   source: string;
   sourceKind: CoverageProvenance;
   reason: PatternIssueReason;
-}
-
-interface PatternCollectionResult {
-  recognizers: PatternRecognizer[];
-  issues: PatternIssue[];
 }
 
 interface PatternAnalysis {
@@ -1158,21 +1430,6 @@ interface RegexScanResult {
   hasLookAround: boolean;
   hasBackReference: boolean;
   complexityCapped: boolean;
-}
-
-function createCoveragePredicate(
-  properties: Set<string>,
-  matchers: RegExp[]
-): (name: string) => boolean {
-  const propertySet = new Set(properties);
-  const regexes = matchers.slice();
-  return (name: string) => {
-    if (propertySet.has(name)) return true;
-    for (const regex of regexes) {
-      if (regex.test(name)) return true;
-    }
-    return false;
-  };
 }
 
 function analyzeRegexPattern(source: string): PatternAnalysis {
@@ -1393,6 +1650,18 @@ function decodeLiteral(pattern: string): string | undefined {
   return result;
 }
 
+function extractStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const result: string[] = [];
+  for (const entry of value) {
+    if (typeof entry !== 'string') {
+      return undefined;
+    }
+    result.push(entry);
+  }
+  return result;
+}
+
 function hasPresencePressure(schema: Record<string, unknown>): boolean {
   const minProps =
     typeof schema.minProperties === 'number' && schema.minProperties > 0;
@@ -1431,6 +1700,31 @@ function isArrayLikeSchema(schema: Record<string, unknown>): boolean {
     return true;
   if ('items' in schema || 'prefixItems' in schema) return true;
   return false;
+}
+
+function intersectStringSets(
+  left: Set<string>,
+  right: Set<string>
+): Set<string> {
+  const result = new Set<string>();
+  for (const value of left) {
+    if (right.has(value)) {
+      result.add(value);
+    }
+  }
+  return result;
+}
+
+function dedupePatternIssues(issues: PatternIssue[]): PatternIssue[] {
+  const seen = new Set<string>();
+  const unique: PatternIssue[] = [];
+  for (const issue of issues) {
+    const key = `${issue.sourceKind}:${issue.source}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(issue);
+  }
+  return unique;
 }
 
 function isObjectLikeSchema(schema: Record<string, unknown>): boolean {

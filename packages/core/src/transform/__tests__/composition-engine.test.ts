@@ -111,6 +111,39 @@ describe('CompositionEngine coverage index', () => {
     expect(entry?.provenance).toEqual([]);
   });
 
+  it('requires must-cover names to satisfy every additionalProperties:false conjunct', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      required: ['alpha'],
+      properties: {
+        alpha: { type: 'string' },
+      },
+      allOf: [
+        {
+          additionalProperties: false,
+          properties: {
+            beta: { type: 'string' },
+          },
+        },
+      ],
+    };
+
+    const result = compose(makeInput(schema));
+    const entry = result.coverageIndex.get('');
+    expect(entry).toBeDefined();
+    expect(entry?.has('alpha')).toBe(false);
+    expect(entry?.has('beta')).toBe(false);
+    expect(entry?.has('gamma')).toBe(false);
+    expect(entry?.enumerate?.()).toEqual([]);
+    const hint = result.diag?.unsatHints?.find(
+      (record) => record.code === DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE
+    );
+    expect(hint).toBeDefined();
+    const warnCodes = result.diag?.warn?.map((entry) => entry.code) ?? [];
+    expect(warnCodes).toContain(DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX);
+  });
+
   it('emits unsat hint when must-cover set is empty under presence pressure', () => {
     const schema = {
       type: 'object',
@@ -328,6 +361,36 @@ describe('CompositionEngine branch selection', () => {
     expect(scores).toBeDefined();
     expect(scores?.['2']).toBe(5);
     expect(branch?.scoreDetails.orderedIndices).toEqual([0, 1, 2]);
+  });
+
+  it('awards anchored disjoint patternProperties bonus', () => {
+    const schema = {
+      oneOf: [
+        {
+          type: 'object',
+          patternProperties: {
+            '^foo$': {},
+          },
+          additionalProperties: false,
+        },
+        {
+          type: 'object',
+          patternProperties: {
+            '^bar$': {},
+          },
+          additionalProperties: false,
+        },
+      ],
+    };
+
+    const result = compose(makeInput(schema));
+    const branch = result.diag?.branchDecisions?.find(
+      (entry) => entry.canonPath === '/oneOf'
+    );
+    expect(branch).toBeDefined();
+    const scores = branch?.scoreDetails.scoresByIndex;
+    expect(scores?.['0']).toBe(50);
+    expect(scores?.['1']).toBe(50);
   });
 });
 
