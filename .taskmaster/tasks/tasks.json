@@ -2,2357 +2,10 @@
   "project": "FoundryData",
   "version": "0.1.0-mvp",
   "approach": "Hybrid (Task Master structure + granular subtasks)",
-  "master": {
-    "tasks": [
-      {
-        "id": 0,
-        "title": "Project Setup and Configuration",
-        "description": "Initialize monorepo structure with TypeScript and development tooling",
-        "priority": "critical",
-        "estimatedHours": 4,
-        "dependencies": [],
-        "status": "done",
-        "details": "Setup npm workspaces monorepo with packages/core, packages/cli, packages/shared. Configure TypeScript with strict mode, ESLint, Prettier, and git hooks.",
-        "testStrategy": "Verify all packages build correctly, linting passes, and packages can reference each other",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Initialize npm workspaces",
-            "estimatedHours": 1,
-            "checklist": [
-              "Create root package.json with workspaces",
-              "Setup packages/core structure",
-              "Setup packages/cli structure",
-              "Setup packages/shared structure"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 2,
-            "title": "Configure TypeScript",
-            "estimatedHours": 1,
-            "checklist": [
-              "Root tsconfig.json with strict mode",
-              "Package-specific tsconfig.json files",
-              "Project references setup",
-              "Build scripts configuration"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 3,
-            "title": "Setup development tools",
-            "estimatedHours": 1,
-            "checklist": [
-              "ESLint configuration",
-              "Prettier configuration",
-              "Husky git hooks",
-              "Commitlint setup"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 4,
-            "title": "Configure Jest testing",
-            "estimatedHours": 1,
-            "checklist": [
-              "Jest configuration for monorepo",
-              "ts-jest setup",
-              "Coverage configuration (80% target)",
-              "Test scripts in package.json"
-            ],
-            "status": "done"
-          }
-        ]
-      },
-      {
-        "id": 1,
-        "title": "Implement Core Type System and Result Pattern",
-        "description": "Create fundamental types and Result<T,E> pattern for error handling throughout the application",
-        "priority": "critical",
-        "estimatedHours": 8,
-        "dependencies": [
-          0
-        ],
-        "status": "done",
-        "details": "Implement Result<T,E> pattern in packages/core/src/types/result.ts with Ok() and Err() constructors. Create branded types for schema validation. Add core interfaces for SchemaNode, GenerationConfig, and ValidationResult.",
-        "testStrategy": "Unit tests for Result pattern operations, type safety validation, and edge cases like nested Results. Test type guards and branded types.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create Result<T,E> pattern",
-            "estimatedHours": 2,
-            "file": "packages/core/src/types/result.ts",
-            "checklist": [
-              "Ok and Err classes",
-              "map and mapErr methods",
-              "isOk and isErr type guards",
-              "Helper functions ok() and err()"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 2,
-            "title": "Define core schema types",
-            "estimatedHours": 2,
-            "file": "packages/core/src/types/schema.ts",
-            "checklist": [
-              "Schema union type",
-              "ObjectSchema, ArraySchema interfaces",
-              "StringSchema with formats",
-              "NumberSchema, BooleanSchema"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 3,
-            "title": "Create error hierarchy",
-            "estimatedHours": 2,
-            "file": "packages/core/src/types/errors.ts",
-            "checklist": [
-              "FoundryError base class",
-              "SchemaError, GenerationError, ValidationError",
-              "Error context and suggestions",
-              "ErrorReporter for formatting"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 4,
-            "title": "Write comprehensive tests",
-            "estimatedHours": 2,
-            "file": "packages/core/src/types/__tests__/",
-            "checklist": [
-              "Result pattern tests",
-              "Type guard tests",
-              "Error hierarchy tests",
-              "100% coverage target"
-            ],
-            "status": "done"
-          }
-        ]
-      },
-      {
-        "id": 2,
-        "title": "Build Schema Parser with JSON Schema Support",
-        "description": "Create schema parsing system that converts JSON Schema to internal representation",
-        "priority": "critical",
-        "estimatedHours": 8,
-        "dependencies": [
-          1
-        ],
-        "status": "done",
-        "details": "Implement SchemaParser class in packages/core/src/parser/schema-parser.ts. Parse JSON Schema into internal SchemaNode tree structure. Support basic types, arrays, nested objects (depth ≤ 2), enums, and constraints. Handle string formats. Return Result<SchemaNode, ParseError> for all operations.",
-        "testStrategy": "Test with all example schemas in docs/examples/. Verify parsing of supported features and proper error handling for unsupported features like nested objects.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create SchemaParser interface",
-            "estimatedHours": 1,
-            "file": "packages/core/src/parser/schema-parser.ts",
-            "checklist": [
-              "SchemaParser interface",
-              "supports() method",
-              "parse() method returning Result",
-              "ParserRegistry pattern"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 2,
-            "title": "Implement JSON Schema parser",
-            "estimatedHours": 3,
-            "file": "packages/core/src/parser/json-schema-parser.ts",
-            "checklist": [
-              "Parse basic types",
-              "Handle constraints (min/max, lengths)",
-              "Parse arrays and nested objects (depth ≤ 2)",
-              "Support enums and required fields"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 3,
-            "title": "Handle unsupported features",
-            "estimatedHours": 2,
-            "checklist": [
-              "Detect nested objects",
-              "Detect pattern/regex",
-              "Detect $ref, allOf, oneOf",
-              "Return clear error messages with workarounds"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 4,
-            "title": "Parser testing suite",
-            "estimatedHours": 2,
-            "file": "packages/core/src/parser/__tests__/",
-            "checklist": [
-              "Test all example schemas",
-              "Test error cases",
-              "Test edge cases",
-              "Verify error messages"
-            ],
-            "status": "done"
-          }
-        ]
-      },
-      {
-        "id": 3,
-        "title": "Create Format Registry System",
-        "description": "Implement extensible format registry for string formats like uuid, email, date",
-        "priority": "high",
-        "estimatedHours": 6,
-        "dependencies": [
-          1
-        ],
-        "status": "done",
-        "details": "Build FormatRegistry class in packages/core/src/registry/format-registry.ts using Registry pattern. Register built-in formats: uuid, email, date, date-time. Allow custom format registration.",
-        "testStrategy": "Test each built-in format generates valid data. Test custom format registration and invocation. Verify format constraints are respected.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create Registry pattern",
-            "estimatedHours": 2,
-            "file": "packages/core/src/registry/format-registry.ts",
-            "checklist": [
-              "FormatRegistry class",
-              "FormatGenerator interface",
-              "register() and get() methods",
-              "Pattern matching support"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 2,
-            "title": "Implement built-in formats",
-            "estimatedHours": 2,
-            "checklist": [
-              "UUIDGenerator (crypto.randomUUID)",
-              "EmailGenerator (simple pattern)",
-              "DateGenerator (YYYY-MM-DD)",
-              "DateTimeGenerator (ISO 8601)"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 3,
-            "title": "Format validation and tests",
-            "estimatedHours": 2,
-            "checklist": [
-              "Validate each format output",
-              "Test with AJV format validators",
-              "Test custom format registration",
-              "Performance benchmarks"
-            ],
-            "status": "done"
-          }
-        ]
-      },
-      {
-        "id": 4,
-        "title": "Implement Core Data Generators",
-        "description": "Build generator classes for primitive types with constraint support",
-        "priority": "critical",
-        "estimatedHours": 10,
-        "dependencies": [
-          2,
-          3
-        ],
-        "status": "done",
-        "details": "Create abstract DataGenerator class and concrete implementations for all primitive types. Each generator implements generate(config: GenerationConfig): Result<any, GenerationError>. Use Faker.js as base but ensure constraint compliance.",
-        "testStrategy": "Property-based testing with fast-check to verify all generated values meet constraints. Test edge cases like min=max, empty enums, and boundary values.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create DataGenerator base class",
-            "estimatedHours": 2,
-            "file": "packages/core/src/generator/data-generator.ts",
-            "checklist": [
-              "Abstract DataGenerator class",
-              "GeneratorContext interface",
-              "supports() method",
-              "generate() abstract method"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 2,
-            "title": "StringGenerator with formats",
-            "estimatedHours": 3,
-            "file": "packages/core/src/generator/string-generator.ts",
-            "checklist": [
-              "Basic string generation",
-              "minLength/maxLength support",
-              "Format delegation to registry",
-              "Enum support"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 3,
-            "title": "Number and Integer generators",
-            "estimatedHours": 2,
-            "checklist": [
-              "NumberGenerator with decimals",
-              "IntegerGenerator (whole numbers)",
-              "minimum/maximum constraints",
-              "Deterministic with seed"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 4,
-            "title": "Boolean and Enum generators",
-            "estimatedHours": 1,
-            "checklist": [
-              "BooleanGenerator",
-              "EnumGenerator with caching",
-              "Weighted selection option",
-              "Deterministic output"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 5,
-            "title": "Property-based testing",
-            "estimatedHours": 2,
-            "checklist": [
-              "Install fast-check",
-              "Test all constraints",
-              "Test 1000+ samples per generator",
-              "Verify deterministic with seeds"
-            ],
-            "status": "done"
-          }
-        ]
-      },
-      {
-        "id": 5,
-        "title": "Build Array and Object Generators",
-        "description": "Implement array generation supporting primitives and nested objects (depth ≤ 2), plus object generation",
-        "priority": "critical",
-        "estimatedHours": 8,
-        "dependencies": [
-          4
-        ],
-        "status": "done",
-        "details": "Create ArrayGenerator and ObjectGenerator classes. Support arrays of primitives and nested objects (depth ≤ 2). Respect minItems/maxItems constraints. Handle required fields correctly.",
-        "testStrategy": "Test array length constraints, mixed primitive arrays, and nested object arrays (depth ≤ 2). Verify performance with large arrays (1000+ items). Test required vs optional fields.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Implement ArrayGenerator",
-            "estimatedHours": 3,
-            "file": "packages/core/src/generator/array-generator.ts",
-            "checklist": [
-              "Array of primitives",
-              "Array of nested objects (depth ≤ 2)",
-              "minItems/maxItems constraints",
-              "Efficient generation without recursion"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 2,
-            "title": "Implement ObjectGenerator",
-            "estimatedHours": 3,
-            "file": "packages/core/src/generator/object-generator.ts",
-            "checklist": [
-              "Generate required fields first",
-              "Optional fields conditionally",
-              "Block nested objects (MVP limit)",
-              "Clear error for unsupported nesting"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 3,
-            "title": "Integration tests",
-            "estimatedHours": 2,
-            "checklist": [
-              "Test with example schemas",
-              "Performance with 1000+ objects",
-              "Arrays of objects",
-              "Complex constraint combinations"
-            ],
-            "status": "done"
-          }
-        ]
-      },
-      {
-        "id": 6,
-        "title": "Create Compliance Validator with AJV",
-        "description": "Implement validation system to ensure 100% schema compliance",
-        "priority": "critical",
-        "estimatedHours": 6,
-        "dependencies": [
-          2
-        ],
-        "status": "done",
-        "details": "Build ComplianceValidator class using AJV for JSON Schema validation. Configure AJV with ajv-formats. Implement batch validation. Return detailed validation errors. Ensure strict mode.",
-        "testStrategy": "Validate generated data against all example schemas. Test with intentionally invalid data. Performance test with 1000+ records.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Setup AJV with formats",
-            "estimatedHours": 2,
-            "file": "packages/core/src/validator/compliance-validator.ts",
-            "checklist": [
-              "Install ajv and ajv-formats",
-              "Configure strict mode",
-              "Add all format validators",
-              "Setup error verbosity"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 2,
-            "title": "Implement batch validation",
-            "estimatedHours": 2,
-            "checklist": [
-              "ComplianceValidator class",
-              "Batch validation method",
-              "Compliance score calculation",
-              "Detailed error reporting"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 3,
-            "title": "Compliance testing suite",
-            "estimatedHours": 2,
-            "checklist": [
-              "Test 100% compliance rate",
-              "Test error detection",
-              "Performance benchmarks",
-              "1000+ sample validation"
-            ],
-            "status": "done"
-          }
-        ]
-      },
-      {
-        "id": 7,
-        "title": "Implement Generation Pipeline",
-        "description": "Create main generation pipeline orchestrating parsing, generation, and validation",
-        "status": "in-progress",
-        "dependencies": [
-          5,
-          6
-        ],
-        "priority": "highest",
-        "details": "Build FoundryGenerator class orchestrating the pipeline: Parse → Plan → Generate → Validate. Deterministic generation via per-context PRNG (no global faker.seed). Enforce 100% compliance gate for supported features (otherwise fail with clear error). Collect per-stage metrics (parse/generate/validate): durations, AJV cache hit rate, formats used. Handle batch generation efficiently and expose a reproducible seed in outputs. This is the central pipeline that orchestrates the entire system and must be completed before documentation tasks.",
-        "testStrategy": "Integration tests with all example schemas. Property-based tests asserting determinism: same seed → bit-identical outputs, prefix stability. Performance benchmarks: 1000 rows < 200ms, 10000 rows < 2s. Compliance invariant: score === 100 or explicit unsupported-feature error.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Design Pipeline Orchestrator with Error Propagation",
-            "description": "Create FoundryGenerator class with Parse → Plan → Generate → Validate orchestration and comprehensive error handling",
-            "dependencies": [],
-            "details": "Implement FoundryGenerator class in packages/core/src/generator/foundry-generator.ts with methods: parseSchema(), planGeneration(), generateData(), validateOutput(). Each stage returns Result<T,E> with proper error propagation. Define PipelineStage enum and PipelineMetrics interface. Implement stage-by-stage execution with early termination on errors. Include error context preservation across stages and detailed error messages referencing which stage failed.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Implement Seed-Based Deterministic Generation",
-            "description": "Create per-context PRNG system ensuring deterministic generation without global faker.seed mutation",
-            "dependencies": [
-              "7.1"
-            ],
-            "details": "Implement SeedManager class managing per-generation-context PRNGs. Create GenerationContext interface with isolated faker instance per generation call. Ensure same seed produces bit-identical outputs across runs. Implement seed derivation for batch generation (base_seed + row_index). Add seed validation and normalization. Expose used seed in generation results for reproducibility. Never mutate global faker.seed - each context gets its own faker instance.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Add Performance Monitoring and Metrics Collection",
-            "description": "Implement comprehensive metrics collection for pipeline stages and performance optimization",
-            "dependencies": [
-              "7.2"
-            ],
-            "details": "Create PipelineMetrics interface tracking per-stage durations, AJV cache hit rates, formats used, and memory usage. Implement MetricsCollector class with startStage()/endStage() methods. Add performance targets validation: 1000 rows < 200ms, 10000 rows < 2s. Implement batch generation optimization to minimize parser/validator overhead. Add memory usage tracking and cleanup. Include metrics in generation results for debugging and optimization.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Create Integration Tests for Complete Pipeline",
-            "description": "Build comprehensive integration tests validating end-to-end pipeline functionality across all components",
-            "dependencies": [
-              "7.3"
-            ],
-            "details": "Create integration tests in packages/core/src/generator/__tests__/foundry-generator.integration.test.ts testing all example schemas from docs/examples/. Implement property-based tests asserting determinism: same seed produces identical outputs, prefix stability for batch generation. Add performance benchmarks meeting targets. Test compliance invariant: 100% valid outputs or explicit unsupported-feature errors. Include error propagation tests and edge cases like empty schemas, invalid inputs, and resource constraints.",
-            "status": "pending",
-            "testStrategy": ""
-          }
-        ]
-      },
-      {
-        "id": 8,
-        "title": "Build CLI Commands with Commander.js",
-        "description": "Implement CLI interface with generate command and all required options",
-        "priority": "critical",
-        "estimatedHours": 8,
-        "dependencies": [
-          7
-        ],
-        "status": "pending",
-        "details": "Create CLI structure using Commander.js. Implement generate command with options: --schema, --rows, --seed, --output. Add help and version commands. Handle file I/O operations.",
-        "testStrategy": "CLI integration tests for all command variations. Test file input/output, error handling, and help text. Performance validation with CLI overhead.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Setup CLI structure",
-            "estimatedHours": 2,
-            "file": "packages/cli/src/index.ts",
-            "checklist": [
-              "Commander.js setup",
-              "Entry point configuration",
-              "npm bin configuration",
-              "Version and help commands"
-            ]
-          },
-          {
-            "id": 2,
-            "title": "Implement generate command",
-            "estimatedHours": 3,
-            "file": "packages/cli/src/commands/generate.ts",
-            "checklist": [
-              "Schema file loading",
-              "--rows parameter",
-              "--seed parameter",
-              "--output parameter",
-              "JSON output formatting"
-            ]
-          },
-          {
-            "id": 3,
-            "title": "Add UI feedback",
-            "estimatedHours": 2,
-            "file": "packages/cli/src/utils/ui.ts",
-            "checklist": [
-              "Progress indicators",
-              "Success/error messages",
-              "Color output with chalk",
-              "Generation statistics"
-            ]
-          },
-          {
-            "id": 4,
-            "title": "CLI integration tests",
-            "estimatedHours": 1,
-            "checklist": [
-              "Test all commands",
-              "Test file operations",
-              "Test error scenarios",
-              "Verify exit codes"
-            ]
-          }
-        ]
-      },
-      {
-        "id": 9,
-        "title": "Error Handling and User Experience",
-        "description": "Implement comprehensive error system with clear user-facing messages",
-        "priority": "high",
-        "estimatedHours": 4,
-        "dependencies": [],
-        "status": "done",
-        "details": "Enhance error reporting throughout the system. For unsupported features, provide clear explanations and workarounds. Include suggestions for future feature support.",
-        "testStrategy": "Test error messages for all unsupported features. Verify helpful error context and workaround suggestions.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Enhance error messages",
-            "estimatedHours": 2,
-            "checklist": [
-              "User-friendly error formatting",
-              "Workaround suggestions",
-              "Feature availability timeline",
-              "No stack traces in production"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 2,
-            "title": "Add examples to errors",
-            "estimatedHours": 2,
-            "checklist": [
-              "Schema correction examples",
-              "Supported feature examples",
-              "Link to documentation",
-              "GitHub issue templates"
-            ],
-            "status": "done"
-          }
-        ]
-      },
-      {
-        "id": 10,
-        "title": "Complete Test Suite and Performance Validation",
-        "description": "Ensure comprehensive testing and performance targets are met",
-        "priority": "high",
-        "estimatedHours": 8,
-        "dependencies": [
-          9
-        ],
-        "status": "done",
-        "details": "Finalize all tests with 80%+ coverage. Validate performance benchmarks. Create compliance test suite validating 1000+ samples per schema type.",
-        "testStrategy": "Achieve 80% test coverage minimum. All example schemas must generate valid data. Performance targets: 1000 rows < 200ms, 10000 rows < 2s.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Unit test completion",
-            "estimatedHours": 2,
-            "checklist": [
-              "80% coverage achieved",
-              "All edge cases covered",
-              "Mocks for external deps",
-              "Test utilities created"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 2,
-            "title": "Integration test suite",
-            "estimatedHours": 2,
-            "checklist": [
-              "End-to-end scenarios",
-              "All example schemas",
-              "Error path testing",
-              "Multi-package integration"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 3,
-            "title": "Performance benchmarks",
-            "estimatedHours": 2,
-            "checklist": [
-              "1000 rows < 200ms verified",
-              "10000 rows < 2s verified",
-              "Memory usage < 100MB",
-              "Benchmark documentation"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 4,
-            "title": "Compliance validation",
-            "estimatedHours": 2,
-            "checklist": [
-              "1000+ samples per type",
-              "100% compliance rate",
-              "Edge case validation",
-              "Report generation"
-            ],
-            "status": "done"
-          }
-        ]
-      },
-      {
-        "id": 11,
-        "title": "Documentation and Examples",
-        "description": "Create comprehensive documentation and example schemas",
-        "priority": "medium",
-        "estimatedHours": 6,
-        "dependencies": [
-          10
-        ],
-        "status": "pending",
-        "details": "Write README with quickstart guide. Create example schemas for different use cases. Document API and CLI usage.",
-        "testStrategy": "All examples must work with the CLI. Documentation code samples must be tested.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create README",
-            "estimatedHours": 2,
-            "checklist": [
-              "Installation instructions",
-              "Quickstart example",
-              "Feature comparison table",
-              "Badges (npm, license, build)"
-            ]
-          },
-          {
-            "id": 2,
-            "title": "Example schemas",
-            "estimatedHours": 2,
-            "checklist": [
-              "ecommerce-schema.json",
-              "saas-user-schema.json",
-              "api-transaction-schema.json",
-              "team-with-users-schema.json"
-            ]
-          },
-          {
-            "id": 3,
-            "title": "API documentation",
-            "estimatedHours": 2,
-            "checklist": [
-              "JSDoc comments",
-              "TypeDoc generation",
-              "Usage examples",
-              "Migration guide"
-            ]
-          }
-        ]
-      },
-      {
-        "id": 12,
-        "title": "Launch Preparation",
-        "description": "Prepare for npm publication and public launch",
-        "priority": "medium",
-        "estimatedHours": 4,
-        "dependencies": [
-          11
-        ],
-        "status": "pending",
-        "details": "Setup GitHub repository, publish to npm, create demo materials, prepare launch communications.",
-        "testStrategy": "Test npm installation globally and locally. Verify all links and demos work.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "GitHub setup",
-            "estimatedHours": 1,
-            "checklist": [
-              "Create organization",
-              "Setup repository",
-              "Issue templates",
-              "GitHub Actions CI"
-            ]
-          },
-          {
-            "id": 2,
-            "title": "npm publication",
-            "estimatedHours": 1,
-            "checklist": [
-              "Package.json cleanup",
-              "Publish @foundrydata/core",
-              "Publish foundrydata CLI",
-              "Test global installation"
-            ]
-          },
-          {
-            "id": 3,
-            "title": "Demo creation",
-            "estimatedHours": 1,
-            "checklist": [
-              "Record demo GIF",
-              "Show speed (1000 rows < 200ms)",
-              "Optimize GIF size",
-              "Add to README"
-            ]
-          },
-          {
-            "id": 4,
-            "title": "Launch materials",
-            "estimatedHours": 1,
-            "checklist": [
-              "Hacker News post draft",
-              "Twitter announcement",
-              "Dev.to article",
-              "Beta tester outreach"
-            ]
-          }
-        ]
-      },
-      {
-        "id": 13,
-        "title": "Enable pattern support in JSONSchemaParser",
-        "description": "Propagate string `pattern` from JSON Schema into parsed StringSchema (instead of rejecting), aligned with StringGenerator capabilities.",
-        "priority": "high",
-        "estimatedHours": 4,
-        "dependencies": [
-          2,
-          4
-        ],
-        "status": "done",
-        "details": "Update packages/core/src/parser/json-schema-parser.ts to accept and pass through the `pattern` keyword for string schemas. Remove the current early rejection of `pattern`, validate regex only for syntactic correctness (try new RegExp), and store the original pattern string on the parsed schema. Ensure this remains draft-agnostic (Draft-07, 2019-09, 2020-12). Keep error messaging helpful for invalid regex. Add ReDoS guards: limit pattern length/complexity and provide a clear ParseError with suggestion; document generation fallbacks for complex patterns.",
-        "testStrategy": "Add unit tests in packages/core/src/parser/__tests__/ to verify that: (1) valid pattern strings are preserved on parsed StringSchema; (2) invalid/too-complex regex patterns produce a clear ParseError with suggestion; (3) end-to-end: StringGenerator generates values matching the pattern when present, with safe fallbacks when patterns are complex. Add an integration test in test/__tests__/integration/generator-compliance/ to confirm AJV accepts generated values under schemas with pattern.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Allow pattern in parser",
-            "estimatedHours": 1,
-            "file": "packages/core/src/parser/json-schema-parser.ts",
-            "checklist": [
-              "Remove early error on pattern",
-              "Set StringSchema.pattern when string",
-              "Validate regex syntax safely"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 2,
-            "title": "Parser tests for pattern",
-            "estimatedHours": 1,
-            "file": "packages/core/src/parser/__tests__/",
-            "checklist": [
-              "Valid pattern passes and is preserved",
-              "Invalid pattern yields ParseError with suggestion"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 3,
-            "title": "E2E generation with pattern",
-            "estimatedHours": 1,
-            "file": "test/__tests__/integration/generator-compliance/",
-            "checklist": [
-              "StringGenerator respects pattern",
-              "AJV validates generated values"
-            ],
-            "status": "done"
-          },
-          {
-            "id": 4,
-            "title": "Docs and limitations update",
-            "estimatedHours": 1,
-            "checklist": [
-              "Update docs/COMPREHENSIVE_FEATURE_SUPPORT.md",
-              "Mention supported regex scope and caveats"
-            ],
-            "status": "done"
-          }
-        ]
-      },
-      {
-        "id": 27,
-        "title": "Introduce Per-Context PRNG (remove global faker.seed)",
-        "description": "Replace global Faker seeding with a per-context deterministic PRNG exposed via GeneratorContext to ensure isolation and reproducibility.",
-        "priority": "high",
-        "estimatedHours": 6,
-        "dependencies": [
-          4,
-          7
-        ],
-        "status": "done",
-        "details": "ACCEPTANCE: (1) No calls to faker.seed in repo; (2) Same seed + same schema → bit-identical outputs across runs and in parallel; (3) Overhead <5% vs baseline on micro-benchmarks (p95). IMPLEMENTATION: Add RNG interface (next(), int(min,max), float(min,max)) to GeneratorContext; implement seeded PRNG (mulberry32/xorshift) with pure state; refactor generators to use context RNG for selection/shuffle; document determinism guarantees.",
-        "testStrategy": "Determinism tests (same seed → identical outputs); concurrency tests (N workers); integration in full pipeline with prefix-stability; micro-benchmarks to verify overhead <5%.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Add PRNG to context",
-            "status": "done",
-            "file": "packages/core/src/generator/data-generator.ts"
-          },
-          {
-            "id": 2,
-            "title": "Remove faker.seed global",
-            "status": "done",
-            "file": "packages/core/src/generator/data-generator.ts"
-          },
-          {
-            "id": 3,
-            "title": "Refactor generators to RNG",
-            "status": "done",
-            "file": "packages/core/src/generator/types/"
-          },
-          {
-            "id": 4,
-            "title": "Determinism tests",
-            "status": "done",
-            "file": "test/__tests__/integration/pipeline/"
-          }
-        ]
-      },
-      {
-        "id": 28,
-        "title": "Stable Cache Key for AJV Compiled Validators",
-        "description": "Use a stable stringify or hashing strategy for schema cache keys to maximize cache hits and avoid recompilation due to key order.",
-        "priority": "medium",
-        "estimatedHours": 3,
-        "dependencies": [
-          6
-        ],
-        "status": "pending",
-        "details": "ACCEPTANCE: schemas with different key orders share the same cache entry; improved cache hit rate recorded. IMPLEMENTATION: canonical stringify (sorted keys) or fast hash; retain WeakMap for identity; guard heavy canonicalization. METRICS: before/after hit-rate and compile counts.",
-        "testStrategy": "Unit tests for key equality across orderings; measure hit/miss deltas in validator metrics; micro-bench compile vs cached validate.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Implement stable stringify/hash",
-            "status": "pending",
-            "file": "packages/core/src/validator/compliance-validator.ts"
-          },
-          {
-            "id": 2,
-            "title": "Integrate into cache",
-            "status": "pending",
-            "file": "packages/core/src/validator/compliance-validator.ts"
-          },
-          {
-            "id": 3,
-            "title": "Add tests and metrics",
-            "status": "pending",
-            "file": "packages/core/src/validator/__tests__/"
-          }
-        ]
-      },
-      {
-        "id": 29,
-        "title": "Support Bounded Nested Object Parsing",
-        "description": "Allow nested objects in JSONSchemaParser up to a configurable depth; beyond the limit, produce a clear ParseError with suggestions.",
-        "priority": "high",
-        "estimatedHours": 5,
-        "dependencies": [
-          2
-        ],
-        "status": "done",
-        "details": "ACCEPTANCE: nested objects parsed up to default depth=2; deeper structures fail fast with guidance. IMPLEMENTATION: recursive descent with depth counter; reuse existing type guards; keep MVP constraints documented. TESTS: AJV × generator end-to-end for nested objects within bounds.",
-        "testStrategy": "Unit tests for depth boundary; integration tests ensuring generated nested objects validate; error-path tests with suggestion messages for over-depth schemas.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Add depth limit to parser",
-            "status": "done",
-            "file": "packages/core/src/parser/json-schema-parser.ts"
-          },
-          {
-            "id": 2,
-            "title": "Nested objects tests",
-            "status": "done",
-            "file": "packages/core/src/parser/__tests__/"
-          }
-        ]
-      },
-      {
-        "id": 30,
-        "title": "Format Registry Init: Exactly-Once & Tests",
-        "description": "Guarantee that built-in formats initialize exactly once even with deep imports; add tests for idempotence and direct-registry import.",
-        "priority": "medium",
-        "estimatedHours": 3,
-        "dependencies": [
-          3
-        ],
-        "status": "pending",
-        "details": "ACCEPTANCE: lazy init runs once; re-imports or deep imports do not duplicate registration; no memory leaks. TESTS: import registry without core index; verify formats available and registered once.",
-        "testStrategy": "Unit tests in registry __tests__ for lazy init idempotence and deep import behavior; integration test touching generators that use formats.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Idempotent initializer",
-            "status": "pending",
-            "file": "packages/core/src/registry/format-registry.ts"
-          },
-          {
-            "id": 2,
-            "title": "Lazy init tests",
-            "status": "pending",
-            "file": "packages/core/src/registry/__tests__/"
-          }
-        ]
-      }
-    ],
-    "metadata": {
-      "created": "2025-08-24T14:00:00.000Z",
-      "updated": "2025-09-06T14:57:10.955Z",
-      "approach": "Hybrid - Task Master structure with granular subtasks",
-      "totalTasks": 14,
-      "totalSubtasks": 52,
-      "estimatedTotalHours": 86,
-      "phases": {
-        "setup": [
-          0
-        ],
-        "core": [
-          1,
-          2,
-          3
-        ],
-        "generators": [
-          4,
-          5
-        ],
-        "validation": [
-          6,
-          7
-        ],
-        "cli": [
-          8,
-          9
-        ],
-        "quality": [
-          10
-        ],
-        "launch": [
-          11,
-          12
-        ]
-      },
-      "criticalPath": [
-        0,
-        1,
-        2,
-        4,
-        5,
-        7,
-        8
-      ],
-      "advantages": [
-        "Main tasks from Task Master provide clear epic-level structure",
-        "Subtasks provide actionable 1-4 hour work items",
-        "Test strategy integrated in each main task (TDD approach)",
-        "Technical details preserved from Task Master",
-        "Added missing setup, documentation, and launch tasks",
-        "File paths specified for clarity",
-        "Checklists for verification",
-        "Realistic time estimates for planning"
-      ],
-      "description": "Tasks for master context"
-    }
-  },
-  "testing-v2": {
-    "tasks": [
-      {
-        "id": 1,
-        "title": "Inventory Current Test Implementation",
-        "description": "Phase 0 - Count and list all existing test files in packages/, document test statistics and create baseline",
-        "details": "- Count and list all existing test files in packages/\\n- Document for each test file: number of tests, fast-check usage, Result pattern usage, FormatRegistry usage, coverage %\\n- Run existing tests and document pass/fail status, execution times, flaky tests\\n- Check dependency versions: fast-check, vitest, ajv\\n- Create CURRENT_STATE.md with inventory",
-        "testStrategy": "",
-        "status": "done",
-        "dependencies": [],
-        "priority": "high",
-        "subtasks": []
-      },
-      {
-        "id": 2,
-        "title": "Setup Test Configuration Infrastructure",
-        "description": "Phase 1 - Create comprehensive test configuration with Vitest, fast-check, and AJV setup",
-        "details": "- Create test/setup.ts with fast-check global config (seed=424242, numRuns from env)\\n- Create test/global-setup.ts and test/global-teardown.ts\\n- Update vitest.config.ts with platform-specific pool, no retries, fixed sequence in CI\\n- Install missing dependencies: ajv@8.x, ajv-formats@3.x, ajv-formats-draft2019@1.x, @vitest/coverage-v8\\n- Verify setup with test run",
-        "testStrategy": "",
-        "status": "done",
-        "dependencies": [
-          1
-        ],
-        "priority": "medium",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create test/setup.ts configuration",
-            "description": "Configure fast-check global settings with fixed seed and environment-based numRuns",
-            "details": "- Set TEST_SEED=424242 by default\\n- Configure FC_NUM_RUNS from environment (100 local, 1000 CI)\\n- Configure global AJV instance\\n- Add logging for debugging",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 2
-          },
-          {
-            "id": 2,
-            "title": "Update vitest.config.ts for stability",
-            "description": "Configure Vitest for deterministic testing across platforms",
-            "details": "- Set pool based on platform (threads for Windows, forks for others)\\n- Disable retries (retry: 0)\\n- Configure fixed sequence in CI (shuffle: false)\\n- Set appropriate timeouts for property-based testing",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 2
-          },
-          {
-            "id": 3,
-            "title": "Install testing dependencies",
-            "description": "Install all required testing packages for the new architecture",
-            "details": "- Install ajv@8.x and ajv-formats@3.x\\n- Install ajv-formats-draft2019@1.x for full draft support\\n- Install @vitest/coverage-v8 for coverage reporting\\n- Update package.json with test scripts",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 2
-          }
-        ]
-      },
-      {
-        "id": 3,
-        "title": "Create AJV Factory System",
-        "description": "Phase 1 - Implement AJV factory supporting all JSON Schema drafts with caching",
-        "details": "- Create test/helpers/ajv-factory.ts\\n- Implement createAjv(draft: JsonSchemaDraft) function supporting draft-07, 2019-09, 2020-12\\n- Configure with allowUnionTypes: false, validateFormats: true\\n- Add WeakMap cache for compiled validators\\n- Implement getAjv() singleton function\\n- Add draft-specific format loading\\n- Create unit tests for AJV factory",
-        "testStrategy": "",
-        "status": "done",
-        "dependencies": [
-          2
-        ],
-        "priority": "medium",
-        "subtasks": []
-      },
-      {
-        "id": 4,
-        "title": "Implement Custom Vitest Matchers",
-        "description": "Phase 1 - Create custom matchers for JSON Schema validation and testing",
-        "details": "- Create test/matchers/index.ts\\n- Implement toMatchJsonSchema(schema) using cached AJV\\n- Implement toBeWithinRange(min, max) for numbers\\n- Implement toHaveCompliance(expected) for compliance scores\\n- Implement toBeValidUUID(), toBeValidEmail(), toBeValidISO8601()\\n- Implement toBeDistinct(deep) with stable stringify\\n- Implement toHaveErrorRate(rate, tolerance)\\n- Implement toBeGeneratedWithSeed({seed, schema, generate})\\n- Register matchers with expect.extend()\\n- Create test/matchers/__tests__/matchers.test.ts",
-        "testStrategy": "",
-        "status": "done",
-        "dependencies": [
-          3
-        ],
-        "priority": "high",
-        "subtasks": []
-      },
-      {
-        "id": 5,
-        "title": "Create JSON Schema Arbitraries",
-        "description": "Phase 1 - Build fast-check arbitraries for JSON Schema generation without contradictions",
-        "details": "- Create test/arbitraries/json-schema.ts\\n- Implement createBounds(min, max) helper\\n- Implement jsonSchemaArbitraryFor(draft) with support for:\\n  * stringSchema with valid enum/const respecting constraints\\n  * numberSchema with valid enum/const respecting bounds\\n  * booleanSchema, nullSchema, objectSchema, arraySchema\\n  * combinedSchema (allOf, anyOf, oneOf, not)\\n  * conditionalSchema (if/then/else)\\n- Handle draft-specific keywords properly\\n- Ensure required ⊆ properties always\\n- Create tests verifying no contradictions possible",
-        "testStrategy": "",
-        "status": "done",
-        "dependencies": [
-          3
-        ],
-        "priority": "medium",
-        "subtasks": []
-      },
-      {
-        "id": 6,
-        "title": "Implement Invariant Testing Pattern",
-        "description": "Phase 2 - Core invariant tests ensuring 100% schema compliance",
-        "details": "- Create test/patterns/invariant-testing.test.ts\\n- Implement \\\"MUST generate 100% schema-compliant data\\\" test using AJV oracle\\n- Implement \\\"MUST be deterministic with same seed\\\" test\\n- Implement \\\"MUST generate correct data types\\\" test\\n- Implement \\\"MUST respect all boundary constraints\\\" test for numeric, string, array, object constraints\\n- Test with all drafts via SCHEMA_DRAFT env variable\\n- Log seed, schema, errors on failure",
-        "testStrategy": "",
-        "status": "done",
-        "dependencies": [
-          4,
-          5
-        ],
-        "priority": "medium",
-        "subtasks": []
-      },
-      {
-        "id": 7,
-        "title": "Implement Metamorphic Testing Pattern",
-        "description": "Phase 2 - Metamorphic relations testing with schema relaxation",
-        "details": "- Create test/patterns/metamorphic-testing.test.ts\\n- Implement complete relaxSchema(schema, draft) function handling all constraint removal\\n- Remove unevaluatedItems/Properties for 2019-09+ drafts\\n- Handle arrays, objects, conditional schemas recursively\\n- Implement \\\"validity preserved under relaxation\\\" test\\n- Implement \\\"prefix stability\\\" test: generate(seed, n1+n2)[0:n1] === generate(seed, n1)\\n- Test all metamorphic relations with each draft\\n- Add failure logging with full context",
-        "testStrategy": "",
-        "status": "done",
-        "dependencies": [
-          6
-        ],
-        "priority": "high",
-        "subtasks": []
-      },
-      {
-        "id": 9,
-        "title": "Implement Performance Benchmarks",
-        "description": "Phase 4 - Create comprehensive performance benchmarks with realistic targets following testing v2.1 architecture, including JSON Schema coverage metrics and cumulative regression detection",
-        "status": "done",
-        "dependencies": [],
-        "priority": "medium",
-        "details": "- Create test/performance/benchmarks.test.ts with deterministic seed 424242\n- Define benchmark levels with percentiles (NOT averages): simple (<0.5ms p95), medium (<2ms p95), complex (<20ms p95)\n- Implement batch performance: p95 < 10ms for 1000 items validation\n- Add memory efficiency: p95 < 100MB for 10,000 records generation\n- Implement platform-aware tolerances: Windows * 1.5, macOS baseline, Linux baseline\n- Add measurement methodology with warmup phases, outlier detection (remove top/bottom 5%)\n- Implement cache warming for AJV validators and FormatRegistry before timing\n- Add GC timing with forced garbage collection between test runs\n- Generate baseline.json for performance tracking and regression detection\n- Add automated alerts for >20% performance regression in CI\n- Track JSON Schema coverage: keywords tested (type, format, constraints), keyword combinations coverage, edge cases per draft\n- Implement cumulative regression test suite capturing failing cases as permanent tests\n- Add AJV version compatibility performance testing",
-        "testStrategy": "Multiple runs with statistical analysis (min 100 runs for stable percentiles). Test across Node.js versions 18, 20, latest. Include micro benchmarks (single calls), integration benchmarks (full pipelines), and memory benchmarks (large datasets). Test performance across all JSON Schema drafts (draft-07, 2019-09, 2020-12). Implement memory leak detection over extended runs. Track JSON Schema keyword coverage and maintain cumulative regression suite.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Set up benchmark infrastructure",
-            "description": "Create benchmark test file with deterministic configuration",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Create test/performance/benchmarks.test.ts\n- Configure deterministic seed 424242 for reproducible results\n- Set up platform detection (Windows, macOS, Linux)\n- Configure Node.js version matrix testing\n- Implement hardware detection for CI vs local environments",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Implement percentile-based measurement methodology",
-            "description": "Create robust measurement system using percentiles instead of averages",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Implement min 100 runs for stable percentile calculations\n- Add outlier detection and removal (top/bottom 5%)\n- Calculate p50, p95, p99 percentiles for all benchmarks\n- Add warmup phases to avoid JIT compilation effects\n- Implement forced garbage collection between test runs with global.gc()",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Define performance targets and platform tolerances",
-            "description": "Set precise performance targets with platform-specific adjustments",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Simple operations: <0.5ms p95\n- Medium complexity: <2ms p95\n- Complex operations: <20ms p95\n- Batch performance: p95 < 10ms for 1000 items validation\n- Memory efficiency: p95 < 100MB for 10,000 records generation\n- Platform tolerances: Windows * 1.5, macOS baseline, Linux baseline",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Implement cache warming and preparation",
-            "description": "Pre-warm caches before measurements for accurate timing",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Pre-warm AJV validators using WeakMap caching\n- Pre-warm FormatRegistry before timing measurements\n- Implement cache effectiveness metrics (hit/miss ratios)\n- Ensure consistent cache state across benchmark runs",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Create multi-draft performance testing",
-            "description": "Test performance across all supported JSON Schema drafts",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Implement draft-specific benchmarks for draft-07, 2019-09, 2020-12\n- Test format validation performance across drafts\n- Compare constraint handling performance between drafts\n- Measure schema compilation time by draft version",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Implement baseline generation and regression detection",
-            "description": "Create performance tracking and automated regression detection",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Generate baseline.json with current performance targets\n- Implement automated comparison with previous baseline\n- Add >20% regression detection that fails benchmarks\n- Create performance dashboard tracking trends over time\n- Add memory regression detection: max 100MB diff from baseline",
-            "testStrategy": ""
-          },
-          {
-            "id": 7,
-            "title": "Add comprehensive benchmark categories",
-            "description": "Implement micro, integration, and memory benchmark suites",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Micro benchmarks: single function calls\n- Integration benchmarks: full generation pipelines\n- Memory benchmarks: large dataset generation (10,000+ records)\n- Memory leak detection over extended runs\n- Cache performance benchmarks for WeakMap validators",
-            "testStrategy": ""
-          },
-          {
-            "id": 8,
-            "title": "Implement JSON Schema coverage metrics tracking",
-            "description": "Track which JSON Schema keywords and combinations are being performance tested",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Track tested keywords: type, format, constraints (min/max, length limits, etc.)\n- Measure proportion of keyword combinations covered in benchmarks\n- Track coverage of edge cases per JSON Schema draft (draft-07, 2019-09, 2020-12)\n- Generate coverage reports showing gaps in performance testing\n- Implement coverage baseline generation for regression detection",
-            "testStrategy": ""
-          },
-          {
-            "id": 9,
-            "title": "Add AJV version compatibility performance testing",
-            "description": "Test performance consistency across different AJV versions",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Test against multiple AJV versions (8.x, latest)\n- Measure performance impact of AJV version upgrades\n- Track format validation performance across AJV versions\n- Add compatibility regression detection for AJV updates",
-            "testStrategy": ""
-          },
-          {
-            "id": 10,
-            "title": "Implement cumulative regression test suite",
-            "description": "Capture failing performance cases as permanent regression tests",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Create test/performance/regression-suite.test.ts\n- Automatically capture performance failures as test cases\n- Store failing schemas and performance thresholds\n- Implement permanent regression test execution in CI\n- Add failure case deduplication to avoid test suite bloat",
-            "testStrategy": ""
-          }
-        ]
-      },
-      {
-        "id": 10,
-        "title": "Configure CI/CD Pipeline for Testing",
-        "description": "Phase 5 - Setup comprehensive CI/CD pipeline with multi-draft and multi-platform testing architecture v2.1",
-        "status": "done",
-        "dependencies": [
-          9
-        ],
-        "priority": "medium",
-        "details": "**MATRIX TESTING CONFIGURATION:**\n- Create .github/workflows/test.yml with testing v2.1 architecture\n- Configure test matrix: draft-07 × 2019-09 × 2020-12 with SCHEMA_DRAFT environment variable\n- Node.js versions: 18.x, 20.x, latest with proper npm cache configuration\n- OS platforms: ubuntu-latest, macos-latest, windows-latest with platform-specific pool tolerances\n- Pool configuration: 'threads' for Windows, 'forks' for other platforms\n\n**ENVIRONMENT VARIABLES (Testing v2.1):**\n- TEST_SEED=424242 for deterministic testing (NEVER Date.now())\n- FC_NUM_RUNS: 100 (quick jobs), 1000 (full jobs), configurable per job type\n- SCHEMA_DRAFT: draft-07|2019-09|2020-12 for multi-draft testing matrix\n- DEBUG=false (CI), true (debug jobs) for logging control\n- PERF_LOG=true for performance jobs with baseline comparison\n\n**JOB TYPES ARCHITECTURE:**\n- quick-tests: 5min timeout, FC_NUM_RUNS=100, core functionality validation\n- full-tests: 30min timeout, FC_NUM_RUNS=1000, comprehensive matrix testing\n- performance-tests: isolated job with baseline.json comparison and regression detection\n- memory-tests: extended runs with leak detection and GC monitoring\n\n**ARTIFACT MANAGEMENT & OPTIMIZATION:**\n- Upload baseline.json for performance tracking and trend analysis\n- Coverage reports with lcov format for external tools integration\n- Test results with junit XML for GitHub annotations\n- Performance reports with regression alerts (>20% degradation fails CI)\n- Cache strategy: npm cache, compiled schemas, baseline artifacts\n- Parallel job execution with proper dependency management\n- Fail-fast: false for matrix jobs to collect all results\n- Retry strategy: 0 retries (deterministic testing principle)\n\n**STATUS REPORTING & QUALITY GATES:**\n- GitHub status badges for README: test status, coverage, performance\n- PR comments with performance regression alerts and artifact links\n- All tests must pass with 100% compliance invariant\n- Coverage threshold: 90% line coverage minimum\n- Memory regression: >100MB increase fails CI\n- ESLint: zero errors allowed with auto-fix in dedicated job",
-        "testStrategy": "Validate CI/CD configuration with test matrix execution across all draft × node × OS combinations. Verify deterministic behavior with fixed TEST_SEED=424242. Test artifact generation and baseline comparison functionality. Validate performance regression detection with intentional slowdowns. Test coverage reporting integration and quality gates enforcement.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create GitHub workflow file with testing v2.1 matrix configuration",
-            "description": "Implement .github/workflows/test.yml with comprehensive matrix testing setup",
-            "status": "done",
-            "dependencies": [],
-            "details": "Create workflow file with:\n- Matrix strategy: schema drafts (draft-07, 2019-09, 2020-12) × Node.js versions (18.x, 20.x, latest) × OS platforms (ubuntu-latest, macos-latest, windows-latest)\n- Platform-specific pool configuration: 'threads' for Windows, 'forks' for others\n- Proper environment variable injection per matrix combination\n- Cache configuration for npm and compiled schemas\n- Parallel execution with dependency management",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Configure environment variables and deterministic testing setup",
-            "description": "Setup all required environment variables for testing v2.1 architecture",
-            "status": "done",
-            "dependencies": [],
-            "details": "Configure environment variables:\n- TEST_SEED=424242 (fixed, never Date.now())\n- FC_NUM_RUNS based on job type (100 for quick, 1000 for full)\n- SCHEMA_DRAFT per matrix combination\n- DEBUG=false for CI, true for debug jobs\n- PERF_LOG=true for performance tracking\n- Ensure deterministic behavior across all job types",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Implement job type architecture with timeouts and configurations",
-            "description": "Setup different job types with specific configurations and timeouts",
-            "status": "done",
-            "dependencies": [],
-            "details": "Create job types:\n- quick-tests: 5min timeout, FC_NUM_RUNS=100, core functionality\n- full-tests: 30min timeout, FC_NUM_RUNS=1000, comprehensive matrix\n- performance-tests: isolated job with baseline.json comparison\n- memory-tests: extended runs with leak detection and GC monitoring\n- Configure proper timeouts, retry policies (0 retries), and fail-fast settings",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Setup artifact management and performance tracking",
-            "description": "Configure artifact upload/download and performance baseline tracking",
-            "status": "done",
-            "dependencies": [],
-            "details": "Implement artifact management:\n- Upload baseline.json for performance tracking\n- Coverage reports with lcov format\n- Test results with junit XML for annotations\n- Performance reports with trend analysis\n- Regression detection with >20% degradation threshold\n- Proper artifact retention and cleanup policies",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Configure status reporting and quality gates",
-            "description": "Setup GitHub status badges, PR comments, and quality enforcement",
-            "status": "done",
-            "dependencies": [],
-            "details": "Implement reporting features:\n- GitHub status badges for README (test status, coverage, performance)\n- PR comments with performance regression alerts and artifact links\n- Quality gates: 100% test compliance, 90% coverage minimum, memory regression limits\n- ESLint zero-error policy with auto-fix job\n- Integration with GitHub annotations for test results",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Test and validate CI/CD pipeline functionality",
-            "description": "Comprehensive testing of the complete CI/CD pipeline setup",
-            "status": "done",
-            "dependencies": [],
-            "details": "Validate CI/CD functionality:\n- Test matrix execution across all draft × node × OS combinations\n- Verify deterministic behavior with TEST_SEED=424242\n- Test artifact generation and baseline comparison\n- Validate performance regression detection with intentional slowdowns\n- Test coverage reporting and quality gate enforcement\n- Verify status badge generation and PR comment functionality",
-            "testStrategy": ""
-          }
-        ]
-      },
-      {
-        "id": 11,
-        "title": "Create Business Scenario Arbitraries",
-        "description": "Phase 1 - Build arbitraries for business testing scenarios",
-        "details": "- Create test/arbitraries/business.ts\\n- Implement businessScenarioArbitrary with scenario types ('normal', 'edge', 'peak', 'error')\\n- Configure load parameters: users, requestsPerSecond, duration, rampUp, rampDown\\n- Set distribution ratios where normal + edge + error = 1\\n- Add errorConfig with rate, types, retryable, maxRetries\\n- Include edgeCases boolean flags and seed for determinism\\n- Add metadata: name, description, tags, version\\n- Create validation tests for distribution sum and seed generation",
-        "testStrategy": "",
-        "status": "done",
-        "dependencies": [
-          3
-        ],
-        "priority": "medium",
-        "subtasks": []
-      },
-      {
-        "id": 12,
-        "title": "Format Registry Integration Strategy",
-        "description": "Phase 1 - Analyze and integrate FormatRegistry with AJV formats",
-        "details": "- Analyze current FormatRegistry usage in existing tests\\n- Compare FormatRegistry capabilities with AJV formats\\n- Make decision: Keep, Replace, or Adapter pattern\\n- If Adapter: create test/helpers/format-adapter.ts mapping FormatRegistry to AJV\\n- If Replace: document migration and update all format references\\n- Ensure backward compatibility\\n- Update existing tests to use decided approach",
-        "testStrategy": "",
-        "status": "done",
-        "dependencies": [
-          3
-        ],
-        "priority": "high",
-        "subtasks": []
-      },
-      {
-        "id": 13,
-        "title": "Implement Stateful Testing Pattern",
-        "description": "Phase 2 - Model-based testing with state consistency",
-        "status": "done",
-        "dependencies": [
-          6
-        ],
-        "priority": "medium",
-        "details": "- Create test/patterns/stateful-testing.test.ts with testing v2.1 architecture\n- Define SystemState interface with cache (WeakMap), metrics (GenerationMetrics), scenario (ScenarioContext)\n- Integrate getAjv() singleton with WeakMap caching in model state tracking\n- Define Command union type: Generate, Validate, ClearCache, SetScenario, CompileSchema, Reset\n- Implement commandArbitrary using fc.oneof with fixed seed 424242\n- Implement state consistency test tracking changes and verifying invariants with AJV oracle\n- State validation: ensure generated data passes AJV validation after each command\n- Cache state consistency: track AJV validator compilation count in system state\n- Check cache size limits, memory usage, and metrics consistency\n- Test error handling and recovery scenarios with deterministic reproduction",
-        "testStrategy": "Use model-based testing with fc.commands() and deterministic seed 424242. Implement custom matchers: toMaintainInvariant() for system state consistency, toHaveValidState() using toMatchJsonSchema, cache metrics matchers (toHaveHitRate(), toCacheEffectively()). Test invariants: cache size limits never exceed configured max, memory consistency tracking, validation consistency between system and AJV oracle, state recovery from errors, and deterministic reproducibility.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Define SystemState interface with testing v2.1 architecture",
-            "description": "Create comprehensive system state interface integrating AJV oracle and metrics",
-            "status": "done",
-            "dependencies": [],
-            "details": "- SystemState interface with cache (WeakMap), metrics (GenerationMetrics), scenario (ScenarioContext)\n- GenerationMetrics: track generated count, validated count, cache hits/misses\n- CacheState: monitor memory usage, compilation count, cleanup effectiveness\n- ScenarioContext: current draft, seed, validation rules active\n- Integrate getAjv() singleton with WeakMap caching for state tracking",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Implement Command union type with deterministic generation",
-            "description": "Define all command types with seed propagation and AJV integration",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Command union: Generate, Validate, ClearCache, SetScenario, CompileSchema, Reset\n- Generate command: includes seed propagation and AJV validation check\n- Validate command: uses AJV oracle for consistency check\n- ClearCache command: tests cache cleanup and memory release\n- SetScenario command: changes generation parameters (draft, constraints)\n- CompileSchema/Reset commands with state management",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Create commandArbitrary with fixed seed 424242",
-            "description": "Implement deterministic command generation using fc.oneof",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Implement commandArbitrary using fc.oneof with deterministic arbitrary\n- Fixed seed 424242 for stateful command sequence generation\n- Seed-based command generation ensuring reproducibility\n- Same seed produces identical command sequences for debugging\n- Log seed + command sequence for failure reproduction",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Implement custom matchers for stateful testing",
-            "description": "Create specialized matchers for system state validation",
-            "status": "done",
-            "dependencies": [],
-            "details": "- toMaintainInvariant() matcher for system state consistency\n- toHaveValidState() utilizing toMatchJsonSchema for data validation\n- Cache metrics matchers: toHaveHitRate(), toCacheEffectively()\n- Integration with existing custom matchers from test/matchers/\n- AJV oracle integration for validation consistency checks",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Implement invariant checking patterns",
-            "description": "Define and test all system invariants with AJV oracle",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Cache size limits: never exceed configured max cache entries\n- Memory consistency: track memory usage changes after each command\n- Validation consistency: system validator results match AJV oracle\n- State recovery: system can recover from error states gracefully\n- Determinism: same command sequence produces identical results\n- AJV validation check after each command execution",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Implement model-based testing with fc.commands()",
-            "description": "Create comprehensive model-based test suite",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Property-based command sequences with fc.commands()\n- State consistency checks after each command execution\n- Memory leak detection over extended command sequences\n- Performance monitoring: command execution times within percentile targets\n- Integration with testing v2.1 architecture and deterministic seed 424242",
-            "testStrategy": ""
-          }
-        ]
-      },
-      {
-        "id": 14,
-        "title": "Implement Oracle Testing Pattern",
-        "description": "Phase 2 - Use AJV as validation oracle for consistency testing, implementing the architecture defined in ADR docs/tests/format-registry-ajv-integration-decision.md with advanced caching and testing v2.1 compliance",
-        "status": "done",
-        "dependencies": [
-          6
-        ],
-        "priority": "high",
-        "details": "- Create test/patterns/oracle-testing.test.ts following ADR architecture and testing v2.1 standards\n- Implement AJV integration via getAjv() singleton with WeakMap caching of compiled validators\n- Implement 100% agreement invariant: expect(ourValidator(data)).toBe(ajvValidator(data))\n- Zero tolerance policy: Both validators MUST agree on ALL validation results\n- Integrate custom matchers: toMatchJsonSchema for AJV compliance verification\n- Implement toHaveAgreement(expectedRate) matcher with division by zero protection\n- Use stable comparison with sorted keys stringify for object consistency\n- Test with deterministic seed 424242 (never Date.now() or random seeds)\n- Complete failure logging: seed + schema + data + discrepancies for reproduction\n- Multi-draft matrix testing: draft-07, 2019-09, 2020-12 using getSchemaArbitrary()\n- Implement FormatRegistry-AJV adapter per ADR specification\n- Test format validation consistency: FormatRegistry vs AJV formats\n- Handle format policy v2.2: assertive formats (email, uuid) vs annotative formats\n- Test cross-format validation with all supported formats per draft\n- Oracle testing patterns: positive cases (valid data passes both), negative cases (invalid data fails both)\n- Test boundary conditions where systems might disagree\n- Property-based testing with fc.property() and invariant checking\n- Performance comparison: oracle shouldn't be slower than 2x our validator\n- Categorize discrepancies: format differences, draft differences, implementation bugs\n- Zero tolerance approach: investigate and fix ALL disagreements with full context logging",
-        "testStrategy": "Use property-based testing with AJV as the definitive oracle. Implement deterministic testing with fixed seed 424242. Test both positive cases (valid data should pass both systems) and negative cases (invalid data should fail both systems). Include edge cases and boundary conditions. Use custom matchers for consistent validation checking. Test across all supported JSON Schema drafts with comprehensive failure logging for reproduction.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Set up AJV oracle infrastructure with advanced caching",
-            "description": "Implement getAjv() singleton with WeakMap caching for compiled validators",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Create getAjv() singleton function with WeakMap-based validator caching\n- Implement per-draft AJV instances with proper format configuration\n- Set up deterministic test environment with seed 424242\n- Configure AJV with format-assertion vocabulary for proper format handling",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Implement custom matchers for oracle testing",
-            "description": "Create toMatchJsonSchema and toHaveAgreement matchers with stability guarantees",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Integrate toMatchJsonSchema matcher for AJV compliance verification\n- Implement toHaveAgreement(expectedRate) matcher with division by zero protection\n- Add stable comparison with sorted keys stringify for object consistency\n- Ensure circular reference protection in matcher implementations",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Implement 100% agreement invariant tests",
-            "description": "Create zero-tolerance validation agreement tests between our validator and AJV",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Implement expect(ourValidator(data)).toBe(ajvValidator(data)) invariant\n- Test with property-based approach using fc.property()\n- Cover positive cases (valid data passes both systems)\n- Cover negative cases (invalid data fails both systems)\n- Include boundary conditions and edge cases",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Implement FormatRegistry-AJV adapter integration",
-            "description": "Create adapter following ADR specification for format validation consistency",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Implement FormatRegistry-AJV adapter per ADR docs/tests/format-registry-ajv-integration-decision.md\n- Test format validation consistency between FormatRegistry and AJV formats\n- Handle format policy v2.2: assertive vs annotative format behavior\n- Test cross-format validation with all supported formats per JSON Schema draft",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Implement multi-draft matrix testing",
-            "description": "Test oracle consistency across all supported JSON Schema drafts",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Multi-draft testing: draft-07, 2019-09, 2020-12 using getSchemaArbitrary()\n- Ensure format behavior consistency across drafts\n- Test draft-specific features and format handling\n- Verify adapter works correctly with all draft versions",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Implement comprehensive failure logging and discrepancy handling",
-            "description": "Create zero-tolerance discrepancy tracking with full reproduction context",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Complete failure logging: seed + schema + data + discrepancies for reproduction\n- Categorize discrepancies: format differences, draft differences, implementation bugs\n- Zero tolerance approach: investigate and fix ALL disagreements\n- Log full context on any disagreement with schemas, data, and validator outputs",
-            "testStrategy": ""
-          },
-          {
-            "id": 7,
-            "title": "Implement performance comparison testing",
-            "description": "Ensure oracle performance doesn't exceed 2x our validator performance",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Performance comparison: oracle shouldn't be slower than 2x our validator\n- Measure validation times for both systems\n- Test with various schema complexities\n- Report performance metrics and identify bottlenecks",
-            "testStrategy": ""
-          }
-        ]
-      },
-      {
-        "id": 15,
-        "title": "Create Generator Test Adapter Layer",
-        "description": "Phase 3 - Bridge between existing Result pattern and new test expectations with Testing Architecture v2.1 integration",
-        "status": "done",
-        "dependencies": [
-          "6"
-        ],
-        "priority": "high",
-        "details": "- Create test/helpers/format-adapter.ts following Adapter Pattern from ADR docs/tests/format-registry-ajv-integration-decision.md\n- Implement adapter between FormatRegistry and AJV validation as specified in ADR\n- Bridge existing Result<T,E> pattern with new test expectations\n- Integrate createBounds() from '../arbitraries/json-schema.js' for constraint coherence\n- Create unified API consistency bridge for array vs {data: array} handling\n- Implement custom matchers integration layer (toMatchJsonSchema, toBeDistinct, toBeGeneratedWithSeed)\n- Handle multi-draft format compatibility with assertive vs annotative behavior\n- Ensure deterministic seed 424242 propagation through adapter layers\n- Convert Result.ok/error to proper ValidationError types\n- Maintain backward compatibility with existing tests\n- Leverage WeakMap caching from getAjv() for performance\n- Add <10% performance overhead requirement for adapters",
-        "testStrategy": "Follow test strategy defined in format-registry-ajv-integration-decision.md ADR with Testing Architecture v2.1 patterns including deterministic seed testing, multi-draft validation, and custom matcher integration",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Implement createBounds() Helper Integration",
-            "description": "Integrate createBounds() helper from arbitraries for constraint coherence",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Import createBounds() from '../arbitraries/json-schema.js'\n- Bridge Result<T,E> pattern with createBounds() generated bounds\n- Ensure adapter handles bounds properly for numeric types and array/string lengths\n- Add type safety for bounds validation",
-            "testStrategy": "Test bounds generation and validation with edge cases"
-          },
-          {
-            "id": 2,
-            "title": "Create Custom Matchers Integration Layer",
-            "description": "Bridge existing Result pattern with custom matchers",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Bridge between existing Result pattern and custom matchers (toMatchJsonSchema, toBeDistinct)\n- Create adapter for API consistency: convert array vs {data: array} seamlessly\n- Integrate toBeGeneratedWithSeed() matcher for deterministic validation\n- Ensure type-safe matcher integration",
-            "testStrategy": "Test matcher integration with deterministic seed and API consistency"
-          },
-          {
-            "id": 3,
-            "title": "Implement FormatRegistry-AJV Adapter Architecture",
-            "description": "Create adapter following ADR specification for format handling",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Implement adapter following ADR docs/tests/format-registry-ajv-integration-decision.md\n- Bridge FormatRegistry calls to AJV format validation\n- Handle format policy v2.2: assertive vs annotative format behavior conversion\n- Create adapter layer for multi-draft format compatibility",
-            "testStrategy": "Test format validation across all drafts with assertive/annotative behavior"
-          },
-          {
-            "id": 4,
-            "title": "Create Result Pattern Bridge",
-            "description": "Convert Result pattern to Testing Architecture v2.1 expectations",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Convert Result.ok/error to ValidationError proper types\n- Bridge GeneratorContext to include seed and draft information\n- Create adapter for async generation with Promise<Result<T[],E>>\n- Ensure backward compatibility with existing tests using Result pattern",
-            "testStrategy": "Test Result pattern conversion and backward compatibility"
-          },
-          {
-            "id": 5,
-            "title": "Implement Testing Architecture v2.1 Adapter Patterns",
-            "description": "Integrate core Testing Architecture v2.1 patterns",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Ensure seed propagation: adapters pass through deterministic seed 424242\n- Implement error conversion: proper mapping between Result errors and AJV validation errors\n- Add draft context: adapter must know current JSON Schema draft for proper validation\n- Integrate cache: adapters should leverage WeakMap caching from getAjv()",
-            "testStrategy": "Test deterministic behavior, error mapping, and cache integration"
-          },
-          {
-            "id": 6,
-            "title": "Create API Consistency Bridge",
-            "description": "Unified handling of different API patterns",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Create unified array return vs {data: array} handling via adapter pattern\n- Ensure type safety: adapter maintains TypeScript type consistency\n- Performance requirement: adapters shouldn't add >10% overhead to core operations\n- Memory safety: adapters should not introduce memory leaks with cached references",
-            "testStrategy": "Test API consistency, performance benchmarks, and memory leak detection"
-          }
-        ]
-      },
-      {
-        "id": 16,
-        "title": "Create Integration Tests",
-        "description": "Phase 4 - End-to-end integration testing with Testing Architecture v2.1 compliance",
-        "status": "done",
-        "dependencies": [],
-        "priority": "medium",
-        "details": "- Create test/__tests__/integration/ directory for full pipeline tests\n- Implement complete generation → validation pipeline tests with AJV oracle\n- Test all schema drafts end-to-end: draft-07, 2019-09, 2020-12\n- Cross-draft compatibility testing with FormatRegistry-AJV adapter\n- Business scenario integration with real schemas from fixtures\n- Error scenario testing with pipeline recovery and graceful degradation\n- Load testing with cache behavior under realistic usage patterns\n- Memory monitoring with leak detection for large datasets (10,000+ records)\n- Verify determinism with fixed seed 424242 propagation through entire pipeline\n- Performance end-to-end testing: full pipeline p95 < 20ms targets\n- Cache warming integration with WeakMap validators and FormatRegistry caches\n- Pipeline validation patterns: input/processing/output validation with error handling",
-        "testStrategy": "- Use custom matchers (toMatchJsonSchema, toBeDistinct) for full pipeline validation\n- Implement performance benchmarking with percentile targets (p95)\n- Apply deterministic testing with fixed seed 424242 for reproducible results\n- Multi-platform testing to verify pipeline behavior across OS platforms\n- Extended runs with full garbage collection monitoring for memory leak detection\n- Logging standards: seed + schema + pipeline state on failures\n- AJV oracle as single source of truth for 100% compliance verification",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Set up integration test directory structure",
-            "description": "Create test/__tests__/integration/ with proper organization",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Create test/__tests__/integration/ directory\n- Set up subdirectories: pipeline/, drafts/, scenarios/, performance/\n- Configure integration test setup with proper imports and utilities",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Implement full pipeline integration tests",
-            "description": "Test complete generation → validation workflow with AJV oracle",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Test schema parsing → generation → validation pipeline\n- Integrate AJV oracle for 100% compliance verification\n- Test pipeline with various schema types and constraints\n- Verify end-to-end workflow maintains determinism with seed 424242",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Create multi-draft end-to-end tests",
-            "description": "Test all JSON Schema drafts through complete pipeline",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Test draft-07, 2019-09, 2020-12 end-to-end\n- Cross-draft compatibility testing\n- FormatRegistry-AJV adapter integration testing\n- Verify draft-specific keyword handling through full pipeline",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Implement business scenario integration tests",
-            "description": "Test real-world scenarios with actual schemas",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Use business scenario arbitraries with real schemas from fixtures\n- Test normal, edge, peak, and error scenarios end-to-end\n- Verify business scenario distribution and load parameters\n- Test error scenario recovery and graceful degradation",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Create performance and memory integration tests",
-            "description": "Test pipeline performance and memory usage under load",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Full pipeline performance testing with p95 < 20ms targets\n- Memory monitoring for large datasets (10,000+ records)\n- Memory leak detection with extended runs and GC monitoring\n- Cache behavior testing under realistic usage patterns\n- Cache warming integration with WeakMap validators",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Implement deterministic integration testing",
-            "description": "Verify determinism and reproducibility across full pipeline",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Test fixed seed 424242 propagation through entire pipeline\n- Verify same seed produces identical results end-to-end\n- Error reproduction testing with full context logging\n- Performance consistency measurements with deterministic results",
-            "testStrategy": ""
-          },
-          {
-            "id": 7,
-            "title": "Create pipeline validation and error handling tests",
-            "description": "Test validation patterns and error recovery mechanisms",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Input validation: schema compliance and format validation\n- Processing validation: generation correctness and constraint adherence\n- Output validation: AJV oracle compliance and format correctness\n- Error handling: proper error propagation and recovery mechanisms\n- Multi-platform testing across different OS environments",
-            "testStrategy": ""
-          }
-        ]
-      },
-      {
-        "id": 17,
-        "title": "Create Documentation and Examples",
-        "description": "Phase 5 - Comprehensive documentation for the new testing architecture",
-        "details": "- Create test/README.md with architecture overview and pattern explanations\\n- Document migration guide from v2.0 to v2.1\\n- Create troubleshooting guide\\n- Document all environment variables: TEST_SEED, FC_NUM_RUNS, SCHEMA_DRAFT, PERF_LOG, DEBUG\\n- Create examples/ directory with pattern examples and migration examples\\n- Add performance optimization tips\\n- Document draft-specific differences table\\n- Add decision log for architectural choices",
-        "testStrategy": "",
-        "status": "done",
-        "dependencies": [
-          10
-        ],
-        "priority": "medium",
-        "subtasks": []
-      },
-      {
-        "id": 18,
-        "title": "Final Validation and Release",
-        "description": "Phase 5 - Final validation and release preparation",
-        "details": "- Run full test suite with all drafts × all platforms\\n- Verify determinism: run same tests 10 times with same seed\\n- Check coverage meets all thresholds\\n- Remove debug console.log statements (except error paths)\\n- Verify no flaky tests in CI (10 consecutive runs)\\n- Update package.json scripts: test:quick, test:standard, test:full, test:coverage, test:bench, test:draft\\n- Create CHANGELOG.md for v2.1.0\\n- Tag release v2.1.0\\n- Update main README.md with test badges",
-        "testStrategy": "",
-        "status": "pending",
-        "dependencies": [
-          17
-        ],
-        "priority": "low",
-        "subtasks": []
-      },
-      {
-        "id": 19,
-        "title": "Migrate Boolean Generator Tests",
-        "description": "Phase 3 - Migrate boolean generator tests to use AJV validation",
-        "details": "- Open packages/core/src/generator/types/__tests__/boolean-generator.test.ts\\n- Keep existing Result pattern and test structure\\n- Add AJV validation after isOk() checks\\n- Replace manual schema arbitrary with getSchemaArbitrary().filter()\\n- Add seed parameter and logging\\n- Use fc.readConfigureGlobal().numRuns\\n- Verify tests pass with all drafts",
-        "testStrategy": "",
-        "status": "done",
-        "dependencies": [
-          15
-        ],
-        "priority": "high",
-        "subtasks": []
-      },
-      {
-        "id": 20,
-        "title": "Migrate String Generator Tests",
-        "description": "Phase 3 - Migrate string generator tests with comprehensive constraint testing using testing architecture v2.1 patterns",
-        "status": "done",
-        "dependencies": [
-          15
-        ],
-        "priority": "high",
-        "details": "- Open packages/core/src/generator/types/__tests__/string-generator.test.ts\n- Keep existing test structure and patterns\n- Integrate createBounds() helper from '../arbitraries/json-schema.js' for minLength/maxLength constraint coherence\n- Replace manual arbitraries with getSchemaArbitrary().filter() patterns\n- Implement custom matchers: toMatchJsonSchema (AJV compliance), toBeValidEmail, toBeValidUUID\n- Use FormatRegistry-AJV adapter per ADR docs/tests/format-registry-ajv-integration-decision.md\n- Handle formats policy v2.2: assertive formats (email, uuid) vs annotative formats (json-pointer)\n- Use getAjv() singleton with WeakMap cached validators\n- Implement deterministic testing with fixed seed 424242 (never Date.now())\n- Add multi-draft testing support: draft-07, 2019-09, 2020-12\n- Test performance with percentiles p95 < 0.5ms/item (not averages)\n- Add seed + schema logging on test failures for reproduction\n- Validate pattern + minLength/maxLength coherence with createBounds().chain()\n- Test enum/const values respect all constraints (length, pattern, format)\n- Implement cross-format validation with all draft-supported formats",
-        "testStrategy": "Use AJV oracle validation with FormatRegistry-AJV adapter for format testing. Implement createBounds() helper for consistent constraint handling. Use custom matchers (toMatchJsonSchema, toBeValidEmail, toBeValidUUID) for compliance verification. Test with deterministic seed 424242 and percentile-based performance metrics (p95 targets). Reference format policy v2.2 for assertive vs annotative format behavior across JSON Schema drafts.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Integrate createBounds() helper and custom matchers",
-            "description": "Replace manual constraint calculations with createBounds() patterns and integrate custom Vitest matchers",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Import createBounds() from '../arbitraries/json-schema.js'\n- Replace manual minLength/maxLength calculations with createBounds(0, 1000).chain() patterns\n- Import and configure custom matchers: toMatchJsonSchema, toBeValidEmail, toBeValidUUID\n- Update constraint validation tests to use coherent bounds generation",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Implement FormatRegistry-AJV adapter integration",
-            "description": "Integrate format validation using FormatRegistry-AJV adapter per ADR specifications",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Reference ADR docs/tests/format-registry-ajv-integration-decision.md\n- Implement adapter for assertive formats (email, uuid) vs annotative formats (json-pointer)\n- Use getAjv() singleton with WeakMap cached validators\n- Test format behavior compliance across different JSON Schema drafts",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Implement deterministic testing with fixed seed",
-            "description": "Replace any random seed usage with deterministic seed 424242 and add failure logging",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Set fixed seed 424242 for all fast-check operations\n- Remove any Date.now() or random seed usage\n- Add seed + schema logging on test failures for reproduction\n- Ensure tests are completely deterministic across runs",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Add multi-draft testing support",
-            "description": "Implement testing across draft-07, 2019-09, and 2020-12 using getSchemaArbitrary()",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Use getSchemaArbitrary() with draft-specific schema generation\n- Test string generation behavior across all supported JSON Schema drafts\n- Verify format validation differences between drafts\n- Ensure consistent behavior where standards overlap",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Implement percentile-based performance testing",
-            "description": "Replace average-based performance metrics with percentile targets (p95 < 0.5ms/item)",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Remove any average-based performance calculations\n- Implement p95 percentile measurement for string generation\n- Set target: p95 < 0.5ms/item for string generation\n- Add performance regression detection",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Add comprehensive constraint coherence testing",
-            "description": "Test pattern + minLength/maxLength coherence and enum/const constraint compliance",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Test pattern validation with minLength/maxLength using createBounds()\n- Verify enum/const values respect all constraints (length, pattern, format)\n- Add cross-format validation tests with all supported formats per draft\n- Test constraint boundary conditions and edge cases",
-            "testStrategy": ""
-          }
-        ]
-      },
-      {
-        "id": 21,
-        "title": "Migrate Number/Integer Generator Tests",
-        "description": "Phase 3 - Migrate numeric generator tests with draft-specific bounds handling",
-        "status": "done",
-        "dependencies": [
-          15
-        ],
-        "priority": "high",
-        "details": "- Migrate number-generator.test.ts and integer-generator.test.ts\n- Replace manual min/max calculations with createBounds() helper from '../arbitraries/json-schema.js'\n- Add AJV validation using toMatchJsonSchema matcher\n- Test exclusive bounds properly (draft-07 exclusiveMinimum boolean vs 2019-09+ exclusiveMinimum number)\n- Test multipleOf with decimals and integers\n- Ensure enum/const values respect all constraints using toBeWithinBounds matcher\n- Add determinism tests with seeds\n- Test edge cases where createBounds() and AJV validation might differ\n- Cross-reference with FormatAdapter tests for numeric format consistency",
-        "testStrategy": "Use createBounds() helper for consistent numeric constraint handling. Integrate custom matchers: toMatchJsonSchema for AJV compliance, toBeDistinct for uniqueness, toBeWithinBounds for numeric constraint validation. Test draft-specific semantic differences and ensure deterministic generation with fixed seeds.",
-        "subtasks": []
-      },
-      {
-        "id": 22,
-        "title": "Migrate Complex Type Generator Tests",
-        "description": "Phase 3 - Migrate enum, array, and object generator tests with draft-specific handling and testing architecture v2.1 patterns",
-        "status": "done",
-        "dependencies": [
-          15
-        ],
-        "priority": "high",
-        "details": "- Migrate enum-generator.test.ts, array-generator.test.ts, object-generator.test.ts\n- Integrate createBounds() helper from '../arbitraries/json-schema.js' for minItems/maxItems, minProperties/maxProperties\n- Handle constraint coherence: required ⊆ properties via shuffledSubarray(Object.keys(properties))\n- Avoid contradictions in arbitraries: enum/const values respect all constraints\n- Implement custom matchers: toMatchJsonSchema (AJV compliance), toBeDistinct (deep comparison for uniqueItems)\n- Use getAjv() singleton with WeakMap cached validators for performance\n- Handle draft-specific differences:\n  * items vs prefixItems for tuples: draft-07 items array vs 2019-09+ prefixItems\n  * unevaluatedItems/Properties handling for 2019-09/2020-12 (absent in draft-07)\n  * dependencies keyword (draft-07) vs dependentRequired/dependentSchemas (newer drafts)\n- Performance benchmarks percentiles p95 < 2ms for complex objects\n- Deterministic tests with seed 424242, logging seed+schema on failures\n- Nested schema validation recursive with AJV oracle\n- Memory leak detection for complex nested structures\n- WeakMap caching for compiled validators on nested schemas\n- Format validation via FormatRegistry-AJV adapter for formats in properties\n- Test boundary conditions: empty objects, maxProperties reached, circular refs handling",
-        "testStrategy": "Use testing architecture v2.1 patterns: AJV oracle validation with FormatRegistry-AJV adapter, createBounds() helper for constraint coherence, custom matchers (toMatchJsonSchema, toBeDistinct), deterministic seed 424242, percentile-based performance benchmarks (p95 < 2ms), WeakMap cached validators, memory leak detection for nested structures.",
-        "subtasks": []
-      },
-      {
-        "id": 23,
-        "title": "Migrate Validator Tests",
-        "description": "Phase 3 - Migrate validator tests to use AJV oracle and performance percentiles with testing architecture v2.1 compliance",
-        "status": "done",
-        "dependencies": [
-          15
-        ],
-        "priority": "high",
-        "details": "AJV ORACLE WITH ADVANCED CACHING:\n- Replace custom validation with getAjv() singleton as single source of truth\n- Implement WeakMap caching for compiled validators to avoid recompilation\n- Tests 100% compliance invariant: expect(compliance).toBe(100) never >95%\n- Memory leak detection with global.gc() and process.memoryUsage()\n\nPERFORMANCE PERCENTILES (NOT AVERAGES):\n- Performance tests with percentiles p50, p95, p99 (never averages)\n- Targets: p50 < 0.3ms, p95 < 0.5ms, p99 < 2ms per validation\n- Batch validation performance for arrays: p95 < 10ms for 1000 items\n- Platform-aware targets: Windows * 1.5 tolerance factor\n\nTESTING ARCHITECTURE V2.1 COMPLIANCE:\n- Deterministic tests with fixed seed 424242 (never Date.now())\n- Complete logging: seed + schema + errors on failures for reproduction\n- Multi-draft validation: draft-07, 2019-09, 2020-12 with matrix testing\n- Format policy v2.2: assertive vs annotative formats handling\n\nCUSTOM MATCHERS AND VALIDATION PATTERNS:\n- toMatchJsonSchema for AJV compliance verification\n- Custom matchers for validation metrics: toHaveCompliance(100)\n- toHaveErrorRate with zero-division protection\n- Stable stringify for consistent object comparison\n\nMEMORY & PERFORMANCE MONITORING:\n- Memory regression detection: max 100MB diff after iterations\n- Performance regression with baseline comparison\n- Warmup phases before measurements to avoid JIT effects\n- Cache size monitoring to prevent memory bloat\n\nVALIDATOR ARCHITECTURE TESTING:\n- Test compilation caching effectiveness with hit/miss metrics\n- Concurrent validation safety with multi-threading\n- Error aggregation and standardized reporting patterns",
-        "testStrategy": "Use AJV oracle validation with getAjv() singleton and WeakMap caching. Implement percentile-based performance benchmarks (p50, p95, p99) with platform-aware targets. Test 100% compliance invariant with deterministic seed 424242. Validate memory leak detection and cache effectiveness metrics. Test multi-draft compliance and format policy v2.2 handling.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Implement AJV Oracle with Advanced Caching",
-            "description": "Replace custom validation with getAjv() singleton and implement WeakMap caching",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Open packages/core/src/validator/__tests__/compliance-validator.test.ts\n- Replace custom validation logic with getAjv() singleton calls\n- Implement WeakMap caching for compiled validators\n- Add cache hit/miss metrics tracking\n- Test compilation caching effectiveness",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Implement 100% Compliance Invariant Testing",
-            "description": "Ensure all validation tests enforce 100% compliance, never >95%",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Replace all compliance checks with expect(compliance).toBe(100)\n- Add toHaveCompliance(100) custom matcher\n- Implement complete logging: seed + schema + errors on failures\n- Test with deterministic seed 424242",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Migrate to Percentile-Based Performance Testing",
-            "description": "Replace average-based performance tests with percentiles (p50, p95, p99)",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Update performance tests to use percentiles not averages\n- Set targets: p50 < 0.3ms, p95 < 0.5ms, p99 < 2ms per validation\n- Implement batch validation performance: p95 < 10ms for 1000 items\n- Add platform-aware targets: Windows * 1.5 tolerance factor\n- Add warmup phases before measurements to avoid JIT effects",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Implement Memory Leak Detection and Monitoring",
-            "description": "Add comprehensive memory monitoring and leak detection",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Implement memory leak detection with global.gc() and process.memoryUsage()\n- Add memory regression detection: max 100MB diff after iterations\n- Implement cache size monitoring to prevent memory bloat\n- Add performance regression testing with baseline comparison",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Add Multi-Draft Validation Matrix Testing",
-            "description": "Implement comprehensive multi-draft JSON Schema validation testing",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Test validation across draft-07, 2019-09, 2020-12\n- Implement format policy v2.2: assertive vs annotative formats handling\n- Add matrix testing for cross-draft compatibility\n- Ensure consistent behavior across all supported drafts",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Implement Custom Matchers and Validation Patterns",
-            "description": "Add comprehensive custom matchers for validation testing",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Implement toMatchJsonSchema for AJV compliance verification\n- Add toHaveErrorRate with zero-division protection\n- Implement stable stringify for consistent object comparison\n- Add concurrent validation safety testing with multi-threading\n- Implement standardized error aggregation and reporting patterns",
-            "testStrategy": ""
-          }
-        ]
-      },
-      {
-        "id": 24,
-        "title": "Configure Fast-Check Shrinking and Timeout Strategy",
-        "description": "Implement comprehensive fast-check configuration with shrinking settings, timeout management for property-based tests, and failure context preservation for testing stability and debugging.",
-        "details": "- Configure fc.configureGlobal() with shrinking parameters: interruptAfterTimeLimit: 10000ms, endOnFailure: true, verbose: 2 for detailed failure reporting\n- Implement timeout management for property-based tests with 30-second timeout using Vitest's test.timeout() configuration\n- Create failure context preservation mechanism to capture and log: seed values, schema configurations, generated data samples, shrinking steps\n- Add shrinking configuration for different test scenarios: aggressive shrinking for CI (maxShrinkRuns: 1000), balanced for development (maxShrinkRuns: 500)\n- Implement shrinking timeout controls to prevent infinite shrinking loops\n- Configure verbose output levels: level 0 for CI (minimal), level 2 for development (detailed failure context)\n- Add shrinking progress monitoring with intermediate result logging\n- Create shrinking result analysis utilities for debugging complex property failures\n- Integrate with existing TEST_SEED=424242 deterministic configuration\n- Add shrinking performance metrics and timeout breach detection",
-        "testStrategy": "Verify fast-check configuration applies correctly across all property-based tests. Test timeout behavior with intentionally slow properties to ensure 30s limit enforcement. Validate shrinking works by introducing failing properties and confirming shrinking finds minimal counterexamples within timeout. Test failure context preservation by triggering failures and verifying complete context capture (seed, schema, data). Verify shrinking performance doesn't exceed configured limits. Test different verbose levels produce expected output detail. Validate integration with existing deterministic seed configuration maintains test reproducibility.",
-        "status": "done",
-        "dependencies": [
-          2,
-          6
-        ],
-        "priority": "high",
-        "subtasks": []
-      },
-      {
-        "id": 25,
-        "title": "Handle JSON Schema References and Circular Dependencies",
-        "description": "Implement detection and handling of $ref, $recursiveRef, $dynamicRef with proper cycle detection algorithms. Create reference resolution engine and circular dependency breaking strategies.",
-        "details": "- Create packages/core/parser/reference-resolver.ts with comprehensive reference handling\n- Implement ReferenceResolver class with support for:\n  * $ref resolution with URI fragment handling (#/definitions/User)\n  * $recursiveRef resolution for recursive schemas (draft 2019-09)\n  * $dynamicRef/$dynamicAnchor resolution (draft 2020-12)\n  * External reference loading with URI resolution\n- Implement cycle detection using Set-based tracking of reference paths\n- Create CircularDependencyDetector with algorithms:\n  * Depth-first traversal with visited node tracking\n  * Stack-based cycle detection for immediate loops\n  * Global reference graph analysis for complex cycles\n- Implement breaking strategies:\n  * Lazy resolution with reference placeholders\n  * Maximum depth limiting (default: 10 levels)\n  * Reference cache with WeakMap for performance\n- Add support for JSON Pointer resolution (RFC 6901)\n- Handle base URI resolution and relative references\n- Integrate with existing Schema union types\n- Add comprehensive error handling with descriptive messages\n- Create reference resolution context with scope tracking",
-        "testStrategy": "Create comprehensive test suite with reference scenarios: simple $ref to definitions, nested references, circular self-references, mutual circular references, external file references (mocked), invalid reference handling. Test cycle detection with various loop patterns: direct self-reference, two-node cycles, complex multi-node cycles, deeply nested references. Validate reference resolution across all JSON Schema drafts with draft-specific features. Use property-based testing for reference path generation and resolution. Test performance with large reference graphs and ensure O(n) complexity. Include edge cases: malformed references, missing targets, infinite recursion prevention. Verify integration with existing AJV factory and custom matchers.",
-        "status": "done",
-        "dependencies": [
-          3,
-          4,
-          5
-        ],
-        "priority": "high",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Implement basic $ref resolution",
-            "description": "Create ReferenceResolver.resolveRef() with JSON Pointer support",
-            "details": "Implement basic ReferenceResolver.resolveRef() method with JSON Pointer support (RFC 6901) for URI fragments like #/definitions/User",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 25
-          },
-          {
-            "id": 2,
-            "title": "Add cycle detection algorithms",
-            "description": "Implement DFS and stack-based cycle detection for circular references",
-            "details": "Create CircularDependencyDetector with depth-first traversal, visited node tracking, and stack-based detection for immediate loops",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 25
-          },
-          {
-            "id": 3,
-            "title": "Support advanced references ($recursiveRef/$dynamicRef)",
-            "description": "Implement $recursiveRef and $dynamicRef for JSON Schema drafts 2019-09+",
-            "details": "Add support for $recursiveRef (draft 2019-09) and $dynamicRef/$dynamicAnchor (draft 2020-12) with proper scope tracking",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 25
-          },
-          {
-            "id": 4,
-            "title": "Implement lazy resolution and depth limiting",
-            "description": "Add lazy resolution with reference placeholders and maximum depth limiting",
-            "details": "Implement lazy resolution strategy with reference placeholders, maximum depth limiting (default: 10 levels), and reference cache management",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 25
-          },
-          {
-            "id": 5,
-            "title": "Add WeakMap caching and performance optimization",
-            "description": "Implement reference cache with WeakMap for performance and memory management",
-            "details": "Create WeakMap-based reference cache, performance optimization for reference resolution, and memory management for large schema graphs",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 25
-          }
-        ]
-      },
-      {
-        "id": 26,
-        "title": "Create Generator Compliance Integration Tests",
-        "description": "Implement comprehensive integration tests that verify all generators produce 100% AJV-compliant data across all supported JSON Schema drafts.",
-        "details": "INTEGRATION TEST ARCHITECTURE:\n- Create test/__tests__/integration/generator-compliance/ directory structure\n- Implement end-to-end generator → AJV validation pipeline tests\n- Test all generator types (string, number, integer, boolean, array, object, enum) against AJV oracle\n- Cross-draft compliance testing: draft-07, 2019-09, 2020-12\n\nCOMPLIANCE VERIFICATION:\n- Use getAjv() singleton with WeakMap caching for compiled validators\n- Implement 100% compliance invariant: expect(compliance).toBe(100) never >95%\n- Test constraint coherence: required ⊆ properties, enum/const respect bounds\n- FormatRegistry-AJV adapter integration for format validation\n\nSCENARIO COVERAGE:\n- Normal generation scenarios with realistic constraints\n- Edge cases: min/max bounds, empty arrays, boundary conditions\n- Stress testing: maximum array lengths, complex nested structures\n- Error conditions: contradictory constraints, invalid combinations\n\nPERFORMANCE INTEGRATION:\n- Percentile-based benchmarks: p95 < 200ms for 1000 records\n- Memory monitoring during bulk generation and validation\n- Cache effectiveness metrics for validator compilation\n\nDRAFT-SPECIFIC TESTING:\n- exclusiveMinimum boolean vs number semantics\n- Format validation behavior differences across drafts\n- Keyword support variations (const in draft-07 vs 2019-09+)",
-        "testStrategy": "Use custom matchers (toMatchJsonSchema, toBeDistinct, toHaveCompliance) for validation. Implement deterministic testing with fixed seed 424242 for reproducible results. Test with business scenario arbitraries for realistic load patterns. Verify memory leak detection and cache performance. Apply percentile-based performance targets (p95 < 200ms). Test cross-draft compatibility with FormatRegistry-AJV adapter. Validate 100% compliance invariant across all generator types and constraint combinations.",
-        "status": "done",
-        "dependencies": [
-          16,
-          15,
-          4
-        ],
-        "priority": "high",
-        "subtasks": []
-      },
-      {
-        "id": 31,
-        "title": "Verify Per-Context PRNG Determinism (master:27)",
-        "description": "Testing v2 - Validate determinism and parallel reproducibility of the per-context PRNG implemented in master task 27.",
-        "priority": "high",
-        "estimatedHours": 3,
-        "dependencies": [
-          2
-        ],
-        "status": "done",
-        "details": "ACCEPTANCE: (1) Same seed + same schema → bit-identical outputs across runs; (2) Parallel executions (N workers) produce identical outputs; (3) Prefix-stability holds; (4) No calls to faker.seed exist in codebase. REPORT: record p95 overhead <5% in micro-benchmarks.",
-        "testStrategy": "Property-based tests for determinism and prefix-stability at pipeline level; concurrency tests with worker threads/process pool; micro-benchmarks comparing PRNG vs baseline (report percentiles).",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Determinism property test",
-            "status": "done",
-            "file": "test/__tests__/integration/pipeline/"
-          },
-          {
-            "id": 2,
-            "title": "Prefix-stability test",
-            "status": "done",
-            "file": "test/__tests__/integration/pipeline/"
-          },
-          {
-            "id": 3,
-            "title": "Concurrency reproducibility test",
-            "status": "done",
-            "file": "test/performance/benchmarks.test.ts"
-          },
-          {
-            "id": 4,
-            "title": "Micro-bench overhead report",
-            "status": "done",
-            "file": "test/performance/benchmarks.test.ts"
-          }
-        ]
-      },
-      {
-        "id": 32,
-        "title": "Measure AJV Cache Effectiveness (master:28)",
-        "description": "Testing v2 - Measure and gate cache hit rate improvements from stable cache key strategy implemented in master task 28.",
-        "priority": "medium",
-        "estimatedHours": 2,
-        "dependencies": [
-          3
-        ],
-        "status": "pending",
-        "details": "ACCEPTANCE: (1) Semantically identical schemas (reordered keys) use the same compiled validator; (2) Cache hit rate improves vs baseline; (3) Compile count reduced under repeated validation workloads. REPORT: include hit/miss deltas and timing percentiles.",
-        "testStrategy": "Create reordered-schema fixtures and validate equality of cache key behavior; run micro-bench compile vs cached validate; record metrics and assert thresholds; integrate with performance baseline/regression suite.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Reordered schemas fixtures",
-            "status": "pending",
-            "file": "test/helpers/ajv-factory.ts"
-          },
-          {
-            "id": 2,
-            "title": "Cache metrics capture",
-            "status": "pending",
-            "file": "test/performance/benchmarks.test.ts"
-          },
-          {
-            "id": 3,
-            "title": "Threshold assertions & report",
-            "status": "pending",
-            "file": "test/performance/regression-suite.test.ts"
-          }
-        ]
-      }
-    ],
-    "metadata": {
-      "created": "2025-08-28T17:17:54.786Z",
-      "updated": "2025-09-06T12:40:16.859Z",
-      "description": "Testing infrastructure v2.1 implementation - property-based testing with AJV, fast-check, and multi-draft support"
-    }
-  },
-  "error-system-v3": {
-    "tasks": [
-      {
-        "id": 1,
-        "title": "Create Error Code Infrastructure",
-        "description": "Implement the foundational error code system with enums, mappings, and severity types",
-        "details": "Create packages/core/src/errors/codes.ts with:\n- ErrorCode enum (E001-E499 range)\n- EXIT_CODES mapping for CLI integration\n- HTTP_STATUS_BY_CODE mapping for API responses\n- Severity type definition ('info' | 'warn' | 'error')\n\nKey error codes:\n- E001-E099: Schema errors (nested objects, patterns, composition)\n- E100-E199: Generation errors (constraints, limits)\n- E200-E299: Validation errors (compliance)\n- E300-E399: Configuration errors\n- E400-E499: Parse errors\n\nSpecial code E012 for circular reference detection.",
-        "testStrategy": "Unit tests in packages/core/src/errors/__tests__/codes.test.ts:\n- Verify all error codes are unique\n- Test exit code mapping completeness\n- Test HTTP status mapping validity (400-599 range)\n- Ensure every ErrorCode has both exit and HTTP mappings",
-        "status": "done",
-        "dependencies": [],
-        "priority": "high",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Define ErrorCode enum structure",
-            "description": "Create the ErrorCode enum with all error categories (E001-E499)",
-            "details": "Define enum ErrorCode in packages/core/src/errors/codes.ts:\n- E001-E099: Schema errors (nested objects, patterns, composition, structure, parse, circular refs)\n- E100-E199: Generation errors (constraints, limits)\n- E200-E299: Validation errors (compliance)\n- E300-E399: Configuration errors\n- E400-E499: Parse errors\nInclude E012 for CIRCULAR_REFERENCE_DETECTED\n<info added on 2025-09-05T21:50:30.398Z>\nEnsure the ErrorCode enum explicitly defines CIRCULAR_REFERENCE_DETECTED = 'E012' as a named constant. Verify that EXIT_CODES mapping includes an entry for E012 (suggest exit code 2 for schema validation failures). Verify that HTTP_STATUS_BY_CODE includes an entry for E012 (suggest 400 Bad Request for schema validation errors). Add validation tests to ensure every enum member has corresponding entries in both mapping objects.\n</info added on 2025-09-05T21:50:30.398Z>\n<info added on 2025-09-05T21:55:51.415Z>\nAdd INTERNAL_ERROR = 'E500' for unexpected/uncategorized errors with exit code 99 and HTTP status 500. Use this code as fallback for any unknown or uncategorized errors.\n</info added on 2025-09-05T21:55:51.415Z>",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 1
-          },
-          {
-            "id": 2,
-            "title": "Create exit code and HTTP mappings",
-            "description": "Define EXIT_CODES and HTTP_STATUS_BY_CODE mappings for all error codes",
-            "details": "Add to packages/core/src/errors/codes.ts:\n- EXIT_CODES: Record<ErrorCode, number> mapping each code to CLI exit code (10-99 range)\n- HTTP_STATUS_BY_CODE: Record<ErrorCode, number> mapping to HTTP status (400-599)\n- Export type Severity = 'info' | 'warn' | 'error'\nEnsure all ErrorCode values have entries in both mappings\n<info added on 2025-09-05T21:54:42.361Z>\nAdd TypeScript exhaustiveness constraint: use 'satisfies Record<ErrorCode, number>' on EXIT_CODES and HTTP_STATUS_BY_CODE to enforce compile-time exhaustiveness checking. This ensures every ErrorCode has an entry in both mappings and provides TypeScript compiler errors if any ErrorCode is missing.\n</info added on 2025-09-05T21:54:42.361Z>",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 1
-          },
-          {
-            "id": 3,
-            "title": "Write error code infrastructure tests",
-            "description": "Create comprehensive unit tests for error codes, exit codes, and HTTP mappings",
-            "details": "Create packages/core/src/errors/__tests__/codes.test.ts:\n- Test all error codes are unique (no duplicates)\n- Test every ErrorCode has an exit code mapping\n- Test every ErrorCode has an HTTP status mapping\n- Test HTTP status codes are valid (400-599 range)\n- Test exit codes are in valid range (1-255)\n- Test Severity type exports correctly\n<info added on 2025-09-05T21:50:49.474Z>\nAdd complete mapping coverage tests: verify size(ErrorCode enum) === size(EXIT_CODES) === size(HTTP_STATUS_BY_CODE), test that each ErrorCode has an entry in both mappings, validate HTTP status in range 400-599, validate exit codes in range 1-255\n</info added on 2025-09-05T21:50:49.474Z>",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 1
-          }
-        ]
-      },
-      {
-        "id": 2,
-        "title": "Refactor FoundryError Base Class",
-        "description": "Transform the base error class to support new error contract with typed context and environment-aware serialization",
-        "details": "Refactor packages/core/src/types/errors.ts FoundryError class:\n\nNEW Constructor:\n- params object pattern with message, errorCode, severity, context, cause\n- Typed ErrorContext interface with path, schemaPath, ref, value, valueExcerpt, limitationKey, availableIn\n\nREMOVE Methods:\n- getUserMessage() - moved to presenter\n- getSuggestions() - moved to presenter\n\nADD Methods:\n- toJSON(env: 'dev' | 'prod'): SerializedError with PII redaction\n- toUserError(): UserError for safe external exposure\n- getExitCode(): number from EXIT_CODES mapping\n\nEnsure proper error chaining with cause support.",
-        "testStrategy": "Update packages/core/src/types/__tests__/errors.test.ts:\n- Test new constructor with params object\n- Verify toJSON('prod') excludes stack and redacts PII\n- Verify toJSON('dev') includes full context\n- Test getExitCode() returns correct mapping\n- Test cause chaining preservation\n- Remove tests for deleted getUserMessage/getSuggestions",
-        "status": "done",
-        "dependencies": [
-          1
-        ],
-        "priority": "high",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Define ErrorContext interface",
-            "description": "Create the ErrorContext interface with all required fields for error localization",
-            "details": "Define in packages/core/src/types/errors.ts:\ninterface ErrorContext {\n  path?: string;           // JSON Pointer: '/properties/address'\n  schemaPath?: string;     // Schema path: '#/properties/address'\n  ref?: string;            // Reference URI\n  value?: unknown;         // Problematic value (redacted in prod)\n  valueExcerpt?: string;   // Safe excerpt of value\n  limitationKey?: string;  // Links to limitation registry\n  availableIn?: string;    // Version when feature available\n}\n<info added on 2025-09-05T21:50:10.145Z>\nPath semantics clarification: path represents data instance path (JSON Pointer format from AJV instancePath like '/users/0/name'), schemaPath represents schema definition path (JSON Schema pointer like '#/properties/users/items/properties/name'). ValidationError should use path field for data location (AJV instancePath), while SchemaError and reference-resolver should use schemaPath field for schema locations. Tests required: verify ValidationError populates path with instancePath, verify SchemaError/reference-resolver populate schemaPath correctly.\n</info added on 2025-09-05T21:50:10.145Z>",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 2
-          },
-          {
-            "id": 2,
-            "title": "Refactor FoundryError constructor",
-            "description": "Update FoundryError to use params object pattern with new fields",
-            "details": "Update FoundryError class constructor:\n- Change from (message, code, context?) to params object\n- Params: {message, errorCode: ErrorCode, severity?: Severity, context?: ErrorContext, cause?: Error}\n- Store all fields as class properties\n- Remove getUserMessage() method\n- Remove getSuggestions() method\n- Ensure proper Error.captureStackTrace handling",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 2
-          },
-          {
-            "id": 3,
-            "title": "Implement serialization methods",
-            "description": "Add toJSON, toUserError, and getExitCode methods to FoundryError",
-            "details": "Add methods to FoundryError:\n- toJSON(env: 'dev' | 'prod'): SerializedError\n  - In prod: exclude stack, redact PII from context.value\n  - In dev: include full context and stack\n- toUserError(): UserError for safe external exposure\n- getExitCode(): number - lookup from EXIT_CODES using errorCode\nImplement PII redaction logic for sensitive fields",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 2
-          },
-          {
-            "id": 4,
-            "title": "Update FoundryError tests",
-            "description": "Refactor tests for new FoundryError structure and methods",
-            "details": "Update packages/core/src/types/__tests__/errors.test.ts:\n- Test new params constructor pattern\n- Test toJSON('prod') excludes stack and redacts PII\n- Test toJSON('dev') includes full context\n- Test getExitCode() returns correct mapping\n- Test cause chaining works properly\n- Remove tests for deleted getUserMessage/getSuggestions\n- Add tests for ErrorContext interface validation",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 2
-          }
-        ]
-      },
-      {
-        "id": 3,
-        "title": "Update Error Subclasses",
-        "description": "Migrate all error subclasses to new constructor pattern with default error codes and typed contexts",
-        "details": "Update all subclasses in packages/core/src/types/errors.ts:\n\nSchemaError:\n- New params constructor with errorCode (default: INVALID_SCHEMA_STRUCTURE)\n- Required context.path as JSON Pointer\n- Optional context.schemaPath and context.ref\n\nGenerationError:\n- New params constructor with errorCode (default: CONSTRAINT_VIOLATION)\n- Optional context.field and context.constraint\n\nValidationError:\n- Keep failures array parameter\n- Add errorCode (default: COMPLIANCE_VALIDATION_FAILED)\n- New params constructor pattern\n\nConfigError:\n- New params constructor with errorCode (default: CONFIGURATION_ERROR)\n- Optional context.setting\n\nParseError:\n- New params constructor with errorCode (default: PARSE_ERROR)\n- Optional context.input and context.position",
-        "testStrategy": "Update error subclass tests:\n- Test each subclass with new constructor\n- Verify default error codes are applied\n- Test context type enforcement\n- Verify specialized context fields (path for SchemaError, etc.)\n- Test inheritance from FoundryError base",
-        "status": "done",
-        "dependencies": [
-          2
-        ],
-        "priority": "high",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Update SchemaError class",
-            "description": "Refactor SchemaError to new params constructor with required path context",
-            "details": "Update SchemaError in packages/core/src/types/errors.ts:\n- New params constructor pattern\n- Default errorCode: INVALID_SCHEMA_STRUCTURE\n- Required context.path as JSON Pointer format\n- Optional context.schemaPath and context.ref\n- Remove old constructor (message, path, suggestion)\n<info added on 2025-09-05T21:53:34.576Z>\nCorrection: SchemaError doit avoir context.schemaPath REQUIS (pas path). Le champ path est réservé pour les données dans ValidationError. SchemaError utilise schemaPath pour localiser l'erreur dans le schéma JSON Schema lui-même. Mise à jour nécessaire:\n- Required context.schemaPath (JSON Pointer vers l'erreur dans le schéma)\n- Supprimer context.path (réservé pour ValidationError)\n- Optional context.ref uniquement\n</info added on 2025-09-05T21:53:34.576Z>",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 3
-          },
-          {
-            "id": 2,
-            "title": "Update GenerationError class",
-            "description": "Refactor GenerationError with new constructor and optional field/constraint context",
-            "details": "Update GenerationError in packages/core/src/types/errors.ts:\n- New params constructor pattern\n- Default errorCode: CONSTRAINT_VIOLATION\n- Optional context.field and context.constraint\n- Remove old constructor (message, suggestion, field, constraint)",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 3
-          },
-          {
-            "id": 3,
-            "title": "Update ValidationError, ConfigError, ParseError",
-            "description": "Refactor remaining error classes to new constructor pattern",
-            "details": "Update in packages/core/src/types/errors.ts:\n\nValidationError:\n- Keep failures array parameter\n- Default errorCode: COMPLIANCE_VALIDATION_FAILED\n- New params constructor\n\nConfigError:\n- Default errorCode: CONFIGURATION_ERROR\n- Optional context.setting\n\nParseError:\n- Default errorCode: PARSE_ERROR\n- Optional context.input and context.position",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 3
-          }
-        ]
-      },
-      {
-        "id": 4,
-        "title": "Update Error Emission Points",
-        "description": "Refactor all error throwing locations to use new constructor pattern with proper error codes and JSON Pointer paths",
-        "details": "Update packages/core/src/parser/reference-resolver.ts and other emission points:\n\nBEFORE:\nthrow new SchemaError(message, pathOrRef, suggestion?)\n\nAFTER:\nthrow new SchemaError({\n  message,\n  errorCode: ErrorCode.SPECIFIC_CODE,\n  context: {\n    path: pointer,      // JSON Pointer format\n    schemaPath: pointer,\n    ref: refUri\n  }\n})\n\nError code mappings:\n- Circular reference → CIRCULAR_REFERENCE_DETECTED (E012)\n- Max depth exceeded → INVALID_SCHEMA_STRUCTURE\n- Invalid JSON Pointer → INVALID_SCHEMA_STRUCTURE  \n- Missing external schema → SCHEMA_PARSE_FAILED\n\nSearch for all \"throw new\" statements and update accordingly.",
-        "testStrategy": "Integration tests for error emission:\n- Test reference-resolver throws correct error codes\n- Verify JSON Pointer paths are properly formatted\n- Test context contains expected fields\n- Verify error messages remain descriptive\n- Test circular reference detection uses E012",
-        "status": "done",
-        "dependencies": [
-          3
-        ],
-        "priority": "high",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Update reference-resolver.ts errors",
-            "description": "Refactor all error emissions in reference-resolver to use new pattern",
-            "details": "Update packages/core/src/parser/reference-resolver.ts:\n- Replace all SchemaError instantiations with new params pattern\n- Map error scenarios to specific codes:\n  * Circular reference → CIRCULAR_REFERENCE_DETECTED\n  * Max depth exceeded → INVALID_SCHEMA_STRUCTURE\n  * Invalid JSON Pointer → INVALID_SCHEMA_STRUCTURE\n  * Missing external schema → SCHEMA_PARSE_FAILED\n- Include JSON Pointer path and schemaPath in context\n<info added on 2025-09-05T21:54:10.285Z>\nFor the reference-resolver.ts error parameter corrections:\n- Use schemaPath for JSON Schema pointer (not path)\n- Use ref for URI reference\n- Keep path field empty/undefined for SchemaError (reserved for data validation)\n- Avoid duplicating pointer value across multiple fields\n\nUpdated pattern should be:\n```\nthrow new SchemaError({\n  message,\n  errorCode: ErrorCode.SPECIFIC_CODE,\n  context: {\n    schemaPath: jsonPointer,  // JSON Schema location\n    ref: uriReference        // External reference URI\n    // path: undefined        // Reserved for data paths\n  }\n})\n```\n</info added on 2025-09-05T21:54:10.285Z>",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 4
-          },
-          {
-            "id": 2,
-            "title": "Update other error emission points",
-            "description": "Find and update all other throw statements in the codebase",
-            "details": "Search entire codebase for 'throw new' statements:\n- Update all FoundryError subclass instantiations\n- Use appropriate ErrorCode for each scenario\n- Include proper context with path when available\n- Ensure JSON Pointer format for paths\n- Maintain descriptive error messages",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 4
-          }
-        ]
-      },
-      {
-        "id": 5,
-        "title": "Create ErrorPresenter Class",
-        "description": "Implement presentation layer for formatting errors across different environments (CLI, API, production)",
-        "details": "Create packages/core/src/errors/presenter.ts:\n\nErrorPresenter class:\n- Constructor(env: 'dev'|'prod', options: {colors?, terminalWidth?, locale?, redactKeys?})\n- formatForCLI(error): CLIErrorView with color support, NO_COLOR/FORCE_COLOR respect\n- formatForAPI(error): APIErrorView with RFC7807 structure\n- formatForProduction(error): ProductionView with PII redaction\n\nKey features:\n- NO business logic - pure presentation\n- Terminal width awareness for text wrapping\n- Automatic PII redaction for configured keys\n- Environment-specific stack trace handling\n- Returns view objects, not formatted strings\n\nDefault redact keys: password, apiKey, secret, token, ssn, creditCard\n\nReplace existing ErrorReporter functionality.",
-        "testStrategy": "Create packages/core/src/errors/__tests__/presenter.test.ts:\n- Test dev vs prod formatting differences\n- Test PII redaction in production\n- Test NO_COLOR and FORCE_COLOR env variables\n- Test terminal width text wrapping\n- Test CLI snapshot outputs (with strip-ansi)\n- Test API format compliance\n- Verify no stack traces in production",
-        "status": "done",
-        "dependencies": [
-          1
-        ],
-        "priority": "high",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Implement formatForCLI method",
-            "description": "Create CLI formatting with color support and terminal awareness",
-            "details": "In ErrorPresenter.formatForCLI():\n- Return CLIErrorView object (not string)\n- Respect NO_COLOR and FORCE_COLOR env variables\n- Use terminal width for text wrapping\n- Include error code, location (JSON Pointer), workaround, documentation link\n- Format sections: title, location, excerpt, workaround, documentation, ETA\n- Handle colors through options.colors flag",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 5
-          },
-          {
-            "id": 2,
-            "title": "Implement formatForAPI method",
-            "description": "Create API error formatting following RFC7807 problem details",
-            "details": "In ErrorPresenter.formatForAPI():\n- Return APIErrorView object\n- Include: status (HTTP code), type (error doc URL), title, detail, instance (request ID)\n- Add: code (ErrorCode), path (JSON Pointer), suggestions array\n- Map error code to HTTP status using HTTP_STATUS_BY_CODE\n- Format type as: https://foundrydata.dev/errors/{code}",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 5
-          },
-          {
-            "id": 3,
-            "title": "Implement PII redaction system",
-            "description": "Create secure redaction for sensitive data in production environments",
-            "details": "Implement in ErrorPresenter:\n- Default redact keys: password, apiKey, secret, token, ssn, creditCard\n- redact() method to apply redaction rules to context.value\n- Replace sensitive values with '[REDACTED]'\n- formatForProduction() method: no stack traces, redacted values, include requestId\n- Ensure redaction is recursive for nested objects\n<info added on 2025-09-05T21:56:36.910Z>\nTests pour redaction profonde: \n- Objets imbriqués multi-niveaux avec clés sensibles\n- Arrays contenant des objets avec données PII\n- Combinaisons objets/arrays imbriqués complexes\n- Vérification que toutes les clés par défaut (password, apiKey, secret, token, ssn, creditCard) sont détectées récursivement\n- Cas limites: propriétés null/undefined dans structures imbriquées\n- Test performance sur structures profondes (>5 niveaux)\n- Validation que la structure originale reste intacte après redaction\n</info added on 2025-09-05T21:56:36.910Z>",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 5
-          },
-          {
-            "id": 4,
-            "title": "Replace ErrorReporter with ErrorPresenter",
-            "description": "Migrate from ErrorReporter to ErrorPresenter to avoid duplication",
-            "details": "Replace or adapt ErrorReporter:\n- Option A: Remove ErrorReporter completely, replace with ErrorPresenter\n- Option B: Make ErrorReporter a thin shim that delegates to ErrorPresenter\n- Ensure no direct ErrorReporter usage in production code\n- All CLI/API outputs must come from ErrorPresenter\n- Update imports across the codebase",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 5
-          }
-        ]
-      },
-      {
-        "id": 6,
-        "title": "Create Limitations Registry",
-        "description": "Implement centralized registry for MVP limitations with workarounds and version roadmap",
-        "details": "Create packages/core/src/errors/limitations.ts:\n\nLIMITATIONS_REGISTRY with entries for:\n- nestedObjects: E001, available v0.3, flatten workaround\n- regexPatterns: E002, available v0.2, enum/format alternative\n- schemaComposition: E003, available v1.0, manual merge workaround\n\nEach limitation includes:\n- errorCode mapping\n- availableIn version\n- workaround description and example\n- docsAnchor for documentation links\n- featureExamples for context\n\nHelper functions:\n- isSupported(limitationKey, version): boolean\n- getLimitation(key): Limitation | null\n- enrichErrorWithLimitation(error, key): adds limitation context to error\n- compareVersions(v1, v2): number for version comparison",
-        "testStrategy": "Create packages/core/src/errors/__tests__/limitations.test.ts:\n- Test getLimitation returns correct data\n- Test isSupported version comparison logic\n- Test enrichErrorWithLimitation adds proper fields\n- Test unknown limitations return null\n- Test registry completeness (all keys have full data)",
-        "status": "done",
-        "dependencies": [
-          1
-        ],
-        "priority": "medium",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Define LIMITATIONS_REGISTRY entries",
-            "description": "Create the centralized registry with all MVP limitation entries",
-            "details": "Create LIMITATIONS_REGISTRY in packages/core/src/errors/limitations.ts:\n- nestedObjects entry: E001, v0.3, flatten workaround\n- regexPatterns entry: E002, v0.2, enum/format alternative  \n- schemaComposition entry: E003, v1.0, manual merge\nEach entry includes: errorCode, availableIn, workaround, workaroundExample, docsAnchor, featureExamples",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 6
-          },
-          {
-            "id": 2,
-            "title": "Implement limitation helper functions",
-            "description": "Create utility functions for limitation management",
-            "details": "Add to packages/core/src/errors/limitations.ts:\n- isSupported(limitationKey, version): Check if feature is available\n- getLimitation(key): Retrieve limitation details\n- enrichErrorWithLimitation(error, key): Auto-add limitation context\n- compareVersions(v1, v2): Version comparison logic\nExport CURRENT_VERSION constant",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 6
-          }
-        ]
-      },
-      {
-        "id": 7,
-        "title": "Create Suggestion System",
-        "description": "Implement pure functions for error suggestions, typo detection, and schema fix proposals",
-        "details": "Create packages/core/src/errors/suggestions.ts with pure functions:\n\ndidYouMean(input, validOptions[], maxDistance?):\n- Simple edit distance algorithm for MVP\n- Return top 3 suggestions within distance threshold\n- No complex Levenshtein for v0.1 (performance)\n\ngetAlternative(unsupportedFeature):\n- Return alternative from ALTERNATIVES_REGISTRY\n- Map features to workarounds\n\nproposeSchemaFix(error):\n- Generate before/after schema examples\n- Include diff visualization\n- Add explanation text\n\ngetWorkaround(limitationKey):\n- Retrieve workaround from limitations registry\n- Include example and availableIn version\n\nAll functions must be pure (no side effects) for testability.",
-        "testStrategy": "Create packages/core/src/errors/__tests__/suggestions.test.ts:\n- Test didYouMean with various typos\n- Test distance calculation accuracy\n- Test getAlternative registry lookups\n- Test proposeSchemaFix generates valid diffs\n- Test null returns for unknown inputs\n- Property-based testing for didYouMean",
-        "status": "done",
-        "dependencies": [
-          6
-        ],
-        "priority": "medium",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Implement didYouMean function",
-            "description": "Create typo detection with simple distance algorithm",
-            "details": "In packages/core/src/errors/suggestions.ts:\n- didYouMean(input, validOptions[], maxDistance = 3)\n- Simple edit distance calculation (not Levenshtein for MVP)\n- Return top 3 suggestions within threshold\n- Sort by distance\nInclude calculateDistance helper function",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 7
-          },
-          {
-            "id": 2,
-            "title": "Implement schema fix proposals",
-            "description": "Create functions for alternative suggestions and schema corrections",
-            "details": "In packages/core/src/errors/suggestions.ts:\n- getAlternative(unsupportedFeature): Lookup from ALTERNATIVES_REGISTRY\n- proposeSchemaFix(error): Generate before/after with diff\n- getWorkaround(limitationKey): Retrieve from limitations registry\nAll functions must be pure (no side effects)",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 7
-          }
-        ]
-      },
-      {
-        "id": 8,
-        "title": "Migrate and Update Tests",
-        "description": "Update all existing tests and create new test suites for the error system refactor",
-        "status": "done",
-        "dependencies": [
-          5,
-          7,
-          "4"
-        ],
-        "priority": "high",
-        "details": "Complete test migration:\n- Remove tests for deleted getUserMessage/getSuggestions methods\n- Update error.code assertions to error.errorCode\n- Update constructor calls in all test files\n- Migrate ErrorReporter tests to ErrorPresenter with deterministic CLI snapshots (no colors/emojis in CI)\n- Ensure all error instantiations use new params pattern\n- Verify no direct ErrorReporter usage remains in production code\n- Ensure all CLI/API outputs come from ErrorPresenter only\n<info added on 2025-09-05T21:55:13.862Z>\nAdditional acceptance criteria: Zero ErrorReporter imports in production code. Verify with grep/ripgrep that no production files import ErrorReporter after migration\n</info added on 2025-09-05T21:55:13.862Z>",
-        "testStrategy": "Run full test suite after migration:\n- npm run test:all\n- Verify no failures related to error handling\n- Check coverage remains above threshold\n- Validate snapshot tests for CLI output are deterministic in CI environment\n- Verify ErrorPresenter outputs match expected CLI format without colors/emojis in CI\n- Confirm all production code uses ErrorPresenter instead of ErrorReporter",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Remove ErrorReporter tests and migrate to ErrorPresenter",
-            "description": "Replace all ErrorReporter test files with ErrorPresenter equivalents using deterministic snapshots",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Locate all test files referencing ErrorReporter\n- Create new ErrorPresenter test files with snapshot testing\n- Configure snapshots to exclude colors and emojis in CI environment\n- Ensure deterministic output for consistent CI runs\n- Remove old ErrorReporter test files",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Update error property assertions throughout test suite",
-            "description": "Change all error.code references to error.errorCode in test files",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Search for all instances of error.code assertions\n- Replace with error.errorCode\n- Update error constructor calls to use new params pattern\n- Verify test expectations match new error structure",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Verify no direct ErrorReporter usage in production code",
-            "description": "Audit codebase to ensure ErrorReporter is completely replaced by ErrorPresenter in production paths",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Search for any remaining ErrorReporter imports or usage\n- Verify all CLI output goes through ErrorPresenter\n- Verify all API error responses use ErrorPresenter\n- Document any ErrorReporter deprecation warnings if kept for compatibility",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Configure CI-specific snapshot testing",
-            "description": "Set up test configuration to generate deterministic snapshots without colors or emojis in CI",
-            "status": "done",
-            "dependencies": [],
-            "details": "- Configure test environment detection for CI\n- Ensure ErrorPresenter outputs plain text in CI mode\n- Update or create new snapshots for CLI error outputs\n- Verify snapshots are consistent across different CI environments",
-            "testStrategy": ""
-          }
-        ]
-      },
-      {
-        "id": 9,
-        "title": "Final Quality Checks and Documentation",
-        "description": "Complete final verification, linting, documentation of breaking changes, and error code documentation setup",
-        "status": "done",
-        "dependencies": [
-          8
-        ],
-        "priority": "medium",
-        "details": "Final steps:\n- Verify no stack traces in production mode\n- Verify all ErrorCode mappings work (exit codes, HTTP status)\n- Verify formatForAPI().type points to existing or stub pages at https://foundrydata.dev/errors/{code}\n- Create minimum stub file to document error codes\n- Run linter and fix any issues: npm run lint\n- Run formatter: npm run format\n- Document all breaking changes in CHANGELOG.md\n- Update README with new error handling features\n- Ensure ErrorReporter is properly deprecated or removed",
-        "testStrategy": "Final validation:\n- npm run task-ready (full quality check)\n- npm run typecheck\n- npm run lint\n- npm run test:all\n- Manual testing of error scenarios in CLI\n- Verify error code documentation URLs are accessible",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Verify error code URL mapping",
-            "description": "Check that formatForAPI().type points to valid documentation URLs",
-            "status": "done",
-            "dependencies": [],
-            "details": "Verify each error code in ErrorCode enum has corresponding documentation at https://foundrydata.dev/errors/{code}",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Create error code documentation stub",
-            "description": "Create minimum documentation file for error codes",
-            "status": "done",
-            "dependencies": [],
-            "details": "Create stub documentation file that lists all error codes with basic descriptions to serve as foundation for https://foundrydata.dev/errors/ pages",
-            "testStrategy": ""
-          }
-        ]
-      }
-    ],
-    "metadata": {
-      "created": "2025-09-05T21:37:48.791Z",
-      "updated": "2025-09-06T11:19:59.757Z",
-      "description": "Implementation of comprehensive error system with user-friendly messages, stable error codes, JSON Pointer localization, and PII redaction for FoundryData MVP"
-    }
-  },
   "feature-simplification": {
     "tasks": [
       {
-        "id": 8000,
+        "id": "8000",
         "title": "AGENT — Operating mode for Claude Code",
         "description": "Execution discipline and guardrails for building from SPEC via anchors only.",
         "priority": "medium",
@@ -2374,7 +27,7 @@
         ]
       },
       {
-        "id": 9000,
+        "id": "9000",
         "title": "SPEC — Canonical Source (header & metadata)",
         "description": "Reference-only: section §0.",
         "priority": "low",
@@ -2404,7 +57,7 @@
         ]
       },
       {
-        "id": 9050,
+        "id": "9050",
         "title": "SPEC — Maintenance / Evolution",
         "description": "Reference-only: section §24.",
         "priority": "low",
@@ -2436,7 +89,7 @@
         ]
       },
       {
-        "id": 9100,
+        "id": "9100",
         "title": "Terminology (preamble — quick ref)",
         "description": "Reference-only: section §0.",
         "priority": "low",
@@ -2468,7 +121,7 @@
         ]
       },
       {
-        "id": 9101,
+        "id": "9101",
         "title": "§1 Goal",
         "description": "Reference-only: section §1.",
         "priority": "low",
@@ -2516,7 +169,7 @@
         ]
       },
       {
-        "id": 9102,
+        "id": "9102",
         "title": "§2 Scope",
         "description": "Reference-only: section §2.",
         "priority": "low",
@@ -2564,7 +217,7 @@
         ]
       },
       {
-        "id": 9103,
+        "id": "9103",
         "title": "§3 Principles & Invariants",
         "description": "Reference-only: section §3.",
         "priority": "low",
@@ -2604,7 +257,7 @@
         ]
       },
       {
-        "id": 9104,
+        "id": "9104",
         "title": "§4 Operational guidance",
         "description": "Reference-only: section §4.",
         "priority": "low",
@@ -2644,7 +297,7 @@
         ]
       },
       {
-        "id": 9105,
+        "id": "9105",
         "title": "§5 Configuration Overview",
         "description": "Reference-only: section §5.",
         "priority": "low",
@@ -2684,7 +337,7 @@
         ]
       },
       {
-        "id": 9106,
+        "id": "9106",
         "title": "§6 High-Level Architecture",
         "description": "Reference-only: section §6.",
         "priority": "low",
@@ -2708,7 +361,7 @@
         ]
       },
       {
-        "id": 9107,
+        "id": "9107",
         "title": "§7 Schema Normalizer (Canonicalization)",
         "description": "Reference-only: section §7.",
         "priority": "low",
@@ -2756,7 +409,7 @@
         ]
       },
       {
-        "id": 9108,
+        "id": "9108",
         "title": "§8 Composition Engine",
         "description": "Reference-only: section §8.",
         "priority": "low",
@@ -2828,7 +481,7 @@
         ]
       },
       {
-        "id": 9109,
+        "id": "9109",
         "title": "§9 Generator",
         "description": "Reference-only: section §9.",
         "priority": "low",
@@ -2868,7 +521,7 @@
         ]
       },
       {
-        "id": 9110,
+        "id": "9110",
         "title": "§10 Repair Engine (AJV-Driven)",
         "description": "Reference-only: section §10.",
         "priority": "low",
@@ -2932,7 +585,7 @@
         ]
       },
       {
-        "id": 9111,
+        "id": "9111",
         "title": "§11 Modes",
         "description": "Reference-only: section §11.",
         "priority": "low",
@@ -2956,7 +609,7 @@
         ]
       },
       {
-        "id": 9112,
+        "id": "9112",
         "title": "§12 Draft Handling",
         "description": "Reference-only: section §12.",
         "priority": "low",
@@ -2988,7 +641,7 @@
         ]
       },
       {
-        "id": 9113,
+        "id": "9113",
         "title": "§13 AJV Configuration",
         "description": "Reference-only: section §13.",
         "priority": "low",
@@ -3012,7 +665,7 @@
         ]
       },
       {
-        "id": 9114,
+        "id": "9114",
         "title": "§14 Cache Strategy",
         "description": "Reference-only: section §14.",
         "priority": "low",
@@ -3044,7 +697,7 @@
         ]
       },
       {
-        "id": 9115,
+        "id": "9115",
         "title": "§15 Performance, Determinism & Metrics",
         "description": "Reference-only: section §15.",
         "priority": "low",
@@ -3084,7 +737,7 @@
         ]
       },
       {
-        "id": 9116,
+        "id": "9116",
         "title": "§16 Implementation Plan",
         "description": "Reference-only: section §16.",
         "priority": "low",
@@ -3132,7 +785,7 @@
         ]
       },
       {
-        "id": 9117,
+        "id": "9117",
         "title": "§17 Documentation Additions",
         "description": "Reference-only: section §17.",
         "priority": "low",
@@ -3172,7 +825,7 @@
         ]
       },
       {
-        "id": 9118,
+        "id": "9118",
         "title": "§18 Features Matrix",
         "description": "Reference-only: section §18.",
         "priority": "low",
@@ -3196,7 +849,7 @@
         ]
       },
       {
-        "id": 9119,
+        "id": "9119",
         "title": "§19 Diagnostics (codes)",
         "description": "Reference-only: section §19.",
         "priority": "low",
@@ -3236,7 +889,7 @@
         ]
       },
       {
-        "id": 9120,
+        "id": "9120",
         "title": "§20 Testing Strategy",
         "description": "Reference-only: section §20.",
         "priority": "low",
@@ -3284,7 +937,7 @@
         ]
       },
       {
-        "id": 9121,
+        "id": "9121",
         "title": "§21 Risks & Mitigations",
         "description": "Reference-only: section §21.",
         "priority": "low",
@@ -3308,7 +961,7 @@
         ]
       },
       {
-        "id": 9122,
+        "id": "9122",
         "title": "§22 Deliverables (Code)",
         "description": "Reference-only: section §22.",
         "priority": "low",
@@ -3348,7 +1001,7 @@
         ]
       },
       {
-        "id": 9123,
+        "id": "9123",
         "title": "§23 Appendix — Minimal Interfaces",
         "description": "Reference-only: section §23.",
         "priority": "low",
@@ -3388,7 +1041,7 @@
         ]
       },
       {
-        "id": 9124,
+        "id": "9124",
         "title": "§24 Norms & References",
         "description": "Reference-only: section §24.",
         "priority": "low",
@@ -3428,7 +1081,7 @@
         ]
       },
       {
-        "id": 1,
+        "id": "1",
         "title": "Scaffolding & Monorepo",
         "description": "Initialize monorepo, packages, basic build/test/bench harness, and docs skeleton.",
         "priority": "high",
@@ -3479,7 +1132,7 @@
         ]
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "Dual AJV & Config Gate",
         "description": "Introduce Source vs Planning AJV instances and enforce startup parity gates.",
         "priority": "high",
@@ -3524,7 +1177,7 @@
         "updatedAt": "2025-10-12T20:00:58.449Z"
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "Utils: RNG, rationals, JSON-safe",
         "description": "Provide deterministic RNG, exact rational helpers with fallbacks, and JSON-safe logging.",
         "priority": "high",
@@ -3568,7 +1221,7 @@
         ]
       },
       {
-        "id": 4,
+        "id": "4",
         "title": "Structural hashing & stable-hash",
         "description": "Implement structural hashing for uniqueItems and stable schema hashing for cache.",
         "status": "done",
@@ -3590,7 +1243,8 @@
             "dependencies": [],
             "details": "Create packages/core/src/util/struct-hash.ts with SHA-256 based structural hashing for JavaScript values. Must handle canonical JSON normalization (sorted keys, arrays in order, -0→0, BigInt stringified). Include collision detection with deepEqual confirmation. Replace JSON.stringify usage in array-generator.ts lines 364, 603-607 with this implementation.",
             "status": "done",
-            "testStrategy": "Unit tests for deterministic hashing, collision handling, edge cases with -0, BigInt, deep objects/arrays"
+            "testStrategy": "Unit tests for deterministic hashing, collision handling, edge cases with -0, BigInt, deep objects/arrays",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -3599,12 +1253,13 @@
             "dependencies": [],
             "details": "Create packages/core/src/util/stable-hash.ts for deterministic schema digest generation. Must integrate with CacheOptions.hashIfBytesLt setting in types/options.ts. Provide consistent hashing for schema objects to enable efficient caching in the composition engine pipeline stage.",
             "status": "done",
-            "testStrategy": "Unit tests for schema hashing consistency, deterministic output across runs, integration with cache options"
+            "testStrategy": "Unit tests for schema hashing consistency, deterministic output across runs, integration with cache options",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "PtrMap canon→original",
         "description": "Bidirectional pointer mapping between canonical and original schema pointers.",
         "priority": "medium",
@@ -3631,7 +1286,7 @@
         ]
       },
       {
-        "id": 6,
+        "id": "6",
         "title": "Metrics & diagnostic envelope",
         "description": "Diagnostics envelope `{code, canonPath, details?}`, metrics collection, verbosity toggle.",
         "priority": "high",
@@ -3675,7 +1330,7 @@
         ]
       },
       {
-        "id": 7,
+        "id": "7",
         "title": "Normalizer",
         "description": "Draft unification, boolean/trivial simplifications with unevaluated guards, conditional rewrite (safe), propertyNames rewrite (P0: enum-only).",
         "priority": "high",
@@ -3714,10 +1369,10 @@
         ]
       },
       {
-        "id": 8,
+        "id": "8",
         "title": "Composition Engine",
         "description": "Build effective view, CoverageIndex (has/enumerate), branch selection, early-unsat hints, caps; AP:false must-cover and Strict/Lax behaviors.",
-        "status": "pending",
+        "status": "deferred",
         "dependencies": [
           "2",
           "3",
@@ -3743,7 +1398,7 @@
             "description": "Implement core effective view computation and CoverageIndex data structure with has/enumerate methods",
             "dependencies": [],
             "details": "Build the core effective view computation that processes normalized schemas from the Normalizer (task 7). Implement CoverageIndex class with has() and enumerate() methods, ensuring enumerate only operates on provably finite sources. Handle AP:false must-cover requirements with Safe/Unsafe pattern detection. Export CoverageIndex for every object schema processed.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for CoverageIndex.has/enumerate purity, effective view computation correctness, and finite source validation",
             "parentId": "undefined"
           },
@@ -3753,14 +1408,14 @@
             "description": "Implement deterministic branch selection with score-only invariants and diagnostic emission",
             "dependencies": [],
             "details": "Implement branch selection algorithm with deterministic tiebreakRand recording (even for |T|=1 cases). Handle Strict vs Lax behaviors for AP_FALSE_UNSAFE_PATTERN routing. Implement early-unsat hints generation and diagnostic emission with correct locus information. Ensure memo keys include PlanOptionsSubKey for proper caching.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for deterministic branch selection, tiebreakRand presence, Strict/Lax routing behavior, and diagnostic locus accuracy",
             "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9,
+        "id": "9",
         "title": "Generator",
         "description": "Foundry generator honoring effective view, pattern witness, minimal width/length, if-aware-lite.",
         "status": "pending",
@@ -3792,7 +1447,7 @@
         ]
       },
       {
-        "id": 10,
+        "id": "10",
         "title": "Repair Engine",
         "description": "AJV-driven repairs, epsilon logging, AP:false rename guard with CoverageIndex, unevaluated evaluation guard.",
         "status": "pending",
@@ -3825,24 +1480,23 @@
         ]
       },
       {
-        "id": 11,
+        "id": "11",
         "title": "Pipeline Orchestrator",
         "description": "Wire Normalize → Compose → Generate → Repair → Validate; pass metrics and diagnostics through.",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [
           "2",
+          "5",
+          "6",
           "7",
-          "8",
           "9",
           "10",
           "8000",
           "9000",
-          "9106",
           "9101",
+          "9106",
           "9113",
-          "9115",
-          "5",
-          "6"
+          "9115"
         ],
         "priority": "high",
         "details": "[Context] §4 pipeline; §6 phases; §1 acceptance; §15 metrics.\n- spec://§4#pipeline, spec://§6#phases, spec://§1#acceptance, spec://§15#metrics\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§4\",\"anchors\":[\"spec://§4#pipeline\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Final AJV validate against original; support Lax/Strict behaviors routed by Modes task.\n- Wire together Normalize → Compose → Generate → Repair → Validate stages from dependency tasks.\n- Integrate with existing FoundryGenerator structure in packages/core/src/generator/foundry-generator.ts\n- Preserve existing PipelineStage enum and metrics collection patterns\n[Deliverables]\n- packages/core/src/index.ts (main orchestrator entry point)\n- Enhanced packages/core/src/generator/foundry-generator.ts with new pipeline stages\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench\n[Definition of Done]\n- End-to-end run returns diagnostics+metrics and valid instances on simple cases; errors propagate with correct codes.\n- All five pipeline stages (Normalize, Compose, Generate, Repair, Validate) are wired together\n- Integration with task 2 (Dual AJV), task 7 (Normalizer), task 8 (Composition Engine), task 9 (Generator), and task 10 (Repair Engine)",
@@ -3854,9 +1508,10 @@
             "description": "Create main orchestrator entry point in packages/core/src/index.ts that coordinates the five-stage pipeline",
             "dependencies": [],
             "details": "Implement the high-level orchestrator function that coordinates Normalize → Compose → Generate → Repair → Validate stages. This should integrate with the existing FoundryGenerator structure and maintain compatibility with current PipelineStage enum and metrics collection patterns. The orchestrator should handle stage dependencies, error propagation, and metrics aggregation across all pipeline stages.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "Unit test for pipeline coordination logic, integration test for end-to-end execution with metrics collection",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-10-14T18:23:23.199Z"
           },
           {
             "id": 2,
@@ -3866,19 +1521,19 @@
               1
             ],
             "details": "Integrate the Normalizer from task 7 as the first stage in the pipeline. Handle draft unification, boolean/trivial simplifications, conditional rewrite options, and propertyNames rewrite. Ensure proper error handling and metrics collection for the normalization stage.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "Test normalization stage integration with various schema types and conditional rewrite scenarios",
             "parentId": "undefined"
           },
           {
             "id": 3,
             "title": "Integrate Composition Engine stage",
-            "description": "Wire task 8 (Composition Engine) implementation into the pipeline orchestrator",
+            "description": "Wire task 8 (Composition Engine) implementation into the pipeline orchestrator [Updated: 10/14/2025]",
             "dependencies": [
               2
             ],
-            "details": "Integrate the Composition Engine from task 8 as the second stage in the pipeline. Handle effective view building, must-cover additionalProperties:false, bag contains semantics, and rational multipleOf calculations. Ensure proper data flow from Normalizer to Composition stage.",
-            "status": "pending",
+            "details": "Integrate the Composition Engine from task 8 as the second stage in the pipeline. Handle effective view building, must-cover additionalProperties:false, bag contains semantics, and rational multipleOf calculations. Ensure proper data flow from Normalizer to Composition stage.\n<info added on 2025-10-14T18:19:41.172Z>\nLet me analyze the codebase to understand the current project structure and implementation patterns before updating the subtask status.Based on my analysis of the codebase, I can see that:\n\n1. **The Composition Engine is implemented** in `/Users/fstepho/dev/foundry/foundrydata/packages/core/src/transform/composition-engine.ts` - it exports a `compose` function and `CompositionEngine` class.\n\n2. **Pipeline integration exists** in `/Users/fstepho/dev/foundry/foundrydata/test/__tests__/integration/pipeline/full-pipeline.test.ts` showing parsing → generation → validation flow.\n\n3. **The project structure** uses a monorepo with packages in `packages/core/src/` for core functionality.\n\n4. **Task validation commands** exist in `package.json:32-33` with `task-ready` and `task-complete` scripts.\n\nThe user request is simply \"set status to in-progress\" - this is a status change request that doesn't require detailed implementation information, just an acknowledgment that work has begun on integrating the Composition Engine into the pipeline orchestrator.\n\nStarted integrating Composition Engine from task 8 into pipeline orchestrator as second stage. Working on wiring data flow from Normalizer to Composition stage with proper handling of effective view building, additionalProperties:false semantics, and rational multipleOf calculations.\n</info added on 2025-10-14T18:19:41.172Z>",
+            "status": "in-progress",
             "testStrategy": "Test composition stage integration with complex object patterns and array constraints",
             "parentId": "undefined"
           },
@@ -3942,10 +1597,11 @@
             "testStrategy": "Test error propagation from each pipeline stage, verify error context preservation and proper error codes",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2025-10-14T18:23:23.199Z"
       },
       {
-        "id": 12,
+        "id": "12",
         "title": "Modes & External $ref",
         "description": "Implement Strict vs Lax behaviors and external $ref skip-eligibility probe.",
         "priority": "medium",
@@ -3973,7 +1629,7 @@
         ]
       },
       {
-        "id": 13,
+        "id": "13",
         "title": "Draft handling & $dynamic*",
         "description": "Dialect detection, Ajv class selection, bounded in-document $dynamicRef binding (planning-only).",
         "status": "done",
@@ -3993,7 +1649,8 @@
             "dependencies": [],
             "details": "Create packages/core/src/util/draft.ts with functions that leverage the existing JsonSchemaDialect type, createAjvByDialect, and getAjvClassLabel functions from ajv-source.ts. Implement dialect detection from schema $schema property and provide Ajv class selection interface that integrates with the current architecture.",
             "status": "done",
-            "testStrategy": "Unit tests for each supported dialect detection and corresponding Ajv class selection"
+            "testStrategy": "Unit tests for each supported dialect detection and corresponding Ajv class selection",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -4004,12 +1661,13 @@
             ],
             "details": "Implement bounded dynamic scope resolution that respects depth limits from GuardsOptions.maxDynamicScopeHops (add this field to GuardsOptions interface in types/options.ts if not present). Provide planning-only substitution to fragment $ref without cross-document I/O. Emit DYNAMIC_SCOPE_BOUNDED when successfully bound within limits, DYNAMIC_PRESENT otherwise.",
             "status": "done",
-            "testStrategy": "Unit tests covering depth boundary conditions, successful/failed binding scenarios, and ancestor path resolution with/without $ref"
+            "testStrategy": "Unit tests covering depth boundary conditions, successful/failed binding scenarios, and ancestor path resolution with/without $ref",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 14,
+        "id": "14",
         "title": "Cache Strategy",
         "description": "Implement hierarchical caches and memo keys including PlanOptionsSubKey and AJV flags.",
         "priority": "high",
@@ -4039,7 +1697,7 @@
         ]
       },
       {
-        "id": 15,
+        "id": "15",
         "title": "Bench Harness & Gates",
         "description": "Benchmark harness and CI gates for p95 latency and memory peaks; metrics wiring.",
         "status": "pending",
@@ -4069,7 +1727,7 @@
         ]
       },
       {
-        "id": 16,
+        "id": "16",
         "title": "Diagnostics payload conformance",
         "description": "Enforce §19.1 mini-schemas, phase separation, and verbosity toggle exposure.",
         "status": "done",
@@ -4120,7 +1778,7 @@
         ]
       },
       {
-        "id": 17,
+        "id": "17",
         "title": "Unit Tests (per section)",
         "description": "Unit test suites mirroring SPEC sections, including fuzzing for oneOf exclusivity and must-cover.",
         "status": "pending",
@@ -4150,7 +1808,7 @@
         ]
       },
       {
-        "id": 18,
+        "id": "18",
         "title": "Integration & e2e",
         "description": "End-to-end scenarios covering modes, AP:false unsafe patterns, oneOf exclusivity refinement.",
         "status": "pending",
@@ -4179,20 +1837,20 @@
         ]
       },
       {
-        "id": 19,
+        "id": "19",
         "title": "Documentation",
         "description": "Author Invariants, Known-Limits, and Features docs; update README and error catalog.",
         "status": "pending",
         "dependencies": [
-          4,
-          7,
-          8,
-          9,
-          10,
-          11,
-          14,
-          17,
-          18,
+          "4",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "14",
+          "17",
+          "18",
           "8000",
           "9000",
           "9117",
@@ -4209,7 +1867,8 @@
             "dependencies": [],
             "details": "Create comprehensive invariants documentation based on completed implementations in Tasks 4 (structural hashing), 7 (normalizer), 8 (composition engine), and pipeline orchestration. Reference actual code behaviors and guarantee definitions from packages/core/src/ modules.",
             "status": "pending",
-            "testStrategy": "Verify invariants match implementation behavior through code review and example validation."
+            "testStrategy": "Verify invariants match implementation behavior through code review and example validation.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -4218,7 +1877,8 @@
             "dependencies": [],
             "details": "Document specific limits enforced by implemented features: Task 14 cache limits, Task 8 composition complexity caps, Task 10 repair engine bounds, Task 9 generator limits. Include performance implications and degradation behaviors.",
             "status": "pending",
-            "testStrategy": "Validate limits against actual implementation configurations and bench profile constraints."
+            "testStrategy": "Validate limits against actual implementation configurations and bench profile constraints.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -4227,7 +1887,8 @@
             "dependencies": [],
             "details": "Build feature matrix based on actual implementation coverage from core tasks. Include schema support levels, conditional handling, array/object support, numeric handling, and ref resolution capabilities implemented in the pipeline.",
             "status": "pending",
-            "testStrategy": "Cross-reference feature claims with unit test coverage and integration test scenarios."
+            "testStrategy": "Cross-reference feature claims with unit test coverage and integration test scenarios.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -4236,7 +1897,8 @@
             "dependencies": [],
             "details": "Create comprehensive error documentation reflecting actual diagnostic codes, error propagation patterns, and recovery mechanisms implemented across the 5-stage pipeline. Reference Task 6 diagnostic envelope structure.",
             "status": "pending",
-            "testStrategy": "Verify error codes match implementation and are properly categorized by pipeline phase."
+            "testStrategy": "Verify error codes match implementation and are properly categorized by pipeline phase.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -4245,12 +1907,13 @@
             "dependencies": [],
             "details": "Revise README to reflect actual implementation from Tasks 1-18: monorepo structure, pipeline architecture, performance characteristics from bench harness, API examples from Task 21 public API.",
             "status": "pending",
-            "testStrategy": "Validate README accuracy against actual package structure and API signatures."
+            "testStrategy": "Validate README accuracy against actual package structure and API signatures.",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 20,
+        "id": "20",
         "title": "Fixtures & Bench profiles",
         "description": "Provide test fixtures and bench profiles (simple/medium/pathological); property-based generators for fuzzing.",
         "priority": "medium",
@@ -4277,7 +1940,7 @@
         ]
       },
       {
-        "id": 21,
+        "id": "21",
         "title": "Public API & TS types",
         "description": "Exported functions and types for normalize/compose/generate/repair; stable signatures.",
         "priority": "medium",
@@ -4304,7 +1967,7 @@
         ]
       },
       {
-        "id": 22,
+        "id": "22",
         "title": "CI pipelines (lint, test, bench)",
         "description": "Set up CI with linting, unit/integration tests, and bench gates.",
         "status": "pending",
@@ -4334,7 +1997,7 @@
         ]
       },
       {
-        "id": 23,
+        "id": "23",
         "title": "P2 refinements",
         "description": "Deferred features: propertyNames pattern-form rewrite; pattern approximations for must-cover; contains subsumption.",
         "priority": "medium",
@@ -4361,7 +2024,7 @@
         ]
       },
       {
-        "id": 24,
+        "id": "24",
         "title": "Packaging & Release",
         "description": "Prepare versioning, changelog, and publish configuration; SemVer alignment.",
         "priority": "medium",
@@ -4390,15 +2053,12 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-12T20:00:58.450Z",
+      "lastModified": "2025-10-14T18:23:23.200Z",
       "taskCount": 52,
-      "completedCount": 30,
+      "completedCount": 38,
       "tags": [
         "feature-simplification"
-      ],
-      "created": "2025-10-13T11:26:34.120Z",
-      "description": "Tasks for feature-simplification context",
-      "updated": "2025-10-13T21:46:21.993Z"
+      ]
     }
   }
 }

@@ -45,6 +45,7 @@ Integrate the Normalizer from task 7 as the first stage in the pipeline. Handle 
 ### Description: Wire task 8 (Composition Engine) implementation into the pipeline orchestrator
 ### Details:
 Integrate the Composition Engine from task 8 as the second stage in the pipeline. Handle effective view building, must-cover additionalProperties:false, bag contains semantics, and rational multipleOf calculations. Ensure proper data flow from Normalizer to Composition stage.
+Deliver the Compose input/output envelope from §23 (`schema`, `ptrMap`, `revPtrMap`, `notes`) so diagnostics can be keyed per `canonPath` and §7 synthetic notes reach the Composition engine.
 
 ## 4. Integrate Generator stage [pending]
 ### Dependencies: 11.3
@@ -75,4 +76,3 @@ Collect and aggregate metrics from all five pipeline stages (normalizeMs, compos
 ### Description: Ensure proper error handling and propagation across all pipeline stages
 ### Details:
 Implement comprehensive error handling that preserves error context across pipeline stages. Handle FoundryError types from each stage, maintain error codes, and ensure diagnostic information is properly aggregated and reported.
-
