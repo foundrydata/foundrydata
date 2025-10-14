@@ -40,7 +40,6 @@ describe('computeSelectorMemoKey', () => {
       seed: 123,
       planOptions: {
         trials: { perBranch: 3 },
-        guards: { allowAdditionalProperties: false },
       },
       userKey: 'custom-key',
       ajvMetadata: {
@@ -201,6 +200,24 @@ describe('CompositionEngine coverage index', () => {
     expect(entry?.enumerate?.()).toEqual(['bar', 'foo']);
     expect(entry?.has('foo')).toBe(true);
     expect(entry?.has('baz')).toBe(false);
+  });
+
+  it('does not enumerate for raw propertyNames.enum without §7 rewrite', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      propertyNames: { enum: ['a', 'b'] },
+    } as const;
+
+    const result = compose(makeInput(schema));
+    const entry = result.coverageIndex.get('');
+    expect(entry).toBeDefined();
+    // enumerate() must be absent when finiteness derives only from raw propertyNames.enum
+    expect(entry?.enumerate).toBeUndefined();
+    // Gating-only: has() should not be satisfied solely by propertyNames.enum
+    expect(entry?.has('a')).toBe(false);
+    expect(entry?.has('b')).toBe(false);
+    expect(entry?.has('c')).toBe(false);
   });
 
   it('handles vacuous coverage when additionalProperties is not false', () => {

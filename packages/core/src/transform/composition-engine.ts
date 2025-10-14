@@ -602,8 +602,30 @@ class CompositionEngine {
       const filtered = Array.from(enumerationCandidates.values()).filter(
         (candidate) => hasName(candidate)
       );
+
+      // Guard: do not expose enumerate() when finiteness comes only from
+      // raw propertyNames.enum (no §7 rewrite evidence). Enumeration is
+      // allowed when we have any non-propertyNames finite source (named
+      // properties or patternProperties/propertyNamesSynthetic literals), or
+      // when a PNAMES_REWRITE_APPLIED note exists at this object.
+      const hasNonPropertyNamesFiniteSource = conjuncts.some(
+        (conj) =>
+          conj.named.size > 0 || conj.patterns.some((p) => Boolean(p.literals))
+      );
+      const hasGatingEnum = conjuncts.some(
+        (conj) => conj.gatingEnum !== undefined && conj.gatingEnum.size > 0
+      );
+      const pnamesRewriteApplied = this.hasPnamesRewrite(canonPath);
+
       const limit = this.resolvedOptions.complexity.maxEnumCardinality;
-      if (filtered.length > limit) {
+      if (
+        hasGatingEnum &&
+        !hasNonPropertyNamesFiniteSource &&
+        !pnamesRewriteApplied
+      ) {
+        // Finite only due to raw propertyNames gating ⇒ do not enumerate
+        // (SPEC §8 — coverage-index-enumerate restriction).
+      } else if (filtered.length > limit) {
         this.recordCap(DIAGNOSTIC_CODES.COMPLEXITY_CAP_ENUM);
         this.addWarn(canonPath, DIAGNOSTIC_CODES.COMPLEXITY_CAP_ENUM, {
           limit,
@@ -671,6 +693,14 @@ class CompositionEngine {
 
       this.addApproximation(canonPath, 'presencePressure');
     }
+  }
+
+  private hasPnamesRewrite(pointer: string): boolean {
+    return this.notes.some(
+      (n) =>
+        n.canonPath === pointer &&
+        n.code === DIAGNOSTIC_CODES.PNAMES_REWRITE_APPLIED
+    );
   }
 
   private collectCoverageConjuncts(
