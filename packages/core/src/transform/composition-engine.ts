@@ -626,6 +626,15 @@ class CompositionEngine {
     this.coverageIndex.set(canonPath, coverageEntry);
 
     if (!safeIntersectionExists && presencePressure) {
+      const hasAnyCoverageSource = conjuncts.some(
+        (conj) =>
+          conj.hasProperties ||
+          conj.hasPatternProperties ||
+          conj.hasSyntheticPatterns
+      );
+      const hasOnlyPropertyNamesGating =
+        !hasAnyCoverageSource &&
+        conjuncts.some((conj) => conj.gatingEnum || conj.gatingPattern);
       this.addUnsatHint({
         code: DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
         canonPath,
@@ -634,19 +643,30 @@ class CompositionEngine {
         details: buildUnsatDetails(schema),
       });
 
-      const detail = this.buildApFalseUnsafeDetail(unsafeIssues);
-      if (this.mode === 'strict') {
-        this.addFatal(
-          canonPath,
-          DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN,
-          detail
-        );
-      } else {
-        this.addWarn(
-          canonPath,
-          DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN,
-          detail
-        );
+      // SPEC §8 (AP:false fail-fast): Only emit AP_FALSE_UNSAFE_PATTERN when
+      // must-cover would rely on non-anchored or complexity-capped patterns
+      // from patternProperties or synthetic (§7) sources. A raw
+      // propertyNames.pattern (no rewrite) is gating-only and MUST NOT trigger
+      // AP_FALSE_UNSAFE_PATTERN. We reflect that by requiring evidence of
+      // "unsafe" coverage pattern issues gathered during conjunct analysis.
+      if (
+        unsafeIssues.length > 0 ||
+        (!hasOnlyPropertyNamesGating && !hasAnyCoverageSource)
+      ) {
+        const detail = this.buildApFalseUnsafeDetail(unsafeIssues);
+        if (this.mode === 'strict') {
+          this.addFatal(
+            canonPath,
+            DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN,
+            detail
+          );
+        } else {
+          this.addWarn(
+            canonPath,
+            DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN,
+            detail
+          );
+        }
       }
 
       this.addApproximation(canonPath, 'presencePressure');
