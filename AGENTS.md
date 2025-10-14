@@ -498,83 +498,83 @@ Checks:
 
 ---
 
-## Intégration Task Master — Outils MCP
+## Intégration Task Master — Slash Commands & CLI
 
-**Politique d'accès** : **ne jamais** lire `.taskmaster/*.json` directement ; **toujours** utiliser les outils MCP.
+**Politique d'accès** : **ne jamais** lire `.taskmaster/*.json` directement ; **toujours** utiliser les slash commands ou la CLI.
 
-**Chemins** : passer `projectRoot` en **chemin absolu** (`/Users/fstepho/dev/foundry/foundrydata`) ; `projectRoot:"."` est résolu côté Task Master (`cwd` = `/`) et provoque `Error: No valid tasks found in /.taskmaster/tasks/tasks.json`.
+**Tag actif** : `feature-simplification` — Toutes les tâches 1..24 sont gérées sous ce tag (vérifié via `npx task-master list`).
 
-### Outils MCP Disponibles
+### Slash Commands Disponibles (Recommandé)
 
-```typescript
-// Lister toutes les tâches
-mcp__task-master-ai__get_tasks({
-  projectRoot: "/Users/fstepho/dev/foundry/foundrydata",
-  status?: "pending" | "in-progress" | "done" | "review",
-  withSubtasks?: boolean
-})
+Les 44 slash commands Task Master sont disponibles avec la syntaxe `/tm:category:command` :
 
-// Obtenir une tâche spécifique
-mcp__task-master-ai__get_task({
-  id: "7",
-  projectRoot: "/Users/fstepho/dev/foundry/foundrydata"
-})
+```bash
+# Commandes principales
+/tm:list:list-tasks                          # Lister les tâches
+/tm:show:show-task <id>                      # Voir une tâche
+/tm:next:next-task                           # Prochaine tâche recommandée
+/tm:set-status:to-in-progress <id>           # Marquer en cours
+/tm:set-status:to-done <id>                  # Marquer done
+/complete-task <id>                          # Compléter avec validation
 
-// Trouver la prochaine tâche disponible
-mcp__task-master-ai__next_task({
-  projectRoot: "/Users/fstepho/dev/foundry/foundrydata"
-})
+# Analyse & expansion
+/tm:analyze-complexity:analyze-complexity    # Analyse de complexité
+/tm:expand:expand-task <id>                  # Décomposer une tâche
+/tm:complexity-report:complexity-report      # Voir le rapport
 
-// Changer le statut d'une tâche
-mcp__task-master-ai__set_task_status({
-  id: "7",
-  status: "in-progress" | "done" | "pending" | "review" | "deferred" | "cancelled",
-  projectRoot: "/Users/fstepho/dev/foundry/foundrydata"
-})
+# Dépendances
+/tm:validate-dependencies:validate-dependencies  # Valider les dépendances
+/tm:add-dependency:add-dependency            # Ajouter une dépendance
+/tm:remove-dependency:remove-dependency      # Retirer une dépendance
+```
 
-// Analyser la complexité du projet
-mcp__task-master-ai__analyze_project_complexity({
-  projectRoot: "/Users/fstepho/dev/foundry/foundrydata",
-  threshold?: 5  // 1-10, default 5
-})
+**Référence complète** : [.claude/TASK_MASTER_QUICK_REF.md](./.claude/TASK_MASTER_QUICK_REF.md)
 
-// Afficher le rapport de complexité
-mcp__task-master-ai__complexity_report({
-  projectRoot: "/Users/fstepho/dev/foundry/foundrydata"
-})
+### CLI Task Master (Alternative)
 
-// Valider les dépendances
-mcp__task-master-ai__validate_dependencies({
-  projectRoot: "/Users/fstepho/dev/foundry/foundrydata"
-})
+Toutes les commandes sont également disponibles via CLI :
+
+```bash
+# Lister les tâches
+npx task-master list
+
+# Voir une tâche
+npx task-master show <id>
+
+# Prochaine tâche
+npx task-master next
+
+# Changer le statut
+npx task-master set-status --id=<id> --status=done
+npx task-master set-status --id=<id> --status=in-progress
+
+# Valider les dépendances
+npx task-master validate-dependencies
 ```
 
 ### Workflow Typique
 
-```typescript
-// 1. Trouver la prochaine tâche
-const nextTask = mcp__task-master-ai__next_task({
-  projectRoot: "/Users/fstepho/dev/foundry/foundrydata"
-})
+```bash
+# 1. Trouver la prochaine tâche
+/tm:next:next-task
+# ou: npx task-master next
 
-// 2. Marquer comme en cours
-mcp__task-master-ai__set_task_status({
-  id: nextTask.id,
-  status: "in-progress",
-  projectRoot: "/Users/fstepho/dev/foundry/foundrydata"
-})
+# 2. Marquer comme en cours
+/tm:set-status:to-in-progress <id>
+# ou: npx task-master set-status --id=<id> --status=in-progress
 
-// 3. [Implémenter la tâche...]
+# 3. [Implémenter la tâche...]
 
-// 4. Marquer comme terminée
-mcp__task-master-ai__set_task_status({
-  id: nextTask.id,
-  status: "done",
-  projectRoot: "/Users/fstepho/dev/foundry/foundrydata"
-})
+# 4. Marquer comme terminée avec validation complète
+/complete-task <id>
+# ou: npx task-master set-status --id=<id> --status=done
 ```
 
-**Note** : Les slash commands `/project:tm/*` et `/complete-task` ne sont **pas** disponibles dans cette configuration. Utiliser exclusivement les outils MCP ci-dessus.
+### ⚠️ Outils MCP Non Disponibles
+
+Les 36 outils MCP Task Master (`mcp__task-master-ai__*`) sont **rejetés par VSCode** en raison d'une incompatibilité avec JSON Schema Draft 2020-12 `$dynamicRef`.
+
+**Workaround** : Utiliser les slash commands ou la CLI directe (voir ci-dessus).
 
 ---
 

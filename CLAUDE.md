@@ -307,41 +307,47 @@ If using Claude Code with MCP, you can access:
 **Import workflow**: `@./.taskmaster/CLAUDE.md`
 **Completion protocol**: Always use `/complete-task <id>`; do **not** call low‑level status commands directly.
 
-#### Task Access Policy — Use CLI, Not JSON
+#### Task Access Policy — Use Slash Commands or CLI, Not JSON
 
 **CRITICAL**: Never directly read or parse `.taskmaster/tasks/tasks.json` or task files.
 
 **Why**:
 - Task structure is an implementation detail that may change
 - CLI commands handle JSON parsing, validation, and error handling
-- MCP tools provide structured, type-safe access
+- Slash commands provide structured, user-friendly access
 - Direct JSON parsing bypasses business logic and validation
 
 **Always use**:
-- Slash commands: `/project:tm/show <id>`, `/project:tm/list`, etc.
-- MCP tools: `mcp__task-master-ai__get_task`, `mcp__task-master-ai__get_tasks`
+- Slash commands: `/tm:show:show-task <id>`, `/tm:list:list-tasks`, `/complete-task <id>`
+- CLI: `npx task-master show <id>`, `npx task-master list`
 
 **Never**:
 - ❌ Read `.taskmaster/tasks/tasks.json` directly
 - ❌ Parse task files with `jq`, `cat`, or manual JSON parsing
 - ❌ Access `.taskmaster/state.json` directly
 - ❌ Modify task files without Task Master commands
+- ❌ Use MCP tools `mcp__task-master-ai__*` (not available due to VSCode bug)
 
 **Example**:
 
 ```bash
+# ✅ CORRECT: Use slash command
+/tm:show:show-task 9100
+
 # ✅ CORRECT: Use CLI
-/project:tm/show 9100
+npx task-master show 9100
 
 # ❌ WRONG: Direct file access
 cat .taskmaster/tasks/tasks.json | jq '.tasks[] | select(.id=="9100")'
 
-# ✅ CORRECT: Use MCP tool
+# ❌ WRONG: Use MCP tool (not available)
 mcp__task-master-ai__get_task(id: "9100")
 
 # ❌ WRONG: Parse manually
 Read(.taskmaster/tasks/tasks.json)
 ```
+
+**Quick Reference**: See [.claude/TASK_MASTER_QUICK_REF.md](./.claude/TASK_MASTER_QUICK_REF.md) for all available commands.
 
 #### REFONLY Policy — Anchor-Based SPEC References
 
@@ -467,7 +473,8 @@ Use judgment; balance readability, cohesion, and performance.
 - ❌ Parsing task files with `jq`, `cat`, or bash commands
 - ❌ Accessing `.taskmaster/state.json` directly
 - ❌ Modifying task files without Task Master commands
-- ✅ **Always use `/project:tm/` slash commands or MCP tools**
+- ❌ Using MCP tools `mcp__task-master-ai__*` (not available due to VSCode bug)
+- ✅ **Always use `/tm:category:command` slash commands or `npx task-master` CLI**
 
 ### Implementation Scope Creep
 
