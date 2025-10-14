@@ -130,3 +130,10 @@ export {
   assertDiagnosticEnvelope,
   type DiagnosticEnvelope,
 } from './diag/validate';
+export {
+  compose,
+  type ComposeOptions,
+  type ComposeResult,
+  type CoverageEntry,
+  type CoverageIndex,
+} from './transform/composition-engine';

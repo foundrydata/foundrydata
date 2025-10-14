@@ -38,3 +38,4 @@ Build the core effective view computation that processes normalized schemas from
 ### Details:
 Implement branch selection algorithm with deterministic tiebreakRand recording (even for |T|=1 cases). Handle Strict vs Lax behaviors for AP_FALSE_UNSAFE_PATTERN routing. Implement early-unsat hints generation and diagnostic emission with correct locus information. Ensure memo keys include PlanOptionsSubKey for proper caching.
 
+> Blocked until Task 11 delivers the Normalizer → Compose envelope (schema + ptrMap + notes) required by spec://§23; resume once subtask “Integrate Composition Engine stage” completes that plumbing.
