@@ -700,6 +700,48 @@ describe('CompositionEngine AP:false strict vs lax', () => {
     expect(coverageEntry).toBeDefined();
     expect(coverageEntry?.enumerate?.()).toEqual([]);
   });
+
+  it('does not emit AP_FALSE_UNSAFE_PATTERN for raw propertyNames.pattern gating without rewrite', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id'],
+      // Raw propertyNames.pattern (no §7 rewrite): gating-only per SPEC §8
+      propertyNames: { pattern: '^(?:id|name)$' },
+    } as const;
+
+    const result = compose(makeInput(schema));
+    const diag = result.diag;
+    expect(diag).toBeDefined();
+
+    const hasApFalseFatal = (diag?.fatal ?? []).some(
+      (e) =>
+        e.code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN &&
+        e.canonPath === ''
+    );
+    const hasApFalseWarn = (diag?.warn ?? []).some(
+      (e) =>
+        e.code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN &&
+        e.canonPath === ''
+    );
+    expect(hasApFalseFatal).toBe(false);
+    expect(hasApFalseWarn).toBe(false);
+
+    const hint = diag?.unsatHints?.find(
+      (e) =>
+        e.code === DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE &&
+        e.canonPath === ''
+    );
+    expect(hint).toBeDefined();
+
+    const approx = (diag?.warn ?? []).find(
+      (e) =>
+        e.code === DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX &&
+        e.canonPath === ''
+    );
+    expect(approx).toBeDefined();
+    expect(approx?.details).toEqual({ reason: 'presencePressure' });
+  });
 });
 
 describe('CompositionEngine complexity capping', () => {
