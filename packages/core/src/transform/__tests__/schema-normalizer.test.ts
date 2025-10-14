@@ -45,7 +45,18 @@ describe('SchemaNormalizer – boolean simplifications', () => {
     const result = normalize(schema);
 
     expect(result.schema).toBe(true);
-    expect(result.ptrMap.get('')).toBe('/anyOf/1');
+    expect(result.ptrMap.get('')).toBe('/anyOf');
+    expect(noteCodes(result)).toEqual([]);
+  });
+
+  it('collapses allOf containing false to false with operator origin', () => {
+    const schema = {
+      allOf: [{ type: 'string' }, false],
+    };
+    const result = normalize(schema);
+
+    expect(result.schema).toBe(false);
+    expect(result.ptrMap.get('')).toBe('/allOf');
     expect(noteCodes(result)).toEqual([]);
   });
 
@@ -149,6 +160,23 @@ describe('SchemaNormalizer – conditional rewrite', () => {
       result,
       DIAGNOSTIC_CODES.IF_REWRITE_SKIPPED_UNEVALUATED
     );
+    expect(note).toBeDefined();
+    expect(note?.canonPath).toBe('/if');
+  });
+
+  it('skips rewrite when generated not depth would exceed guard limit', () => {
+    const schema = {
+      if: ifSchema,
+      then: thenSchema,
+      else: elseSchema,
+    };
+    const result = normalize(schema, {
+      rewriteConditionals: 'safe',
+      guards: { maxGeneratedNotNesting: 1 },
+    });
+
+    expect(result.schema).toEqual(schema);
+    const note = findNote(result, DIAGNOSTIC_CODES.NOT_DEPTH_CAPPED);
     expect(note).toBeDefined();
     expect(note?.canonPath).toBe('/if');
   });

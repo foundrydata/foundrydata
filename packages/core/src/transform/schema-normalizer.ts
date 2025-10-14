@@ -69,12 +69,24 @@ export interface NormalizeResult {
 
 export interface NormalizeOptions {
   rewriteConditionals?: 'never' | 'safe' | 'aggressive';
+  guards?: {
+    maxGeneratedNotNesting?: number;
+  };
 }
 
-const DEFAULT_OPTIONS: Required<Pick<NormalizeOptions, 'rewriteConditionals'>> =
-  {
-    rewriteConditionals: 'never',
+interface ResolvedNormalizeOptions {
+  rewriteConditionals: 'never' | 'safe' | 'aggressive';
+  guards: {
+    maxGeneratedNotNesting: number;
   };
+}
+
+const DEFAULT_OPTIONS: ResolvedNormalizeOptions = {
+  rewriteConditionals: 'never',
+  guards: {
+    maxGeneratedNotNesting: 2,
+  },
+};
 
 export function normalize(
   schema: unknown,
@@ -85,16 +97,23 @@ export function normalize(
 }
 
 class SchemaNormalizer {
-  private readonly options: Required<
-    Pick<NormalizeOptions, 'rewriteConditionals'>
-  >;
+  private readonly options: ResolvedNormalizeOptions;
   private root: CanonNode;
   private notes: NormalizerNote[] = [];
 
   constructor(schema: unknown, options?: NormalizeOptions) {
+    const guardsOption =
+      options?.guards?.maxGeneratedNotNesting ??
+      DEFAULT_OPTIONS.guards.maxGeneratedNotNesting;
+    if (guardsOption < 0) {
+      throw new Error('guards.maxGeneratedNotNesting must be non-negative');
+    }
     this.options = {
-      ...DEFAULT_OPTIONS,
-      ...options,
+      rewriteConditionals:
+        options?.rewriteConditionals ?? DEFAULT_OPTIONS.rewriteConditionals,
+      guards: {
+        maxGeneratedNotNesting: guardsOption,
+      },
     };
     this.root = this.cloneNode(schema, '');
   }
@@ -416,6 +435,19 @@ class SchemaNormalizer {
             DIAGNOSTIC_CODES.IF_REWRITE_DISABLED_ANNOTATION_RISK
           );
         } else {
+          const notDepthLimit = this.options.guards.maxGeneratedNotNesting;
+          const requiredNotDepth = 2;
+          if (notDepthLimit < requiredNotDepth) {
+            this.addNote(conditionalPointer, DIAGNOSTIC_CODES.NOT_DEPTH_CAPPED);
+            return createObjectNode(
+              entrySlots.map((slot) => ({
+                key: slot.key,
+                node: slot.node,
+              })),
+              node.origin
+            );
+          }
+
           const ifOrigin = ifNode.origin;
           const thenClone = cloneCanonNode(thenNode);
           const elseClone = cloneCanonNode(elseNode);
@@ -1367,7 +1399,7 @@ class SchemaNormalizer {
     if (falseOrigin !== undefined) {
       return {
         kind: 'collapse',
-        node: createValueNode(false, falseOrigin),
+        node: createValueNode(false, node.origin),
       };
     }
 
@@ -1424,7 +1456,7 @@ class SchemaNormalizer {
     if (trueOrigin !== undefined) {
       return {
         kind: 'collapse',
-        node: createValueNode(true, trueOrigin),
+        node: createValueNode(true, node.origin),
       };
     }
 
