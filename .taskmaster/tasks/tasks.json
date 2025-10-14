@@ -1508,10 +1508,10 @@
             "description": "Create main orchestrator entry point in packages/core/src/index.ts that coordinates the five-stage pipeline",
             "dependencies": [],
             "details": "Implement the high-level orchestrator function that coordinates Normalize → Compose → Generate → Repair → Validate stages. This should integrate with the existing FoundryGenerator structure and maintain compatibility with current PipelineStage enum and metrics collection patterns. The orchestrator should handle stage dependencies, error propagation, and metrics aggregation across all pipeline stages.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Unit test for pipeline coordination logic, integration test for end-to-end execution with metrics collection",
             "parentId": "undefined",
-            "updatedAt": "2025-10-14T18:23:23.199Z"
+            "updatedAt": "2025-10-14T18:37:31.916Z"
           },
           {
             "id": 2,
@@ -1521,9 +1521,10 @@
               1
             ],
             "details": "Integrate the Normalizer from task 7 as the first stage in the pipeline. Handle draft unification, boolean/trivial simplifications, conditional rewrite options, and propertyNames rewrite. Ensure proper error handling and metrics collection for the normalization stage.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Test normalization stage integration with various schema types and conditional rewrite scenarios",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-10-14T18:37:38.010Z"
           },
           {
             "id": 3,
@@ -1533,9 +1534,10 @@
               2
             ],
             "details": "Integrate the Composition Engine from task 8 as the second stage in the pipeline. Handle effective view building, must-cover additionalProperties:false, bag contains semantics, and rational multipleOf calculations. Ensure proper data flow from Normalizer to Composition stage.\n<info added on 2025-10-14T18:19:41.172Z>\nLet me analyze the codebase to understand the current project structure and implementation patterns before updating the subtask status.Based on my analysis of the codebase, I can see that:\n\n1. **The Composition Engine is implemented** in `/Users/fstepho/dev/foundry/foundrydata/packages/core/src/transform/composition-engine.ts` - it exports a `compose` function and `CompositionEngine` class.\n\n2. **Pipeline integration exists** in `/Users/fstepho/dev/foundry/foundrydata/test/__tests__/integration/pipeline/full-pipeline.test.ts` showing parsing → generation → validation flow.\n\n3. **The project structure** uses a monorepo with packages in `packages/core/src/` for core functionality.\n\n4. **Task validation commands** exist in `package.json:32-33` with `task-ready` and `task-complete` scripts.\n\nThe user request is simply \"set status to in-progress\" - this is a status change request that doesn't require detailed implementation information, just an acknowledgment that work has begun on integrating the Composition Engine into the pipeline orchestrator.\n\nStarted integrating Composition Engine from task 8 into pipeline orchestrator as second stage. Working on wiring data flow from Normalizer to Composition stage with proper handling of effective view building, additionalProperties:false semantics, and rational multipleOf calculations.\n</info added on 2025-10-14T18:19:41.172Z>",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Test composition stage integration with complex object patterns and array constraints",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-10-14T18:37:44.402Z"
           },
           {
             "id": 4,
@@ -1598,7 +1600,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-10-14T18:23:23.199Z"
+        "updatedAt": "2025-10-14T18:37:44.402Z"
       },
       {
         "id": "12",
@@ -2053,7 +2055,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-14T18:23:23.200Z",
+      "lastModified": "2025-10-14T18:37:44.403Z",
       "taskCount": 52,
       "completedCount": 38,
       "tags": [
