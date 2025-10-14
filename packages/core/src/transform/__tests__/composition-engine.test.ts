@@ -33,6 +33,114 @@ function makeInput(
   };
 }
 
+describe('computeSelectorMemoKey', () => {
+  it('stabilizes ajv flag ordering and plan options snapshot', () => {
+    const key = computeSelectorMemoKey({
+      canonPath: '/oneOf',
+      seed: 123,
+      planOptions: {
+        trials: { perBranch: 3 },
+        guards: { allowAdditionalProperties: false },
+      },
+      userKey: 'custom-key',
+      ajvMetadata: {
+        ajvMajor: 8,
+        ajvClass: 'Ajv2020',
+        ajvFlags: { removeAdditional: 'all', strict: false },
+      },
+    });
+
+    const parsed = JSON.parse(key);
+    expect(parsed).toMatchObject({
+      canonPath: '/oneOf',
+      seed: 123,
+      ajvMajor: 8,
+      ajvClass: 'Ajv2020',
+      userKey: 'custom-key',
+    });
+    expect(parsed.ajvFlags).toEqual({
+      removeAdditional: 'all',
+      strict: false,
+    });
+    expect(typeof parsed.planOptionsSubKey).toBe('string');
+    expect(parsed.planOptionsSubKey.length).toBeGreaterThan(0);
+  });
+
+  it('fills default metadata when optional fields are omitted', () => {
+    const key = computeSelectorMemoKey({
+      canonPath: '',
+      seed: -1,
+    });
+    const parsed = JSON.parse(key);
+    expect(parsed).toMatchObject({
+      canonPath: '',
+      seed: 4294967295, // uint32 coercion
+      ajvMajor: 0,
+      ajvClass: 'unknown',
+      userKey: '',
+    });
+    expect(parsed.ajvFlags).toEqual({});
+    expect(parsed.planOptionsSubKey).toContain('"trials.perBranch":2');
+  });
+});
+
+describe('CompositionEngine traversal', () => {
+  it('visits array items, prefixItems, and conditional branches', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: { type: 'string' },
+      properties: {
+        list: {
+          type: 'array',
+          items: [
+            {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                foo: { type: 'string' },
+              },
+            },
+            {
+              type: 'array',
+              items: { type: 'integer' },
+            },
+          ],
+          prefixItems: [{ type: 'number' }],
+          contains: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              bar: { const: 1 },
+            },
+          },
+        },
+      },
+      dependentSchemas: {
+        list: { minItems: 1 },
+      },
+      definitions: {
+        legacy: { type: 'null' },
+      },
+      $defs: {
+        modern: { type: 'boolean' },
+      },
+      unevaluatedProperties: { type: 'number' },
+      unevaluatedItems: { type: 'integer' },
+      propertyNames: { pattern: '^foo' },
+      not: { type: 'null' },
+      if: { properties: { flag: { const: true } } },
+      then: { required: ['flag'] },
+      else: { properties: { alt: { type: 'number' } } },
+    };
+
+    const result = compose(makeInput(schema));
+    expect(result.coverageIndex.has('')).toBe(true);
+    expect(result.coverageIndex.has('/properties/list/items/0')).toBe(true);
+    expect(result.coverageIndex.has('/properties/list/contains')).toBe(true);
+    expect(result.containsBag.get('/properties/list')).toBeDefined();
+  });
+});
+
 describe('CompositionEngine coverage index', () => {
   it('produces finite coverage entries with enumeration and provenance', () => {
     const schema = {
@@ -144,7 +252,7 @@ describe('CompositionEngine coverage index', () => {
     expect(warnCodes).toContain(DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX);
   });
 
-  it('emits unsat hint when must-cover set is empty under presence pressure', () => {
+  it('fails fast in strict mode when must-cover set is empty under presence pressure', () => {
     const schema = {
       type: 'object',
       additionalProperties: false,
@@ -157,6 +265,110 @@ describe('CompositionEngine coverage index', () => {
     expect(hint?.code).toBe(DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE);
     expect(hint?.canonPath).toBe('');
     expect(hint?.details).toEqual({ required: ['id'] });
+    const fatal = result.diag?.fatal?.find(
+      (entry) => entry.code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN
+    );
+    expect(fatal).toBeDefined();
+    expect(fatal?.details).toEqual({ sourceKind: 'patternProperties' });
+    const warnCodes = result.diag?.warn?.map((entry) => entry.code) ?? [];
+    expect(warnCodes).toContain(DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX);
+  });
+
+  it('downgrades to warn in lax mode when must-cover set is empty under presence pressure', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id'],
+    };
+
+    const result = compose(makeInput(schema), { mode: 'lax' });
+    const hint = result.diag?.unsatHints?.[0];
+    expect(hint).toBeDefined();
+    const hasFatalApFalse =
+      result.diag?.fatal?.some(
+        (entry) => entry.code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN
+      ) ?? false;
+    expect(hasFatalApFalse).toBe(false);
+    const warn = result.diag?.warn?.filter(
+      (entry) => entry.code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN
+    );
+    expect(warn).toHaveLength(1);
+    expect(warn?.[0]?.details).toEqual({ sourceKind: 'patternProperties' });
+    const approxWarn = result.diag?.warn?.find(
+      (entry) => entry.code === DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX
+    );
+    expect(approxWarn).toBeDefined();
+    expect(approxWarn?.details).toEqual({ reason: 'presencePressure' });
+  });
+
+  it('includes patternSource when a single unsafe pattern triggers the fail-fast', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      required: ['x'],
+      patternProperties: {
+        foo: {}, // missing anchors ⇒ unsafe pattern
+      },
+    };
+
+    const result = compose(makeInput(schema));
+    const fatal = result.diag?.fatal?.find(
+      (entry) => entry.code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN
+    );
+    expect(fatal).toBeDefined();
+    expect(fatal?.details).toEqual({
+      sourceKind: 'patternProperties',
+      patternSource: 'foo',
+    });
+  });
+
+  it('uses propertyNamesSynthetic sourceKind when synthetic patterns trigger the fail-fast', () => {
+    const patternSource = 'bar';
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      required: ['x'],
+      patternProperties: {
+        [patternSource]: {},
+      },
+    };
+
+    const ptrEntries: Array<[string, string]> = [
+      [`/patternProperties/${patternSource}`, '#/propertyNames'],
+    ];
+    const result = compose(makeInput(schema, [], ptrEntries));
+    const fatal = result.diag?.fatal?.find(
+      (entry) => entry.code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN
+    );
+    expect(fatal).toBeDefined();
+    expect(fatal?.details).toEqual({
+      sourceKind: 'propertyNamesSynthetic',
+      patternSource,
+    });
+  });
+
+  it('prefers patternProperties sourceKind when both synthetic and direct patterns are unsafe', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      required: ['x'],
+      patternProperties: {
+        foo: {},
+        bar: {},
+      },
+    };
+    const ptrEntries: Array<[string, string]> = [
+      ['/patternProperties/bar', '#/propertyNames'],
+    ];
+
+    const result = compose(makeInput(schema, [], ptrEntries));
+    const fatal = result.diag?.fatal?.find(
+      (entry) => entry.code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN
+    );
+    expect(fatal).toBeDefined();
+    expect(fatal?.details).toEqual({
+      sourceKind: 'patternProperties',
+    });
   });
 });
 
@@ -192,6 +404,31 @@ describe('CompositionEngine contains bag', () => {
       { schema: { const: 'alpha' }, min: 2 },
       { schema: { const: 'beta' }, min: 1, max: 3 },
     ]);
+  });
+
+  it('emits fatal when contains antecedent is subset of blocker with max 0', () => {
+    const sharedSchema = { const: ['alpha', { foo: 'bar' }] };
+    const schema = {
+      type: 'array',
+      contains: sharedSchema,
+      allOf: [
+        {
+          contains: sharedSchema,
+          maxContains: 0,
+        },
+      ],
+    };
+
+    const result = compose(makeInput(schema));
+    const fatal = result.diag?.fatal?.find(
+      (entry) => entry.code === DIAGNOSTIC_CODES.CONTAINS_UNSAT_BY_SUM
+    );
+    expect(fatal).toBeDefined();
+    expect(fatal?.details).toMatchObject({
+      reason: 'subsetContradiction',
+      antecedentIndex: 0,
+      blockingIndex: 1,
+    });
   });
 
   it('enforces complexity cap on contains needs', () => {

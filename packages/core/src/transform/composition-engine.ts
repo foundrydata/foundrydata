@@ -625,49 +625,31 @@ class CompositionEngine {
     }
     this.coverageIndex.set(canonPath, coverageEntry);
 
-    if (!safeIntersectionExists) {
-      if (presencePressure) {
-        this.addUnsatHint({
-          code: DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
+    if (!safeIntersectionExists && presencePressure) {
+      this.addUnsatHint({
+        code: DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
+        canonPath,
+        provable: false,
+        reason: 'coverageUnknown',
+        details: buildUnsatDetails(schema),
+      });
+
+      const detail = this.buildApFalseUnsafeDetail(unsafeIssues);
+      if (this.mode === 'strict') {
+        this.addFatal(
           canonPath,
-          provable: false,
-          reason: 'coverageUnknown',
-          details: buildUnsatDetails(schema),
-        });
+          DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN,
+          detail
+        );
+      } else {
+        this.addWarn(
+          canonPath,
+          DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN,
+          detail
+        );
       }
-      if (unsafeIssues.length > 0 && presencePressure) {
-        const distinctIssues = dedupePatternIssues(unsafeIssues);
-        const primary = distinctIssues[0];
-        const detail: Record<string, unknown> = {
-          sourceKind:
-            distinctIssues.some(
-              (issue) => issue.sourceKind === 'patternProperties'
-            ) &&
-            distinctIssues.some(
-              (issue) => issue.sourceKind === 'propertyNamesSynthetic'
-            )
-              ? 'patternProperties'
-              : (primary?.sourceKind ?? 'patternProperties'),
-        };
-        if (distinctIssues.length === 1 && primary) {
-          detail.patternSource = primary.source;
-        }
-        if (this.mode === 'strict') {
-          this.addFatal(
-            canonPath,
-            DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN,
-            detail
-          );
-        } else {
-          this.addWarn(
-            canonPath,
-            DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN,
-            detail
-          );
-        }
-      } else if (presencePressure) {
-        this.addApproximation(canonPath, 'presencePressure');
-      }
+
+      this.addApproximation(canonPath, 'presencePressure');
     }
   }
 
@@ -1223,6 +1205,33 @@ class CompositionEngine {
   private isPropertyNamesSynthetic(pointer: string): boolean {
     const origin = this.ptrMap.get(pointer);
     return origin !== undefined && origin.includes('/propertyNames');
+  }
+
+  private buildApFalseUnsafeDetail(
+    issues: PatternIssue[]
+  ): Record<string, unknown> {
+    if (issues.length === 0) {
+      return { sourceKind: 'patternProperties' };
+    }
+
+    const distinctIssues = dedupePatternIssues(issues);
+    const primary = distinctIssues[0];
+    const hasPatternProps = distinctIssues.some(
+      (issue) => issue.sourceKind === 'patternProperties'
+    );
+    const hasSynthetic = distinctIssues.some(
+      (issue) => issue.sourceKind === 'propertyNamesSynthetic'
+    );
+    const detail: Record<string, unknown> = {
+      sourceKind:
+        hasPatternProps && hasSynthetic
+          ? 'patternProperties'
+          : (primary?.sourceKind ?? 'patternProperties'),
+    };
+    if (distinctIssues.length === 1 && primary) {
+      detail.patternSource = primary.source;
+    }
+    return detail;
   }
 }
 
