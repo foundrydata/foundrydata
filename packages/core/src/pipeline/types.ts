@@ -5,6 +5,7 @@ import type {
 import type {
   ComposeOptions,
   ComposeResult,
+  ComposeInput,
 } from '../transform/composition-engine';
 import type {
   MetricsCollector,
@@ -65,10 +66,7 @@ export interface PipelineArtifacts {
 
 export interface PipelineStageOverrides {
   normalize?: (schema: unknown, options?: NormalizeOptions) => NormalizeResult;
-  compose?: (
-    canonicalSchema: unknown,
-    options?: ComposeOptions
-  ) => ComposeResult;
+  compose?: (input: ComposeInput, options?: ComposeOptions) => ComposeResult;
 }
 
 export interface PipelineOptions {

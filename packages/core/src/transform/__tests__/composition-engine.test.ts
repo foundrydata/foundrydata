@@ -2,7 +2,36 @@
 import { describe, it, expect } from 'vitest';
 
 import { DIAGNOSTIC_CODES } from '../../diag/codes';
-import { compose, computeSelectorMemoKey } from '../composition-engine';
+import {
+  compose,
+  computeSelectorMemoKey,
+  type ComposeInput,
+} from '../composition-engine';
+import type { NormalizerNote } from '../schema-normalizer';
+
+function makeInput(
+  schema: unknown,
+  notes: NormalizerNote[] = [],
+  ptrEntries: Array<[string, string]> = []
+): ComposeInput {
+  const ptrMap = new Map<string, string>(ptrEntries);
+  const revPtrMap = new Map<string, string[]>();
+  for (const [canon, origin] of ptrEntries) {
+    const existing = revPtrMap.get(origin);
+    if (existing) {
+      existing.push(canon);
+      existing.sort();
+    } else {
+      revPtrMap.set(origin, [canon]);
+    }
+  }
+  return {
+    schema,
+    ptrMap,
+    revPtrMap,
+    notes,
+  };
+}
 
 describe('CompositionEngine coverage index', () => {
   it('produces finite coverage entries with enumeration and provenance', () => {
@@ -15,7 +44,7 @@ describe('CompositionEngine coverage index', () => {
       },
     };
 
-    const result = compose(schema);
+    const result = compose(makeInput(schema));
     const entry = result.coverageIndex.get('');
     expect(entry).toBeDefined();
     expect(entry?.has('a')).toBe(true);
@@ -34,7 +63,7 @@ describe('CompositionEngine coverage index', () => {
       },
     };
 
-    const result = compose(schema);
+    const result = compose(makeInput(schema));
     const entry = result.coverageIndex.get('');
     expect(entry).toBeDefined();
     expect(entry?.has('a')).toBe(true);
@@ -42,6 +71,28 @@ describe('CompositionEngine coverage index', () => {
     expect(entry?.has('c')).toBe(false);
     expect(entry?.provenance).toEqual(['patternProperties']);
     expect(entry?.enumerate?.()).toEqual(['a', 'b']);
+  });
+
+  it('treats propertyNames synthetic patterns as coverage contributors', () => {
+    const patternSource = '^(?:foo|bar)$';
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      patternProperties: {
+        [patternSource]: {},
+      },
+    };
+    const ptrEntries: Array<[string, string]> = [
+      [`/patternProperties/${patternSource}`, '#/propertyNames'],
+    ];
+    const result = compose(makeInput(schema, [], ptrEntries));
+
+    const entry = result.coverageIndex.get('');
+    expect(entry).toBeDefined();
+    expect(entry?.provenance).toEqual(['propertyNamesSynthetic']);
+    expect(entry?.enumerate?.()).toEqual(['bar', 'foo']);
+    expect(entry?.has('foo')).toBe(true);
+    expect(entry?.has('baz')).toBe(false);
   });
 
   it('handles vacuous coverage when additionalProperties is not false', () => {
@@ -52,7 +103,7 @@ describe('CompositionEngine coverage index', () => {
       },
     };
 
-    const result = compose(schema);
+    const result = compose(makeInput(schema));
     const entry = result.coverageIndex.get('');
     expect(entry).toBeDefined();
     expect(entry?.has('anything')).toBe(true);
@@ -67,12 +118,139 @@ describe('CompositionEngine coverage index', () => {
       required: ['id'],
     };
 
-    const result = compose(schema);
+    const result = compose(makeInput(schema));
     const hint = result.diag?.unsatHints?.[0];
     expect(hint).toBeDefined();
     expect(hint?.code).toBe(DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE);
     expect(hint?.canonPath).toBe('');
     expect(hint?.details).toEqual({ required: ['id'] });
+  });
+});
+
+describe('CompositionEngine contains bag', () => {
+  it('collects contains needs with default minimum', () => {
+    const containsSchema = { const: 1 };
+    const schema = {
+      type: 'array',
+      contains: containsSchema,
+    };
+
+    const result = compose(makeInput(schema));
+    const bag = result.containsBag.get('');
+    expect(bag).toBeDefined();
+    expect(bag).toHaveLength(1);
+    expect(bag?.[0]?.schema).toBe(containsSchema);
+    expect(bag?.[0]?.min).toBe(1);
+    expect(bag?.[0]?.max).toBeUndefined();
+  });
+
+  it('concatenates contains needs across allOf branches', () => {
+    const schema = {
+      type: 'array',
+      allOf: [
+        { contains: { const: 'alpha' }, minContains: 2 },
+        { contains: { const: 'beta' }, maxContains: 3 },
+      ],
+    };
+
+    const result = compose(makeInput(schema));
+    const bag = result.containsBag.get('');
+    expect(bag).toEqual([
+      { schema: { const: 'alpha' }, min: 2 },
+      { schema: { const: 'beta' }, min: 1, max: 3 },
+    ]);
+  });
+
+  it('enforces complexity cap on contains needs', () => {
+    const schema = {
+      type: 'array',
+      allOf: [
+        { contains: { const: 1 } },
+        { contains: { const: 2 } },
+        { contains: { const: 3 } },
+      ],
+    };
+
+    const result = compose(makeInput(schema), {
+      planOptions: {
+        complexity: {
+          maxContainsNeeds: 2,
+        },
+      },
+    });
+
+    const bag = result.containsBag.get('');
+    expect(bag).toHaveLength(2);
+    expect(result.diag?.caps).toContain(
+      DIAGNOSTIC_CODES.COMPLEXITY_CAP_CONTAINS
+    );
+    const warn = result.diag?.warn?.find(
+      (entry) => entry.code === DIAGNOSTIC_CODES.COMPLEXITY_CAP_CONTAINS
+    );
+    expect(warn?.details).toEqual({ limit: 2, observed: 3 });
+  });
+
+  it('emits fatal diagnostic when min exceeds max', () => {
+    const schema = {
+      type: 'array',
+      contains: { const: 'flag' },
+      minContains: 3,
+      maxContains: 2,
+    };
+
+    const result = compose(makeInput(schema));
+    const fatal = result.diag?.fatal?.find(
+      (entry) =>
+        entry.code === DIAGNOSTIC_CODES.CONTAINS_NEED_MIN_GT_MAX &&
+        entry.canonPath === ''
+    );
+    expect(fatal?.details).toEqual({ min: 3, max: 2 });
+  });
+
+  it('detects unsatisfiable sum when needs are disjoint', () => {
+    const schema = {
+      type: 'array',
+      maxItems: 1,
+      allOf: [
+        { contains: { const: 'left' }, minContains: 1 },
+        { contains: { const: 'right' }, minContains: 1 },
+      ],
+    };
+
+    const result = compose(makeInput(schema));
+    const fatal = result.diag?.fatal?.find(
+      (entry) =>
+        entry.code === DIAGNOSTIC_CODES.CONTAINS_UNSAT_BY_SUM &&
+        entry.canonPath === ''
+    );
+    expect(fatal?.details).toMatchObject({
+      disjointness: 'provable',
+    });
+  });
+
+  it('records unsat hint when overlap is unknown', () => {
+    const schema = {
+      type: 'array',
+      maxItems: 1,
+      allOf: [
+        { contains: { type: 'string' }, minContains: 1 },
+        { contains: { type: 'string' }, minContains: 1 },
+      ],
+    };
+
+    const result = compose(makeInput(schema));
+    const hint = result.diag?.unsatHints?.find(
+      (entry) =>
+        entry.code === DIAGNOSTIC_CODES.CONTAINS_UNSAT_BY_SUM &&
+        entry.canonPath === ''
+    );
+    expect(hint).toBeDefined();
+    expect(hint?.provable).toBe(false);
+    expect(hint?.reason).toBe('overlapUnknown');
+    expect(hint?.details).toMatchObject({
+      sumMin: 2,
+      maxItems: 1,
+    });
   });
 });
 
@@ -97,7 +275,7 @@ describe('CompositionEngine branch selection', () => {
       ],
     };
 
-    const result = compose(schema, {
+    const result = compose(makeInput(schema), {
       seed: 123,
       trials: {
         perBranch: 2,
@@ -142,7 +320,7 @@ describe('CompositionEngine branch selection', () => {
       ],
     };
 
-    const result = compose(schema);
+    const result = compose(makeInput(schema));
     const branch = result.diag?.branchDecisions?.find(
       (entry) => entry.canonPath === '/anyOf'
     );
@@ -164,7 +342,7 @@ describe('CompositionEngine AP:false strict vs lax', () => {
   } as const;
 
   it('emits fatal AP_FALSE_UNSAFE_PATTERN in strict mode when only unsafe coverage exists', () => {
-    const result = compose(unsafePatternSchema);
+    const result = compose(makeInput(unsafePatternSchema));
     const diag = result.diag;
     expect(diag).toBeDefined();
     const fatal = diag?.fatal ?? [];
@@ -192,7 +370,7 @@ describe('CompositionEngine AP:false strict vs lax', () => {
   });
 
   it('downgrades unsafe pattern to warning in lax mode', () => {
-    const result = compose(unsafePatternSchema, { mode: 'lax' });
+    const result = compose(makeInput(unsafePatternSchema), { mode: 'lax' });
     const diag = result.diag;
     expect(diag).toBeDefined();
     const warn = diag?.warn ?? [];
@@ -246,7 +424,7 @@ describe('CompositionEngine complexity capping', () => {
       ],
     };
 
-    const result = compose(schema, {
+    const result = compose(makeInput(schema), {
       planOptions: {
         complexity: {
           maxOneOfBranches: 1,
@@ -276,7 +454,7 @@ describe('CompositionEngine complexity capping', () => {
       anyOf: [{ type: 'string' }, { type: 'number' }, { type: 'boolean' }],
     };
 
-    const result = compose(schema, {
+    const result = compose(makeInput(schema), {
       planOptions: {
         trials: {
           skipTrials: true,
@@ -321,7 +499,7 @@ describe('CompositionEngine complexity capping', () => {
       ],
     };
 
-    const result = compose(schema, {
+    const result = compose(makeInput(schema), {
       seed: 7,
       planOptions: {
         trials: {
@@ -338,6 +516,26 @@ describe('CompositionEngine complexity capping', () => {
     expect(typeof branch?.scoreDetails.tiebreakRand).toBe('number');
     expect(branch?.scoreDetails.exclusivityRand).toBeUndefined();
     expect(result.diag?.overlap).toBeUndefined();
+  });
+});
+
+describe('CompositionEngine coverage diagnostics', () => {
+  it('emits coverage regex diagnostics at owning canonPath', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      patternProperties: {
+        '(': { type: 'string' },
+      },
+    };
+
+    const result = compose(makeInput(schema));
+    const regexWarns =
+      result.diag?.warn?.filter(
+        (entry) => entry.code === DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR
+      ) ?? [];
+    expect(regexWarns).toHaveLength(1);
+    expect(regexWarns[0]?.canonPath).toBe('');
   });
 });
 

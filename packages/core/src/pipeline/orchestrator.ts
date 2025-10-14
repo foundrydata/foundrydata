@@ -4,7 +4,11 @@ import {
   normalize,
   type NormalizeResult,
 } from '../transform/schema-normalizer';
-import { compose, type ComposeOptions } from '../transform/composition-engine';
+import {
+  compose,
+  type ComposeOptions,
+  type ComposeInput,
+} from '../transform/composition-engine';
 import { MetricsCollector, type MetricPhase } from '../util/metrics';
 import {
   PipelineStageError,
@@ -39,7 +43,7 @@ type NormalizeRunner = (
 ) => NormalizeResult;
 
 type ComposeRunner = (
-  canonicalSchema: unknown,
+  input: ComposeInput,
   options?: PipelineOptions['compose']
 ) => ReturnType<typeof compose>;
 
@@ -145,7 +149,14 @@ export async function executePipeline(
   // Compose stage (requires canonical schema from normalize phase)
   metrics.begin(METRIC_PHASE_BY_STAGE.compose);
   try {
-    const canonicalSchema = normalizeResult?.schema ?? schema;
+    const composeInput: ComposeInput =
+      normalizeResult ??
+      ({
+        schema,
+        ptrMap: new Map<string, string>(),
+        revPtrMap: new Map<string, string[]>(),
+        notes: [],
+      } satisfies ComposeInput);
     let composeOptions: ComposeOptions | undefined =
       options.compose !== undefined ? { ...options.compose } : undefined;
     if (options.mode !== undefined) {
@@ -155,7 +166,7 @@ export async function executePipeline(
         composeOptions.mode = options.mode;
       }
     }
-    const composeResult = runners.compose(canonicalSchema, composeOptions);
+    const composeResult = runners.compose(composeInput, composeOptions);
     stages.compose = {
       status: 'completed',
       output: composeResult,
