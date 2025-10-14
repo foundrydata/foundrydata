@@ -41,6 +41,21 @@
       "capturedAt": "2025-09-06T12:01:56.993Z",
       "performanceThreshold": 5,
       "failureReason": "2019-09 format validation performance issue"
+    },
+    {
+      "id": "regression-190ea3f8",
+      "description": "string schema with minLength, maxLength, pattern - Multiple string constraints performance issue",
+      "schema": {
+        "type": "string",
+        "minLength": 10,
+        "maxLength": 100,
+        "pattern": "^[a-zA-Z0-9]+$"
+      },
+      "data": "abcdefghij1234567890",
+      "draft": "draft-07",
+      "capturedAt": "2025-10-14T19:07:04.062Z",
+      "performanceThreshold": 2,
+      "failureReason": "Multiple string constraints performance issue"
     }
   ]
 }

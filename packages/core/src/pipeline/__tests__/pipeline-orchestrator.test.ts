@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { compose as runCompose } from '../../transform/composition-engine';
+import {
+  compose as runCompose,
+  type ComposeInput,
+} from '../../transform/composition-engine';
 import { MetricsCollector } from '../../util/metrics';
 import { executePipeline } from '../orchestrator';
 
@@ -57,8 +60,8 @@ describe('executePipeline', () => {
 
     expect(result.stages.compose.status).toBe('skipped');
     expect(result.errors).toHaveLength(1);
-    expect(result.errors[0].stage).toBe('normalize');
-    expect(result.errors[0].message).toBe('boom');
+    expect(result.errors[0]!.stage).toBe('normalize');
+    expect(result.errors[0]!.message).toBe('boom');
   });
 
   it('passes canonical schema to compose override and reuses custom metrics collector', async () => {
@@ -75,7 +78,7 @@ describe('executePipeline', () => {
       verbosity: 'ci',
     });
 
-    let composeInput: unknown;
+    let composeInput: ComposeInput | undefined;
 
     const result = await executePipeline(
       schema,
@@ -84,16 +87,16 @@ describe('executePipeline', () => {
         snapshotVerbosity: 'ci',
       },
       {
-        compose(canonicalSchema, options) {
-          composeInput = canonicalSchema;
-          return runCompose(canonicalSchema, options);
+        compose(input, options) {
+          composeInput = input;
+          return runCompose(input, options);
         },
       }
     );
 
     const normalizeOutput = result.stages.normalize.output;
     expect(normalizeOutput).toBeDefined();
-    expect(composeInput).toStrictEqual(normalizeOutput?.schema);
+    expect(composeInput).toStrictEqual(normalizeOutput);
     expect(result.artifacts.canonical).toBe(normalizeOutput);
     expect(result.artifacts.effective).toBe(result.stages.compose.output);
 

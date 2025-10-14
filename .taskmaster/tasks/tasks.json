@@ -1372,7 +1372,7 @@
         "id": "8",
         "title": "Composition Engine",
         "description": "Build effective view, CoverageIndex (has/enumerate), branch selection, early-unsat hints, caps; AP:false must-cover and Strict/Lax behaviors.",
-        "status": "deferred",
+        "status": "in-progress",
         "dependencies": [
           "2",
           "3",
@@ -1412,7 +1412,8 @@
             "testStrategy": "Unit tests for deterministic branch selection, tiebreakRand presence, Strict/Lax routing behavior, and diagnostic locus accuracy",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2025-10-14T19:12:24.676Z"
       },
       {
         "id": "9",
@@ -2055,7 +2056,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-14T18:37:44.403Z",
+      "lastModified": "2025-10-14T19:12:24.677Z",
       "taskCount": 52,
       "completedCount": 38,
       "tags": [

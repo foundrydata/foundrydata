@@ -10,6 +10,7 @@ import {
   type PlanOptions,
   type ResolvedOptions,
 } from '../types/options';
+import type { NormalizeResult, NormalizerNote } from './schema-normalizer';
 
 type CoverageProvenance =
   | 'properties'
@@ -27,6 +28,12 @@ export type CoverageIndex = Map<string, CoverageEntry>;
 export interface ContainsNeed {
   schema: unknown;
   min?: number;
+  max?: number;
+}
+
+interface NormalizedContainsNeed {
+  schema: unknown;
+  min: number;
   max?: number;
 }
 
@@ -54,6 +61,7 @@ export interface ComposeDiagnostics {
   metrics?: Record<string, number>;
   caps?: string[];
   branchDecisions?: BranchDecisionRecord[];
+  nodes?: Record<string, NodeDiagnostics>;
 }
 
 export interface BranchDecisionRecord {
@@ -75,6 +83,12 @@ export interface BranchDecisionRecord {
     reason?: string;
   };
   memoKey?: string;
+}
+
+export interface NodeDiagnostics {
+  chosenBranch?: BranchDecisionRecord['chosenBranch'];
+  scoreDetails?: BranchDecisionRecord['scoreDetails'];
+  budget?: BranchDecisionRecord['budget'];
 }
 
 export interface ComposeOptions {
@@ -107,8 +121,8 @@ export interface ComposeOptions {
 }
 
 export interface ComposeResult {
-  schema: unknown;
-  containsBag?: ContainsNeed[];
+  canonical: NormalizeResult;
+  containsBag: Map<string, ContainsNeed[]>;
   coverageIndex: CoverageIndex;
   diag?: ComposeDiagnostics;
 }
@@ -125,11 +139,13 @@ export interface SelectorMemoKeyInput {
   };
 }
 
+export type ComposeInput = NormalizeResult;
+
 export function compose(
-  schema: unknown,
+  input: ComposeInput,
   options?: ComposeOptions
 ): ComposeResult {
-  const engine = new CompositionEngine(schema, options);
+  const engine = new CompositionEngine(input, options);
   return engine.run();
 }
 
@@ -162,6 +178,9 @@ export function computeSelectorMemoKey(input: SelectorMemoKeyInput): string {
 
 class CompositionEngine {
   private readonly schema: unknown;
+  private readonly ptrMap: Map<string, string>;
+  private readonly revPtrMap: Map<string, string[]>;
+  private readonly notes: NormalizerNote[];
   private readonly options: ComposeOptions;
   private readonly coverageIndex: CoverageIndex = new Map();
   private readonly diag: ComposeDiagnostics = {};
@@ -173,9 +192,14 @@ class CompositionEngine {
   private readonly approxReasons = new Map<string, Set<string>>();
   private readonly mode: 'strict' | 'lax';
   private readonly branchDiagnostics = new Map<string, BranchDecisionRecord>();
+  private readonly containsIndex = new Map<string, ContainsNeed[]>();
+  private readonly coverageRegexWarnKeys = new Set<string>();
 
-  constructor(schema: unknown, options?: ComposeOptions) {
-    this.schema = schema;
+  constructor(input: ComposeInput, options?: ComposeOptions) {
+    this.schema = input.schema;
+    this.ptrMap = input.ptrMap;
+    this.revPtrMap = input.revPtrMap;
+    this.notes = input.notes;
     this.options = options ?? {};
     this.seed = (options?.seed ?? 1) >>> 0;
     this.mode = options?.mode ?? 'strict';
@@ -198,8 +222,13 @@ class CompositionEngine {
     this.visitNode(this.schema, '');
     const diag = this.finalizeDiagnostics();
     return {
-      schema: this.schema,
-      containsBag: undefined,
+      canonical: {
+        schema: this.schema,
+        ptrMap: this.ptrMap,
+        revPtrMap: this.revPtrMap,
+        notes: this.notes,
+      },
+      containsBag: this.containsIndex,
       coverageIndex: this.coverageIndex,
       diag,
     };
@@ -216,6 +245,9 @@ class CompositionEngine {
     }
 
     const schema = node as Record<string, unknown>;
+    if (isArrayLikeSchema(schema)) {
+      this.registerContainsBag(schema, canonPath);
+    }
     if (isObjectLikeSchema(schema)) {
       this.registerCoverageEntry(schema, canonPath);
     }
@@ -350,6 +382,121 @@ class CompositionEngine {
     }
   }
 
+  private registerContainsBag(
+    schema: Record<string, unknown>,
+    canonPath: string
+  ): void {
+    const rawNeeds = collectContainsNeeds(schema);
+    if (rawNeeds.length === 0) {
+      this.containsIndex.delete(canonPath);
+      return;
+    }
+
+    const evaluated = this.evaluateContainsBag(rawNeeds, schema, canonPath);
+    if (evaluated.length === 0) {
+      this.containsIndex.delete(canonPath);
+      return;
+    }
+    this.containsIndex.set(canonPath, evaluated);
+  }
+
+  private evaluateContainsBag(
+    bag: ContainsNeed[],
+    schema: Record<string, unknown>,
+    canonPath: string
+  ): ContainsNeed[] {
+    const normalized: NormalizedContainsNeed[] = bag.map((need) => ({
+      schema: need.schema,
+      min: typeof need.min === 'number' ? need.min : 1,
+      ...(typeof need.max === 'number' ? { max: need.max } : {}),
+    }));
+
+    const effectiveMaxItems = computeEffectiveMaxItems(schema);
+    let aggregateMin = 0;
+
+    for (const need of normalized) {
+      aggregateMin += need.min;
+      if (need.max !== undefined && need.max < need.min) {
+        this.addFatal(canonPath, DIAGNOSTIC_CODES.CONTAINS_NEED_MIN_GT_MAX, {
+          min: need.min,
+          max: need.max,
+        });
+      }
+      if (effectiveMaxItems !== undefined && need.min > effectiveMaxItems) {
+        this.addFatal(canonPath, DIAGNOSTIC_CODES.CONTAINS_UNSAT_BY_SUM, {
+          sumMin: need.min,
+          maxItems: effectiveMaxItems,
+          disjointness: 'provable',
+        });
+      }
+    }
+
+    if (effectiveMaxItems !== undefined && aggregateMin > effectiveMaxItems) {
+      if (areNeedsPairwiseDisjoint(normalized)) {
+        this.addFatal(canonPath, DIAGNOSTIC_CODES.CONTAINS_UNSAT_BY_SUM, {
+          sumMin: aggregateMin,
+          maxItems: effectiveMaxItems,
+          disjointness: 'provable',
+        });
+      } else {
+        this.addUnsatHint({
+          code: DIAGNOSTIC_CODES.CONTAINS_UNSAT_BY_SUM,
+          canonPath,
+          provable: false,
+          reason: 'overlapUnknown',
+          details: {
+            sumMin: aggregateMin,
+            maxItems: effectiveMaxItems ?? null,
+          },
+        });
+      }
+    }
+
+    for (let i = 0; i < normalized.length; i += 1) {
+      const antecedent = normalized[i]!;
+      if (antecedent.min <= 0) continue;
+      for (let j = 0; j < normalized.length; j += 1) {
+        if (i === j) continue;
+        const blocker = normalized[j]!;
+        if (blocker.max !== 0) continue;
+        if (isSchemaSubset(antecedent.schema, blocker.schema)) {
+          this.addFatal(canonPath, DIAGNOSTIC_CODES.CONTAINS_UNSAT_BY_SUM, {
+            sumMin: aggregateMin,
+            maxItems: effectiveMaxItems ?? null,
+            disjointness: 'provable',
+            reason: 'subsetContradiction',
+            antecedentIndex: i,
+            blockingIndex: j,
+          });
+        }
+      }
+    }
+
+    let trimmed = normalized;
+    const limit = this.resolvedOptions.complexity.maxContainsNeeds;
+    if (normalized.length > limit) {
+      this.recordCap(DIAGNOSTIC_CODES.COMPLEXITY_CAP_CONTAINS);
+      this.addWarn(canonPath, DIAGNOSTIC_CODES.COMPLEXITY_CAP_CONTAINS, {
+        limit,
+        observed: normalized.length,
+      });
+      trimmed = normalized.slice(0, limit);
+    }
+
+    const trimmedSumMin = trimmed.reduce((total, need) => total + need.min, 0);
+    this.addWarn(canonPath, DIAGNOSTIC_CODES.CONTAINS_BAG_COMBINED, {
+      bagSize: trimmed.length,
+      sumMin: trimmedSumMin,
+      maxItems: effectiveMaxItems ?? null,
+    });
+
+    return trimmed.map((need) =>
+      need.max !== undefined
+        ? { schema: need.schema, min: need.min, max: need.max }
+        : { schema: need.schema, min: need.min }
+    );
+  }
+
   private registerCoverageEntry(
     schema: Record<string, unknown>,
     canonPath: string
@@ -376,7 +523,12 @@ class CompositionEngine {
     const patternCollection = this.collectPatternRecognizers(schema, canonPath);
     const recognizers = patternCollection.recognizers;
     const unsafePatterns = patternCollection.issues;
-
+    const syntheticRecognizers = recognizers.filter(
+      (entry) => entry.sourceKind === 'propertyNamesSynthetic'
+    );
+    const patternPropertyRecognizers = recognizers.filter(
+      (entry) => entry.sourceKind === 'patternProperties'
+    );
     const patternMatchers = recognizers.map((entry) => entry.regexp);
     const presencePressure = hasPresencePressure(schema);
     const hasSafeCoverage =
@@ -420,8 +572,11 @@ class CompositionEngine {
     if (namedProperties.size > 0) {
       provenance.add('properties');
     }
-    if (patternMatchers.length > 0) {
+    if (patternPropertyRecognizers.length > 0) {
       provenance.add('patternProperties');
+    }
+    if (syntheticRecognizers.length > 0) {
+      provenance.add('propertyNamesSynthetic');
     }
 
     const enumerationCandidates = new Set<string>(namedProperties);
@@ -615,9 +770,19 @@ class CompositionEngine {
     }
 
     if (this.branchDiagnostics.size > 0) {
-      this.diag.branchDecisions = Array.from(
-        this.branchDiagnostics.values()
-      ).sort((a, b) => a.canonPath.localeCompare(b.canonPath));
+      const ordered = Array.from(this.branchDiagnostics.values()).sort((a, b) =>
+        a.canonPath.localeCompare(b.canonPath)
+      );
+      this.diag.branchDecisions = ordered;
+      const nodes: Record<string, NodeDiagnostics> = {};
+      for (const record of ordered) {
+        nodes[record.canonPath] = {
+          chosenBranch: record.chosenBranch,
+          scoreDetails: record.scoreDetails,
+          budget: record.budget,
+        };
+      }
+      this.diag.nodes = nodes;
     }
 
     if (
@@ -646,6 +811,33 @@ class CompositionEngine {
   ): void {
     this.diag.warn ??= [];
     this.diag.warn.push({ code, canonPath, details });
+  }
+
+  private addCoverageRegexWarn(
+    canonPath: string,
+    code: DiagnosticCode,
+    details: Record<string, unknown>
+  ): void {
+    const patternSourceValue = (
+      details as {
+        patternSource?: unknown;
+      }
+    ).patternSource;
+    const contextValue = (details as { context?: unknown }).context;
+    const patternSource =
+      typeof patternSourceValue === 'string' ? patternSourceValue : undefined;
+    const context = typeof contextValue === 'string' ? contextValue : undefined;
+    const key = JSON.stringify({
+      canonPath,
+      code,
+      context,
+      patternSource,
+    });
+    if (this.coverageRegexWarnKeys.has(key)) {
+      return;
+    }
+    this.coverageRegexWarnKeys.add(key);
+    this.addWarn(canonPath, code, details);
   }
 
   private addFatal(
@@ -703,33 +895,46 @@ class CompositionEngine {
         patternProps as Record<string, unknown>
       )) {
         const patternPtr = appendPointer(patternBasePtr, patternSource);
+        const sourceKind: CoverageProvenance = this.isPropertyNamesSynthetic(
+          patternPtr
+        )
+          ? 'propertyNamesSynthetic'
+          : 'patternProperties';
         const analysis = analyzeRegexPattern(patternSource);
 
         if (analysis.compileError) {
-          this.addWarn(patternPtr, DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR, {
-            patternSource,
-            context: 'coverage',
-          });
+          this.addCoverageRegexWarn(
+            canonPath,
+            DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR,
+            {
+              patternSource,
+              context: 'coverage',
+            }
+          );
           this.addApproximation(canonPath, 'regexCompileError');
           issues.push({
             pointer: canonPath,
             source: patternSource,
-            sourceKind: 'patternProperties',
+            sourceKind,
             reason: 'regexCompileError',
           });
           continue;
         }
 
         if (analysis.complexityCapped) {
-          this.addWarn(patternPtr, DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED, {
-            patternSource,
-            context: 'coverage',
-          });
+          this.addCoverageRegexWarn(
+            canonPath,
+            DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED,
+            {
+              patternSource,
+              context: 'coverage',
+            }
+          );
           this.addApproximation(canonPath, 'regexComplexityCap');
           issues.push({
             pointer: canonPath,
             source: patternSource,
-            sourceKind: 'patternProperties',
+            sourceKind,
             reason: 'regexComplexityCap',
           });
           continue;
@@ -740,7 +945,7 @@ class CompositionEngine {
           issues.push({
             pointer: canonPath,
             source: patternSource,
-            sourceKind: 'patternProperties',
+            sourceKind,
             reason: 'nonAnchoredPattern',
           });
           continue;
@@ -750,7 +955,7 @@ class CompositionEngine {
           source: patternSource,
           regexp: analysis.compiled,
           pointer: patternPtr,
-          sourceKind: 'patternProperties',
+          sourceKind,
           literals: analysis.literalAlternatives,
         });
       }
@@ -768,6 +973,11 @@ class CompositionEngine {
   }): void {
     this.diag.unsatHints ??= [];
     this.diag.unsatHints.push(hint);
+  }
+
+  private isPropertyNamesSynthetic(pointer: string): boolean {
+    const origin = this.ptrMap.get(pointer);
+    return origin !== undefined && origin.includes('/propertyNames');
   }
 }
 
@@ -1209,6 +1419,20 @@ function buildUnsatDetails(schema: Record<string, unknown>): {
   return details;
 }
 
+function isArrayLikeSchema(schema: Record<string, unknown>): boolean {
+  const typeValue = schema.type;
+  if (typeValue === 'array') return true;
+  if (Array.isArray(typeValue) && typeValue.includes('array')) return true;
+  if (
+    'contains' in schema ||
+    'minContains' in schema ||
+    'maxContains' in schema
+  )
+    return true;
+  if ('items' in schema || 'prefixItems' in schema) return true;
+  return false;
+}
+
 function isObjectLikeSchema(schema: Record<string, unknown>): boolean {
   if (schema.type === 'object') return true;
   if (schema.properties || schema.patternProperties) return true;
@@ -1231,4 +1455,270 @@ function sortObjectKeys<T extends Record<string, unknown>>(input: T): T {
       return acc;
     }, {});
   return sorted as T;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function collectContainsNeeds(schema: Record<string, unknown>): ContainsNeed[] {
+  const needs: ContainsNeed[] = [];
+  const direct = makeContainsNeed(schema);
+  if (direct) {
+    needs.push(direct);
+  }
+  const allOf = Array.isArray(schema.allOf) ? schema.allOf : undefined;
+  if (allOf) {
+    for (const branch of allOf) {
+      if (isRecord(branch)) {
+        needs.push(...collectContainsNeeds(branch));
+      }
+    }
+  }
+  return needs;
+}
+
+function makeContainsNeed(
+  schema: Record<string, unknown>
+): ContainsNeed | undefined {
+  if (!('contains' in schema)) return undefined;
+  const containsSchema = schema.contains;
+  if (containsSchema === undefined) return undefined;
+  const minValue =
+    typeof schema.minContains === 'number' ? schema.minContains : undefined;
+  const maxValue =
+    typeof schema.maxContains === 'number' ? schema.maxContains : undefined;
+  const need: ContainsNeed = {
+    schema: containsSchema,
+    min: minValue ?? 1,
+  };
+  if (maxValue !== undefined) {
+    need.max = maxValue;
+  }
+  return need;
+}
+
+function computeEffectiveMaxItems(schema: unknown): number | undefined {
+  if (!isRecord(schema)) return undefined;
+  let candidate: number | undefined;
+  if (typeof schema.maxItems === 'number' && Number.isFinite(schema.maxItems)) {
+    candidate = schema.maxItems;
+  }
+  const tupleCap = inferTupleMaxLen(schema);
+  if (tupleCap !== undefined) {
+    candidate =
+      candidate === undefined ? tupleCap : Math.min(candidate, tupleCap);
+  }
+  const allOf = Array.isArray(schema.allOf) ? schema.allOf : undefined;
+  if (allOf) {
+    for (const branch of allOf) {
+      const branchMax = computeEffectiveMaxItems(branch);
+      if (branchMax !== undefined) {
+        candidate =
+          candidate === undefined ? branchMax : Math.min(candidate, branchMax);
+      }
+    }
+  }
+  return candidate;
+}
+
+function inferTupleMaxLen(schema: Record<string, unknown>): number | undefined {
+  if (schema.items === false) {
+    if (Array.isArray(schema.prefixItems)) {
+      return (schema.prefixItems as unknown[]).length;
+    }
+    return 0;
+  }
+  return undefined;
+}
+
+function areNeedsPairwiseDisjoint(needs: NormalizedContainsNeed[]): boolean {
+  for (let i = 0; i < needs.length; i += 1) {
+    for (let j = i + 1; j < needs.length; j += 1) {
+      const left = needs[i]!;
+      const right = needs[j]!;
+      if (!areSchemasDisjoint(left.schema, right.schema)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function areSchemasDisjoint(a: unknown, b: unknown): boolean {
+  if (!isRecord(a) || !isRecord(b)) return false;
+
+  const constA = getConstValue(a);
+  const constB = getConstValue(b);
+  if (constA !== undefined && constB !== undefined) {
+    return stableStringify(constA) !== stableStringify(constB);
+  }
+
+  if (constA !== undefined) {
+    const enumB = getEnumSet(b);
+    if (enumB && !enumB.has(stableStringify(constA))) {
+      return true;
+    }
+  }
+
+  if (constB !== undefined) {
+    const enumA = getEnumSet(a);
+    if (enumA && !enumA.has(stableStringify(constB))) {
+      return true;
+    }
+  }
+
+  const enumA = getEnumSet(a);
+  const enumB = getEnumSet(b);
+  if (enumA && enumB) {
+    for (const value of enumA) {
+      if (enumB.has(value)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  const typesA = getTypeSet(a);
+  const typesB = getTypeSet(b);
+  if (typesA && typesB) {
+    return typeSetsDisjoint(typesA, typesB);
+  }
+
+  return false;
+}
+
+function getConstValue(schema: Record<string, unknown>): unknown | undefined {
+  return schema.const;
+}
+
+function getEnumSet(schema: Record<string, unknown>): Set<string> | undefined {
+  if (!Array.isArray(schema.enum)) return undefined;
+  const set = new Set<string>();
+  for (const entry of schema.enum as unknown[]) {
+    set.add(stableStringify(entry));
+  }
+  return set;
+}
+
+function getTypeSet(schema: Record<string, unknown>): Set<string> | undefined {
+  const typeValue = schema.type;
+  if (typeof typeValue === 'string') {
+    return new Set([typeValue]);
+  }
+  if (Array.isArray(typeValue)) {
+    const set = new Set<string>();
+    for (const entry of typeValue) {
+      if (typeof entry === 'string') {
+        set.add(entry);
+      }
+    }
+    return set.size > 0 ? set : undefined;
+  }
+  return undefined;
+}
+
+function typesOverlap(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (a === 'integer' && b === 'number') return true;
+  if (a === 'number' && b === 'integer') return true;
+  return false;
+}
+
+function typeSetsDisjoint(setA: Set<string>, setB: Set<string>): boolean {
+  for (const ta of setA) {
+    for (const tb of setB) {
+      if (typesOverlap(ta, tb)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function typeSetSubset(setA: Set<string>, setB: Set<string>): boolean {
+  for (const ta of setA) {
+    if (setB.has(ta)) continue;
+    if (ta === 'integer' && setB.has('number')) continue;
+    return false;
+  }
+  return true;
+}
+
+function isSchemaSubset(a: unknown, b: unknown): boolean {
+  if (!isRecord(a) || !isRecord(b)) return false;
+
+  const constA = getConstValue(a);
+  const constB = getConstValue(b);
+  if (
+    constA !== undefined &&
+    constB !== undefined &&
+    stableStringify(constA) === stableStringify(constB)
+  ) {
+    return true;
+  }
+
+  if (constA !== undefined) {
+    const enumB = getEnumSet(b);
+    if (enumB && enumB.has(stableStringify(constA))) {
+      return true;
+    }
+  }
+
+  const enumA = getEnumSet(a);
+  const enumB = getEnumSet(b);
+  if (enumA && enumB) {
+    let subset = true;
+    for (const value of enumA) {
+      if (!enumB.has(value)) {
+        subset = false;
+        break;
+      }
+    }
+    if (subset) return true;
+  }
+
+  const typesA = getTypeSet(a);
+  const typesB = getTypeSet(b);
+  if (typesA && typesB && typeSetSubset(typesA, typesB)) {
+    return true;
+  }
+
+  const allOfA = Array.isArray(a.allOf) ? (a.allOf as unknown[]) : undefined;
+  if (allOfA) {
+    return allOfA.every((entry) => isSchemaSubset(entry, b));
+  }
+
+  return false;
+}
+
+function normalizeForStableStringify(
+  value: unknown,
+  seen: WeakSet<object>
+): unknown {
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+  if (seen.has(value as object)) {
+    return undefined;
+  }
+  seen.add(value as object);
+  if (Array.isArray(value)) {
+    return (value as unknown[]).map((item) =>
+      normalizeForStableStringify(item, seen)
+    );
+  }
+  const entries = Object.entries(value as Record<string, unknown>).sort(
+    ([a], [b]) => a.localeCompare(b)
+  );
+  const normalized: Record<string, unknown> = {};
+  for (const [key, val] of entries) {
+    normalized[key] = normalizeForStableStringify(val, seen);
+  }
+  return normalized;
+}
+
+function stableStringify(value: unknown): string {
+  const normalized = normalizeForStableStringify(value, new WeakSet());
+  return JSON.stringify(normalized);
 }
