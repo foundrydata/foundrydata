@@ -62,11 +62,30 @@ export interface PipelineStages {
 export interface PipelineArtifacts {
   canonical?: NormalizeResult;
   effective?: ComposeResult;
+  generated?: unknown[];
+  repaired?: unknown[];
+  validation?: { valid: boolean; errors?: unknown[] };
 }
 
 export interface PipelineStageOverrides {
   normalize?: (schema: unknown, options?: NormalizeOptions) => NormalizeResult;
   compose?: (input: ComposeInput, options?: ComposeOptions) => ComposeResult;
+  generate?: (
+    effective: ComposeResult,
+    options?: PipelineOptions['generate']
+  ) => unknown[] | Promise<unknown[]>;
+  repair?: (
+    items: unknown[],
+    args: { schema: unknown; effective: ComposeResult },
+    options?: PipelineOptions['repair']
+  ) => unknown[] | Promise<unknown[]>;
+  validate?: (
+    items: unknown[],
+    schema: unknown,
+    options?: PipelineOptions['validate']
+  ) =>
+    | { valid: boolean; errors?: unknown[] }
+    | Promise<{ valid: boolean; errors?: unknown[] }>;
 }
 
 export interface PipelineOptions {
@@ -76,6 +95,19 @@ export interface PipelineOptions {
   collector?: MetricsCollector;
   snapshotVerbosity?: MetricsVerbosity;
   mode?: 'strict' | 'lax';
+  generate?: {
+    count?: number;
+    seed?: number;
+  };
+  repair?: {
+    attempts?: number;
+  };
+  validate?: {
+    /** When true, apply ajv-formats to both instances */
+    validateFormats?: boolean;
+    /** Enable discriminator support on both instances */
+    discriminator?: boolean;
+  };
 }
 
 export interface PipelineResult {
