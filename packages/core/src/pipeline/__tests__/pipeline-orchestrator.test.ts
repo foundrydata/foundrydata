@@ -19,9 +19,11 @@ describe('executePipeline', () => {
     };
 
     const result = await executePipeline(schema);
+    // Debug removed; keep test concise
 
     expect(result.status).toBe('completed');
-    expect(result.timeline).toEqual(['normalize', 'compose']);
+    // Backward-compat: at minimum the first two stages must run
+    expect(result.timeline.slice(0, 2)).toEqual(['normalize', 'compose']);
 
     const normalizeStage = result.stages.normalize;
     const composeStage = result.stages.compose;
@@ -102,6 +104,85 @@ describe('executePipeline', () => {
 
     const expectedSnapshot = collector.snapshotMetrics({ verbosity: 'ci' });
     expect(result.metrics).toStrictEqual(expectedSnapshot);
-    expect(result.timeline).toEqual(['normalize', 'compose']);
+    expect(result.timeline.slice(0, 2)).toEqual(['normalize', 'compose']);
+  });
+
+  it('runs full 5-stage pipeline with default stages and validates output', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        id: { type: 'integer', minimum: 0 },
+        title: { type: 'string', minLength: 1 },
+      },
+      required: ['id', 'title'],
+    };
+
+    const result = await executePipeline(schema, {
+      generate: { count: 1 },
+      validate: { validateFormats: false },
+    });
+
+    expect(result.status).toBe('completed');
+    expect(result.timeline).toEqual([
+      'normalize',
+      'compose',
+      'generate',
+      'repair',
+      'validate',
+    ]);
+
+    // Stage statuses
+    expect(result.stages.normalize.status).toBe('completed');
+    expect(result.stages.compose.status).toBe('completed');
+    expect(result.stages.generate.status).toBe('completed');
+    expect(result.stages.repair.status).toBe('completed');
+    expect(result.stages.validate.status).toBe('completed');
+
+    // Artifacts captured
+    expect(Array.isArray(result.artifacts.generated)).toBe(true);
+    expect(Array.isArray(result.artifacts.repaired)).toBe(true);
+    expect(result.artifacts.validation).toBeDefined();
+
+    // Metrics present and non-negative
+    expect(result.metrics.generateMs).toBeGreaterThanOrEqual(0);
+    expect(result.metrics.repairMs).toBeGreaterThanOrEqual(0);
+    expect(result.metrics.validateMs).toBeGreaterThanOrEqual(0);
+    // Validations per row should be >= 1 (we validated at least one item)
+    expect(result.metrics.validationsPerRow).toBeGreaterThanOrEqual(1);
+  });
+
+  it('supports overrides for generate/repair/validate stages', async () => {
+    const schema = { type: 'string' };
+    const seen: string[] = [];
+
+    const result = await executePipeline(
+      schema,
+      {},
+      {
+        generate() {
+          seen.push('generate');
+          return ['x'];
+        },
+        repair(items) {
+          seen.push('repair');
+          return items;
+        },
+        validate(items) {
+          seen.push('validate');
+          return { valid: Array.isArray(items) };
+        },
+      }
+    );
+
+    expect(result.timeline).toEqual([
+      'normalize',
+      'compose',
+      'generate',
+      'repair',
+      'validate',
+    ]);
+    expect(seen).toEqual(['generate', 'repair', 'validate']);
   });
 });
