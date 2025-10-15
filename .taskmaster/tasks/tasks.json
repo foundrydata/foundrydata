@@ -1372,7 +1372,7 @@
         "id": "8",
         "title": "Composition Engine",
         "description": "Build effective view, CoverageIndex (has/enumerate), branch selection, early-unsat hints, caps; AP:false must-cover and Strict/Lax behaviors.",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           "2",
           "3",
@@ -1413,7 +1413,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-10-14T19:12:24.676Z"
+        "updatedAt": "2025-10-15T18:54:14.278Z"
       },
       {
         "id": "9",
@@ -2056,9 +2056,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-14T19:12:24.677Z",
+      "lastModified": "2025-10-15T18:54:14.279Z",
       "taskCount": 52,
-      "completedCount": 38,
+      "completedCount": 39,
       "tags": [
         "feature-simplification"
       ]
