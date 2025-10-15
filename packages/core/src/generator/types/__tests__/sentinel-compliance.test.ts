@@ -11,7 +11,17 @@ import { StringGenerator } from '../string-generator';
 import { FormatRegistry } from '../../../registry/format-registry';
 import { createGeneratorContext } from '../../data-generator';
 import '../../../../../../test/matchers/index';
-import { FoundryGenerator } from '../../foundry-generator';
+import { normalize } from '../../../transform/schema-normalizer';
+import { compose } from '../../../transform/composition-engine';
+import { generateFromCompose } from '../../foundry-generator';
+import { createAjv } from '../../../../../../test/helpers/ajv-factory';
+
+function generateItems(schema: unknown, count = 5): unknown[] {
+  const normalized = normalize(schema);
+  const effective = compose(normalized);
+  const output = generateFromCompose(effective, { count });
+  return output.items;
+}
 
 describe('Sentinel Compliance (MVP gaps)', () => {
   const formatRegistry = new FormatRegistry();
@@ -24,16 +34,13 @@ describe('Sentinel Compliance (MVP gaps)', () => {
           { type: 'number', maximum: 10, multipleOf: 0.5 },
         ],
       } as const;
-      // Use FoundryGenerator pipeline to handle composition
-      const gen = new FoundryGenerator();
-      const r = gen.run(schema as object, {
-        count: 5,
-        seed: 424242,
-        locale: 'en',
-      });
-      expect(r.isOk()).toBe(true);
-      if (!r.isOk()) return;
-      expect(r.value.report.compliant).toBe(true);
+      // Use generator pipeline to handle composition
+      const items = generateItems(schema as object);
+      const ajv = createAjv('2020-12');
+      const validate = ajv.compile(schema as object);
+      for (const value of items) {
+        expect(validate(value)).toBe(true);
+      }
     });
   });
 
@@ -45,15 +52,12 @@ describe('Sentinel Compliance (MVP gaps)', () => {
           { type: 'integer', minimum: 0 },
         ],
       } as const;
-      const gen = new FoundryGenerator();
-      const r = gen.run(schema as object, {
-        count: 5,
-        seed: 424242,
-        locale: 'en',
-      });
-      expect(r.isOk()).toBe(true);
-      if (!r.isOk()) return;
-      expect(r.value.report.compliant).toBe(true);
+      const items = generateItems(schema as object);
+      const ajv = createAjv('2020-12');
+      const validate = ajv.compile(schema as object);
+      for (const value of items) {
+        expect(validate(value)).toBe(true);
+      }
     });
 
     it('oneOf: selects a deterministic branch, AJV validates', () => {
@@ -63,30 +67,24 @@ describe('Sentinel Compliance (MVP gaps)', () => {
           { type: 'integer', minimum: 0 },
         ],
       } as const;
-      const gen = new FoundryGenerator();
-      const r = gen.run(schema as object, {
-        count: 5,
-        seed: 424242,
-        locale: 'en',
-      });
-      expect(r.isOk()).toBe(true);
-      if (!r.isOk()) return;
-      expect(r.value.report.compliant).toBe(true);
+      const items = generateItems(schema as object);
+      const ajv = createAjv('2020-12');
+      const validate = ajv.compile(schema as object);
+      for (const value of items) {
+        expect(validate(value)).toBe(true);
+      }
     });
 
     it('not: generates values outside prohibited schema, AJV validates', () => {
       const schema = {
         not: { type: 'number' },
       } as const;
-      const gen = new FoundryGenerator();
-      const r = gen.run(schema as object, {
-        count: 5,
-        seed: 424242,
-        locale: 'en',
-      });
-      expect(r.isOk()).toBe(true);
-      if (!r.isOk()) return;
-      expect(r.value.report.compliant).toBe(true);
+      const items = generateItems(schema as object);
+      const ajv = createAjv('2020-12');
+      const validate = ajv.compile(schema as object);
+      for (const value of items) {
+        expect(validate(value)).toBe(true);
+      }
     });
   });
 

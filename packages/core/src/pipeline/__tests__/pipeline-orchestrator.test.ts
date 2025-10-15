@@ -141,7 +141,7 @@ describe('executePipeline', () => {
     expect(result.stages.validate.status).toBe('completed');
 
     // Artifacts captured
-    expect(Array.isArray(result.artifacts.generated)).toBe(true);
+    expect(Array.isArray(result.artifacts.generated?.items)).toBe(true);
     expect(Array.isArray(result.artifacts.repaired)).toBe(true);
     expect(result.artifacts.validation).toBeDefined();
 
@@ -163,7 +163,12 @@ describe('executePipeline', () => {
       {
         generate() {
           seen.push('generate');
-          return ['x'];
+          return {
+            items: ['x'],
+            diagnostics: [],
+            metrics: {},
+            seed: 0,
+          };
         },
         repair(items) {
           seen.push('repair');

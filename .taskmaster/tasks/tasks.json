@@ -5,7 +5,7 @@
   "feature-simplification": {
     "tasks": [
       {
-        "id": 8000,
+        "id": "8000",
         "title": "AGENT — Operating mode for Claude Code",
         "description": "Execution discipline and guardrails for building from SPEC via anchors only.",
         "priority": "medium",
@@ -27,7 +27,7 @@
         ]
       },
       {
-        "id": 9000,
+        "id": "9000",
         "title": "SPEC — Canonical Source (header & metadata)",
         "description": "Reference-only: section §0.",
         "priority": "low",
@@ -57,7 +57,7 @@
         ]
       },
       {
-        "id": 9050,
+        "id": "9050",
         "title": "SPEC — Maintenance / Evolution",
         "description": "Reference-only: section §24.",
         "priority": "low",
@@ -89,7 +89,7 @@
         ]
       },
       {
-        "id": 9100,
+        "id": "9100",
         "title": "Terminology (preamble — quick ref)",
         "description": "Reference-only: section §0.",
         "priority": "low",
@@ -121,7 +121,7 @@
         ]
       },
       {
-        "id": 9101,
+        "id": "9101",
         "title": "§1 Goal",
         "description": "Reference-only: section §1.",
         "priority": "low",
@@ -169,7 +169,7 @@
         ]
       },
       {
-        "id": 9102,
+        "id": "9102",
         "title": "§2 Scope",
         "description": "Reference-only: section §2.",
         "priority": "low",
@@ -217,7 +217,7 @@
         ]
       },
       {
-        "id": 9103,
+        "id": "9103",
         "title": "§3 Principles & Invariants",
         "description": "Reference-only: section §3.",
         "priority": "low",
@@ -257,7 +257,7 @@
         ]
       },
       {
-        "id": 9104,
+        "id": "9104",
         "title": "§4 Operational guidance",
         "description": "Reference-only: section §4.",
         "priority": "low",
@@ -297,7 +297,7 @@
         ]
       },
       {
-        "id": 9105,
+        "id": "9105",
         "title": "§5 Configuration Overview",
         "description": "Reference-only: section §5.",
         "priority": "low",
@@ -337,7 +337,7 @@
         ]
       },
       {
-        "id": 9106,
+        "id": "9106",
         "title": "§6 High-Level Architecture",
         "description": "Reference-only: section §6.",
         "priority": "low",
@@ -361,7 +361,7 @@
         ]
       },
       {
-        "id": 9107,
+        "id": "9107",
         "title": "§7 Schema Normalizer (Canonicalization)",
         "description": "Reference-only: section §7.",
         "priority": "low",
@@ -409,7 +409,7 @@
         ]
       },
       {
-        "id": 9108,
+        "id": "9108",
         "title": "§8 Composition Engine",
         "description": "Reference-only: section §8.",
         "priority": "low",
@@ -481,7 +481,7 @@
         ]
       },
       {
-        "id": 9109,
+        "id": "9109",
         "title": "§9 Generator",
         "description": "Reference-only: section §9.",
         "priority": "low",
@@ -521,7 +521,7 @@
         ]
       },
       {
-        "id": 9110,
+        "id": "9110",
         "title": "§10 Repair Engine (AJV-Driven)",
         "description": "Reference-only: section §10.",
         "priority": "low",
@@ -585,7 +585,7 @@
         ]
       },
       {
-        "id": 9111,
+        "id": "9111",
         "title": "§11 Modes",
         "description": "Reference-only: section §11.",
         "priority": "low",
@@ -609,7 +609,7 @@
         ]
       },
       {
-        "id": 9112,
+        "id": "9112",
         "title": "§12 Draft Handling",
         "description": "Reference-only: section §12.",
         "priority": "low",
@@ -641,7 +641,7 @@
         ]
       },
       {
-        "id": 9113,
+        "id": "9113",
         "title": "§13 AJV Configuration",
         "description": "Reference-only: section §13.",
         "priority": "low",
@@ -665,7 +665,7 @@
         ]
       },
       {
-        "id": 9114,
+        "id": "9114",
         "title": "§14 Cache Strategy",
         "description": "Reference-only: section §14.",
         "priority": "low",
@@ -697,7 +697,7 @@
         ]
       },
       {
-        "id": 9115,
+        "id": "9115",
         "title": "§15 Performance, Determinism & Metrics",
         "description": "Reference-only: section §15.",
         "priority": "low",
@@ -737,7 +737,7 @@
         ]
       },
       {
-        "id": 9116,
+        "id": "9116",
         "title": "§16 Implementation Plan",
         "description": "Reference-only: section §16.",
         "priority": "low",
@@ -785,7 +785,7 @@
         ]
       },
       {
-        "id": 9117,
+        "id": "9117",
         "title": "§17 Documentation Additions",
         "description": "Reference-only: section §17.",
         "priority": "low",
@@ -825,7 +825,7 @@
         ]
       },
       {
-        "id": 9118,
+        "id": "9118",
         "title": "§18 Features Matrix",
         "description": "Reference-only: section §18.",
         "priority": "low",
@@ -849,7 +849,7 @@
         ]
       },
       {
-        "id": 9119,
+        "id": "9119",
         "title": "§19 Diagnostics (codes)",
         "description": "Reference-only: section §19.",
         "priority": "low",
@@ -889,7 +889,7 @@
         ]
       },
       {
-        "id": 9120,
+        "id": "9120",
         "title": "§20 Testing Strategy",
         "description": "Reference-only: section §20.",
         "priority": "low",
@@ -937,7 +937,7 @@
         ]
       },
       {
-        "id": 9121,
+        "id": "9121",
         "title": "§21 Risks & Mitigations",
         "description": "Reference-only: section §21.",
         "priority": "low",
@@ -961,7 +961,7 @@
         ]
       },
       {
-        "id": 9122,
+        "id": "9122",
         "title": "§22 Deliverables (Code)",
         "description": "Reference-only: section §22.",
         "priority": "low",
@@ -1001,7 +1001,7 @@
         ]
       },
       {
-        "id": 9123,
+        "id": "9123",
         "title": "§23 Appendix — Minimal Interfaces",
         "description": "Reference-only: section §23.",
         "priority": "low",
@@ -1041,7 +1041,7 @@
         ]
       },
       {
-        "id": 9124,
+        "id": "9124",
         "title": "§24 Norms & References",
         "description": "Reference-only: section §24.",
         "priority": "low",
@@ -1081,7 +1081,7 @@
         ]
       },
       {
-        "id": 1,
+        "id": "1",
         "title": "Scaffolding & Monorepo",
         "description": "Initialize monorepo, packages, basic build/test/bench harness, and docs skeleton.",
         "priority": "high",
@@ -1132,7 +1132,7 @@
         ]
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "Dual AJV & Config Gate",
         "description": "Introduce Source vs Planning AJV instances and enforce startup parity gates.",
         "priority": "high",
@@ -1177,7 +1177,7 @@
         "updatedAt": "2025-10-12T20:00:58.449Z"
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "Utils: RNG, rationals, JSON-safe",
         "description": "Provide deterministic RNG, exact rational helpers with fallbacks, and JSON-safe logging.",
         "priority": "high",
@@ -1221,7 +1221,7 @@
         ]
       },
       {
-        "id": 4,
+        "id": "4",
         "title": "Structural hashing & stable-hash",
         "description": "Implement structural hashing for uniqueItems and stable schema hashing for cache.",
         "status": "done",
@@ -1259,7 +1259,7 @@
         ]
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "PtrMap canon→original",
         "description": "Bidirectional pointer mapping between canonical and original schema pointers.",
         "priority": "medium",
@@ -1286,7 +1286,7 @@
         ]
       },
       {
-        "id": 6,
+        "id": "6",
         "title": "Metrics & diagnostic envelope",
         "description": "Diagnostics envelope `{code, canonPath, details?}`, metrics collection, verbosity toggle.",
         "priority": "high",
@@ -1330,7 +1330,7 @@
         ]
       },
       {
-        "id": 7,
+        "id": "7",
         "title": "Normalizer",
         "description": "Draft unification, boolean/trivial simplifications with unevaluated guards, conditional rewrite (safe), propertyNames rewrite (P0: enum-only).",
         "priority": "high",
@@ -1369,7 +1369,7 @@
         ]
       },
       {
-        "id": 8,
+        "id": "8",
         "title": "Composition Engine",
         "description": "Build effective view, CoverageIndex (has/enumerate), branch selection, early-unsat hints, caps; AP:false must-cover and Strict/Lax behaviors.",
         "status": "done",
@@ -1416,10 +1416,10 @@
         "updatedAt": "2025-10-15T18:54:14.278Z"
       },
       {
-        "id": 9,
+        "id": "9",
         "title": "Generator",
         "description": "Foundry generator honoring effective view, pattern witness, minimal width/length, if-aware-lite.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "8",
           "8000",
@@ -1445,10 +1445,11 @@
             "testStrategy": "Unit tests for core generation logic with deterministic seed handling",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2025-10-15T21:01:59.471Z"
       },
       {
-        "id": 10,
+        "id": "10",
         "title": "Repair Engine",
         "description": "AJV-driven repairs, epsilon logging, AP:false rename guard with CoverageIndex, unevaluated evaluation guard.",
         "status": "pending",
@@ -1481,7 +1482,7 @@
         ]
       },
       {
-        "id": 11,
+        "id": "11",
         "title": "Pipeline Orchestrator",
         "description": "Wire Normalize → Compose → Generate → Repair → Validate; pass metrics and diagnostics through. Pipeline orchestration is wired but pending integration of task 9 generator and task 10 repair engines; revisit once those land to replace stubs and tighten dual AJV parity.",
         "status": "deferred",
@@ -1512,7 +1513,8 @@
             ],
             "details": "Integrate the Generator from task 9 as the third stage in the pipeline. Handle deterministic seeded generation, enum/const precedence, and if-aware-lite generation. Maintain compatibility with existing generator structure in foundry-generator.ts. Currently using stub implementation pending task 9 completion.",
             "status": "pending",
-            "testStrategy": "Test generator stage integration with deterministic output verification and enum precedence handling"
+            "testStrategy": "Test generator stage integration with deterministic output verification and enum precedence handling",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1523,7 +1525,8 @@
             ],
             "details": "Integrate the Repair Engine from task 10 as the fourth stage in the pipeline. Handle AJV-driven corrections, idempotent repairs, rational snapping, and structural deduplication for uniqueItems. Implement repair budgeting and graceful degradation. Currently using stub implementation pending task 10 completion.",
             "status": "pending",
-            "testStrategy": "Test repair stage integration with various validation failure scenarios and repair budget limits"
+            "testStrategy": "Test repair stage integration with various validation failure scenarios and repair budget limits",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -1534,7 +1537,8 @@
             ],
             "details": "Integrate the Dual AJV system from task 2 as the final validation stage. Ensure validation against original schema, handle Source and Planning AJV instances, and implement proper error reporting with pointer mapping and caching.",
             "status": "pending",
-            "testStrategy": "Test validation stage integration with both Source and Planning AJV instances, verify validation against original schema"
+            "testStrategy": "Test validation stage integration with both Source and Planning AJV instances, verify validation against original schema",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -1545,7 +1549,8 @@
             ],
             "details": "Collect and aggregate metrics from all five pipeline stages (normalizeMs, composeMs, generateMs, repairMs, validateMs). Include validationsPerRow, repairPassesPerRow, branchTrialsTried, and memory usage. Ensure compatibility with existing PipelineMetrics interface.",
             "status": "pending",
-            "testStrategy": "Test metrics collection from all stages, verify metric accuracy and completeness"
+            "testStrategy": "Test metrics collection from all stages, verify metric accuracy and completeness",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -1556,7 +1561,8 @@
             ],
             "details": "Implement comprehensive error handling that preserves error context across pipeline stages. Handle FoundryError types from each stage, maintain error codes, and ensure diagnostic information is properly aggregated and reported.",
             "status": "pending",
-            "testStrategy": "Test error propagation from each pipeline stage, verify error context preservation and proper error codes"
+            "testStrategy": "Test error propagation from each pipeline stage, verify error context preservation and proper error codes",
+            "parentId": "undefined"
           },
           {
             "id": 9,
@@ -1567,7 +1573,8 @@
             ],
             "details": "Once task 9 (Generator) is completed, replace the current stub implementation in the pipeline orchestrator with the actual Generator implementation. Ensure proper integration with the pipeline flow, maintain deterministic seeded generation, and verify enum/const precedence handling works correctly.",
             "status": "pending",
-            "testStrategy": "Integration test to verify Generator stage replacement maintains pipeline functionality and deterministic output"
+            "testStrategy": "Integration test to verify Generator stage replacement maintains pipeline functionality and deterministic output",
+            "parentId": "undefined"
           },
           {
             "id": 10,
@@ -1578,7 +1585,8 @@
             ],
             "details": "Once task 10 (Repair Engine) is completed, replace the current stub implementation in the pipeline orchestrator with the actual Repair Engine implementation. Ensure proper AJV-driven corrections, idempotent repairs, and repair budgeting work correctly within the pipeline flow.",
             "status": "pending",
-            "testStrategy": "Integration test to verify Repair Engine stage replacement maintains pipeline functionality and proper repair behavior"
+            "testStrategy": "Integration test to verify Repair Engine stage replacement maintains pipeline functionality and proper repair behavior",
+            "parentId": "undefined"
           },
           {
             "id": 11,
@@ -1589,7 +1597,8 @@
             ],
             "details": "After integrating the actual Generator and Repair Engine implementations, review the dual AJV validation parity to ensure consistent behavior between Source and Planning AJV instances. Address any discrepancies and ensure proper validation against the original schema throughout the complete pipeline.",
             "status": "pending",
-            "testStrategy": "Comprehensive validation testing to verify dual AJV parity across all pipeline stages with real implementations"
+            "testStrategy": "Comprehensive validation testing to verify dual AJV parity across all pipeline stages with real implementations",
+            "parentId": "undefined"
           },
           {
             "id": 1,
@@ -1631,7 +1640,7 @@
         ]
       },
       {
-        "id": 12,
+        "id": "12",
         "title": "Modes & External $ref",
         "description": "Implement Strict vs Lax behaviors and external $ref skip-eligibility probe.",
         "priority": "medium",
@@ -1659,7 +1668,7 @@
         ]
       },
       {
-        "id": 13,
+        "id": "13",
         "title": "Draft handling & $dynamic*",
         "description": "Dialect detection, Ajv class selection, bounded in-document $dynamicRef binding (planning-only).",
         "status": "done",
@@ -1697,7 +1706,7 @@
         ]
       },
       {
-        "id": 14,
+        "id": "14",
         "title": "Cache Strategy",
         "description": "Implement hierarchical caches and memo keys including PlanOptionsSubKey and AJV flags.",
         "priority": "high",
@@ -1727,7 +1736,7 @@
         ]
       },
       {
-        "id": 15,
+        "id": "15",
         "title": "Bench Harness & Gates",
         "description": "Benchmark harness and CI gates for p95 latency and memory peaks; metrics wiring.",
         "status": "pending",
@@ -1757,7 +1766,7 @@
         ]
       },
       {
-        "id": 16,
+        "id": "16",
         "title": "Diagnostics payload conformance",
         "description": "Enforce §19.1 mini-schemas, phase separation, and verbosity toggle exposure.",
         "status": "done",
@@ -1808,7 +1817,7 @@
         ]
       },
       {
-        "id": 17,
+        "id": "17",
         "title": "Unit Tests (per section)",
         "description": "Unit test suites mirroring SPEC sections, including fuzzing for oneOf exclusivity and must-cover.",
         "status": "pending",
@@ -1838,7 +1847,7 @@
         ]
       },
       {
-        "id": 18,
+        "id": "18",
         "title": "Integration & e2e",
         "description": "End-to-end scenarios covering modes, AP:false unsafe patterns, oneOf exclusivity refinement.",
         "status": "pending",
@@ -1867,7 +1876,7 @@
         ]
       },
       {
-        "id": 19,
+        "id": "19",
         "title": "Documentation",
         "description": "Author Invariants, Known-Limits, and Features docs; update README and error catalog.",
         "status": "pending",
@@ -1943,7 +1952,7 @@
         ]
       },
       {
-        "id": 20,
+        "id": "20",
         "title": "Fixtures & Bench profiles",
         "description": "Provide test fixtures and bench profiles (simple/medium/pathological); property-based generators for fuzzing.",
         "priority": "medium",
@@ -1970,7 +1979,7 @@
         ]
       },
       {
-        "id": 21,
+        "id": "21",
         "title": "Public API & TS types",
         "description": "Exported functions and types for normalize/compose/generate/repair; stable signatures.",
         "priority": "medium",
@@ -1997,7 +2006,7 @@
         ]
       },
       {
-        "id": 22,
+        "id": "22",
         "title": "CI pipelines (lint, test, bench)",
         "description": "Set up CI with linting, unit/integration tests, and bench gates.",
         "status": "pending",
@@ -2027,7 +2036,7 @@
         ]
       },
       {
-        "id": 23,
+        "id": "23",
         "title": "P2 refinements",
         "description": "Deferred features: propertyNames pattern-form rewrite; pattern approximations for must-cover; contains subsumption.",
         "priority": "medium",
@@ -2054,7 +2063,7 @@
         ]
       },
       {
-        "id": 24,
+        "id": "24",
         "title": "Packaging & Release",
         "description": "Prepare versioning, changelog, and publish configuration; SemVer alignment.",
         "priority": "medium",
@@ -2083,14 +2092,12 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-15T19:13:23.312Z",
+      "lastModified": "2025-10-15T21:01:59.472Z",
       "taskCount": 52,
-      "completedCount": 39,
+      "completedCount": 40,
       "tags": [
         "feature-simplification"
-      ],
-      "created": "2025-10-15T19:13:30.805Z",
-      "description": "Tasks for feature-simplification context"
+      ]
     }
   }
 }

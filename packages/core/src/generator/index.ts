@@ -3,9 +3,13 @@
  * Re-export all generator functionality
  */
 
-// Export the main Generator class
+// Export the main Generator stage helpers
 export { Generator } from '../generator';
-export { FoundryGenerator } from './foundry-generator';
+export {
+  generateFromCompose,
+  type GeneratorStageOutput,
+  type FoundryGeneratorOptions,
+} from './foundry-generator';
 
 // Export base generator infrastructure
 export * from './data-generator';

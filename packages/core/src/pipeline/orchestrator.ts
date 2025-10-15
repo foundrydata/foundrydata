@@ -15,6 +15,11 @@ import { createSourceAjv } from '../util/ajv-source';
 import { checkAjvStartupParity } from '../util/ajv-gate';
 import { MetricsCollector, type MetricPhase } from '../util/metrics';
 import {
+  generateFromCompose,
+  type GeneratorStageOutput,
+  type FoundryGeneratorOptions,
+} from '../generator/foundry-generator';
+import {
   PipelineStageError,
   type PipelineStageName,
   type PipelineStageOverrides,
@@ -57,7 +62,7 @@ interface StageRunners {
   generate: (
     effective: ReturnType<typeof compose>,
     options?: PipelineOptions['generate']
-  ) => Promise<unknown[]> | unknown[];
+  ) => Promise<GeneratorStageOutput> | GeneratorStageOutput;
   repair: (
     items: unknown[],
     args: { schema: unknown; effective: ReturnType<typeof compose> },
@@ -123,7 +128,7 @@ export async function executePipeline(
   const runners: StageRunners = {
     normalize: overrides.normalize ?? normalize,
     compose: overrides.compose ?? compose,
-    generate: overrides.generate ?? defaultGenerate,
+    generate: overrides.generate ?? createDefaultGenerate(metrics, schema),
     repair: overrides.repair ?? defaultRepair,
     validate: overrides.validate ?? defaultValidate,
   };
@@ -227,7 +232,7 @@ export async function executePipeline(
   }
 
   // Generate stage
-  let generated: unknown[] | undefined;
+  let generated: GeneratorStageOutput | undefined;
   metrics.begin(METRIC_PHASE_BY_STAGE.generate);
   try {
     const eff = stages.compose.output!;
@@ -264,7 +269,10 @@ export async function executePipeline(
   metrics.begin(METRIC_PHASE_BY_STAGE.repair);
   try {
     const eff = stages.compose.output!;
-    const items = stages.generate.output as unknown[];
+    const generatedOutput = stages.generate.output;
+    const items = Array.isArray(generatedOutput?.items)
+      ? generatedOutput.items
+      : [];
     repaired = await Promise.resolve(
       runners.repair(items, { schema, effective: eff }, options.repair)
     );
@@ -298,9 +306,12 @@ export async function executePipeline(
   // Validate stage (Dual AJV parity, validate against original)
   metrics.begin(METRIC_PHASE_BY_STAGE.validate);
   try {
-    const items =
-      (stages.repair.output as unknown[]) ??
-      (stages.generate.output as unknown[]);
+    const generatedOutput = stages.generate.output;
+    const generatedItems = Array.isArray(generatedOutput?.items)
+      ? generatedOutput.items
+      : [];
+    const repairedItems = stages.repair.output as unknown[] | undefined;
+    const items = repairedItems ?? generatedItems;
     const validation = await Promise.resolve(
       runners.validate(items, schema, options.validate)
     );
@@ -333,112 +344,20 @@ export async function executePipeline(
   };
 }
 
-/**
- * Default generator: produce minimal items satisfying common constraints (best-effort).
- * Deterministic given seed in options; defaults to count=1.
- */
-async function defaultGenerate(
-  effective: ReturnType<typeof compose>,
-  options?: PipelineOptions['generate']
-): Promise<unknown[]> {
-  const count = Math.max(1, Math.floor(options?.count ?? 1));
-  const items: unknown[] = [];
-  for (let i = 0; i < count; i += 1) {
-    items.push(generateOne(effective.canonical.schema));
-  }
-  return items;
-}
-
-function generateOne(schema: unknown): unknown {
-  if (!schema || typeof schema !== 'object') return {};
-  const s = schema as Record<string, unknown>;
-  // const / enum take precedence
-  if (Object.prototype.hasOwnProperty.call(s, 'const')) {
-    return s.const;
-  }
-  if (Array.isArray(s.enum) && s.enum.length > 0) {
-    return s.enum[0];
-  }
-  const t = s.type;
-  if (
-    t === 'object' ||
-    (Array.isArray(t) && (t as string[]).includes('object'))
-  ) {
-    const required = new Set<string>(
-      Array.isArray(s.required) ? (s.required as string[]) : []
-    );
-    const props = (s.properties ?? {}) as Record<string, unknown>;
-    const out: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(props)) {
-      if (required.has(k)) out[k] = generateOne(v);
-    }
-    return out;
-  }
-  if (
-    t === 'array' ||
-    (Array.isArray(t) && (t as string[]).includes('array'))
-  ) {
-    const minItems =
-      typeof s.minItems === 'number' ? Math.max(0, s.minItems as number) : 0;
-    const base = Array.isArray(s.prefixItems)
-      ? (s.prefixItems as unknown[])
-      : [];
-    const itemSchema = s.items;
-    const out: unknown[] = [];
-    for (const pre of base) out.push(generateOne(pre));
-    while (out.length < minItems) {
-      out.push(generateOne(itemSchema));
-    }
-    return out;
-  }
-  if (
-    t === 'string' ||
-    (Array.isArray(t) && (t as string[]).includes('string'))
-  ) {
-    const minLength =
-      typeof s.minLength === 'number' ? Math.max(0, s.minLength as number) : 0;
-    const maxLength =
-      typeof s.maxLength === 'number'
-        ? Math.max(minLength, s.maxLength as number)
-        : Math.max(1, minLength);
-    const len = Math.min(Math.max(1, minLength), maxLength);
-    return 'x'.repeat(len);
-  }
-  if (
-    t === 'integer' ||
-    (Array.isArray(t) && (t as string[]).includes('integer'))
-  ) {
-    let v = 0;
-    if (typeof s.minimum === 'number')
-      v = Math.max(v, Math.ceil(s.minimum as number));
-    if (typeof s.exclusiveMinimum === 'number')
-      v = Math.max(v, Math.ceil((s.exclusiveMinimum as number) + 1));
-    if (typeof s.maximum === 'number')
-      v = Math.min(v, Math.floor(s.maximum as number));
-    return v;
-  }
-  if (
-    t === 'number' ||
-    (Array.isArray(t) && (t as string[]).includes('number'))
-  ) {
-    let v = 0;
-    if (typeof s.minimum === 'number') v = Math.max(v, s.minimum as number);
-    if (typeof s.exclusiveMinimum === 'number')
-      v = Math.max(v, (s.exclusiveMinimum as number) + Number.EPSILON);
-    if (typeof s.maximum === 'number') v = Math.min(v, s.maximum as number);
-    return v;
-  }
-  if (
-    t === 'boolean' ||
-    (Array.isArray(t) && (t as string[]).includes('boolean'))
-  ) {
-    return true;
-  }
-  if (t === 'null' || (Array.isArray(t) && (t as string[]).includes('null'))) {
-    return null;
-  }
-  // Fallback: empty object
-  return {};
+function createDefaultGenerate(
+  metrics: MetricsCollector,
+  sourceSchema: unknown
+): StageRunners['generate'] {
+  return (effective, options) => {
+    const generatorOptions: FoundryGeneratorOptions = {
+      count: options?.count,
+      seed: options?.seed,
+      planOptions: options?.planOptions,
+      metrics,
+      sourceSchema,
+    };
+    return generateFromCompose(effective, generatorOptions);
+  };
 }
 
 async function defaultRepair(
