@@ -12,7 +12,6 @@ import {
 const PLAN_OPTIONS_SUBKEY_FIELDS = [
   'complexity.maxAnyOfBranches',
   'complexity.maxContainsNeeds',
-  'complexity.maxEnumCardinality',
   'complexity.maxOneOfBranches',
   'complexity.maxPatternProps',
   'conditionals.exclusivityStringTweak',

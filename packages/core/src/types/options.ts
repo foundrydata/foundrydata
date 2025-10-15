@@ -80,8 +80,6 @@ export interface ComplexityOptions {
   maxAnyOfBranches?: number;
   /** Maximum pattern properties to analyze (default: 64) */
   maxPatternProps?: number;
-  /** Maximum enum values to process (default: 10_000) */
-  maxEnumCardinality?: number;
   /** Maximum contains needs to track (default: 16) */
   maxContainsNeeds?: number;
   /** Maximum schema size in bytes (default: 2_000_000) */
@@ -231,7 +229,6 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
     maxOneOfBranches: 200,
     maxAnyOfBranches: 500,
     maxPatternProps: 64,
-    maxEnumCardinality: 10_000,
     maxContainsNeeds: 16,
     maxSchemaBytes: 2_000_000,
     bailOnUnsatAfter: 12,
@@ -373,9 +370,6 @@ function validateOptions(options: ResolvedOptions): void {
   }
   if (options.complexity.maxPatternProps <= 0) {
     throw new Error('complexity.maxPatternProps must be positive');
-  }
-  if (options.complexity.maxEnumCardinality <= 0) {
-    throw new Error('complexity.maxEnumCardinality must be positive');
   }
   if (options.complexity.maxContainsNeeds <= 0) {
     throw new Error('complexity.maxContainsNeeds must be positive');
