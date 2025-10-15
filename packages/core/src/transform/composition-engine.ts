@@ -676,6 +676,38 @@ class CompositionEngine {
       const hasOnlyPropertyNamesGating =
         !hasAnyCoverageSource &&
         conjuncts.some((conj) => conj.gatingEnum || conj.gatingPattern);
+
+      // SPEC §8 Early unsat: provably empty coverage under presence pressure.
+      // Provable iff there are NO coverage sources (no named properties, no
+      // anchored-safe patternProperties, no §7 synthetic patterns). In this
+      // case, short-circuit as unsat and emit UNSAT_AP_FALSE_EMPTY_COVERAGE.
+      if (!hasAnyCoverageSource) {
+        this.addFatal(
+          canonPath,
+          DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
+          buildUnsatDetails(schema)
+        );
+        // If raw propertyNames gating is present, surface approximation + hint
+        // for observability (tests expect presencePressure markers in this path).
+        const hasAnyGating = conjuncts.some(
+          (conj) => conj.gatingEnum || conj.gatingPattern
+        );
+        if (hasAnyGating) {
+          this.addApproximation(canonPath, 'presencePressure');
+          this.addUnsatHint({
+            code: DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
+            canonPath,
+            provable: false,
+            reason: 'presencePressure',
+            details: buildUnsatDetails(schema),
+          });
+        }
+        return;
+      }
+
+      // Otherwise, coverage emptiness is not provable (patterns or gating are
+      // involved). Do NOT short-circuit: emit approximation + hint, and in
+      // Strict mode only escalate unsafe pattern usage to AP_FALSE_UNSAFE_PATTERN.
       this.addUnsatHint({
         code: DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
         canonPath,
@@ -688,12 +720,8 @@ class CompositionEngine {
       // must-cover would rely on non-anchored or complexity-capped patterns
       // from patternProperties or synthetic (§7) sources. A raw
       // propertyNames.pattern (no rewrite) is gating-only and MUST NOT trigger
-      // AP_FALSE_UNSAFE_PATTERN. We reflect that by requiring evidence of
-      // "unsafe" coverage pattern issues gathered during conjunct analysis.
-      if (
-        unsafeIssues.length > 0 ||
-        (!hasOnlyPropertyNamesGating && !hasAnyCoverageSource)
-      ) {
+      // AP_FALSE_UNSAFE_PATTERN.
+      if (unsafeIssues.length > 0 && !hasOnlyPropertyNamesGating) {
         const detail = this.buildApFalseUnsafeDetail(unsafeIssues);
         if (this.mode === 'strict') {
           this.addFatal(
