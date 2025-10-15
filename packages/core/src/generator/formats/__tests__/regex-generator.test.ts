@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { RegexGenerator } from '../regex-generator';
 import { createAjv } from '../../../../../../test/helpers/ajv-factory';
-import { FoundryGenerator } from '../../foundry-generator';
+import { normalize } from '../../../transform/schema-normalizer';
+import { compose } from '../../../transform/composition-engine';
+import { generateFromCompose } from '../../foundry-generator';
 
 describe('RegexGenerator', () => {
   it('validates generated patterns compile as RegExp', () => {
@@ -15,24 +17,21 @@ describe('RegexGenerator', () => {
     new RegExp(pattern);
   });
 
-  it('integrates with FoundryGenerator for format: "regex"', () => {
+  it('integrates with the generator pipeline for format: "regex"', () => {
     const schema = {
       $schema: 'http://json-schema.org/draft-07/schema#',
       type: 'string',
       format: 'regex',
     } as const;
-    const foundry = new FoundryGenerator();
-    const r = foundry.run(schema as object, {
+    const normalized = normalize(schema as object);
+    const effective = compose(normalized);
+    const r = generateFromCompose(effective, {
       count: 5,
       seed: 123,
-      compat: 'strict',
-      locale: 'en',
     });
-    expect(r.isOk()).toBe(true);
-    if (!r.isOk()) return;
     const ajv = createAjv('draft-07');
     const validate = ajv.compile(schema as object);
-    for (const v of r.value.items) {
+    for (const v of r.items) {
       expect(validate(v)).toBe(true);
     }
   });

@@ -7,12 +7,14 @@ import type {
   ComposeResult,
   ComposeInput,
 } from '../transform/composition-engine';
+import type { GeneratorStageOutput } from '../generator/foundry-generator';
 import type {
   MetricsCollector,
   MetricsCollectorOptions,
   MetricsSnapshot,
   MetricsVerbosity,
 } from '../util/metrics';
+import type { PlanOptions } from '../types/options';
 
 export type PipelineStageName =
   | 'normalize'
@@ -54,7 +56,7 @@ export interface PipelineStageReport<TOutput> {
 export interface PipelineStages {
   normalize: PipelineStageReport<NormalizeResult>;
   compose: PipelineStageReport<ComposeResult>;
-  generate: PipelineStageReport<unknown>;
+  generate: PipelineStageReport<GeneratorStageOutput>;
   repair: PipelineStageReport<unknown>;
   validate: PipelineStageReport<unknown>;
 }
@@ -62,7 +64,7 @@ export interface PipelineStages {
 export interface PipelineArtifacts {
   canonical?: NormalizeResult;
   effective?: ComposeResult;
-  generated?: unknown[];
+  generated?: GeneratorStageOutput;
   repaired?: unknown[];
   validation?: { valid: boolean; errors?: unknown[] };
 }
@@ -73,7 +75,7 @@ export interface PipelineStageOverrides {
   generate?: (
     effective: ComposeResult,
     options?: PipelineOptions['generate']
-  ) => unknown[] | Promise<unknown[]>;
+  ) => GeneratorStageOutput | Promise<GeneratorStageOutput>;
   repair?: (
     items: unknown[],
     args: { schema: unknown; effective: ComposeResult },
@@ -98,6 +100,7 @@ export interface PipelineOptions {
   generate?: {
     count?: number;
     seed?: number;
+    planOptions?: Partial<PlanOptions>;
   };
   repair?: {
     attempts?: number;

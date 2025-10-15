@@ -1,1406 +1,1284 @@
-/* eslint-disable complexity */
 /* eslint-disable max-depth */
+/* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
 /* eslint-disable max-lines */
-/**
- * FoundryGenerator: Orchestrates Parse → Plan → Generate → Validate
- */
-
-import { ok, err, type Result } from '../types/result';
 import {
-  ParseError,
-  GenerationError,
-  ValidationError,
-  ConfigError,
-  type FoundryError,
-} from '../types/errors';
+  DIAGNOSTIC_CODES,
+  DIAGNOSTIC_PHASES,
+  type DiagnosticCode,
+} from '../diag/codes';
+import type {
+  ComposeResult,
+  NodeDiagnostics,
+} from '../transform/composition-engine';
+import type { ContainsNeed } from '../transform/composition-engine';
+import type { MetricsCollector } from '../util/metrics';
 import {
-  type ResolvedOptions,
   resolveOptions,
   type PlanOptions,
+  type ResolvedOptions,
 } from '../types/options';
 import type { Schema } from '../types/schema';
-import type { NormalizeResult } from '../transform/schema-normalizer';
-import {
-  ParserRegistry,
-  JSONSchemaParser,
-  createDefaultParserRegistry,
-} from '../parser';
-import {
-  FormatRegistry,
-  defaultFormatRegistry,
-  initializeBuiltInFormats,
-} from '../registry/format-registry';
-import {
-  UUIDGenerator,
-  EmailGenerator,
-  DateGenerator,
-  DateTimeGenerator,
-  RegexGenerator,
-} from './formats';
-import type { FormatOptions } from '../registry/format-registry';
-import {
-  createGeneratorContext,
-  type GeneratorContext,
-} from './data-generator';
-import { ObjectGenerator } from './types/object-generator';
-import { ArrayGenerator } from './types/array-generator';
-import { StringGenerator } from './types/string-generator';
-import { NumberGenerator } from './types/number-generator';
-import { IntegerGenerator } from './types/integer-generator';
-import { BooleanGenerator } from './types/boolean-generator';
-import {
-  ComplianceValidator,
-  type ComplianceReport,
-} from '../validator/compliance-validator';
+import { FormatRegistry } from '../registry/format-registry';
+import { registerBuiltInFormats } from './formats';
+import { structuralHash } from '../util/struct-hash';
+import { createSourceAjv, type JsonSchemaDialect } from '../util/ajv-source';
+import type Ajv from 'ajv';
+import type { ValidateFunction } from 'ajv';
 
-export enum PipelineStage {
-  Parse = 'parse',
-  Resolve = 'resolve',
-  Plan = 'plan',
-  Generate = 'generate',
-  Validate = 'validate',
+type JsonPointer = string;
+
+export interface GeneratorDiagnostic {
+  code: DiagnosticCode;
+  phase: typeof DIAGNOSTIC_PHASES.GENERATE;
+  canonPath: JsonPointer;
+  details?: unknown;
+  budget?: {
+    tried: number;
+    limit: number;
+    skipped?: boolean;
+    // Align with diagnosticsEnvelope.schema.json budget.reason enum
+    // Use generic cap reasons here; keep specific pattern reasons in details.reason
+    reason?:
+      | 'skipTrialsFlag'
+      | 'largeOneOf'
+      | 'largeAnyOf'
+      | 'complexityCap'
+      // Internal specific reasons may appear in details.reason
+      | 'candidateBudget'
+      | 'witnessDomainExhausted';
+  };
+  scoreDetails?: {
+    tiebreakRand: number;
+    exclusivityRand?: number;
+    [key: string]: number | undefined;
+  };
 }
 
-export interface PipelineDurations {
-  parseMs: number;
-  resolveMs: number;
-  planMs: number;
-  generateMs: number;
-  validateMs: number;
-  totalMs: number;
-}
-
-export interface PipelineMetrics {
-  durations: PipelineDurations;
-  itemsGenerated: number;
-  formatsUsed: string[];
-  validatorCacheHitRate?: number;
-  compiledSchemas?: number;
-  memory?: { rss: number; heapUsed: number };
-  itemsRepaired?: number;
-  repairAttemptsUsed?: number;
-  optionsSnapshot?: ResolvedOptions;
-}
-
-export interface GenerationPlan {
-  generator:
-    | ObjectGenerator
-    | ArrayGenerator
-    | StringGenerator
-    | NumberGenerator
-    | IntegerGenerator
-    | BooleanGenerator;
-  schema: Schema;
-  formatRegistry: FormatRegistry;
-  /** List of unsupported features detected (compat=lax) */
-  unsupportedFeatures?: string[];
-  compat?: 'strict' | 'lax';
-}
-
-export interface GenerationOptions {
-  seed?: number;
-  locale?: string;
-  count?: number;
-  /** Additional retry attempts per item when initial validation fails */
-  repairAttempts?: number;
-  /** Compatibility mode: 'strict' (default) fails on unsupported features, 'lax' proceeds */
-  compat?: 'strict' | 'lax';
-}
-
-export interface GenerationOutput {
+export interface GeneratorStageOutput {
   items: unknown[];
-  report: ComplianceReport;
-  metrics: PipelineMetrics;
+  diagnostics: GeneratorDiagnostic[];
+  metrics: {
+    patternWitnessTried?: number;
+  };
   seed: number;
 }
 
-/**
- * Simple seed normalizer/deriver for per-item determinism
- */
-class SeedManager {
-  normalize(seed?: number): number {
-    if (typeof seed !== 'number' || !Number.isFinite(seed)) return 123456789;
-    // Force 32-bit unsigned for stability
-    return seed >>> 0;
-  }
-
-  derive(baseSeed: number, index: number): number {
-    // Simple derivation: base plus index in 32-bit space
-    return (baseSeed + (index >>> 0)) >>> 0;
-  }
+export interface FoundryGeneratorOptions {
+  count?: number;
+  seed?: number;
+  planOptions?: Partial<PlanOptions>;
+  metrics?: MetricsCollector;
+  /** Original source schema (for E-Trace anyOf dynamic validation) */
+  sourceSchema?: unknown;
 }
 
-/**
- * Wrapper around FormatRegistry to track which formats were used
- */
-class FormatRegistryWithMetrics extends FormatRegistry {
-  private readonly inner: FormatRegistry;
-  private readonly used = new Set<string>();
-
-  constructor(inner?: FormatRegistry) {
-    super();
-    this.inner = inner ?? defaultFormatRegistry;
-  }
-
-  override generate(
-    format: string,
-    options?: FormatOptions
-  ): Result<string, GenerationError> {
-    this.used.add(format);
-    return this.inner.generate(format, options);
-  }
-
-  override validate(format: string, value: string): boolean {
-    this.used.add(format);
-    return this.inner.validate(format, value);
-  }
-
-  getUsedFormats(): string[] {
-    return Array.from(this.used.values()).sort();
-  }
+export function generateFromCompose(
+  effective: ComposeResult,
+  options: FoundryGeneratorOptions = {}
+): GeneratorStageOutput {
+  const engine = new GeneratorEngine(effective, options);
+  return engine.run();
 }
 
-/**
- * Simple stage timer utility
- */
-class MetricsCollector {
-  private marks = new Map<PipelineStage, number>();
-  private durations: PipelineDurations = {
-    parseMs: 0,
-    resolveMs: 0,
-    planMs: 0,
-    generateMs: 0,
-    validateMs: 0,
-    totalMs: 0,
-  };
-  private enabled: boolean;
+class GeneratorEngine {
+  private readonly resolved: ResolvedOptions;
 
-  constructor(enabled = true) {
-    this.enabled = enabled;
-  }
+  private readonly options: FoundryGeneratorOptions;
 
-  start(stage: PipelineStage): void {
-    if (!this.enabled) return;
-    this.marks.set(stage, Date.now());
-  }
+  private readonly metrics?: MetricsCollector;
 
-  end(stage: PipelineStage): void {
-    if (!this.enabled) return;
-    const start = this.marks.get(stage) ?? Date.now();
-    const delta = Date.now() - start;
-    switch (stage) {
-      case PipelineStage.Parse:
-        this.durations.parseMs = delta;
-        break;
-      case PipelineStage.Plan:
-        this.durations.planMs = delta;
-        break;
-      case PipelineStage.Resolve:
-        this.durations.resolveMs = delta;
-        break;
-      case PipelineStage.Generate:
-        this.durations.generateMs = delta;
-        break;
-      case PipelineStage.Validate:
-        this.durations.validateMs = delta;
-        break;
-    }
-  }
+  private readonly pointerIndex: WeakMap<object, JsonPointer>;
 
-  finalize(): PipelineDurations {
-    this.durations.totalMs =
-      this.durations.parseMs +
-      this.durations.resolveMs +
-      this.durations.planMs +
-      this.durations.generateMs +
-      this.durations.validateMs;
-    return this.durations;
-  }
-}
+  private readonly diagnostics: GeneratorDiagnostic[] = [];
 
-export class FoundryGenerator {
-  private readonly parserRegistry: ParserRegistry;
-  private readonly formatRegistry: FormatRegistryWithMetrics;
-  private readonly validator: ComplianceValidator;
-  private readonly seedManager = new SeedManager();
-  private readonly options: ResolvedOptions;
+  private patternWitnessTrials = 0;
 
-  constructor(opts?: {
-    parserRegistry?: ParserRegistry;
-    formatRegistry?: FormatRegistry;
-    validator?: ComplianceValidator;
-    options?: Partial<PlanOptions>;
-  }) {
-    // Resolve options with defaults first
-    this.options = resolveOptions(opts?.options);
+  private readonly normalizedAlphabet: string[];
 
-    this.parserRegistry = opts?.parserRegistry ?? createDefaultParserRegistry();
-    // Ensure JSONSchemaParser is registered when using a fresh registry
-    type MaybeGet = { getRegisteredParsers?: () => string[] };
-    const maybe = this.parserRegistry as unknown as MaybeGet;
-    if (!maybe.getRegisteredParsers) {
-      // Fallback: register explicitly (older registries)
-      this.parserRegistry.register(new JSONSchemaParser());
-    }
+  private readonly coverageIndex: ComposeResult['coverageIndex'];
 
-    // Ensure a usable format registry is provided/initialized
-    const innerRegistry = opts?.formatRegistry ?? defaultFormatRegistry;
-    // Trigger lazy initializer if configured elsewhere
-    try {
-      void innerRegistry.getRegisteredFormats();
-    } catch {
-      // ignore
-    }
-    // Fail-safe: if essential formats are missing, initialize built-ins locally
-    const essentials = new Set(['uuid', 'email', 'date', 'date-time']);
-    const registered = new Set(innerRegistry.getRegisteredFormats());
-    const missingEssential = Array.from(essentials).some(
-      (f) => !registered.has(f)
+  private readonly containsBag: ComposeResult['containsBag'];
+
+  private readonly diagNodes: Record<string, NodeDiagnostics> | undefined;
+
+  private readonly baseSeed: number;
+  private readonly formatRegistry: FormatRegistry;
+
+  private readonly ptrMap: ComposeResult['canonical']['ptrMap'];
+  private readonly sourceSchema?: unknown;
+  private sourceAjvCache?: Ajv;
+  private branchValidatorCache: Map<string, ValidateFunction> = new Map();
+
+  constructor(effective: ComposeResult, options: FoundryGeneratorOptions) {
+    this.options = options;
+    this.resolved = resolveOptions(options.planOptions ?? {});
+    this.metrics = options.metrics;
+    this.coverageIndex = effective.coverageIndex;
+    this.containsBag = effective.containsBag;
+    this.diagNodes = effective.diag?.nodes;
+    this.pointerIndex = buildPointerIndex(effective.canonical.schema);
+    this.normalizedAlphabet = normalizeAlphabet(
+      this.resolved.patternWitness.alphabet
     );
-    if (missingEssential) {
-      initializeBuiltInFormats(innerRegistry, [
-        new UUIDGenerator(),
-        new EmailGenerator(),
-        new DateGenerator(),
-        new DateTimeGenerator(),
-        new RegexGenerator(),
-      ]);
-    }
-
-    this.formatRegistry = new FormatRegistryWithMetrics(innerRegistry);
-    this.validator =
-      opts?.validator ??
-      new ComplianceValidator({
-        // Map ResolvedOptions to ComplianceValidator options
-        strictSchema: this.options.failFast.externalRefStrict === 'error',
-        validateFormats: true, // Always validate formats for compliance
-      });
+    this.baseSeed = normalizeSeed(options.seed);
+    this.rootSchema = effective.canonical.schema;
+    this.formatRegistry = new FormatRegistry();
+    registerBuiltInFormats(this.formatRegistry);
+    this.ptrMap = effective.canonical.ptrMap;
+    this.sourceSchema = options.sourceSchema;
   }
 
-  parseSchema(input: unknown): Result<NormalizeResult, ParseError> {
-    try {
-      return this.parserRegistry.parse(input);
-    } catch (e) {
-      const errMsg = e instanceof Error ? e.message : String(e);
-      return err(
-        new ParseError({
-          message: `Parse stage failed: ${errMsg}`,
-          context: { stage: PipelineStage.Parse },
-        })
-      );
-    }
-  }
+  private readonly rootSchema: Schema | unknown;
 
-  // Heuristic scan for unsupported features (aligns with parser's PLANNED_FEATURES)
-  private scanUnsupportedFeatures(input: unknown): string[] {
-    const unsupported: string[] = [];
-    // Only flag features that we do not fully plan/generate in strict mode.
-    // Composition keywords (allOf/anyOf/oneOf/not) and object keywords
-    // (patternProperties/propertyNames/dependentSchemas) are supported now.
-    const KEYS = new Set(['if', 'then', 'else']);
-    const visit = (node: unknown): void => {
-      if (!node || typeof node !== 'object') return;
-      for (const k of Object.keys(node as Record<string, unknown>)) {
-        if (KEYS.has(k)) unsupported.push(k);
-        visit((node as Record<string, unknown>)[k]);
-      }
+  run(): GeneratorStageOutput {
+    const count = Math.max(1, Math.floor(this.options.count ?? 1));
+    const items: unknown[] = [];
+    for (let index = 0; index < count; index += 1) {
+      items.push(this.generateValue(this.rootSchema, '', index));
+    }
+
+    const metrics: GeneratorStageOutput['metrics'] = {};
+    if (this.patternWitnessTrials > 0) {
+      metrics.patternWitnessTried = this.patternWitnessTrials;
+    }
+
+    return {
+      items,
+      diagnostics: this.diagnostics,
+      metrics,
+      seed: this.baseSeed,
     };
-    visit(input);
-    return Array.from(new Set(unsupported)).sort();
   }
 
-  private inferScenarioFromComment(
-    input: unknown
-  ): 'normal' | 'edge' | 'peak' | 'error' {
-    if (!input || typeof input !== 'object') return 'normal';
-    const comment = (input as Record<string, unknown>)['$comment'];
-    if (typeof comment !== 'string') return 'normal';
-    const c = comment.toLowerCase();
-    if (c.includes('edge')) return 'edge';
-    if (c.includes('peak')) return 'peak';
-    if (c.includes('error')) return 'error';
-    return 'normal';
-  }
-
-  /**
-   * Synchronous local $ref resolver for in-document references (e.g. '#/...').
-   * Does not fetch external URIs. Best-effort for common patterns using $defs/definitions.
-   */
-  private resolveLocalRefs(root: unknown): unknown {
-    const seen = new WeakSet<object>();
-
-    const decode = (token: string): string =>
-      token.replace(/~1/g, '/').replace(/~0/g, '~');
-
-    const getByPointer = (obj: unknown, pointer: string): unknown => {
-      if (!pointer || pointer === '#') return obj;
-      const path = pointer.startsWith('#') ? pointer.slice(1) : pointer;
-      const tokens = path.split('/').slice(1).map(decode).filter(Boolean);
-      let cur: unknown = obj;
-      for (const t of tokens) {
-        if (typeof cur !== 'object' || cur === null) return undefined;
-        cur = (cur as Record<string, unknown>)[t];
-      }
-      return cur;
-    };
-
-    // Normalize draft-07 definitions to $defs in a shallow clone of root
-    const normalizeRoot = (input: unknown): unknown => {
-      if (!input || typeof input !== 'object') return input;
-      const cloned = this.clone(input as Record<string, unknown>);
-      const defs = (cloned as Record<string, unknown>)['definitions'];
-      if (defs && typeof defs === 'object') {
-        const targetDefs =
-          (cloned as Record<string, unknown>)['$defs'] &&
-          typeof (cloned as Record<string, unknown>)['$defs'] === 'object'
-            ? ((cloned as Record<string, unknown>)['$defs'] as Record<
-                string,
-                unknown
-              >)
-            : (((cloned as Record<string, unknown>)['$defs'] = {}),
-              (cloned as Record<string, unknown>)['$defs'] as Record<
-                string,
-                unknown
-              >);
-        for (const [k, v] of Object.entries(defs as Record<string, unknown>)) {
-          if (!(k in targetDefs)) targetDefs[k] = v;
-        }
-        // keep original definitions for AJV; do not delete
-      }
-      return cloned;
-    };
-
-    const rootNorm = normalizeRoot(root) as Record<string, unknown>;
-
-    const walk = (node: unknown, refStack: Set<string>): unknown => {
-      if (node === null || typeof node !== 'object') return node;
-      if (seen.has(node as object)) return node;
-      seen.add(node as object);
-
-      // Handle direct $ref (in-document)
-      if (
-        typeof (node as Record<string, unknown>)['$ref'] === 'string' &&
-        ((node as Record<string, unknown>)['$ref'] as string).startsWith('#')
-      ) {
-        // Rewrite draft-07 definitions path to $defs
-        const refPtr = (
-          (node as Record<string, unknown>)['$ref'] as string
-        ).replace(/^#\/definitions\//, '#/$defs/');
-        if (refStack.has(refPtr)) {
-          // cycle detected – keep $ref as stub to avoid infinite expansion
-          return { $ref: refPtr };
-        }
-        const target = getByPointer(rootNorm, refPtr);
-        if (target !== undefined) {
-          const nextStack = new Set(refStack);
-          nextStack.add(refPtr);
-          return walk(this.clone(target), nextStack);
-        }
-        return { $ref: refPtr }; // unresolved; keep normalized ref as-is
-      }
-
-      if (Array.isArray(node)) {
-        return (node as unknown[]).map((v) => walk(v, refStack));
-      }
-
-      const out: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
-        out[k] = walk(v, refStack);
-      }
-      return out;
-    };
-
-    return walk(rootNorm, new Set<string>());
-  }
-
-  // Simple deep clone for plain JSON-compatible structures
-  private clone<T>(value: T): T {
-    return value && typeof value === 'object'
-      ? JSON.parse(JSON.stringify(value))
-      : value;
-  }
-
-  planGeneration(schema: Schema): Result<GenerationPlan, ConfigError> {
-    try {
-      if (schema === false) {
-        return err(
-          new ConfigError({
-            message: 'Schema is false (unsatisfiable) - cannot generate',
-            context: { stage: PipelineStage.Plan },
-          })
-        );
-      }
-
-      // Choose generator based on root schema type (default: object)
-      let generator:
-        | ObjectGenerator
-        | ArrayGenerator
-        | StringGenerator
-        | NumberGenerator
-        | IntegerGenerator
-        | BooleanGenerator;
-
-      // Schema that will be handed to the selected generator
-      let effectiveSchema: Schema = schema;
-
-      if (typeof schema === 'boolean') {
-        // true schema → any value allowed, use object for deterministic output
-        generator = new ObjectGenerator();
-      } else {
-        // Handle composition in planning
-        effectiveSchema = this.resolveComposition(schema);
-        // Apply conditional heuristics to bias generation
-        effectiveSchema = this.applyConditionalHeuristics(effectiveSchema);
-
-        // Special-case: official Draft meta-schemas → generate minimal object schema
-        if (this.isOfficialMetaSchema(schema)) {
-          effectiveSchema = { type: 'object' } as Schema;
-        }
-
-        const typeField = (effectiveSchema as { type?: string | string[] })
-          .type;
-        const pickUnion = (arr: string[]): string => {
-          // Heuristic: for official meta-schemas, prefer 'object' first, then 'boolean'
-          const s = effectiveSchema as Record<string, unknown>;
-          const meta = String(s.$schema || s.$id || '').toLowerCase();
-          const isMeta = meta.includes('json-schema.org');
-          if (isMeta) {
-            if (arr.includes('object')) return 'object';
-            if (arr.includes('boolean')) return 'boolean';
-          }
-          const pref = [
-            'object',
-            'array',
-            'string',
-            'number',
-            'integer',
-            'boolean',
-            'null',
-          ];
-          for (const p of pref) if (arr.includes(p)) return p;
-          return arr[0] ?? 'object';
-        };
-        const base = Array.isArray(typeField)
-          ? pickUnion(typeField)
-          : (typeField ?? 'object');
-        const t = base as string;
-
-        // If union type (array), narrow to the first type for generation while
-        // preserving other constraints. Validation still happens against the
-        // original, potentially-union schema later.
-        if (Array.isArray(schema.type)) {
-          effectiveSchema = {
-            ...(schema as Record<string, unknown>),
-            type: t,
-          } as Schema;
-        }
-
-        // Ensure effectiveSchema carries a concrete type for downstream generators
-        if (typeof (effectiveSchema as { type?: string }).type !== 'string') {
-          effectiveSchema = {
-            ...(effectiveSchema as Record<string, unknown>),
-            type: t,
-          } as Schema;
-        }
-
-        switch (t) {
-          case 'object':
-            generator = new ObjectGenerator();
-            break;
-          case 'array':
-            generator = new ArrayGenerator();
-            break;
-          case 'string':
-            generator = new StringGenerator();
-            break;
-          case 'number':
-            generator = new NumberGenerator();
-            break;
-          case 'integer':
-            generator = new IntegerGenerator();
-            break;
-          case 'boolean':
-            generator = new BooleanGenerator();
-            break;
-          default:
-            generator = new ObjectGenerator();
-            break;
-        }
-      }
-
-      return ok({
-        generator,
-        schema: effectiveSchema,
-        formatRegistry: this.formatRegistry,
-      });
-    } catch (e) {
-      const errMsg = e instanceof Error ? e.message : String(e);
-      return err(
-        new ConfigError({
-          message: `Plan stage failed: ${errMsg}`,
-          context: { stage: PipelineStage.Plan },
-        })
-      );
-    }
-  }
-
-  /**
-   * Resolve composition keywords into an effective schema for generation.
-   * Validation still runs against the original schema.
-   */
-  private resolveComposition(schema: Schema): Schema {
-    if (typeof schema !== 'object' || schema === null) return schema;
-    const s = schema as Record<string, unknown>;
-
-    if (Array.isArray(s.allOf) && s.allOf.length > 0) {
-      return this.mergeAllOf(s.allOf as Schema[]);
-    }
-    if (Array.isArray(s.anyOf) && s.anyOf.length > 0) {
-      return this.selectBestBranch(s.anyOf as Schema[]);
-    }
-    if (Array.isArray(s.oneOf) && s.oneOf.length > 0) {
-      return this.selectBestBranch(s.oneOf as Schema[]);
-    }
-    if (s.not) {
-      return this.invertNot(s.not as Schema);
-    }
-    return schema;
-  }
-
-  /**
-   * Detect when the schema itself IS an official JSON Schema meta-schema.
-   * Important: many normal user schemas include "$schema" pointing to the
-   * official meta-schema URL. That alone must NOT trigger this condition.
-   * We only consider it an official meta-schema when $id matches one.
-   */
-  private isOfficialMetaSchema(schema: Schema): boolean {
-    if (typeof schema !== 'object' || schema === null) return false;
-    const s = schema as Record<string, unknown>;
-    const id = String(s.$id || '').toLowerCase();
-    const hints = [
-      'json-schema.org/draft-07/schema',
-      'json-schema.org/draft/2019-09/schema',
-      'json-schema.org/draft/2020-12/schema',
-    ];
-    // Only check $id. $schema merely declares the draft and is common in user schemas.
-    return hints.some((h) => id.includes(h));
-  }
-
-  /** Merge a list of schemas from allOf into a simplified single schema */
-  private mergeAllOf(schemas: Schema[]): Schema {
-    const out: Record<string, unknown> = {};
-    const types: string[] = [];
-
-    for (const sch of schemas) {
-      if (typeof sch !== 'object' || sch === null) continue;
-      const so = sch as Record<string, unknown>;
-      const t = so.type;
-      if (typeof t === 'string') types.push(t);
-
-      // Strings
-      if (t === 'string') {
-        out.type = 'string';
-        if (typeof so.minLength === 'number') {
-          out.minLength = Math.max(
-            (out.minLength as number) ?? 0,
-            so.minLength
-          );
-        }
-        if (typeof so.maxLength === 'number') {
-          const curr = (out.maxLength as number) ?? Number.POSITIVE_INFINITY;
-          out.maxLength = Math.min(curr, so.maxLength);
-        }
-        if (typeof so.pattern === 'string' && out.pattern === undefined) {
-          out.pattern = so.pattern;
-        }
-        if (typeof so.format === 'string' && out.format === undefined) {
-          out.format = so.format;
-        }
-      }
-
-      // Numbers/integers
-      if (t === 'number' || t === 'integer') {
-        out.type = t;
-        if (typeof so.minimum === 'number') {
-          out.minimum = Math.max(
-            (out.minimum as number) ?? -Infinity,
-            so.minimum
-          );
-        }
-        if (typeof so.maximum === 'number') {
-          const curr = (out.maximum as number) ?? Infinity;
-          out.maximum = Math.min(curr, so.maximum);
-        }
-        if (typeof so.exclusiveMinimum === 'number') {
-          out.exclusiveMinimum = Math.max(
-            (out.exclusiveMinimum as number) ?? -Infinity,
-            so.exclusiveMinimum
-          );
-        }
-        if (typeof so.exclusiveMaximum === 'number') {
-          out.exclusiveMaximum = Math.min(
-            (out.exclusiveMaximum as number) ?? Infinity,
-            so.exclusiveMaximum
-          );
-        }
-        if (typeof so.multipleOf === 'number' && out.multipleOf === undefined) {
-          out.multipleOf = so.multipleOf;
-        }
-      }
-
-      // Objects
-      if (t === 'object') {
-        out.type = 'object';
-        const props = (out.properties as Record<string, Schema>) ?? {};
-        const req = new Set<string>(
-          Array.isArray(out.required) ? (out.required as string[]) : []
-        );
-        if (so.properties && typeof so.properties === 'object') {
-          for (const [k, v] of Object.entries(
-            so.properties as Record<string, Schema>
-          )) {
-            if (!(k in props)) props[k] = v;
-          }
-        }
-        if (Array.isArray(so.required)) {
-          (so.required as string[]).forEach((r) => req.add(r));
-        }
-        if (req.size > 0) out.required = Array.from(req);
-        if (
-          so.additionalProperties !== undefined &&
-          out.additionalProperties === undefined
-        ) {
-          out.additionalProperties = so.additionalProperties;
-        }
-        out.properties = props;
-      }
-
-      // Arrays
-      if (t === 'array') {
-        out.type = 'array';
-        if (typeof so.minItems === 'number') {
-          out.minItems = Math.max((out.minItems as number) ?? 0, so.minItems);
-        }
-        if (typeof so.maxItems === 'number') {
-          const curr = (out.maxItems as number) ?? Infinity;
-          out.maxItems = Math.min(curr, so.maxItems);
-        }
-        if (so.items !== undefined && out.items === undefined)
-          out.items = so.items;
-        if (so.prefixItems !== undefined && out.prefixItems === undefined)
-          out.prefixItems = so.prefixItems;
-      }
-    }
-
-    // If multiple distinct types encountered, fall back to first
-    if (types.length > 1) out.type = types[0];
-    return out as Schema;
-  }
-
-  /** Deterministically select a branch for anyOf/oneOf */
-  private selectBestBranch(branches: Schema[]): Schema {
-    // Prefer typed branches; then prefer object, array, string, number, integer, boolean, null order
-    const order = new Map<string, number>([
-      ['object', 1],
-      ['array', 2],
-      ['string', 3],
-      ['number', 4],
-      ['integer', 5],
-      ['boolean', 6],
-      ['null', 7],
-    ]);
-    const scored = branches.map((b, i) => {
-      if (typeof b !== 'object' || b === null) return { i, score: 99, b };
-      const t = (b as Record<string, unknown>).type;
-      const s = typeof t === 'string' ? (order.get(t) ?? 50) : 80;
-      return { i, score: s, b };
-    });
-    scored.sort((a, b) => a.score - b.score || a.i - b.i);
-    const selected = (scored[0]?.b ??
-      branches[0] ??
-      ({ type: 'object' } as Schema)) as Schema;
-    return selected;
-  }
-
-  /** Produce a simple schema that does not match the given "not" schema */
-  private invertNot(notSchema: Schema): Schema {
-    if (typeof notSchema !== 'object' || notSchema === null) {
-      return { type: 'object' } as Schema; // default different type
-    }
-    const t = (notSchema as Record<string, unknown>).type;
-    if (typeof t === 'string') {
-      const alt = [
-        'object',
-        'array',
-        'string',
-        'number',
-        'integer',
-        'boolean',
-        'null',
-      ].find((x) => x !== t);
-      return alt ? ({ type: alt } as Schema) : ({ type: 'object' } as Schema);
-    }
-    if ('const' in (notSchema as Record<string, unknown>)) {
-      const c = (notSchema as Record<string, unknown>).const;
-      // choose a value of a different type to avoid equality
-      if (typeof c === 'string')
-        return { type: 'number', minimum: 0, maximum: 10 } as Schema;
-      if (typeof c === 'number')
-        return { type: 'string', minLength: 1, maxLength: 5 } as Schema;
-      if (typeof c === 'boolean')
-        return { type: 'string', minLength: 1 } as Schema;
-      return { type: 'string', minLength: 1 } as Schema;
-    }
-    if ('enum' in (notSchema as Record<string, unknown>)) {
-      // pick a type outside common enum types
-      return { type: 'object', properties: {} } as Schema;
-    }
-    return { type: 'object' } as Schema;
-  }
-
-  /**
-   * Heuristically apply top-level and one-level nested if/then/else by merging
-   * the likely branch (prefer satisfying "if" → "then"). Returns a cloned schema.
-   */
-  private applyConditionalHeuristics(schema: Schema): Schema {
-    if (typeof schema !== 'object' || schema === null) return schema;
-    const s = this.clone(schema as Record<string, unknown>);
-
-    const mergeObjectSchema = (
-      base: Record<string, unknown>,
-      add: Record<string, unknown>
-    ): void => {
-      if (Array.isArray(add.required)) {
-        const req = new Set<string>(
-          Array.isArray(base.required) ? (base.required as string[]) : []
-        );
-        for (const r of add.required as string[]) req.add(r);
-        if (req.size > 0) base.required = Array.from(req);
-      }
-      if (add.properties && typeof add.properties === 'object') {
-        const baseProps = (base.properties as Record<string, unknown>) || {};
-        for (const [k, v] of Object.entries(
-          add.properties as Record<string, unknown>
-        )) {
-          if (!(k in baseProps)) baseProps[k] = this.clone(v);
-        }
-        base.properties = baseProps;
-      }
-      if (
-        add.additionalProperties !== undefined &&
-        base.additionalProperties === undefined
-      ) {
-        base.additionalProperties = add.additionalProperties;
-      }
-    };
-
-    const tryApplyOnObject = (obj: Record<string, unknown>): void => {
-      const ifSch = obj['if'];
-      const thenSch = obj['then'];
-      const elseSch = obj['else'];
-      if (!ifSch || typeof ifSch !== 'object') return;
-
-      const ifProps = (ifSch as Record<string, unknown>).properties as
-        | Record<string, unknown>
-        | undefined;
-      const req = (ifSch as Record<string, unknown>).required as
-        | string[]
-        | undefined;
-      let predKey: string | undefined;
-      let predSchema: Record<string, unknown> | undefined;
-      if (ifProps && typeof ifProps === 'object') {
-        const keys = Object.keys(ifProps);
-        if (keys.length === 1) {
-          const k = keys[0]!;
-          const v = ifProps[k];
-          if (
-            v &&
-            typeof v === 'object' &&
-            ('const' in (v as object) || 'enum' in (v as object))
-          ) {
-            predKey = k;
-            predSchema = v as Record<string, unknown>;
-          }
-        }
-      }
-      if (!predKey && Array.isArray(req) && req.length === 1) {
-        predKey = req[0]!;
-        predSchema = undefined;
-      }
-      if (!predKey) return;
-
-      if (obj.type === undefined) obj.type = 'object';
-      if (obj.properties === undefined) obj.properties = {};
-      if (!Array.isArray(obj.required)) obj.required = [];
-
-      const props = obj.properties as Record<string, unknown>;
-      const baseKeySchema = ((props[predKey] as Record<string, unknown>) ??
-        {}) as Record<string, unknown>;
-      const mergedKeySchema: Record<string, unknown> =
-        this.clone(baseKeySchema);
-      if (predSchema) {
-        if ('const' in predSchema) {
-          // Prefer const; drop enum to avoid generator choosing enum path first
-          delete (mergedKeySchema as Record<string, unknown>).enum;
-          mergedKeySchema.const = predSchema.const;
-        } else if (Array.isArray(predSchema.enum)) {
-          const predEnum = predSchema.enum as unknown[];
-          if (Array.isArray(mergedKeySchema.enum)) {
-            const baseEnum = mergedKeySchema.enum as unknown[];
-            const inter = baseEnum.filter((x) =>
-              predEnum.some((y) => JSON.stringify(y) === JSON.stringify(x))
-            );
-            mergedKeySchema.enum =
-              inter.length > 0 ? inter : this.clone(predEnum);
-          } else {
-            mergedKeySchema.enum = this.clone(predEnum);
-          }
-        }
-      }
-      props[predKey] = mergedKeySchema;
-      if (!(obj.required as string[]).includes(predKey))
-        (obj.required as string[]).push(predKey);
-
-      if (thenSch && typeof thenSch === 'object') {
-        mergeObjectSchema(obj, thenSch as Record<string, unknown>);
-      } else if (elseSch && typeof elseSch === 'object') {
-        mergeObjectSchema(obj, elseSch as Record<string, unknown>);
-      }
-    };
-
-    const topType = s.type as string | string[] | undefined;
-    const topIsObject =
-      (typeof topType === 'string' && topType === 'object') ||
-      (Array.isArray(topType) && topType.includes('object')) ||
-      topType === undefined;
-    if (topIsObject) tryApplyOnObject(s);
-
-    if (s.properties && typeof s.properties === 'object') {
-      const props = s.properties as Record<string, unknown>;
-      for (const [k, v] of Object.entries(props)) {
-        if (v && typeof v === 'object') {
-          const vObj = this.clone(v as Record<string, unknown>);
-          const vType = vObj.type as string | string[] | undefined;
-          const vIsObject =
-            (typeof vType === 'string' && vType === 'object') ||
-            (Array.isArray(vType) && vType.includes('object')) ||
-            vType === undefined;
-          if (vIsObject) {
-            tryApplyOnObject(vObj);
-            props[k] = vObj;
-          }
-        }
-      }
-    }
-
-    return s as Schema;
-  }
-
-  generateData(
-    plan: GenerationPlan,
-    options: Required<Pick<GenerationOptions, 'seed' | 'locale' | 'count'>> &
-      Pick<GenerationOptions, 'repairAttempts'>,
-    originalSchema: object
-  ): Result<
-    {
-      items: unknown[];
-      contextTemplate: Omit<GeneratorContext, 'seed'>;
-      repairs: { itemsRepaired: number; attemptsUsed: number };
-    },
-    GenerationError
-  > {
-    const { generator, schema, formatRegistry } = plan;
-    const baseSeed = this.seedManager.normalize(options.seed);
-    const locale = options.locale;
-    const count = Math.max(0, options.count);
-
-    try {
-      const items: unknown[] = [];
-      let itemsRepaired = 0;
-      let attemptsUsed = 0;
-      // Use a template context we will clone per item to keep caches isolated
-      const scenario = this.inferScenarioFromComment(originalSchema);
-      const templateContext = createGeneratorContext(schema, formatRegistry, {
-        seed: baseSeed,
-        locale,
-        path: '$',
-        scenario,
-        resolvedOptions: this.options,
-      });
-
-      for (let i = 0; i < count; i++) {
-        const baseIndexSeed = this.seedManager.derive(baseSeed, i);
-        const maxAttempts = Math.max(0, options.repairAttempts ?? 1);
-        let accepted: unknown | undefined;
-        let attempt = 0;
-        let lastError: unknown = undefined;
-
-        while (attempt <= maxAttempts) {
-          const attemptSeed =
-            (baseIndexSeed ^ Math.imul(attempt, 0x9e3779b9)) >>> 0;
-          const context: GeneratorContext = {
-            ...templateContext,
-            cache: new Map(),
-            seed: attemptSeed,
-            currentDepth: 0,
-            path: '$',
-          };
-
-          const genRes = generator.generate(schema, context);
-          if (genRes.isErr()) {
-            lastError = genRes.error;
-            attempt++;
-            continue;
-          }
-
-          const v = this.validator.validateSingle(genRes.value, originalSchema);
-          if (v.isOk() && v.value.valid) {
-            accepted = genRes.value;
-            if (attempt > 0) {
-              itemsRepaired++;
-              attemptsUsed += attempt;
-            }
-            break;
-          }
-          // Try conditional fixups (if/then/else) once per attempt when applicable
-          const adjusted = this.tryConditionalAdjust(
-            genRes.isOk() ? genRes.value : undefined,
-            originalSchema,
-            context,
-            i,
-            attempt
-          );
-          if (adjusted !== undefined) {
-            const v2 = this.validator.validateSingle(adjusted, originalSchema);
-            if (v2.isOk() && v2.value.valid) {
-              accepted = adjusted;
-              itemsRepaired++;
-              attemptsUsed += attempt + 1;
-              break;
-            }
-          }
-          lastError = v.isErr() ? v.error : v.value;
-          attempt++;
-        }
-
-        if (accepted === undefined) {
-          return err(
-            new GenerationError({
-              message:
-                `Generate stage failed at index ${i} after ${maxAttempts + 1} attempts` +
-                (lastError &&
-                typeof (lastError as { message?: unknown }).message === 'string'
-                  ? `: ${(lastError as { message: string }).message}`
-                  : ''),
-              context: {
-                stage: PipelineStage.Generate,
-                index: i,
-                lastError,
-              },
-            })
-          );
-        }
-        items.push(accepted);
-      }
-
-      // Return items and the reusable context template (without seed)
-      const { seed: _omit, ...rest } = templateContext;
-      return ok({
-        items,
-        contextTemplate: rest,
-        repairs: { itemsRepaired, attemptsUsed },
-      });
-    } catch (e) {
-      const errMsg = e instanceof Error ? e.message : String(e);
-      return err(
-        new GenerationError({
-          message: `Generate stage failed: ${errMsg}`,
-          context: { stage: PipelineStage.Generate },
-        })
-      );
-    }
-  }
-
-  /**
-   * Attempt to repair a generated root value to satisfy simple top-level if/then/else.
-   * Heuristic: if root is an object and schema has top-level { if, then, else },
-   * - If value matches "if", ensure required from "then" are present (generate if needed)
-   * - Otherwise, if "else" exists, ensure required from "else" are present
-   */
-  private tryConditionalAdjust(
-    value: unknown,
-    schemaInput: object,
-    baseContext: GeneratorContext,
-    index: number,
-    attempt: number
-  ): unknown | undefined {
-    if (!value || typeof value !== 'object' || Array.isArray(value))
-      return undefined;
-    const root = schemaInput as Record<string, unknown>;
-    const ifSch = root['if'];
-    const thenSch = root['then'];
-    const elseSch = root['else'];
-    if (!ifSch || typeof ifSch !== 'object') return undefined;
-
-    // Determine which branch applies
-    const ifMatch = this.validator.validateSingle(value, ifSch as object);
-    let isIf = ifMatch.isOk() && ifMatch.value.valid;
-    // Prefer THEN by constructing predicate when simple (const/enum on one key)
-    const ifProps = (ifSch as Record<string, unknown>).properties as
-      | Record<string, unknown>
-      | undefined;
-    const reqIf = (ifSch as Record<string, unknown>).required as
-      | string[]
-      | undefined;
-    let predKey: string | undefined;
-    let candidate: unknown | undefined;
-    if (ifProps && typeof ifProps === 'object') {
-      const keys = Object.keys(ifProps);
-      if (keys.length === 1) {
-        const k = keys[0]!;
-        const v = ifProps[k] as Record<string, unknown>;
-        if (v && typeof v === 'object') {
-          const vObj = v as { const?: unknown; enum?: unknown[] };
-          if ('const' in vObj) candidate = vObj.const;
-          else if (Array.isArray(vObj.enum) && vObj.enum.length > 0)
-            candidate = vObj.enum[0];
-          predKey = k;
-        }
-      }
-    }
-    if (!predKey && Array.isArray(reqIf) && reqIf.length === 1) {
-      predKey = reqIf[0]!;
-      candidate = candidate ?? `val-${(baseContext.seed ?? 0) ^ index}`;
-    }
-    let branch: Record<string, unknown> | undefined = isIf
-      ? (thenSch as Record<string, unknown> | undefined)
-      : (elseSch as Record<string, unknown> | undefined);
-    // If we can satisfy IF by construction, switch to THEN path
-    if (predKey) {
-      const forced = JSON.parse(JSON.stringify(value)) as Record<
-        string,
-        unknown
-      >;
-      forced[predKey] = candidate;
-      value = forced;
-      isIf = true;
-      branch = thenSch as Record<string, unknown> | undefined;
-    }
-    if (!branch || typeof branch !== 'object') return undefined;
-
-    // Collect required keys from branch
-    const reqBranch = Array.isArray(branch.required)
-      ? (branch.required as string[])
-      : [];
-    if (reqBranch.length === 0) return undefined;
-
-    const props =
-      (branch.properties as Record<string, unknown> | undefined) ||
-      (root.properties as Record<string, unknown> | undefined) ||
-      undefined;
-
-    const out = JSON.parse(JSON.stringify(value)) as Record<string, unknown>;
-    let changed = false;
-    for (const k of reqBranch) {
-      if (!(k in out)) {
-        const propSchema = props && (props[k] as Schema | undefined);
-        const propVal = this.generateForSchemaOrDefault(
-          propSchema,
-          baseContext,
-          `${baseContext.path}.${k}`,
-          index,
-          attempt
-        );
-        out[k] = propVal;
-        changed = true;
-      }
-    }
-    // Debug logging removed after verification
-    return changed ? out : undefined;
-  }
-
-  /** Generate a value for a property schema; fall back to sensible defaults */
-  private generateForSchemaOrDefault(
-    schema: Schema | undefined,
-    baseContext: GeneratorContext,
-    path: string,
-    index: number,
-    attempt: number
+  private generateValue(
+    schema: unknown,
+    canonPath: JsonPointer,
+    itemIndex: number
   ): unknown {
-    const seed =
-      (baseContext.seed ?? 0) ^
-      Math.imul(index + 1, 0x9e3779b9) ^
-      Math.imul(attempt + 17, 0x85ebca6b);
-    if (!schema || typeof schema === 'boolean') {
-      // Default simple string
-      return `val-${(seed >>> 0).toString(36)}`;
+    if (schema === false) {
+      return null;
+    }
+    if (schema === true || schema === undefined) {
+      return {};
+    }
+    if (!schema || typeof schema !== 'object') {
+      return {};
+    }
+    const obj = schema as Record<string, unknown>;
+
+    if (Object.prototype.hasOwnProperty.call(obj, 'const')) {
+      return obj.const;
+    }
+    if (Array.isArray(obj.enum) && obj.enum.length > 0) {
+      return obj.enum[0];
     }
 
-    // Handle const/enum without invoking generators
-    const sObj = schema as Record<string, unknown>;
-    if ('const' in sObj) return sObj.const as unknown;
-    if (Array.isArray(sObj.enum) && (sObj.enum as unknown[]).length > 0) {
-      return (sObj.enum as unknown[])[0];
-    }
-
-    const type = sObj.type as string | string[] | undefined;
-    const pickType = Array.isArray(type) ? type[0] : type;
-
-    const nested = createGeneratorContext(schema, baseContext.formatRegistry, {
-      seed,
-      locale: baseContext.locale,
-      path,
-      scenario: baseContext.scenario,
-      maxDepth: baseContext.maxDepth,
-      resolvedOptions: baseContext.options,
-    });
-
-    try {
-      switch (pickType) {
-        case 'string': {
-          const r = new StringGenerator().generate(schema, nested);
-          return r.isOk() ? r.value : 'x';
+    const type = determineType(obj);
+    switch (type) {
+      case 'object':
+        return this.generateObject(obj, canonPath, itemIndex);
+      case 'array':
+        return this.generateArray(obj, canonPath, itemIndex);
+      case 'string':
+        return this.generateString(obj);
+      case 'integer':
+        return this.generateInteger(obj);
+      case 'number':
+        return this.generateNumber(obj);
+      case 'boolean':
+        return this.generateBoolean(obj);
+      case 'null':
+        return null;
+      default:
+        if (Array.isArray(obj.allOf)) {
+          return this.generateAllOf(obj, canonPath, itemIndex);
         }
-        case 'number': {
-          const r = new NumberGenerator().generate(schema, nested);
-          return r.isOk() ? r.value : 0;
+        if (Array.isArray(obj.oneOf)) {
+          return this.generateOneOf(obj, canonPath, itemIndex);
         }
-        case 'integer': {
-          const r = new IntegerGenerator().generate(schema, nested);
-          return r.isOk() ? r.value : 0;
+        if (Array.isArray(obj.anyOf)) {
+          return this.generateAnyOf(obj, canonPath, itemIndex);
         }
-        case 'boolean': {
-          const r = new BooleanGenerator().generate(schema, nested);
-          return r.isOk() ? r.value : true;
-        }
-        case 'array': {
-          const r = new ArrayGenerator().generate(schema, nested);
-          return r.isOk() ? r.value : [];
-        }
-        case 'object': {
-          const r = new ObjectGenerator().generate(schema, nested);
-          return r.isOk() ? r.value : {};
-        }
-        default:
-          // Best-effort fallbacks
-          if ('properties' in sObj || 'required' in sObj) {
-            const r = new ObjectGenerator().generate(
-              { ...(sObj as object), type: 'object' } as Schema,
-              nested
-            );
-            return r.isOk() ? r.value : {};
-          }
-          if ('items' in sObj || 'prefixItems' in sObj) {
-            const r = new ArrayGenerator().generate(
-              { ...(sObj as object), type: 'array' } as Schema,
-              nested
-            );
-            return r.isOk() ? r.value : [];
-          }
-          return `val-${(seed >>> 0).toString(36)}`;
-      }
-    } catch {
-      return `val-${(seed >>> 0).toString(36)}`;
+        return {};
     }
   }
 
-  validateOutput(
-    items: unknown[],
-    originalSchema: object
-  ): Result<ComplianceReport, ValidationError> {
-    try {
-      const schemaForValidation = this.sanitizeExternalRefs(originalSchema);
-      const reportResult = this.validator.validate(items, schemaForValidation);
-      if (reportResult.isErr()) return err(reportResult.error);
+  private generateObject(
+    schema: Record<string, unknown>,
+    canonPath: JsonPointer,
+    itemIndex: number
+  ): Record<string, unknown> {
+    const required = new Set(
+      Array.isArray(schema.required)
+        ? (schema.required as string[]).filter((v) => typeof v === 'string')
+        : []
+    );
+    const properties = isRecord(schema.properties)
+      ? (schema.properties as Record<string, unknown>)
+      : {};
+    const patternProperties = isRecord(schema.patternProperties)
+      ? (schema.patternProperties as Record<string, unknown>)
+      : {};
+    const additionalProperties = schema.additionalProperties;
 
-      const report = reportResult.value;
-      if (!report.compliant || report.score !== 100) {
-        return err(
-          new ValidationError({
-            message: 'Validate stage failed: compliance score < 100%',
-            failures: report.details.flatMap((d) => d.errors),
-            context: { stage: PipelineStage.Validate, report },
-          })
-        );
-      }
-      return ok(report);
-    } catch (e) {
-      const errMsg = e instanceof Error ? e.message : String(e);
-      return err(
-        new ValidationError({
-          message: `Validate stage failed: ${errMsg}`,
-          failures: [],
-          context: { stage: PipelineStage.Validate },
-        })
+    const coverage = this.coverageIndex.get(canonPath);
+    const result: Record<string, unknown> = {};
+    const usedNames = new Set<string>();
+
+    const requiredNames = Array.from(required.values()).sort();
+    for (const name of requiredNames) {
+      const resolved = this.resolveSchemaForKey(
+        name,
+        canonPath,
+        properties,
+        patternProperties,
+        additionalProperties
       );
+      const value = this.generateValue(
+        resolved.schema,
+        resolved.pointer,
+        itemIndex
+      );
+      result[name] = value;
+      usedNames.add(name);
+    }
+
+    this.applyDependentRequired(
+      schema,
+      result,
+      canonPath,
+      itemIndex,
+      usedNames
+    );
+
+    const minProperties =
+      typeof schema.minProperties === 'number'
+        ? Math.max(0, Math.floor(schema.minProperties))
+        : 0;
+
+    const eTraceGuard = schema.unevaluatedProperties === false;
+
+    // Add optional properties from explicit definitions first
+    if (usedNames.size < minProperties) {
+      const candidates = Object.keys(properties)
+        .filter((name) => !usedNames.has(name))
+        .sort();
+      for (const name of candidates) {
+        if (usedNames.size >= minProperties) break;
+        if (coverage && !coverage.has(name)) continue;
+        if (eTraceGuard && !this.isEvaluatedAt(schema, canonPath, result, name))
+          continue;
+        const resolved = this.resolveSchemaForKey(
+          name,
+          canonPath,
+          properties,
+          patternProperties,
+          additionalProperties
+        );
+        const value = this.generateValue(
+          resolved.schema,
+          resolved.pointer,
+          itemIndex
+        );
+        result[name] = value;
+        usedNames.add(name);
+      }
+    }
+
+    if (usedNames.size < minProperties) {
+      const patternIterator = this.createPatternIterators(
+        patternProperties,
+        canonPath
+      );
+      while (usedNames.size < minProperties && patternIterator.length > 0) {
+        let satisfied = false;
+        for (const iterator of patternIterator) {
+          const candidate = iterator.next((value) => {
+            if (usedNames.has(value)) return false;
+            if (coverage && !coverage.has(value)) return false;
+            if (
+              eTraceGuard &&
+              !this.isEvaluatedAt(schema, canonPath, result, value)
+            )
+              return false;
+            return true;
+          });
+          if (!candidate) continue;
+          const resolved = this.resolveSchemaForKey(
+            candidate,
+            canonPath,
+            properties,
+            patternProperties,
+            additionalProperties
+          );
+          const value = this.generateValue(
+            resolved.schema,
+            resolved.pointer,
+            itemIndex
+          );
+          result[candidate] = value;
+          usedNames.add(candidate);
+          satisfied = true;
+          break;
+        }
+        if (!satisfied) break;
+      }
+    }
+
+    return result;
+  }
+
+  private isEvaluatedAt(
+    objectSchema: Record<string, unknown>,
+    canonPath: JsonPointer,
+    currentObject: Record<string, unknown>,
+    name: string
+  ): boolean {
+    const properties = isRecord(objectSchema.properties)
+      ? (objectSchema.properties as Record<string, unknown>)
+      : {};
+    if (Object.prototype.hasOwnProperty.call(properties, name)) return true;
+
+    const patternProperties = isRecord(objectSchema.patternProperties)
+      ? (objectSchema.patternProperties as Record<string, unknown>)
+      : {};
+    for (const pattern of Object.keys(patternProperties)) {
+      if (typeof pattern !== 'string') continue;
+      try {
+        const regex = new RegExp(pattern, 'u');
+        if (regex.test(name)) return true;
+      } catch {
+        // ignore invalid pattern for E-Trace evidence
+      }
+    }
+
+    // additionalProperties evaluates when it is not false
+    if (objectSchema.additionalProperties !== false) return true;
+
+    // anyOf dynamic: include branches that validate currentObject via Source AJV
+    if (Array.isArray(objectSchema.anyOf) && objectSchema.anyOf.length > 0) {
+      const branches = objectSchema.anyOf as unknown[];
+      for (let idx = 0; idx < branches.length; idx += 1) {
+        const branchCanonPtr = appendPointer(canonPath, `anyOf/${idx}`);
+        const valid = this.validateAgainstOriginalAt(
+          branchCanonPtr,
+          currentObject
+        );
+        if (!valid) continue;
+        const branch = branches[idx];
+        if (!isRecord(branch)) continue;
+        const bProps = isRecord(branch.properties)
+          ? (branch.properties as Record<string, unknown>)
+          : {};
+        if (Object.prototype.hasOwnProperty.call(bProps, name)) return true;
+        const bPatterns = isRecord(branch.patternProperties)
+          ? (branch.patternProperties as Record<string, unknown>)
+          : {};
+        for (const pattern of Object.keys(bPatterns)) {
+          if (typeof pattern !== 'string') continue;
+          try {
+            const regex = new RegExp(pattern, 'u');
+            if (regex.test(name)) return true;
+          } catch {
+            // ignore invalid pattern
+          }
+        }
+        if (branch.additionalProperties !== false) return true;
+      }
+    }
+
+    return false;
+  }
+
+  private validateAgainstOriginalAt(
+    canonPtr: JsonPointer,
+    data: unknown
+  ): boolean {
+    try {
+      const originalPtr = this.ptrMap.get(canonPtr);
+      const sub = this.getOriginalSubschema(originalPtr);
+      if (!sub) return false;
+      const key = originalPtr ?? `#canon:${canonPtr}`;
+      let validate: ValidateFunction | undefined =
+        this.branchValidatorCache.get(key);
+      if (!validate) {
+        const ajv = this.getOrCreateSourceAjv();
+        validate = ajv.compile(sub as object);
+        this.branchValidatorCache.set(key, validate);
+      }
+      const v = validate!;
+      return !!v(data);
+    } catch {
+      return false;
     }
   }
 
-  /**
-   * Replace external $ref/$dynamicRef/$recursiveRef with permissive true-schemas
-   * to allow local AJV validation of meta-schemas without fetching.
-   */
-  private sanitizeExternalRefs(input: object): object {
-    const clone = (v: unknown): unknown =>
-      v && typeof v === 'object' ? JSON.parse(JSON.stringify(v)) : v;
-    const root = clone(input) as Record<string, unknown>;
+  private getOriginalSubschema(originalPtr?: string): unknown | undefined {
+    const root = this.sourceSchema;
+    if (!root || !originalPtr) return undefined;
+    if (originalPtr === '' || originalPtr === '#') return root as object;
+    const ptr = originalPtr.startsWith('#')
+      ? originalPtr.slice(1)
+      : originalPtr;
+    const tokens = ptr
+      .split('/')
+      .filter((t) => t.length > 0)
+      .map(unescapePointerToken);
+    let node: unknown = root;
+    for (const tok of tokens) {
+      if (
+        node !== null &&
+        typeof node === 'object' &&
+        Object.prototype.hasOwnProperty.call(
+          node as Record<string, unknown>,
+          tok
+        )
+      ) {
+        node = (node as Record<string, unknown>)[tok];
+      } else {
+        return undefined;
+      }
+    }
+    return node;
+  }
 
-    const isExternalRef = (ref: unknown): boolean => {
-      if (typeof ref !== 'string') return false;
-      if (ref.startsWith('#')) return false;
-      // Keep embedded meta fragments intact; they are handled by ComplianceValidator
-      if (ref.startsWith('meta/')) return false;
-      return true;
-    };
+  private getOrCreateSourceAjv(): Ajv {
+    if (this.sourceAjvCache) return this.sourceAjvCache;
+    const dialect: JsonSchemaDialect = ((): JsonSchemaDialect => {
+      const s = this.sourceSchema as Record<string, unknown> | undefined;
+      const sch =
+        typeof s?.['$schema'] === 'string'
+          ? (s!['$schema'] as string).toLowerCase()
+          : '';
+      if (sch.includes('2020-12')) return '2020-12';
+      if (sch.includes('2019-09') || sch.includes('draft-2019'))
+        return '2019-09';
+      if (sch.includes('draft-07') || sch.includes('draft-06'))
+        return 'draft-07';
+      if (sch.includes('draft-04') || sch.endsWith('/schema#'))
+        return 'draft-04';
+      return '2020-12';
+    })();
+    this.sourceAjvCache = createSourceAjv(
+      { dialect, validateFormats: false, discriminator: false },
+      this.options.planOptions
+    );
+    return this.sourceAjvCache;
+  }
 
-    const visit = (node: unknown): unknown => {
-      if (!node || typeof node !== 'object') return node;
-      if (Array.isArray(node)) return node.map(visit);
-      const obj = node as Record<string, unknown>;
-      const out: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(obj)) {
-        if (
-          (k === '$ref' || k === '$dynamicRef' || k === '$recursiveRef') &&
-          isExternalRef(v)
-        ) {
-          out[k] = true;
+  private applyDependentRequired(
+    schema: Record<string, unknown>,
+    target: Record<string, unknown>,
+    canonPath: JsonPointer,
+    itemIndex: number,
+    used: Set<string>
+  ): void {
+    const dependentRequired = isRecord(schema.dependentRequired)
+      ? (schema.dependentRequired as Record<string, unknown>)
+      : undefined;
+    if (!dependentRequired) return;
+    const properties = isRecord(schema.properties)
+      ? (schema.properties as Record<string, unknown>)
+      : {};
+    const patternProperties = isRecord(schema.patternProperties)
+      ? (schema.patternProperties as Record<string, unknown>)
+      : {};
+    for (const [name, requirements] of Object.entries(dependentRequired)) {
+      if (!Object.prototype.hasOwnProperty.call(target, name)) continue;
+      if (!Array.isArray(requirements)) continue;
+      for (const dep of requirements) {
+        if (typeof dep !== 'string' || used.has(dep)) continue;
+        const coverage = this.coverageIndex.get(canonPath);
+        if (coverage && !coverage.has(dep)) {
           continue;
         }
-        out[k] = visit(v);
+        const resolved = this.resolveSchemaForKey(
+          dep,
+          canonPath,
+          properties,
+          patternProperties,
+          schema.additionalProperties
+        );
+        const value = this.generateValue(
+          resolved.schema,
+          resolved.pointer,
+          itemIndex
+        );
+        target[dep] = value;
+        used.add(dep);
       }
-      return out;
-    };
-
-    return visit(root) as object;
+    }
   }
 
-  run(
-    schemaInput: object,
-    options: GenerationOptions & { count?: number }
-  ): Result<GenerationOutput, FoundryError> {
-    const metrics = new MetricsCollector(this.options.metrics);
-
-    // Parse original (early feature checks / errors)
-    metrics.start(PipelineStage.Parse);
-    const parsedOriginal = this.parseSchema(schemaInput);
-    metrics.end(PipelineStage.Parse);
-    const compat = options.compat ?? 'strict';
-    if (parsedOriginal.isErr() && compat !== 'lax') return parsedOriginal;
-
-    // In strict mode, fail fast on conditional keywords for modern drafts (2019-09/2020-12).
-    // For draft-07, conditionals are handled heuristically and allowed in strict.
-    if (compat === 'strict') {
-      const unsupported = this.scanUnsupportedFeatures(schemaInput);
-      const hasConditionals = unsupported.some(
-        (k) => k === 'if' || k === 'then' || k === 'else'
+  private createPatternIterators(
+    patternProperties: Record<string, unknown>,
+    canonPath: JsonPointer
+  ): PatternEnumerator[] {
+    const entries = Object.keys(patternProperties)
+      .filter((pattern) => typeof pattern === 'string')
+      .sort();
+    const basePointer = appendPointer(canonPath, 'patternProperties');
+    return entries.map((pattern) => {
+      const schema = patternProperties[pattern];
+      const pointer =
+        getPointerFromIndex(this.pointerIndex, schema) ??
+        appendPointer(basePointer, pattern);
+      return new PatternEnumerator(
+        pattern,
+        this.resolved.patternWitness,
+        this.normalizedAlphabet,
+        {
+          recordCap: (reason, tried) =>
+            this.recordPatternCap(pointer, reason, tried),
+          recordTrial: () => this.recordPatternWitnessTrial(),
+        }
       );
-      const schStr =
-        schemaInput &&
-        typeof (schemaInput as Record<string, unknown>)['$schema'] === 'string'
-          ? String(
-              (schemaInput as Record<string, unknown>)['$schema']
-            ).toLowerCase()
-          : '';
-      const isModernDraft =
-        schStr.includes('2020-12') || schStr.includes('2019-09');
-      if (hasConditionals && isModernDraft) {
-        return err(
-          new ConfigError({
-            message: `Unsupported features in strict mode: ${unsupported.join(', ')}`,
-            context: { stage: PipelineStage.Parse, unsupported },
-          })
-        );
-      }
-    }
-
-    // Resolve in-document references for planning/generation
-    metrics.start(PipelineStage.Resolve);
-    const resolvedInput = this.resolveLocalRefs(schemaInput);
-    metrics.end(PipelineStage.Resolve);
-
-    // Parse resolved schema for generation
-    const parsed = this.parseSchema(resolvedInput);
-    let genSchema: Schema;
-    if (parsed.isOk()) {
-      const normalization = parsed.value;
-      genSchema = normalization.schema as Schema;
-    } else if (compat === 'lax') {
-      // Soft-accept: proceed with the original resolved object as Schema
-      genSchema = resolvedInput as Schema;
-    } else {
-      return parsed;
-    }
-
-    // Plan
-    metrics.start(PipelineStage.Plan);
-    const plan = this.planGeneration(genSchema);
-    metrics.end(PipelineStage.Plan);
-    if (plan.isErr()) return plan;
-    const planValue = plan.value as GenerationPlan;
-    // Annotate plan with compat + unsupported features (if lax)
-    if (compat === 'lax') {
-      const unsupported = this.scanUnsupportedFeatures(schemaInput);
-      planValue.unsupportedFeatures = unsupported;
-      planValue.compat = 'lax';
-    }
-
-    // Generate
-    const seed = this.seedManager.normalize(options.seed);
-    const locale = options.locale ?? 'en';
-    const count = options.count ?? 1;
-
-    metrics.start(PipelineStage.Generate);
-    const gen = this.generateData(
-      planValue,
-      {
-        seed,
-        locale,
-        count,
-        repairAttempts: options.repairAttempts ?? 1,
-      },
-      schemaInput
-    );
-    metrics.end(PipelineStage.Generate);
-    if (gen.isErr()) return gen;
-
-    // Validate
-    metrics.start(PipelineStage.Validate);
-    const validation = this.validateOutput(gen.value.items, schemaInput);
-    metrics.end(PipelineStage.Validate);
-    if (validation.isErr()) return validation;
-
-    // Collect metrics
-    const durations = metrics.finalize();
-    const validatorMetrics = this.validator.getMetrics();
-    const formatsUsed = this.formatRegistry.getUsedFormats();
-
-    const memory =
-      typeof process !== 'undefined' &&
-      typeof process.memoryUsage === 'function'
-        ? (() => {
-            const m = process.memoryUsage();
-            return { rss: m.rss, heapUsed: m.heapUsed };
-          })()
-        : undefined;
-
-    const pipelineMetrics: PipelineMetrics = {
-      durations,
-      itemsGenerated: gen.value.items.length,
-      formatsUsed,
-      validatorCacheHitRate: validatorMetrics.cacheHitRate,
-      compiledSchemas: validatorMetrics.compiledSchemas,
-      memory,
-      itemsRepaired: gen.value.repairs.itemsRepaired,
-      repairAttemptsUsed: gen.value.repairs.attemptsUsed,
-      optionsSnapshot: this.options,
-    };
-
-    return ok({
-      items: gen.value.items,
-      report: validation.value,
-      metrics: pipelineMetrics,
-      seed,
     });
   }
+
+  private resolveSchemaForKey(
+    name: string,
+    objectCanonPath: JsonPointer,
+    properties: Record<string, unknown>,
+    patternProperties: Record<string, unknown>,
+    additionalProperties: unknown
+  ): { schema: unknown; pointer: JsonPointer } {
+    if (Object.prototype.hasOwnProperty.call(properties, name)) {
+      const schema = properties[name];
+      const pointer =
+        getPointerFromIndex(this.pointerIndex, schema) ??
+        appendPointer(appendPointer(objectCanonPath, 'properties'), name);
+      return { schema, pointer };
+    }
+
+    for (const [pattern, schema] of Object.entries(patternProperties)) {
+      if (typeof pattern !== 'string') continue;
+      try {
+        const regex = new RegExp(pattern, 'u');
+        if (!regex.test(name)) continue;
+      } catch {
+        continue;
+      }
+      const pointer =
+        getPointerFromIndex(this.pointerIndex, schema) ??
+        appendPointer(
+          appendPointer(objectCanonPath, 'patternProperties'),
+          pattern
+        );
+      return { schema, pointer };
+    }
+
+    if (additionalProperties !== undefined) {
+      const pointer =
+        getPointerFromIndex(this.pointerIndex, additionalProperties) ??
+        appendPointer(objectCanonPath, 'additionalProperties');
+      return { schema: additionalProperties, pointer };
+    }
+
+    return {
+      schema: undefined,
+      pointer: appendPointer(objectCanonPath, 'additionalProperties'),
+    };
+  }
+
+  private generateArray(
+    schema: Record<string, unknown>,
+    canonPath: JsonPointer,
+    itemIndex: number
+  ): unknown[] {
+    const result: unknown[] = [];
+    const prefixItems = Array.isArray(schema.prefixItems)
+      ? (schema.prefixItems as unknown[])
+      : [];
+
+    for (let idx = 0; idx < prefixItems.length; idx += 1) {
+      const childCanon = appendPointer(canonPath, `prefixItems/${idx}`);
+      result.push(this.generateValue(prefixItems[idx], childCanon, itemIndex));
+    }
+
+    const minItems =
+      typeof schema.minItems === 'number'
+        ? Math.max(0, Math.floor(schema.minItems))
+        : 0;
+    const containsNeeds = this.containsBag.get(canonPath) ?? [];
+    const containsContributions = this.satisfyContainsNeeds(
+      containsNeeds,
+      result,
+      canonPath,
+      itemIndex
+    );
+
+    const baseline = Math.max(
+      minItems,
+      prefixItems.length,
+      containsContributions
+    );
+
+    while (result.length < baseline) {
+      const itemsSchema = schema.items;
+      const childCanon = appendPointer(canonPath, 'items');
+      const value = this.generateValue(itemsSchema, childCanon, itemIndex);
+      result.push(value);
+    }
+
+    if (schema.uniqueItems === true) {
+      enforceUniqueItems(result);
+      // After de-duplication, re-satisfy contains deterministically
+      // and then enforce uniqueness again.
+      const afterDedup = this.satisfyContainsNeeds(
+        this.containsBag.get(canonPath) ?? [],
+        result,
+        canonPath,
+        itemIndex
+      );
+      void afterDedup;
+      enforceUniqueItems(result);
+      // Ensure minimal length after uniqueness enforcement
+      const finalBaseline = Math.max(minItems, prefixItems.length);
+      while (result.length < finalBaseline) {
+        const itemsSchema = schema.items;
+        const childCanon = appendPointer(canonPath, 'items');
+        // try up to a few times to keep uniqueness
+        let placed = false;
+        for (let tries = 0; tries < 4 && !placed; tries += 1) {
+          const candidate = this.generateValue(
+            itemsSchema,
+            childCanon,
+            itemIndex
+          );
+          if (isUniqueAppend(result, candidate)) {
+            result.push(candidate);
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          // fallback unique filler
+          result.push({ __fd_unique_filler: result.length });
+        }
+      }
+    }
+
+    return result;
+  }
+
+  private satisfyContainsNeeds(
+    needs: ContainsNeed[],
+    result: unknown[],
+    canonPath: JsonPointer,
+    itemIndex: number
+  ): number {
+    let maxContribution = result.length;
+    if (!needs || needs.length === 0) {
+      return maxContribution;
+    }
+    const baseContains = appendPointer(canonPath, 'contains');
+    for (let index = 0; index < needs.length; index += 1) {
+      const need = needs[index];
+      if (!need) continue;
+      const min = Math.max(1, Math.floor(need.min ?? 1));
+      const childCanon =
+        getPointerFromIndex(this.pointerIndex, need.schema) ??
+        appendPointer(baseContains, String(index));
+      let satisfied = 0;
+      for (let c = 0; c < min; c += 1) {
+        const value = this.generateValue(need.schema, childCanon, itemIndex);
+        result.push(value);
+        satisfied += 1;
+      }
+      if (satisfied > 0) {
+        maxContribution = Math.max(maxContribution, result.length);
+      }
+    }
+    return maxContribution;
+  }
+
+  private generateString(schema: Record<string, unknown>): string {
+    // const/enum outrank type
+    if (schema.const !== undefined && typeof schema.const === 'string') {
+      return schema.const as string;
+    }
+    if (Array.isArray(schema.enum)) {
+      const first = (schema.enum as unknown[]).find(
+        (v) => typeof v === 'string'
+      );
+      if (typeof first === 'string') return first;
+    }
+
+    // format-aware generation (best-effort)
+    if (typeof schema.format === 'string') {
+      const res = this.formatRegistry.generate(schema.format);
+      if (res.isOk && res.isOk()) {
+        let v = res.value;
+        // Apply length bounds if present (Unicode length approximation)
+        const minLength =
+          typeof schema.minLength === 'number'
+            ? Math.max(0, Math.floor(schema.minLength))
+            : 0;
+        const maxLength =
+          typeof schema.maxLength === 'number'
+            ? Math.max(minLength, Math.floor(schema.maxLength))
+            : undefined;
+        if (v.length < minLength) {
+          const base = v || (this.normalizedAlphabet[0] ?? 'a');
+          v = base.repeat(minLength);
+        }
+        if (maxLength !== undefined && v.length > maxLength) {
+          v = v.slice(0, maxLength);
+        }
+        return v;
+      }
+    }
+
+    const minLength =
+      typeof schema.minLength === 'number'
+        ? Math.max(0, Math.floor(schema.minLength))
+        : 0;
+    const maxLength =
+      typeof schema.maxLength === 'number'
+        ? Math.max(minLength, Math.floor(schema.maxLength))
+        : undefined;
+    const baseChar = this.normalizedAlphabet[0] ?? 'a';
+    let candidate = baseChar.repeat(minLength);
+    if (candidate.length === 0) {
+      candidate = '';
+    }
+    if (maxLength !== undefined && candidate.length > maxLength) {
+      candidate = candidate.slice(0, maxLength);
+    }
+    return candidate;
+  }
+
+  private generateInteger(schema: Record<string, unknown>): number {
+    if (
+      schema.const !== undefined &&
+      (typeof schema.const === 'number' || typeof schema.const === 'bigint')
+    ) {
+      return Number(schema.const);
+    }
+    if (Array.isArray(schema.enum)) {
+      const first = (schema.enum as unknown[]).find((v) => Number.isInteger(v));
+      if (typeof first === 'number') return first;
+    }
+    let value = 0;
+    if (typeof schema.minimum === 'number') {
+      value = Math.max(value, Math.ceil(schema.minimum));
+    }
+    if (typeof schema.exclusiveMinimum === 'number') {
+      value = Math.max(value, Math.ceil(schema.exclusiveMinimum + 1));
+    }
+    if (typeof schema.maximum === 'number') {
+      value = Math.min(value, Math.floor(schema.maximum));
+    }
+    if (typeof schema.multipleOf === 'number' && schema.multipleOf !== 0) {
+      value = alignToMultiple(value, schema.multipleOf);
+    }
+    return value;
+  }
+
+  private generateNumber(schema: Record<string, unknown>): number {
+    if (typeof schema.const === 'number') {
+      return schema.const as number;
+    }
+    if (Array.isArray(schema.enum)) {
+      const first = (schema.enum as unknown[]).find(
+        (v) => typeof v === 'number'
+      );
+      if (typeof first === 'number') return first;
+    }
+    let value = 0;
+    if (typeof schema.minimum === 'number') {
+      value = Math.max(value, schema.minimum);
+    }
+    if (typeof schema.exclusiveMinimum === 'number') {
+      value = Math.max(value, schema.exclusiveMinimum + Number.EPSILON);
+    }
+    if (typeof schema.maximum === 'number') {
+      value = Math.min(value, schema.maximum);
+    }
+    if (typeof schema.multipleOf === 'number' && schema.multipleOf !== 0) {
+      value = alignToMultiple(value, schema.multipleOf);
+    }
+    return value;
+  }
+
+  private generateBoolean(schema: Record<string, unknown>): boolean {
+    if (schema.default === false) return false;
+    if (schema.const === false) return false;
+    return true;
+  }
+
+  private generateAllOf(
+    schema: Record<string, unknown>,
+    canonPath: JsonPointer,
+    itemIndex: number
+  ): unknown {
+    const branches = Array.isArray(schema.allOf)
+      ? (schema.allOf as unknown[])
+      : [];
+    if (branches.length === 0) return {};
+    const merged = mergeAllOfBranches(branches);
+    return this.generateValue(merged, canonPath, itemIndex);
+  }
+
+  private generateOneOf(
+    schema: Record<string, unknown>,
+    canonPath: JsonPointer,
+    itemIndex: number
+  ): unknown {
+    const record = this.diagNodes?.[canonPath];
+    const branches = Array.isArray(schema.oneOf)
+      ? (schema.oneOf as unknown[])
+      : [];
+    const selectedIndex =
+      typeof record?.chosenBranch?.index === 'number'
+        ? record.chosenBranch.index
+        : 0;
+    const chosen =
+      selectedIndex >= 0 && selectedIndex < branches.length ? selectedIndex : 0;
+    if (branches.length > 1) {
+      const exclusivityRand = this.computeExclusivityRand(canonPath, itemIndex);
+      this.diagnostics.push({
+        code: DIAGNOSTIC_CODES.EXCLUSIVITY_TWEAK_STRING,
+        phase: DIAGNOSTIC_PHASES.GENERATE,
+        canonPath,
+        scoreDetails: { tiebreakRand: 0, exclusivityRand },
+      });
+    }
+    const branchPath = appendPointer(canonPath, `oneOf/${chosen}`);
+    return this.generateValue(branches[chosen], branchPath, itemIndex);
+  }
+
+  private generateAnyOf(
+    schema: Record<string, unknown>,
+    canonPath: JsonPointer,
+    itemIndex: number
+  ): unknown {
+    const branches = Array.isArray(schema.anyOf)
+      ? (schema.anyOf as unknown[])
+      : [];
+    if (branches.length === 0) return {};
+    const branchPath = appendPointer(canonPath, 'anyOf/0');
+    return this.generateValue(branches[0], branchPath, itemIndex);
+  }
+
+  recordPatternWitnessTrial(): void {
+    this.patternWitnessTrials += 1;
+    this.metrics?.addPatternWitnessTrial();
+  }
+
+  recordPatternCap(
+    canonPath: JsonPointer,
+    reason: 'witnessDomainExhausted' | 'candidateBudget',
+    tried: number
+  ): void {
+    this.diagnostics.push({
+      code: DIAGNOSTIC_CODES.COMPLEXITY_CAP_PATTERNS,
+      phase: DIAGNOSTIC_PHASES.GENERATE,
+      canonPath,
+      details: {
+        reason,
+        alphabet: this.resolved.patternWitness.alphabet,
+        maxLength: this.resolved.patternWitness.maxLength,
+        tried,
+      },
+      budget: {
+        tried,
+        limit: this.resolved.patternWitness.maxCandidates,
+        skipped: true,
+        // Align with diagnosticsEnvelope.schema.json: use generic cap reason
+        // Specific cap reason is carried in details.reason
+        reason: 'complexityCap',
+      },
+      scoreDetails: {
+        tiebreakRand: 0,
+      },
+    });
+  }
+
+  private computeExclusivityRand(
+    canonPath: JsonPointer,
+    itemIndex: number
+  ): number {
+    const key = { seed: this.baseSeed, path: canonPath, idx: itemIndex };
+    const h = structuralHash(key);
+    if (!h) return 0;
+    const part = h.digest.slice(0, 8);
+    const n = parseInt(part, 16) >>> 0;
+    return n / 0xffffffff;
+  }
+}
+
+class PatternEnumerator {
+  private readonly regex: RegExp | null;
+
+  private readonly config: ResolvedOptions['patternWitness'];
+
+  private readonly alphabet: string[];
+
+  private readonly recordCap: (
+    reason: 'witnessDomainExhausted' | 'candidateBudget',
+    tried: number
+  ) => void;
+
+  private readonly recordTrial: () => void;
+
+  private currentLength = 0;
+
+  private indices: number[] | null = null;
+
+  private tried = 0;
+
+  private exhausted = false;
+
+  private capped = false;
+
+  constructor(
+    patternSource: string,
+    config: ResolvedOptions['patternWitness'],
+    alphabet: string[],
+    hooks: {
+      recordCap: (
+        reason: 'witnessDomainExhausted' | 'candidateBudget',
+        tried: number
+      ) => void;
+      recordTrial: () => void;
+    }
+  ) {
+    this.config = config;
+    this.alphabet = alphabet;
+    this.recordCap = hooks.recordCap;
+    this.recordTrial = hooks.recordTrial;
+
+    if (!isAnchoredPattern(patternSource)) {
+      this.regex = null;
+      this.exhausted = true;
+      return;
+    }
+
+    try {
+      this.regex = new RegExp(patternSource, 'u');
+    } catch {
+      this.regex = null;
+      this.exhausted = true;
+      return;
+    }
+
+    if (this.alphabet.length === 0) {
+      this.exhausted = true;
+      this.capped = true;
+      this.recordCap('witnessDomainExhausted', 0);
+    }
+  }
+
+  next(predicate: (candidate: string) => boolean): string | undefined {
+    if (!this.regex || this.exhausted) {
+      return undefined;
+    }
+
+    while (!this.exhausted) {
+      const candidate = this.produceCandidate();
+      if (candidate === undefined) break;
+
+      this.tried += 1;
+      this.recordTrial();
+
+      if (this.tried > this.config.maxCandidates) {
+        if (!this.capped) {
+          this.capped = true;
+          this.recordCap('candidateBudget', this.tried - 1);
+        }
+        this.exhausted = true;
+        return undefined;
+      }
+
+      if (!predicate(candidate)) {
+        continue;
+      }
+      if (this.regex.test(candidate)) {
+        return candidate;
+      }
+    }
+
+    if (!this.capped) {
+      this.capped = true;
+      this.recordCap('witnessDomainExhausted', this.tried);
+    }
+    return undefined;
+  }
+
+  private produceCandidate(): string | undefined {
+    if (this.currentLength === 0) {
+      this.currentLength = 1;
+      this.indices = [0];
+      return '';
+    }
+
+    if (!this.indices) {
+      this.indices = new Array(this.currentLength).fill(0);
+    }
+
+    const candidate = this.indices
+      .map((index) => this.alphabet[index] ?? '')
+      .join('');
+
+    if (candidate.length !== this.currentLength) {
+      this.exhausted = true;
+      return undefined;
+    }
+
+    this.advance();
+    return candidate;
+  }
+
+  private advance(): void {
+    if (!this.indices) return;
+    const arr = this.indices!;
+    for (let idx = arr.length - 1; idx >= 0; idx -= 1) {
+      const currentIndex = arr[idx] ?? 0;
+      const nextIndex = currentIndex + 1;
+      if (nextIndex < this.alphabet.length) {
+        arr[idx] = nextIndex;
+        this.indices = arr;
+        return;
+      }
+      arr[idx] = 0;
+    }
+    this.currentLength += 1;
+    if (this.currentLength > this.config.maxLength) {
+      this.exhausted = true;
+      return;
+    }
+    this.indices = new Array(this.currentLength).fill(0);
+  }
+}
+
+function determineType(schema: Record<string, unknown>): string | undefined {
+  if (typeof schema.type === 'string') return schema.type;
+  if (Array.isArray(schema.type)) {
+    return schema.type[0];
+  }
+  if (schema.properties || schema.patternProperties) return 'object';
+  if (schema.items || schema.prefixItems) return 'array';
+  return undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeAlphabet(input: string): string[] {
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+  for (const char of input ?? '') {
+    const code = char.codePointAt(0);
+    if (code === undefined) continue;
+    if (code >= 0xd800 && code <= 0xdfff) {
+      continue;
+    }
+    const normalizedChar = String.fromCodePoint(code);
+    if (seen.has(normalizedChar)) continue;
+    seen.add(normalizedChar);
+    normalized.push(normalizedChar);
+  }
+  normalized.sort();
+  return normalized;
+}
+
+function normalizeSeed(seed?: number): number {
+  if (!Number.isFinite(seed)) {
+    return 123456789;
+  }
+  return Math.floor(seed as number) >>> 0;
+}
+
+function alignToMultiple(value: number, multiple: number): number {
+  if (multiple === 0) return value;
+  const remainder = value % multiple;
+  if (remainder === 0) return value;
+  return value + (multiple - remainder);
+}
+
+function enforceUniqueItems(items: unknown[]): void {
+  const seen = new Set<string>();
+  const deduped: unknown[] = [];
+  for (let idx = 0; idx < items.length; idx += 1) {
+    const h = structuralHash(items[idx]);
+    const key = h?.digest ?? JSON.stringify(items[idx]);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(items[idx]);
+  }
+  // mutate in place
+  items.length = 0;
+  deduped.forEach((v) => items.push(v));
+}
+
+function isUniqueAppend(items: unknown[], candidate: unknown): boolean {
+  const h = structuralHash(candidate);
+  const key = h?.digest ?? JSON.stringify(candidate);
+  const seen = new Set<string>();
+  for (const it of items) {
+    const hx = structuralHash(it);
+    const kx = hx?.digest ?? JSON.stringify(it);
+    seen.add(kx);
+  }
+  return !seen.has(key);
+}
+
+function mergeAllOfBranches(branches: unknown[]): Record<string, unknown> {
+  const merged: Record<string, unknown> = {};
+  for (const branch of branches) {
+    if (!isRecord(branch)) continue;
+    mergeNumericConstraints(merged, branch);
+    if (branch.type !== undefined && merged.type === undefined) {
+      merged.type = branch.type;
+    }
+    if (isRecord(branch.properties)) {
+      merged.properties = {
+        ...(merged.properties as Record<string, unknown> | undefined),
+        ...(branch.properties as Record<string, unknown>),
+      };
+    }
+    for (const [key, value] of Object.entries(branch)) {
+      if (NUMERIC_KEYWORDS.has(key) || key === 'properties') continue;
+      if (!(key in merged)) {
+        merged[key] = value;
+      }
+    }
+  }
+  return merged;
+}
+
+const NUMERIC_KEYWORDS = new Set([
+  'minimum',
+  'maximum',
+  'exclusiveMinimum',
+  'exclusiveMaximum',
+  'multipleOf',
+]);
+
+function mergeNumericConstraints(
+  target: Record<string, unknown>,
+  source: Record<string, unknown>
+): void {
+  if (typeof source.minimum === 'number') {
+    const current = target['minimum'] as number | undefined;
+    target['minimum'] =
+      typeof current === 'number'
+        ? Math.max(current, source.minimum)
+        : source.minimum;
+  }
+  if (typeof source.maximum === 'number') {
+    const current = target['maximum'] as number | undefined;
+    target['maximum'] =
+      typeof current === 'number'
+        ? Math.min(current, source.maximum)
+        : source.maximum;
+  }
+  if (typeof source.exclusiveMinimum === 'number') {
+    const current = target['exclusiveMinimum'] as number | undefined;
+    target['exclusiveMinimum'] =
+      typeof current === 'number'
+        ? Math.max(current, source.exclusiveMinimum)
+        : source.exclusiveMinimum;
+  }
+  if (typeof source.exclusiveMaximum === 'number') {
+    const current = target['exclusiveMaximum'] as number | undefined;
+    target['exclusiveMaximum'] =
+      typeof current === 'number'
+        ? Math.min(current, source.exclusiveMaximum)
+        : source.exclusiveMaximum;
+  }
+  if (typeof source.multipleOf === 'number') {
+    const current = target['multipleOf'] as number | undefined;
+    target['multipleOf'] =
+      typeof current === 'number'
+        ? lcmForRationals(current, source.multipleOf)
+        : source.multipleOf;
+  }
+}
+
+function lcmForRationals(a: number, b: number): number {
+  const scaleA = decimalScale(a);
+  const scaleB = decimalScale(b);
+  const scale = lcmInteger(scaleA, scaleB);
+  const scaledA = Math.round(a * scale);
+  const scaledB = Math.round(b * scale);
+  const lcmScaled = lcmInteger(Math.abs(scaledA), Math.abs(scaledB));
+  return lcmScaled / scale;
+}
+
+function decimalScale(value: number): number {
+  const text = value.toString();
+  if (!text.includes('.')) return 1;
+  const decimals = text.split('.')[1]?.length ?? 0;
+  return 10 ** decimals;
+}
+
+function lcmInteger(a: number, b: number): number {
+  if (a === 0 || b === 0) return 0;
+  return Math.abs((a * b) / gcdInteger(a, b));
+}
+
+function gcdInteger(a: number, b: number): number {
+  let x = Math.abs(a);
+  let y = Math.abs(b);
+  while (y !== 0) {
+    const temp = y;
+    y = x % y;
+    x = temp;
+  }
+  return x || 1;
+}
+
+function escapeJsonPointerToken(token: string): string {
+  return token.replace(/~/g, '~0').replace(/\//g, '~1');
+}
+
+function appendPointer(base: string, segment: string): string {
+  if (segment === '') return base;
+  const encoded = escapeJsonPointerToken(segment);
+  if (base === '') {
+    return `/${encoded}`;
+  }
+  return `${base}/${encoded}`;
+}
+
+function buildPointerIndex(schema: unknown): WeakMap<object, JsonPointer> {
+  const index = new WeakMap<object, JsonPointer>();
+  const visit = (node: unknown, path: JsonPointer): void => {
+    if (!node || typeof node !== 'object') return;
+    index.set(node as object, path);
+    if (Array.isArray(node)) {
+      node.forEach((value, idx) => {
+        visit(value, appendPointer(path, String(idx)));
+      });
+      return;
+    }
+    for (const [key, value] of Object.entries(
+      node as Record<string, unknown>
+    )) {
+      visit(value, appendPointer(path, key));
+    }
+  };
+  visit(schema, '');
+  return index;
+}
+
+function getPointerFromIndex(
+  index: WeakMap<object, JsonPointer>,
+  value: unknown
+): JsonPointer | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  return index.get(value as object);
+}
+
+function isAnchoredPattern(pattern: string): boolean {
+  return pattern.startsWith('^') && pattern.endsWith('$');
+}
+
+function unescapePointerToken(token: string): string {
+  return token.replace(/~1/g, '/').replace(/~0/g, '~');
 }

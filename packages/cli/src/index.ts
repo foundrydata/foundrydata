@@ -1,18 +1,20 @@
 #!/usr/bin/env node
 /* eslint-disable complexity */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable max-lines-per-function */
 
 import { Command } from 'commander';
 import fs from 'node:fs';
 import path from 'node:path';
-import * as Core from '@foundrydata/core';
 import {
   ErrorPresenter,
   isFoundryError,
   FoundryError,
   ErrorCode,
   resolveOptions,
+  executePipeline,
+  PipelineStageError,
+  ReferenceResolver,
+  type PipelineResult,
 } from '@foundrydata/core';
 import { renderCLIView } from './render';
 import { parsePlanOptions } from './flags';
@@ -90,9 +92,6 @@ program
       const raw = fs.readFileSync(abs, 'utf8');
       const input = JSON.parse(raw);
 
-      const FoundryGenerator = (Core as any).FoundryGenerator as any;
-      const ReferenceResolver = (Core as any).ReferenceResolver as any;
-
       // Determine compatibility mode early (used by pre-scan and generation)
       const compat: 'strict' | 'lax' =
         String(options.compat ?? 'strict') === 'lax' ? 'lax' : 'strict';
@@ -142,7 +141,6 @@ program
 
       const count = Number(options.rows ?? options.count ?? 1);
       const seed = Number(options.seed ?? 424242);
-      const locale = String(options.locale ?? 'en');
       const repairAttempts = Number(options.repairAttempts ?? 1);
 
       // Parse CLI options into PlanOptions
@@ -156,49 +154,53 @@ program
         );
       }
 
-      const gen = new FoundryGenerator({ options: planOptions });
-      const result = gen.run(schemaForGen as object, {
-        count,
-        seed,
-        locale,
-        repairAttempts,
-        compat,
+      const pipelineResult = await executePipeline(schemaForGen as object, {
+        mode: compat,
+        metrics: { enabled: options.metrics !== false },
+        compose: { planOptions },
+        generate: {
+          count,
+          seed,
+          planOptions,
+        },
+        repair: {
+          attempts: repairAttempts,
+        },
+        validate: {
+          validateFormats: true,
+        },
       });
-      if (result.isErr()) throw result.error;
 
-      // Print items as JSON array on stdout
-      process.stdout.write(JSON.stringify(result.value.items, null, 2) + '\n');
-
-      // Print a concise metrics summary on stderr (does not pollute stdout JSON)
-      const m = result.value.metrics;
-      const repaired = m.itemsRepaired ?? 0;
-      const attemptsUsed = m.repairAttemptsUsed ?? 0;
-      if (repaired > 0 || attemptsUsed > 0) {
-        process.stderr.write(
-          `[foundrydata] repairs: ${repaired} items (attempts used: ${attemptsUsed})\n`
-        );
-      }
-
-      if (options.printMetrics) {
-        // Emit structured metrics for tools/CI (stderr to keep stdout clean JSON for items)
-        const metricsPayload = {
-          durations: m.durations,
-          itemsGenerated: m.itemsGenerated,
-          formatsUsed: m.formatsUsed,
-          validatorCacheHitRate: m.validatorCacheHitRate,
-          compiledSchemas: m.compiledSchemas,
-          memory: m.memory,
-          itemsRepaired: m.itemsRepaired ?? 0,
-          repairAttemptsUsed: m.repairAttemptsUsed ?? 0,
-        };
-        process.stderr.write(
-          `[foundrydata] metrics: ${JSON.stringify(metricsPayload)}\n`
-        );
-      }
+      handlePipelineOutput(pipelineResult, options.printMetrics === true);
     } catch (err: unknown) {
       await handleCliError(err);
     }
   });
+
+function handlePipelineOutput(
+  result: PipelineResult,
+  printMetrics: boolean
+): void {
+  if (result.status !== 'completed') {
+    const stageError = result.errors[0];
+    if (stageError) throw stageError;
+    throw new PipelineStageError('generate', 'Generation pipeline failed');
+  }
+
+  const generatedStage = result.stages.generate.output;
+  const repairedItems = result.artifacts.repaired;
+  const items = Array.isArray(repairedItems)
+    ? repairedItems
+    : (generatedStage?.items ?? []);
+
+  process.stdout.write(JSON.stringify(items, null, 2) + '\n');
+
+  if (printMetrics) {
+    process.stderr.write(
+      `[foundrydata] metrics: ${JSON.stringify(result.metrics)}\n`
+    );
+  }
+}
 
 async function handleCliError(err: unknown): Promise<never> {
   const env = process.env.NODE_ENV === 'production' ? 'prod' : 'dev';

@@ -1,5 +1,6 @@
 /* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
+/* eslint-disable max-lines */
 /**
  * Configuration options for the FoundryData generation pipeline
  *
@@ -112,6 +113,27 @@ export interface ConditionalsOptions {
 }
 
 /**
+ * Pattern witness search configuration
+ */
+export interface PatternWitnessOptions {
+  /**
+   * Alphabet of Unicode code points used when synthesizing witnesses.
+   * Defaults to "abcdefghijklmnopqrstuvwxyz0123456789_-" (see SPEC §23).
+   */
+  alphabet?: string;
+  /**
+   * Maximum number of Unicode code points allowed per candidate.
+   * Defaults to 12.
+   */
+  maxLength?: number;
+  /**
+   * Maximum number of candidates evaluated before declaring a cap.
+   * Defaults to 32768.
+   */
+  maxCandidates?: number;
+}
+
+/**
  * Complete configuration options for the FoundryData pipeline
  *
  * All options are optional and have conservative defaults.
@@ -153,6 +175,9 @@ export interface PlanOptions {
 
   /** Conditional schema processing */
   conditionals?: ConditionalsOptions;
+
+  /** Pattern witness search configuration */
+  patternWitness?: PatternWitnessOptions;
 }
 
 /**
@@ -179,6 +204,7 @@ export interface ResolvedOptions {
   complexity: Required<ComplexityOptions>;
   failFast: Required<FailFastOptions>;
   conditionals: Required<ConditionalsOptions>;
+  patternWitness: Required<PatternWitnessOptions>;
 }
 
 /**
@@ -243,6 +269,12 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
     strategy: 'if-aware-lite', // default mapping for rewriteConditionals:'never'
     minThenSatisfaction: 'required-only',
   },
+
+  patternWitness: {
+    alphabet: 'abcdefghijklmnopqrstuvwxyz0123456789_-',
+    maxLength: 12,
+    maxCandidates: 32768,
+  },
 };
 
 /**
@@ -273,6 +305,10 @@ export function resolveOptions(
     conditionals: {
       ...DEFAULT_OPTIONS.conditionals,
       ...userOptions.conditionals,
+    },
+    patternWitness: {
+      ...DEFAULT_OPTIONS.patternWitness,
+      ...userOptions.patternWitness,
     },
   };
 
@@ -379,5 +415,19 @@ function validateOptions(options: ResolvedOptions): void {
   }
   if (options.complexity.bailOnUnsatAfter <= 0) {
     throw new Error('complexity.bailOnUnsatAfter must be positive');
+  }
+
+  // Validate pattern witness options
+  if (options.patternWitness.maxLength <= 0) {
+    throw new Error('patternWitness.maxLength must be positive');
+  }
+  if (options.patternWitness.maxCandidates <= 0) {
+    throw new Error('patternWitness.maxCandidates must be positive');
+  }
+  if (
+    options.patternWitness.alphabet !== undefined &&
+    typeof options.patternWitness.alphabet !== 'string'
+  ) {
+    throw new Error('patternWitness.alphabet must be a string when provided');
   }
 }
