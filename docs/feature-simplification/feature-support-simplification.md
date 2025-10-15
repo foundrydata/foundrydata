@@ -183,7 +183,9 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
 | Patterns (witness)         | `patternWitness.{alphabet,maxLength,maxCandidates}` | Bounded and deterministic search domain for pattern witness generation            | §9, §23 |
 | Repair (must‑cover guard)  | `repair.mustCoverGuard` (default: true)             | Deterministic policy for renaming under AP:false; see §10 and cache key in §14    | §10, §14, §23 |
 
-Clarification: `complexity.maxEnumCardinality` also applies to finite sets derived from exact‑literal `patternProperties` (see §8), in addition to `enum` and §7 synthetic literals.
+Clarification: The build‑time constant `ENUM_CAP` also applies to finite sets derived from exact‑literal `patternProperties` (see §8), in addition to `enum` and §7 synthetic literals.
+
+**Clarification (normative).** The former runtime knob `complexity.maxEnumCardinality` is removed from PlanOptions; the Coverage Index export uses the build‑time constant `ENUM_CAP` instead (see §8). `Compose` MUST ignore any PlanOptions value attempting to set that bound.
 
 <a id="s5-precedence"></a>
 **Precedence & compatibility.** Mode (Strict/Lax) defines the baseline; specific `failFast` overrides refine it (see §11).
@@ -619,11 +621,7 @@ Implementations **MUST NOT** include generator‑only `COMPLEXITY_CAP_PATTERNS` 
  
  `Compose` **MUST** produce a coverage index **entry for every object node** and return the map as `coverageIndex` in the API result.
  Implementations **MUST NOT** elide entries based on mode or guard configuration. The map MAY be empty **only when the schema contains no object nodes**; consumers
- **MAY** ignore it when not needed. Implementations MUST NOT elide `enumerate()` due to budgets or PlanOptions. Its presence depends only on whether
- the global must‑cover intersection is provably finite per this section. When finite, `enumerate()` MUST be provided
- **except when** the `COMPLEXITY_CAP_ENUM` cap applies (see below). In that case `enumerate()` **MUST** be absent and
- `COMPLEXITY_CAP_ENUM{ limit, observed }` **MUST** be emitted. Otherwise it MUST be absent. This preserves determinism
- and the Purity requirement below.
+ **MAY** ignore it when not needed. Implementations MUST NOT elide `enumerate()` due to budgets, and its presence MUST NOT depend on any PlanOptions value. Its presence depends only on whether the global must‑cover intersection is provably finite under this section. When finite, `enumerate()` MUST be provided **except** when the constant `ENUM_CAP` (defined below) applies. In that case `enumerate()` MUST be absent and `COMPLEXITY_CAP_ENUM{ limit, observed }` MUST be emitted. Otherwise it MUST be absent. This preserves determinism and the Purity requirement below.
 
 
  ```ts
@@ -641,10 +639,7 @@ Implementations **MUST NOT** include generator‑only `COMPLEXITY_CAP_PATTERNS` 
  type CoverageIndex = Map<canonPath, CoverageEntry>;
  ```
  
-* **Purity (normative).** Both `has(name)` and `enumerate()` are pure: no AJV calls, no I/O, no dependence on seed,
-  wall‑clock, environment, locale, budgets, or any `PlanOptions` values. They depend only on the canonical schema subtree at
-  `canonPath` and `(AJV.major, AJV.flags)`. When present, repeated calls to `enumerate()` for the same
-  `(canonPath, AJV.major, AJV.flags)` MUST return byte‑for‑byte identical arrays.
+* **Purity (normative).** Both `has(name)` and `enumerate()` are pure: no AJV calls, no I/O, no dependence on seed, wall‑clock, environment, locale, budgets, or any PlanOptions values. They depend only on the canonical schema subtree at `canonPath`, `(AJV.major, AJV.flags)`, and the implementation constant `ENUM_CAP` defined below. When present, repeated calls to `enumerate()` for the same `(canonPath, AJV.major, AJV.flags, ENUM_CAP)` MUST return byte‑for‑byte identical arrays.
 * **Vacuous case (normative).** When no conjunct at the object has `additionalProperties:false`, the `CoverageIndex` **still includes** an entry for this object: `has(name)` **MUST** return `true` for any string input; `enumerate` **MUST** be `undefined`; and `provenance` **MUST** be empty.
 * **Global intersection (normative):** `has(name)` decides membership in the **global must‑cover intersection** at this object — i.e., the intersection across **all** `allOf` conjuncts that set `additionalProperties:false`, after applying only the **safe** `propertyNames` gating of §8 (enum, or anchored‑safe & not complexity‑capped). Concretely, return `true` **iff** `name` is admitted by **each** such conjunct via its named `properties` or an **anchored‑safe** `patternProperties` entry, including **synthetic** entries from the §7 `propertyNames` rewrite **only when** `PNAMES_REWRITE_APPLIED` was recorded. Raw `propertyNames.pattern` **never** contributes coverage.
 * **Contributors to the intersection (normative clarification).** Only conjuncts that enforce `additionalProperties:false` at the object location **contribute** recognizers to the global must‑cover intersection. Conjuncts without `additionalProperties:false` do **not** participate in the coverage intersection (their `additionalProperties` schemas remain relevant to AJV validation but are irrelevant to must‑cover planning).
@@ -678,7 +673,8 @@ Implementations **MUST NOT** include generator‑only `COMPLEXITY_CAP_PATTERNS` 
      `⋂_{Ci with AP:false} ( properties_Ci ∪ literals(propertyNamesSynthetic_Ci) )`, after applying the safe `propertyNames` gating of §8;
    • with duplicates removed; and
    • in **UTF‑16 lexicographic** order (ascending).
-  **Cardinality cap (normative).** When the derived finite universe size (post‑intersection) **exceeds** `complexity.maxEnumCardinality`, Compose **MUST NOT** provide `enumerate()` and **MUST** emit `COMPLEXITY_CAP_ENUM` with `details:{ limit:number, observed:number }`.
+  **Definition (normative) — `ENUM_CAP`.** A process‑ or build‑time integer constant used to bound the materialized export of `enumerate()`. `ENUM_CAP` is **not** a PlanOption and is **not** modifiable at request time. Implementations MAY provide a build‑time or process‑wide configuration mechanism; `Compose` MUST ignore any attempt to control this bound via PlanOptions.
+  **Cardinality cap (normative).** When the derived finite universe size (post‑intersection) **exceeds `ENUM_CAP`**, Compose MUST NOT provide `enumerate()` and MUST emit `COMPLEXITY_CAP_ENUM` with `details:{ limit: `ENUM_CAP`, observed: |G| }`.
   **Cross‑reference (normative):** This rule is an explicit exception to the earlier `enumerate()` obligation in this subsection.
   **Enumeration vs `propertyNames.enum` (normative clarification).** Even when the global must‑cover intersection becomes
   finite **solely** because a raw `propertyNames.enum` is present (i.e., without a §7 rewrite at the same object),
@@ -705,7 +701,7 @@ Implementations **MUST NOT** include generator‑only `COMPLEXITY_CAP_PATTERNS` 
      If Ci.propertyNames is pattern **and** anchored‑safe & non‑capped:
         filter A_i by that pattern; otherwise leave A_i unchanged (unknown gating).
   2) G := ⋂ A_i over all such Ci.
-  3) If `|G| > complexity.maxEnumCardinality` (when defined), do **not** export `enumerate()` and **emit** `COMPLEXITY_CAP_ENUM{ limit, observed: |G| }`. Otherwise return `sortUTF16Asc(dedup(G))`.
+  3) If `|G| > ENUM_CAP`, do **not** export `enumerate()` and **emit** `COMPLEXITY_CAP_ENUM{ limit: ENUM_CAP, observed: |G| }`. Otherwise return `sortUTF16Asc(dedup(G))`.
 
   **Further constraints (normative).**
   • Regex guards: Only **anchored‑safe & non‑capped** exact‑literal alternations may contribute literals; patterns that fail to compile or are capped contribute **no** literals and **MUST** log coverage‑time diagnostics per §8.
@@ -714,7 +710,7 @@ Implementations **MUST NOT** include generator‑only `COMPLEXITY_CAP_PATTERNS` 
   • When `enumerate()` is provided, the export **MUST** also include `provenance`,
     de-duplicated and UTF‑16 sorted; it **MUST** list `'propertyNamesSynthetic'` whenever §7 synthetic patterns
     contributed to the enumerated set.
-* The `CoverageIndex` is **deterministic** for a fixed `(AJV.major, AJV.flags)` and **MUST NOT** vary with seed or `PlanOptions*`.
+* The `CoverageIndex` is **deterministic** for a fixed `(AJV.major, AJV.flags, ENUM_CAP)` and **MUST NOT** vary with seed or PlanOptions.
  <a id="s8-coverage-index-enumerate"></a>
  * Enumeration order (normative). When `enumerate` is provided, it **MUST** return a **deduplicated** array of names in **UTF‑16 lexicographic** order (ascending). This requirement is for determinism; consumers remain free to ignore `enumerate` when not needed.
 
@@ -1666,7 +1662,6 @@ decisions at compose‑time and **MUST** key on `(canonPath, seed, AJV.major, AJ
 **PlanOptionsSubKey (normative)** — JSON string of the following fields only, with keys sorted lexicographically:
 'complexity.maxAnyOfBranches',
 'complexity.maxContainsNeeds',
-'complexity.maxEnumCardinality',
 'complexity.maxOneOfBranches',
 'complexity.maxPatternProps',
 'conditionals.exclusivityStringTweak',
@@ -1690,6 +1685,7 @@ decisions at compose‑time and **MUST** key on `(canonPath, seed, AJV.major, AJ
 'trials.skipTrialsIfBranchesGt'
 (affects AP:false rename policy only; included to key rename behavior; no effect on numeric math or tolerances).
 Omitted/undefined fields are not serialized.
+**Normative clarification.** `ENUM_CAP` (the Coverage Index enumeration bound; see §8) is not a PlanOption and MUST NOT be serialized into `PlanOptionsSubKey` or any cache/memo keys.
 **Canonicalization (normative).** When computing `PlanOptionsSubKey`, any
 `conditionals.strategy:'rewrite'` **MUST** be normalized to `'if-aware-lite'`.
 This normalization **MUST NOT** trigger any Normalizer rewrite; only
@@ -2081,6 +2077,7 @@ Provide the following minimal JSON‑Schema‑like shapes for major codes. Only 
     "limit":{"type":"number"},
     "observed":{"type":"number"}
 }}
+**Normative.** For `COMPLEXITY_CAP_ENUM`, `details.limit` MUST equal `ENUM_CAP` (see definition above).
 
 // COMPLEXITY_CAP_CONTAINS  (compose-time cap on contains-bag)
 { "type":"object", "required":["limit","observed"],
@@ -2362,7 +2359,7 @@ export interface PlanOptions {
     maxOneOfBranches?: number;
     maxAnyOfBranches?: number;
     maxPatternProps?: number;
-    maxEnumCardinality?: number;
+    /* DEPRECATED: maxEnumCardinality was removed; Compose MUST ignore any runtime value. */
     maxContainsNeeds?: number;
     maxSchemaBytes?: number;
     bailOnUnsatAfter?: number; // gen→repair→validate cycles
@@ -2409,6 +2406,8 @@ export interface PlanOptions {
   };
 }
 ```
+
+**Normative (compatibility).** If an implementation still accepts `PlanOptions.complexity.maxEnumCardinality`, `Compose` MUST ignore it for Coverage Index export; outcomes of `coverageIndex.has()` / `enumerate()` MUST NOT depend on it. Implementations MAY reject such input as a configuration error, but MUST NOT change Coverage Index behavior based on it.
 
 <a id="s23-normalize-interfaces"></a>
 ```ts
