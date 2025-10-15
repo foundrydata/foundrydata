@@ -269,7 +269,7 @@ describe('CompositionEngine coverage index', () => {
     expect(warnCodes).toContain(DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX);
   });
 
-  it('fails fast in strict mode when must-cover set is empty under presence pressure', () => {
+  it('short-circuits UNSAT_AP_FALSE_EMPTY_COVERAGE in strict mode when must-cover set is provably empty under presence pressure', () => {
     const schema = {
       type: 'object',
       additionalProperties: false,
@@ -277,21 +277,18 @@ describe('CompositionEngine coverage index', () => {
     };
 
     const result = compose(makeInput(schema));
-    const hint = result.diag?.unsatHints?.[0];
-    expect(hint).toBeDefined();
-    expect(hint?.code).toBe(DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE);
-    expect(hint?.canonPath).toBe('');
-    expect(hint?.details).toEqual({ required: ['id'] });
     const fatal = result.diag?.fatal?.find(
-      (entry) => entry.code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN
+      (entry) => entry.code === DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE
     );
     expect(fatal).toBeDefined();
-    expect(fatal?.details).toEqual({ sourceKind: 'patternProperties' });
-    const warnCodes = result.diag?.warn?.map((entry) => entry.code) ?? [];
-    expect(warnCodes).toContain(DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX);
+    expect(fatal?.canonPath).toBe('');
+    expect(fatal?.details).toEqual({ required: ['id'] });
+    // No unsatHints when early-unsat is taken.
+    const hasHints = (result.diag?.unsatHints ?? []).length > 0;
+    expect(hasHints).toBe(false);
   });
 
-  it('downgrades to warn in lax mode when must-cover set is empty under presence pressure', () => {
+  it('also short-circuits UNSAT_AP_FALSE_EMPTY_COVERAGE in lax mode (mode does not affect provable emptiness)', () => {
     const schema = {
       type: 'object',
       additionalProperties: false,
@@ -299,23 +296,15 @@ describe('CompositionEngine coverage index', () => {
     };
 
     const result = compose(makeInput(schema), { mode: 'lax' });
-    const hint = result.diag?.unsatHints?.[0];
-    expect(hint).toBeDefined();
-    const hasFatalApFalse =
-      result.diag?.fatal?.some(
-        (entry) => entry.code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN
-      ) ?? false;
-    expect(hasFatalApFalse).toBe(false);
-    const warn = result.diag?.warn?.filter(
-      (entry) => entry.code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN
+    const fatal = result.diag?.fatal?.find(
+      (entry) => entry.code === DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE
     );
-    expect(warn).toHaveLength(1);
-    expect(warn?.[0]?.details).toEqual({ sourceKind: 'patternProperties' });
-    const approxWarn = result.diag?.warn?.find(
-      (entry) => entry.code === DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX
-    );
-    expect(approxWarn).toBeDefined();
-    expect(approxWarn?.details).toEqual({ reason: 'presencePressure' });
+    expect(fatal).toBeDefined();
+    expect(fatal?.canonPath).toBe('');
+    expect(fatal?.details).toEqual({ required: ['id'] });
+    // No unsatHints when early-unsat is taken.
+    const hasHints = (result.diag?.unsatHints ?? []).length > 0;
+    expect(hasHints).toBe(false);
   });
 
   it('includes patternSource when a single unsafe pattern triggers the fail-fast', () => {
