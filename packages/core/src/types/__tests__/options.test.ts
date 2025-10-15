@@ -44,7 +44,6 @@ describe('PlanOptions', () => {
       expect(resolved.complexity.maxOneOfBranches).toBe(200);
       expect(resolved.complexity.maxAnyOfBranches).toBe(500);
       expect(resolved.complexity.maxPatternProps).toBe(64);
-      expect(resolved.complexity.maxEnumCardinality).toBe(10_000);
       expect(resolved.complexity.maxContainsNeeds).toBe(16);
       expect(resolved.complexity.maxSchemaBytes).toBe(2_000_000);
       expect(resolved.complexity.bailOnUnsatAfter).toBe(12);
@@ -167,9 +166,7 @@ describe('PlanOptions', () => {
         resolveOptions({ complexity: { maxPatternProps: 0 } })
       ).toThrow('complexity.maxPatternProps must be positive');
 
-      expect(() =>
-        resolveOptions({ complexity: { maxEnumCardinality: -5 } })
-      ).toThrow('complexity.maxEnumCardinality must be positive');
+      // maxEnumCardinality removed from PlanOptions; ignored if present
 
       expect(() =>
         resolveOptions({ complexity: { maxContainsNeeds: 0 } })

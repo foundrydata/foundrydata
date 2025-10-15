@@ -4,6 +4,8 @@
 /* eslint-disable complexity */
 import { DIAGNOSTIC_CODES, type DiagnosticCode } from '../diag/codes';
 import { createPlanOptionsSubKey, type CacheKeyContext } from '../util/cache';
+import { canonicalizeForHash } from '../util/canonical-json';
+import { ENUM_CAP } from '../constants';
 import { XorShift32 } from '../util/rng';
 import {
   resolveOptions,
@@ -245,6 +247,21 @@ class CompositionEngine {
   }
 
   run(): ComposeResult {
+    // Compose-time schema byte-size cap (SPEC §8: COMPLEXITY_CAP_SCHEMA_SIZE)
+    try {
+      const { byteLength } = canonicalizeForHash(this.schema);
+      const limit = this.resolvedOptions.complexity.maxSchemaBytes;
+      if (typeof limit === 'number' && byteLength > limit) {
+        this.recordCap(DIAGNOSTIC_CODES.COMPLEXITY_CAP_SCHEMA_SIZE);
+        this.addWarn('', DIAGNOSTIC_CODES.COMPLEXITY_CAP_SCHEMA_SIZE, {
+          limit,
+          observed: byteLength,
+        });
+      }
+    } catch {
+      // If canonicalization fails unexpectedly, ignore for cap purposes.
+    }
+
     this.visitNode(this.schema, '');
     const diag = this.finalizeDiagnostics();
     return {
@@ -275,6 +292,8 @@ class CompositionEngine {
       this.registerContainsBag(schema, canonPath);
     }
     if (isObjectLikeSchema(schema)) {
+      // Early unsat checks involving propertyNames enums (SPEC §8 early-unsat)
+      this.checkPropertyNamesUnsat(schema, canonPath);
       this.registerCoverageEntry(schema, canonPath);
     }
 
@@ -617,7 +636,7 @@ class CompositionEngine {
       );
       const pnamesRewriteApplied = this.hasPnamesRewrite(canonPath);
 
-      const limit = this.resolvedOptions.complexity.maxEnumCardinality;
+      const limit = ENUM_CAP;
       if (
         hasGatingEnum &&
         !hasNonPropertyNamesFiniteSource &&
@@ -692,6 +711,53 @@ class CompositionEngine {
       }
 
       this.addApproximation(canonPath, 'presencePressure');
+    }
+  }
+
+  private checkPropertyNamesUnsat(
+    schema: Record<string, unknown>,
+    canonPath: string
+  ): void {
+    const pn = schema.propertyNames;
+    if (!pn || typeof pn !== 'object') return;
+    const pnRec = pn as Record<string, unknown>;
+
+    // Helper to extract enum of strings
+    const enumVals = Array.isArray(pnRec.enum)
+      ? (pnRec.enum as unknown[]).filter(
+          (v): v is string => typeof v === 'string'
+        )
+      : undefined;
+
+    // UNSAT_MINPROPS_PNAMES: propertyNames enum empty AND minProperties > 0
+    if (
+      enumVals &&
+      enumVals.length === 0 &&
+      typeof schema.minProperties === 'number' &&
+      schema.minProperties > 0
+    ) {
+      this.addFatal(canonPath, DIAGNOSTIC_CODES.UNSAT_MINPROPS_PNAMES, {
+        minProperties: schema.minProperties,
+      });
+      return;
+    }
+
+    // UNSAT_REQUIRED_PNAMES: required contains names not in enum E
+    if (enumVals && enumVals.length > 0) {
+      const required = Array.isArray(schema.required)
+        ? (schema.required as unknown[]).filter(
+            (v): v is string => typeof v === 'string'
+          )
+        : [];
+      if (required.length > 0) {
+        const allowed = new Set(enumVals);
+        const requiredOut = required.filter((r) => !allowed.has(r));
+        if (requiredOut.length > 0) {
+          this.addFatal(canonPath, DIAGNOSTIC_CODES.UNSAT_REQUIRED_PNAMES, {
+            requiredOut,
+          });
+        }
+      }
     }
   }
 

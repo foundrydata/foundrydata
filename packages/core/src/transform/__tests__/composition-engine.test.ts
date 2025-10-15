@@ -898,6 +898,64 @@ describe('CompositionEngine coverage diagnostics', () => {
   });
 });
 
+// Enumeration cap is exercised indirectly by other tests; no dedicated cap test here.
+
+describe('CompositionEngine early-unsat with propertyNames', () => {
+  it('emits UNSAT_MINPROPS_PNAMES when propertyNames enum is empty and minProperties>0', () => {
+    const schema = {
+      type: 'object',
+      minProperties: 1,
+      propertyNames: { enum: [] },
+    } as const;
+
+    const result = compose(makeInput(schema));
+    const fatal = result.diag?.fatal ?? [];
+    const found = fatal.find(
+      (e) =>
+        e.code === DIAGNOSTIC_CODES.UNSAT_MINPROPS_PNAMES && e.canonPath === ''
+    );
+    expect(found).toBeDefined();
+    expect(found?.details).toEqual({ minProperties: 1 });
+  });
+
+  it('emits UNSAT_REQUIRED_PNAMES when required contains names not in propertyNames enum', () => {
+    const schema = {
+      type: 'object',
+      required: ['a', 'b'],
+      propertyNames: { enum: ['a'] },
+    } as const;
+
+    const result = compose(makeInput(schema));
+    const fatal = result.diag?.fatal ?? [];
+    const found = fatal.find(
+      (e) =>
+        e.code === DIAGNOSTIC_CODES.UNSAT_REQUIRED_PNAMES && e.canonPath === ''
+    );
+    expect(found).toBeDefined();
+    expect(found?.details).toEqual({ requiredOut: ['b'] });
+  });
+});
+
+describe('CompositionEngine schema byte-size cap', () => {
+  it('emits COMPLEXITY_CAP_SCHEMA_SIZE when canonical JSON exceeds limit', () => {
+    const schema = {
+      type: 'object',
+      properties: Object.fromEntries(
+        Array.from({ length: 200 }, (_, i) => [`p${i}`, { type: 'string' }])
+      ),
+    } as const;
+
+    const result = compose(makeInput(schema), {
+      planOptions: { complexity: { maxSchemaBytes: 200 } },
+    });
+    const codes = result.diag?.warn?.map((w) => w.code) ?? [];
+    expect(codes).toContain(DIAGNOSTIC_CODES.COMPLEXITY_CAP_SCHEMA_SIZE);
+    expect(result.diag?.caps).toContain(
+      DIAGNOSTIC_CODES.COMPLEXITY_CAP_SCHEMA_SIZE
+    );
+  });
+});
+
 describe('computeSelectorMemoKey', () => {
   it('includes plan options subkey, AJV metadata, and user salt', () => {
     const key = computeSelectorMemoKey({
