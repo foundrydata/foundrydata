@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { canonicalizeForHash } from './canonical-json';
+import { canonicalizeForHash } from './canonical-json.js';
 
 export interface StableHashOptions {
   maxBytes?: number;

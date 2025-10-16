@@ -8,8 +8,8 @@ import {
   type KnownDiagnosticCode,
   getAllowedDiagnosticPhases,
   isKnownDiagnosticCode,
-} from './codes';
-import { DIAGNOSTIC_DETAIL_SCHEMAS, type MiniSchema } from './schemas';
+} from './codes.js';
+import { DIAGNOSTIC_DETAIL_SCHEMAS, type MiniSchema } from './schemas.js';
 
 export interface DiagnosticEnvelope<Details = unknown> {
   code: DiagnosticCode;

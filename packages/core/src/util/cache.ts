@@ -1,8 +1,8 @@
 /* eslint-disable max-lines */
 import type Ajv from 'ajv';
 
-import { stableHash } from './stable-hash';
-import { extractAjvFlags } from './ajv-source';
+import { stableHash } from './stable-hash.js';
+import { extractAjvFlags } from './ajv-source.js';
 import {
   resolveOptions,
   type PlanOptions,

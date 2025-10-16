@@ -4,21 +4,21 @@
 import {
   normalize,
   type NormalizeResult,
-} from '../transform/schema-normalizer';
+} from '../transform/schema-normalizer.js';
 import {
   compose,
   type ComposeOptions,
   type ComposeInput,
-} from '../transform/composition-engine';
-import { createPlanningAjv } from '../util/ajv-planning';
-import { createSourceAjv } from '../util/ajv-source';
-import { checkAjvStartupParity } from '../util/ajv-gate';
-import { MetricsCollector, type MetricPhase } from '../util/metrics';
+} from '../transform/composition-engine.js';
+import { createPlanningAjv } from '../util/ajv-planning.js';
+import { createSourceAjv } from '../util/ajv-source.js';
+import { checkAjvStartupParity } from '../util/ajv-gate.js';
+import { MetricsCollector, type MetricPhase } from '../util/metrics.js';
 import {
   generateFromCompose,
   type GeneratorStageOutput,
   type FoundryGeneratorOptions,
-} from '../generator/foundry-generator';
+} from '../generator/foundry-generator.js';
 import {
   PipelineStageError,
   type PipelineStageName,
@@ -28,7 +28,7 @@ import {
   type PipelineStages,
   type PipelineStatus,
   type PipelineArtifacts,
-} from './types';
+} from './types.js';
 
 const STAGE_SEQUENCE: PipelineStageName[] = [
   'normalize',

@@ -3,10 +3,10 @@
  * Provides extensible format generation and validation for string formats
  */
 
-import { Result, err } from '../types/result';
-import { GenerationError } from '../types/errors';
-import { didYouMean } from '../errors/suggestions';
-import type { StringFormat } from '../types/schema';
+import { Result, err } from '../types/result.js';
+import { GenerationError } from '../types/errors.js';
+import { didYouMean } from '../errors/suggestions.js';
+import type { StringFormat } from '../types/schema.js';
 
 /**
  * Options for format generation

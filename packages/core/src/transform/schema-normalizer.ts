@@ -3,8 +3,8 @@
 /* eslint-disable max-lines */
 /* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
-import { DIAGNOSTIC_CODES } from '../diag/codes';
-import type { DiagnosticCode } from '../diag/codes';
+import { DIAGNOSTIC_CODES } from '../diag/codes.js';
+import type { DiagnosticCode } from '../diag/codes.js';
 
 type CanonNode = CanonObjectNode | CanonArrayNode | CanonValueNode;
 

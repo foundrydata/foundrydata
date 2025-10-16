@@ -3,13 +3,13 @@
  * Generates date-time strings in ISO 8601 format (YYYY-MM-DDTHH:mm:ssZ)
  */
 
-import { Result, ok } from '../../types/result';
-import { GenerationError } from '../../types/errors';
-import { isISO8601DateTime } from '../../types/schema';
+import { Result, ok } from '../../types/result.js';
+import { GenerationError } from '../../types/errors.js';
+import { isISO8601DateTime } from '../../types/schema.js';
 import type {
   FormatGenerator,
   FormatOptions,
-} from '../../registry/format-registry';
+} from '../../registry/format-registry.js';
 
 export class DateTimeGenerator implements FormatGenerator {
   readonly name = 'date-time';

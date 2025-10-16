@@ -4,18 +4,18 @@
  */
 
 // Export the main Generator stage helpers
-export { Generator } from '../generator';
+export { Generator } from '../generator.js';
 export {
   generateFromCompose,
   type GeneratorStageOutput,
   type FoundryGeneratorOptions,
-} from './foundry-generator';
+} from './foundry-generator.js';
 
 // Export base generator infrastructure
-export * from './data-generator';
+export * from './data-generator.js';
 
 // Export type-specific generators
-export * from './types';
+export * from './types/index.js';
 
 // Export format generators
-export * from './formats';
+export * from './formats/index.js';

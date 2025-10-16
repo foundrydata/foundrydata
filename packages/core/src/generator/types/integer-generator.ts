@@ -9,14 +9,14 @@
 
 /* eslint-disable max-lines, max-lines-per-function, complexity, @typescript-eslint/no-explicit-any */
 
-import { Result, ok, err } from '../../types/result';
-import { GenerationError } from '../../types/errors';
-import type { Schema, IntegerSchema } from '../../types/schema';
+import { Result, ok, err } from '../../types/result.js';
+import { GenerationError } from '../../types/errors.js';
+import type { Schema, IntegerSchema } from '../../types/schema.js';
 import {
   DataGenerator,
   GeneratorContext,
   GenerationConfig,
-} from '../data-generator';
+} from '../data-generator.js';
 
 // Default bounds for integer generation when not specified
 const DEFAULT_INTEGER_MIN = -1000000;

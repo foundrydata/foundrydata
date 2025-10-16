@@ -11,4 +11,4 @@ export {
   type ComplianceValidationResult,
   type ComplianceReport,
   type ComplianceSummary,
-} from './compliance-validator';
+} from './compliance-validator.js';

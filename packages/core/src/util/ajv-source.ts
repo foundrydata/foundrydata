@@ -1,13 +1,13 @@
 import Ajv, { type Options as AjvOptions } from 'ajv';
-import Ajv2019 from 'ajv/dist/2019';
-import Ajv2020 from 'ajv/dist/2020';
+import Ajv2019 from 'ajv/dist/2019.js';
+import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 
 import {
   resolveOptions,
   type PlanOptions,
   type ResolvedOptions,
-} from '../types/options';
+} from '../types/options.js';
 
 export type JsonSchemaDialect = 'draft-04' | 'draft-07' | '2019-09' | '2020-12';
 

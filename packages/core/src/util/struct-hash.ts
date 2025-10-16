@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
-import { canonicalizeForHash } from './canonical-json';
+import { canonicalizeForHash } from './canonical-json.js';
 
 export interface StructuralHashResult {
   digest: string;

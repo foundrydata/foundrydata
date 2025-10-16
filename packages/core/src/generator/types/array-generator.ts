@@ -13,26 +13,26 @@
  * - Nested structure generation
  */
 
-import { Result, ok, err } from '../../types/result';
-import { GenerationError } from '../../types/errors';
-import type { Schema, ArraySchema, StringSchema } from '../../types/schema';
+import { Result, ok, err } from '../../types/result.js';
+import { GenerationError } from '../../types/errors.js';
+import type { Schema, ArraySchema, StringSchema } from '../../types/schema.js';
 import {
   isStringSchema,
   isNumberSchema,
   isIntegerSchema,
   isBooleanSchema,
-} from '../../types/schema';
+} from '../../types/schema.js';
 import {
   DataGenerator,
   GeneratorContext,
   GenerationConfig,
-} from '../data-generator';
-import { StringGenerator } from './string-generator';
-import { NumberGenerator } from './number-generator';
-import { IntegerGenerator } from './integer-generator';
-import { BooleanGenerator } from './boolean-generator';
-import { ObjectGenerator } from './object-generator';
-import { structuralHash, bucketsEqual } from '../../util/struct-hash';
+} from '../data-generator.js';
+import { StringGenerator } from './string-generator.js';
+import { NumberGenerator } from './number-generator.js';
+import { IntegerGenerator } from './integer-generator.js';
+import { BooleanGenerator } from './boolean-generator.js';
+import { ObjectGenerator } from './object-generator.js';
+import { structuralHash, bucketsEqual } from '../../util/struct-hash.js';
 
 // Type guard to check if schema is an object (not boolean)
 function isSchemaObject(schema: Schema): schema is Exclude<Schema, boolean> {

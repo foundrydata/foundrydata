@@ -3,14 +3,14 @@
  * Generates boolean values with support for const, enum, and weighted selection
  */
 
-import { Result, ok, err } from '../../types/result';
-import { GenerationError } from '../../types/errors';
-import type { Schema, BooleanSchema } from '../../types/schema';
+import { Result, ok, err } from '../../types/result.js';
+import { GenerationError } from '../../types/errors.js';
+import type { Schema, BooleanSchema } from '../../types/schema.js';
 import {
   DataGenerator,
   GeneratorContext,
   GenerationConfig,
-} from '../data-generator';
+} from '../data-generator.js';
 
 /**
  * Options for boolean generation

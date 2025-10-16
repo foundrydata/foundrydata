@@ -3,11 +3,11 @@
  * Supports multiple schema formats with extensible parser registration
  */
 
-import type { Result } from '../types/result';
-import { ParseError } from '../types/errors';
-import { err } from '../types/result';
-import { ErrorCode } from '../errors/codes';
-import type { NormalizeResult } from '../transform/schema-normalizer';
+import type { Result } from '../types/result.js';
+import { ParseError } from '../types/errors.js';
+import { err } from '../types/result.js';
+import { ErrorCode } from '../errors/codes.js';
+import type { NormalizeResult } from '../transform/schema-normalizer.js';
 
 /**
  * Base interface for schema parsers

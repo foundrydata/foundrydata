@@ -3,13 +3,13 @@
  * Generates realistic email addresses using common patterns
  */
 
-import { Result, ok } from '../../types/result';
-import { GenerationError } from '../../types/errors';
-import { isEmail } from '../../types/schema';
+import { Result, ok } from '../../types/result.js';
+import { GenerationError } from '../../types/errors.js';
+import { isEmail } from '../../types/schema.js';
 import type {
   FormatGenerator,
   FormatOptions,
-} from '../../registry/format-registry';
+} from '../../registry/format-registry.js';
 
 export class EmailGenerator implements FormatGenerator {
   readonly name = 'email';

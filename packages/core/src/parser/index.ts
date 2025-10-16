@@ -2,19 +2,19 @@
  * Parser module exports
  */
 
-export type { SchemaParser } from './schema-parser';
-export { ParserRegistry, hasProperty } from './schema-parser';
-export { JSONSchemaParser } from './json-schema-parser';
+export type { SchemaParser } from './schema-parser.js';
+export { ParserRegistry, hasProperty } from './schema-parser.js';
+export { JSONSchemaParser } from './json-schema-parser.js';
 export {
   ReferenceResolver,
   CircularDependencyDetector,
   type ReferenceResolverOptions,
   type ResolutionContext,
   type ResolvedReference,
-} from './reference-resolver';
+} from './reference-resolver.js';
 
-import { ParserRegistry } from './schema-parser';
-import { JSONSchemaParser } from './json-schema-parser';
+import { ParserRegistry } from './schema-parser.js';
+import { JSONSchemaParser } from './json-schema-parser.js';
 
 /**
  * Create a default parser registry with built-in parsers

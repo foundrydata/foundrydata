@@ -1,20 +1,20 @@
 import type {
   NormalizeOptions,
   NormalizeResult,
-} from '../transform/schema-normalizer';
+} from '../transform/schema-normalizer.js';
 import type {
   ComposeOptions,
   ComposeResult,
   ComposeInput,
-} from '../transform/composition-engine';
-import type { GeneratorStageOutput } from '../generator/foundry-generator';
+} from '../transform/composition-engine.js';
+import type { GeneratorStageOutput } from '../generator/foundry-generator.js';
 import type {
   MetricsCollector,
   MetricsCollectorOptions,
   MetricsSnapshot,
   MetricsVerbosity,
-} from '../util/metrics';
-import type { PlanOptions } from '../types/options';
+} from '../util/metrics.js';
+import type { PlanOptions } from '../types/options.js';
 
 export type PipelineStageName =
   | 'normalize'

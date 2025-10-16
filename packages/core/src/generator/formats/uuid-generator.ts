@@ -4,13 +4,13 @@
  * Falls back to a fixed-seed PRNG to keep tests deterministic if no seed supplied.
  */
 import { randomUUID } from 'crypto';
-import { Result, ok, err } from '../../types/result';
-import { GenerationError } from '../../types/errors';
-import { isUUID } from '../../types/schema';
+import { Result, ok, err } from '../../types/result.js';
+import { GenerationError } from '../../types/errors.js';
+import { isUUID } from '../../types/schema.js';
 import type {
   FormatGenerator,
   FormatOptions,
-} from '../../registry/format-registry';
+} from '../../registry/format-registry.js';
 
 export class UUIDGenerator implements FormatGenerator {
   readonly name = 'uuid';

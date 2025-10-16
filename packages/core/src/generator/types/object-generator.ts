@@ -9,21 +9,21 @@
 
 /* eslint-disable max-lines, max-lines-per-function, complexity, @typescript-eslint/no-explicit-any */
 
-import { Result, ok, err } from '../../types/result';
-import { GenerationError } from '../../types/errors';
-import type { Schema, ObjectSchema } from '../../types/schema';
+import { Result, ok, err } from '../../types/result.js';
+import { GenerationError } from '../../types/errors.js';
+import type { Schema, ObjectSchema } from '../../types/schema.js';
 import {
   DataGenerator,
   GeneratorContext,
   GenerationConfig,
-} from '../data-generator';
+} from '../data-generator.js';
 
 // Import other generators for property generation
-import { StringGenerator } from './string-generator';
-import { NumberGenerator } from './number-generator';
-import { IntegerGenerator } from './integer-generator';
-import { BooleanGenerator } from './boolean-generator';
-import { ArrayGenerator } from './array-generator';
+import { StringGenerator } from './string-generator.js';
+import { NumberGenerator } from './number-generator.js';
+import { IntegerGenerator } from './integer-generator.js';
+import { BooleanGenerator } from './boolean-generator.js';
+import { ArrayGenerator } from './array-generator.js';
 
 export class ObjectGenerator extends DataGenerator {
   supports(schema: Schema): boolean {
