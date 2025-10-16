@@ -9,14 +9,14 @@
 
 /* eslint-disable max-lines-per-function, complexity, @typescript-eslint/no-explicit-any */
 
-import { Result, ok, err } from '../../types/result';
-import { GenerationError } from '../../types/errors';
-import type { Schema, StringSchema } from '../../types/schema';
+import { Result, ok, err } from '../../types/result.js';
+import { GenerationError } from '../../types/errors.js';
+import type { Schema, StringSchema } from '../../types/schema.js';
 import {
   DataGenerator,
   GeneratorContext,
   GenerationConfig,
-} from '../data-generator';
+} from '../data-generator.js';
 
 export class StringGenerator extends DataGenerator {
   /**

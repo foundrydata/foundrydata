@@ -3,13 +3,13 @@
  * Export all primitive type generators
  */
 
-export { StringGenerator } from './string-generator';
-export { NumberGenerator } from './number-generator';
-export { IntegerGenerator } from './integer-generator';
-export { BooleanGenerator } from './boolean-generator';
-export { EnumGenerator } from './enum-generator';
-export { ArrayGenerator } from './array-generator';
-export { ObjectGenerator } from './object-generator';
+export { StringGenerator } from './string-generator.js';
+export { NumberGenerator } from './number-generator.js';
+export { IntegerGenerator } from './integer-generator.js';
+export { BooleanGenerator } from './boolean-generator.js';
+export { EnumGenerator } from './enum-generator.js';
+export { ArrayGenerator } from './array-generator.js';
+export { ObjectGenerator } from './object-generator.js';
 
 // Re-export base generator classes
 export {
@@ -17,6 +17,6 @@ export {
   GeneratorRegistry,
   createGeneratorContext,
   defaultGeneratorRegistry,
-} from '../data-generator';
+} from '../data-generator.js';
 
-export type { GeneratorContext, GenerationConfig } from '../data-generator';
+export type { GeneratorContext, GenerationConfig } from '../data-generator.js';

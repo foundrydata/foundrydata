@@ -3,13 +3,13 @@
  * Generates dates in YYYY-MM-DD format (ISO 8601 date format)
  */
 
-import { Result, ok } from '../../types/result';
-import { GenerationError } from '../../types/errors';
-import { isISO8601Date } from '../../types/schema';
+import { Result, ok } from '../../types/result.js';
+import { GenerationError } from '../../types/errors.js';
+import { isISO8601Date } from '../../types/schema.js';
 import type {
   FormatGenerator,
   FormatOptions,
-} from '../../registry/format-registry';
+} from '../../registry/format-registry.js';
 
 export class DateGenerator implements FormatGenerator {
   readonly name = 'date';

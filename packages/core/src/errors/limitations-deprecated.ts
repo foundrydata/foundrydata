@@ -3,7 +3,7 @@
  * Centralized reference for MVP limitations, workarounds, and availability.
  */
 
-import { ErrorCode } from './codes';
+import { ErrorCode } from './codes.js';
 import type { FoundryError, ErrorContext } from '../types/errors';
 
 export const CURRENT_VERSION = '0.1.0';

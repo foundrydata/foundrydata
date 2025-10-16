@@ -8,8 +8,8 @@ export {
   registerFormat,
   generateFormat,
   validateFormat,
-} from './format-registry';
-export type { FormatGenerator, FormatOptions } from './format-registry';
+} from './format-registry.js';
+export type { FormatGenerator, FormatOptions } from './format-registry.js';
 
 // Note: Built-in formats are initialized lazily in `packages/core/src/index.ts`
 // via `defaultFormatRegistry.setInitializer(...)` to avoid circular deps

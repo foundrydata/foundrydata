@@ -1,9 +1,9 @@
 import Ajv, { type Options as AjvOptions } from 'ajv';
-import Ajv2020 from 'ajv/dist/2020';
+import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 
-import { resolveOptions, type PlanOptions } from '../types/options';
-import { extractAjvFlags } from './ajv-source';
+import { resolveOptions, type PlanOptions } from '../types/options.js';
+import { extractAjvFlags } from './ajv-source.js';
 
 export interface PlanningAjvFactoryOptions {
   validateFormats?: boolean;

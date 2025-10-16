@@ -1,7 +1,7 @@
 /* eslint-disable max-depth */
 /* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
-import { getAjvClassLabel, type JsonSchemaDialect } from './ajv-source';
+import { getAjvClassLabel, type JsonSchemaDialect } from './ajv-source.js';
 
 export type AjvClassName = ReturnType<typeof getAjvClassLabel>;
 

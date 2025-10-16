@@ -1,5 +1,5 @@
 import { Buffer } from 'node:buffer';
-import { jsonSafeReplacer } from './json-safe';
+import { jsonSafeReplacer } from './json-safe.js';
 
 type CanonicalJSONValue =
   | null

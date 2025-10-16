@@ -23,14 +23,14 @@
 
 /* eslint-disable max-lines, max-lines-per-function, complexity, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 
-import { Result, ok, err } from '../../types/result';
-import { GenerationError } from '../../types/errors';
-import type { Schema, NumberSchema } from '../../types/schema';
+import { Result, ok, err } from '../../types/result.js';
+import { GenerationError } from '../../types/errors.js';
+import type { Schema, NumberSchema } from '../../types/schema.js';
 import {
   DataGenerator,
   GeneratorContext,
   GenerationConfig,
-} from '../data-generator';
+} from '../data-generator.js';
 
 export class NumberGenerator extends DataGenerator {
   // Default bounds constants for consistent behavior across methods

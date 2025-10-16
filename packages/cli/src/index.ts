@@ -16,8 +16,8 @@ import {
   ReferenceResolver,
   type PipelineResult,
 } from '@foundrydata/core';
-import { renderCLIView } from './render';
-import { parsePlanOptions } from './flags';
+import { renderCLIView } from './render.js';
+import { parsePlanOptions } from './flags.js';
 
 const program = new Command();
 

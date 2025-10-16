@@ -1,9 +1,9 @@
 import {
   type FormatGenerator,
   type FormatOptions,
-} from '../../registry/format-registry';
-import { ok, err, type Result } from '../../types/result';
-import { GenerationError } from '../../types/errors';
+} from '../../registry/format-registry.js';
+import { ok, err, type Result } from '../../types/result.js';
+import { GenerationError } from '../../types/errors.js';
 
 /**
  * RegexGenerator: generates valid ECMAScript regex pattern strings (without delimiters)

@@ -1,12 +1,12 @@
 /* eslint-disable max-lines-per-function */
-import { ok, err, type Result } from '../types/result';
-import { ParseError } from '../types/errors';
-import { ErrorCode } from '../errors/codes';
-import type { SchemaParser } from './schema-parser';
+import { ok, err, type Result } from '../types/result.js';
+import { ParseError } from '../types/errors.js';
+import { ErrorCode } from '../errors/codes.js';
+import type { SchemaParser } from './schema-parser.js';
 import {
   normalize,
   type NormalizeResult,
-} from '../transform/schema-normalizer';
+} from '../transform/schema-normalizer.js';
 
 type ParseResult = Result<NormalizeResult, ParseError>;
 

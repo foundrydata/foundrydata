@@ -7,19 +7,19 @@
 
 /* eslint-disable max-lines */
 import Ajv from 'ajv';
-import Ajv2019 from 'ajv/dist/2019';
-import Ajv2020 from 'ajv/dist/2020';
+import Ajv2019 from 'ajv/dist/2019.js';
+import Ajv2020 from 'ajv/dist/2020.js';
 import type { ErrorObject, ValidateFunction, JSONSchemaType } from 'ajv';
 import addFormats from 'ajv-formats';
 import draft2019Formats from 'ajv-formats-draft2019';
 
-import type { Result } from '../types/result';
-import { ok, err } from '../types/result';
+import type { Result } from '../types/result.js';
+import { ok, err } from '../types/result.js';
 import {
   ValidationError,
   ValidationFailure,
   createValidationFailure,
-} from '../types/errors';
+} from '../types/errors.js';
 
 /**
  * Individual validation result for a single data item

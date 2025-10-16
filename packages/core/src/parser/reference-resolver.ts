@@ -6,10 +6,10 @@
  * Handles $ref, $recursiveRef, $dynamicRef with cycle detection
  */
 
-import type { Schema, BaseSchema } from '../types/schema';
-import { SchemaError } from '../types/errors';
-import { ErrorCode } from '../errors/codes';
-import { Result, ok, err } from '../types/result';
+import type { Schema, BaseSchema } from '../types/schema.js';
+import { SchemaError } from '../types/errors.js';
+import { ErrorCode } from '../errors/codes.js';
+import { Result, ok, err } from '../types/result.js';
 
 /**
  * Reference resolution options

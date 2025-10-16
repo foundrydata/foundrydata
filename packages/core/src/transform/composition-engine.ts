@@ -2,17 +2,20 @@
 /* eslint-disable max-lines-per-function */
 /* eslint-disable max-lines */
 /* eslint-disable complexity */
-import { DIAGNOSTIC_CODES, type DiagnosticCode } from '../diag/codes';
-import { createPlanOptionsSubKey, type CacheKeyContext } from '../util/cache';
-import { canonicalizeForHash } from '../util/canonical-json';
-import { ENUM_CAP } from '../constants';
-import { XorShift32 } from '../util/rng';
+import { DIAGNOSTIC_CODES, type DiagnosticCode } from '../diag/codes.js';
+import {
+  createPlanOptionsSubKey,
+  type CacheKeyContext,
+} from '../util/cache.js';
+import { canonicalizeForHash } from '../util/canonical-json.js';
+import { ENUM_CAP } from '../constants.js';
+import { XorShift32 } from '../util/rng.js';
 import {
   resolveOptions,
   type PlanOptions,
   type ResolvedOptions,
-} from '../types/options';
-import type { NormalizeResult, NormalizerNote } from './schema-normalizer';
+} from '../types/options.js';
+import type { NormalizeResult, NormalizerNote } from './schema-normalizer.js';
 
 type CoverageProvenance =
   | 'properties'

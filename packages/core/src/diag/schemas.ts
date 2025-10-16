@@ -1,4 +1,4 @@
-import { DIAGNOSTIC_CODES, type KnownDiagnosticCode } from './codes';
+import { DIAGNOSTIC_CODES, type KnownDiagnosticCode } from './codes.js';
 
 export type MiniSchema =
   | { kind: 'string' }

@@ -3,7 +3,7 @@
 import type Ajv from 'ajv';
 import ajvPkg from 'ajv/package.json';
 
-import { extractAjvFlags, type ExtractedAjvFlags } from './ajv-source';
+import { extractAjvFlags, type ExtractedAjvFlags } from './ajv-source.js';
 
 export interface AjvGateDiff {
   flag: string;

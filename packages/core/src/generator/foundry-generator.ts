@@ -6,23 +6,23 @@ import {
   DIAGNOSTIC_CODES,
   DIAGNOSTIC_PHASES,
   type DiagnosticCode,
-} from '../diag/codes';
+} from '../diag/codes.js';
 import type {
   ComposeResult,
   NodeDiagnostics,
-} from '../transform/composition-engine';
-import type { ContainsNeed } from '../transform/composition-engine';
-import type { MetricsCollector } from '../util/metrics';
+} from '../transform/composition-engine.js';
+import type { ContainsNeed } from '../transform/composition-engine.js';
+import type { MetricsCollector } from '../util/metrics.js';
 import {
   resolveOptions,
   type PlanOptions,
   type ResolvedOptions,
-} from '../types/options';
-import type { Schema } from '../types/schema';
-import { FormatRegistry } from '../registry/format-registry';
-import { registerBuiltInFormats } from './formats';
-import { structuralHash } from '../util/struct-hash';
-import { createSourceAjv, type JsonSchemaDialect } from '../util/ajv-source';
+} from '../types/options.js';
+import type { Schema } from '../types/schema.js';
+import { FormatRegistry } from '../registry/format-registry.js';
+import { registerBuiltInFormats } from './formats/index.js';
+import { structuralHash } from '../util/struct-hash.js';
+import { createSourceAjv, type JsonSchemaDialect } from '../util/ajv-source.js';
 import type Ajv from 'ajv';
 import type { ValidateFunction } from 'ajv';
 

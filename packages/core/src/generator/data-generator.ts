@@ -7,12 +7,12 @@
 
 // Note: we avoid using '@faker-js/faker' seeding to ensure per-context PRNG
 // without global or instance seeding side-effects.
-import type { Result } from '../types/result';
-import type { GenerationError } from '../types/errors';
-import type { Schema } from '../types/schema';
-import type { FormatRegistry } from '../registry/format-registry';
-import type { ResolvedOptions } from '../types/options';
-import { resolveOptions } from '../types/options';
+import type { Result } from '../types/result.js';
+import type { GenerationError } from '../types/errors.js';
+import type { Schema } from '../types/schema.js';
+import type { FormatRegistry } from '../registry/format-registry.js';
+import type { ResolvedOptions } from '../types/options.js';
+import { resolveOptions } from '../types/options.js';
 
 /**
  * Generation context passed to all generators
