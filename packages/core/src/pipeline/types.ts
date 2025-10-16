@@ -15,6 +15,7 @@ import type {
   MetricsVerbosity,
 } from '../util/metrics.js';
 import type { PlanOptions } from '../types/options.js';
+import type { DiagnosticEnvelope } from '../diag/validate.js';
 
 export type PipelineStageName =
   | 'normalize'
@@ -67,6 +68,14 @@ export interface PipelineArtifacts {
   generated?: GeneratorStageOutput;
   repaired?: unknown[];
   validation?: { valid: boolean; errors?: unknown[] };
+  repairDiagnostics?: DiagnosticEnvelope[];
+  repairActions?: Array<{
+    action: string;
+    canonPath: string;
+    origPath?: string;
+    instancePath?: string;
+    details?: Record<string, unknown>;
+  }>;
 }
 
 export interface PipelineStageOverrides {
@@ -80,7 +89,33 @@ export interface PipelineStageOverrides {
     items: unknown[],
     args: { schema: unknown; effective: ComposeResult },
     options?: PipelineOptions['repair']
-  ) => unknown[] | Promise<unknown[]>;
+  ) =>
+    | unknown[]
+    | {
+        items: unknown[];
+        diagnostics?: DiagnosticEnvelope[];
+        actions?: Array<{
+          action: string;
+          canonPath: string;
+          origPath?: string;
+          instancePath?: string;
+          details?: Record<string, unknown>;
+        }>;
+      }
+    | Promise<
+        | unknown[]
+        | {
+            items: unknown[];
+            diagnostics?: DiagnosticEnvelope[];
+            actions?: Array<{
+              action: string;
+              canonPath: string;
+              origPath?: string;
+              instancePath?: string;
+              details?: Record<string, unknown>;
+            }>;
+          }
+      >;
   validate?: (
     items: unknown[],
     schema: unknown,

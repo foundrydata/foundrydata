@@ -29,6 +29,8 @@ import {
   type PipelineStatus,
   type PipelineArtifacts,
 } from './types.js';
+import { repairItemsAjvDriven } from '../repair/repair-engine.js';
+import type { DiagnosticEnvelope } from '../diag/validate.js';
 
 const STAGE_SEQUENCE: PipelineStageName[] = [
   'normalize',
@@ -67,7 +69,11 @@ interface StageRunners {
     items: unknown[],
     args: { schema: unknown; effective: ReturnType<typeof compose> },
     options?: PipelineOptions['repair']
-  ) => Promise<unknown[]> | unknown[];
+  ) =>
+    | Promise<
+        unknown[] | { items: unknown[]; diagnostics?: DiagnosticEnvelope[] }
+      >
+    | (unknown[] | { items: unknown[]; diagnostics?: DiagnosticEnvelope[] });
   validate: (
     items: unknown[],
     schema: unknown,
@@ -129,7 +135,7 @@ export async function executePipeline(
     normalize: overrides.normalize ?? normalize,
     compose: overrides.compose ?? compose,
     generate: overrides.generate ?? createDefaultGenerate(metrics, schema),
-    repair: overrides.repair ?? defaultRepair,
+    repair: overrides.repair ?? createDefaultRepair(options),
     validate: overrides.validate ?? defaultValidate,
   };
 
@@ -273,11 +279,38 @@ export async function executePipeline(
     const items = Array.isArray(generatedOutput?.items)
       ? generatedOutput.items
       : [];
-    repaired = await Promise.resolve(
+    const out = await Promise.resolve(
       runners.repair(items, { schema, effective: eff }, options.repair)
     );
+    type RepairActions = {
+      action: string;
+      canonPath: string;
+      origPath?: string;
+      instancePath?: string;
+      details?: Record<string, unknown>;
+    };
+    type RepairObject = {
+      items: unknown[];
+      diagnostics?: DiagnosticEnvelope[];
+      actions?: RepairActions[];
+    };
+    const isRepairObject = (v: unknown): v is RepairObject =>
+      typeof v === 'object' &&
+      v !== null &&
+      'items' in (v as Record<string, unknown>) &&
+      Array.isArray((v as { items?: unknown[] }).items);
+    const normalizedItems = Array.isArray(out)
+      ? out
+      : isRepairObject(out)
+        ? out.items
+        : [];
+    repaired = normalizedItems;
     stages.repair = { status: 'completed', output: repaired };
-    artifacts.repaired = repaired;
+    artifacts.repaired = normalizedItems;
+    if (isRepairObject(out) && out.diagnostics)
+      artifacts.repairDiagnostics = out.diagnostics;
+    if (isRepairObject(out) && out.actions)
+      artifacts.repairActions = out.actions;
   } catch (error) {
     const stageError = toPipelineStageError('repair', error);
     stages.repair = { status: 'failed', error: stageError };
@@ -360,13 +393,30 @@ function createDefaultGenerate(
   };
 }
 
-async function defaultRepair(
+function createDefaultRepair(
+  pipelineOptions: PipelineOptions
+): (
   items: unknown[],
   _args: { schema: unknown; effective: ReturnType<typeof compose> },
   _options?: PipelineOptions['repair']
-): Promise<unknown[]> {
-  // For now, pass-through (idempotent). Real repairs to be handled by Task 10.
-  return items;
+) => Promise<
+  unknown[] | { items: unknown[]; diagnostics: DiagnosticEnvelope[] }
+> {
+  return async (items, _args, _options) => {
+    const { schema, effective } = _args;
+    const attempts = Math.max(1, Math.min(3, _options?.attempts ?? 1));
+    const planOptions = pipelineOptions.generate?.planOptions;
+    try {
+      return repairItemsAjvDriven(
+        items,
+        { schema, effective, planOptions },
+        { attempts }
+      );
+    } catch {
+      // Conservative: on any unexpected error, fall back to pass-through
+      return items as unknown[];
+    }
+  };
 }
 
 async function defaultValidate(
