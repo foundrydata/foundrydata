@@ -104,6 +104,39 @@ describe('AJV startup parity gate', () => {
     }
   });
 
+  it('enforces formats plugin parity when validateFormats:true', () => {
+    const source = createSourceAjv({
+      dialect: 'draft-07',
+      validateFormats: true,
+    });
+    // Create planning Ajv without installing ajv-formats to simulate mismatch
+    // and mark class for the gate.
+    const planning = new Ajv2020({
+      strictSchema: true,
+      strictTypes: true,
+      allErrors: false,
+      unicodeRegExp: true,
+      coerceTypes: false,
+      validateFormats: true,
+    }) as any;
+    (planning as { __fd_ajvClass?: string }).__fd_ajvClass = 'Ajv2020';
+
+    try {
+      checkAjvStartupParity(source, planning, {
+        planningCompilesCanonical2020: true,
+        validateFormats: true,
+        sourceClass: 'Ajv',
+      });
+      throw new Error('expected AjvFlagsMismatchError');
+    } catch (e: any) {
+      expect(e).toBeInstanceOf(AjvFlagsMismatchError);
+      const hasFormatsDiff = e.details.diffs.some((d: any) =>
+        String(d.flag).includes('formatsPlugin')
+      );
+      expect(hasFormatsDiff).toBe(true);
+    }
+  });
+
   it('maps drafts to the correct Ajv class (source) and requires Ajv2020 for planning', () => {
     // Source for 2019-09 should mark Ajv2019
     const source2019 = createSourceAjv({
