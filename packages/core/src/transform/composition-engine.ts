@@ -145,6 +145,12 @@ export interface ComposeOptions {
     ajvFlags: Record<string, unknown>;
   };
   /**
+   * Optional memoization cache for branch selection decisions, keyed by the
+   * normative memo key (canonPath, seed, AJV.major, AJV.flags, PlanOptionsSubKey[, userKey]).
+   * When omitted, an internal LRU cache bounded by PlanOptions.cache.lruSize is used.
+   */
+  memoCache?: Map<string, BranchDecisionRecord>;
+  /**
    * Optional resolved cache context (stable hash, flags). When supplied, the
    * `planOptionsSubKey` component will be reused instead of recomputing.
    */
@@ -208,6 +214,30 @@ export function computeSelectorMemoKey(input: SelectorMemoKeyInput): string {
   );
 }
 
+class StringLRU<V> {
+  private readonly map = new Map<string, V>();
+  constructor(private readonly capacity: number) {}
+  get(key: string): V | undefined {
+    const v = this.map.get(key);
+    if (v !== undefined) {
+      this.map.delete(key);
+      this.map.set(key, v);
+    }
+    return v;
+  }
+  set(key: string, value: V): void {
+    if (this.map.has(key)) this.map.delete(key);
+    this.map.set(key, value);
+    if (this.map.size > this.capacity) {
+      const oldest = this.map.keys().next();
+      if (!oldest.done) this.map.delete(oldest.value);
+    }
+  }
+  size(): number {
+    return this.map.size;
+  }
+}
+
 class CompositionEngine {
   private readonly schema: unknown;
   private readonly ptrMap: Map<string, string>;
@@ -220,6 +250,7 @@ class CompositionEngine {
   private readonly resolvedOptions: ResolvedOptions;
   private readonly planOptionsSnapshot: PlanOptions;
   private readonly memoKeyLog = new Map<string, string>();
+  private readonly memoCache?: Map<string, BranchDecisionRecord>;
   private readonly caps = new Set<string>();
   private readonly approxReasons = new Map<string, Set<string>>();
   private readonly mode: 'strict' | 'lax';
@@ -248,6 +279,15 @@ class CompositionEngine {
     });
     this.resolvedOptions = resolved;
     this.planOptionsSnapshot = resolved as unknown as PlanOptions;
+    // Initialize memo cache: external if provided, else bounded internal LRU per SPEC §14
+    if (options?.memoCache) {
+      this.memoCache = options.memoCache;
+    } else {
+      const cap = Math.max(1, resolved.cache.lruSize);
+      this.memoCache = new StringLRU<BranchDecisionRecord>(
+        cap
+      ) as unknown as Map<string, BranchDecisionRecord>;
+    }
   }
 
   run(): ComposeResult {
@@ -1100,6 +1140,28 @@ class CompositionEngine {
     branches: unknown[],
     canonPath: string
   ): void {
+    // Derive memo key upfront to allow memoization short-circuit per SPEC §14
+    const userKey = this.options.selectorMemoKeyFn
+      ? this.options.selectorMemoKeyFn(
+          canonPath,
+          this.seed,
+          this.planOptionsSnapshot
+        )
+      : undefined;
+    const memoKey = computeSelectorMemoKey({
+      canonPath,
+      seed: this.seed,
+      planOptions: this.resolvedOptions,
+      userKey,
+      ajvMetadata: this.options.memoizer,
+    });
+    const cached = this.memoCache?.get(memoKey);
+    if (cached && cached.kind === kind) {
+      // Reuse cached decision and record diagnostics + metrics deterministically
+      this.branchDiagnostics.set(canonPath, cached);
+      this.memoKeyLog.set(canonPath, memoKey);
+      return;
+    }
     if (branches.length === 0) return;
     const branchStats = branches.map((branch, index) =>
       analyzeBranch(branch, index)
@@ -1198,20 +1260,7 @@ class CompositionEngine {
       }
     }
 
-    const userKey = this.options.selectorMemoKeyFn
-      ? this.options.selectorMemoKeyFn(
-          canonPath,
-          this.seed,
-          this.planOptionsSnapshot
-        )
-      : undefined;
-    const memoKey = computeSelectorMemoKey({
-      canonPath,
-      seed: this.seed,
-      planOptions: this.resolvedOptions,
-      userKey,
-      ajvMetadata: this.options.memoizer,
-    });
+    // memoKey computed above
     const scoresByIndex = Object.fromEntries(
       scored.map((entry) => [String(entry.idx), entry.score])
     );
@@ -1224,7 +1273,7 @@ class CompositionEngine {
       budget.reason = reason;
     }
 
-    this.branchDiagnostics.set(canonPath, {
+    const record: BranchDecisionRecord = {
       canonPath,
       kind,
       chosenBranch: { index: chosenIdx, score: maxScore },
@@ -1238,7 +1287,9 @@ class CompositionEngine {
       },
       budget,
       memoKey,
-    });
+    };
+    this.branchDiagnostics.set(canonPath, record);
+    this.memoCache?.set(memoKey, record);
     this.memoKeyLog.set(canonPath, memoKey);
   }
 

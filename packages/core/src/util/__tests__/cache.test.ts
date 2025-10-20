@@ -6,7 +6,9 @@ import {
   createCacheKeyContext,
   createPlanOptionsSubKey,
   createSchemaCache,
+  createSchemaCachePool,
   SchemaCache,
+  SchemaCachePool,
   type CacheKeyContext,
 } from '../cache';
 import { resolveOptions, type PlanOptions } from '../../types/options';
@@ -284,5 +286,58 @@ describe('SchemaCache', () => {
 
     cache.set(schema, ctx, 'factory');
     expect(cache.get(schema, ctx)).toBe('factory');
+  });
+});
+
+describe('SchemaCachePool', () => {
+  it('separates LRU spaces for source and planning', () => {
+    const pool: SchemaCachePool<string> = createSchemaCachePool<string>({
+      cache: {
+        preferWeakMap: false,
+        useId: true,
+        hashIfBytesLt: 4096,
+        lruSize: 2,
+      },
+    });
+    const ctx = defaultContext().context;
+
+    const src = pool.get('source');
+    const plan = pool.get('planning');
+
+    const schema = { $id: 'urn:sep:test' };
+
+    src.set(schema, ctx, 'SRC');
+    expect(src.get(schema, ctx)).toBe('SRC');
+    // planning space should not see source entries
+    expect(plan.get(schema, ctx)).toBeUndefined();
+
+    plan.set(schema, ctx, 'PLAN');
+    expect(plan.get(schema, ctx)).toBe('PLAN');
+    // source space remains unaffected
+    expect(src.get(schema, ctx)).toBe('SRC');
+  });
+
+  it('maintains independent LRU eviction across spaces', () => {
+    const pool = createSchemaCachePool<string>({
+      cache: {
+        preferWeakMap: false,
+        useId: true,
+        hashIfBytesLt: 4096,
+        lruSize: 1,
+      },
+    });
+    const ctx = defaultContext().context;
+
+    const src = pool.get('source');
+    const plan = pool.get('planning');
+
+    src.set({ $id: 'urn:s:a' }, ctx, 'SA');
+    src.set({ $id: 'urn:s:b' }, ctx, 'SB'); // evicts SA in source
+    expect(src.get({ $id: 'urn:s:a' }, ctx)).toBeUndefined();
+    expect(src.get({ $id: 'urn:s:b' }, ctx)).toBe('SB');
+
+    // planning remains independent
+    plan.set({ $id: 'urn:p:a' }, ctx, 'PA');
+    expect(plan.get({ $id: 'urn:p:a' }, ctx)).toBe('PA');
   });
 });

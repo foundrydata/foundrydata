@@ -204,6 +204,48 @@ export async function executePipeline(
         composeOptions.mode = options.mode;
       }
     }
+    // Build planning AJV metadata for memoization keys (SPEC §14)
+    const planOptions = options.generate?.planOptions;
+    const resolved = resolveOptions(planOptions);
+    const shouldAlignMoP =
+      resolved.rational.fallback === 'decimal' ||
+      resolved.rational.fallback === 'float';
+    const expectedMoP = shouldAlignMoP
+      ? resolved.rational.decimalPrecision
+      : undefined;
+    const planningForCompose = createPlanningAjv(
+      {
+        validateFormats: Boolean(options.validate?.validateFormats),
+        discriminator: Boolean(options.validate?.discriminator),
+        multipleOfPrecision: expectedMoP,
+      },
+      planOptions
+    );
+    const ajvFlags = extractAjvFlags(planningForCompose) as unknown as Record<
+      string,
+      unknown
+    >;
+    const ajvMajor = Number.parseInt(
+      String(
+        (planningForCompose as unknown as { version?: string }).version ?? '0'
+      ).split('.')[0] ?? '0',
+      10
+    );
+    const ajvClass =
+      (
+        planningForCompose as unknown as {
+          __fd_ajvClass?: string;
+        }
+      ).__fd_ajvClass ?? 'Ajv2020';
+    composeOptions = {
+      ...composeOptions,
+      planOptions,
+      memoizer: {
+        ajvMajor: Number.isFinite(ajvMajor) ? ajvMajor : 0,
+        ajvClass,
+        ajvFlags,
+      },
+    };
     const composeResult = runners.compose(composeInput, composeOptions);
     stages.compose = {
       status: 'completed',
