@@ -16,6 +16,7 @@ import {
   type ResolvedOptions,
 } from '../types/options.js';
 import type { NormalizeResult, NormalizerNote } from './schema-normalizer.js';
+import { resolveDynamicRefBinding } from '../util/draft.js';
 
 type CoverageProvenance =
   | 'properties'
@@ -291,6 +292,26 @@ class CompositionEngine {
     }
 
     const schema = node as Record<string, unknown>;
+    // SPEC §12 — Dynamic refs bounded in-document resolution (diagnostic only)
+    // If a $dynamicRef is present at this node, attempt a bounded in-document
+    // binding and record DYNAMIC_SCOPE_BOUNDED with {name, depth} when successful.
+    const dynRef = schema['$dynamicRef'];
+    if (typeof dynRef === 'string') {
+      const maxHops = this.resolvedOptions.guards.maxDynamicScopeHops;
+      const res = resolveDynamicRefBinding(this.schema, canonPath, dynRef, {
+        maxHops,
+      });
+      if (
+        res.code === 'DYNAMIC_SCOPE_BOUNDED' &&
+        typeof res.name === 'string' &&
+        typeof res.depth === 'number'
+      ) {
+        this.addWarn(canonPath, DIAGNOSTIC_CODES.DYNAMIC_SCOPE_BOUNDED, {
+          name: res.name,
+          depth: res.depth,
+        });
+      }
+    }
     if (isArrayLikeSchema(schema)) {
       this.registerContainsBag(schema, canonPath);
     }

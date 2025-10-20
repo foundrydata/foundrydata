@@ -307,6 +307,25 @@ describe('CompositionEngine coverage index', () => {
     expect(hasHints).toBe(false);
   });
 
+  it('records DYNAMIC_SCOPE_BOUNDED when a bounded dynamic scope binding is found', () => {
+    const schema = {
+      $dynamicAnchor: 'slot',
+      type: 'object',
+      properties: {
+        child: { $dynamicRef: '#slot' },
+      },
+    } as const;
+
+    const result = compose(makeInput(schema));
+    const warn = result.diag?.warn ?? [];
+    const entry = warn.find(
+      (e) => e.code === DIAGNOSTIC_CODES.DYNAMIC_SCOPE_BOUNDED
+    );
+    expect(entry).toBeDefined();
+    expect(entry?.canonPath).toBe('/properties/child');
+    expect(entry?.details).toEqual({ name: 'slot', depth: 2 });
+  });
+
   it('includes patternSource when a single unsafe pattern triggers the fail-fast', () => {
     const schema = {
       type: 'object',

@@ -98,6 +98,42 @@ export function checkAjvStartupParity(
     });
   }
 
+  // formats plugin parity (SPEC §13 startup-config-check)
+  // If validateFormats:true on either instance, both must have an equivalent set
+  // of active validators (e.g., via ajv-formats). Factories mark presence on
+  // __fd_formatsPlugin; use it to verify parity and presence.
+  const sFormatsPlugin =
+    (sourceAjv as AjvWithMarkers).__fd_formatsPlugin === true;
+  const pFormatsPlugin =
+    (planningAjv as AjvWithMarkers).__fd_formatsPlugin === true;
+  if (Boolean(sFlags.validateFormats) || Boolean(pFlags.validateFormats)) {
+    // Presence on each instance when it claims validateFormats:true
+    if (Boolean(sFlags.validateFormats) && !sFormatsPlugin) {
+      diffs.push({
+        flag: 'formatsPlugin(source)',
+        expected: true,
+        actual: sFormatsPlugin,
+      });
+    }
+    if (Boolean(pFlags.validateFormats) && !pFormatsPlugin) {
+      diffs.push({
+        flag: 'formatsPlugin(planning)',
+        expected: true,
+        actual: pFormatsPlugin,
+      });
+    }
+    // Parity across instances when format validation is active on both
+    if (Boolean(sFlags.validateFormats) && Boolean(pFlags.validateFormats)) {
+      if (sFormatsPlugin !== pFormatsPlugin) {
+        diffs.push({
+          flag: 'formatsPlugin(parity)',
+          expected: true,
+          actual: false,
+        });
+      }
+    }
+  }
+
   // allowUnionTypes policy: enabled on planning when compiling union-typed views (we require true by default)
   if (expect.planningCompilesCanonical2020 && pFlags.allowUnionTypes !== true) {
     diffs.push({
