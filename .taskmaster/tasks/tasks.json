@@ -1485,7 +1485,7 @@
         "id": 11,
         "title": "Pipeline Orchestrator",
         "description": "Wire Normalize → Compose → Generate → Repair → Validate; pass metrics and diagnostics through. Pipeline orchestration is wired but pending integration of task 9 generator and task 10 repair engines; revisit once those land to replace stubs and tighten dual AJV parity.",
-        "status": "deferred",
+        "status": "done",
         "dependencies": [
           "2",
           "5",
@@ -1512,7 +1512,7 @@
               3
             ],
             "details": "Integrate the Generator from task 9 as the third stage in the pipeline. Handle deterministic seeded generation, enum/const precedence, and if-aware-lite generation. Maintain compatibility with existing generator structure in foundry-generator.ts. Currently using stub implementation pending task 9 completion.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test generator stage integration with deterministic output verification and enum precedence handling",
             "parentId": "undefined"
           },
@@ -1524,7 +1524,7 @@
               4
             ],
             "details": "Integrate the Repair Engine from task 10 as the fourth stage in the pipeline. Handle AJV-driven corrections, idempotent repairs, rational snapping, and structural deduplication for uniqueItems. Implement repair budgeting and graceful degradation. Currently using stub implementation pending task 10 completion.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test repair stage integration with various validation failure scenarios and repair budget limits",
             "parentId": "undefined"
           },
@@ -1536,7 +1536,7 @@
               5
             ],
             "details": "Integrate the Dual AJV system from task 2 as the final validation stage. Ensure validation against original schema, handle Source and Planning AJV instances, and implement proper error reporting with pointer mapping and caching.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test validation stage integration with both Source and Planning AJV instances, verify validation against original schema",
             "parentId": "undefined"
           },
@@ -1548,7 +1548,7 @@
               6
             ],
             "details": "Collect and aggregate metrics from all five pipeline stages (normalizeMs, composeMs, generateMs, repairMs, validateMs). Include validationsPerRow, repairPassesPerRow, branchTrialsTried, and memory usage. Ensure compatibility with existing PipelineMetrics interface.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test metrics collection from all stages, verify metric accuracy and completeness",
             "parentId": "undefined"
           },
@@ -1560,7 +1560,7 @@
               7
             ],
             "details": "Implement comprehensive error handling that preserves error context across pipeline stages. Handle FoundryError types from each stage, maintain error codes, and ensure diagnostic information is properly aggregated and reported.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test error propagation from each pipeline stage, verify error context preservation and proper error codes",
             "parentId": "undefined"
           },
@@ -1572,7 +1572,7 @@
               8
             ],
             "details": "Once task 9 (Generator) is completed, replace the current stub implementation in the pipeline orchestrator with the actual Generator implementation. Ensure proper integration with the pipeline flow, maintain deterministic seeded generation, and verify enum/const precedence handling works correctly.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Integration test to verify Generator stage replacement maintains pipeline functionality and deterministic output",
             "parentId": "undefined"
           },
@@ -1584,7 +1584,7 @@
               9
             ],
             "details": "Once task 10 (Repair Engine) is completed, replace the current stub implementation in the pipeline orchestrator with the actual Repair Engine implementation. Ensure proper AJV-driven corrections, idempotent repairs, and repair budgeting work correctly within the pipeline flow.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Integration test to verify Repair Engine stage replacement maintains pipeline functionality and proper repair behavior",
             "parentId": "undefined"
           },
@@ -1596,7 +1596,7 @@
               10
             ],
             "details": "After integrating the actual Generator and Repair Engine implementations, review the dual AJV validation parity to ensure consistent behavior between Source and Planning AJV instances. Address any discrepancies and ensure proper validation against the original schema throughout the complete pipeline.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Comprehensive validation testing to verify dual AJV parity across all pipeline stages with real implementations",
             "parentId": "undefined"
           },
@@ -2100,7 +2100,7 @@
       ],
       "created": "2025-10-15T22:07:07.308Z",
       "description": "Tasks for feature-simplification context",
-      "updated": "2025-10-16T21:45:57.163Z"
+      "updated": "2025-10-20T08:37:34.117Z"
     }
   }
 }

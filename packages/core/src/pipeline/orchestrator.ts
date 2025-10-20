@@ -309,8 +309,11 @@ export async function executePipeline(
     artifacts.repaired = normalizedItems;
     if (isRepairObject(out) && out.diagnostics)
       artifacts.repairDiagnostics = out.diagnostics;
-    if (isRepairObject(out) && out.actions)
+    if (isRepairObject(out) && out.actions) {
       artifacts.repairActions = out.actions;
+      // Aggregate metrics: total repair actions applied across all items
+      metrics.addRepairActions(out.actions.length);
+    }
   } catch (error) {
     const stageError = toPipelineStageError('repair', error);
     stages.repair = { status: 'failed', error: stageError };
