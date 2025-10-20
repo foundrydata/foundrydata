@@ -68,6 +68,10 @@ export interface PipelineArtifacts {
   generated?: GeneratorStageOutput;
   repaired?: unknown[];
   validation?: { valid: boolean; errors?: unknown[] };
+  validationFlags?: {
+    source: Record<string, unknown>;
+    planning: Record<string, unknown>;
+  };
   repairDiagnostics?: DiagnosticEnvelope[];
   repairActions?: Array<{
     action: string;
@@ -121,8 +125,22 @@ export interface PipelineStageOverrides {
     schema: unknown,
     options?: PipelineOptions['validate']
   ) =>
-    | { valid: boolean; errors?: unknown[] }
-    | Promise<{ valid: boolean; errors?: unknown[] }>;
+    | {
+        valid: boolean;
+        errors?: unknown[];
+        flags?: {
+          source: Record<string, unknown>;
+          planning: Record<string, unknown>;
+        };
+      }
+    | Promise<{
+        valid: boolean;
+        errors?: unknown[];
+        flags?: {
+          source: Record<string, unknown>;
+          planning: Record<string, unknown>;
+        };
+      }>;
 }
 
 export interface PipelineOptions {

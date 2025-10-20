@@ -11,9 +11,10 @@ import {
   type ComposeInput,
 } from '../transform/composition-engine.js';
 import { createPlanningAjv } from '../util/ajv-planning.js';
-import { createSourceAjv } from '../util/ajv-source.js';
+import { createSourceAjv, extractAjvFlags } from '../util/ajv-source.js';
 import { checkAjvStartupParity } from '../util/ajv-gate.js';
 import { MetricsCollector, type MetricPhase } from '../util/metrics.js';
+import { resolveOptions } from '../types/options.js';
 import {
   generateFromCompose,
   type GeneratorStageOutput,
@@ -136,7 +137,7 @@ export async function executePipeline(
     compose: overrides.compose ?? compose,
     generate: overrides.generate ?? createDefaultGenerate(metrics, schema),
     repair: overrides.repair ?? createDefaultRepair(options),
-    validate: overrides.validate ?? defaultValidate,
+    validate: overrides.validate ?? createDefaultValidate(options),
   };
 
   const stages = createInitialStages();
@@ -353,6 +354,23 @@ export async function executePipeline(
     );
     stages.validate = { status: 'completed', output: validation };
     artifacts.validation = validation;
+    // Expose AJV flags used during validation if provided by the validate runner
+    if (
+      validation &&
+      typeof validation === 'object' &&
+      'flags' in (validation as Record<string, unknown>) &&
+      (validation as { flags?: unknown }).flags
+    ) {
+      const flags = (
+        validation as {
+          flags?: {
+            source: Record<string, unknown>;
+            planning: Record<string, unknown>;
+          };
+        }
+      ).flags;
+      if (flags) artifacts.validationFlags = flags;
+    }
     // Metrics: validations per row
     if (Array.isArray(items)) {
       metrics.addValidationCount(items.length);
@@ -422,59 +440,91 @@ function createDefaultRepair(
   };
 }
 
-async function defaultValidate(
-  items: unknown[],
-  schema: unknown,
-  options?: PipelineOptions['validate']
-): Promise<{ valid: boolean; errors?: unknown[] }> {
-  // Dual AJV with startup parity checks
-  // Conservative top-level dialect detection to avoid property-name collisions (e.g., { properties: { id: ... } })
-  const dialect = ((): '2020-12' | '2019-09' | 'draft-07' | 'draft-04' => {
-    if (schema && typeof schema === 'object') {
-      const sch = (schema as Record<string, unknown>)['$schema'];
-      if (typeof sch === 'string') {
-        const lowered = sch.toLowerCase();
-        if (lowered.includes('2020-12')) return '2020-12';
-        if (lowered.includes('2019-09') || lowered.includes('draft-2019'))
-          return '2019-09';
-        if (lowered.includes('draft-07') || lowered.includes('draft-06'))
-          return 'draft-07';
-        if (lowered.includes('draft-04') || lowered.endsWith('/schema#'))
-          return 'draft-04';
+function createDefaultValidate(
+  pipelineOptions: PipelineOptions
+): StageRunners['validate'] {
+  return async (items, schema, options) => {
+    // Dual AJV with startup parity checks
+    // Conservative top-level dialect detection to avoid property-name collisions (e.g., { properties: { id: ... } })
+    const dialect = ((): '2020-12' | '2019-09' | 'draft-07' | 'draft-04' => {
+      if (schema && typeof schema === 'object') {
+        const sch = (schema as Record<string, unknown>)['$schema'];
+        if (typeof sch === 'string') {
+          const lowered = sch.toLowerCase();
+          if (lowered.includes('2020-12')) return '2020-12';
+          if (lowered.includes('2019-09') || lowered.includes('draft-2019'))
+            return '2019-09';
+          if (lowered.includes('draft-07') || lowered.includes('draft-06'))
+            return 'draft-07';
+          if (lowered.includes('draft-04') || lowered.endsWith('/schema#'))
+            return 'draft-04';
+        }
+      }
+      return '2020-12';
+    })();
+    // Resolve plan options to align multipleOfPrecision when required by SPEC §13
+    const planOptions = pipelineOptions.generate?.planOptions;
+    const resolved = resolveOptions(planOptions);
+    const shouldAlignMoP =
+      resolved.rational.fallback === 'decimal' ||
+      resolved.rational.fallback === 'float';
+    const expectedMoP = shouldAlignMoP
+      ? resolved.rational.decimalPrecision
+      : undefined;
+
+    // dialect resolved; proceed with AJV parity and validation
+    const validateFormats = Boolean(options?.validateFormats);
+    const discriminator = Boolean(options?.discriminator);
+    const sourceAjv = createSourceAjv(
+      {
+        dialect,
+        validateFormats,
+        discriminator,
+        multipleOfPrecision: expectedMoP,
+      },
+      planOptions
+    );
+    const planningAjv = createPlanningAjv(
+      { validateFormats, discriminator, multipleOfPrecision: expectedMoP },
+      planOptions
+    );
+    type AjvMarker = {
+      __fd_ajvClass?: 'Ajv' | 'Ajv2019' | 'Ajv2020' | 'ajv-draft-04';
+    };
+    const sourceClass =
+      (sourceAjv as unknown as AjvMarker).__fd_ajvClass ?? 'Ajv';
+
+    checkAjvStartupParity(sourceAjv, planningAjv, {
+      planningCompilesCanonical2020: true,
+      validateFormats,
+      discriminator,
+      sourceClass,
+      multipleOfPrecision: expectedMoP,
+    });
+
+    const validateFn = sourceAjv.compile(schema as object);
+    const errors: unknown[] = [];
+    let allValid = true;
+    for (const it of items) {
+      const ok = validateFn(it);
+      if (!ok) {
+        allValid = false;
+        errors.push(validateFn.errors ?? []);
       }
     }
-    return '2020-12';
-  })();
-  // dialect resolved; proceed with AJV parity and validation
-  const validateFormats = Boolean(options?.validateFormats);
-  const discriminator = Boolean(options?.discriminator);
-  const sourceAjv = createSourceAjv(
-    { dialect, validateFormats, discriminator },
-    {}
-  );
-  const planningAjv = createPlanningAjv({ validateFormats, discriminator }, {});
-  type AjvMarker = {
-    __fd_ajvClass?: 'Ajv' | 'Ajv2019' | 'Ajv2020' | 'ajv-draft-04';
+    return {
+      valid: allValid,
+      errors: errors.length ? errors : undefined,
+      flags: {
+        source: extractAjvFlags(sourceAjv) as unknown as Record<
+          string,
+          unknown
+        >,
+        planning: extractAjvFlags(planningAjv) as unknown as Record<
+          string,
+          unknown
+        >,
+      },
+    };
   };
-  const sourceClass =
-    (sourceAjv as unknown as AjvMarker).__fd_ajvClass ?? 'Ajv';
-
-  checkAjvStartupParity(sourceAjv, planningAjv, {
-    planningCompilesCanonical2020: true,
-    validateFormats,
-    discriminator,
-    sourceClass,
-  });
-
-  const validateFn = sourceAjv.compile(schema as object);
-  const errors: unknown[] = [];
-  let allValid = true;
-  for (const it of items) {
-    const ok = validateFn(it);
-    if (!ok) {
-      allValid = false;
-      errors.push(validateFn.errors ?? []);
-    }
-  }
-  return { valid: allValid, errors: errors.length ? errors : undefined };
 }
