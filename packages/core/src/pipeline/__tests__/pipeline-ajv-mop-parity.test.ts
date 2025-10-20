@@ -14,6 +14,9 @@ vi.mock('../../util/ajv-gate.js', async (importOriginal) => {
       planningAjv: unknown,
       expectPayload: unknown
     ) => {
+      // Mark parameters as used to satisfy TS noUnusedParameters
+      void sourceAjv;
+      void planningAjv;
       capture.last = expectPayload;
       // Do not throw; passthrough behavior for the rest of the pipeline
     },
