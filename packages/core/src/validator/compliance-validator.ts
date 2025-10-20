@@ -20,6 +20,35 @@ import {
   ValidationFailure,
   createValidationFailure,
 } from '../types/errors.js';
+import { resolveOptions } from '../types/options.js';
+
+/** Simple LRU map used to bound cache size per AJV instance */
+class LRUMap<K, V> {
+  private readonly map = new Map<K, V>();
+  constructor(private readonly capacity: number) {}
+  get(key: K): V | undefined {
+    const v = this.map.get(key);
+    if (v !== undefined) {
+      this.map.delete(key);
+      this.map.set(key, v);
+    }
+    return v;
+  }
+  set(key: K, value: V): void {
+    if (this.map.has(key)) this.map.delete(key);
+    this.map.set(key, value);
+    if (this.map.size > this.capacity) {
+      const oldest = this.map.keys().next();
+      if (!oldest.done) this.map.delete(oldest.value);
+    }
+  }
+  clear(): void {
+    this.map.clear();
+  }
+  get size(): number {
+    return this.map.size;
+  }
+}
 
 /**
  * Individual validation result for a single data item
@@ -93,7 +122,7 @@ export class ComplianceValidator {
     Ajv,
     WeakMap<object, ValidateFunction>
   >();
-  private schemaKeyMap = new Map<Ajv, Map<string, object>>();
+  private schemaKeyMap = new Map<Ajv, LRUMap<string, object>>();
   private performanceMetrics = {
     totalValidations: 0,
     cacheHits: 0,
@@ -101,10 +130,13 @@ export class ComplianceValidator {
     totalValidationTime: 0,
   };
   private readonly opts: ComplianceValidatorOptions;
+  private readonly schemaLRUCapacity: number;
 
   constructor(options: ComplianceValidatorOptions = {}) {
     // Store options for later AJV initialization (lazy per-draft)
     this.opts = options;
+    // Use generous default to avoid test flakiness; still bounded (SPEC §14)
+    this.schemaLRUCapacity = Math.max(1024, resolveOptions().cache.lruSize);
   }
 
   /** Create or return an AJV instance for the given draft */
@@ -360,7 +392,7 @@ export class ComplianceValidator {
     }
     let km = this.schemaKeyMap.get(ajv);
     if (!km) {
-      km = new Map<string, object>();
+      km = new LRUMap<string, object>(this.schemaLRUCapacity);
       this.schemaKeyMap.set(ajv, km);
     }
 
@@ -675,7 +707,7 @@ export class ComplianceValidator {
   public clearCache(): void {
     // Reset per-AJV caches
     this.compiledValidators = new Map<Ajv, WeakMap<object, ValidateFunction>>();
-    this.schemaKeyMap = new Map<Ajv, Map<string, object>>();
+    this.schemaKeyMap = new Map<Ajv, LRUMap<string, object>>();
     // Reset performance metrics on cache clear
     this.performanceMetrics = {
       totalValidations: 0,

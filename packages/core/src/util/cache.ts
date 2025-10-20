@@ -400,3 +400,35 @@ export function createSchemaCache<Value>(
   };
   return new SchemaCache<Value>(cacheOptions);
 }
+
+// Separate LRU spaces per AJV instance (planning vs source)
+export type CacheSpace = 'source' | 'planning';
+
+export class SchemaCachePool<Value> {
+  private readonly source: SchemaCache<Value>;
+  private readonly planning: SchemaCache<Value>;
+
+  constructor(options?: Partial<PlanOptions> | ResolvedOptions) {
+    this.source = createSchemaCache<Value>(options);
+    this.planning = createSchemaCache<Value>(options);
+  }
+
+  public get(space: CacheSpace): SchemaCache<Value> {
+    return space === 'source' ? this.source : this.planning;
+  }
+
+  public clear(space?: CacheSpace): void {
+    if (!space) {
+      this.source.clear();
+      this.planning.clear();
+      return;
+    }
+    this.get(space).clear();
+  }
+}
+
+export function createSchemaCachePool<Value>(
+  options?: Partial<PlanOptions> | ResolvedOptions
+): SchemaCachePool<Value> {
+  return new SchemaCachePool<Value>(options);
+}
