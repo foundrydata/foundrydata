@@ -354,6 +354,18 @@ export async function executePipeline(
     );
     stages.validate = { status: 'completed', output: validation };
     artifacts.validation = validation;
+    // If final validation fails, the pipeline must fail per SPEC (§6 Phases)
+    if (
+      validation &&
+      typeof validation === 'object' &&
+      'valid' in (validation as Record<string, unknown>) &&
+      (validation as { valid?: boolean }).valid === false
+    ) {
+      status = 'failed';
+      errors.push(
+        new PipelineStageError('validate', 'FINAL_VALIDATION_FAILED')
+      );
+    }
     // Expose AJV flags used during validation if provided by the validate runner
     if (
       validation &&
