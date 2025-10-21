@@ -1739,7 +1739,7 @@
         "id": "15",
         "title": "Bench Harness & Gates",
         "description": "Benchmark harness and CI gates for p95 latency and memory peaks; metrics wiring.",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [
           "8000",
           "9000",
@@ -1763,7 +1763,8 @@
             "testStrategy": "Unit tests for harness components, integration tests with sample schemas",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2025-10-21T21:50:54.935Z"
       },
       {
         "id": "16",
@@ -2094,7 +2095,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-21T21:49:38.422Z",
+      "lastModified": "2025-10-21T21:50:54.936Z",
       "taskCount": 52,
       "completedCount": 43,
       "tags": [

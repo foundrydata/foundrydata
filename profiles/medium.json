@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Medium Bench Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "orderId": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 12
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "customer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "segment": {
+          "type": "string",
+          "enum": ["consumer", "business", "enterprise"]
+        }
+      },
+      "required": ["id", "name"]
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "sku": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{4,10}$"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 25
+          },
+          "unitPrice": {
+            "type": "number",
+            "minimum": 0
+          },
+          "options": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "color": { "type": "string", "maxLength": 12 },
+              "size": { "type": "string", "enum": ["xs", "s", "m", "l", "xl"] },
+              "customMessage": { "type": "string", "maxLength": 40 }
+            }
+          }
+        },
+        "required": ["sku", "quantity", "unitPrice"]
+      }
+    },
+    "expedited": {
+      "type": "boolean"
+    },
+    "shipBy": {
+      "type": "string",
+      "format": "date"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 256
+    }
+  },
+  "required": ["orderId", "createdAt", "customer", "items"],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "expedited": { "const": true }
+        },
+        "required": ["expedited"]
+      },
+      "then": {
+        "required": ["shipBy"]
+      }
+    }
+  ]
+}

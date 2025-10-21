@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pathological Bench Profile",
+  "type": "object",
+  "unevaluatedProperties": false,
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": ["alpha", "beta", "gamma"]
+    },
+    "payload": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "alphaId": { "type": "string", "pattern": "^[a-z]{3}-\\d{2}$" },
+            "value": { "type": "number", "minimum": 0, "maximum": 1000 },
+            "active": { "type": "boolean" }
+          },
+          "required": ["alphaId", "value"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "betaRef": { "type": "string", "format": "uri" },
+            "status": { "type": "string", "enum": ["pending", "ready", "error"] },
+            "retries": { "type": "integer", "minimum": 0, "maximum": 5 }
+          },
+          "required": ["betaRef", "status"]
+        }
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "dependentRequired": {
+        "createdBy": ["createdAt"],
+        "updatedBy": ["updatedAt"]
+      },
+      "properties": {
+        "createdAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string", "minLength": 1 },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "updatedBy": { "type": "string", "minLength": 1 },
+        "note": { "type": "string", "maxLength": 32 }
+      }
+    },
+    "history": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 15,
+      "contains": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "event": { "type": "string", "enum": ["created", "updated", "archived"] },
+          "at": { "type": "string", "format": "date-time" }
+        },
+        "required": ["event", "at"]
+      },
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "event": { "type": "string" },
+              "payload": { "type": "object" }
+            },
+            "required": ["event"]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "snapshot": { "type": "object" },
+              "checksum": { "type": "string", "pattern": "^[A-F0-9]{6}$" }
+            },
+            "required": ["snapshot", "checksum"]
+          }
+        ]
+      }
+    },
+    "flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primary": { "type": "boolean" },
+        "critical": { "type": "boolean" },
+        "archived": { "type": "boolean" }
+      },
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]{1,10}$"
+      },
+      "dependentRequired": {
+        "critical": ["primary"]
+      }
+    }
+  },
+  "required": ["kind", "payload", "metadata"]
+}
