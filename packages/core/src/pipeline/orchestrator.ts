@@ -278,11 +278,28 @@ export async function executePipeline(
       },
     };
     const composeResult = runners.compose(composeInput, composeOptions);
-    stages.compose = {
-      status: 'completed',
-      output: composeResult,
-    };
     artifacts.effective = composeResult;
+
+    const fatalDiagnostics = composeResult.diag?.fatal ?? [];
+    if (fatalDiagnostics.length > 0) {
+      const fatalError = new PipelineStageError(
+        'compose',
+        'COMPOSE_FATAL_DIAGNOSTICS',
+        { fatalDiagnostics }
+      );
+      stages.compose = {
+        status: 'failed',
+        output: composeResult,
+        error: fatalError,
+      };
+      errors.push(fatalError);
+      status = 'failed';
+    } else {
+      stages.compose = {
+        status: 'completed',
+        output: composeResult,
+      };
+    }
 
     // Runtime self-check: diagnostics emitted during compose must conform to phase rules
     const composeDiagnostics: DiagnosticEnvelope[] = [
