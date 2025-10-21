@@ -642,6 +642,109 @@ describe('Foundry pipeline integration scenarios', () => {
     });
   });
 
+  describe('Rename pre-flight', () => {
+    it('rejects rename with reason "branch" when evaluation guard blocks all candidates under unevaluatedProperties:false', async () => {
+      // Root object: propertyNames restricts to ['a','b']; AP:false at root; oneOf selects branch on 'a'
+      const schema = {
+        type: 'object',
+        propertyNames: { enum: ['a', 'b'] },
+        oneOf: [
+          {
+            type: 'object',
+            properties: { a: { const: 'x' } },
+            required: ['a'],
+            unevaluatedProperties: false,
+          },
+          {
+            type: 'object',
+            properties: { b: { const: 'y' } },
+            required: ['b'],
+            unevaluatedProperties: false,
+          },
+        ],
+      } as const;
+
+      const overrides = {
+        // Force a candidate that violates propertyNames to trigger rename pre-flight
+        generate: async () => ({
+          items: [{ a: 'x', k: 'z' }],
+          diagnostics: [],
+          metrics: {},
+          seed: 41,
+        }),
+      };
+
+      const result = await executePipeline(
+        schema,
+        {
+          mode: 'strict',
+          validate: { validateFormats: false },
+        },
+        overrides
+      );
+
+      const repairDiags = result.artifacts.repairDiagnostics ?? [];
+      const fail = repairDiags.find(
+        (d) => d.code === DIAGNOSTIC_CODES.REPAIR_RENAME_PREFLIGHT_FAIL
+      );
+      expect(fail).toBeDefined();
+      expect(fail?.details).toMatchObject({
+        reason: 'branch',
+        from: 'k',
+        to: 'b',
+      });
+
+      // No rename action should have been applied
+      const actions = result.artifacts.repairActions ?? [];
+      expect(
+        actions.find((a) => a.action === 'renameProperty')
+      ).toBeUndefined();
+    });
+
+    it('rejects rename with reason "dependent" when offending key participates in dependentRequired', async () => {
+      const schema = {
+        type: 'object',
+        propertyNames: { enum: ['n', 'd1'] },
+        dependentRequired: { k: ['d1'] },
+      } as const;
+
+      const overrides = {
+        generate: async () => ({
+          items: [{ k: 'v' }],
+          diagnostics: [],
+          metrics: {},
+          seed: 43,
+        }),
+      };
+
+      const result = await executePipeline(
+        schema,
+        {
+          mode: 'strict',
+          validate: { validateFormats: false },
+        },
+        overrides
+      );
+
+      const repairDiags = result.artifacts.repairDiagnostics ?? [];
+      const fail = repairDiags.find(
+        (d) => d.code === DIAGNOSTIC_CODES.REPAIR_RENAME_PREFLIGHT_FAIL
+      );
+      expect(fail).toBeDefined();
+      // Implementation emits to=offendingKey for dependent reason
+      expect(fail?.details).toMatchObject({
+        reason: 'dependent',
+        from: 'k',
+        to: 'k',
+      });
+
+      const actions = result.artifacts.repairActions ?? [];
+      expect(
+        actions.find((a) => a.action === 'renameProperty')
+      ).toBeUndefined();
+    });
+  });
+
   describe('Repair must-cover guard determinism', () => {
     it('remains stable with guard enabled and diverges when disabled', async () => {
       const overrides = {
