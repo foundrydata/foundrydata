@@ -168,3 +168,4 @@ Thumbs.db
 
 # Performance test baselines
 test/performance/baseline.json
+bench/bench-gate.json

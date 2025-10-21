@@ -29,6 +29,7 @@
     "clean": "rm -rf packages/*/dist",
     "prepublish": "npm run build",
     "prepare": "husky",
+    "bench": "tsx scripts/bench.ts",
     "task-ready": "npm run lint && npm run typecheck && npm run build && npm run test",
     "task-complete": "npm run task-ready && echo '✅ Task validation passed - ready to mark as complete'"
   },
@@ -82,6 +83,7 @@
     "lint-staged": "^16.1.5",
     "prettier": "^3.6.2",
     "tslib": "^2.8.1",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.40.0",
     "vite-tsconfig-paths": "^5.1.4",
