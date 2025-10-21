@@ -31,7 +31,13 @@ import {
   type PipelineArtifacts,
 } from './types.js';
 import { repairItemsAjvDriven } from '../repair/repair-engine.js';
-import type { DiagnosticEnvelope } from '../diag/validate.js';
+import {
+  assertDiagnosticEnvelope,
+  assertDiagnosticsForPhase,
+  type DiagnosticEnvelope,
+} from '../diag/validate.js';
+import { DIAGNOSTIC_CODES, DIAGNOSTIC_PHASES } from '../diag/codes.js';
+import { AjvFlagsMismatchError } from '../util/ajv-gate.js';
 
 const STAGE_SEQUENCE: PipelineStageName[] = [
   'normalize',
@@ -156,6 +162,24 @@ export async function executePipeline(
       output: normalizeResult,
     };
     artifacts.canonical = normalizeResult;
+
+    // Runtime self-check: diagnostics emitted during normalize must conform to phase rules
+    const normalizeDiagnostics: DiagnosticEnvelope[] = (
+      normalizeResult?.notes ?? []
+    ).map((n) => ({
+      code: n.code,
+      canonPath: n.canonPath,
+      details: n.details,
+    }));
+    if (normalizeDiagnostics.length > 0) {
+      assertDiagnosticsForPhase(
+        DIAGNOSTIC_PHASES.NORMALIZE,
+        normalizeDiagnostics
+      );
+      for (const env of normalizeDiagnostics) {
+        assertDiagnosticEnvelope(env);
+      }
+    }
   } catch (error) {
     const stageError = toPipelineStageError('normalize', error);
     stages.normalize = {
@@ -252,6 +276,18 @@ export async function executePipeline(
       output: composeResult,
     };
     artifacts.effective = composeResult;
+
+    // Runtime self-check: diagnostics emitted during compose must conform to phase rules
+    const composeDiagnostics: DiagnosticEnvelope[] = [
+      ...(composeResult.diag?.fatal ?? []),
+      ...(composeResult.diag?.warn ?? []),
+    ];
+    if (composeDiagnostics.length > 0) {
+      assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.COMPOSE, composeDiagnostics);
+      for (const env of composeDiagnostics) {
+        assertDiagnosticEnvelope(env);
+      }
+    }
   } catch (error) {
     const stageError = toPipelineStageError('compose', error);
     stages.compose = {
@@ -288,6 +324,17 @@ export async function executePipeline(
     generated = await Promise.resolve(runners.generate(eff, options.generate));
     stages.generate = { status: 'completed', output: generated };
     artifacts.generated = generated;
+
+    // Runtime self-check: generator diagnostics must be allowed only in generate phase
+    const genDiags: DiagnosticEnvelope[] = (generated?.diagnostics ?? []).map(
+      (d) => ({ code: d.code, canonPath: d.canonPath, details: d.details })
+    );
+    if (genDiags.length > 0) {
+      assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.GENERATE, genDiags);
+      for (const env of genDiags) {
+        assertDiagnosticEnvelope(env);
+      }
+    }
   } catch (error) {
     const stageError = toPipelineStageError('generate', error);
     stages.generate = { status: 'failed', error: stageError };
@@ -352,6 +399,17 @@ export async function executePipeline(
     artifacts.repaired = normalizedItems;
     if (isRepairObject(out) && out.diagnostics)
       artifacts.repairDiagnostics = out.diagnostics;
+    // Runtime self-check: repair diagnostics must be allowed only in repair phase
+    if (
+      isRepairObject(out) &&
+      Array.isArray(out.diagnostics) &&
+      out.diagnostics.length > 0
+    ) {
+      assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.REPAIR, out.diagnostics);
+      for (const env of out.diagnostics) {
+        assertDiagnosticEnvelope(env);
+      }
+    }
     if (isRepairObject(out) && out.actions) {
       artifacts.repairActions = out.actions;
       // Aggregate metrics: total repair actions applied across all items
@@ -430,6 +488,21 @@ export async function executePipeline(
       metrics.addValidationCount(items.length);
     }
   } catch (error) {
+    // If startup parity failed, mirror SPEC-required diagnostic AJV_FLAGS_MISMATCH
+    if (error instanceof AjvFlagsMismatchError) {
+      const diag: DiagnosticEnvelope = {
+        code: DIAGNOSTIC_CODES.AJV_FLAGS_MISMATCH,
+        canonPath: '',
+        details: error.details as unknown,
+      };
+      try {
+        assertDiagnosticEnvelope(diag);
+        assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.VALIDATE, [diag]);
+      } catch {
+        // If envelope assertion itself throws, continue to stage error
+      }
+      artifacts.validationDiagnostics = [diag];
+    }
     const stageError = toPipelineStageError('validate', error);
     stages.validate = { status: 'failed', error: stageError };
     errors.push(stageError);

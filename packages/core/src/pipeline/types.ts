@@ -72,6 +72,8 @@ export interface PipelineArtifacts {
     source: Record<string, unknown>;
     planning: Record<string, unknown>;
   };
+  /** Diagnostics emitted during the validate stage (e.g., AJV_FLAGS_MISMATCH) */
+  validationDiagnostics?: DiagnosticEnvelope[];
   repairDiagnostics?: DiagnosticEnvelope[];
   repairActions?: Array<{
     action: string;
