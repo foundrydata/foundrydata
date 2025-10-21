@@ -39,6 +39,12 @@ describe('Foundry pipeline integration scenarios', () => {
         validate: { validateFormats: false },
       });
 
+      expect(result.status).toBe('failed');
+      expect(result.stages.compose.status).toBe('failed');
+      expect(result.stages.generate.status).toBe('skipped');
+      expect(result.stages.repair.status).toBe('skipped');
+      expect(result.stages.validate.status).toBe('skipped');
+
       const composeOutput = result.stages.compose.output!;
       expect(composeOutput.diag?.fatal).toEqual(
         expect.arrayContaining([
@@ -54,10 +60,8 @@ describe('Foundry pipeline integration scenarios', () => {
         DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX
       );
 
-      const generated = result.artifacts.generated;
-      expect(Array.isArray(generated?.items)).toBe(true);
-      const item = (generated?.items?.[0] ?? {}) as Record<string, unknown>;
-      expect(Object.keys(item)).toEqual(['id']);
+      expect(result.artifacts.generated).toBeUndefined();
+      expect(result.errors[0]?.message).toBe('COMPOSE_FATAL_DIAGNOSTICS');
     });
 
     it('downgrades to warning in lax mode and still limits keys to must-cover', async () => {
@@ -364,6 +368,20 @@ describe('Foundry pipeline integration scenarios', () => {
       expect(coverage?.provenance).toEqual(
         expect.arrayContaining(['properties', 'patternProperties'])
       );
+      expect(coverage?.has('rogue')).toBe(false);
+
+      const generatedItems =
+        (result.artifacts.generated?.items as Record<string, unknown>[]) ?? [];
+      expect(generatedItems.length).toBeGreaterThan(0);
+      const allowedKeys = new Set(['anchor', 'fallback', 'aux_0', 'aux_1']);
+      for (const item of generatedItems) {
+        const keys = Object.keys(item);
+        expect(keys.every((key) => allowedKeys.has(key))).toBe(true);
+        if ('anchor' in item) {
+          expect(item).toHaveProperty('fallback');
+          expect(item).toHaveProperty('aux_0');
+        }
+      }
     });
   });
 
