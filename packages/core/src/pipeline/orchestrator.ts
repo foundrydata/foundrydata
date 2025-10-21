@@ -15,6 +15,7 @@ import { createSourceAjv, extractAjvFlags } from '../util/ajv-source.js';
 import { checkAjvStartupParity } from '../util/ajv-gate.js';
 import { MetricsCollector, type MetricPhase } from '../util/metrics.js';
 import { resolveOptions } from '../types/options.js';
+import type { ValidateFunction } from 'ajv';
 import {
   generateFromCompose,
   type GeneratorStageOutput,
@@ -29,6 +30,7 @@ import {
   type PipelineStages,
   type PipelineStatus,
   type PipelineArtifacts,
+  type ValidateStageResult,
 } from './types.js';
 import { repairItemsAjvDriven } from '../repair/repair-engine.js';
 import {
@@ -85,12 +87,17 @@ interface StageRunners {
     items: unknown[],
     schema: unknown,
     options?: PipelineOptions['validate']
-  ) =>
-    | Promise<{ valid: boolean; errors?: unknown[] }>
-    | {
-        valid: boolean;
-        errors?: unknown[];
-      };
+  ) => Promise<ValidateStageResult> | ValidateStageResult;
+}
+
+class ExternalRefValidationError extends Error {
+  public readonly diagnostic: DiagnosticEnvelope;
+
+  constructor(diagnostic: DiagnosticEnvelope) {
+    super(DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED);
+    this.name = 'ExternalRefValidationError';
+    this.diagnostic = diagnostic;
+  }
 }
 
 function createInitialStages(): PipelineStages {
@@ -449,42 +456,37 @@ export async function executePipeline(
       : [];
     const repairedItems = stages.repair.output as unknown[] | undefined;
     const items = repairedItems ?? generatedItems;
-    const validation = await Promise.resolve(
+    const validation: ValidateStageResult = await Promise.resolve(
       runners.validate(items, schema, options.validate)
     );
     stages.validate = { status: 'completed', output: validation };
     artifacts.validation = validation;
     // If final validation fails, the pipeline must fail per SPEC (§6 Phases)
-    if (
-      validation &&
-      typeof validation === 'object' &&
-      'valid' in (validation as Record<string, unknown>) &&
-      (validation as { valid?: boolean }).valid === false
-    ) {
+    if (validation.valid === false && validation.skippedValidation !== true) {
       status = 'failed';
       errors.push(
         new PipelineStageError('validate', 'FINAL_VALIDATION_FAILED')
       );
     }
-    // Expose AJV flags used during validation if provided by the validate runner
     if (
-      validation &&
-      typeof validation === 'object' &&
-      'flags' in (validation as Record<string, unknown>) &&
-      (validation as { flags?: unknown }).flags
+      Array.isArray(validation.diagnostics) &&
+      validation.diagnostics.length > 0
     ) {
-      const flags = (
-        validation as {
-          flags?: {
-            source: Record<string, unknown>;
-            planning: Record<string, unknown>;
-          };
-        }
-      ).flags;
-      if (flags) artifacts.validationFlags = flags;
+      const diagList = validation.diagnostics;
+      assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.VALIDATE, diagList);
+      for (const env of diagList) {
+        assertDiagnosticEnvelope(env);
+      }
+      artifacts.validationDiagnostics = diagList;
+    }
+    // Expose AJV flags used during validation if provided by the validate runner
+    if (validation.flags) {
+      artifacts.validationFlags = validation.flags;
     }
     // Metrics: validations per row
-    if (Array.isArray(items)) {
+    if (validation.skippedValidation === true) {
+      metrics.addValidationCount(0);
+    } else if (Array.isArray(items)) {
       metrics.addValidationCount(items.length);
     }
   } catch (error) {
@@ -500,6 +502,16 @@ export async function executePipeline(
         assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.VALIDATE, [diag]);
       } catch {
         // If envelope assertion itself throws, continue to stage error
+      }
+      artifacts.validationDiagnostics = [diag];
+    }
+    if (error instanceof ExternalRefValidationError) {
+      const diag = error.diagnostic;
+      try {
+        assertDiagnosticEnvelope(diag);
+        assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.VALIDATE, [diag]);
+      } catch {
+        // continue to stage error even if assertion throws
       }
       artifacts.validationDiagnostics = [diag];
     }
@@ -629,7 +641,44 @@ function createDefaultValidate(
       multipleOfPrecision: expectedMoP,
     });
 
-    const validateFn = sourceAjv.compile(schema as object);
+    const flags = {
+      source: extractAjvFlags(sourceAjv) as unknown as Record<string, unknown>,
+      planning: extractAjvFlags(planningAjv) as unknown as Record<
+        string,
+        unknown
+      >,
+    };
+
+    let validateFn: ValidateFunction;
+    try {
+      validateFn = sourceAjv.compile(schema as object);
+    } catch (error) {
+      const refs = extractExternalRefCandidates(error);
+      if (refs.length > 0) {
+        const sorted = [...refs].sort();
+        const primary = sorted[0] ?? refs[0];
+        const mode = pipelineOptions.mode ?? 'strict';
+        const diag: DiagnosticEnvelope = {
+          code: DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED,
+          canonPath: '',
+          details: {
+            ref: primary,
+            mode,
+            ...(mode === 'lax' ? { skippedValidation: true } : undefined),
+          },
+        };
+        if (mode === 'lax') {
+          return {
+            valid: true,
+            skippedValidation: true,
+            diagnostics: [diag],
+            flags,
+          };
+        }
+        throw new ExternalRefValidationError(diag);
+      }
+      throw error;
+    }
     const errors: unknown[] = [];
     let allValid = true;
     for (const it of items) {
@@ -642,16 +691,113 @@ function createDefaultValidate(
     return {
       valid: allValid,
       errors: errors.length ? errors : undefined,
-      flags: {
-        source: extractAjvFlags(sourceAjv) as unknown as Record<
-          string,
-          unknown
-        >,
-        planning: extractAjvFlags(planningAjv) as unknown as Record<
-          string,
-          unknown
-        >,
-      },
+      flags,
     };
   };
+}
+
+function extractExternalRefCandidates(error: unknown): string[] {
+  const refs = new Set<string>();
+  collectExternalRefCandidates(error, refs, 0);
+  return Array.from(refs);
+}
+
+function collectExternalRefCandidates(
+  value: unknown,
+  refs: Set<string>,
+  depth: number
+): void {
+  if (value === undefined || value === null) {
+    return;
+  }
+  if (depth > 4) {
+    return;
+  }
+  if (typeof value === 'string') {
+    recordExternalRefCandidate(value, refs);
+    return;
+  }
+  if (value instanceof Error) {
+    recordExternalRefMessage(value.message, refs);
+    collectExternalRefCandidates(
+      (value as { cause?: unknown }).cause,
+      refs,
+      depth + 1
+    );
+  }
+  if (typeof value !== 'object') {
+    return;
+  }
+  const obj = value as Record<string, unknown>;
+  recordExternalRefCandidate(obj.missingRef, refs);
+  recordExternalRefCandidate(obj.missingSchema, refs);
+  recordExternalRefCandidate(obj.ref, refs);
+  if (Array.isArray(obj.refs)) {
+    for (const entry of obj.refs) {
+      recordExternalRefCandidate(entry, refs);
+    }
+  }
+  if (obj.params && typeof obj.params === 'object') {
+    const params = obj.params as Record<string, unknown>;
+    recordExternalRefCandidate(params.ref, refs);
+    if (Array.isArray(params.refs)) {
+      for (const entry of params.refs) {
+        recordExternalRefCandidate(entry, refs);
+      }
+    }
+  }
+  if (Array.isArray(obj.errors)) {
+    for (const entry of obj.errors) {
+      collectExternalRefCandidates(entry, refs, depth + 1);
+    }
+  }
+  if ('cause' in obj) {
+    collectExternalRefCandidates(
+      (obj as { cause?: unknown }).cause,
+      refs,
+      depth + 1
+    );
+  }
+  if ('message' in obj && typeof obj.message === 'string') {
+    recordExternalRefMessage(obj.message, refs);
+  }
+}
+
+function recordExternalRefMessage(
+  message: string | undefined,
+  refs: Set<string>
+): void {
+  if (!message) return;
+  const regex = /reference\s+([^\s"'`]+)/g;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(message)) !== null) {
+    recordExternalRefCandidate(match[1], refs);
+  }
+}
+
+function recordExternalRefCandidate(
+  candidate: unknown,
+  refs: Set<string>
+): void {
+  if (typeof candidate !== 'string') {
+    return;
+  }
+  const trimmed = candidate.trim();
+  if (!trimmed) {
+    return;
+  }
+  if (!isLikelyExternalRef(trimmed)) {
+    return;
+  }
+  refs.add(trimmed);
+}
+
+function isLikelyExternalRef(value: string): boolean {
+  if (!value) {
+    return false;
+  }
+  if (value.startsWith('#')) {
+    return false;
+  }
+  return true;
 }

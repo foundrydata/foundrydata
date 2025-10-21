@@ -54,12 +54,23 @@ export interface PipelineStageReport<TOutput> {
   error?: PipelineStageError;
 }
 
+export interface ValidateStageResult {
+  valid: boolean;
+  errors?: unknown[];
+  flags?: {
+    source: Record<string, unknown>;
+    planning: Record<string, unknown>;
+  };
+  skippedValidation?: boolean;
+  diagnostics?: DiagnosticEnvelope[];
+}
+
 export interface PipelineStages {
   normalize: PipelineStageReport<NormalizeResult>;
   compose: PipelineStageReport<ComposeResult>;
   generate: PipelineStageReport<GeneratorStageOutput>;
   repair: PipelineStageReport<unknown>;
-  validate: PipelineStageReport<unknown>;
+  validate: PipelineStageReport<ValidateStageResult>;
 }
 
 export interface PipelineArtifacts {
@@ -67,7 +78,7 @@ export interface PipelineArtifacts {
   effective?: ComposeResult;
   generated?: GeneratorStageOutput;
   repaired?: unknown[];
-  validation?: { valid: boolean; errors?: unknown[] };
+  validation?: ValidateStageResult;
   validationFlags?: {
     source: Record<string, unknown>;
     planning: Record<string, unknown>;
@@ -126,23 +137,7 @@ export interface PipelineStageOverrides {
     items: unknown[],
     schema: unknown,
     options?: PipelineOptions['validate']
-  ) =>
-    | {
-        valid: boolean;
-        errors?: unknown[];
-        flags?: {
-          source: Record<string, unknown>;
-          planning: Record<string, unknown>;
-        };
-      }
-    | Promise<{
-        valid: boolean;
-        errors?: unknown[];
-        flags?: {
-          source: Record<string, unknown>;
-          planning: Record<string, unknown>;
-        };
-      }>;
+  ) => ValidateStageResult | Promise<ValidateStageResult>;
 }
 
 export interface PipelineOptions {
