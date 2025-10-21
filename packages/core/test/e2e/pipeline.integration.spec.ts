@@ -19,9 +19,12 @@ import {
   dependentAllOfCoverageSchema,
   apFalseRegexCapSchema,
   repairOrigPathSchema,
+  mustCoverGuardSchema,
+  scoreOnlyLargeOneOfSchema,
 } from '../../src/pipeline/__fixtures__/integration-schemas.js';
 import { AjvFlagsMismatchError } from '../../src/util/ajv-gate.js';
 import * as AjvPlanning from '../../src/util/ajv-planning.js';
+import { createPlanOptionsSubKey } from '../../src/util/cache.js';
 
 describe('Foundry pipeline integration scenarios', () => {
   afterEach(() => {
@@ -294,9 +297,7 @@ describe('Foundry pipeline integration scenarios', () => {
           entry.canonPath === ''
       );
       expect(coverageHint).toBeDefined();
-      expect(['coverageUnknown', 'presencePressure']).toContain(
-        coverageHint?.reason
-      );
+      expect(coverageHint?.reason).toBe('coverageUnknown');
 
       const coverage = composeOutput.coverageIndex.get('');
       expect(coverage).toBeDefined();
@@ -546,6 +547,44 @@ describe('Foundry pipeline integration scenarios', () => {
     expect(typeof nodeDiag?.scoreDetails?.tiebreakRand).toBe('number');
   });
 
+  it('records score-only selection diagnostics when oneOf exceeds configured threshold', async () => {
+    const result = await executePipeline(scoreOnlyLargeOneOfSchema, {
+      generate: {
+        count: 1,
+        seed: 61,
+        planOptions: {
+          trials: {
+            skipTrialsIfBranchesGt: 2,
+            skipTrials: false,
+          },
+        },
+      },
+      validate: { validateFormats: false },
+    });
+
+    const composeOutput = result.stages.compose.output!;
+    const branch = composeOutput.diag?.branchDecisions?.find(
+      (entry) => entry.canonPath === '/oneOf'
+    );
+    expect(branch).toBeDefined();
+    expect(branch?.budget.skipped).toBe(true);
+    expect(branch?.budget.reason).toBe('largeOneOf');
+    expect(branch?.budget.tried).toBe(0);
+    expect(branch?.budget.limit).toBeGreaterThan(0);
+    expect(branch?.scoreDetails.orderedIndices.length).toBe(
+      scoreOnlyLargeOneOfSchema.oneOf.length
+    );
+    expect(typeof branch?.scoreDetails.tiebreakRand).toBe('number');
+
+    const warnCodes =
+      composeOutput.diag?.warn?.map((entry) => entry.code) ?? [];
+    expect(warnCodes).toContain(DIAGNOSTIC_CODES.TRIALS_SKIPPED_LARGE_ONEOF);
+
+    const nodeDiag = composeOutput.diag?.nodes?.['/oneOf'];
+    expect(nodeDiag?.budget?.reason).toBe('largeOneOf');
+    expect(typeof nodeDiag?.scoreDetails?.tiebreakRand).toBe('number');
+  });
+
   describe('Repair observability', () => {
     it('propagates origPath for each repair action', async () => {
       const overrides = {
@@ -575,6 +614,101 @@ describe('Foundry pipeline integration scenarios', () => {
         const expectedOrig = ptrMap?.get(action.canonPath);
         expect(action.origPath).toBe(expectedOrig);
       }
+    });
+  });
+
+  describe('Repair must-cover guard determinism', () => {
+    it('remains stable with guard enabled and diverges when disabled', async () => {
+      const overrides = {
+        generate: async () => ({
+          items: [{ alpha: 'ok', rogue: 'z' }],
+          diagnostics: [],
+          metrics: {},
+          seed: 101,
+        }),
+      };
+
+      const guardedOptions = {
+        mode: 'strict' as const,
+        generate: {
+          count: 1,
+          seed: 101,
+          planOptions: {
+            repair: { mustCoverGuard: true },
+          },
+        },
+        validate: { validateFormats: false },
+      };
+
+      const guardedFirst = await executePipeline(
+        mustCoverGuardSchema,
+        guardedOptions,
+        overrides
+      );
+      const guardedSecond = await executePipeline(
+        mustCoverGuardSchema,
+        guardedOptions,
+        overrides
+      );
+
+      expect(guardedFirst.artifacts.repaired).toEqual(
+        guardedSecond.artifacts.repaired
+      );
+      expect(guardedFirst.artifacts.repairActions).toEqual(
+        guardedSecond.artifacts.repairActions
+      );
+
+      const guardedItem = (guardedFirst.artifacts.repaired?.[0] ??
+        {}) as Record<string, unknown>;
+      expect(Object.keys(guardedItem)).toEqual(['alpha']);
+
+      const guardedRename = guardedFirst.artifacts.repairActions?.find(
+        (action) => action.action === 'renameProperty'
+      );
+      expect(guardedRename).toBeUndefined();
+
+      const unguardedOptions = {
+        ...guardedOptions,
+        generate: {
+          ...guardedOptions.generate,
+          planOptions: {
+            ...guardedOptions.generate.planOptions,
+            repair: { mustCoverGuard: false },
+          },
+        },
+      };
+
+      const unguarded = await executePipeline(
+        mustCoverGuardSchema,
+        unguardedOptions,
+        overrides
+      );
+
+      const unguardedItem = (unguarded.artifacts.repaired?.[0] ?? {}) as Record<
+        string,
+        unknown
+      >;
+      expect(new Set(Object.keys(unguardedItem))).toEqual(
+        new Set(['alpha', 'beta'])
+      );
+
+      const unguardedRename = unguarded.artifacts.repairActions?.find(
+        (action) => action.action === 'renameProperty'
+      );
+      expect(unguardedRename?.details).toMatchObject({
+        from: 'rogue',
+        to: 'beta',
+      });
+
+      const guardedSubKey = createPlanOptionsSubKey(
+        guardedOptions.generate?.planOptions
+      );
+      const unguardedSubKey = createPlanOptionsSubKey(
+        unguardedOptions.generate?.planOptions
+      );
+      expect(guardedSubKey).not.toBe(unguardedSubKey);
+      expect(guardedSubKey).toContain('"repair.mustCoverGuard":true');
+      expect(unguardedSubKey).toContain('"repair.mustCoverGuard":false');
     });
   });
 

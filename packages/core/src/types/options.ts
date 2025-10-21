@@ -134,6 +134,14 @@ export interface PatternWitnessOptions {
 }
 
 /**
+ * Repair stage configuration
+ */
+export interface RepairPlanOptions {
+  /** Enforce must-cover-based rename guard under AP:false (default: true) */
+  mustCoverGuard?: boolean;
+}
+
+/**
  * Complete configuration options for the FoundryData pipeline
  *
  * All options are optional and have conservative defaults.
@@ -178,6 +186,9 @@ export interface PlanOptions {
 
   /** Pattern witness search configuration */
   patternWitness?: PatternWitnessOptions;
+
+  /** Repair-stage configuration */
+  repair?: RepairPlanOptions;
 }
 
 /**
@@ -205,6 +216,7 @@ export interface ResolvedOptions {
   failFast: Required<FailFastOptions>;
   conditionals: Required<ConditionalsOptions>;
   patternWitness: Required<PatternWitnessOptions>;
+  repair: Required<RepairPlanOptions>;
 }
 
 /**
@@ -275,6 +287,9 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
     maxLength: 12,
     maxCandidates: 32768,
   },
+  repair: {
+    mustCoverGuard: true,
+  },
 };
 
 /**
@@ -309,6 +324,10 @@ export function resolveOptions(
     patternWitness: {
       ...DEFAULT_OPTIONS.patternWitness,
       ...userOptions.patternWitness,
+    },
+    repair: {
+      ...DEFAULT_OPTIONS.repair,
+      ...userOptions.repair,
     },
   };
 
@@ -429,5 +448,9 @@ function validateOptions(options: ResolvedOptions): void {
     typeof options.patternWitness.alphabet !== 'string'
   ) {
     throw new Error('patternWitness.alphabet must be a string when provided');
+  }
+
+  if (typeof options.repair.mustCoverGuard !== 'boolean') {
+    throw new Error('repair.mustCoverGuard must be boolean');
   }
 }
