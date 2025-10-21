@@ -50,7 +50,8 @@ export interface GeneratorDiagnostic {
       | 'witnessDomainExhausted';
   };
   scoreDetails?: {
-    tiebreakRand: number;
+    // Optional to allow exclusivity-only diagnostics to omit tie-break value per SPEC
+    tiebreakRand?: number;
     exclusivityRand?: number;
     [key: string]: number | undefined;
   };
@@ -840,12 +841,19 @@ class GeneratorEngine {
       selectedIndex >= 0 && selectedIndex < branches.length ? selectedIndex : 0;
     if (branches.length > 1) {
       const exclusivityRand = this.computeExclusivityRand(canonPath, itemIndex);
-      const tiebreakRand = this.computeTiebreakRand(canonPath, itemIndex);
+      // SPEC §8/§15: Do not synthesize/overwrite tiebreakRand when RNG is used only in oneOf step‑4.
+      // Include tiebreakRand here only if selection RNG was actually used during Compose (tie/score-only).
+      const composeNode = this.diagNodes?.[canonPath];
+      const composeTiebreak = composeNode?.scoreDetails?.tiebreakRand;
+      const scoreDetails =
+        typeof composeTiebreak === 'number'
+          ? { tiebreakRand: composeTiebreak, exclusivityRand }
+          : { exclusivityRand };
       this.diagnostics.push({
         code: DIAGNOSTIC_CODES.EXCLUSIVITY_TWEAK_STRING,
         phase: DIAGNOSTIC_PHASES.GENERATE,
         canonPath,
-        scoreDetails: { tiebreakRand, exclusivityRand },
+        scoreDetails,
       });
     }
     const branchPath = appendPointer(canonPath, `oneOf/${chosen}`);
@@ -905,15 +913,6 @@ class GeneratorEngine {
   ): number {
     // SPEC §15 RNG — fresh xorshift32 instance per oneOf location (canonPath), no global state
     const rng = new XorShift32(this.baseSeed, canonPath);
-    return rng.nextFloat01();
-  }
-
-  private computeTiebreakRand(
-    canonPath: JsonPointer,
-    _itemIndex: number
-  ): number {
-    // SPEC §15 RNG — record tiebreakRand always, even when |T|=1
-    const rng = new XorShift32(this.baseSeed, `${canonPath}|tb`);
     return rng.nextFloat01();
   }
 }
