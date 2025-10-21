@@ -1850,7 +1850,7 @@
         "id": "18",
         "title": "Integration & e2e",
         "description": "End-to-end scenarios covering modes, AP:false unsafe patterns, oneOf exclusivity refinement.",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           "8000",
           "9000",
@@ -1869,12 +1869,13 @@
             "description": "Create comprehensive e2e tests validating the complete 5-stage pipeline implementation from task 11",
             "dependencies": [],
             "details": "Implement end-to-end tests that validate the complete Pipeline Orchestrator implementation including: 1) Normalize → Compose → Generate → Repair → Validate flow; 2) Metrics collection across all stages; 3) Proper error propagation; 4) Mode-specific routing (Strict/Lax); 5) External $ref handling behaviors; 6) AP:false unsafe pattern detection and handling. Tests should reference packages/core/src/generator/foundry-generator.ts orchestration logic and validate against original schema per AJV oracle principle.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Integration smoke: simple schema end-to-end; metrics fields all present; validationsPerRow ≥ 1 unless Lax skip path applies. Test all five pipeline stages execute in sequence with proper metrics collection.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-10-21T21:49:38.421Z"
           }
         ],
-        "updatedAt": "2025-10-21T18:03:06.018Z"
+        "updatedAt": "2025-10-21T21:49:38.421Z"
       },
       {
         "id": "19",
@@ -2093,9 +2094,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-21T18:03:06.019Z",
+      "lastModified": "2025-10-21T21:49:38.422Z",
       "taskCount": 52,
-      "completedCount": 42,
+      "completedCount": 43,
       "tags": [
         "feature-simplification"
       ]
