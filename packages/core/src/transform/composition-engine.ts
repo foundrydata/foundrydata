@@ -752,7 +752,8 @@ class CompositionEngine {
           buildUnsatDetails(schema)
         );
         // If raw propertyNames gating is present, surface approximation + hint
-        // for observability (tests expect presencePressure markers in this path).
+        // for observability; the hint reason stays coverageUnknown per SPEC while
+        // the approximation details record presencePressure.
         const hasAnyGating = conjuncts.some(
           (conj) => conj.gatingEnum || conj.gatingPattern
         );
@@ -762,7 +763,7 @@ class CompositionEngine {
             code: DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
             canonPath,
             provable: false,
-            reason: 'presencePressure',
+            reason: 'coverageUnknown',
             details: buildUnsatDetails(schema),
           });
         }

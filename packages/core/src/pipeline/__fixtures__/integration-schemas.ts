@@ -221,3 +221,40 @@ export const repairOrigPathSchema = {
   },
   required: ['anchor', 'fallback'],
 } as const;
+
+export const mustCoverGuardSchema = {
+  $schema: 'https://json-schema.org/draft/2020-12/schema',
+  type: 'object',
+  additionalProperties: false,
+  required: ['alpha'],
+  properties: {
+    alpha: { type: 'string', const: 'ok' },
+  },
+  propertyNames: {
+    enum: ['alpha', 'beta'],
+  },
+} as const;
+
+export const scoreOnlyLargeOneOfSchema = {
+  $schema: 'https://json-schema.org/draft/2020-12/schema',
+  oneOf: [
+    {
+      type: 'object',
+      additionalProperties: false,
+      properties: { tag: { const: 'left' } },
+      required: ['tag'],
+    },
+    {
+      type: 'object',
+      additionalProperties: false,
+      properties: { tag: { const: 'middle' } },
+      required: ['tag'],
+    },
+    {
+      type: 'object',
+      additionalProperties: false,
+      properties: { tag: { const: 'right' } },
+      required: ['tag'],
+    },
+  ],
+} as const;

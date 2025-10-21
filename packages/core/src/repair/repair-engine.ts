@@ -456,6 +456,8 @@ export function repairItemsAjvDriven(
   const validateFn = sourceAjv.compile(schema as object);
   const ajvFlags = extractAjvFlags(sourceAjv);
   const decimalPrecision = ajvFlags.multipleOfPrecision ?? 12;
+  const repairPlanOptions = args.planOptions?.repair;
+  const mustCoverGuardEnabled = repairPlanOptions?.mustCoverGuard !== false;
 
   const repaired: unknown[] = [];
   const diagnostics: DiagnosticEnvelope[] = [];
@@ -703,7 +705,7 @@ export function repairItemsAjvDriven(
           canonPath,
           present,
           apFalse,
-          mustCoverGuard: true,
+          mustCoverGuard: mustCoverGuardEnabled,
           coverageIndex: effective.coverageIndex,
           unevaluatedApplies: unevalApplies,
           isEvaluated,

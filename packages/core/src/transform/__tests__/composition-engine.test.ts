@@ -758,6 +758,7 @@ describe('CompositionEngine AP:false strict vs lax', () => {
         e.canonPath === ''
     );
     expect(hint).toBeDefined();
+    expect(hint?.reason).toBe('coverageUnknown');
 
     const approx = (diag?.warn ?? []).find(
       (e) =>

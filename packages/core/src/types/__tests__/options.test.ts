@@ -55,6 +55,9 @@ describe('PlanOptions', () => {
       // Conditionals defaults
       expect(resolved.conditionals.strategy).toBe('if-aware-lite'); // default from DEFAULT_OPTIONS
       expect(resolved.conditionals.minThenSatisfaction).toBe('required-only');
+
+      // Repair defaults
+      expect(resolved.repair.mustCoverGuard).toBe(true);
     });
 
     it('should merge user options with defaults', () => {
@@ -69,6 +72,9 @@ describe('PlanOptions', () => {
         trials: {
           skipTrials: true,
         },
+        repair: {
+          mustCoverGuard: false,
+        },
         metrics: false,
       };
 
@@ -82,6 +88,7 @@ describe('PlanOptions', () => {
       expect(resolved.rational.qCap).toBe(1_000_000);
       expect(resolved.trials.skipTrials).toBe(true);
       expect(resolved.metrics).toBe(false);
+      expect(resolved.repair.mustCoverGuard).toBe(false);
 
       // Unspecified options should use defaults
       expect(resolved.rational.maxLcmBits).toBe(128); // default
@@ -189,6 +196,7 @@ describe('PlanOptions', () => {
         guards: { maxGeneratedNotNesting: 5 },
         cache: { lruSize: 128, hashIfBytesLt: 500_000 },
         complexity: { maxOneOfBranches: 100, maxSchemaBytes: 1_000_000 },
+        repair: { mustCoverGuard: false },
       };
 
       expect(() => resolveOptions(validOptions)).not.toThrow();
@@ -196,6 +204,15 @@ describe('PlanOptions', () => {
       expect(resolved.rational.maxRatBits).toBe(256);
       expect(resolved.trials.perBranch).toBe(5);
       expect(resolved.guards.maxGeneratedNotNesting).toBe(5);
+      expect(resolved.repair.mustCoverGuard).toBe(false);
+    });
+
+    it('should reject invalid repair options', () => {
+      expect(() =>
+        resolveOptions({
+          repair: { mustCoverGuard: 'nope' as unknown as boolean },
+        })
+      ).toThrow('repair.mustCoverGuard must be boolean');
     });
   });
 });
