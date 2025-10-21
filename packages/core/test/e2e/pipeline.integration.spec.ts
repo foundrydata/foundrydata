@@ -75,7 +75,12 @@ describe('Foundry pipeline integration scenarios', () => {
       );
       const warnCodes =
         composeOutput.diag?.warn?.map((entry) => entry.code) ?? [];
-      expect(warnCodes).toContain(DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN);
+      expect(warnCodes).toEqual(
+        expect.arrayContaining([
+          DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN,
+          DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX,
+        ])
+      );
 
       const generated = result.artifacts.generated;
       expect(Array.isArray(generated?.items)).toBe(true);
@@ -92,6 +97,8 @@ describe('Foundry pipeline integration scenarios', () => {
         validate: { validateFormats: false },
       });
 
+      expect(result.status).toBe('completed');
+      expect(result.stages.validate.status).toBe('completed');
       const composeOutput = result.stages.compose.output!;
       const fatalCodes =
         composeOutput.diag?.fatal?.map((entry) => entry.code) ?? [];
