@@ -227,6 +227,50 @@ describe('Foundry pipeline integration scenarios', () => {
     expect(typeof diag?.scoreDetails?.exclusivityRand).toBe('number');
   });
 
+  it('ensures oneOf selection yields exclusive validation among branches', async () => {
+    // spec://§20#integration — oneOf overlap: selected branch is exclusive
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      oneOf: [
+        {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            tag: { enum: ['A', 'B'] },
+            aOnly: { type: 'string', minLength: 1 },
+          },
+          required: ['tag', 'aOnly'],
+        },
+        {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            tag: { enum: ['B', 'C'] },
+            bOnly: { type: 'string', minLength: 1 },
+          },
+          required: ['tag', 'bOnly'],
+        },
+      ],
+    } as const;
+
+    const result = await executePipeline(schema, {
+      generate: { count: 6, seed: 121 },
+      validate: { validateFormats: false },
+    });
+
+    const items = result.artifacts.generated?.items ?? [];
+    expect(items.length).toBeGreaterThan(0);
+
+    // Each item must validate exactly one branch
+    for (const it of items) {
+      const v0 = it && typeof it === 'object' && 'aOnly' in (it as object);
+      const v1 = it && typeof it === 'object' && 'bOnly' in (it as object);
+      // Disjoint by construction: presence of aOnly vs bOnly
+      expect(v0 || v1).toBe(true);
+      expect(v0 && v1).toBe(false);
+    }
+  });
+
   describe('Conditional rewrites', () => {
     it('performs safe rewrite without semantic drift', async () => {
       const safeResult = await executePipeline(conditionalSafeRewriteSchema, {
@@ -861,5 +905,59 @@ describe('Foundry pipeline integration scenarios', () => {
     expect(result.stages.validate.error?.cause).toBeInstanceOf(
       AjvFlagsMismatchError
     );
+  });
+
+  it('does not rely on non-validating anyOf branch under unevaluatedProperties:false (T-UEP-TRACE-02)', async () => {
+    // spec://§20#integration — T‑UEP‑TRACE‑02 integration
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      unevaluatedProperties: false,
+      properties: { discr: { enum: ['left', 'right'] } },
+      required: ['discr'],
+      anyOf: [
+        {
+          type: 'object',
+          properties: { discr: { const: 'left' }, leftKey: { type: 'number' } },
+          required: ['discr'],
+          patternProperties: { '^l_\\w+$': { type: 'string' } },
+        },
+        {
+          type: 'object',
+          properties: {
+            discr: { const: 'right' },
+            rightKey: { type: 'number' },
+          },
+          required: ['discr'],
+          patternProperties: { '^r_\\w+$': { type: 'string' } },
+        },
+      ],
+    } as const;
+
+    const result = await executePipeline(schema, {
+      generate: { count: 6, seed: 222 },
+      validate: { validateFormats: false },
+    });
+
+    const items: unknown[] =
+      result.artifacts.repaired ?? result.artifacts.generated?.items ?? [];
+    expect(items.length).toBeGreaterThan(0);
+
+    for (const raw of items) {
+      const obj = (raw ?? {}) as Record<string, unknown>;
+      const discr = obj.discr as string | undefined;
+      // Exactly one branch is intended to validate via discriminant
+      expect(discr === 'left' || discr === 'right').toBe(true);
+
+      // Under unevaluatedProperties:false, keys must not rely on the non-validating branch
+      const keys = Object.keys(obj);
+      if (discr === 'left') {
+        // MUST NOT emit keys introduced by branch-2 only (r_*)
+        expect(keys.some((k) => /^r_\w+$/.test(k))).toBe(false);
+      } else if (discr === 'right') {
+        // MUST NOT emit keys introduced by branch-1 only (l_*)
+        expect(keys.some((k) => /^l_\w+$/.test(k))).toBe(false);
+      }
+    }
   });
 });
