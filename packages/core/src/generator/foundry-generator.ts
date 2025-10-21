@@ -22,6 +22,7 @@ import type { Schema } from '../types/schema.js';
 import { FormatRegistry } from '../registry/format-registry.js';
 import { registerBuiltInFormats } from './formats/index.js';
 import { structuralHash } from '../util/struct-hash.js';
+import { XorShift32 } from '../util/rng.js';
 import { createSourceAjv, type JsonSchemaDialect } from '../util/ajv-source.js';
 import type Ajv from 'ajv';
 import type { ValidateFunction } from 'ajv';
@@ -839,11 +840,12 @@ class GeneratorEngine {
       selectedIndex >= 0 && selectedIndex < branches.length ? selectedIndex : 0;
     if (branches.length > 1) {
       const exclusivityRand = this.computeExclusivityRand(canonPath, itemIndex);
+      const tiebreakRand = this.computeTiebreakRand(canonPath, itemIndex);
       this.diagnostics.push({
         code: DIAGNOSTIC_CODES.EXCLUSIVITY_TWEAK_STRING,
         phase: DIAGNOSTIC_PHASES.GENERATE,
         canonPath,
-        scoreDetails: { tiebreakRand: 0, exclusivityRand },
+        scoreDetails: { tiebreakRand, exclusivityRand },
       });
     }
     const branchPath = appendPointer(canonPath, `oneOf/${chosen}`);
@@ -899,14 +901,20 @@ class GeneratorEngine {
 
   private computeExclusivityRand(
     canonPath: JsonPointer,
-    itemIndex: number
+    _itemIndex: number
   ): number {
-    const key = { seed: this.baseSeed, path: canonPath, idx: itemIndex };
-    const h = structuralHash(key);
-    if (!h) return 0;
-    const part = h.digest.slice(0, 8);
-    const n = parseInt(part, 16) >>> 0;
-    return n / 0xffffffff;
+    // SPEC §15 RNG — fresh xorshift32 instance per oneOf location (canonPath), no global state
+    const rng = new XorShift32(this.baseSeed, canonPath);
+    return rng.nextFloat01();
+  }
+
+  private computeTiebreakRand(
+    canonPath: JsonPointer,
+    _itemIndex: number
+  ): number {
+    // SPEC §15 RNG — record tiebreakRand always, even when |T|=1
+    const rng = new XorShift32(this.baseSeed, `${canonPath}|tb`);
+    return rng.nextFloat01();
   }
 }
 
