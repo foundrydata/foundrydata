@@ -182,6 +182,14 @@ function handlePipelineOutput(
   printMetrics: boolean
 ): void {
   if (result.status !== 'completed') {
+    // If validation-time diagnostics were produced (e.g., AJV_FLAGS_MISMATCH),
+    // surface them before throwing to aid troubleshooting, per SPEC diagnostics exposure.
+    const vdiags = result.artifacts.validationDiagnostics;
+    if (Array.isArray(vdiags) && vdiags.length > 0) {
+      process.stderr.write(
+        `[foundrydata] diagnostics(validate): ${JSON.stringify(vdiags)}\n`
+      );
+    }
     const stageError = result.errors[0];
     if (stageError) throw stageError;
     throw new PipelineStageError('generate', 'Generation pipeline failed');
