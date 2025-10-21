@@ -397,6 +397,26 @@ function synthStringFromPattern(patternSource: string): string {
   return '';
 }
 
+function codePointLength(value: string): number {
+  // Count Unicode code points (surrogates count as 1)
+  return Array.from(value).length;
+}
+
+function codePointSlice(value: string, endExclusive: number): string {
+  // Return prefix of string with at most endExclusive code points
+  if (endExclusive <= 0) return '';
+  const arr = Array.from(value);
+  if (arr.length <= endExclusive) return value;
+  return arr.slice(0, endExclusive).join('');
+}
+
+function padToMinCodePoints(value: string, min: number, padChar = 'a'): string {
+  const arr = Array.from(value);
+  if (arr.length >= min) return value;
+  const padCount = min - arr.length;
+  return value + padChar.repeat(padCount);
+}
+
 function hasIntegerType(schemaNode: any): boolean {
   const t = schemaNode?.type;
   if (typeof t === 'string') return t === 'integer';
@@ -447,12 +467,13 @@ export function repairItemsAjvDriven(
     details?: Record<string, unknown>;
   }> = [];
   for (const original of items) {
-    let current = deepClone(original);
-    let pass = validateFn(current);
+    // Fast-path: validate original without cloning to minimize overhead
+    let pass = validateFn(original);
     if (pass) {
-      repaired.push(current);
+      repaired.push(original);
       continue;
     }
+    let current = deepClone(original);
 
     for (let iter = 0; iter < attempts; iter += 1) {
       const errors = (validateFn as any).errors as AjvError[] | undefined;
@@ -464,7 +485,48 @@ export function repairItemsAjvDriven(
         const kw = err.keyword;
         const instPtr = err.instancePath || '';
         const sp = normalizeSchemaPointerFromError(err.schemaPath);
-        if (kw === 'type') {
+        if (kw === 'minLength' || kw === 'maxLength') {
+          if (isUnderPropertyNames(sp)) continue;
+          const limit = (err.params as any)?.limit as number | undefined;
+          if (typeof limit !== 'number') continue;
+          let curVal = getByPointer(current, instPtr);
+          if (typeof curVal !== 'string') {
+            // Coerce to empty string before applying repair
+            if (instPtr === '') current = '' as any;
+            else setByPointer(current, instPtr, '');
+            curVal = '';
+          }
+          const len = codePointLength(curVal as string);
+          if (kw === 'minLength' && len < limit) {
+            const repairedStr = padToMinCodePoints(
+              curVal as string,
+              limit,
+              'a'
+            );
+            if (instPtr === '') current = repairedStr as any;
+            else setByPointer(current, instPtr, repairedStr);
+            changed = true;
+            const canonStr = sp.replace(/\/(?:minLength)(?:\/.*)?$/, '');
+            actions.push({
+              action: 'stringPadTruncate',
+              canonPath: canonStr,
+              instancePath: instPtr,
+              details: { kind: 'minLength', limit, delta: limit - len },
+            });
+          } else if (kw === 'maxLength' && len > limit) {
+            const repairedStr = codePointSlice(curVal as string, limit);
+            if (instPtr === '') current = repairedStr as any;
+            else setByPointer(current, instPtr, repairedStr);
+            changed = true;
+            const canonStr = sp.replace(/\/(?:maxLength)(?:\/.*)?$/, '');
+            actions.push({
+              action: 'stringPadTruncate',
+              canonPath: canonStr,
+              instancePath: instPtr,
+              details: { kind: 'maxLength', limit, delta: len - limit },
+            });
+          }
+        } else if (kw === 'type') {
           // Skip mapping repairs when the error originates from propertyNames subtree
           if (isUnderPropertyNames(sp)) continue;
           // derive desired type
@@ -700,7 +762,64 @@ export function repairItemsAjvDriven(
         const props = objectSchema?.properties;
         const sub = props?.[missing];
         const hasDefault = sub && typeof sub === 'object' && 'default' in sub;
-        if (!hasDefault) continue;
+        if (!hasDefault) {
+          // SPEC §10 mapping: if no default, synthesize a minimal value for the sub-schema
+          const synth = (s: any): unknown => {
+            if (!s || typeof s !== 'object') return null;
+            if (Array.isArray(s.enum) && s.enum.length > 0) return s.enum[0];
+            if ('const' in s) return s.const;
+            const t =
+              typeof s.type === 'string'
+                ? s.type
+                : Array.isArray(s.type)
+                  ? s.type[0]
+                  : undefined;
+            switch (t) {
+              case 'string':
+                return '';
+              case 'number':
+              case 'integer':
+                return 0;
+              case 'boolean':
+                return false;
+              case 'object':
+                return {};
+              case 'array':
+                return [];
+              case 'null':
+                return null;
+              default:
+                return null;
+            }
+          };
+          const unevalApplies2 =
+            objectSchema?.unevaluatedProperties === false ||
+            anyErrorAtPath(errors, 'unevaluatedProperties', objectPtr);
+          const isEvaluated2 = buildIsEvaluatedFn(
+            validateFn as any,
+            current,
+            objectPtr
+          );
+          if (unevalApplies2 && !isEvaluated2(missing)) {
+            // Respect evaluation guard; skip add
+            continue;
+          }
+          if (!(missing in (obj as Record<string, unknown>))) {
+            (obj as Record<string, unknown>)[missing] = synth(sub);
+            /* istanbul ignore next */
+            const eTraceUpdate2 = (_: string): void => {};
+            eTraceUpdate2(canonPathReq);
+            changed = true;
+            actions.push({
+              action: 'addRequiredSynth',
+              canonPath: canonPathReq,
+              origPath: parentPtr,
+              instancePath: objectPtr,
+              details: { name: missing },
+            });
+          }
+          continue;
+        }
 
         const unevalApplies =
           objectSchema?.unevaluatedProperties === false ||
@@ -729,6 +848,49 @@ export function repairItemsAjvDriven(
             instancePath: objectPtr,
             details: { name: missing },
           });
+        }
+      }
+
+      // Remove extras under additionalProperties:false and unevaluatedProperties:false
+      for (const err of errors) {
+        if (
+          err.keyword !== 'additionalProperties' &&
+          err.keyword !== 'unevaluatedProperties'
+        )
+          continue;
+        const objectPtr = err.instancePath || '';
+        const obj = getByPointer(current, objectPtr);
+        if (!obj || typeof obj !== 'object' || Array.isArray(obj)) continue;
+        const propName =
+          (err.params as any).additionalProperty ??
+          (err.params as any).unevaluatedProperty;
+        if (typeof propName !== 'string') continue;
+        if (
+          Object.prototype.hasOwnProperty.call(
+            obj as Record<string, unknown>,
+            propName
+          )
+        ) {
+          delete (obj as Record<string, unknown>)[propName];
+          const canonObj = normalizeSchemaPointerFromError(
+            err.schemaPath
+          ).replace(
+            /\/(?:additionalProperties|unevaluatedProperties)(?:\/.*)?$/,
+            ''
+          );
+          actions.push({
+            action: 'removeAdditionalProperty',
+            canonPath: canonObj,
+            instancePath: objectPtr,
+            details: {
+              name: propName,
+              kind:
+                err.keyword === 'additionalProperties'
+                  ? 'additional'
+                  : 'unevaluated',
+            },
+          });
+          changed = true;
         }
       }
 
@@ -813,7 +975,10 @@ export function repairItemsAjvDriven(
             const parentPtr = sp.replace(/\/(?:minItems)(?:\/.*)?$/, '');
             const nodeSchema = getByPointer(schema, parentPtr) as any;
             const itemSchema = nodeSchema?.items;
-            const pad = (s: any): unknown => {
+            const prefixItems = Array.isArray(nodeSchema?.prefixItems)
+              ? (nodeSchema.prefixItems as unknown[])
+              : [];
+            const synthFrom = (s: any): unknown => {
               if (s && typeof s === 'object' && 'default' in s)
                 return (s as any).default;
               const t =
@@ -841,9 +1006,12 @@ export function repairItemsAjvDriven(
               }
             };
             const toAdd = limit - arr.length;
-            const additions = new Array(toAdd)
-              .fill(0)
-              .map(() => pad(itemSchema));
+            const additions: unknown[] = [];
+            for (let i = arr.length; i < limit; i += 1) {
+              const schemaForIndex =
+                i < prefixItems.length ? prefixItems[i] : itemSchema;
+              additions.push(synthFrom(schemaForIndex));
+            }
             const grown = arr.concat(additions);
             if (arrPtr === '') (current as any) = grown as any;
             else setByPointer(current, arrPtr, grown);

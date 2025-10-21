@@ -20,6 +20,10 @@ describe('Pipeline final validation failure', () => {
         generate() {
           return { items: ['a'], diagnostics: [], metrics: {}, seed: 0 };
         },
+        // Disable repair for this test to assert final validation failure semantics
+        repair(items) {
+          return items;
+        },
       }
     );
 
