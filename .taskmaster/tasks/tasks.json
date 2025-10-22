@@ -1842,12 +1842,13 @@
             "description": "Create comprehensive unit test suites for core modules including generator, validator, parser, and types",
             "dependencies": [],
             "details": "Build unit tests targeting the existing source structure in packages/core/src/. Focus on modules that support the 5-stage pipeline: generator/, validator/, parser/, and types/. Ensure tests use AJV as oracle and fixed RNG seeds for determinism.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "Target existing modules with deterministic test cases using fixed seeds",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-10-22T22:34:17.927Z"
           }
         ],
-        "updatedAt": "2025-10-22T17:48:19.696Z"
+        "updatedAt": "2025-10-22T22:34:17.927Z"
       },
       {
         "id": "18",
@@ -2097,7 +2098,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-22T21:24:51.253Z",
+      "lastModified": "2025-10-22T22:34:17.928Z",
       "taskCount": 52,
       "completedCount": 44,
       "tags": [

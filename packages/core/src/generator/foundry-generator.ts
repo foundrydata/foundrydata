@@ -20,9 +20,11 @@ import {
   type ResolvedOptions,
 } from '../types/options.js';
 import type { Schema } from '../types/schema.js';
-import { FormatRegistry } from '../registry/format-registry.js';
-import { registerBuiltInFormats } from './formats/index.js';
 import { structuralHash } from '../util/struct-hash.js';
+import {
+  createFormatRegistry,
+  type FormatRegistry,
+} from './format-registry.js';
 import { XorShift32 } from '../util/rng.js';
 import { createSourceAjv, type JsonSchemaDialect } from '../util/ajv-source.js';
 import { resolveDynamicRefBinding } from '../util/draft.js';
@@ -133,14 +135,13 @@ class GeneratorEngine {
   private readonly diagNodes: Record<string, NodeDiagnostics> | undefined;
 
   private readonly baseSeed: number;
-  private readonly formatRegistry: FormatRegistry;
-
   private readonly ptrMap: ComposeResult['canonical']['ptrMap'];
   private readonly sourceSchema?: unknown;
   private sourceAjvCache?: Ajv;
   private branchValidatorCache: Map<string, ValidateFunction> = new Map();
   private readonly conditionalBlocklist: Map<string, Set<string>> = new Map();
   private readonly shouldRecordEvalTrace: boolean;
+  private readonly formatRegistry?: FormatRegistry;
 
   constructor(effective: ComposeResult, options: FoundryGeneratorOptions) {
     this.options = options;
@@ -154,9 +155,12 @@ class GeneratorEngine {
       this.resolved.patternWitness.alphabet
     );
     this.baseSeed = normalizeSeed(options.seed);
+    if (options.validateFormats === true) {
+      this.formatRegistry = createFormatRegistry({
+        seed: this.baseSeed,
+      });
+    }
     this.rootSchema = effective.canonical.schema;
-    this.formatRegistry = new FormatRegistry();
-    registerBuiltInFormats(this.formatRegistry);
     this.ptrMap = effective.canonical.ptrMap;
     this.sourceSchema = options.sourceSchema;
     const notes: NormalizerNote[] = effective.canonical.notes ?? [];
@@ -1614,31 +1618,6 @@ class GeneratorEngine {
       if (typeof first === 'string') return first;
     }
 
-    // format-aware generation (best-effort)
-    if (typeof schema.format === 'string') {
-      const res = this.formatRegistry.generate(schema.format);
-      if (res.isOk && res.isOk()) {
-        let v = res.value;
-        // Apply length bounds if present (Unicode length approximation)
-        const minLength =
-          typeof schema.minLength === 'number'
-            ? Math.max(0, Math.floor(schema.minLength))
-            : 0;
-        const maxLength =
-          typeof schema.maxLength === 'number'
-            ? Math.max(minLength, Math.floor(schema.maxLength))
-            : undefined;
-        const padChar = this.normalizedAlphabet[0] ?? 'a';
-        if (codePointLength(v) < minLength) {
-          v = ensureMinCodePoints(v, minLength, padChar);
-        }
-        if (maxLength !== undefined && codePointLength(v) > maxLength) {
-          v = truncateToCodePoints(v, maxLength);
-        }
-        return v;
-      }
-    }
-
     const minLength =
       typeof schema.minLength === 'number'
         ? Math.max(0, Math.floor(schema.minLength))
@@ -1647,8 +1626,24 @@ class GeneratorEngine {
       typeof schema.maxLength === 'number'
         ? Math.max(minLength, Math.floor(schema.maxLength))
         : undefined;
-    const baseChar = this.normalizedAlphabet[0] ?? 'a';
-    let candidate = minLength === 0 ? '' : repeatCodePoint(baseChar, minLength);
+    const padChar = this.normalizedAlphabet[0] ?? 'a';
+
+    // format-aware generation (best-effort when formats are validated)
+    if (this.formatRegistry && typeof schema.format === 'string') {
+      const res = this.formatRegistry.generate(schema.format);
+      if (res.isOk()) {
+        let value = res.value;
+        if (codePointLength(value) < minLength) {
+          value = ensureMinCodePoints(value, minLength, padChar);
+        }
+        if (maxLength !== undefined && codePointLength(value) > maxLength) {
+          value = truncateToCodePoints(value, maxLength);
+        }
+        return value;
+      }
+    }
+
+    let candidate = minLength === 0 ? '' : repeatCodePoint(padChar, minLength);
     if (maxLength !== undefined && codePointLength(candidate) > maxLength) {
       candidate = truncateToCodePoints(candidate, maxLength);
     }
