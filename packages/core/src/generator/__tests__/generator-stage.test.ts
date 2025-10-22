@@ -123,36 +123,55 @@ describe('Foundry generator stage', () => {
     expect(iOut.items[0]).toBe(7);
   });
 
-  it('generates common string formats (uuid/email) with minimal validity', () => {
+  it('emits annotate-only strings when format validation is disabled', () => {
     const uuidSchema = { type: 'string', format: 'uuid' };
     const uuidOut = generateFromCompose(composeSchema(uuidSchema));
     const uuid = uuidOut.items[0] as string;
-    expect(typeof uuid).toBe('string');
-    expect(uuid).toMatch(
-      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
-    );
+    expect(uuid).toBe('');
 
     const emailSchema = { type: 'string', format: 'email' };
     const emailOut = generateFromCompose(composeSchema(emailSchema));
     const email = emailOut.items[0] as string;
+    expect(email).toBe('');
+  });
+
+  it('synthesizes canonical strings for core formats when validateFormats is true', () => {
+    const opts = { validateFormats: true, seed: 2025 };
+
+    const uuidSchema = { type: 'string', format: 'uuid' };
+    const uuidOut = generateFromCompose(composeSchema(uuidSchema), opts);
+    const uuid = uuidOut.items[0] as string;
+    expect(typeof uuid).toBe('string');
+    expect(uuid).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    );
+
+    const emailSchema = { type: 'string', format: 'email' };
+    const emailOut = generateFromCompose(composeSchema(emailSchema), opts);
+    const email = emailOut.items[0] as string;
     expect(typeof email).toBe('string');
-    expect(email.includes('@')).toBe(true);
+    expect(email).toMatch(/^[^@\s]+@example\.test$/);
   });
 
   it('applies minLength/maxLength bounds to formatted strings (trimming/padding)', () => {
     // Trim a uuid to 8 chars via maxLength
     const trimmedSchema = { type: 'string', format: 'uuid', maxLength: 8 };
-    const trimmed = generateFromCompose(composeSchema(trimmedSchema))
-      .items[0] as string;
+    const trimmed = generateFromCompose(composeSchema(trimmedSchema), {
+      validateFormats: true,
+      seed: 4001,
+    }).items[0] as string;
     expect(typeof trimmed).toBe('string');
     expect(trimmed.length).toBeLessThanOrEqual(8);
 
     // Pad an email-like string to minLength via repeat
-    const paddedSchema = { type: 'string', format: 'email', minLength: 10 };
-    const padded = generateFromCompose(composeSchema(paddedSchema))
-      .items[0] as string;
+    const paddedSchema = { type: 'string', format: 'email', minLength: 40 };
+    const padded = generateFromCompose(composeSchema(paddedSchema), {
+      validateFormats: true,
+      seed: 4001,
+    }).items[0] as string;
     expect(typeof padded).toBe('string');
-    expect(padded.length).toBeGreaterThanOrEqual(10);
+    expect(Array.from(padded).length).toBeGreaterThanOrEqual(40);
+    expect(padded.startsWith('user.')).toBe(true);
   });
 
   it('enforces uniqueItems and preserves minimal length with stable fillers', () => {

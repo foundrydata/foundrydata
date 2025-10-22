@@ -1,17 +1,11 @@
 // @foundrydata/core entry point
 
-export { Generator } from './generator/index.js';
-export * from './parser/index.js';
 export * from './types/index.js';
-export * from './registry/index.js';
-export * from './generator/formats/index.js';
-export * from './validator/index.js';
 export {
   generateFromCompose,
   type GeneratorStageOutput,
   type FoundryGeneratorOptions,
 } from './generator/foundry-generator.js';
-export * from '@foundrydata/shared';
 export {
   ErrorCode,
   type Severity,
@@ -24,52 +18,6 @@ export {
   type APIErrorView,
   type ProductionView,
 } from './errors/presenter.js';
-
-// Limitations registry and helpers (Task 6)
-export {
-  LIMITATIONS_REGISTRY,
-  type Limitation,
-  type LimitationKey,
-  CURRENT_VERSION,
-  getLimitation,
-  compareVersions,
-  isSupported,
-  enrichErrorWithLimitation,
-} from './errors/limitations-deprecated.js';
-
-// Suggestion system helpers (Task 7)
-export {
-  didYouMean,
-  getAlternative,
-  proposeSchemaFix,
-  getWorkaround,
-  calculateDistance,
-  type Alternative,
-  type SchemaFix,
-  type Workaround,
-} from './errors/suggestions.js';
-
-// Initialize built-in formats to avoid circular dependencies
-import {
-  defaultFormatRegistry,
-  initializeBuiltInFormats,
-} from './registry/format-registry.js';
-import {
-  UUIDGenerator,
-  EmailGenerator,
-  DateGenerator,
-  DateTimeGenerator,
-} from './generator/formats/index.js';
-
-// Set up lazy initialization for the default registry
-defaultFormatRegistry.setInitializer(() => {
-  initializeBuiltInFormats(defaultFormatRegistry, [
-    new UUIDGenerator(),
-    new EmailGenerator(),
-    new DateGenerator(),
-    new DateTimeGenerator(),
-  ]);
-});
 
 // AJV utilities (Task 2)
 export {

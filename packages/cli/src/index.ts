@@ -13,7 +13,6 @@ import {
   resolveOptions,
   executePipeline,
   PipelineStageError,
-  ReferenceResolver,
   type PipelineResult,
 } from '@foundrydata/core';
 import { renderCLIView } from './render.js';
@@ -39,17 +38,12 @@ program
     'Per-item retry attempts on validation failure',
     '1'
   )
-  .option(
-    '--resolve-externals',
-    'Resolve external $ref before generation',
-    false
-  )
   .option('--print-metrics', 'Print pipeline metrics as JSON to stderr', false)
   .option('--compat <mode>', 'Compatibility mode: strict|lax', 'strict')
   .option(
     '--rewrite-conditionals <mode>',
     'Conditional rewriting: never|safe|aggressive',
-    'safe'
+    'never'
   )
   .option('--debug-freeze', 'Enable debug freeze for development')
   .option('--skip-trials', 'Skip branch trials, use score-only selection')
@@ -83,7 +77,7 @@ program
   )
   .option('--no-metrics', 'Disable metrics collection')
   .option('--debug-passes', 'Print effective configuration to stderr')
-  .action(async (options) => {
+  .action(async function (this: Command, options) {
     try {
       const schemaPath = options.schema as string | undefined;
       if (!schemaPath) throw new Error('Missing --schema <file>');
@@ -130,21 +124,20 @@ program
         }
       }
 
-      let schemaForGen = input;
-      if (options.resolveExternals) {
-        const resolver = new ReferenceResolver();
-        resolver.addSchema(input, input.$id || abs);
-        const resolved = await resolver.resolve(input);
-        if (resolved.isErr()) throw resolved.error;
-        schemaForGen = resolved.value as object;
-      }
-
+      const schemaForGen = input;
       const count = Number(options.rows ?? options.count ?? 1);
       const seed = Number(options.seed ?? 424242);
       const repairAttempts = Number(options.repairAttempts ?? 1);
 
       // Parse CLI options into PlanOptions
-      const planOptions = parsePlanOptions(options);
+      const command = this;
+      const cliPlanOptions = { ...options } as Parameters<
+        typeof parsePlanOptions
+      >[0];
+      if (command.getOptionValueSource('rewriteConditionals') === 'default') {
+        delete cliPlanOptions.rewriteConditionals;
+      }
+      const planOptions = parsePlanOptions(cliPlanOptions);
       const resolvedOptions = resolveOptions(planOptions);
 
       // Print effective configuration if requested
