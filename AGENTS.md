@@ -73,12 +73,67 @@ Step 8  Marquer la tâche comme terminée :
 npm i
 npm run build
 npm run test
-npm run test:benchmarks   # provisoire jusqu’au bench harness dédié
+npm run test:benchmarks   # provisoire jusqu'au bench harness dédié
 npm run typecheck
 npm run lint
 ```
 
 > Si pnpm est activé : utiliser les variantes `pnpm -w ...`.
+
+### Exécution de Code TypeScript — Protocole `tsx`
+
+**CRITICAL**: Ne **jamais** utiliser `bash -lc 'node - <<EOF'` pour du code TypeScript. Node.js ne peut pas importer des fichiers `.ts` non compilés.
+
+**❌ INCORRECT (échoue avec ERR_MODULE_NOT_FOUND)**
+
+```bash
+bash -lc 'node - <<EOF
+import { executePipeline } from './packages/core/src/pipeline/orchestrator.js';
+const res = await executePipeline(schema, options);
+console.log(res);
+EOF
+'
+```
+
+**✅ CORRECT : Utiliser `npx tsx --eval` avec wrapper async**
+
+```bash
+npx tsx --eval "(async () => {
+  const { executePipeline } = await import('./packages/core/src/pipeline/orchestrator.js');
+  const { dependentAllOfCoverageSchema } = await import('./packages/core/src/pipeline/__fixtures__/integration-schemas.js');
+
+  const res = await executePipeline(dependentAllOfCoverageSchema, {
+    mode: 'strict',
+    generate: { count: 2, seed: 37 },
+    validate: { validateFormats: false },
+  });
+  console.log('generated', res.artifacts.generated?.items);
+  console.log('repair', res.artifacts.repaired);
+  console.log('actions', res.artifacts.repairActions);
+})()"
+```
+
+**Pourquoi `tsx` ?**
+
+* Gère automatiquement les imports TypeScript `.ts` → `.js`
+* Pas besoin de compilation préalable
+* Support ESM natif avec `import`
+* Déterministe et reproductible
+
+**Alternatives (si compilation déjà faite)**
+
+```bash
+# 1. Compiler d'abord
+npm run build
+
+# 2. Utiliser les fichiers compilés dans dist/
+node -e "
+import { executePipeline } from './packages/core/dist/pipeline/orchestrator.js';
+// ...
+"
+```
+
+**Note pour Codex AI** : Codex tente parfois `bash -lc 'node - <<EOF'` pour des tests rapides. Toujours intercepter et remplacer par `npx tsx -e "..."` pour éviter ERR_MODULE_NOT_FOUND.
 
 ---
 
