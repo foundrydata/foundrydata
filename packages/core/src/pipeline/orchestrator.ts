@@ -148,7 +148,8 @@ export async function executePipeline(
   const runners: StageRunners = {
     normalize: overrides.normalize ?? normalize,
     compose: overrides.compose ?? compose,
-    generate: overrides.generate ?? createDefaultGenerate(metrics, schema),
+    generate:
+      overrides.generate ?? createDefaultGenerate(metrics, schema, options),
     repair: overrides.repair ?? createDefaultRepair(options),
     validate: overrides.validate ?? createDefaultValidate(options),
   };
@@ -556,7 +557,8 @@ export async function executePipeline(
 
 function createDefaultGenerate(
   metrics: MetricsCollector,
-  sourceSchema: unknown
+  sourceSchema: unknown,
+  pipelineOptions: PipelineOptions
 ): StageRunners['generate'] {
   return (effective, options) => {
     const generatorOptions: FoundryGeneratorOptions = {
@@ -565,6 +567,8 @@ function createDefaultGenerate(
       planOptions: options?.planOptions,
       metrics,
       sourceSchema,
+      validateFormats: pipelineOptions.validate?.validateFormats,
+      discriminator: pipelineOptions.validate?.discriminator,
     };
     return generateFromCompose(effective, generatorOptions);
   };

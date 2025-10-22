@@ -5,7 +5,7 @@ import { compose } from '../../transform/composition-engine';
 import { generateFromCompose } from '../foundry-generator';
 
 describe('Array generation — contains + uniqueItems minimal filler', () => {
-  it('satisfies contains, enforces uniqueItems and fills with unique fallback', () => {
+  it('satisfies contains and leaves unsatisfiable unique constraints for downstream repair', () => {
     const schema = {
       type: 'array',
       minItems: 2,
@@ -22,10 +22,10 @@ describe('Array generation — contains + uniqueItems minimal filler', () => {
     const arr = out.items[0] as unknown[];
 
     expect(Array.isArray(arr)).toBe(true);
-    // minimal length honored after uniqueness
-    expect(arr.length).toBe(2);
-    // array should contain a `1` and a unique filler distinct from 1
-    expect(arr.some((v) => v === 1)).toBe(true);
-    expect(arr.some((v) => typeof v === 'object')).toBe(true);
+    // contains requirement respected
+    expect(arr.filter((v) => v === 1).length).toBeGreaterThanOrEqual(1);
+    // domain is unsatisfiable under uniqueItems; generator stops after the feasible item
+    expect(arr.length).toBe(1);
+    expect(arr.every((v) => typeof v !== 'object')).toBe(true);
   });
 });

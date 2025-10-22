@@ -477,6 +477,170 @@ export function repairItemsAjvDriven(
     }
     let current = deepClone(original);
 
+    type RenameRegistryEntry =
+      | { status: 'renamed' }
+      | {
+          status: 'pendingDelete';
+          canonPath: string;
+          from: string;
+          mustCover: boolean;
+          reason: 'deletedNoSafeName' | 'deletedMustCoverRejected';
+        };
+    const renameRegistry = new Map<string, RenameRegistryEntry>();
+    const makeRenameKey = (ptr: string, name: string): string =>
+      `${ptr}::${name}`;
+
+    const attemptPropertyNamesRectification = (
+      offending: string,
+      objectPtr: string,
+      parentPtr: string,
+      errors: AjvError[]
+    ): { attempted: boolean; renamed: boolean } => {
+      const key = makeRenameKey(objectPtr, offending);
+      const existing = renameRegistry.get(key);
+      if (existing) {
+        return {
+          attempted: true,
+          renamed: existing.status === 'renamed',
+        };
+      }
+
+      const obj = getByPointer(current, objectPtr);
+      if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
+        return { attempted: false, renamed: false };
+      }
+      const objectSchema = getByPointer(schema, parentPtr) as any;
+      if (!objectSchema || typeof objectSchema !== 'object') {
+        return { attempted: false, renamed: false };
+      }
+
+      const pnames = objectSchema.propertyNames;
+      if (!pnames || typeof pnames !== 'object') {
+        return { attempted: false, renamed: false };
+      }
+
+      let enumValues: string[] | undefined;
+      if (Array.isArray(pnames.enum)) {
+        enumValues = (pnames.enum as unknown[]).filter(
+          (value): value is string => typeof value === 'string'
+        );
+      } else if (typeof pnames.const === 'string') {
+        enumValues = [pnames.const];
+      }
+      if (!enumValues || enumValues.length === 0) {
+        return { attempted: false, renamed: false };
+      }
+
+      const canonCandidates = effective.canonical.revPtrMap.get(parentPtr);
+      const canonPath =
+        canonCandidates && canonCandidates.length > 0
+          ? canonCandidates[0]!
+          : parentPtr;
+
+      const apFalse =
+        (objectSchema && objectSchema.additionalProperties === false) || false;
+      const mustCoverActive = apFalse && mustCoverGuardEnabled;
+      const present = new Set(Object.keys(obj as Record<string, unknown>));
+      const unevalApplies =
+        objectSchema?.unevaluatedProperties === false ||
+        anyErrorAtPath(errors, 'unevaluatedProperties', objectPtr);
+      const isEvaluated = buildIsEvaluatedFn(
+        validateFn as any,
+        current,
+        objectPtr
+      );
+
+      const protectedNames = new Set<string>();
+      if (Array.isArray(objectSchema?.required)) {
+        for (const n of objectSchema.required as unknown[]) {
+          if (typeof n === 'string') protectedNames.add(n);
+        }
+      }
+      const depReq =
+        (objectSchema as any)?.dependentRequired ??
+        (objectSchema as any)?.dependencies;
+      if (depReq && typeof depReq === 'object') {
+        for (const key of Object.keys(depReq as Record<string, unknown>)) {
+          protectedNames.add(key);
+          const val = (depReq as any)[key];
+          if (Array.isArray(val)) {
+            for (const v of val) {
+              if (typeof v === 'string') protectedNames.add(v);
+            }
+          }
+        }
+      }
+      const depSchemas = (objectSchema as any)?.dependentSchemas;
+      if (depSchemas && typeof depSchemas === 'object') {
+        for (const key of Object.keys(depSchemas as Record<string, unknown>)) {
+          protectedNames.add(key);
+        }
+      }
+
+      const res = chooseClosedEnumRenameCandidate(offending, enumValues, {
+        canonPath,
+        present,
+        apFalse,
+        mustCoverGuard: mustCoverGuardEnabled,
+        coverageIndex: effective.coverageIndex,
+        unevaluatedApplies: unevalApplies,
+        isEvaluated,
+        blockedSourceNames: protectedNames,
+      });
+
+      if (res.ok && res.candidate) {
+        renameKey(obj as Record<string, unknown>, offending, res.candidate);
+        /* istanbul ignore next */
+        const eTraceUpdate = (_: string): void => {};
+        eTraceUpdate(canonPath);
+        diagnostics.push({
+          code: DIAGNOSTIC_CODES.REPAIR_PNAMES_PATTERN_ENUM,
+          canonPath,
+          details: {
+            from: offending,
+            to: res.candidate,
+            reason: 'enumRename',
+            mustCover: mustCoverActive,
+          },
+        });
+        actions.push({
+          action: 'renameProperty',
+          canonPath,
+          origPath: parentPtr,
+          instancePath: objectPtr,
+          details: { from: offending, to: res.candidate },
+        });
+        renameRegistry.set(key, { status: 'renamed' });
+        return { attempted: true, renamed: true };
+      }
+
+      if (res.diagnostics && res.diagnostics.length) {
+        diagnostics.push(...res.diagnostics);
+      }
+
+      const deleteReason: 'deletedNoSafeName' | 'deletedMustCoverRejected' =
+        mustCoverActive &&
+        (res.diagnostics ?? []).some((diag) => {
+          const code = diag.code;
+          return (
+            code === DIAGNOSTIC_CODES.MUSTCOVER_INDEX_MISSING ||
+            code === DIAGNOSTIC_CODES.REPAIR_EVAL_GUARD_FAIL ||
+            code === DIAGNOSTIC_CODES.REPAIR_RENAME_PREFLIGHT_FAIL
+          );
+        })
+          ? 'deletedMustCoverRejected'
+          : 'deletedNoSafeName';
+
+      renameRegistry.set(key, {
+        status: 'pendingDelete',
+        canonPath,
+        from: offending,
+        mustCover: mustCoverActive,
+        reason: deleteReason,
+      });
+      return { attempted: true, renamed: false };
+    };
+
     for (let iter = 0; iter < attempts; iter += 1) {
       const errors = (validateFn as any).errors as AjvError[] | undefined;
       if (!errors || errors.length === 0) break;
@@ -625,120 +789,17 @@ export function repairItemsAjvDriven(
           | string
           | undefined;
         if (!offending) continue;
-
-        // Object path is the instancePath where propertyNames applies
         const objectPtr = err.instancePath || '';
-        const obj = getByPointer(current, objectPtr);
-        if (!obj || typeof obj !== 'object' || Array.isArray(obj)) continue;
-
-        // From schemaPath, derive the object schema pointer (parent of /propertyNames)
         const sp = normalizeSchemaPointerFromError(err.schemaPath);
         const parentPtr = sp.replace(/\/(?:propertyNames)(?:\/.*)?$/, '');
-
-        // Resolve enum values from original schema
-        const objectSchema = getByPointer(schema, parentPtr) as any;
-        const pnames = objectSchema?.propertyNames;
-        let enumValues: string[] | undefined;
-        if (pnames && typeof pnames === 'object') {
-          if (Array.isArray(pnames.enum)) {
-            enumValues = (pnames.enum as unknown[]).filter(
-              (v) => typeof v === 'string'
-            ) as string[];
-          } else if (typeof pnames.const === 'string') {
-            enumValues = [String(pnames.const)];
-          }
-        }
-        if (!enumValues || enumValues.length === 0) continue;
-
-        // Map original schema pointer to canonical pointer for must-cover
-        const canonCandidates = effective.canonical.revPtrMap.get(parentPtr);
-        const canonPath =
-          canonCandidates && canonCandidates.length > 0
-            ? canonCandidates[0]!
-            : parentPtr;
-
-        const apFalse =
-          (objectSchema && objectSchema.additionalProperties === false) ||
-          false;
-        const present = new Set(Object.keys(obj as Record<string, unknown>));
-
-        const unevalApplies =
-          objectSchema?.unevaluatedProperties === false ||
-          anyErrorAtPath(errors, 'unevaluatedProperties', objectPtr);
-
-        const isEvaluated = buildIsEvaluatedFn(
-          validateFn as any,
-          current,
-          objectPtr
+        const result = attemptPropertyNamesRectification(
+          offending,
+          objectPtr,
+          parentPtr,
+          errors
         );
-
-        // Build protected names from required + dependent* / dependencies entries
-        const protectedNames = new Set<string>();
-        if (Array.isArray(objectSchema?.required)) {
-          for (const n of objectSchema.required as unknown[]) {
-            if (typeof n === 'string') protectedNames.add(n);
-          }
-        }
-        const depReq =
-          (objectSchema as any)?.dependentRequired ??
-          (objectSchema as any)?.dependencies;
-        if (depReq && typeof depReq === 'object') {
-          for (const key of Object.keys(depReq as Record<string, unknown>)) {
-            protectedNames.add(key);
-            const val = (depReq as any)[key];
-            if (Array.isArray(val)) {
-              for (const v of val)
-                if (typeof v === 'string') protectedNames.add(v);
-            }
-          }
-        }
-        const depSchemas = (objectSchema as any)?.dependentSchemas;
-        if (depSchemas && typeof depSchemas === 'object') {
-          for (const key of Object.keys(
-            depSchemas as Record<string, unknown>
-          )) {
-            protectedNames.add(key);
-          }
-        }
-
-        const res = chooseClosedEnumRenameCandidate(offending, enumValues, {
-          canonPath,
-          present,
-          apFalse,
-          mustCoverGuard: mustCoverGuardEnabled,
-          coverageIndex: effective.coverageIndex,
-          unevaluatedApplies: unevalApplies,
-          isEvaluated,
-          blockedSourceNames: protectedNames,
-        });
-
-        if (res.ok && res.candidate) {
-          renameKey(obj as Record<string, unknown>, offending, res.candidate);
-          // E-Trace refresh hook (no-op placeholder for strict SPEC compliance)
-          /* istanbul ignore next */
-          const eTraceUpdate = (_: string): void => {};
-          eTraceUpdate(canonPath);
+        if (result.renamed) {
           changed = true;
-          diagnostics.push({
-            code: DIAGNOSTIC_CODES.REPAIR_PNAMES_PATTERN_ENUM,
-            canonPath,
-            details: {
-              from: offending,
-              to: res.candidate,
-              mustCover: Boolean(apFalse),
-            },
-          });
-          actions.push({
-            action: 'renameProperty',
-            canonPath,
-            origPath: parentPtr,
-            instancePath: objectPtr,
-            details: { from: offending, to: res.candidate },
-          });
-        }
-
-        if (res.diagnostics && res.diagnostics.length) {
-          diagnostics.push(...res.diagnostics);
         }
       }
 
@@ -867,6 +928,22 @@ export function repairItemsAjvDriven(
           (err.params as any).additionalProperty ??
           (err.params as any).unevaluatedProperty;
         if (typeof propName !== 'string') continue;
+        const canonObj = normalizeSchemaPointerFromError(
+          err.schemaPath
+        ).replace(
+          /\/(?:additionalProperties|unevaluatedProperties)(?:\/.*)?$/,
+          ''
+        );
+        const renameAttempt = attemptPropertyNamesRectification(
+          propName,
+          objectPtr,
+          canonObj,
+          errors
+        );
+        if (renameAttempt.renamed) {
+          changed = true;
+          continue;
+        }
         if (
           Object.prototype.hasOwnProperty.call(
             obj as Record<string, unknown>,
@@ -874,12 +951,6 @@ export function repairItemsAjvDriven(
           )
         ) {
           delete (obj as Record<string, unknown>)[propName];
-          const canonObj = normalizeSchemaPointerFromError(
-            err.schemaPath
-          ).replace(
-            /\/(?:additionalProperties|unevaluatedProperties)(?:\/.*)?$/,
-            ''
-          );
           actions.push({
             action: 'removeAdditionalProperty',
             canonPath: canonObj,
@@ -893,6 +964,21 @@ export function repairItemsAjvDriven(
             },
           });
           changed = true;
+          const registryEntry = renameRegistry.get(
+            makeRenameKey(objectPtr, propName)
+          );
+          if (registryEntry && registryEntry.status === 'pendingDelete') {
+            diagnostics.push({
+              code: DIAGNOSTIC_CODES.REPAIR_PNAMES_PATTERN_ENUM,
+              canonPath: registryEntry.canonPath,
+              details: {
+                from: registryEntry.from,
+                reason: registryEntry.reason,
+                mustCover: registryEntry.mustCover,
+              },
+            });
+            renameRegistry.delete(makeRenameKey(objectPtr, propName));
+          }
         }
       }
 

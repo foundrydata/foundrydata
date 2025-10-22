@@ -654,7 +654,9 @@ class CompositionEngine {
       (conj) => conj.gatingPattern && !conj.gatingPattern.literals
     );
     const enumerationEligible =
-      !hasNonLiteralPattern && !gatingWithoutEnumeration;
+      unsafeIssues.length === 0 &&
+      !hasNonLiteralPattern &&
+      !gatingWithoutEnumeration;
 
     const provenance = new Set<CoverageProvenance>();
     if (conjuncts.some((conj) => conj.hasProperties)) {
@@ -718,6 +720,23 @@ class CompositionEngine {
         filtered.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
         enumerationValues = filtered;
       }
+    } else if (
+      !safeIntersectionExists &&
+      presencePressure &&
+      conjuncts.some(
+        (conj) =>
+          conj.hasProperties ||
+          conj.patterns.length > 0 ||
+          conj.hasSyntheticPatterns
+      )
+    ) {
+      enumerationValues = [];
+    } else if (
+      !safeIntersectionExists &&
+      presencePressure &&
+      unsafeIssues.length > 0
+    ) {
+      enumerationValues = [];
     }
 
     const coverageEntry: CoverageEntry = {
@@ -1094,6 +1113,16 @@ class CompositionEngine {
   private createCoveragePredicate(
     conjuncts: CoverageConjunctInfo[]
   ): (name: string) => boolean {
+    const coverageBearingCount = conjuncts.reduce((count, conj) => {
+      if (
+        conj.hasProperties ||
+        conj.patterns.length > 0 ||
+        conj.hasSyntheticPatterns
+      ) {
+        return count + 1;
+      }
+      return count;
+    }, 0);
     return (name: string) => {
       for (const conj of conjuncts) {
         if (conj.gatingEnum && !conj.gatingEnum.has(name)) {
@@ -1101,6 +1130,14 @@ class CompositionEngine {
         }
         if (conj.gatingPattern && !conj.gatingPattern.regexp.test(name)) {
           return false;
+        }
+        const hasCoverageSource =
+          conj.hasProperties ||
+          conj.patterns.length > 0 ||
+          conj.hasSyntheticPatterns;
+        const gatingOnly = !hasCoverageSource;
+        if (gatingOnly && coverageBearingCount > 0) {
+          continue;
         }
         if (conj.named.has(name)) {
           continue;

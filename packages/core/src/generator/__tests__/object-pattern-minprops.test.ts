@@ -11,6 +11,7 @@ describe('Object generation — minProperties via anchored patternProperties', (
       minProperties: 1,
       // AP:false with evaluated gating
       additionalProperties: false,
+      unevaluatedProperties: false,
       // Anchored safe pattern; should enumerate a single-letter name like "a"
       patternProperties: {
         '^[a]$': { type: 'integer', const: 2 },
@@ -30,5 +31,12 @@ describe('Object generation — minProperties via anchored patternProperties', (
     expect(obj[k as keyof typeof obj]).toBe(2);
     // Pattern witness trials should be recorded deterministically
     expect(out.metrics.patternWitnessTried).toBeGreaterThan(0);
+
+    const evalTrace = out.diagnostics.find(
+      (diag) => diag.code === 'EVALTRACE_PROP_SOURCE'
+    ) as { details?: { name?: string; via?: string[] } } | undefined;
+    expect(evalTrace).toBeTruthy();
+    expect(evalTrace?.details?.name).toBe(k);
+    expect(evalTrace?.details?.via).toContain('patternProperties');
   });
 });

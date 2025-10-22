@@ -174,7 +174,7 @@ describe('Foundry generator stage', () => {
     expect(arr.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('uses stable filler when uniqueItems cannot place new unique values', () => {
+  it('leaves unsatisfiable uniqueItems domains without inventing sentinel fillers', () => {
     const schema = {
       type: 'array',
       uniqueItems: true,
@@ -186,15 +186,8 @@ describe('Foundry generator stage', () => {
     const out = generateFromCompose(eff);
     const arr = out.items[0] as unknown[];
     expect(Array.isArray(arr)).toBe(true);
-    // Dedup leaves a single 1, filler adds a stable object to reach baseline 2
-    expect(arr.length).toBeGreaterThanOrEqual(2);
-    const hasFiller = arr.some(
-      (v) =>
-        typeof v === 'object' &&
-        v !== null &&
-        '__fd_unique_filler' in (v as any)
-    );
-    expect(hasFiller).toBe(true);
+    // Dedup leaves the only satisfiable candidate; generator defers unsat to downstream stages
+    expect(arr).toEqual([1]);
   });
 
   it('handles anyOf by choosing the first branch deterministically', () => {
@@ -217,6 +210,12 @@ describe('Foundry generator stage', () => {
     };
     const out = generateFromCompose(composeSchema(schema));
     expect(out.items[0]).toBe(5);
+  });
+
+  it('emits false as the stable boolean minimum when unconstrained', () => {
+    const schema = { type: 'boolean' };
+    const out = generateFromCompose(composeSchema(schema));
+    expect(out.items[0]).toBe(false);
   });
 
   it('applies dependentRequired when trigger key is present', () => {
