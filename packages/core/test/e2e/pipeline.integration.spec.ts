@@ -459,7 +459,7 @@ describe('Foundry pipeline integration scenarios', () => {
       (entry) => entry.code === DIAGNOSTIC_CODES.COMPLEXITY_CAP_PATTERNS
     );
     expect(genDiag).toBeDefined();
-    expect(genDiag?.details).toMatchObject({ reason: 'candidateBudget' });
+    expect(genDiag?.details).toMatchObject({ reason: 'regexComplexity' });
     expect(genDiag?.budget).toMatchObject({
       reason: 'complexityCap',
       skipped: true,

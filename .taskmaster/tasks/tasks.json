@@ -1441,12 +1441,13 @@
             "description": "Core generator implementation that integrates with Composition Engine effective view",
             "dependencies": [],
             "details": "Implement the foundry generator that consumes the effective view and CoverageIndex from the Composition Engine to generate schema-compliant data. Must honor pattern witness selection, minimal width/length constraints, and if-aware-lite processing.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for core generation logic with deterministic seed handling",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-10-22T21:24:51.252Z"
           }
         ],
-        "updatedAt": "2025-10-15T21:01:59.471Z"
+        "updatedAt": "2025-10-22T21:24:51.252Z"
       },
       {
         "id": "10",
@@ -1739,7 +1740,7 @@
         "id": "15",
         "title": "Bench Harness & Gates",
         "description": "Benchmark harness and CI gates for p95 latency and memory peaks; metrics wiring.",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           "8000",
           "9000",
@@ -1764,7 +1765,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-10-21T21:50:54.935Z"
+        "updatedAt": "2025-10-21T22:30:58.373Z"
       },
       {
         "id": "16",
@@ -1821,7 +1822,7 @@
         "id": "17",
         "title": "Unit Tests (per section)",
         "description": "Unit test suites mirroring SPEC sections, including fuzzing for oneOf exclusivity and must-cover.",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [
           "7",
           "8",
@@ -1845,7 +1846,8 @@
             "testStrategy": "Target existing modules with deterministic test cases using fixed seeds",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2025-10-22T17:48:19.696Z"
       },
       {
         "id": "18",
@@ -2095,9 +2097,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-21T21:50:54.936Z",
+      "lastModified": "2025-10-22T21:24:51.253Z",
       "taskCount": 52,
-      "completedCount": 43,
+      "completedCount": 44,
       "tags": [
         "feature-simplification"
       ]

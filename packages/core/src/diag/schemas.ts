@@ -334,6 +334,11 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
     optional: {
       to: { kind: 'string' },
       mustCover: { kind: 'boolean' },
+      reason: enumSchema([
+        'enumRename',
+        'deletedNoSafeName',
+        'deletedMustCoverRejected',
+      ]),
     },
   },
   [DIAGNOSTIC_CODES.REPAIR_RENAME_PREFLIGHT_FAIL]: {
