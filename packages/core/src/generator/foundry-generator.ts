@@ -1,3 +1,4 @@
+/* eslint-disable max-depth */
 /* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
 /* eslint-disable max-lines */
@@ -11,6 +12,7 @@ import type {
   NodeDiagnostics,
 } from '../transform/composition-engine.js';
 import type { ContainsNeed } from '../transform/composition-engine.js';
+import type { NormalizerNote } from '../transform/schema-normalizer.js';
 import type { MetricsCollector } from '../util/metrics.js';
 import {
   resolveOptions,
@@ -23,10 +25,32 @@ import { registerBuiltInFormats } from './formats/index.js';
 import { structuralHash } from '../util/struct-hash.js';
 import { XorShift32 } from '../util/rng.js';
 import { createSourceAjv, type JsonSchemaDialect } from '../util/ajv-source.js';
+import { resolveDynamicRefBinding } from '../util/draft.js';
 import type Ajv from 'ajv';
 import type { ValidateFunction } from 'ajv';
 
 type JsonPointer = string;
+
+type EvaluationFamily =
+  | 'properties'
+  | 'patternProperties'
+  | 'additionalProperties'
+  | '$ref'
+  | 'allOf'
+  | 'oneOf'
+  | 'anyOf'
+  | 'then'
+  | 'else';
+
+interface EvaluationProof {
+  via: EvaluationFamily[];
+}
+
+interface EvaluationNode {
+  schema: Record<string, unknown>;
+  pointer: JsonPointer;
+  via: EvaluationFamily[];
+}
 
 export interface GeneratorDiagnostic {
   code: DiagnosticCode;
@@ -72,6 +96,9 @@ export interface FoundryGeneratorOptions {
   metrics?: MetricsCollector;
   /** Original source schema (for E-Trace anyOf dynamic validation) */
   sourceSchema?: unknown;
+  /** Mirror planning AJV flags to maintain parity per SPEC §§12–13 */
+  validateFormats?: boolean;
+  discriminator?: boolean;
 }
 
 export function generateFromCompose(
@@ -101,6 +128,8 @@ class GeneratorEngine {
 
   private readonly containsBag: ComposeResult['containsBag'];
 
+  private readonly pnamesRewrite: Set<string>;
+
   private readonly diagNodes: Record<string, NodeDiagnostics> | undefined;
 
   private readonly baseSeed: number;
@@ -111,6 +140,7 @@ class GeneratorEngine {
   private sourceAjvCache?: Ajv;
   private branchValidatorCache: Map<string, ValidateFunction> = new Map();
   private readonly conditionalBlocklist: Map<string, Set<string>> = new Map();
+  private readonly shouldRecordEvalTrace: boolean;
 
   constructor(effective: ComposeResult, options: FoundryGeneratorOptions) {
     this.options = options;
@@ -129,6 +159,13 @@ class GeneratorEngine {
     registerBuiltInFormats(this.formatRegistry);
     this.ptrMap = effective.canonical.ptrMap;
     this.sourceSchema = options.sourceSchema;
+    const notes: NormalizerNote[] = effective.canonical.notes ?? [];
+    this.pnamesRewrite = new Set(
+      notes
+        .filter((note) => note.code === DIAGNOSTIC_CODES.PNAMES_REWRITE_APPLIED)
+        .map((note) => note.canonPath)
+    );
+    this.shouldRecordEvalTrace = this.resolved.metrics === true;
   }
 
   private readonly rootSchema: Schema | unknown;
@@ -215,6 +252,7 @@ class GeneratorEngine {
     const result: Record<string, unknown> = {};
     const usedNames = new Set<string>();
     this.conditionalBlocklist.delete(canonPath);
+    const eTraceGuard = schema.unevaluatedProperties === false;
 
     if (
       Array.isArray(schema.oneOf) &&
@@ -251,10 +289,18 @@ class GeneratorEngine {
       }
     };
 
+    const visitedPointers = new Set<string>();
+
     const mergeSchema = (
       source: Record<string, unknown>,
       pointer: JsonPointer
     ): void => {
+      const visitKey = pointer ?? '';
+      if (visitedPointers.has(visitKey)) {
+        return;
+      }
+      visitedPointers.add(visitKey);
+
       if (Array.isArray(source.required)) {
         for (const name of source.required as unknown[]) {
           if (typeof name === 'string') {
@@ -300,6 +346,23 @@ class GeneratorEngine {
           }
         }
       }
+      const refValue = source['$ref'];
+      if (typeof refValue === 'string') {
+        const target = this.resolveRefTarget(refValue);
+        if (target) {
+          mergeSchema(target.schema, target.pointer);
+        }
+      }
+      const dynamicRefValue = source['$dynamicRef'];
+      if (typeof dynamicRefValue === 'string') {
+        const dynamicTarget = this.resolveDynamicRefTarget(
+          pointer,
+          dynamicRefValue
+        );
+        if (dynamicTarget) {
+          mergeSchema(dynamicTarget.schema, dynamicTarget.pointer);
+        }
+      }
       if (Array.isArray(source.allOf)) {
         const branches = source.allOf as unknown[];
         for (let idx = 0; idx < branches.length; idx += 1) {
@@ -331,6 +394,12 @@ class GeneratorEngine {
 
     const requiredNames = Array.from(required.values()).sort();
     for (const name of requiredNames) {
+      const evaluationProof = eTraceGuard
+        ? this.findEvaluationProof(schema, canonPath, result, name)
+        : undefined;
+      if (eTraceGuard && !evaluationProof) {
+        continue;
+      }
       const resolved = this.resolveSchemaForKey(
         name,
         canonPath,
@@ -345,6 +414,7 @@ class GeneratorEngine {
       );
       result[name] = value;
       usedNames.add(name);
+      this.recordEvaluationTrace(canonPath, name, evaluationProof);
     }
 
     this.applyDependentRequired(
@@ -356,7 +426,8 @@ class GeneratorEngine {
       properties,
       patternProperties,
       additionalProperties,
-      dependencyMap
+      dependencyMap,
+      eTraceGuard
     );
     this.applyConditionalHints(schema, canonPath, result, itemIndex, usedNames);
 
@@ -364,8 +435,6 @@ class GeneratorEngine {
       typeof schema.minProperties === 'number'
         ? Math.max(0, Math.floor(schema.minProperties))
         : 0;
-
-    const eTraceGuard = schema.unevaluatedProperties === false;
 
     // Add optional properties from explicit definitions first
     if (usedNames.size < minProperties) {
@@ -376,8 +445,10 @@ class GeneratorEngine {
         if (usedNames.size >= minProperties) break;
         if (this.isConditionallyBlocked(canonPath, name)) continue;
         if (coverage && !coverage.has(name)) continue;
-        if (eTraceGuard && !this.isEvaluatedAt(schema, canonPath, result, name))
-          continue;
+        const evaluationProof = eTraceGuard
+          ? this.findEvaluationProof(schema, canonPath, result, name)
+          : undefined;
+        if (eTraceGuard && !evaluationProof) continue;
         const resolved = this.resolveSchemaForKey(
           name,
           canonPath,
@@ -392,6 +463,7 @@ class GeneratorEngine {
         );
         result[name] = value;
         usedNames.add(name);
+        this.recordEvaluationTrace(canonPath, name, evaluationProof);
       }
     }
 
@@ -403,15 +475,21 @@ class GeneratorEngine {
       while (usedNames.size < minProperties && patternIterator.length > 0) {
         let satisfied = false;
         for (const iterator of patternIterator) {
+          let evaluationProofForCandidate: EvaluationProof | undefined;
           const candidate = iterator.next((value) => {
             if (usedNames.has(value)) return false;
             if (this.isConditionallyBlocked(canonPath, value)) return false;
             if (coverage && !coverage.has(value)) return false;
-            if (
-              eTraceGuard &&
-              !this.isEvaluatedAt(schema, canonPath, result, value)
-            )
-              return false;
+            if (eTraceGuard) {
+              const proof = this.findEvaluationProof(
+                schema,
+                canonPath,
+                result,
+                value
+              );
+              if (!proof) return false;
+              evaluationProofForCandidate = proof;
+            }
             return true;
           });
           if (!candidate) continue;
@@ -429,6 +507,11 @@ class GeneratorEngine {
           );
           result[candidate] = value;
           usedNames.add(candidate);
+          this.recordEvaluationTrace(
+            canonPath,
+            candidate,
+            evaluationProofForCandidate
+          );
           satisfied = true;
           break;
         }
@@ -436,52 +519,106 @@ class GeneratorEngine {
       }
     }
 
+    if (usedNames.size < minProperties) {
+      const propertyNamesSchema = isRecord(schema.propertyNames)
+        ? (schema.propertyNames as Record<string, unknown>)
+        : undefined;
+      const propertyNamesEnum = Array.isArray(propertyNamesSchema?.enum)
+        ? (propertyNamesSchema.enum as unknown[]).filter(
+            (value): value is string => typeof value === 'string'
+          )
+        : undefined;
+      const rewriteApplied = this.hasPnamesRewrite(canonPath);
+      const apFalse = schema.additionalProperties === false;
+      if (
+        propertyNamesEnum &&
+        propertyNamesEnum.length > 0 &&
+        (!apFalse || rewriteApplied)
+      ) {
+        const seen = new Set<string>();
+        const sortedCandidates = propertyNamesEnum
+          .filter((value) => {
+            if (seen.has(value)) return false;
+            seen.add(value);
+            return true;
+          })
+          .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+        for (const candidate of sortedCandidates) {
+          if (usedNames.size >= minProperties) break;
+          if (usedNames.has(candidate)) continue;
+          if (this.isConditionallyBlocked(canonPath, candidate)) continue;
+          if (coverage && !coverage.has(candidate)) continue;
+          const evaluationProof = eTraceGuard
+            ? this.findEvaluationProof(schema, canonPath, result, candidate)
+            : undefined;
+          if (eTraceGuard && !evaluationProof) {
+            continue;
+          }
+          const resolved = this.resolveSchemaForKey(
+            candidate,
+            canonPath,
+            properties,
+            patternProperties,
+            additionalProperties
+          );
+          const value = this.generateValue(
+            resolved.schema,
+            resolved.pointer,
+            itemIndex
+          );
+          result[candidate] = value;
+          usedNames.add(candidate);
+          this.recordEvaluationTrace(canonPath, candidate, evaluationProof);
+        }
+      }
+    }
+
     return result;
   }
 
-  private isEvaluatedAt(
+  private findEvaluationProof(
     objectSchema: Record<string, unknown>,
     canonPath: JsonPointer,
     currentObject: Record<string, unknown>,
     name: string
-  ): boolean {
+  ): EvaluationProof | undefined {
     const processed = new Set<string>();
-    const queue: Array<{
-      schema: Record<string, unknown>;
-      pointer: JsonPointer;
-    }> = this.expandObjectApplicators(
-      { schema: objectSchema, pointer: canonPath },
+    const queue: EvaluationNode[] = this.expandObjectApplicators(
+      { schema: objectSchema, pointer: canonPath, via: [] },
       currentObject
     );
     while (queue.length > 0) {
       const entry = queue.shift()!;
-      if (processed.has(entry.pointer)) continue;
-      processed.add(entry.pointer);
-      if (this.schemaEvaluatesName(entry.schema, name)) {
-        return true;
+      const key = `${entry.pointer}|${entry.via.join('>')}`;
+      if (processed.has(key)) continue;
+      processed.add(key);
+      const evaluation = this.schemaEvaluatesName(entry.schema, name);
+      if (evaluation) {
+        return { via: [...entry.via, evaluation] };
       }
       const extras = this.collectActiveApplicators(
         entry.schema,
         entry.pointer,
-        currentObject
+        currentObject,
+        entry.via
       );
       for (const extra of extras) {
-        if (!processed.has(extra.pointer)) {
-          queue.push(extra);
-        }
+        queue.push(extra);
       }
     }
-    return false;
+    return undefined;
   }
 
   private schemaEvaluatesName(
     schema: Record<string, unknown>,
     name: string
-  ): boolean {
+  ): EvaluationFamily | undefined {
     const properties = isRecord(schema.properties)
       ? (schema.properties as Record<string, unknown>)
       : {};
-    if (Object.prototype.hasOwnProperty.call(properties, name)) return true;
+    if (Object.prototype.hasOwnProperty.call(properties, name)) {
+      return 'properties';
+    }
     const patternProperties = isRecord(schema.patternProperties)
       ? (schema.patternProperties as Record<string, unknown>)
       : {};
@@ -489,35 +626,38 @@ class GeneratorEngine {
       if (typeof pattern !== 'string') continue;
       try {
         const regex = new RegExp(pattern, 'u');
-        if (regex.test(name)) return true;
+        if (regex.test(name)) {
+          return 'patternProperties';
+        }
       } catch {
         continue;
       }
     }
     const additional = schema.additionalProperties;
-    if (additional !== false) return true;
-    return false;
+    if (additional !== false) {
+      return 'additionalProperties';
+    }
+    return undefined;
   }
 
   private expandObjectApplicators(
-    root: { schema: Record<string, unknown>; pointer: JsonPointer },
+    root: EvaluationNode,
     currentObject: Record<string, unknown>
-  ): Array<{ schema: Record<string, unknown>; pointer: JsonPointer }> {
+  ): EvaluationNode[] {
     const stack = [root];
     const seen = new Set<string>();
-    const collected: Array<{
-      schema: Record<string, unknown>;
-      pointer: JsonPointer;
-    }> = [];
+    const collected: EvaluationNode[] = [];
     while (stack.length > 0) {
       const entry = stack.pop()!;
-      if (seen.has(entry.pointer)) continue;
-      seen.add(entry.pointer);
+      const key = `${entry.pointer}|${entry.via.join('>')}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
       collected.push(entry);
       const extras = this.collectActiveApplicators(
         entry.schema,
         entry.pointer,
-        currentObject
+        currentObject,
+        entry.via
       );
       for (const extra of extras) {
         stack.push(extra);
@@ -529,12 +669,10 @@ class GeneratorEngine {
   private collectActiveApplicators(
     schema: Record<string, unknown>,
     pointer: JsonPointer,
-    currentObject: Record<string, unknown>
-  ): Array<{ schema: Record<string, unknown>; pointer: JsonPointer }> {
-    const extras: Array<{
-      schema: Record<string, unknown>;
-      pointer: JsonPointer;
-    }> = [];
+    currentObject: Record<string, unknown>,
+    viaBase: EvaluationFamily[]
+  ): EvaluationNode[] {
+    const extras: EvaluationNode[] = [];
 
     if (Array.isArray(schema.allOf)) {
       const branches = schema.allOf as unknown[];
@@ -544,7 +682,11 @@ class GeneratorEngine {
         const branchPointer =
           getPointerFromIndex(this.pointerIndex, branch) ??
           appendPointer(pointer, `allOf/${idx}`);
-        extras.push({ schema: branch, pointer: branchPointer });
+        extras.push({
+          schema: branch,
+          pointer: branchPointer,
+          via: [...viaBase, 'allOf'],
+        });
       }
     }
 
@@ -556,7 +698,11 @@ class GeneratorEngine {
           const branchPointer =
             getPointerFromIndex(this.pointerIndex, branch) ??
             appendPointer(pointer, `oneOf/${chosen}`);
-          extras.push({ schema: branch, pointer: branchPointer });
+          extras.push({
+            schema: branch,
+            pointer: branchPointer,
+            via: [...viaBase, 'oneOf'],
+          });
         }
       }
     }
@@ -570,7 +716,11 @@ class GeneratorEngine {
           getPointerFromIndex(this.pointerIndex, branch) ??
           appendPointer(pointer, `anyOf/${idx}`);
         if (this.validateAgainstOriginalAt(branchPointer, currentObject)) {
-          extras.push({ schema: branch, pointer: branchPointer });
+          extras.push({
+            schema: branch,
+            pointer: branchPointer,
+            via: [...viaBase, 'anyOf'],
+          });
         }
       }
     }
@@ -585,13 +735,45 @@ class GeneratorEngine {
         const thenPointer =
           getPointerFromIndex(this.pointerIndex, thenSchema) ??
           appendPointer(pointer, 'then');
-        extras.push({ schema: thenSchema, pointer: thenPointer });
+        extras.push({
+          schema: thenSchema,
+          pointer: thenPointer,
+          via: [...viaBase, 'then'],
+        });
       } else if (outcome.status === 'unsatisfied' && isRecord(schema.else)) {
         const elseSchema = schema.else as Record<string, unknown>;
         const elsePointer =
           getPointerFromIndex(this.pointerIndex, elseSchema) ??
           appendPointer(pointer, 'else');
-        extras.push({ schema: elseSchema, pointer: elsePointer });
+        extras.push({
+          schema: elseSchema,
+          pointer: elsePointer,
+          via: [...viaBase, 'else'],
+        });
+      }
+    }
+
+    const refValue = schema['$ref'];
+    if (typeof refValue === 'string') {
+      const target = this.resolveRefTarget(refValue);
+      if (target) {
+        extras.push({
+          schema: target.schema,
+          pointer: target.pointer,
+          via: [...viaBase, '$ref'],
+        });
+      }
+    }
+
+    const dynamicRefValue = schema['$dynamicRef'];
+    if (typeof dynamicRefValue === 'string') {
+      const target = this.resolveDynamicRefTarget(pointer, dynamicRefValue);
+      if (target) {
+        extras.push({
+          schema: target.schema,
+          pointer: target.pointer,
+          via: [...viaBase, '$ref'],
+        });
       }
     }
 
@@ -604,16 +786,42 @@ class GeneratorEngine {
       const depPointer =
         getPointerFromIndex(this.pointerIndex, depSchema) ??
         appendPointer(pointer, `dependentSchemas/${key}`);
-      extras.push({ schema: depSchema, pointer: depPointer });
+      extras.push({
+        schema: depSchema,
+        pointer: depPointer,
+        via: [...viaBase, 'allOf'],
+      });
     }
 
     return extras;
+  }
+
+  private recordEvaluationTrace(
+    canonPath: JsonPointer,
+    name: string,
+    proof: EvaluationProof | undefined
+  ): void {
+    if (!this.shouldRecordEvalTrace) return;
+    if (!proof || proof.via.length === 0) return;
+    this.diagnostics.push({
+      code: DIAGNOSTIC_CODES.EVALTRACE_PROP_SOURCE,
+      phase: DIAGNOSTIC_PHASES.GENERATE,
+      canonPath,
+      details: {
+        name,
+        via: proof.via,
+      },
+    });
   }
 
   private getChosenOneOfIndex(canonPath: JsonPointer): number | undefined {
     const node = this.diagNodes?.[canonPath];
     const idx = node?.chosenBranch?.index;
     return typeof idx === 'number' ? idx : undefined;
+  }
+
+  private hasPnamesRewrite(canonPath: JsonPointer): boolean {
+    return this.pnamesRewrite.has(canonPath);
   }
 
   private shouldDelegateObjectToOneOf(
@@ -701,15 +909,67 @@ class GeneratorEngine {
       return '2020-12';
     })();
     this.sourceAjvCache = createSourceAjv(
-      { dialect, validateFormats: false, discriminator: false },
+      {
+        dialect,
+        validateFormats: Boolean(this.options.validateFormats),
+        discriminator: Boolean(this.options.discriminator),
+        multipleOfPrecision:
+          this.resolved.rational.fallback === 'decimal' ||
+          this.resolved.rational.fallback === 'float'
+            ? this.resolved.rational.decimalPrecision
+            : undefined,
+      },
       this.options.planOptions
     );
     return this.sourceAjvCache;
   }
 
+  private resolveRefTarget(
+    ref: string
+  ): { schema: Record<string, unknown>; pointer: JsonPointer } | undefined {
+    const pointer = normalizeFragmentRef(ref);
+    if (pointer === undefined) {
+      return undefined;
+    }
+    const target = resolvePointerInSchema(this.rootSchema, pointer);
+    if (!isRecord(target)) {
+      return undefined;
+    }
+    const canonicalPointer =
+      getPointerFromIndex(this.pointerIndex, target as object) ?? pointer;
+    return {
+      schema: target as Record<string, unknown>,
+      pointer: canonicalPointer,
+    };
+  }
+
+  private resolveDynamicRefTarget(
+    currentPointer: JsonPointer,
+    dynamicRef: string
+  ): { schema: Record<string, unknown>; pointer: JsonPointer } | undefined {
+    const configured = this.resolved.guards?.maxDynamicScopeHops;
+    const maxHops =
+      typeof configured === 'number' && configured > 0 ? configured : 2;
+    const binding = resolveDynamicRefBinding(
+      this.rootSchema,
+      currentPointer,
+      dynamicRef,
+      {
+        maxHops,
+      }
+    );
+    if (
+      binding.code !== 'DYNAMIC_SCOPE_BOUNDED' ||
+      typeof binding.ref !== 'string'
+    ) {
+      return undefined;
+    }
+    return this.resolveRefTarget(binding.ref);
+  }
+
   // eslint-disable-next-line max-params
   private applyDependentRequired(
-    _schema: Record<string, unknown>,
+    objectSchema: Record<string, unknown>,
     target: Record<string, unknown>,
     canonPath: JsonPointer,
     itemIndex: number,
@@ -717,7 +977,8 @@ class GeneratorEngine {
     properties: Record<string, unknown>,
     patternProperties: Record<string, unknown>,
     additionalProperties: unknown,
-    dependencyMap: Record<string, string[]>
+    dependencyMap: Record<string, string[]>,
+    eTraceGuard: boolean
   ): void {
     if (!dependencyMap) return;
     for (const [name, requirements] of Object.entries(dependencyMap)) {
@@ -727,6 +988,12 @@ class GeneratorEngine {
         if (typeof dep !== 'string' || used.has(dep)) continue;
         const coverage = this.coverageIndex.get(canonPath);
         if (coverage && !coverage.has(dep)) {
+          continue;
+        }
+        const evaluationProof = eTraceGuard
+          ? this.findEvaluationProof(objectSchema, canonPath, target, dep)
+          : undefined;
+        if (eTraceGuard && !evaluationProof) {
           continue;
         }
         const resolved = this.resolveSchemaForKey(
@@ -743,6 +1010,7 @@ class GeneratorEngine {
         );
         target[dep] = value;
         used.add(dep);
+        this.recordEvaluationTrace(canonPath, dep, evaluationProof);
       }
     }
   }
@@ -817,22 +1085,39 @@ class GeneratorEngine {
       .filter((pattern) => typeof pattern === 'string')
       .sort();
     const basePointer = appendPointer(canonPath, 'patternProperties');
-    return entries.map((pattern) => {
+    const enumerators: PatternEnumerator[] = [];
+    for (const pattern of entries) {
       const schema = patternProperties[pattern];
       const pointer =
         getPointerFromIndex(this.pointerIndex, schema) ??
         appendPointer(basePointer, pattern);
-      return new PatternEnumerator(
-        pattern,
-        this.resolved.patternWitness,
-        this.normalizedAlphabet,
-        {
-          recordCap: (reason, tried) =>
-            this.recordPatternCap(pointer, reason, tried),
-          recordTrial: () => this.recordPatternWitnessTrial(),
-        }
+      const analysis = analyzePatternForWitness(pattern);
+      const anchoredSafe =
+        analysis.anchoredStart &&
+        analysis.anchoredEnd &&
+        !analysis.hasLookAround &&
+        !analysis.hasBackReference;
+      if (!anchoredSafe) {
+        continue;
+      }
+      if (analysis.complexityCapped) {
+        this.recordPatternCap(pointer, 'regexComplexity', 0);
+        continue;
+      }
+      enumerators.push(
+        new PatternEnumerator(
+          pattern,
+          this.resolved.patternWitness,
+          this.normalizedAlphabet,
+          {
+            recordCap: (reason, tried) =>
+              this.recordPatternCap(pointer, reason, tried),
+            recordTrial: () => this.recordPatternWitnessTrial(),
+          }
+        )
       );
-    });
+    }
+    return enumerators;
   }
 
   private resolveSchemaForKey(
@@ -902,13 +1187,16 @@ class GeneratorEngine {
     const containsNeeds = this.containsBag.get(canonPath) ?? [];
     const itemsSchema = schema.items;
     const hardCap = itemsSchema === false ? prefixItems.length : undefined;
-    const containsContributions = this.satisfyContainsNeeds(
-      containsNeeds,
-      result,
-      canonPath,
-      itemIndex,
-      hardCap
-    );
+    const shouldPreSatisfyContains = schema.uniqueItems !== true;
+    const containsContributions = shouldPreSatisfyContains
+      ? this.satisfyContainsNeeds(
+          containsNeeds,
+          result,
+          canonPath,
+          itemIndex,
+          hardCap
+        )
+      : computeContainsBaseline(containsNeeds, result.length, hardCap);
 
     const baseline = Math.max(
       minItems,
@@ -929,7 +1217,7 @@ class GeneratorEngine {
       // After de-duplication, re-satisfy contains deterministically
       // and then enforce uniqueness again.
       const afterDedup = this.satisfyContainsNeeds(
-        this.containsBag.get(canonPath) ?? [],
+        containsNeeds,
         result,
         canonPath,
         itemIndex,
@@ -954,9 +1242,6 @@ class GeneratorEngine {
             continue;
           }
           result.push(candidate);
-        }
-        while (result.length < desiredLength) {
-          result.push({ __fd_unique_filler: result.length });
         }
       }
     }
@@ -1295,9 +1580,10 @@ class GeneratorEngine {
       if (used.has(name)) continue;
       if (coverage && !coverage.has(name)) continue;
       if (this.isConditionallyBlocked(canonPath, name)) continue;
-      if (eTraceGuard && !this.isEvaluatedAt(schema, canonPath, target, name)) {
-        continue;
-      }
+      const evaluationProof = eTraceGuard
+        ? this.findEvaluationProof(schema, canonPath, target, name)
+        : undefined;
+      if (eTraceGuard && !evaluationProof) continue;
       const resolved = this.resolveSchemaForKey(
         name,
         canonPath,
@@ -1312,6 +1598,7 @@ class GeneratorEngine {
       );
       target[name] = value;
       used.add(name);
+      this.recordEvaluationTrace(canonPath, name, evaluationProof);
     }
   }
 
@@ -1422,9 +1709,18 @@ class GeneratorEngine {
   }
 
   private generateBoolean(schema: Record<string, unknown>): boolean {
-    if (schema.default === false) return false;
+    if (schema.const === true) return true;
     if (schema.const === false) return false;
-    return true;
+    if (Array.isArray(schema.enum)) {
+      const firstBool = (schema.enum as unknown[]).find(
+        (value) => typeof value === 'boolean'
+      );
+      if (typeof firstBool === 'boolean') {
+        return firstBool;
+      }
+    }
+    if (schema.default === false) return false;
+    return false;
   }
 
   private generateAllOf(
@@ -1496,7 +1792,7 @@ class GeneratorEngine {
 
   recordPatternCap(
     canonPath: JsonPointer,
-    reason: 'witnessDomainExhausted' | 'candidateBudget',
+    reason: 'witnessDomainExhausted' | 'candidateBudget' | 'regexComplexity',
     tried: number
   ): void {
     this.diagnostics.push({
@@ -1541,7 +1837,7 @@ class PatternEnumerator {
   private readonly alphabet: string[];
 
   private readonly recordCap: (
-    reason: 'witnessDomainExhausted' | 'candidateBudget',
+    reason: 'witnessDomainExhausted' | 'candidateBudget' | 'regexComplexity',
     tried: number
   ) => void;
 
@@ -1563,7 +1859,10 @@ class PatternEnumerator {
     alphabet: string[],
     hooks: {
       recordCap: (
-        reason: 'witnessDomainExhausted' | 'candidateBudget',
+        reason:
+          | 'witnessDomainExhausted'
+          | 'candidateBudget'
+          | 'regexComplexity',
         tried: number
       ) => void;
       recordTrial: () => void;
@@ -1646,7 +1945,7 @@ class PatternEnumerator {
       .map((index) => this.alphabet[index] ?? '')
       .join('');
 
-    if (candidate.length !== this.currentLength) {
+    if (codePointLength(candidate) !== this.currentLength) {
       this.exhausted = true;
       return undefined;
     }
@@ -1677,14 +1976,92 @@ class PatternEnumerator {
   }
 }
 
+function normalizeFragmentRef(ref: string): JsonPointer | undefined {
+  if (typeof ref !== 'string' || !ref.startsWith('#')) {
+    return undefined;
+  }
+  if (ref === '#') {
+    return '';
+  }
+  const fragment = ref.slice(1);
+  if (fragment === '') {
+    return '';
+  }
+  if (!fragment.startsWith('/')) {
+    return undefined;
+  }
+  return fragment;
+}
+
+function resolvePointerInSchema(root: unknown, pointer: JsonPointer): unknown {
+  if (pointer === '') {
+    return root;
+  }
+  if (!pointer.startsWith('/')) {
+    return undefined;
+  }
+  const tokens = pointer.slice(1).split('/').map(unescapePointerToken);
+  let node: unknown = root;
+  for (const token of tokens) {
+    if (Array.isArray(node)) {
+      const index = Number(token);
+      if (!Number.isInteger(index) || index < 0 || index >= node.length) {
+        return undefined;
+      }
+      node = node[index];
+      continue;
+    }
+    if (
+      node !== null &&
+      typeof node === 'object' &&
+      Object.prototype.hasOwnProperty.call(
+        node as Record<string, unknown>,
+        token
+      )
+    ) {
+      node = (node as Record<string, unknown>)[token];
+      continue;
+    }
+    return undefined;
+  }
+  return node;
+}
+
 function determineType(schema: Record<string, unknown>): string | undefined {
   if (typeof schema.type === 'string') return schema.type;
   if (Array.isArray(schema.type)) {
-    return schema.type[0];
+    const candidates = schema.type.filter(
+      (value): value is string => typeof value === 'string'
+    );
+    if (candidates.length > 0) {
+      candidates.sort((a, b) => {
+        const rankDiff = typeRank(a) - typeRank(b);
+        if (rankDiff !== 0) {
+          return rankDiff;
+        }
+        return a < b ? -1 : a > b ? 1 : 0;
+      });
+      return candidates[0];
+    }
   }
   if (schema.properties || schema.patternProperties) return 'object';
   if (schema.items || schema.prefixItems) return 'array';
   return undefined;
+}
+
+const TYPE_ORDER: Record<string, number> = {
+  null: 0,
+  boolean: 1,
+  integer: 2,
+  number: 3,
+  string: 4,
+  array: 5,
+  object: 6,
+};
+
+function typeRank(value: string): number {
+  const rank = TYPE_ORDER[value];
+  return rank !== undefined ? rank : 100;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -1801,6 +2178,160 @@ function mergeAllOfBranches(branches: unknown[]): Record<string, unknown> {
     }
   }
   return merged;
+}
+
+function computeContainsBaseline(
+  needs: ContainsNeed[],
+  initialLength: number,
+  maxLength?: number
+): number {
+  let length = initialLength;
+  let maxContribution = length;
+  if (!needs || needs.length === 0) {
+    return maxContribution;
+  }
+  for (let index = 0; index < needs.length; index += 1) {
+    const need = needs[index];
+    if (!need) continue;
+    const min = Math.max(1, Math.floor(need.min ?? 1));
+    for (let count = 0; count < min; count += 1) {
+      if (maxLength !== undefined && length >= maxLength) {
+        break;
+      }
+      length += 1;
+    }
+    if (length > maxContribution) {
+      maxContribution = length;
+    }
+    if (maxLength !== undefined && length >= maxLength) {
+      break;
+    }
+  }
+  return maxContribution;
+}
+
+function analyzePatternForWitness(source: string): {
+  anchoredStart: boolean;
+  anchoredEnd: boolean;
+  hasLookAround: boolean;
+  hasBackReference: boolean;
+  complexityCapped: boolean;
+} {
+  return scanRegexSourceForWitness(source);
+}
+
+function scanRegexSourceForWitness(source: string): {
+  anchoredStart: boolean;
+  anchoredEnd: boolean;
+  hasLookAround: boolean;
+  hasBackReference: boolean;
+  complexityCapped: boolean;
+} {
+  if (source.length > 4096) {
+    return {
+      anchoredStart: source.startsWith('^'),
+      anchoredEnd: source.endsWith('$'),
+      hasLookAround: false,
+      hasBackReference: false,
+      complexityCapped: true,
+    };
+  }
+
+  let anchoredStart = false;
+  let anchoredEnd = false;
+  let hasLookAround = false;
+  let hasBackReference = false;
+  let complexityCapped = false;
+
+  const stack: number[] = [];
+  let inClass = false;
+  let escapeCount = 0;
+
+  for (let index = 0; index < source.length; index += 1) {
+    const ch = source[index];
+    const unescaped = escapeCount % 2 === 0;
+
+    if (unescaped && !inClass && index === 0 && ch === '^') {
+      anchoredStart = true;
+    }
+    if (unescaped && !inClass && index === source.length - 1 && ch === '$') {
+      anchoredEnd = true;
+    }
+
+    if (unescaped && !inClass && ch === '[') {
+      inClass = true;
+    } else if (unescaped && inClass && ch === ']') {
+      inClass = false;
+    }
+
+    if (unescaped && !inClass && ch === '(') {
+      const lookAhead2 = source.slice(index + 1, index + 3);
+      const lookAhead4 = source.slice(index + 1, index + 5);
+      if (
+        lookAhead2 === '?=' ||
+        lookAhead2 === '?!' ||
+        lookAhead4 === '?<=' ||
+        lookAhead4 === '?<!'
+      ) {
+        hasLookAround = true;
+      }
+      stack.push(index);
+    } else if (unescaped && !inClass && ch === ')') {
+      if (stack.length > 0) {
+        stack.pop();
+        if (!complexityCapped) {
+          const nextIndex = index + 1;
+          if (nextIndex < source.length) {
+            const nextChar = source.charAt(nextIndex);
+            if (nextChar === '*' || nextChar === '+' || nextChar === '?') {
+              complexityCapped = true;
+            } else if (nextChar === '{') {
+              let cursor = nextIndex + 1;
+              while (cursor < source.length) {
+                const charAtCursor = source.charAt(cursor);
+                if (!/[0-9,]/.test(charAtCursor)) {
+                  break;
+                }
+                cursor += 1;
+              }
+              if (
+                cursor > nextIndex + 1 &&
+                cursor < source.length &&
+                source.charAt(cursor) === '}'
+              ) {
+                complexityCapped = true;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (unescaped && !inClass && ch === '\\') {
+      const nextChar = source[index + 1];
+      if (nextChar !== undefined) {
+        if (/[1-9]/.test(nextChar)) {
+          hasBackReference = true;
+        } else if (nextChar === 'k' && source[index + 2] === '<') {
+          hasBackReference = true;
+        }
+      }
+    }
+
+    if (ch === '\\') {
+      escapeCount += 1;
+    } else {
+      escapeCount = 0;
+    }
+  }
+
+  return {
+    anchoredStart,
+    anchoredEnd,
+    hasLookAround,
+    hasBackReference,
+    complexityCapped,
+  };
 }
 
 const NUMERIC_KEYWORDS = new Set([
