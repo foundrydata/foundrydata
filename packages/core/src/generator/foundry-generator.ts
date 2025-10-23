@@ -398,6 +398,9 @@ class GeneratorEngine {
 
     const requiredNames = Array.from(required.values()).sort();
     for (const name of requiredNames) {
+      if (coverage && !coverage.has(name)) {
+        continue;
+      }
       const evaluationProof = eTraceGuard
         ? this.findEvaluationProof(schema, canonPath, result, name)
         : undefined;

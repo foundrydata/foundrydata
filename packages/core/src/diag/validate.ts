@@ -15,6 +15,17 @@ export interface DiagnosticEnvelope<Details = unknown> {
   code: DiagnosticCode;
   canonPath: string;
   details?: Details;
+  metrics?: DiagnosticMetrics;
+}
+
+export interface DiagnosticMetrics {
+  [key: string]: number | undefined;
+  validationsPerRow?: number;
+  repairPassesPerRow?: number;
+  repairActionsPerRow?: number;
+  p50LatencyMs?: number;
+  p95LatencyMs?: number;
+  memoryPeakMB?: number;
 }
 
 const FORBIDDEN_DETAIL_KEYS = new Set(['canonPath', 'canonPtr']);
@@ -162,7 +173,13 @@ if (externalRefValidator) {
       return false;
     }
 
-    if (value.skippedValidation === true && mode !== 'lax') {
+    const policy = value.policy;
+    if (
+      value.skippedValidation === true &&
+      mode !== 'lax' &&
+      policy !== 'warn' &&
+      policy !== 'ignore'
+    ) {
       return false;
     }
 
@@ -193,6 +210,10 @@ export function assertDiagnosticEnvelope(envelope: DiagnosticEnvelope): void {
         );
       }
     }
+  }
+
+  if (envelope.metrics !== undefined) {
+    assertDiagnosticMetrics(envelope.metrics);
   }
 }
 
@@ -231,6 +252,23 @@ export function assertDiagnosticsForPhase(
           `${code} must set details.context="rewrite" during normalize phase`
         );
       }
+    }
+  }
+}
+
+function assertDiagnosticMetrics(metrics: unknown): void {
+  if (!isPlainObject(metrics)) {
+    throw new Error('Diagnostic metrics must be an object of numeric values');
+  }
+
+  for (const [key, value] of Object.entries(metrics)) {
+    if (!isString(key)) {
+      throw new Error('Diagnostic metrics keys must be strings');
+    }
+    if (!isNumber(value)) {
+      throw new Error(
+        `Diagnostic metrics value for ${key} must be a finite number`
+      );
     }
   }
 }

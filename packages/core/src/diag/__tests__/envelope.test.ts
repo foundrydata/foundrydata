@@ -73,6 +73,19 @@ describe('assertDiagnosticEnvelope', () => {
         details: {
           ref: 'file.json#/defs/x',
           skippedValidation: true,
+          mode: 'strict',
+          policy: 'warn',
+        },
+      })
+    ).not.toThrow();
+
+    expect(() =>
+      assertDiagnosticEnvelope({
+        code: DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED,
+        canonPath: '',
+        details: {
+          ref: 'file.json#/defs/x',
+          skippedValidation: true,
           mode: 'lax',
         },
       })

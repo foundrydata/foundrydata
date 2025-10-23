@@ -361,6 +361,7 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
       ref: { kind: 'string' },
       mode: enumSchema(['strict', 'lax']),
       skippedValidation: { kind: 'boolean' },
+      policy: enumSchema(['error', 'warn', 'ignore']),
     },
   },
 };
