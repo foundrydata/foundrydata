@@ -1447,7 +1447,7 @@
             "updatedAt": "2025-10-22T21:24:51.252Z"
           }
         ],
-        "updatedAt": "2025-10-22T21:24:51.252Z"
+        "updatedAt": "2025-10-23T22:58:11.111Z"
       },
       {
         "id": "10",
@@ -1653,7 +1653,7 @@
           "9111",
           "9112"
         ],
-        "status": "pending",
+        "status": "done",
         "complexityScore": 3,
         "details": "[Context] §11 modes; external-ref-probe; draft classification for internal vs external.\n- spec://§11#external-ref-probe\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§11\",\"anchors\":[\"spec://§11#external-ref-probe\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Strict: error EXTERNAL_REF_UNRESOLVED; Lax: warn + attempt; heuristic probe to skip validation only when all conditions met; set validationsPerRow=0 when skipped.\n[Deliverables]\n- packages/core/src/util/modes.ts\n[Commands]\n- pnpm i; pnpm -w build; pnpm -w test\n[Definition of Done]\n- Unit tests cover skip eligibility and ref exemplar selection; Strict path aborts planning.",
         "testStrategy": "Unit: compile fail solely due to external refs triggers skip in Lax with metrics set; negative case with mixed errors does not skip.",
@@ -1666,7 +1666,8 @@
             "file": "packages/core/src/util/modes.ts",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2025-10-23T22:29:46.726Z"
       },
       {
         "id": "13",
@@ -1822,7 +1823,7 @@
         "id": "17",
         "title": "Unit Tests (per section)",
         "description": "Unit test suites mirroring SPEC sections, including fuzzing for oneOf exclusivity and must-cover.",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           "7",
           "8",
@@ -1848,7 +1849,7 @@
             "updatedAt": "2025-10-22T22:34:17.927Z"
           }
         ],
-        "updatedAt": "2025-10-22T22:34:17.927Z"
+        "updatedAt": "2025-10-23T20:25:50.243Z"
       },
       {
         "id": "18",
@@ -2015,7 +2016,7 @@
         "id": "22",
         "title": "CI pipelines (lint, test, bench)",
         "description": "Set up CI with linting, unit/integration tests, and bench gates.",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [
           "8000",
           "9000",
@@ -2039,7 +2040,8 @@
             "testStrategy": "Verify workflow triggers on PR/push, executes all test phases, and fails appropriately on test failures",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2025-10-23T22:32:29.505Z"
       },
       {
         "id": "23",
@@ -2098,9 +2100,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-22T22:34:17.928Z",
+      "lastModified": "2025-10-23T22:58:11.112Z",
       "taskCount": 52,
-      "completedCount": 44,
+      "completedCount": 46,
       "tags": [
         "feature-simplification"
       ]
