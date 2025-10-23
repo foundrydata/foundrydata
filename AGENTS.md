@@ -73,7 +73,6 @@ Step 8  Marquer la tâche comme terminée :
 npm i
 npm run build
 npm run test
-npm run test:benchmarks   # provisoire jusqu'au bench harness dédié
 npm run typecheck
 npm run lint
 ```
@@ -527,7 +526,6 @@ Risks/Unknowns:
 Checks:
 - build: npm run build
 - test: npm run test
-- bench: npm run test:benchmarks
 - diag-schema: true
 ```
 
