@@ -50,9 +50,6 @@ export default defineConfig({
     // Platform-aware pool configuration (consistent with root)
     ...getPoolConfig(),
 
-    // Setup files
-    setupFiles: ['./test/setup.ts'],
-
     // ========================================================================
     // TEST DISCOVERY (specific to test utilities)
     // ========================================================================
@@ -108,18 +105,5 @@ export default defineConfig({
 
     // Memory management
     isolate: true,
-
-    // ========================================================================
-    // ENVIRONMENT VARIABLES (customized for matcher testing)
-    // ========================================================================
-
-    env: {
-      // Test-specific environment variables
-      NODE_ENV: 'test',
-      TEST_SEED: '424242', // Fixed seed for deterministic testing
-      FC_NUM_RUNS: isCI ? '100' : '50', // Reduced for faster matcher development feedback
-      SCHEMA_DRAFT: '2020-12', // Use latest draft to test newest features in matchers
-      VITEST_POOL: getPoolConfig().pool,
-    },
   },
 });
