@@ -200,7 +200,7 @@ Règles : (a) le JSON externe (si présent) doit parser ; (b) **après** suppres
       "properties": {
         "build": { "const": "npm run build" },
         "test": { "const": "npm run test" },
-        "bench": { "const": "npm run test:benchmarks" },
+        "bench": { "const": "npm run bench" },
         "diagSchema": { "type": "boolean", "const": true }
       }
     }
