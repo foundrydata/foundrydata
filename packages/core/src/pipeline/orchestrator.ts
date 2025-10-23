@@ -1,3 +1,4 @@
+/* eslint-disable max-depth */
 /* eslint-disable max-lines */
 /* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
@@ -14,7 +15,8 @@ import { createPlanningAjv } from '../util/ajv-planning.js';
 import { createSourceAjv, extractAjvFlags } from '../util/ajv-source.js';
 import { checkAjvStartupParity } from '../util/ajv-gate.js';
 import { MetricsCollector, type MetricPhase } from '../util/metrics.js';
-import { resolveOptions } from '../types/options.js';
+import { resolveOptions, type ResolvedOptions } from '../types/options.js';
+import type Ajv from 'ajv';
 import type { ValidateFunction } from 'ajv';
 import {
   generateFromCompose,
@@ -40,6 +42,12 @@ import {
 } from '../diag/validate.js';
 import { DIAGNOSTIC_CODES, DIAGNOSTIC_PHASES } from '../diag/codes.js';
 import { AjvFlagsMismatchError } from '../util/ajv-gate.js';
+import {
+  classifyExternalRefFailure,
+  createExternalRefDiagnostic,
+  schemaHasExternalRefs,
+  type ExternalRefClassification,
+} from '../util/modes.js';
 
 const STAGE_SEQUENCE: PipelineStageName[] = [
   'normalize',
@@ -100,6 +108,33 @@ class ExternalRefValidationError extends Error {
   }
 }
 
+interface ExternalRefState {
+  diag: DiagnosticEnvelope;
+  classification: ExternalRefClassification;
+}
+
+function determineSchemaDialect(
+  schema: unknown
+): '2020-12' | '2019-09' | 'draft-07' | 'draft-04' {
+  if (schema && typeof schema === 'object') {
+    const sch = (schema as Record<string, unknown>)['$schema'];
+    if (typeof sch === 'string') {
+      const lowered = sch.toLowerCase();
+      if (lowered.includes('2020-12')) return '2020-12';
+      if (lowered.includes('2019-09') || lowered.includes('draft-2019')) {
+        return '2019-09';
+      }
+      if (lowered.includes('draft-07') || lowered.includes('draft-06')) {
+        return 'draft-07';
+      }
+      if (lowered.includes('draft-04') || lowered.endsWith('/schema#')) {
+        return 'draft-04';
+      }
+    }
+  }
+  return '2020-12';
+}
+
 function createInitialStages(): PipelineStages {
   return {
     normalize: { status: 'pending' },
@@ -145,13 +180,26 @@ export async function executePipeline(
 ): Promise<PipelineResult> {
   const metrics =
     options.collector ?? new MetricsCollector(options.metrics ?? {});
+  const sourceDialect = determineSchemaDialect(schema);
+  const planOptions = options.generate?.planOptions;
+  const resolvedPlanOptions = resolveOptions(planOptions);
+  const externalRefStrictPolicy =
+    resolvedPlanOptions.failFast.externalRefStrict;
+  let externalRefState: ExternalRefState | undefined;
   const runners: StageRunners = {
     normalize: overrides.normalize ?? normalize,
     compose: overrides.compose ?? compose,
     generate:
       overrides.generate ?? createDefaultGenerate(metrics, schema, options),
     repair: overrides.repair ?? createDefaultRepair(options),
-    validate: overrides.validate ?? createDefaultValidate(options),
+    validate:
+      overrides.validate ??
+      createDefaultValidate(
+        options,
+        () => externalRefState,
+        externalRefStrictPolicy,
+        resolvedPlanOptions
+      ),
   };
 
   const stages = createInitialStages();
@@ -237,18 +285,61 @@ export async function executePipeline(
       }
     }
     // Build planning AJV metadata for memoization keys (SPEC §14)
-    const planOptions = options.generate?.planOptions;
-    const resolved = resolveOptions(planOptions);
     const shouldAlignMoP =
-      resolved.rational.fallback === 'decimal' ||
-      resolved.rational.fallback === 'float';
+      resolvedPlanOptions.rational.fallback === 'decimal' ||
+      resolvedPlanOptions.rational.fallback === 'float';
     const expectedMoP = shouldAlignMoP
-      ? resolved.rational.decimalPrecision
+      ? resolvedPlanOptions.rational.decimalPrecision
       : undefined;
+    const validateFormats = Boolean(options.validate?.validateFormats);
+    const discriminator = Boolean(options.validate?.discriminator);
+    if (schemaHasExternalRefs(schema)) {
+      const sourceAjvFactory = (): Ajv =>
+        createSourceAjv(
+          {
+            dialect: sourceDialect,
+            validateFormats,
+            discriminator,
+            multipleOfPrecision: expectedMoP,
+          },
+          planOptions
+        );
+      try {
+        const sourceAjv = sourceAjvFactory();
+        sourceAjv.compile(schema as object);
+      } catch (error) {
+        const classification = classifyExternalRefFailure({
+          schema,
+          error,
+          createSourceAjv: sourceAjvFactory,
+        });
+        if (classification.skipEligible) {
+          const mode = options.mode ?? 'strict';
+          const skipValidation =
+            mode === 'lax' ||
+            (mode === 'strict' && externalRefStrictPolicy !== 'error');
+          const diag = createExternalRefDiagnostic(mode, classification, {
+            skipValidation,
+            policy: mode === 'strict' ? externalRefStrictPolicy : undefined,
+          });
+          if (mode === 'strict') {
+            if (externalRefStrictPolicy === 'error') {
+              artifacts.validationDiagnostics = [diag];
+              throw new ExternalRefValidationError(diag);
+            }
+            externalRefState = { diag, classification };
+          } else {
+            externalRefState = { diag, classification };
+          }
+        } else {
+          throw error;
+        }
+      }
+    }
     const planningForCompose = createPlanningAjv(
       {
-        validateFormats: Boolean(options.validate?.validateFormats),
-        discriminator: Boolean(options.validate?.discriminator),
+        validateFormats,
+        discriminator,
         multipleOfPrecision: expectedMoP,
       },
       planOptions
@@ -314,6 +405,9 @@ export async function executePipeline(
       }
     }
   } catch (error) {
+    if (error instanceof ExternalRefValidationError) {
+      artifacts.validationDiagnostics = [error.diagnostic];
+    }
     const stageError = toPipelineStageError('compose', error);
     stages.compose = {
       status: 'failed',
@@ -601,30 +695,14 @@ function createDefaultRepair(
 }
 
 function createDefaultValidate(
-  pipelineOptions: PipelineOptions
+  pipelineOptions: PipelineOptions,
+  getExternalRefState: () => ExternalRefState | undefined,
+  externalRefPolicy: ResolvedOptions['failFast']['externalRefStrict'],
+  preResolvedPlanOptions?: ResolvedOptions
 ): StageRunners['validate'] {
   return async (items, schema, options) => {
-    // Dual AJV with startup parity checks
-    // Conservative top-level dialect detection to avoid property-name collisions (e.g., { properties: { id: ... } })
-    const dialect = ((): '2020-12' | '2019-09' | 'draft-07' | 'draft-04' => {
-      if (schema && typeof schema === 'object') {
-        const sch = (schema as Record<string, unknown>)['$schema'];
-        if (typeof sch === 'string') {
-          const lowered = sch.toLowerCase();
-          if (lowered.includes('2020-12')) return '2020-12';
-          if (lowered.includes('2019-09') || lowered.includes('draft-2019'))
-            return '2019-09';
-          if (lowered.includes('draft-07') || lowered.includes('draft-06'))
-            return 'draft-07';
-          if (lowered.includes('draft-04') || lowered.endsWith('/schema#'))
-            return 'draft-04';
-        }
-      }
-      return '2020-12';
-    })();
-    // Resolve plan options to align multipleOfPrecision when required by SPEC §13
     const planOptions = pipelineOptions.generate?.planOptions;
-    const resolved = resolveOptions(planOptions);
+    const resolved = preResolvedPlanOptions ?? resolveOptions(planOptions);
     const shouldAlignMoP =
       resolved.rational.fallback === 'decimal' ||
       resolved.rational.fallback === 'float';
@@ -632,18 +710,22 @@ function createDefaultValidate(
       ? resolved.rational.decimalPrecision
       : undefined;
 
-    // dialect resolved; proceed with AJV parity and validation
     const validateFormats = Boolean(options?.validateFormats);
     const discriminator = Boolean(options?.discriminator);
-    const sourceAjv = createSourceAjv(
-      {
-        dialect,
-        validateFormats,
-        discriminator,
-        multipleOfPrecision: expectedMoP,
-      },
-      planOptions
-    );
+    const dialect = determineSchemaDialect(schema);
+    const mode = pipelineOptions.mode ?? 'strict';
+
+    const sourceAjvFactory = (): Ajv =>
+      createSourceAjv(
+        {
+          dialect,
+          validateFormats,
+          discriminator,
+          multipleOfPrecision: expectedMoP,
+        },
+        planOptions
+      );
+    const sourceAjv = sourceAjvFactory();
     const planningAjv = createPlanningAjv(
       { validateFormats, discriminator, multipleOfPrecision: expectedMoP },
       planOptions
@@ -670,24 +752,35 @@ function createDefaultValidate(
       >,
     };
 
+    const externalState = getExternalRefState();
+    if (externalState?.classification.skipEligible) {
+      const shouldEmitDiag =
+        mode === 'strict' ? externalRefPolicy !== 'ignore' : true;
+      return {
+        valid: true,
+        skippedValidation: true,
+        diagnostics: shouldEmitDiag ? [externalState.diag] : undefined,
+        flags,
+      };
+    }
+
     let validateFn: ValidateFunction;
     try {
       validateFn = sourceAjv.compile(schema as object);
     } catch (error) {
-      const refs = extractExternalRefCandidates(error);
-      if (refs.length > 0) {
-        const sorted = [...refs].sort();
-        const primary = sorted[0] ?? refs[0];
-        const mode = pipelineOptions.mode ?? 'strict';
-        const diag: DiagnosticEnvelope = {
-          code: DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED,
-          canonPath: '',
-          details: {
-            ref: primary,
-            mode,
-            ...(mode === 'lax' ? { skippedValidation: true } : undefined),
-          },
-        };
+      const classification = classifyExternalRefFailure({
+        schema,
+        error,
+        createSourceAjv: sourceAjvFactory,
+      });
+      if (classification.skipEligible) {
+        const skipValidation =
+          mode === 'lax' ||
+          (mode === 'strict' && externalRefPolicy !== 'error');
+        const diag = createExternalRefDiagnostic(mode, classification, {
+          skipValidation,
+          policy: mode === 'strict' ? externalRefPolicy : undefined,
+        });
         if (mode === 'lax') {
           return {
             valid: true,
@@ -696,7 +789,16 @@ function createDefaultValidate(
             flags,
           };
         }
-        throw new ExternalRefValidationError(diag);
+        if (externalRefPolicy === 'error') {
+          throw new ExternalRefValidationError(diag);
+        }
+        const shouldEmitDiag = externalRefPolicy !== 'ignore';
+        return {
+          valid: true,
+          skippedValidation: true,
+          diagnostics: shouldEmitDiag ? [diag] : undefined,
+          flags,
+        };
       }
       throw error;
     }
@@ -715,110 +817,4 @@ function createDefaultValidate(
       flags,
     };
   };
-}
-
-function extractExternalRefCandidates(error: unknown): string[] {
-  const refs = new Set<string>();
-  collectExternalRefCandidates(error, refs, 0);
-  return Array.from(refs);
-}
-
-function collectExternalRefCandidates(
-  value: unknown,
-  refs: Set<string>,
-  depth: number
-): void {
-  if (value === undefined || value === null) {
-    return;
-  }
-  if (depth > 4) {
-    return;
-  }
-  if (typeof value === 'string') {
-    recordExternalRefCandidate(value, refs);
-    return;
-  }
-  if (value instanceof Error) {
-    recordExternalRefMessage(value.message, refs);
-    collectExternalRefCandidates(
-      (value as { cause?: unknown }).cause,
-      refs,
-      depth + 1
-    );
-  }
-  if (typeof value !== 'object') {
-    return;
-  }
-  const obj = value as Record<string, unknown>;
-  recordExternalRefCandidate(obj.missingRef, refs);
-  recordExternalRefCandidate(obj.missingSchema, refs);
-  recordExternalRefCandidate(obj.ref, refs);
-  if (Array.isArray(obj.refs)) {
-    for (const entry of obj.refs) {
-      recordExternalRefCandidate(entry, refs);
-    }
-  }
-  if (obj.params && typeof obj.params === 'object') {
-    const params = obj.params as Record<string, unknown>;
-    recordExternalRefCandidate(params.ref, refs);
-    if (Array.isArray(params.refs)) {
-      for (const entry of params.refs) {
-        recordExternalRefCandidate(entry, refs);
-      }
-    }
-  }
-  if (Array.isArray(obj.errors)) {
-    for (const entry of obj.errors) {
-      collectExternalRefCandidates(entry, refs, depth + 1);
-    }
-  }
-  if ('cause' in obj) {
-    collectExternalRefCandidates(
-      (obj as { cause?: unknown }).cause,
-      refs,
-      depth + 1
-    );
-  }
-  if ('message' in obj && typeof obj.message === 'string') {
-    recordExternalRefMessage(obj.message, refs);
-  }
-}
-
-function recordExternalRefMessage(
-  message: string | undefined,
-  refs: Set<string>
-): void {
-  if (!message) return;
-  const regex = /reference\s+([^\s"'`]+)/g;
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(message)) !== null) {
-    recordExternalRefCandidate(match[1], refs);
-  }
-}
-
-function recordExternalRefCandidate(
-  candidate: unknown,
-  refs: Set<string>
-): void {
-  if (typeof candidate !== 'string') {
-    return;
-  }
-  const trimmed = candidate.trim();
-  if (!trimmed) {
-    return;
-  }
-  if (!isLikelyExternalRef(trimmed)) {
-    return;
-  }
-  refs.add(trimmed);
-}
-
-function isLikelyExternalRef(value: string): boolean {
-  if (!value) {
-    return false;
-  }
-  if (value.startsWith('#')) {
-    return false;
-  }
-  return true;
 }

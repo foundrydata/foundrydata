@@ -188,11 +188,18 @@ describe('Foundry pipeline integration scenarios', () => {
     });
 
     expect(strictResult.status).toBe('failed');
-    expect(strictResult.stages.validate.status).toBe('failed');
+    expect(strictResult.stages.compose.status).toBe('failed');
+    expect(strictResult.stages.generate.status).toBe('skipped');
+    expect(strictResult.stages.repair.status).toBe('skipped');
+    expect(strictResult.stages.validate.status).toBe('skipped');
     const strictDiag = strictResult.artifacts.validationDiagnostics?.[0];
     expect(strictDiag?.code).toBe(DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED);
-    expect(strictDiag?.details).toMatchObject({ mode: 'strict' });
+    expect(strictDiag?.details).toMatchObject({
+      mode: 'strict',
+      ref: 'https://example.com/external-supplier.schema.json',
+    });
     expect(strictDiag?.details).not.toHaveProperty('skippedValidation', true);
+    expect(strictDiag?.metrics).toBeUndefined();
 
     const laxResult = await executePipeline(externalRefSchema, {
       mode: 'lax',
@@ -201,15 +208,18 @@ describe('Foundry pipeline integration scenarios', () => {
     });
 
     expect(laxResult.status).toBe('completed');
+    expect(laxResult.stages.compose.status).toBe('completed');
     expect(laxResult.stages.validate.status).toBe('completed');
     const laxDiag = laxResult.artifacts.validationDiagnostics?.[0];
     expect(laxDiag?.code).toBe(DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED);
     expect(laxDiag?.details).toMatchObject({
       mode: 'lax',
       skippedValidation: true,
+      ref: 'https://example.com/external-supplier.schema.json',
     });
     expect(laxResult.artifacts.validation?.skippedValidation).toBe(true);
     expect(laxResult.metrics.validationsPerRow).toBe(0);
+    expect(laxDiag?.metrics).toMatchObject({ validationsPerRow: 0 });
   });
 
   it('records exclusivity diagnostics end-to-end', async () => {
