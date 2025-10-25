@@ -2643,6 +2643,10 @@ class GeneratorEngine {
       : [];
     if (branches.length === 0) return {};
     const branchPath = appendPointer(canonPath, 'anyOf/0');
+    // Generation purposefully sticks to the first branch to stay deterministic.
+    // The E-Trace path still revalidates every passing branch via the Source Ajv
+    // so `unevaluatedProperties:false` evidence includes all applicable `anyOf`
+    // indices even though only branch 0 contributes candidate data.
     return this.generateValue(branches[0], branchPath, itemIndex);
   }
 
@@ -2662,7 +2666,7 @@ class GeneratorEngine {
       canonPath,
       details: {
         reason,
-        alphabet: this.resolved.patternWitness.alphabet,
+        alphabet: this.normalizedAlphabet.join(''),
         maxLength: this.resolved.patternWitness.maxLength,
         tried,
       },
@@ -2950,21 +2954,25 @@ function ensureMinCodePoints(
 }
 
 function normalizeAlphabet(input: string): string[] {
-  const seen = new Set<string>();
-  const normalized: string[] = [];
-  for (const char of input ?? '') {
-    const code = char.codePointAt(0);
-    if (code === undefined) continue;
-    if (code >= 0xd800 && code <= 0xdfff) {
+  const source = typeof input === 'string' ? input : '';
+  if (source.length === 0) return [];
+  const codePoints = new Set<number>();
+  for (const chunk of Array.from(source)) {
+    const codePoint = chunk.codePointAt(0);
+    if (codePoint === undefined) {
       continue;
     }
-    const normalizedChar = String.fromCodePoint(code);
-    if (seen.has(normalizedChar)) continue;
-    seen.add(normalizedChar);
-    normalized.push(normalizedChar);
+    if (codePoint >= 0xd800 && codePoint <= 0xdfff) {
+      continue;
+    }
+    codePoints.add(codePoint);
   }
-  normalized.sort();
-  return normalized;
+  if (codePoints.size === 0) {
+    return [];
+  }
+  return Array.from(codePoints)
+    .sort((a, b) => a - b)
+    .map((codePoint) => String.fromCodePoint(codePoint));
 }
 
 function normalizeSeed(seed?: number): number {

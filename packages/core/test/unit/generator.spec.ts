@@ -144,6 +144,29 @@ describe('Foundry generator compliance', () => {
     expect(generate.metrics.patternWitnessTried).toBeUndefined();
   });
 
+  it('caps pattern witness search when alphabet collapses after surrogate filtering', () => {
+    const schema = {
+      type: 'object',
+      minProperties: 1,
+      patternProperties: {
+        '^a+$': { type: 'number' },
+      },
+    };
+    const { generate } = runPipelineStages(schema, {
+      planOptions: { patternWitness: { alphabet: '\ud800' } },
+    });
+    const diag = generate.diagnostics.find(
+      (entry) => entry.code === DIAGNOSTIC_CODES.COMPLEXITY_CAP_PATTERNS
+    );
+    expect(diag).toBeDefined();
+    expect(diag?.details).toMatchObject({
+      reason: 'witnessDomainExhausted',
+      alphabet: '',
+    });
+    expect(diag?.budget).toMatchObject({ reason: 'complexityCap' });
+    expect(generate.metrics.patternWitnessTried).toBeUndefined();
+  });
+
   it('draws optional keys from propertyNames enum when additionalProperties are allowed', () => {
     const schema = {
       type: 'object',
