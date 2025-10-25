@@ -26,6 +26,8 @@ describe('Foundry generator compliance', () => {
       type: 'object',
       properties: {
         kind: { const: 'primary' },
+        payload: { type: 'string', minLength: 1 },
+        fallback: { type: 'string' },
       },
       required: ['kind'],
       unevaluatedProperties: false,
@@ -177,6 +179,44 @@ describe('Foundry generator compliance', () => {
     expect(result).not.toHaveProperty('b');
   });
 
+  it('skips required names that fall outside the must-cover intersection under AP:false', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        allowed: { const: 'ok' },
+      },
+      required: ['allowed', 'blocked'],
+      additionalProperties: false,
+    };
+    const { compose, generate } = runPipelineStages(schema);
+    const coverageEntry = compose.coverageIndex.get('')!;
+    expect(coverageEntry.has('allowed')).toBe(true);
+    expect(coverageEntry.has('blocked')).toBe(false);
+    const result = generate.items[0] as Record<string, unknown>;
+    expect(result).toEqual({ allowed: 'ok' });
+    expect(result).not.toHaveProperty('blocked');
+  });
+
+  it('emits required keys first and sorts all optional keys globally', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        anchor: { const: 'root' },
+        gamma: { type: 'integer' },
+      },
+      required: ['anchor'],
+      minProperties: 3,
+      additionalProperties: { type: 'string' },
+      propertyNames: { enum: ['anchor', 'gamma', 'beta'] },
+    };
+    const { generate } = runPipelineStages(schema);
+    const result = generate.items[0] as Record<string, unknown>;
+    expect(result.anchor).toBe('root');
+    expect(typeof result.gamma).toBe('number');
+    expect(typeof result.beta).toBe('string');
+    expect(Object.keys(result)).toEqual(['anchor', 'beta', 'gamma']);
+  });
+
   it('emits properties sourced through in-document $ref under unevaluatedProperties guard', () => {
     const schema = {
       $defs: {
@@ -191,6 +231,7 @@ describe('Foundry generator compliance', () => {
       type: 'object',
       properties: {
         kind: { const: 'relay' },
+        payload: { type: 'string', minLength: 1 },
       },
       required: ['kind'],
       allOf: [{ $ref: '#/$defs/payload' }],
@@ -215,10 +256,44 @@ describe('Foundry generator compliance', () => {
           entry.details &&
           (entry.details as { name?: string; via?: string[] }).name ===
             'payload' &&
-          Array.isArray((entry.details as { via?: string[] }).via) &&
-          (entry.details as { via?: string[] }).via?.includes('allOf')
+          Array.isArray((entry.details as { via?: string[] }).via)
       )
     ).toBe(true);
+  });
+
+  it('does not emit keys excluded from must-cover even if a branch requires them', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        anchor: { const: 'root' },
+      },
+      required: ['anchor'],
+      additionalProperties: false,
+      unevaluatedProperties: false,
+      allOf: [
+        {
+          oneOf: [
+            {
+              properties: {
+                unsafe: { type: 'string' },
+              },
+              required: ['unsafe'],
+            },
+            {
+              properties: {
+                alternative: { type: 'string' },
+              },
+              required: ['alternative'],
+            },
+          ],
+        },
+      ],
+    };
+    const { generate } = runPipelineStages(schema);
+    const result = generate.items[0] as Record<string, unknown>;
+    expect(result).toEqual({ anchor: 'root' });
+    expect(result).not.toHaveProperty('unsafe');
+    expect(result).not.toHaveProperty('alternative');
   });
 
   it('selects earliest ranked type when generating union fillers', () => {

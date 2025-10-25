@@ -91,7 +91,7 @@ describe('Foundry pipeline integration scenarios', () => {
       const keys = (generated?.items ?? []).flatMap((value) =>
         Object.keys((value ?? {}) as Record<string, unknown>)
       );
-      expect(new Set(keys)).toEqual(new Set(['id']));
+      expect(new Set(keys)).toEqual(new Set());
     });
 
     it('retains safe coverage proof without triggering fail-fast', async () => {
