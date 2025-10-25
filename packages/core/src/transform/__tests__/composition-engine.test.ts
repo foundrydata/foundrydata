@@ -1,6 +1,7 @@
 /* eslint-disable complexity */
 import { describe, it, expect } from 'vitest';
 
+import { ENUM_CAP } from '../../constants';
 import { DIAGNOSTIC_CODES } from '../../diag/codes';
 import {
   compose,
@@ -905,9 +906,65 @@ describe('CompositionEngine coverage diagnostics', () => {
     expect(regexWarns).toHaveLength(1);
     expect(regexWarns[0]?.canonPath).toBe('');
   });
-});
 
-// Enumeration cap is exercised indirectly by other tests; no dedicated cap test here.
+  it('records overlapping patternProperties groups when witnesses collide', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      patternProperties: {
+        '^(?:foo|bar)$': {},
+        '^foo$': {},
+        '^baz$': {},
+      },
+    } as const;
+
+    const result = compose(makeInput(schema));
+    const overlaps = result.diag?.overlaps?.patterns ?? [];
+    expect(overlaps).toContainEqual({
+      key: '',
+      patterns: ['^(?:foo|bar)$', '^foo$'],
+    });
+  });
+
+  it('skips pattern overlap diagnostics when the heuristic is disabled', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      patternProperties: {
+        '^(?:foo|bar)$': {},
+        '^foo$': {},
+      },
+    } as const;
+
+    const result = compose(makeInput(schema), {
+      disablePatternOverlapAnalysis: true,
+    });
+    expect(result.diag?.overlaps).toBeUndefined();
+  });
+
+  it('emits COMPLEXITY_CAP_ENUM diagnostics when enumeration exceeds the cap', () => {
+    const properties: Record<string, unknown> = {};
+    for (let i = 0; i < ENUM_CAP + 1; i += 1) {
+      properties[`k${i}`] = { type: 'number' };
+    }
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      properties,
+    } as const;
+
+    const result = compose(makeInput(schema));
+    const warn = result.diag?.warn?.find(
+      (entry) => entry.code === DIAGNOSTIC_CODES.COMPLEXITY_CAP_ENUM
+    );
+    expect(warn).toMatchObject({
+      canonPath: '',
+      details: { limit: ENUM_CAP, observed: ENUM_CAP + 1 },
+    });
+    expect(result.diag?.caps).toContain(DIAGNOSTIC_CODES.COMPLEXITY_CAP_ENUM);
+    expect(result.coverageIndex.get('')?.enumerate).toBeUndefined();
+  });
+});
 
 describe('CompositionEngine early-unsat with propertyNames', () => {
   it('emits UNSAT_MINPROPS_PNAMES when propertyNames enum is empty and minProperties>0', () => {

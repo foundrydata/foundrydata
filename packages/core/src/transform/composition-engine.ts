@@ -36,6 +36,7 @@ export interface CoverageEntry {
 export type CoverageIndex = Map<string, CoverageEntry>;
 
 interface CoveragePatternInfo {
+  pointer: string;
   source: string;
   regexp: RegExp;
   literals?: string[];
@@ -752,6 +753,7 @@ class CompositionEngine {
       coverageEntry.enumerate = () => snapshot.slice();
     }
     this.coverageIndex.set(canonPath, coverageEntry);
+    this.recordPatternOverlapDiagnostics(canonPath, conjuncts);
 
     if (!safeIntersectionExists && presencePressure) {
       const hasAnyCoverageSource = conjuncts.some(
@@ -877,6 +879,95 @@ class CompositionEngine {
     }
   }
 
+  private recordPatternOverlapDiagnostics(
+    canonPath: string,
+    conjuncts: CoverageConjunctInfo[]
+  ): void {
+    if (this.resolvedOptions.disablePatternOverlapAnalysis) return;
+
+    const patterns = conjuncts.flatMap((conj) => conj.patterns);
+    if (patterns.length < 2) return;
+
+    const adjacency = new Map<number, Set<number>>();
+    const addEdge = (from: number, to: number): void => {
+      let left = adjacency.get(from);
+      if (!left) {
+        left = new Set<number>();
+        adjacency.set(from, left);
+      }
+      left.add(to);
+
+      let right = adjacency.get(to);
+      if (!right) {
+        right = new Set<number>();
+        adjacency.set(to, right);
+      }
+      right.add(from);
+    };
+
+    for (let i = 0; i < patterns.length; i += 1) {
+      for (let j = i + 1; j < patterns.length; j += 1) {
+        if (patternsOverlap(patterns[i]!, patterns[j]!)) {
+          addEdge(i, j);
+        }
+      }
+    }
+
+    if (adjacency.size === 0) {
+      return;
+    }
+
+    const visited = new Set<number>();
+    const entries: Array<{ key: string; patterns: string[] }> = [];
+    const startIndices = Array.from(adjacency.keys()).sort((a, b) => a - b);
+    for (const start of startIndices) {
+      if (visited.has(start)) continue;
+      const stack = [start];
+      const component: number[] = [];
+      while (stack.length > 0) {
+        const current = stack.pop()!;
+        if (visited.has(current)) continue;
+        visited.add(current);
+        component.push(current);
+        const neighbors = adjacency.get(current);
+        if (!neighbors) continue;
+        for (const neighbor of neighbors) {
+          if (!visited.has(neighbor)) {
+            stack.push(neighbor);
+          }
+        }
+      }
+      if (component.length < 2) continue;
+      const patternSources = component
+        .map((idx) => patterns[idx]!.source)
+        .sort();
+      entries.push({ key: canonPath, patterns: patternSources });
+    }
+
+    if (entries.length === 0) return;
+
+    entries.sort((a, b) => {
+      if (a.key !== b.key) return a.key.localeCompare(b.key);
+      const left = a.patterns.join('\u0000');
+      const right = b.patterns.join('\u0000');
+      return left.localeCompare(right);
+    });
+
+    this.diag.overlaps ??= {};
+    this.diag.overlaps.patterns ??= [];
+    const existing = new Set(
+      this.diag.overlaps.patterns.map((entry) =>
+        JSON.stringify({ key: entry.key, patterns: entry.patterns })
+      )
+    );
+    for (const entry of entries) {
+      const signature = JSON.stringify(entry);
+      if (existing.has(signature)) continue;
+      this.diag.overlaps.patterns.push(entry);
+      existing.add(signature);
+    }
+  }
+
   private hasPnamesRewrite(pointer: string): boolean {
     return this.notes.some(
       (n) =>
@@ -998,6 +1089,7 @@ class CompositionEngine {
           continue;
         }
         patterns.push({
+          pointer: patternPtr,
           source: patternSource,
           regexp: analysis.compiled,
           literals: analysis.literalAlternatives,
@@ -1804,6 +1896,45 @@ function dedupePatternIssues(issues: PatternIssue[]): PatternIssue[] {
     unique.push(issue);
   }
   return unique;
+}
+
+function patternsOverlap(
+  left: CoveragePatternInfo,
+  right: CoveragePatternInfo
+): boolean {
+  if (left.source === right.source) return true;
+
+  const candidates = new Set<string>();
+  if (left.literals) {
+    for (const literal of left.literals) {
+      candidates.add(literal);
+    }
+  }
+  if (right.literals) {
+    for (const literal of right.literals) {
+      candidates.add(literal);
+    }
+  }
+
+  if (candidates.size === 0) {
+    return false;
+  }
+
+  for (const candidate of candidates) {
+    if (
+      regexMatches(left.regexp, candidate) &&
+      regexMatches(right.regexp, candidate)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function regexMatches(regexp: RegExp, candidate: string): boolean {
+  regexp.lastIndex = 0;
+  return regexp.test(candidate);
 }
 
 function isObjectLikeSchema(schema: Record<string, unknown>): boolean {
