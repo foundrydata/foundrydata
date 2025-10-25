@@ -51,6 +51,7 @@ describe('PlanOptions', () => {
       // Fail-fast defaults
       expect(resolved.failFast.externalRefStrict).toBe('error');
       expect(resolved.failFast.dynamicRefStrict).toBe('note');
+      expect(resolved.patternPolicy.unsafeUnderApFalse).toBe('error');
 
       // Conditionals defaults
       expect(resolved.conditionals.strategy).toBe('if-aware-lite'); // default from DEFAULT_OPTIONS
@@ -76,6 +77,9 @@ describe('PlanOptions', () => {
         conditionals: {
           exclusivityStringTweak: 'preferAscii',
         },
+        patternPolicy: {
+          unsafeUnderApFalse: 'warn',
+        },
         repair: {
           mustCoverGuard: false,
         },
@@ -92,6 +96,7 @@ describe('PlanOptions', () => {
       expect(resolved.rational.qCap).toBe(1_000_000);
       expect(resolved.trials.skipTrials).toBe(true);
       expect(resolved.conditionals.exclusivityStringTweak).toBe('preferAscii');
+      expect(resolved.patternPolicy.unsafeUnderApFalse).toBe('warn');
       expect(resolved.metrics).toBe(false);
       expect(resolved.repair.mustCoverGuard).toBe(false);
 
@@ -191,6 +196,16 @@ describe('PlanOptions', () => {
       expect(() =>
         resolveOptions({ complexity: { bailOnUnsatAfter: 0 } })
       ).toThrow('complexity.bailOnUnsatAfter must be positive');
+    });
+
+    it('should reject invalid pattern policy posture', () => {
+      expect(() =>
+        resolveOptions({
+          patternPolicy: {
+            unsafeUnderApFalse: 'fatal' as 'error',
+          },
+        })
+      ).toThrow("patternPolicy.unsafeUnderApFalse must be 'error' or 'warn'");
     });
 
     it('should accept valid options', () => {
