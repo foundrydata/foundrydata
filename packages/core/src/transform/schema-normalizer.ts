@@ -212,7 +212,8 @@ class SchemaNormalizer {
           } else {
             this.addNote(
               buildPropertyPointer(pointer, '$ref'),
-              DIAGNOSTIC_CODES.DEFS_TARGET_MISSING
+              DIAGNOSTIC_CODES.DEFS_TARGET_MISSING,
+              { target: rewritten }
             );
           }
         }
