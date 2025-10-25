@@ -1,9 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { repairItemsAjvDriven } from '../../repair/repair-engine';
 
-function eff(): any {
+function eff(schema: unknown): any {
   return {
-    canonical: { revPtrMap: new Map<string, string[]>([['#', ['#']]]) },
+    canonical: {
+      schema,
+      ptrMap: new Map<string, string>(),
+      revPtrMap: new Map<string, string[]>([['#', ['#']]]),
+      notes: [],
+    },
+    containsBag: new Map(),
+    coverageIndex: new Map(),
   };
 }
 
@@ -17,7 +24,7 @@ describe('Repair Engine — propertyNames simple enum rename (AJV-driven)', () =
     const items = [{ bad: 1, b: 2 }];
     const out = repairItemsAjvDriven(
       items,
-      { schema, effective: eff() },
+      { schema, effective: eff(schema) },
       { attempts: 1 }
     );
     const obj = out.items[0] as Record<string, unknown>;

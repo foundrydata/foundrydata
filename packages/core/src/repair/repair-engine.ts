@@ -1,3 +1,4 @@
+/* eslint-disable max-params */
 /* eslint-disable max-lines */
 /* eslint-disable max-depth */
 /* eslint-disable max-lines-per-function */
@@ -13,12 +14,20 @@ import {
 import { structuralHash, bucketsEqual } from '../util/struct-hash.js';
 import type { DiagnosticEnvelope } from '../diag/validate.js';
 import type { PlanOptions } from '../types/options.js';
+import {
+  extractExactLiteralAlternatives,
+  isRegexComplexityCapped,
+} from '../util/pattern-literals.js';
 
 type AjvError = {
   instancePath: string;
   schemaPath: string;
   keyword: string;
   params: Record<string, unknown>;
+};
+
+type AjvValidateFn = ((data: unknown) => boolean) & {
+  errors?: AjvError[];
 };
 
 export interface RepairEpsilonDetails {
@@ -55,6 +64,83 @@ export interface RenamePreflightOptions {
   isNameInMustCover?: (canonPath: string, name: string) => boolean;
   // Names that must not be renamed due to required/dependent* constraints
   blockedSourceNames?: ReadonlySet<string>;
+}
+
+export interface RenamePreflightContext {
+  validator: AjvValidateFn;
+  current: unknown;
+  objectPtr: string;
+  from: string;
+  candidate: string;
+  canonPath: string;
+  baselineDependentKeys: ReadonlySet<string>;
+  baselineOneOfKeys?: ReadonlySet<string>;
+}
+
+export function runRenamePreflightCheck(ctx: RenamePreflightContext): {
+  ok: boolean;
+  diagnostics?: DiagnosticEnvelope[];
+} {
+  const draft = deepClone(ctx.current);
+  const target = getByPointer(draft, ctx.objectPtr);
+  if (!target || typeof target !== 'object' || Array.isArray(target)) {
+    return { ok: false, diagnostics: undefined };
+  }
+  renameKey(target as Record<string, unknown>, ctx.from, ctx.candidate);
+  const passes = ctx.validator(draft);
+  if (passes) return { ok: true };
+  const previewErrors = (ctx.validator.errors ?? []) as AjvError[];
+  const propertyPtr = buildPropertyPointer(ctx.objectPtr || '', ctx.candidate);
+  const targetPaths = new Set<string>([ctx.objectPtr || '', propertyPtr]);
+  const dependentFailure = previewErrors.find((err) => {
+    if (!isDependentConstraintError(err)) return false;
+    const inst = err.instancePath || '';
+    if (!targetPaths.has(inst)) return false;
+    const key = makeErrorKey(err);
+    return !ctx.baselineDependentKeys.has(key);
+  });
+  if (dependentFailure) {
+    return {
+      ok: false,
+      diagnostics: [
+        {
+          code: DIAGNOSTIC_CODES.REPAIR_RENAME_PREFLIGHT_FAIL,
+          canonPath: ctx.canonPath,
+          details: {
+            from: ctx.from,
+            to: ctx.candidate,
+            reason: 'dependent',
+          },
+        },
+      ],
+    };
+  }
+  const branchFailure = previewErrors.find((err) => {
+    if (err.keyword !== 'oneOf') return false;
+    if ((err.instancePath || '') !== (ctx.objectPtr || '')) return false;
+    const key = makeErrorKey(err);
+    if (ctx.baselineOneOfKeys && ctx.baselineOneOfKeys.has(key)) {
+      return false;
+    }
+    return true;
+  });
+  if (branchFailure) {
+    return {
+      ok: false,
+      diagnostics: [
+        {
+          code: DIAGNOSTIC_CODES.REPAIR_RENAME_PREFLIGHT_FAIL,
+          canonPath: ctx.canonPath,
+          details: {
+            from: ctx.from,
+            to: ctx.candidate,
+            reason: 'branch',
+          },
+        },
+      ],
+    };
+  }
+  return { ok: true };
 }
 
 // SPEC §10 — epsilon logging: exact string "1e-<decimalPrecision>"
@@ -311,6 +397,39 @@ function anyErrorAtPath(
   return false;
 }
 
+const DEPENDENT_KEYWORDS = new Set([
+  'dependentRequired',
+  'dependentSchemas',
+  'dependencies',
+]);
+
+function isDependentConstraintError(err: AjvError): boolean {
+  if (DEPENDENT_KEYWORDS.has(err.keyword)) return true;
+  const schemaPath = err.schemaPath || '';
+  if (
+    /\/(?:dependentSchemas|dependencies|dependentRequired)\//.test(schemaPath)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function encodeJsonPointerSegment(segment: string): string {
+  return segment.replace(/~/g, '~0').replace(/\//g, '~1');
+}
+
+function buildPropertyPointer(objectPtr: string, name: string): string {
+  const encoded = encodeJsonPointerSegment(name);
+  if (!objectPtr || objectPtr === '#') {
+    return objectPtr === '#' ? `#/${encoded}` : `/${encoded}`;
+  }
+  return `${objectPtr}/${encoded}`;
+}
+
+function makeErrorKey(err: AjvError): string {
+  return `${err.keyword}::${err.instancePath || ''}::${err.schemaPath}`;
+}
+
 function buildIsEvaluatedFn(
   ajvValidate: (data: unknown) => boolean,
   baseItem: any,
@@ -454,6 +573,7 @@ export function repairItemsAjvDriven(
   const dialect = detectDialect(schema);
   const sourceAjv = createRepairOnlyValidatorAjv({ dialect }, args.planOptions);
   const validateFn = sourceAjv.compile(schema as object);
+  const ajvValidator = validateFn as AjvValidateFn;
   const ajvFlags = extractAjvFlags(sourceAjv);
   const decimalPrecision = ajvFlags.multipleOfPrecision ?? 12;
   const repairPlanOptions = args.planOptions?.repair;
@@ -494,7 +614,8 @@ export function repairItemsAjvDriven(
       offending: string,
       objectPtr: string,
       parentPtr: string,
-      errors: AjvError[]
+      errors: AjvError[],
+      baselineDependentKeys: ReadonlySet<string>
     ): { attempted: boolean; renamed: boolean } => {
       const key = makeRenameKey(objectPtr, offending);
       const existing = renameRegistry.get(key);
@@ -527,6 +648,24 @@ export function repairItemsAjvDriven(
       } else if (typeof pnames.const === 'string') {
         enumValues = [pnames.const];
       }
+      if (
+        (!enumValues || enumValues.length === 0) &&
+        typeof pnames.pattern === 'string'
+      ) {
+        const patternSource = pnames.pattern;
+        if (!isRegexComplexityCapped(patternSource)) {
+          try {
+            // Ensure the pattern compiles with the unicode flag before parsing literals
+            new RegExp(patternSource, 'u');
+            const literals = extractExactLiteralAlternatives(patternSource);
+            if (literals && literals.length > 0) {
+              enumValues = literals;
+            }
+          } catch {
+            // ignore invalid patterns
+          }
+        }
+      }
       if (!enumValues || enumValues.length === 0) {
         return { attempted: false, renamed: false };
       }
@@ -536,9 +675,11 @@ export function repairItemsAjvDriven(
         canonCandidates && canonCandidates.length > 0
           ? canonCandidates[0]!
           : parentPtr;
-
-      const apFalse =
-        (objectSchema && objectSchema.additionalProperties === false) || false;
+      const canonicalNode = getByPointer(
+        effective.canonical.schema,
+        canonPath
+      ) as any;
+      const apFalse = canonicalNode?.additionalProperties === false;
       const mustCoverActive = apFalse && mustCoverGuardEnabled;
       const present = new Set(Object.keys(obj as Record<string, unknown>));
       const unevalApplies =
@@ -577,6 +718,15 @@ export function repairItemsAjvDriven(
         }
       }
 
+      const baselineOneOfKeys = new Set(
+        (errors ?? [])
+          .filter(
+            (err) =>
+              err.keyword === 'oneOf' && (err.instancePath || '') === objectPtr
+          )
+          .map((err) => makeErrorKey(err))
+      );
+
       const res = chooseClosedEnumRenameCandidate(offending, enumValues, {
         canonPath,
         present,
@@ -588,46 +738,63 @@ export function repairItemsAjvDriven(
         blockedSourceNames: protectedNames,
       });
 
-      if (res.ok && res.candidate) {
-        renameKey(obj as Record<string, unknown>, offending, res.candidate);
-        /* istanbul ignore next */
-        const eTraceUpdate = (_: string): void => {};
-        eTraceUpdate(canonPath);
-        diagnostics.push({
-          code: DIAGNOSTIC_CODES.REPAIR_PNAMES_PATTERN_ENUM,
-          canonPath,
-          details: {
-            from: offending,
-            to: res.candidate,
-            reason: 'enumRename',
-            mustCover: mustCoverActive,
-          },
-        });
-        actions.push({
-          action: 'renameProperty',
-          canonPath,
-          origPath: parentPtr,
-          instancePath: objectPtr,
-          details: { from: offending, to: res.candidate },
-        });
-        renameRegistry.set(key, { status: 'renamed' });
-        return { attempted: true, renamed: true };
-      }
-
+      const aggregatedDiagnostics: DiagnosticEnvelope[] = [];
       if (res.diagnostics && res.diagnostics.length) {
         diagnostics.push(...res.diagnostics);
+        aggregatedDiagnostics.push(
+          ...(res.diagnostics as DiagnosticEnvelope[])
+        );
+      }
+
+      if (res.ok && res.candidate) {
+        const preflight = runRenamePreflightCheck({
+          validator: ajvValidator,
+          current,
+          objectPtr,
+          from: offending,
+          candidate: res.candidate,
+          canonPath,
+          baselineDependentKeys,
+          baselineOneOfKeys,
+        });
+        if (preflight.ok) {
+          renameKey(obj as Record<string, unknown>, offending, res.candidate);
+          /* istanbul ignore next */
+          const eTraceUpdate = (_: string): void => {};
+          eTraceUpdate(canonPath);
+          diagnostics.push({
+            code: DIAGNOSTIC_CODES.REPAIR_PNAMES_PATTERN_ENUM,
+            canonPath,
+            details: {
+              from: offending,
+              to: res.candidate,
+              reason: 'enumRename',
+              mustCover: mustCoverActive,
+            },
+          });
+          actions.push({
+            action: 'renameProperty',
+            canonPath,
+            origPath: parentPtr,
+            instancePath: objectPtr,
+            details: { from: offending, to: res.candidate },
+          });
+          renameRegistry.set(key, { status: 'renamed' });
+          return { attempted: true, renamed: true };
+        }
+        if (preflight.diagnostics && preflight.diagnostics.length) {
+          diagnostics.push(...preflight.diagnostics);
+          aggregatedDiagnostics.push(
+            ...(preflight.diagnostics as DiagnosticEnvelope[])
+          );
+        }
       }
 
       const deleteReason: 'deletedNoSafeName' | 'deletedMustCoverRejected' =
         mustCoverActive &&
-        (res.diagnostics ?? []).some((diag) => {
-          const code = diag.code;
-          return (
-            code === DIAGNOSTIC_CODES.MUSTCOVER_INDEX_MISSING ||
-            code === DIAGNOSTIC_CODES.REPAIR_EVAL_GUARD_FAIL ||
-            code === DIAGNOSTIC_CODES.REPAIR_RENAME_PREFLIGHT_FAIL
-          );
-        })
+        aggregatedDiagnostics.some(
+          (diag) => diag.code === DIAGNOSTIC_CODES.MUSTCOVER_INDEX_MISSING
+        )
           ? 'deletedMustCoverRejected'
           : 'deletedNoSafeName';
 
@@ -645,54 +812,18 @@ export function repairItemsAjvDriven(
       const errors = (validateFn as any).errors as AjvError[] | undefined;
       if (!errors || errors.length === 0) break;
       let changed = false;
+      const dependentBaselineKeys = new Set(
+        (errors ?? [])
+          .filter((err) => isDependentConstraintError(err))
+          .map((err) => makeErrorKey(err))
+      );
 
-      // Basic mapping repairs: type, enum, const, pattern
+      // Shape repairs: type, enum, const
       for (const err of errors) {
         const kw = err.keyword;
         const instPtr = err.instancePath || '';
         const sp = normalizeSchemaPointerFromError(err.schemaPath);
-        if (kw === 'minLength' || kw === 'maxLength') {
-          if (isUnderPropertyNames(sp)) continue;
-          const limit = (err.params as any)?.limit as number | undefined;
-          if (typeof limit !== 'number') continue;
-          let curVal = getByPointer(current, instPtr);
-          if (typeof curVal !== 'string') {
-            // Coerce to empty string before applying repair
-            if (instPtr === '') current = '' as any;
-            else setByPointer(current, instPtr, '');
-            curVal = '';
-          }
-          const len = codePointLength(curVal as string);
-          if (kw === 'minLength' && len < limit) {
-            const repairedStr = padToMinCodePoints(
-              curVal as string,
-              limit,
-              'a'
-            );
-            if (instPtr === '') current = repairedStr as any;
-            else setByPointer(current, instPtr, repairedStr);
-            changed = true;
-            const canonStr = sp.replace(/\/(?:minLength)(?:\/.*)?$/, '');
-            actions.push({
-              action: 'stringPadTruncate',
-              canonPath: canonStr,
-              instancePath: instPtr,
-              details: { kind: 'minLength', limit, delta: limit - len },
-            });
-          } else if (kw === 'maxLength' && len > limit) {
-            const repairedStr = codePointSlice(curVal as string, limit);
-            if (instPtr === '') current = repairedStr as any;
-            else setByPointer(current, instPtr, repairedStr);
-            changed = true;
-            const canonStr = sp.replace(/\/(?:maxLength)(?:\/.*)?$/, '');
-            actions.push({
-              action: 'stringPadTruncate',
-              canonPath: canonStr,
-              instancePath: instPtr,
-              details: { kind: 'maxLength', limit, delta: len - limit },
-            });
-          }
-        } else if (kw === 'type') {
+        if (kw === 'type') {
           // Skip mapping repairs when the error originates from propertyNames subtree
           if (isUnderPropertyNames(sp)) continue;
           // derive desired type
@@ -756,49 +887,6 @@ export function repairItemsAjvDriven(
           const c = (nodeSchema as any).const;
           if (instPtr === '') current = c as any;
           else setByPointer(current, instPtr, c);
-          changed = true;
-        } else if (kw === 'pattern') {
-          if (isUnderPropertyNames(sp)) continue;
-          // Only attempt if instance should be a string
-          const val = getByPointer(current, instPtr);
-          if (typeof val !== 'string') {
-            // Convert to minimal string
-            if (instPtr === '') current = '' as any;
-            else setByPointer(current, instPtr, '');
-            changed = true;
-            continue;
-          }
-          const parentPtr = sp.replace(/\/(?:pattern)(?:\/.*)?$/, '');
-          const nodeSchema = getByPointer(schema, parentPtr) as any;
-          const patternSource =
-            typeof nodeSchema?.pattern === 'string'
-              ? nodeSchema.pattern
-              : undefined;
-          if (!patternSource) continue;
-          const candidate = synthStringFromPattern(patternSource);
-          if (instPtr === '') current = candidate as any;
-          else setByPointer(current, instPtr, candidate);
-          changed = true;
-        }
-      }
-
-      // Process propertyNames violations → attempt closed-enum rename
-      for (const err of errors) {
-        if (err.keyword !== 'propertyNames') continue;
-        const offending = (err.params as any).propertyName as
-          | string
-          | undefined;
-        if (!offending) continue;
-        const objectPtr = err.instancePath || '';
-        const sp = normalizeSchemaPointerFromError(err.schemaPath);
-        const parentPtr = sp.replace(/\/(?:propertyNames)(?:\/.*)?$/, '');
-        const result = attemptPropertyNamesRectification(
-          offending,
-          objectPtr,
-          parentPtr,
-          errors
-        );
-        if (result.renamed) {
           changed = true;
         }
       }
@@ -914,82 +1002,56 @@ export function repairItemsAjvDriven(
         }
       }
 
-      // Remove extras under additionalProperties:false and unevaluatedProperties:false
+      // Bounds — string minLength/maxLength adjustments
       for (const err of errors) {
-        if (
-          err.keyword !== 'additionalProperties' &&
-          err.keyword !== 'unevaluatedProperties'
-        )
-          continue;
-        const objectPtr = err.instancePath || '';
-        const obj = getByPointer(current, objectPtr);
-        if (!obj || typeof obj !== 'object' || Array.isArray(obj)) continue;
-        const propName =
-          (err.params as any).additionalProperty ??
-          (err.params as any).unevaluatedProperty;
-        if (typeof propName !== 'string') continue;
-        const canonObj = normalizeSchemaPointerFromError(
-          err.schemaPath
-        ).replace(
-          /\/(?:additionalProperties|unevaluatedProperties)(?:\/.*)?$/,
-          ''
-        );
-        const renameAttempt = attemptPropertyNamesRectification(
-          propName,
-          objectPtr,
-          canonObj,
-          errors
-        );
-        if (renameAttempt.renamed) {
-          changed = true;
-          continue;
+        const kw = err.keyword;
+        if (kw !== 'minLength' && kw !== 'maxLength') continue;
+        const instPtr = err.instancePath || '';
+        const sp = normalizeSchemaPointerFromError(err.schemaPath);
+        if (isUnderPropertyNames(sp)) continue;
+        const limit = (err.params as any)?.limit as number | undefined;
+        if (typeof limit !== 'number') continue;
+        let curVal = getByPointer(current, instPtr);
+        if (typeof curVal !== 'string') {
+          if (instPtr === '') current = '' as any;
+          else setByPointer(current, instPtr, '');
+          curVal = '';
         }
-        if (
-          Object.prototype.hasOwnProperty.call(
-            obj as Record<string, unknown>,
-            propName
-          )
-        ) {
-          delete (obj as Record<string, unknown>)[propName];
-          actions.push({
-            action: 'removeAdditionalProperty',
-            canonPath: canonObj,
-            instancePath: objectPtr,
-            details: {
-              name: propName,
-              kind:
-                err.keyword === 'additionalProperties'
-                  ? 'additional'
-                  : 'unevaluated',
-            },
-          });
+        const len = codePointLength(curVal as string);
+        if (kw === 'minLength' && len < limit) {
+          const repairedStr = padToMinCodePoints(curVal as string, limit, 'a');
+          if (instPtr === '') current = repairedStr as any;
+          else setByPointer(current, instPtr, repairedStr);
           changed = true;
-          const registryEntry = renameRegistry.get(
-            makeRenameKey(objectPtr, propName)
-          );
-          if (registryEntry && registryEntry.status === 'pendingDelete') {
-            diagnostics.push({
-              code: DIAGNOSTIC_CODES.REPAIR_PNAMES_PATTERN_ENUM,
-              canonPath: registryEntry.canonPath,
-              details: {
-                from: registryEntry.from,
-                reason: registryEntry.reason,
-                mustCover: registryEntry.mustCover,
-              },
-            });
-            renameRegistry.delete(makeRenameKey(objectPtr, propName));
-          }
+          const canonStr = sp.replace(/\/(?:minLength)(?:\/.*)?$/, '');
+          actions.push({
+            action: 'stringPadTruncate',
+            canonPath: canonStr,
+            instancePath: instPtr,
+            details: { kind: 'minLength', limit, delta: limit - len },
+          });
+        } else if (kw === 'maxLength' && len > limit) {
+          const repairedStr = codePointSlice(curVal as string, limit);
+          if (instPtr === '') current = repairedStr as any;
+          else setByPointer(current, instPtr, repairedStr);
+          changed = true;
+          const canonStr = sp.replace(/\/(?:maxLength)(?:\/.*)?$/, '');
+          actions.push({
+            action: 'stringPadTruncate',
+            canonPath: canonStr,
+            instancePath: instPtr,
+            details: { kind: 'maxLength', limit, delta: len - limit },
+          });
         }
       }
 
-      // uniqueItems de-dup and maxItems/minItems adjustments
+      // Bounds — uniqueItems and array length adjustments
       {
         const uniqueErr = errors.find((e) => e.keyword === 'uniqueItems');
         if (uniqueErr) {
           const arrPtr = uniqueErr.instancePath || '';
           const arr = getByPointer(current, arrPtr);
           if (Array.isArray(arr)) {
-            // De-duplicate using structural hashing then deepEqual confirmation
             const seen: Record<string, unknown[]> = {};
             const out: unknown[] = [];
             for (const item of arr) {
@@ -1002,8 +1064,7 @@ export function repairItemsAjvDriven(
             }
             if (arrPtr === '') (current as any) = out as any;
             else setByPointer(current, arrPtr, out);
-            // For uniqueItems, compute canon path from the array schema parent (uniqueItems is sibling of items)
-            const uniqCanon = ((): string => {
+            const uniqCanon = (() => {
               const spp = normalizeSchemaPointerFromError(uniqueErr.schemaPath);
               return spp.replace(/\/(?:uniqueItems)(?:\/.*)?$/, '');
             })();
@@ -1058,7 +1119,6 @@ export function repairItemsAjvDriven(
             typeof limit === 'number' &&
             arr.length < limit
           ) {
-            // Derive items schema default
             const sp = normalizeSchemaPointerFromError(minItemsErr.schemaPath);
             const parentPtr = sp.replace(/\/(?:minItems)(?:\/.*)?$/, '');
             const nodeSchema = getByPointer(schema, parentPtr) as any;
@@ -1114,15 +1174,14 @@ export function repairItemsAjvDriven(
         }
       }
 
-      // Numeric clamping/nudging and multipleOf snapping
+      // Bounds — numeric clamping/nudging
       for (const err of errors) {
         const kw = err.keyword;
         if (
           kw !== 'minimum' &&
           kw !== 'maximum' &&
           kw !== 'exclusiveMinimum' &&
-          kw !== 'exclusiveMaximum' &&
-          kw !== 'multipleOf'
+          kw !== 'exclusiveMaximum'
         ) {
           continue;
         }
@@ -1193,27 +1252,6 @@ export function repairItemsAjvDriven(
                 : { kind: kw, epsilon: epsilonStr },
             });
           }
-        } else if (kw === 'multipleOf') {
-          const m = (err.params as any).multipleOf as number | undefined;
-          if (typeof m !== 'number' || m === 0) continue;
-          const k = Math.round(val / m);
-          let snapped = k * m;
-          if (!Number.isFinite(snapped)) continue;
-          if (Math.abs(snapped - val) < eNum) continue;
-          if (isInt) snapped = Math.trunc(snapped);
-          if (valPtr === '') {
-            current = snapped as unknown as typeof current;
-          } else {
-            setByPointer(current, valPtr, snapped);
-          }
-          changed = true;
-          actions.push({
-            action: 'multipleOfSnap',
-            canonPath: canonPath2,
-            origPath: parentPtr,
-            instancePath: valPtr,
-            details: { multipleOf: m, epsilon: epsilonStr },
-          });
         }
       }
 
@@ -1368,6 +1406,182 @@ export function repairItemsAjvDriven(
             instancePath: arrPtr,
           });
           changed = true;
+        }
+      }
+
+      // Semantics — pattern witnesses and multipleOf snapping
+      for (const err of errors) {
+        const kw = err.keyword;
+        if (kw !== 'pattern' && kw !== 'multipleOf') continue;
+        const instPtr = err.instancePath || '';
+        const sp = normalizeSchemaPointerFromError(err.schemaPath);
+        if (kw === 'pattern') {
+          if (isUnderPropertyNames(sp)) continue;
+          const val = getByPointer(current, instPtr);
+          if (typeof val !== 'string') {
+            if (instPtr === '') current = '' as any;
+            else setByPointer(current, instPtr, '');
+            changed = true;
+            continue;
+          }
+          const parentPtr = sp.replace(/\/(?:pattern)(?:\/.*)?$/, '');
+          const nodeSchema = getByPointer(schema, parentPtr) as any;
+          const patternSource =
+            typeof nodeSchema?.pattern === 'string'
+              ? nodeSchema.pattern
+              : undefined;
+          if (!patternSource) continue;
+          const candidate = synthStringFromPattern(patternSource);
+          if (instPtr === '') current = candidate as any;
+          else setByPointer(current, instPtr, candidate);
+          changed = true;
+        } else if (kw === 'multipleOf') {
+          const val = getByPointer(current, instPtr);
+          if (typeof val !== 'number' || Number.isNaN(val)) continue;
+          const parentPtr = sp.replace(/\/(?:multipleOf)(?:\/.*)?$/, '');
+          const numericSchema = getByPointer(schema, parentPtr) as any;
+          const canonCandidates2 = effective.canonical.revPtrMap.get(parentPtr);
+          const canonPath2 =
+            canonCandidates2 && canonCandidates2.length > 0
+              ? canonCandidates2[0]!
+              : parentPtr;
+          const isInt = hasIntegerType(numericSchema);
+          const eNum = epsilonNumber(decimalPrecision);
+          const epsilonStr = formatEpsilon(decimalPrecision);
+          const m = (err.params as any).multipleOf as number | undefined;
+          if (typeof m !== 'number' || m === 0) continue;
+          const k = Math.round(val / m);
+          let snapped = k * m;
+          if (!Number.isFinite(snapped)) continue;
+          if (Math.abs(snapped - val) < eNum) continue;
+          if (isInt) snapped = Math.trunc(snapped);
+          if (instPtr === '') {
+            current = snapped as unknown as typeof current;
+          } else {
+            setByPointer(current, instPtr, snapped);
+          }
+          changed = true;
+          actions.push({
+            action: 'multipleOfSnap',
+            canonPath: canonPath2,
+            origPath: parentPtr,
+            instancePath: instPtr,
+            details: { multipleOf: m, epsilon: epsilonStr },
+          });
+        }
+      }
+
+      // Process propertyNames violations → attempt closed-enum rename
+      const propertyNameGroups = new Map<
+        string,
+        { objectPtr: string; parentPtr: string; offenders: Set<string> }
+      >();
+      for (const err of errors) {
+        if (err.keyword !== 'propertyNames') continue;
+        const offending = (err.params as any).propertyName as
+          | string
+          | undefined;
+        if (!offending) continue;
+        const objectPtr = err.instancePath || '';
+        const sp = normalizeSchemaPointerFromError(err.schemaPath);
+        const parentPtr = sp.replace(/\/(?:propertyNames)(?:\/.*)?$/, '');
+        const keyGroup = `${objectPtr}::${parentPtr}`;
+        let group = propertyNameGroups.get(keyGroup);
+        if (!group) {
+          group = { objectPtr, parentPtr, offenders: new Set() };
+          propertyNameGroups.set(keyGroup, group);
+        }
+        group.offenders.add(offending);
+      }
+      const orderedGroups = Array.from(propertyNameGroups.values()).sort(
+        (a, b) =>
+          a.objectPtr === b.objectPtr
+            ? a.parentPtr.localeCompare(b.parentPtr)
+            : a.objectPtr.localeCompare(b.objectPtr)
+      );
+      for (const group of orderedGroups) {
+        const offenders = Array.from(group.offenders).sort((a, b) =>
+          a < b ? -1 : a > b ? 1 : 0
+        );
+        for (const offending of offenders) {
+          const result = attemptPropertyNamesRectification(
+            offending,
+            group.objectPtr,
+            group.parentPtr,
+            errors,
+            dependentBaselineKeys
+          );
+          if (result.renamed) {
+            changed = true;
+          }
+        }
+      }
+      // Remove extras under additionalProperties:false and unevaluatedProperties:false
+      for (const err of errors) {
+        if (
+          err.keyword !== 'additionalProperties' &&
+          err.keyword !== 'unevaluatedProperties'
+        )
+          continue;
+        const objectPtr = err.instancePath || '';
+        const obj = getByPointer(current, objectPtr);
+        if (!obj || typeof obj !== 'object' || Array.isArray(obj)) continue;
+        const propName =
+          (err.params as any).additionalProperty ??
+          (err.params as any).unevaluatedProperty;
+        if (typeof propName !== 'string') continue;
+        const canonObj = normalizeSchemaPointerFromError(
+          err.schemaPath
+        ).replace(
+          /\/(?:additionalProperties|unevaluatedProperties)(?:\/.*)?$/,
+          ''
+        );
+        const renameAttempt = attemptPropertyNamesRectification(
+          propName,
+          objectPtr,
+          canonObj,
+          errors,
+          dependentBaselineKeys
+        );
+        if (renameAttempt.renamed) {
+          changed = true;
+          continue;
+        }
+        if (
+          Object.prototype.hasOwnProperty.call(
+            obj as Record<string, unknown>,
+            propName
+          )
+        ) {
+          delete (obj as Record<string, unknown>)[propName];
+          actions.push({
+            action: 'removeAdditionalProperty',
+            canonPath: canonObj,
+            instancePath: objectPtr,
+            details: {
+              name: propName,
+              kind:
+                err.keyword === 'additionalProperties'
+                  ? 'additional'
+                  : 'unevaluated',
+            },
+          });
+          changed = true;
+          const registryEntry = renameRegistry.get(
+            makeRenameKey(objectPtr, propName)
+          );
+          if (registryEntry && registryEntry.status === 'pendingDelete') {
+            diagnostics.push({
+              code: DIAGNOSTIC_CODES.REPAIR_PNAMES_PATTERN_ENUM,
+              canonPath: registryEntry.canonPath,
+              details: {
+                from: registryEntry.from,
+                reason: registryEntry.reason,
+                mustCover: registryEntry.mustCover,
+              },
+            });
+            renameRegistry.delete(makeRenameKey(objectPtr, propName));
+          }
         }
       }
 
