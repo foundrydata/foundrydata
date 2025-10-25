@@ -78,6 +78,20 @@ describe('createPlanOptionsSubKey', () => {
     expect(parsed['guards.maxDynamicScopeHops']).toBe(2);
     expect(parsed['complexity.maxOneOfBranches']).toBe(200);
   });
+
+  it('captures exclusivity string tweak preference in the subkey', () => {
+    const preferNul = createPlanOptionsSubKey({
+      conditionals: { exclusivityStringTweak: 'preferNul' },
+    });
+    const preferAscii = createPlanOptionsSubKey({
+      conditionals: { exclusivityStringTweak: 'preferAscii' },
+    });
+
+    expect(preferNul).not.toBe(preferAscii);
+    expect(preferAscii).toContain(
+      '"conditionals.exclusivityStringTweak":"preferAscii"'
+    );
+  });
 });
 
 describe('createCacheKeyContext', () => {

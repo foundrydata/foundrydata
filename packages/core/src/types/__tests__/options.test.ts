@@ -55,6 +55,7 @@ describe('PlanOptions', () => {
       // Conditionals defaults
       expect(resolved.conditionals.strategy).toBe('if-aware-lite'); // default from DEFAULT_OPTIONS
       expect(resolved.conditionals.minThenSatisfaction).toBe('required-only');
+      expect(resolved.conditionals.exclusivityStringTweak).toBe('preferNul');
 
       // Repair defaults
       expect(resolved.repair.mustCoverGuard).toBe(true);
@@ -72,6 +73,9 @@ describe('PlanOptions', () => {
         trials: {
           skipTrials: true,
         },
+        conditionals: {
+          exclusivityStringTweak: 'preferAscii',
+        },
         repair: {
           mustCoverGuard: false,
         },
@@ -87,6 +91,7 @@ describe('PlanOptions', () => {
       expect(resolved.rational.fallback).toBe('float');
       expect(resolved.rational.qCap).toBe(1_000_000);
       expect(resolved.trials.skipTrials).toBe(true);
+      expect(resolved.conditionals.exclusivityStringTweak).toBe('preferAscii');
       expect(resolved.metrics).toBe(false);
       expect(resolved.repair.mustCoverGuard).toBe(false);
 

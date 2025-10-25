@@ -1,3 +1,4 @@
+/* eslint-disable max-params */
 /* eslint-disable max-depth */
 /* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
@@ -54,6 +55,15 @@ interface EvaluationNode {
   schema: Record<string, unknown>;
   pointer: JsonPointer;
   via: EvaluationFamily[];
+}
+
+interface InstanceTweakTarget {
+  pointer: JsonPointer;
+  kind: 'string' | 'number';
+  integer?: boolean;
+  schema?: Record<string, unknown>;
+  get(): string | number;
+  set(value: string | number): void;
 }
 
 export interface GeneratorDiagnostic {
@@ -144,6 +154,9 @@ class GeneratorEngine {
   private readonly conditionalBlocklist: Map<string, Set<string>> = new Map();
   private readonly shouldRecordEvalTrace: boolean;
   private readonly formatRegistry?: FormatRegistry;
+  private readonly pendingExclusivityRand = new Map<JsonPointer, number>();
+  private readonly stringTweakOrder: ReadonlyArray<'\u0000' | 'a'>;
+  private readonly multipleOfEpsilon: number;
 
   constructor(effective: ComposeResult, options: FoundryGeneratorOptions) {
     this.options = options;
@@ -172,6 +185,13 @@ class GeneratorEngine {
         .map((note) => note.canonPath)
     );
     this.shouldRecordEvalTrace = this.resolved.metrics === true;
+    this.stringTweakOrder =
+      this.resolved.conditionals.exclusivityStringTweak === 'preferAscii'
+        ? (['a', '\u0000'] as const)
+        : (['\u0000', 'a'] as const);
+    this.multipleOfEpsilon = Number.parseFloat(
+      `1e-${this.resolved.rational.decimalPrecision}`
+    );
   }
 
   private readonly rootSchema: Schema | unknown;
@@ -1022,7 +1042,6 @@ class GeneratorEngine {
     return this.resolveRefTarget(binding.ref);
   }
 
-  // eslint-disable-next-line max-params
   private applyDependentRequired(
     objectSchema: Record<string, unknown>,
     target: Record<string, unknown>,
@@ -1488,12 +1507,15 @@ class GeneratorEngine {
       if (value >= schema.exclusiveMaximum) return false;
     }
     if (typeof schema.multipleOf === 'number' && schema.multipleOf !== 0) {
-      const multiple = value / schema.multipleOf;
+      const base = schema.multipleOf;
+      const ratio = value / base;
       if (integer) {
-        if (!Number.isInteger(multiple)) return false;
+        if (!Number.isInteger(ratio)) return false;
       } else {
-        const rounded = Math.round(multiple);
-        if (Math.abs(rounded - multiple) > Number.EPSILON * 8) {
+        const nearest = Math.round(ratio);
+        const snapped = nearest * base;
+        const tolerance = this.computeMultipleOfTolerance(snapped);
+        if (Math.abs(value - snapped) > tolerance) {
           return false;
         }
       }
@@ -1574,7 +1596,6 @@ class GeneratorEngine {
     return { status: 'satisfied', discriminants };
   }
 
-  // eslint-disable-next-line max-params
   private ensureThenSatisfaction(
     schema: Record<string, unknown>,
     canonPath: JsonPointer,
@@ -1723,13 +1744,26 @@ class GeneratorEngine {
       value = Math.max(value, Math.ceil(schema.minimum));
     }
     if (typeof schema.exclusiveMinimum === 'number') {
-      value = Math.max(value, Math.ceil(schema.exclusiveMinimum + 1));
+      value = Math.max(value, Math.floor(schema.exclusiveMinimum) + 1);
     }
     if (typeof schema.maximum === 'number') {
       value = Math.min(value, Math.floor(schema.maximum));
     }
+    if (typeof schema.exclusiveMaximum === 'number') {
+      value = Math.min(value, Math.ceil(schema.exclusiveMaximum) - 1);
+    }
     if (typeof schema.multipleOf === 'number' && schema.multipleOf !== 0) {
       value = alignToMultiple(value, schema.multipleOf);
+      if (typeof schema.exclusiveMinimum === 'number') {
+        value = Math.max(value, Math.floor(schema.exclusiveMinimum) + 1);
+      } else if (typeof schema.minimum === 'number') {
+        value = Math.max(value, Math.ceil(schema.minimum));
+      }
+      if (typeof schema.exclusiveMaximum === 'number') {
+        value = Math.min(value, Math.ceil(schema.exclusiveMaximum) - 1);
+      } else if (typeof schema.maximum === 'number') {
+        value = Math.min(value, Math.floor(schema.maximum));
+      }
     }
     return value;
   }
@@ -1744,20 +1778,198 @@ class GeneratorEngine {
       );
       if (typeof first === 'number') return first;
     }
+    const multiple =
+      typeof schema.multipleOf === 'number' && schema.multipleOf !== 0
+        ? (schema.multipleOf as number)
+        : undefined;
+    if (multiple) {
+      const aligned = this.generateMultipleAlignedNumber(schema, multiple);
+      if (typeof aligned === 'number' && Number.isFinite(aligned)) {
+        return aligned;
+      }
+    }
     let value = 0;
     if (typeof schema.minimum === 'number') {
       value = Math.max(value, schema.minimum);
     }
     if (typeof schema.exclusiveMinimum === 'number') {
-      value = Math.max(value, schema.exclusiveMinimum + Number.EPSILON);
+      value = Math.max(value, schema.exclusiveMinimum + this.multipleOfEpsilon);
     }
     if (typeof schema.maximum === 'number') {
       value = Math.min(value, schema.maximum);
     }
-    if (typeof schema.multipleOf === 'number' && schema.multipleOf !== 0) {
-      value = alignToMultiple(value, schema.multipleOf);
+    if (typeof schema.exclusiveMaximum === 'number') {
+      value = Math.min(value, schema.exclusiveMaximum - this.multipleOfEpsilon);
+    }
+    if (multiple) {
+      value = alignToMultiple(value, multiple);
+      if (typeof schema.exclusiveMinimum === 'number') {
+        value = Math.max(
+          value,
+          schema.exclusiveMinimum + this.multipleOfEpsilon
+        );
+      } else if (typeof schema.minimum === 'number') {
+        value = Math.max(value, schema.minimum);
+      }
+      if (typeof schema.exclusiveMaximum === 'number') {
+        value = Math.min(
+          value,
+          schema.exclusiveMaximum - this.multipleOfEpsilon
+        );
+      } else if (typeof schema.maximum === 'number') {
+        value = Math.min(value, schema.maximum);
+      }
+      const preferredIndex =
+        Number.isFinite(value) && multiple !== 0
+          ? Math.round(value / multiple)
+          : undefined;
+      const rescue = this.generateMultipleAlignedNumber(
+        schema,
+        multiple,
+        preferredIndex
+      );
+      if (typeof rescue === 'number' && Number.isFinite(rescue)) {
+        value = rescue;
+      }
     }
     return value;
+  }
+
+  private generateMultipleAlignedNumber(
+    schema: Record<string, unknown>,
+    multipleOf: number,
+    preferredIndex?: number
+  ): number | undefined {
+    const step = Math.abs(multipleOf);
+    if (!Number.isFinite(step) || step === 0) return undefined;
+    const lower = this.resolveLowerNumericBound(schema);
+    const upper = this.resolveUpperNumericBound(schema);
+    const epsilon = Math.min(this.multipleOfEpsilon / 2, step / 2);
+    const lowerConstraint =
+      lower === undefined
+        ? undefined
+        : lower.exclusive
+          ? lower.value + this.multipleOfEpsilon
+          : lower.value;
+    const upperConstraint =
+      upper === undefined
+        ? undefined
+        : upper.exclusive
+          ? upper.value - this.multipleOfEpsilon
+          : upper.value;
+    const minIndex =
+      lowerConstraint === undefined
+        ? undefined
+        : Math.ceil((lowerConstraint - epsilon) / step);
+    const maxIndex =
+      upperConstraint === undefined
+        ? undefined
+        : Math.floor((upperConstraint + epsilon) / step);
+    const lowerIndex =
+      minIndex !== undefined ? minIndex : Number.NEGATIVE_INFINITY;
+    const upperIndex =
+      maxIndex !== undefined ? maxIndex : Number.POSITIVE_INFINITY;
+    if (lowerIndex > upperIndex) {
+      return undefined;
+    }
+    let selectedIndex: number;
+    if (preferredIndex !== undefined && Number.isFinite(preferredIndex)) {
+      const truncated = Math.trunc(preferredIndex);
+      const clamped = Math.max(lowerIndex, Math.min(upperIndex, truncated));
+      selectedIndex = clamped;
+    } else if (lowerIndex <= 0 && upperIndex >= 0) {
+      selectedIndex = 0;
+    } else if (lowerIndex > 0 && Number.isFinite(lowerIndex)) {
+      selectedIndex = lowerIndex;
+    } else if (Number.isFinite(upperIndex)) {
+      selectedIndex = upperIndex;
+    } else {
+      selectedIndex = 0;
+    }
+    if (!Number.isFinite(selectedIndex)) {
+      return undefined;
+    }
+    return this.roundToRationalPrecision(selectedIndex * step);
+  }
+
+  private resolveLowerNumericBound(
+    schema: Record<string, unknown>
+  ): { value: number; exclusive: boolean } | undefined {
+    const inclusive =
+      typeof schema.minimum === 'number'
+        ? { value: schema.minimum, exclusive: false }
+        : undefined;
+    const exclusive =
+      typeof schema.exclusiveMinimum === 'number'
+        ? { value: schema.exclusiveMinimum, exclusive: true }
+        : undefined;
+    if (!inclusive) return exclusive;
+    if (!exclusive) return inclusive;
+    if (exclusive.value > inclusive.value) return exclusive;
+    if (exclusive.value < inclusive.value) return inclusive;
+    return exclusive;
+  }
+
+  private resolveUpperNumericBound(
+    schema: Record<string, unknown>
+  ): { value: number; exclusive: boolean } | undefined {
+    const inclusive =
+      typeof schema.maximum === 'number'
+        ? { value: schema.maximum, exclusive: false }
+        : undefined;
+    const exclusive =
+      typeof schema.exclusiveMaximum === 'number'
+        ? { value: schema.exclusiveMaximum, exclusive: true }
+        : undefined;
+    if (!inclusive) return exclusive;
+    if (!exclusive) return inclusive;
+    if (exclusive.value < inclusive.value) return exclusive;
+    if (exclusive.value > inclusive.value) return inclusive;
+    return exclusive;
+  }
+
+  private roundToRationalPrecision(value: number): number {
+    if (!Number.isFinite(value)) {
+      return value;
+    }
+    const precision = Math.max(
+      0,
+      Math.min(20, Math.floor(this.resolved.rational.decimalPrecision))
+    );
+    return Number.parseFloat(value.toFixed(precision));
+  }
+
+  private computeMultipleOfTolerance(candidate: number): number {
+    const absTol = this.multipleOfEpsilon;
+    const relTol = Math.abs(candidate) * Number.EPSILON * 16;
+    return Math.max(absTol, relTol);
+  }
+
+  private snapshotCompositeState(value: unknown): string | undefined {
+    const hash = structuralHash(value);
+    if (hash?.digest) return hash.digest;
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return undefined;
+    }
+  }
+
+  private resolveNumericTweakStep(
+    initial: number,
+    branch?: Record<string, unknown>
+  ): number {
+    if (
+      branch &&
+      typeof branch.multipleOf === 'number' &&
+      branch.multipleOf !== 0
+    ) {
+      const magnitude = Math.abs(branch.multipleOf);
+      if (magnitude > 0) {
+        return magnitude;
+      }
+    }
+    return Number.isInteger(initial) ? 1 : this.multipleOfEpsilon;
   }
 
   private generateBoolean(schema: Record<string, unknown>): boolean {
@@ -1793,35 +2005,632 @@ class GeneratorEngine {
     canonPath: JsonPointer,
     itemIndex: number
   ): unknown {
-    const record = this.diagNodes?.[canonPath];
     const branches = Array.isArray(schema.oneOf)
       ? (schema.oneOf as unknown[])
       : [];
+    const record = this.diagNodes?.[canonPath];
     const selectedIndex =
       typeof record?.chosenBranch?.index === 'number'
         ? record.chosenBranch.index
         : 0;
     const chosen =
       selectedIndex >= 0 && selectedIndex < branches.length ? selectedIndex : 0;
-    if (branches.length > 1) {
-      const exclusivityRand = this.computeExclusivityRand(canonPath, itemIndex);
-      // SPEC §8/§15: Do not synthesize/overwrite tiebreakRand when RNG is used only in oneOf step‑4.
-      // Include tiebreakRand here only if selection RNG was actually used during Compose (tie/score-only).
-      const composeNode = this.diagNodes?.[canonPath];
-      const composeTiebreak = composeNode?.scoreDetails?.tiebreakRand;
-      const scoreDetails =
-        typeof composeTiebreak === 'number'
-          ? { tiebreakRand: composeTiebreak, exclusivityRand }
-          : { exclusivityRand };
-      this.diagnostics.push({
-        code: DIAGNOSTIC_CODES.EXCLUSIVITY_TWEAK_STRING,
-        phase: DIAGNOSTIC_PHASES.GENERATE,
+    const branchPath = this.buildOneOfBranchPointer(canonPath, chosen);
+    const generated = this.generateValue(
+      branches[chosen],
+      branchPath,
+      itemIndex
+    );
+    return this.enforceOneOfExclusivity(
+      generated,
+      branches,
+      canonPath,
+      chosen,
+      branchPath,
+      2
+    );
+  }
+
+  private enforceOneOfExclusivity(
+    value: unknown,
+    branches: unknown[],
+    canonPath: JsonPointer,
+    chosenIndex: number,
+    chosenBranchPath: JsonPointer,
+    reselectionsRemaining = 1
+  ): unknown {
+    if (branches.length <= 1) return value;
+    const passing = this.evaluateOneOfBranches(canonPath, branches, value);
+    if (!passing.includes(chosenIndex)) {
+      if (reselectionsRemaining <= 0) return value;
+      return this.reselectOneOfBranch(
+        value,
+        branches,
         canonPath,
-        scoreDetails,
-      });
+        chosenIndex,
+        reselectionsRemaining - 1
+      );
     }
-    const branchPath = appendPointer(canonPath, `oneOf/${chosen}`);
-    return this.generateValue(branches[chosen], branchPath, itemIndex);
+    if (passing.length <= 1) return value;
+
+    if (typeof value === 'string') {
+      const tweaked = this.tryStringExclusivity(
+        value,
+        canonPath,
+        branches,
+        chosenIndex,
+        chosenBranchPath,
+        passing
+      );
+      if (tweaked !== undefined) {
+        return tweaked;
+      }
+    }
+
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      const tweaked = this.tryNumericExclusivity(
+        value,
+        canonPath,
+        branches,
+        chosenIndex,
+        chosenBranchPath,
+        passing
+      );
+      if (tweaked !== undefined) {
+        return tweaked;
+      }
+    }
+
+    if (Array.isArray(value) || isRecord(value)) {
+      const modified = this.tryCompositeExclusivity(
+        value,
+        canonPath,
+        branches,
+        chosenIndex,
+        passing
+      );
+      if (modified) {
+        return value;
+      }
+    }
+
+    const finalPassing = this.evaluateOneOfBranches(canonPath, branches, value);
+    if (reselectionsRemaining > 0 && finalPassing.length > 1) {
+      return this.reselectOneOfBranch(
+        value,
+        branches,
+        canonPath,
+        chosenIndex,
+        reselectionsRemaining - 1
+      );
+    }
+
+    return value;
+  }
+
+  private reselectOneOfBranch(
+    value: unknown,
+    branches: unknown[],
+    canonPath: JsonPointer,
+    currentChosen: number,
+    reselectionsRemaining: number
+  ): unknown {
+    const passing = this.evaluateOneOfBranches(canonPath, branches, value);
+    if (passing.length === 0) {
+      return value;
+    }
+    const exclusivityRand = this.drawExclusivityRand(canonPath);
+    this.pendingExclusivityRand.set(canonPath, exclusivityRand);
+    this.recordNodeExclusivityRand(canonPath, exclusivityRand);
+    const candidates =
+      passing.length > 1
+        ? passing.filter((idx) => idx !== currentChosen)
+        : passing.slice();
+    const pool = candidates.length > 0 ? candidates : passing;
+    const pickOffset = Math.min(
+      pool.length - 1,
+      Math.floor(exclusivityRand * pool.length)
+    );
+    const pick = pool[pickOffset] ?? pool[0]!;
+    const fallbackPath = this.buildOneOfBranchPointer(canonPath, pick);
+    const updated = this.enforceOneOfExclusivity(
+      value,
+      branches,
+      canonPath,
+      pick,
+      fallbackPath,
+      reselectionsRemaining
+    );
+    this.pendingExclusivityRand.delete(canonPath);
+    return updated;
+  }
+
+  private evaluateOneOfBranches(
+    canonPath: JsonPointer,
+    branches: unknown[],
+    data: unknown
+  ): number[] {
+    const passing: number[] = [];
+    for (let idx = 0; idx < branches.length; idx += 1) {
+      const branch = branches[idx];
+      const branchPtr = isRecord(branch)
+        ? (getPointerFromIndex(this.pointerIndex, branch) ??
+          this.buildOneOfBranchPointer(canonPath, idx))
+        : this.buildOneOfBranchPointer(canonPath, idx);
+      if (this.validateAgainstOriginalAt(branchPtr, data)) {
+        passing.push(idx);
+      }
+    }
+    return passing;
+  }
+
+  private tryStringExclusivity(
+    initial: string,
+    canonPath: JsonPointer,
+    branches: unknown[],
+    chosenIndex: number,
+    chosenBranchPath: JsonPointer,
+    initialPassing: number[]
+  ): string | undefined {
+    let value = initial;
+    let passing = initialPassing.slice();
+
+    while (true) {
+      const conflicts = passing
+        .filter((idx) => idx !== chosenIndex)
+        .sort((a, b) => a - b);
+      if (conflicts.length === 0) break;
+
+      let updated = false;
+      for (const conflict of conflicts) {
+        for (const char of this.stringTweakOrder) {
+          const candidate = `${value}${char}`;
+          if (!this.validateAgainstOriginalAt(chosenBranchPath, candidate)) {
+            continue;
+          }
+          const candidatePassing = this.evaluateOneOfBranches(
+            canonPath,
+            branches,
+            candidate
+          );
+          if (!candidatePassing.includes(chosenIndex)) {
+            continue;
+          }
+          if (candidatePassing.includes(conflict)) {
+            continue;
+          }
+          this.recordExclusivityStringTweak(canonPath, char);
+          value = candidate;
+          passing = candidatePassing;
+          updated = true;
+          break;
+        }
+        if (updated) break;
+      }
+
+      if (!updated) {
+        break;
+      }
+    }
+
+    return value !== initial ? value : undefined;
+  }
+
+  private tryNumericExclusivity(
+    initial: number,
+    canonPath: JsonPointer,
+    branches: unknown[],
+    chosenIndex: number,
+    chosenBranchPath: JsonPointer,
+    initialPassing: number[]
+  ): number | undefined {
+    const branchSchema = isRecord(branches[chosenIndex])
+      ? (branches[chosenIndex] as Record<string, unknown>)
+      : undefined;
+    const step = this.resolveNumericTweakStep(initial, branchSchema);
+    if (step === 0) return undefined;
+    const deltas: number[] = [step, -step];
+    let value = initial;
+    let passing = initialPassing.slice();
+    const visitedValues = new Set<string>();
+    const maxIterations = 64;
+    let iterations = 0;
+
+    while (iterations < maxIterations) {
+      iterations += 1;
+      const stateKey = Number.isFinite(value)
+        ? value.toPrecision(15)
+        : String(value);
+      if (visitedValues.has(stateKey)) break;
+      visitedValues.add(stateKey);
+
+      const conflicts = passing
+        .filter((idx) => idx !== chosenIndex)
+        .sort((a, b) => a - b);
+      if (conflicts.length === 0) break;
+
+      let updated = false;
+      for (const conflict of conflicts) {
+        for (const delta of deltas) {
+          const candidate = value + delta;
+          if (!Number.isFinite(candidate)) {
+            continue;
+          }
+          if (!this.validateAgainstOriginalAt(chosenBranchPath, candidate)) {
+            continue;
+          }
+          const candidatePassing = this.evaluateOneOfBranches(
+            canonPath,
+            branches,
+            candidate
+          );
+          if (!candidatePassing.includes(chosenIndex)) {
+            continue;
+          }
+          if (candidatePassing.includes(conflict)) {
+            continue;
+          }
+          value = candidate;
+          passing = candidatePassing;
+          updated = true;
+          break;
+        }
+        if (updated) break;
+      }
+      if (!updated) {
+        break;
+      }
+    }
+
+    return value !== initial ? value : undefined;
+  }
+
+  private tryCompositeExclusivity(
+    root: Record<string, unknown> | unknown[],
+    canonPath: JsonPointer,
+    branches: unknown[],
+    chosenIndex: number,
+    initialPassing: number[]
+  ): boolean {
+    const branchSchema = isRecord(branches[chosenIndex])
+      ? (branches[chosenIndex] as Record<string, unknown>)
+      : undefined;
+    const targets = this.collectInstanceTweakTargets(root, branchSchema);
+    if (targets.length === 0) return false;
+    targets.sort((a, b) => a.pointer.localeCompare(b.pointer));
+    let passing = initialPassing.slice();
+    let modified = false;
+    const visitedStates = new Set<string>();
+    const maxIterations = 128;
+    let iterations = 0;
+
+    while (iterations < maxIterations) {
+      iterations += 1;
+      const snapshot = this.snapshotCompositeState(root);
+      if (snapshot) {
+        if (visitedStates.has(snapshot)) break;
+        visitedStates.add(snapshot);
+      }
+
+      const conflicts = passing
+        .filter((idx) => idx !== chosenIndex)
+        .sort((a, b) => a - b);
+      if (conflicts.length === 0) break;
+
+      let updated = false;
+      for (const conflict of conflicts) {
+        for (const target of targets) {
+          if (target.kind === 'string') {
+            const candidatePassing = this.applyStringTweakToTarget(
+              root,
+              target,
+              canonPath,
+              branches,
+              chosenIndex,
+              conflict
+            );
+            if (candidatePassing) {
+              passing = candidatePassing;
+              modified = true;
+              updated = true;
+              break;
+            }
+          } else {
+            const candidatePassing = this.applyNumericTweakToTarget(
+              root,
+              target,
+              canonPath,
+              branches,
+              chosenIndex,
+              conflict
+            );
+            if (candidatePassing) {
+              passing = candidatePassing;
+              modified = true;
+              updated = true;
+              break;
+            }
+          }
+        }
+        if (updated) break;
+      }
+
+      if (!updated) {
+        break;
+      }
+    }
+
+    return modified;
+  }
+
+  private applyStringTweakToTarget(
+    root: Record<string, unknown> | unknown[],
+    target: InstanceTweakTarget,
+    canonPath: JsonPointer,
+    branches: unknown[],
+    chosenIndex: number,
+    conflictIndex: number
+  ): number[] | undefined {
+    if (target.kind !== 'string') return undefined;
+    const original = target.get() as string;
+    for (const char of this.stringTweakOrder) {
+      const candidate = `${original}${char}`;
+      target.set(candidate);
+      const candidatePassing = this.evaluateOneOfBranches(
+        canonPath,
+        branches,
+        root
+      );
+      if (!candidatePassing.includes(chosenIndex)) {
+        target.set(original);
+        continue;
+      }
+      if (candidatePassing.includes(conflictIndex)) {
+        target.set(original);
+        continue;
+      }
+      this.recordExclusivityStringTweak(canonPath, char);
+      return candidatePassing;
+    }
+    target.set(original);
+    return undefined;
+  }
+
+  private applyNumericTweakToTarget(
+    root: Record<string, unknown> | unknown[],
+    target: InstanceTweakTarget,
+    canonPath: JsonPointer,
+    branches: unknown[],
+    chosenIndex: number,
+    conflictIndex: number
+  ): number[] | undefined {
+    if (target.kind !== 'number') return undefined;
+    const original = target.get() as number;
+    const step = this.resolveNumericTweakStep(original, target.schema);
+    if (step === 0) return undefined;
+    const deltas: number[] = [step, -step];
+    for (const delta of deltas) {
+      const candidate = original + delta;
+      if (!Number.isFinite(candidate)) continue;
+      target.set(candidate);
+      const candidatePassing = this.evaluateOneOfBranches(
+        canonPath,
+        branches,
+        root
+      );
+      if (!candidatePassing.includes(chosenIndex)) {
+        target.set(original);
+        continue;
+      }
+      if (candidatePassing.includes(conflictIndex)) {
+        target.set(original);
+        continue;
+      }
+      return candidatePassing;
+    }
+    target.set(original);
+    return undefined;
+  }
+
+  private collectInstanceTweakTargets(
+    value: unknown,
+    schema?: Record<string, unknown>,
+    basePointer: JsonPointer = ''
+  ): InstanceTweakTarget[] {
+    const targets: InstanceTweakTarget[] = [];
+    if (Array.isArray(value)) {
+      for (let idx = 0; idx < value.length; idx += 1) {
+        const entry = value[idx];
+        const pointer = appendPointer(basePointer, String(idx));
+        const childSchema = this.resolveArrayItemSchema(schema, idx);
+        if (typeof entry === 'string') {
+          targets.push({
+            pointer,
+            kind: 'string',
+            schema: childSchema,
+            get: () => value[idx] as string,
+            set: (next) => {
+              value[idx] = next;
+            },
+          });
+        } else if (typeof entry === 'number') {
+          targets.push({
+            pointer,
+            kind: 'number',
+            integer: Number.isInteger(entry),
+            schema: childSchema,
+            get: () => value[idx] as number,
+            set: (next) => {
+              value[idx] = next;
+            },
+          });
+        } else if (isRecord(entry) || Array.isArray(entry)) {
+          targets.push(
+            ...this.collectInstanceTweakTargets(entry, childSchema, pointer)
+          );
+        }
+      }
+      return targets;
+    }
+
+    if (!isRecord(value)) {
+      return targets;
+    }
+
+    const keys = Object.keys(value).sort();
+    for (const key of keys) {
+      const entry = value[key];
+      const pointer = appendPointer(basePointer, key);
+      const childSchema = this.resolveObjectPropertySchema(schema, key);
+      if (typeof entry === 'string') {
+        targets.push({
+          pointer,
+          kind: 'string',
+          schema: childSchema,
+          get: () => value[key] as string,
+          set: (next) => {
+            value[key] = next;
+          },
+        });
+      } else if (typeof entry === 'number') {
+        targets.push({
+          pointer,
+          kind: 'number',
+          integer: Number.isInteger(entry),
+          schema: childSchema,
+          get: () => value[key] as number,
+          set: (next) => {
+            value[key] = next;
+          },
+        });
+      } else if (isRecord(entry) || Array.isArray(entry)) {
+        targets.push(
+          ...this.collectInstanceTweakTargets(entry, childSchema, pointer)
+        );
+      }
+    }
+
+    return targets;
+  }
+
+  private resolveObjectPropertySchema(
+    schema: Record<string, unknown> | undefined,
+    key: string
+  ): Record<string, unknown> | undefined {
+    if (!schema) return undefined;
+    const props = isRecord(schema.properties)
+      ? (schema.properties as Record<string, unknown>)
+      : undefined;
+    if (props && isRecord(props[key])) {
+      return props[key] as Record<string, unknown>;
+    }
+    const patternProps = isRecord(schema.patternProperties)
+      ? (schema.patternProperties as Record<string, unknown>)
+      : undefined;
+    if (patternProps) {
+      for (const [pattern, subschema] of Object.entries(patternProps)) {
+        if (!isRecord(subschema)) continue;
+        try {
+          const regex = new RegExp(pattern);
+          if (regex.test(key)) {
+            return subschema as Record<string, unknown>;
+          }
+        } catch {
+          continue;
+        }
+      }
+    }
+    if (isRecord(schema.additionalProperties)) {
+      return schema.additionalProperties as Record<string, unknown>;
+    }
+    return undefined;
+  }
+
+  private resolveArrayItemSchema(
+    schema: Record<string, unknown> | undefined,
+    index: number
+  ): Record<string, unknown> | undefined {
+    if (!schema) return undefined;
+    const prefixItems = Array.isArray(schema.prefixItems)
+      ? (schema.prefixItems as unknown[])
+      : undefined;
+    if (prefixItems && index < prefixItems.length) {
+      const entry = prefixItems[index];
+      if (isRecord(entry)) {
+        return entry as Record<string, unknown>;
+      }
+    }
+    if (isRecord(schema.items)) {
+      return schema.items as Record<string, unknown>;
+    }
+    return undefined;
+  }
+
+  private recordExclusivityStringTweak(
+    canonPath: JsonPointer,
+    char: '\u0000' | 'a',
+    exclusivityRand?: number
+  ): void {
+    let effectiveRand = exclusivityRand;
+    if (effectiveRand === undefined) {
+      effectiveRand = this.pendingExclusivityRand.get(canonPath);
+      if (effectiveRand !== undefined) {
+        this.pendingExclusivityRand.delete(canonPath);
+      }
+    }
+    if (typeof effectiveRand === 'number') {
+      this.recordNodeExclusivityRand(canonPath, effectiveRand);
+    }
+    const composeNode = this.diagNodes?.[canonPath];
+    const composeTiebreak = composeNode?.scoreDetails?.tiebreakRand;
+    let scoreDetails: GeneratorDiagnostic['scoreDetails'] | undefined;
+    if (typeof composeTiebreak === 'number') {
+      scoreDetails = { tiebreakRand: composeTiebreak };
+    }
+    if (typeof effectiveRand === 'number') {
+      scoreDetails = scoreDetails
+        ? { ...scoreDetails, exclusivityRand: effectiveRand }
+        : { exclusivityRand: effectiveRand };
+    }
+    this.diagnostics.push({
+      code: DIAGNOSTIC_CODES.EXCLUSIVITY_TWEAK_STRING,
+      phase: DIAGNOSTIC_PHASES.GENERATE,
+      canonPath,
+      details: { char },
+      ...(scoreDetails ? { scoreDetails } : {}),
+    });
+  }
+
+  private buildOneOfBranchPointer(
+    canonPath: JsonPointer,
+    branchIndex: number
+  ): JsonPointer {
+    return appendPointer(
+      appendPointer(canonPath, 'oneOf'),
+      String(branchIndex)
+    );
+  }
+
+  private drawExclusivityRand(canonPath: JsonPointer): number {
+    const rng = new XorShift32(this.baseSeed, canonPath);
+    return rng.nextFloat01();
+  }
+
+  private recordNodeExclusivityRand(
+    canonPath: JsonPointer,
+    value: number
+  ): void {
+    if (!this.diagNodes) return;
+    const node = (this.diagNodes[canonPath] ??= {} as NodeDiagnostics);
+    const details =
+      node.scoreDetails ??
+      (node.scoreDetails = {
+        orderedIndices: [],
+        topScoreIndices: [],
+        topKIndices: [],
+        scoresByIndex: {},
+      });
+    details.exclusivityRand = value;
   }
 
   private generateAnyOf(
@@ -1869,15 +2678,6 @@ class GeneratorEngine {
         tiebreakRand: 0,
       },
     });
-  }
-
-  private computeExclusivityRand(
-    canonPath: JsonPointer,
-    _itemIndex: number
-  ): number {
-    // SPEC §15 RNG — fresh xorshift32 instance per oneOf location (canonPath), no global state
-    const rng = new XorShift32(this.baseSeed, canonPath);
-    return rng.nextFloat01();
   }
 }
 

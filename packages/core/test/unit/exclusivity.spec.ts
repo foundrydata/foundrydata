@@ -29,26 +29,13 @@ describe('§9 oneOf exclusivity diagnostics', () => {
     ],
   };
 
-  function exclusivityRandForSeed(seed: number): number {
+  it('skips exclusivity diagnostics when discriminants already isolate branches', () => {
     const { generate } = runPipelineStages(schema, {
-      generate: { seed, count: 1 },
+      generate: { seed: 2024, count: 1 },
     });
     const diag = generate.diagnostics.find(
       (entry) => entry.code === DIAGNOSTIC_CODES.EXCLUSIVITY_TWEAK_STRING
     );
-    expect(diag).toBeDefined();
-    const rand = diag?.scoreDetails?.exclusivityRand;
-    expect(typeof rand).toBe('number');
-    expect(rand).toBeGreaterThanOrEqual(0);
-    expect(rand).toBeLessThan(1);
-    return rand as number;
-  }
-
-  it('produces a deterministic exclusivityRand per seed and canonPath', () => {
-    const first = exclusivityRandForSeed(1234);
-    const second = exclusivityRandForSeed(1234);
-    expect(second).toBeCloseTo(first, 12);
-    const different = exclusivityRandForSeed(9876);
-    expect(different).not.toBe(first);
+    expect(diag).toBeUndefined();
   });
 });

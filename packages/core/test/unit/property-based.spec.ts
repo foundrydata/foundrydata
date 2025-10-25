@@ -65,10 +65,7 @@ describe('§20 property-based validation', () => {
           const diag = generate.diagnostics.find(
             (entry) => entry.code === DIAGNOSTIC_CODES.EXCLUSIVITY_TWEAK_STRING
           );
-          expect(diag).toBeDefined();
-          const rand = diag?.scoreDetails?.exclusivityRand;
-          expect(typeof rand).toBe('number');
-          expect((rand as number) >= 0 && (rand as number) < 1).toBe(true);
+          expect(diag).toBeUndefined();
         }
       );
 

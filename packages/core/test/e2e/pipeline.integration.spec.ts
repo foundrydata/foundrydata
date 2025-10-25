@@ -234,7 +234,14 @@ describe('Foundry pipeline integration scenarios', () => {
       (entry) => entry.code === DIAGNOSTIC_CODES.EXCLUSIVITY_TWEAK_STRING
     );
     expect(diag).toBeDefined();
-    expect(typeof diag?.scoreDetails?.exclusivityRand).toBe('number');
+    expect(diag?.details).toEqual({ char: '\u0000' });
+    expect(diag?.scoreDetails?.exclusivityRand).toBeUndefined();
+    const payload = gen?.items?.[0] as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      kind: 'alpha',
+      guard: true,
+      payload: `-\u0000`,
+    });
   });
 
   it('ensures oneOf selection yields exclusive validation among branches', async () => {
