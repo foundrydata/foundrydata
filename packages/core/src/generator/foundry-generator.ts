@@ -9,6 +9,7 @@ import {
 } from '../diag/codes.js';
 import type {
   ComposeResult,
+  CoverageEntry,
   NodeDiagnostics,
 } from '../transform/composition-engine.js';
 import type { ContainsNeed } from '../transform/composition-engine.js';
@@ -46,6 +47,7 @@ type EvaluationFamily =
 
 interface EvaluationProof {
   via: EvaluationFamily[];
+  pointer: JsonPointer;
 }
 
 interface EvaluationNode {
@@ -396,14 +398,18 @@ class GeneratorEngine {
       dependencyMap[key] = Array.from(set.values());
     }
 
-    const requiredNames = Array.from(required.values()).sort();
+    const compareUtf16 = (a: string, b: string): number =>
+      a < b ? -1 : a > b ? 1 : 0;
+    const requiredNames = Array.from(required.values()).sort(compareUtf16);
     for (const name of requiredNames) {
-      if (coverage && !coverage.has(name)) {
-        continue;
-      }
       const evaluationProof = eTraceGuard
         ? this.findEvaluationProof(schema, canonPath, result, name)
         : undefined;
+      if (
+        !this.isNameWithinCoverage(name, canonPath, coverage, evaluationProof)
+      ) {
+        continue;
+      }
       if (eTraceGuard && !evaluationProof) {
         continue;
       }
@@ -451,10 +457,14 @@ class GeneratorEngine {
       for (const name of candidates) {
         if (usedNames.size >= minProperties) break;
         if (this.isConditionallyBlocked(canonPath, name)) continue;
-        if (coverage && !coverage.has(name)) continue;
         const evaluationProof = eTraceGuard
           ? this.findEvaluationProof(schema, canonPath, result, name)
           : undefined;
+        if (
+          !this.isNameWithinCoverage(name, canonPath, coverage, evaluationProof)
+        ) {
+          continue;
+        }
         if (eTraceGuard && !evaluationProof) continue;
         const resolved = this.resolveSchemaForKey(
           name,
@@ -486,17 +496,14 @@ class GeneratorEngine {
           const candidate = iterator.next((value) => {
             if (usedNames.has(value)) return false;
             if (this.isConditionallyBlocked(canonPath, value)) return false;
-            if (coverage && !coverage.has(value)) return false;
-            if (eTraceGuard) {
-              const proof = this.findEvaluationProof(
-                schema,
-                canonPath,
-                result,
-                value
-              );
-              if (!proof) return false;
-              evaluationProofForCandidate = proof;
+            const proof = eTraceGuard
+              ? this.findEvaluationProof(schema, canonPath, result, value)
+              : undefined;
+            if (!this.isNameWithinCoverage(value, canonPath, coverage, proof)) {
+              return false;
             }
+            if (eTraceGuard && !proof) return false;
+            evaluationProofForCandidate = proof;
             return true;
           });
           if (!candidate) continue;
@@ -554,10 +561,19 @@ class GeneratorEngine {
           if (usedNames.size >= minProperties) break;
           if (usedNames.has(candidate)) continue;
           if (this.isConditionallyBlocked(canonPath, candidate)) continue;
-          if (coverage && !coverage.has(candidate)) continue;
           const evaluationProof = eTraceGuard
             ? this.findEvaluationProof(schema, canonPath, result, candidate)
             : undefined;
+          if (
+            !this.isNameWithinCoverage(
+              candidate,
+              canonPath,
+              coverage,
+              evaluationProof
+            )
+          ) {
+            continue;
+          }
           if (eTraceGuard && !evaluationProof) {
             continue;
           }
@@ -580,7 +596,19 @@ class GeneratorEngine {
       }
     }
 
-    return result;
+    const orderedResult: Record<string, unknown> = {};
+    for (const name of requiredNames) {
+      if (!Object.prototype.hasOwnProperty.call(result, name)) continue;
+      orderedResult[name] = result[name];
+    }
+    const optionalNames = Object.keys(result)
+      .filter((name) => !required.has(name))
+      .sort(compareUtf16);
+    for (const name of optionalNames) {
+      orderedResult[name] = result[name];
+    }
+
+    return orderedResult;
   }
 
   private findEvaluationProof(
@@ -594,6 +622,7 @@ class GeneratorEngine {
       { schema: objectSchema, pointer: canonPath, via: [] },
       currentObject
     );
+    let fallbackProof: EvaluationProof | undefined;
     while (queue.length > 0) {
       const entry = queue.shift()!;
       const key = `${entry.pointer}|${entry.via.join('>')}`;
@@ -601,7 +630,15 @@ class GeneratorEngine {
       processed.add(key);
       const evaluation = this.schemaEvaluatesName(entry.schema, name);
       if (evaluation) {
-        return { via: [...entry.via, evaluation] };
+        const proof: EvaluationProof = {
+          via: [...entry.via, evaluation],
+          pointer: entry.pointer,
+        };
+        if (evaluation === 'additionalProperties') {
+          if (!fallbackProof) fallbackProof = proof;
+        } else {
+          return proof;
+        }
       }
       const extras = this.collectActiveApplicators(
         entry.schema,
@@ -613,7 +650,17 @@ class GeneratorEngine {
         queue.push(extra);
       }
     }
-    return undefined;
+    return fallbackProof;
+  }
+
+  private isNameWithinCoverage(
+    name: string,
+    _canonPath: JsonPointer,
+    baseCoverage: CoverageEntry | undefined,
+    _evaluationProof?: EvaluationProof
+  ): boolean {
+    if (!baseCoverage) return true;
+    return baseCoverage.has(name);
   }
 
   private schemaEvaluatesName(
@@ -698,13 +745,14 @@ class GeneratorEngine {
     }
 
     if (Array.isArray(schema.oneOf)) {
-      const chosen = this.getChosenOneOfIndex(pointer);
+      const oneOfPointer = appendPointer(pointer, 'oneOf');
+      const chosen = this.getChosenOneOfIndex(oneOfPointer);
       if (chosen !== undefined) {
         const branch = schema.oneOf[chosen];
         if (isRecord(branch)) {
           const branchPointer =
             getPointerFromIndex(this.pointerIndex, branch) ??
-            appendPointer(pointer, `oneOf/${chosen}`);
+            appendPointer(oneOfPointer, String(chosen));
           extras.push({
             schema: branch,
             pointer: branchPointer,
@@ -988,18 +1036,20 @@ class GeneratorEngine {
     eTraceGuard: boolean
   ): void {
     if (!dependencyMap) return;
+    const coverage = this.coverageIndex.get(canonPath);
     for (const [name, requirements] of Object.entries(dependencyMap)) {
       if (!Object.prototype.hasOwnProperty.call(target, name)) continue;
       if (!Array.isArray(requirements)) continue;
       for (const dep of requirements) {
         if (typeof dep !== 'string' || used.has(dep)) continue;
-        const coverage = this.coverageIndex.get(canonPath);
-        if (coverage && !coverage.has(dep)) {
-          continue;
-        }
         const evaluationProof = eTraceGuard
           ? this.findEvaluationProof(objectSchema, canonPath, target, dep)
           : undefined;
+        if (
+          !this.isNameWithinCoverage(dep, canonPath, coverage, evaluationProof)
+        ) {
+          continue;
+        }
         if (eTraceGuard && !evaluationProof) {
           continue;
         }
@@ -1585,11 +1635,15 @@ class GeneratorEngine {
 
     for (const name of requiredNames) {
       if (used.has(name)) continue;
-      if (coverage && !coverage.has(name)) continue;
       if (this.isConditionallyBlocked(canonPath, name)) continue;
       const evaluationProof = eTraceGuard
         ? this.findEvaluationProof(schema, canonPath, target, name)
         : undefined;
+      if (
+        !this.isNameWithinCoverage(name, canonPath, coverage, evaluationProof)
+      ) {
+        continue;
+      }
       if (eTraceGuard && !evaluationProof) continue;
       const resolved = this.resolveSchemaForKey(
         name,
