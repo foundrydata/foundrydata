@@ -501,12 +501,13 @@ class CompositionEngine {
     canonPath: string
   ): void {
     const rawNeeds = collectContainsNeeds(schema);
-    if (rawNeeds.length === 0) {
+    const reducedNeeds = applyContainsSubsumption(rawNeeds);
+    if (reducedNeeds.length === 0) {
       this.containsIndex.delete(canonPath);
       return;
     }
 
-    const evaluated = this.evaluateContainsBag(rawNeeds, schema, canonPath);
+    const evaluated = this.evaluateContainsBag(reducedNeeds, schema, canonPath);
     if (evaluated.length === 0) {
       this.containsIndex.delete(canonPath);
       return;
@@ -1980,6 +1981,45 @@ function collectContainsNeeds(schema: Record<string, unknown>): ContainsNeed[] {
     }
   }
   return needs;
+}
+
+function applyContainsSubsumption(needs: ContainsNeed[]): ContainsNeed[] {
+  if (needs.length <= 1) {
+    return needs;
+  }
+
+  const keep = needs.map(() => true);
+  for (let i = 0; i < needs.length; i += 1) {
+    if (!keep[i]) continue;
+    const narrow = needs[i]!;
+    for (let j = 0; j < needs.length; j += 1) {
+      if (i === j || !keep[j]) continue;
+      const broad = needs[j]!;
+      if (canSubsumeNeed(narrow, broad)) {
+        keep[j] = false;
+      }
+    }
+  }
+  return needs.filter((_, index) => keep[index]);
+}
+
+function canSubsumeNeed(narrow: ContainsNeed, broad: ContainsNeed): boolean {
+  if (broad.max !== undefined) {
+    return false;
+  }
+  if (narrow.max !== undefined) {
+    return false;
+  }
+  const narrowMin =
+    typeof narrow.min === 'number' && Number.isFinite(narrow.min)
+      ? narrow.min
+      : 1;
+  const broadMin =
+    typeof broad.min === 'number' && Number.isFinite(broad.min) ? broad.min : 1;
+  if (narrowMin <= broadMin) {
+    return false;
+  }
+  return isSchemaSubset(narrow.schema, broad.schema);
 }
 
 function makeContainsNeed(

@@ -5,10 +5,13 @@
 /* eslint-disable max-lines-per-function */
 import { DIAGNOSTIC_CODES } from '../diag/codes.js';
 import type { DiagnosticCode } from '../diag/codes.js';
+import { scanRegexSource } from '../util/pattern-literals.js';
 
 type CanonNode = CanonObjectNode | CanonArrayNode | CanonValueNode;
 
 type ObjectEntries = Array<CanonObjectEntry>;
+
+type EntrySlot = { key: string; node: CanonNode };
 
 const CONDITIONAL_BLOCKING_KEYWORDS = new Set([
   'unevaluatedProperties',
@@ -567,6 +570,237 @@ class SchemaNormalizer {
     );
   }
 
+  private tryPatternPropertyNamesRewrite(
+    entrySlots: EntrySlot[],
+    propertyNamesSlotIndex: number,
+    patternPropertiesNodeIndex: number,
+    additionalPropertiesIndex: number,
+    propertyNamesPointer: string,
+    objectPointer: string,
+    propertiesNode: CanonNode | undefined,
+    requiredNode: CanonNode | undefined,
+    nodeOrigin: string
+  ): CanonNode | null {
+    const propertyNamesSlot = entrySlots[propertyNamesSlotIndex]!;
+    if (propertyNamesSlot.node.kind !== 'object') {
+      return null;
+    }
+    const propertyNamesNode = propertyNamesSlot.node;
+    const patternIndex = this.findEntryIndex(propertyNamesNode, 'pattern');
+    if (patternIndex === -1) {
+      return null;
+    }
+
+    const patternEntry = propertyNamesNode.entries[patternIndex];
+    const patternNode = patternEntry?.node;
+    if (!patternNode || patternNode.kind !== 'value') {
+      this.recordPnamesComplex(objectPointer, 'PATTERN_NOT_STRING');
+      return null;
+    }
+
+    const patternValue = patternNode.value;
+    if (typeof patternValue !== 'string') {
+      this.recordPnamesComplex(objectPointer, 'PATTERN_NOT_STRING');
+      return null;
+    }
+
+    const patternSource = patternValue;
+    const scan = scanRegexSource(patternSource);
+    if (
+      !scan.anchoredStart ||
+      !scan.anchoredEnd ||
+      scan.hasBackReference ||
+      scan.hasLookAround
+    ) {
+      this.recordPnamesComplex(objectPointer, 'PATTERN_NOT_ANCHORED');
+      return null;
+    }
+
+    if (scan.complexityCapped) {
+      this.recordPnamesComplex(objectPointer, 'REGEX_COMPLEXITY_CAPPED');
+      this.addNote(objectPointer, DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED, {
+        context: 'rewrite',
+        patternSource,
+      });
+      return null;
+    }
+
+    let compiled: RegExp;
+    try {
+      compiled = new RegExp(patternSource, 'u');
+    } catch {
+      this.recordPnamesComplex(objectPointer, 'REGEX_COMPILE_ERROR');
+      this.addNote(objectPointer, DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR, {
+        context: 'rewrite',
+        patternSource,
+      });
+      return null;
+    }
+
+    const missing = new Set<string>();
+    const propertyKeys = propertiesNode
+      ? this.getObjectKeys(propertiesNode)
+      : [];
+    if (propertyKeys) {
+      for (const key of propertyKeys) {
+        if (!this.regexMatches(compiled, key)) {
+          missing.add(key);
+        }
+      }
+    }
+    if (requiredNode) {
+      const requiredKeys = this.getStringArray(requiredNode);
+      if (!requiredKeys) {
+        this.recordPnamesComplex(objectPointer, 'REQUIRED_KEYS_NOT_COVERED');
+        return null;
+      }
+      for (const key of requiredKeys) {
+        if (!this.regexMatches(compiled, key)) {
+          missing.add(key);
+        }
+      }
+    }
+
+    if (missing.size > 0) {
+      this.recordPnamesComplex(
+        objectPointer,
+        'REQUIRED_KEYS_NOT_COVERED',
+        Array.from(missing)
+      );
+      return null;
+    }
+
+    if (patternPropertiesNodeIndex !== -1) {
+      this.recordPnamesComplex(objectPointer, 'PATTERN_PROPERTIES_PRESENT');
+      return null;
+    }
+
+    if (
+      !this.isAdditionalPropertiesSafeForRewrite(
+        entrySlots,
+        additionalPropertiesIndex
+      )
+    ) {
+      this.recordPnamesComplex(objectPointer, 'ADDITIONAL_PROPERTIES_SCHEMA');
+      return null;
+    }
+
+    return this.applySyntheticPropertyNamesPattern(
+      entrySlots,
+      propertyNamesSlotIndex,
+      patternPropertiesNodeIndex,
+      additionalPropertiesIndex,
+      propertyNamesPointer,
+      objectPointer,
+      nodeOrigin,
+      patternSource,
+      'pattern'
+    );
+  }
+
+  private applySyntheticPropertyNamesPattern(
+    entrySlots: EntrySlot[],
+    propertyNamesSlotIndex: number,
+    patternPropertiesNodeIndex: number,
+    additionalPropertiesIndex: number,
+    propertyNamesPointer: string,
+    objectPointer: string,
+    origin: string,
+    patternSource: string,
+    kind: 'enum' | 'pattern'
+  ): CanonNode {
+    const syntheticOrigin = propertyNamesPointer;
+    const syntheticPatternEntry: CanonObjectEntry = {
+      key: patternSource,
+      node: createObjectNode([], syntheticOrigin),
+    };
+
+    if (patternPropertiesNodeIndex !== -1) {
+      const existingPatternSlot = entrySlots[patternPropertiesNodeIndex];
+      if (existingPatternSlot && isObjectNode(existingPatternSlot.node)) {
+        const mergedEntries = existingPatternSlot.node.entries.concat(
+          syntheticPatternEntry
+        );
+        entrySlots[patternPropertiesNodeIndex] = {
+          key: 'patternProperties',
+          node: createObjectNode(
+            mergedEntries,
+            existingPatternSlot.node.origin
+          ),
+        };
+      }
+    } else {
+      const patternPropertiesObject = createObjectNode(
+        [syntheticPatternEntry],
+        syntheticOrigin
+      );
+      const insertionIndex = propertyNamesSlotIndex + 1;
+      entrySlots.splice(insertionIndex, 0, {
+        key: 'patternProperties',
+        node: patternPropertiesObject,
+      });
+      if (
+        additionalPropertiesIndex !== -1 &&
+        additionalPropertiesIndex >= insertionIndex
+      ) {
+        additionalPropertiesIndex += 1;
+      }
+    }
+
+    const additionalNode = createValueNode(false, syntheticOrigin);
+    if (additionalPropertiesIndex !== -1) {
+      entrySlots[additionalPropertiesIndex] = {
+        key: 'additionalProperties',
+        node: additionalNode,
+      };
+    } else {
+      entrySlots.splice(propertyNamesSlotIndex + 2, 0, {
+        key: 'additionalProperties',
+        node: additionalNode,
+      });
+    }
+
+    this.addNote(objectPointer, DIAGNOSTIC_CODES.PNAMES_REWRITE_APPLIED, {
+      kind,
+      source: patternSource,
+    });
+
+    return this.buildObjectFromSlots(entrySlots, origin);
+  }
+
+  private buildObjectFromSlots(
+    entrySlots: EntrySlot[],
+    origin: string
+  ): CanonNode {
+    return createObjectNode(
+      entrySlots.map((slot) => ({
+        key: slot.key,
+        node: slot.node,
+      })),
+      origin
+    );
+  }
+
+  private isAdditionalPropertiesSafeForRewrite(
+    entrySlots: EntrySlot[],
+    additionalPropertiesIndex: number
+  ): boolean {
+    if (additionalPropertiesIndex === -1) {
+      return true;
+    }
+    const additionalSlot = entrySlots[additionalPropertiesIndex]!;
+    const additionalNode = additionalSlot?.node;
+    return (
+      (isValueNode(additionalNode) && additionalNode.value === true) ||
+      (isObjectNode(additionalNode) && additionalNode.entries.length === 0)
+    );
+  }
+
+  private regexMatches(regexp: RegExp, candidate: string): boolean {
+    regexp.lastIndex = 0;
+    return regexp.test(candidate);
+  }
+
   private applyDependencyGuards(
     node: CanonNode,
     pointer: string,
@@ -768,7 +1002,6 @@ class SchemaNormalizer {
     const guardFlags = this.gatherGuardFlags(node);
     const mergedCtx = this.mergeGuardContext(ctx, guardFlags);
 
-    type EntrySlot = { key: string; node: CanonNode };
     const entrySlots: EntrySlot[] = [];
 
     let propertyNamesSlotIndex = -1;
@@ -800,25 +1033,16 @@ class SchemaNormalizer {
       }
     }
 
+    const rebuildObject = (): CanonNode =>
+      this.buildObjectFromSlots(entrySlots, node.origin);
+
     if (propertyNamesSlotIndex === -1) {
-      return createObjectNode(
-        entrySlots.map((slot) => ({
-          key: slot.key,
-          node: slot.node,
-        })),
-        node.origin
-      );
+      return rebuildObject();
     }
 
     const propertyNamesSlot = entrySlots[propertyNamesSlotIndex]!;
     if (propertyNamesSlot.node.kind !== 'object') {
-      return createObjectNode(
-        entrySlots.map((slot) => ({
-          key: slot.key,
-          node: slot.node,
-        })),
-        node.origin
-      );
+      return rebuildObject();
     }
 
     const propertyNamesPointer = buildPropertyPointer(pointer, 'propertyNames');
@@ -826,224 +1050,135 @@ class SchemaNormalizer {
 
     if (this.isGuardActive(mergedCtx)) {
       this.recordPnamesComplex(objectPointer, 'UNEVALUATED_IN_SCOPE');
-      return createObjectNode(
-        entrySlots.map((slot) => ({
-          key: slot.key,
-          node: slot.node,
-        })),
-        node.origin
-      );
+      return rebuildObject();
     }
 
     const enumIndex = this.findEntryIndex(propertyNamesSlot.node, 'enum');
-    if (enumIndex === -1) {
-      return createObjectNode(
-        entrySlots.map((slot) => ({
-          key: slot.key,
-          node: slot.node,
-        })),
-        node.origin
-      );
-    }
+    const patternIndex = this.findEntryIndex(propertyNamesSlot.node, 'pattern');
 
-    const enumEntry = propertyNamesSlot.node.entries[enumIndex];
-    const enumNode = enumEntry?.node;
-    if (!enumNode || enumNode.kind !== 'array') {
-      this.recordPnamesComplex(objectPointer, 'NON_STRING_ENUM_MEMBER');
-      return createObjectNode(
-        entrySlots.map((slot) => ({
-          key: slot.key,
-          node: slot.node,
-        })),
-        node.origin
-      );
-    }
-
-    const enumValues = this.getStringArray(enumNode);
-    if (!enumValues || enumValues.length === 0) {
-      this.recordPnamesComplex(objectPointer, 'NON_STRING_ENUM_MEMBER');
-      return createObjectNode(
-        entrySlots.map((slot) => ({
-          key: slot.key,
-          node: slot.node,
-        })),
-        node.origin
-      );
-    }
-
-    const dedupOrdered: string[] = [];
-    const seen = new Set<string>();
-    for (const value of enumValues) {
-      if (!seen.has(value)) {
-        seen.add(value);
-        dedupOrdered.push(value);
+    if (enumIndex !== -1) {
+      const enumEntry = propertyNamesSlot.node.entries[enumIndex];
+      const enumNode = enumEntry?.node;
+      if (!enumNode || enumNode.kind !== 'array') {
+        this.recordPnamesComplex(objectPointer, 'NON_STRING_ENUM_MEMBER');
+        return rebuildObject();
       }
-    }
-    const sortedValues = dedupOrdered
-      .slice()
-      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-    const enumSet = new Set(sortedValues);
 
-    const missing = new Set<string>();
-    const propertyKeys = propertiesNode
-      ? this.getObjectKeys(propertiesNode)
-      : [];
-    if (propertyKeys) {
-      for (const key of propertyKeys) {
-        if (!enumSet.has(key)) {
-          missing.add(key);
+      const enumValues = this.getStringArray(enumNode);
+      if (!enumValues || enumValues.length === 0) {
+        this.recordPnamesComplex(objectPointer, 'NON_STRING_ENUM_MEMBER');
+        return rebuildObject();
+      }
+
+      const dedupOrdered: string[] = [];
+      const seen = new Set<string>();
+      for (const value of enumValues) {
+        if (!seen.has(value)) {
+          seen.add(value);
+          dedupOrdered.push(value);
         }
       }
-    }
-    if (requiredNode) {
-      const requiredKeys = this.getStringArray(requiredNode);
-      if (!requiredKeys) {
-        this.recordPnamesComplex(objectPointer, 'REQUIRED_KEYS_NOT_COVERED');
-        return createObjectNode(
-          entrySlots.map((slot) => ({
-            key: slot.key,
-            node: slot.node,
-          })),
-          node.origin
-        );
-      }
-      for (const key of requiredKeys) {
-        if (!enumSet.has(key)) {
-          missing.add(key);
+      const sortedValues = dedupOrdered
+        .slice()
+        .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+      const enumSet = new Set(sortedValues);
+
+      const missing = new Set<string>();
+      const propertyKeys = propertiesNode
+        ? this.getObjectKeys(propertiesNode)
+        : [];
+      if (propertyKeys) {
+        for (const key of propertyKeys) {
+          if (!enumSet.has(key)) {
+            missing.add(key);
+          }
         }
       }
-    }
-
-    if (missing.size > 0) {
-      this.recordPnamesComplex(
-        objectPointer,
-        'REQUIRED_KEYS_NOT_COVERED',
-        Array.from(missing)
-      );
-      return createObjectNode(
-        entrySlots.map((slot) => ({
-          key: slot.key,
-          node: slot.node,
-        })),
-        node.origin
-      );
-    }
-
-    if (patternPropertiesNodeIndex !== -1) {
-      const patternSlot = entrySlots[patternPropertiesNodeIndex]!;
-      const patternNode = patternSlot?.node;
-      if (!isObjectNode(patternNode) || patternNode.entries.length > 0) {
-        this.recordPnamesComplex(objectPointer, 'PATTERN_PROPERTIES_PRESENT');
-        return createObjectNode(
-          entrySlots.map((slot) => ({
-            key: slot.key,
-            node: slot.node,
-          })),
-          node.origin
-        );
+      if (requiredNode) {
+        const requiredKeys = this.getStringArray(requiredNode);
+        if (!requiredKeys) {
+          this.recordPnamesComplex(objectPointer, 'REQUIRED_KEYS_NOT_COVERED');
+          return rebuildObject();
+        }
+        for (const key of requiredKeys) {
+          if (!enumSet.has(key)) {
+            missing.add(key);
+          }
+        }
       }
-    }
 
-    if (additionalPropertiesIndex !== -1) {
-      const additionalSlot = entrySlots[additionalPropertiesIndex]!;
-      const additionalNode = additionalSlot?.node;
+      if (missing.size > 0) {
+        this.recordPnamesComplex(
+          objectPointer,
+          'REQUIRED_KEYS_NOT_COVERED',
+          Array.from(missing)
+        );
+        return rebuildObject();
+      }
+
+      if (patternPropertiesNodeIndex !== -1) {
+        const patternSlot = entrySlots[patternPropertiesNodeIndex]!;
+        const patternNode = patternSlot?.node;
+        if (!isObjectNode(patternNode) || patternNode.entries.length > 0) {
+          this.recordPnamesComplex(objectPointer, 'PATTERN_PROPERTIES_PRESENT');
+          return rebuildObject();
+        }
+      }
+
       if (
-        !(isValueNode(additionalNode) && additionalNode.value === true) &&
-        !(isObjectNode(additionalNode) && additionalNode.entries.length === 0)
+        !this.isAdditionalPropertiesSafeForRewrite(
+          entrySlots,
+          additionalPropertiesIndex
+        )
       ) {
         this.recordPnamesComplex(objectPointer, 'ADDITIONAL_PROPERTIES_SCHEMA');
-        return createObjectNode(
-          entrySlots.map((slot) => ({
-            key: slot.key,
-            node: slot.node,
-          })),
-          node.origin
-        );
+        return rebuildObject();
       }
+
+      const patternSource = `^(?:${sortedValues
+        .map((value) => escapeRegexLiteral(value))
+        .join('|')})$`;
+
+      if (isRegexComplexityCapped(patternSource)) {
+        this.recordPnamesComplex(objectPointer, 'REGEX_COMPLEXITY_CAPPED');
+        this.addNote(objectPointer, DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED, {
+          context: 'rewrite',
+          patternSource,
+        });
+        return rebuildObject();
+      }
+
+      return this.applySyntheticPropertyNamesPattern(
+        entrySlots,
+        propertyNamesSlotIndex,
+        patternPropertiesNodeIndex,
+        additionalPropertiesIndex,
+        propertyNamesPointer,
+        objectPointer,
+        node.origin,
+        patternSource,
+        'enum'
+      );
     }
 
-    const patternSource = `^(?:${sortedValues
-      .map((value) => escapeRegexLiteral(value))
-      .join('|')})$`;
-
-    if (isRegexComplexityCapped(patternSource)) {
-      this.recordPnamesComplex(objectPointer, 'REGEX_COMPLEXITY_CAPPED');
-      this.addNote(objectPointer, DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED, {
-        context: 'rewrite',
-        patternSource,
-      });
-      return createObjectNode(
-        entrySlots.map((slot) => ({
-          key: slot.key,
-          node: slot.node,
-        })),
+    if (patternIndex !== -1) {
+      const rewritten = this.tryPatternPropertyNamesRewrite(
+        entrySlots,
+        propertyNamesSlotIndex,
+        patternPropertiesNodeIndex,
+        additionalPropertiesIndex,
+        propertyNamesPointer,
+        objectPointer,
+        propertiesNode,
+        requiredNode,
         node.origin
       );
-    }
-
-    const syntheticOrigin = propertyNamesPointer;
-    const syntheticPatternEntry: CanonObjectEntry = {
-      key: patternSource,
-      node: createObjectNode([], syntheticOrigin),
-    };
-
-    if (patternPropertiesNodeIndex !== -1) {
-      const existingPatternSlot = entrySlots[patternPropertiesNodeIndex];
-      if (existingPatternSlot && isObjectNode(existingPatternSlot.node)) {
-        const mergedEntries = existingPatternSlot.node.entries.concat(
-          syntheticPatternEntry
-        );
-        entrySlots[patternPropertiesNodeIndex] = {
-          key: 'patternProperties',
-          node: createObjectNode(
-            mergedEntries,
-            existingPatternSlot.node.origin
-          ),
-        };
-      }
-    } else {
-      const patternPropertiesObject = createObjectNode(
-        [syntheticPatternEntry],
-        syntheticOrigin
-      );
-      const insertionIndex = propertyNamesSlotIndex + 1;
-      entrySlots.splice(insertionIndex, 0, {
-        key: 'patternProperties',
-        node: patternPropertiesObject,
-      });
-      if (
-        additionalPropertiesIndex !== -1 &&
-        additionalPropertiesIndex >= insertionIndex
-      ) {
-        additionalPropertiesIndex += 1;
+      if (rewritten) {
+        return rewritten;
       }
     }
 
-    const additionalNode = createValueNode(false, syntheticOrigin);
-    if (additionalPropertiesIndex !== -1) {
-      entrySlots[additionalPropertiesIndex] = {
-        key: 'additionalProperties',
-        node: additionalNode,
-      };
-    } else {
-      entrySlots.splice(propertyNamesSlotIndex + 2, 0, {
-        key: 'additionalProperties',
-        node: additionalNode,
-      });
-    }
-
-    this.addNote(objectPointer, DIAGNOSTIC_CODES.PNAMES_REWRITE_APPLIED, {
-      kind: 'enum',
-      source: patternSource,
-    });
-
-    return createObjectNode(
-      entrySlots.map((slot) => ({
-        key: slot.key,
-        node: slot.node,
-      })),
-      node.origin
-    );
+    return rebuildObject();
   }
 
   private annotateDynamicPresence(node: CanonNode, pointer: string): void {

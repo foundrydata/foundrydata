@@ -548,6 +548,36 @@ describe('CompositionEngine contains bag', () => {
       maxItems: 1,
     });
   });
+
+  it('subsumes redundant superset contains needs collected via allOf', () => {
+    const schema = {
+      type: 'array',
+      allOf: [
+        { contains: { type: 'integer' }, minContains: 2 },
+        { contains: { type: 'number' }, minContains: 1 },
+      ],
+    };
+
+    const result = compose(makeInput(schema));
+    const bag = result.containsBag.get('');
+    expect(bag).toHaveLength(1);
+    expect((bag?.[0]?.schema as Record<string, unknown>).type).toBe('integer');
+    expect(bag?.[0]?.min).toBe(2);
+  });
+
+  it('retains needs that enforce maxContains constraints during subsumption', () => {
+    const schema = {
+      type: 'array',
+      allOf: [
+        { contains: { const: 'flag' }, minContains: 1 },
+        { contains: { type: 'string' }, maxContains: 0 },
+      ],
+    };
+
+    const result = compose(makeInput(schema));
+    const bag = result.containsBag.get('');
+    expect(bag).toHaveLength(2);
+  });
 });
 
 describe('CompositionEngine branch selection', () => {
@@ -624,6 +654,20 @@ describe('CompositionEngine branch selection', () => {
     expect(scores).toBeDefined();
     expect(scores?.['2']).toBe(5);
     expect(branch?.scoreDetails.orderedIndices).toEqual([0, 1, 2]);
+  });
+
+  it('enumerates literal candidates for anchored single-character classes', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      patternProperties: {
+        '^[abc]$': {},
+      },
+    };
+
+    const result = compose(makeInput(schema));
+    const coverage = result.coverageIndex.get('');
+    expect(coverage?.enumerate?.()).toEqual(['a', 'b', 'c']);
   });
 
   it('awards anchored disjoint patternProperties bonus', () => {

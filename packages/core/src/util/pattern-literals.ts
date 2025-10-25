@@ -6,9 +6,20 @@
  * pattern forms such as ^(?:foo|bar)$.
  */
 
+const MAX_CHAR_CLASS_ENUM = 32;
+const MAX_CHAR_CLASS_RANGE = 32;
+
 export function extractExactLiteralAlternatives(
   source: string
 ): string[] | undefined {
+  const literalAlternatives = extractLiteralAlternatives(source);
+  if (literalAlternatives) {
+    return literalAlternatives;
+  }
+  return extractCharClassAlternatives(source);
+}
+
+function extractLiteralAlternatives(source: string): string[] | undefined {
   if (!source.startsWith('^') || !source.endsWith('$')) {
     return undefined;
   }
@@ -29,6 +40,41 @@ export function extractExactLiteralAlternatives(
 
   const literal = decodeLiteral(body);
   return literal === undefined ? undefined : [literal];
+}
+
+function extractCharClassAlternatives(source: string): string[] | undefined {
+  if (!source.startsWith('^') || !source.endsWith('$')) {
+    return undefined;
+  }
+
+  let body = source.slice(1, -1);
+  if (body.startsWith('(?:') && body.endsWith(')')) {
+    body = body.slice(3, -1);
+  }
+
+  const parts = splitAlternativesAllowingCharClasses(body);
+  if (!parts) return undefined;
+
+  const results: string[] = [];
+  for (const part of parts) {
+    if (!part) return undefined;
+    const expanded = expandCharExpression(part);
+    if (!expanded) return undefined;
+    for (const literal of expanded) {
+      results.push(literal);
+      if (results.length > MAX_CHAR_CLASS_ENUM) {
+        return undefined;
+      }
+    }
+  }
+
+  if (results.length === 0) {
+    return undefined;
+  }
+
+  const unique = Array.from(new Set(results));
+  unique.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  return unique;
 }
 
 function splitAlternatives(pattern: string): string[] | undefined {
@@ -83,6 +129,125 @@ function decodeLiteral(pattern: string): string | undefined {
     result += ch;
   }
   return result;
+}
+
+function splitAlternativesAllowingCharClasses(
+  pattern: string
+): string[] | undefined {
+  const parts: string[] = [];
+  let current = '';
+  let escaping = false;
+  let inClass = false;
+
+  for (let i = 0; i < pattern.length; i += 1) {
+    const ch = pattern.charAt(i);
+    if (escaping) {
+      current += `\\${ch}`;
+      escaping = false;
+      continue;
+    }
+
+    if (ch === '\\') {
+      escaping = true;
+      continue;
+    }
+
+    if (ch === '[' && !inClass) {
+      inClass = true;
+      current += ch;
+      continue;
+    }
+
+    if (ch === ']' && inClass) {
+      inClass = false;
+      current += ch;
+      continue;
+    }
+
+    if (ch === '|' && !inClass) {
+      parts.push(current);
+      current = '';
+      continue;
+    }
+
+    if (!inClass && '(){}'.includes(ch)) {
+      return undefined;
+    }
+
+    current += ch;
+  }
+
+  if (escaping || inClass) return undefined;
+  parts.push(current);
+  return parts;
+}
+
+function expandCharExpression(expression: string): string[] | undefined {
+  if (!expression) return undefined;
+  if (expression.startsWith('[') && expression.endsWith(']')) {
+    return expandCharClass(expression);
+  }
+  const literal = decodeLiteral(expression);
+  return literal === undefined ? undefined : [literal];
+}
+
+function expandCharClass(expression: string): string[] | undefined {
+  if (expression.length < 3) return undefined;
+  if (expression[1] === '^') return undefined;
+
+  const results: string[] = [];
+  let i = 1;
+
+  while (i < expression.length - 1) {
+    const ch = expression.charAt(i);
+    if (ch === '\\') {
+      i += 1;
+      if (i >= expression.length - 1) return undefined;
+      results.push(expression.charAt(i));
+      i += 1;
+      continue;
+    }
+
+    if (
+      i + 2 < expression.length - 1 &&
+      expression.charAt(i + 1) === '-' &&
+      expression.charAt(i + 2) !== ']'
+    ) {
+      const startCode = expression.codePointAt(i);
+      const endCode = expression.codePointAt(i + 2);
+      if (
+        startCode === undefined ||
+        endCode === undefined ||
+        startCode > endCode ||
+        startCode > 0xffff ||
+        endCode > 0xffff
+      ) {
+        return undefined;
+      }
+      const span = endCode - startCode + 1;
+      if (span > MAX_CHAR_CLASS_RANGE) {
+        return undefined;
+      }
+      for (let code = startCode; code <= endCode; code += 1) {
+        results.push(String.fromCodePoint(code));
+      }
+      i += 3;
+      continue;
+    }
+
+    if (ch === ']') {
+      return undefined;
+    }
+
+    results.push(ch);
+    i += 1;
+  }
+
+  if (results.length === 0 || results.length > MAX_CHAR_CLASS_ENUM) {
+    return undefined;
+  }
+
+  return results;
 }
 
 export interface RegexScanResult {
