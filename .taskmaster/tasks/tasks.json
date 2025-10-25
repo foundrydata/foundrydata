@@ -1999,7 +1999,7 @@
           "9123",
           "9122"
         ],
-        "status": "in-progress",
+        "status": "done",
         "complexityScore": 3,
         "details": "[Context] §23 interfaces; §22 deliverables.\n- spec://§23#compose-interfaces, spec://§23#repair-interfaces\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§23\",\"anchors\":[\"spec://§23#compose-interfaces\",\"spec://§23#repair-interfaces\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- API mirrors minimal interfaces; do not expose internal caches.\n[Deliverables]\n- packages/core/src/index.ts (exports)\n- type declarations\n[Commands]\n- pnpm -w build\n[Definition of Done]\n- Type tests compile; API docs reflect interface anchors.",
         "testStrategy": "TS compile tests; simple programmatic examples.",
@@ -2013,7 +2013,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-10-25T21:34:48.969Z"
+        "updatedAt": "2025-10-25T22:01:01.164Z"
       },
       {
         "id": "22",
@@ -2058,7 +2058,7 @@
           "9116",
           "9108"
         ],
-        "status": "pending",
+        "status": "done",
         "complexityScore": 2,
         "details": "[Context] §16 Phase P2; §7 propertyNames pattern-form; §8 pattern approximations.\n- spec://§16#phase-p2, spec://§7#object-keywords-pnames-rewrite\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§16\",\"anchors\":[\"spec://§16#phase-p2\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Implement anchored-safe pattern-form rewrite with all guards; keep phase separation diagnostics.\n[Deliverables]\n- Extend schema-normalizer.ts and composition-engine.ts\n[Commands]\n- pnpm -w build; pnpm -w test\n[Definition of Done]\n- New rewrite gated by unevaluated*, complexity cap, and anchored-safe rules; tests added.",
         "testStrategy": "Unit: acceptance/refusal for pattern-form; integration: must-cover finite enumeration updated when PNAMES_REWRITE_APPLIED present.",
@@ -2071,7 +2071,8 @@
             "file": "packages/core/src/transform/schema-normalizer.ts",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2025-10-25T22:43:32.556Z"
       },
       {
         "id": "24",
@@ -2103,9 +2104,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-25T21:34:48.970Z",
+      "lastModified": "2025-10-25T22:43:32.557Z",
       "taskCount": 52,
-      "completedCount": 48,
+      "completedCount": 50,
       "tags": [
         "feature-simplification"
       ]

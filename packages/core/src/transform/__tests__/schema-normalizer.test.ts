@@ -448,6 +448,73 @@ describe('SchemaNormalizer – propertyNames rewrite', () => {
     expect(set.has('/additionalProperties')).toBe(true);
   });
 
+  it('adds synthetic entries for anchored propertyNames.pattern rewrites', () => {
+    const schema = {
+      type: 'object',
+      properties: { foo: {}, bar: {} },
+      required: ['foo'],
+      propertyNames: { pattern: '^(?:foo|bar)$' },
+    };
+
+    const result = normalize(schema);
+    expect(result.schema).toEqual({
+      type: 'object',
+      properties: { foo: {}, bar: {} },
+      required: ['foo'],
+      propertyNames: { pattern: '^(?:foo|bar)$' },
+      patternProperties: {
+        '^(?:foo|bar)$': {},
+      },
+      additionalProperties: false,
+    });
+    const note = findNote(result, DIAGNOSTIC_CODES.PNAMES_REWRITE_APPLIED);
+    expect(note).toBeDefined();
+    expect(note?.details).toEqual({
+      kind: 'pattern',
+      source: '^(?:foo|bar)$',
+    });
+  });
+
+  it('refuses pattern rewrite when regex is not anchored-safe', () => {
+    const schema = {
+      type: 'object',
+      propertyNames: { pattern: '^foo' },
+    };
+
+    const result = normalize(schema);
+    expect(result.schema).toEqual(schema);
+    const note = findNote(result, DIAGNOSTIC_CODES.PNAMES_COMPLEX);
+    expect(note?.details).toEqual({ reason: 'PATTERN_NOT_ANCHORED' });
+  });
+
+  it('refuses pattern rewrite when patternProperties already exist', () => {
+    const schema = {
+      propertyNames: { pattern: '^[ab]$' },
+      patternProperties: { '^x$': {} },
+    };
+
+    const result = normalize(schema);
+    expect(result.schema).toEqual(schema);
+    const note = findNote(result, DIAGNOSTIC_CODES.PNAMES_COMPLEX);
+    expect(note?.details).toEqual({ reason: 'PATTERN_PROPERTIES_PRESENT' });
+  });
+
+  it('emits compile diagnostics when propertyNames.pattern fails to compile', () => {
+    const schema = {
+      propertyNames: { pattern: '^(foo$' },
+    };
+
+    const result = normalize(schema);
+    expect(result.schema).toEqual(schema);
+    const complex = findNote(result, DIAGNOSTIC_CODES.PNAMES_COMPLEX);
+    expect(complex?.details).toEqual({ reason: 'REGEX_COMPILE_ERROR' });
+    const regex = findNote(result, DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR);
+    expect(regex?.details).toEqual({
+      context: 'rewrite',
+      patternSource: '^(foo$',
+    });
+  });
+
   it('emits PNAMES_COMPLEX when required contains non-string entries', () => {
     const schema = {
       propertyNames: { enum: ['a', 'b'] },
