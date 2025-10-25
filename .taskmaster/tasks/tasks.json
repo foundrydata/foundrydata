@@ -2087,7 +2087,7 @@
           "9124",
           "9117"
         ],
-        "status": "pending",
+        "status": "done",
         "complexityScore": 2,
         "details": "[Context] §24 references (SemVer); §17 docs.\n- spec://§24#normative\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§24\",\"anchors\":[\"spec://§24#normative\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Changelog and release scripts; version tags; license headers.\n[Deliverables]\n- package.json versioning scripts; docs/CHANGELOG.md\n[Commands]\n- pnpm version <x.y.z>\n[Definition of Done]\n- Release artifact builds; changelog updated; tagged commit.",
         "testStrategy": "Dry-run publish; verify files included.",
@@ -2095,19 +2095,21 @@
           {
             "id": 24001,
             "title": "Prepare release artifacts and changelog",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 8,
             "file": "docs/CHANGELOG.md",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-10-25T23:13:38.405Z"
           }
-        ]
+        ],
+        "updatedAt": "2025-10-25T23:33:28.505Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-25T23:00:27.801Z",
+      "lastModified": "2025-10-25T23:33:28.506Z",
       "taskCount": 52,
-      "completedCount": 51,
+      "completedCount": 52,
       "tags": [
         "feature-simplification"
       ]

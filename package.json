@@ -26,7 +26,9 @@
     "prepare": "husky",
     "bench": "tsx scripts/bench.ts",
     "task-ready": "npm run lint && npm run typecheck && npm run build && npm run test",
-    "task-complete": "npm run task-ready && echo '✅ Task validation passed - ready to mark as complete'"
+    "task-complete": "npm run task-ready && echo '✅ Task validation passed - ready to mark as complete'",
+    "release": "tsx packages/shared/src/release/cli.ts",
+    "release:dry-run": "npm run release -- --dry-run"
   },
   "repository": {
     "type": "git",
@@ -64,6 +66,7 @@
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@types/node": "^20.0.0",
+    "@types/semver": "^7.7.1",
     "@typescript-eslint/eslint-plugin": "^8.40.0",
     "@typescript-eslint/parser": "^8.40.0",
     "@vitest/coverage-v8": "^3.2.4",
@@ -77,6 +80,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.1.5",
     "prettier": "^3.6.2",
+    "semver": "^7.7.3",
     "tslib": "^2.8.1",
     "tsx": "^4.20.6",
     "typescript": "^5.9.2",
