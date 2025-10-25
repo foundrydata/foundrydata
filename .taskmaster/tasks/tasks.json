@@ -1886,7 +1886,7 @@
         "id": "19",
         "title": "Documentation",
         "description": "Author Invariants, Known-Limits, and Features docs; update README and error catalog.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "4",
           "7",
@@ -1956,7 +1956,8 @@
             "testStrategy": "Validate README accuracy against actual package structure and API signatures.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2025-10-25T23:00:27.800Z"
       },
       {
         "id": "20",
@@ -2104,9 +2105,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-25T22:43:32.557Z",
+      "lastModified": "2025-10-25T23:00:27.801Z",
       "taskCount": 52,
-      "completedCount": 50,
+      "completedCount": 51,
       "tags": [
         "feature-simplification"
       ]

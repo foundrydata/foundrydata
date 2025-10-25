@@ -1,15 +1,21 @@
 # FoundryData — Docs Index
 
-This page is an index of the project documentation. It links to authoritative documents without duplicating content already covered in the repository README.
+This page lists the authoritative documentation that accompanies the Feature Simplification refactor. Each document is source-controlled alongside the implementation so changes stay in lockstep with the pipeline.
 
-## Specification (Feature Simplification)
+## Specification & Guarantees
 
-- Feature Support Simplification Plan: docs/feature-simplification/feature-support-simplification.md
-- Invariants: docs/feature-simplification/Invariants.md
-- Known Limits: docs/feature-simplification/Known-Limits.md
-- Features Matrix: docs/feature-simplification/Features.md
-- Phasing: docs/feature-simplification/Phasing.md
-- Overview: docs/feature-simplification/README.md
+- Feature Support Simplification Plan — `docs/feature-simplification/feature-support-simplification.md`
+- Cross-phase invariants — `docs/Invariants.md`
+- Known limits and guardrails — `docs/Known-Limits.md`
+- Feature matrix (✓ / ~ / ⚠️) — `docs/Features.md`
+- Phasing and control-plane overview — `docs/feature-simplification/Phasing.md`
+- SPEC overview — `docs/feature-simplification/README.md`
+
+## Diagnostics & Observability
+
+- Diagnostic catalog (`code`, `budget`, `scoreDetails`) — `docs/error.md`
+- Bench & performance gates — `docs/Known-Limits.md#performance-gates`
+- Diagnostics envelope schema — `docs/feature-simplification/feature-support-simplification.md` §19 (referenced by `packages/core/src/diag/schemas.ts`)
 
 ## Architecture & Reference
 
@@ -29,6 +35,12 @@ This page is an index of the project documentation. It links to authoritative do
 - Examples index: docs/examples/README.md
 - Draft schemas: docs/examples/draft-07.json, docs/examples/draft-2019-09.json, docs/examples/draft-2020-12.json
 - Sample domains: docs/examples/saas-user-schema.json, docs/examples/ecommerce-schema.json, docs/examples/api-transaction-schema.json, docs/examples/team-with-users-schema.json
+
+## Operational non-goals
+
+- No remote resolution of external `$ref`; generation operates on local fragments only.
+- Deterministic generation only (no learned/scenario-based distributions).
+- Generated data is not cached or persisted; every run revalidates against the source schema.
 
 ## Development quick links
 
