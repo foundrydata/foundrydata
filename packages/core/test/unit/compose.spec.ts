@@ -52,6 +52,9 @@ describe('§8 Composition coverage index', () => {
       limit: ENUM_CAP,
       observed: ENUM_CAP + 1,
     });
+    expect(canonical.diag?.caps).toContain(
+      DIAGNOSTIC_CODES.COMPLEXITY_CAP_ENUM
+    );
   });
 
   it('T-ENUM-PP-REGEX-01 treats quantified pattern literals as unsafe and omits enumeration', () => {
