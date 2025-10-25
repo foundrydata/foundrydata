@@ -14,21 +14,33 @@ import {
 import { structuralHash, bucketsEqual } from '../util/struct-hash.js';
 import type { DiagnosticEnvelope } from '../diag/validate.js';
 import type { PlanOptions } from '../types/options.js';
+import type Ajv from 'ajv';
 import {
   extractExactLiteralAlternatives,
   isRegexComplexityCapped,
 } from '../util/pattern-literals.js';
 
-type AjvError = {
+export interface AjvErr {
   instancePath: string;
   schemaPath: string;
   keyword: string;
   params: Record<string, unknown>;
-};
+}
 
 type AjvValidateFn = ((data: unknown) => boolean) & {
-  errors?: AjvError[];
+  errors?: AjvErr[];
 };
+
+export interface RepairCtx {
+  ajv: Ajv;
+  seed: number;
+  budgetPerPath: number;
+  ptrMap: Map<string, string>;
+  rational?: PlanOptions['rational'];
+  complexity?: PlanOptions['complexity'];
+  /** Must-cover predicate exported by Compose per SPEC §8. */
+  isNameInMustCover?: (canonPath: string, name: string) => boolean;
+}
 
 export interface RepairEpsilonDetails {
   epsilon?: string;
@@ -89,7 +101,7 @@ export function runRenamePreflightCheck(ctx: RenamePreflightContext): {
   renameKey(target as Record<string, unknown>, ctx.from, ctx.candidate);
   const passes = ctx.validator(draft);
   if (passes) return { ok: true };
-  const previewErrors = (ctx.validator.errors ?? []) as AjvError[];
+  const previewErrors = (ctx.validator.errors ?? []) as AjvErr[];
   const propertyPtr = buildPropertyPointer(ctx.objectPtr || '', ctx.candidate);
   const targetPaths = new Set<string>([ctx.objectPtr || '', propertyPtr]);
   const dependentFailure = previewErrors.find((err) => {
@@ -377,7 +389,7 @@ function detectDialect(
 }
 
 function anyErrorAtPath(
-  errors: AjvError[],
+  errors: AjvErr[],
   keyword: string,
   instancePath: string,
   propName?: string
@@ -403,7 +415,7 @@ const DEPENDENT_KEYWORDS = new Set([
   'dependencies',
 ]);
 
-function isDependentConstraintError(err: AjvError): boolean {
+function isDependentConstraintError(err: AjvErr): boolean {
   if (DEPENDENT_KEYWORDS.has(err.keyword)) return true;
   const schemaPath = err.schemaPath || '';
   if (
@@ -426,7 +438,7 @@ function buildPropertyPointer(objectPtr: string, name: string): string {
   return `${objectPtr}/${encoded}`;
 }
 
-function makeErrorKey(err: AjvError): string {
+function makeErrorKey(err: AjvErr): string {
   return `${err.keyword}::${err.instancePath || ''}::${err.schemaPath}`;
 }
 
@@ -448,7 +460,7 @@ function buildIsEvaluatedFn(
       return true; // not an object; guard vacuous
     }
     const ok = ajvValidate(draft);
-    const errors = (ajvValidate as any).errors as AjvError[] | null | undefined;
+    const errors = (ajvValidate as any).errors as AjvErr[] | null | undefined;
     if (!errors || ok) {
       return true; // no unevaluatedProperties/additionalProperties complaints
     }
@@ -549,6 +561,20 @@ function epsilonNumber(decimalPrecision = 12): number {
   return Math.pow(10, -p);
 }
 
+export interface RepairAction {
+  action: string;
+  canonPath: string;
+  origPath?: string;
+  instancePath?: string;
+  details?: Record<string, unknown>;
+}
+
+export interface RepairItemsResult {
+  items: unknown[];
+  diagnostics: DiagnosticEnvelope[];
+  actions: RepairAction[];
+}
+
 export function repairItemsAjvDriven(
   items: unknown[],
   args: {
@@ -557,17 +583,7 @@ export function repairItemsAjvDriven(
     planOptions?: Partial<PlanOptions>;
   },
   options?: { attempts?: number }
-): {
-  items: unknown[];
-  diagnostics: DiagnosticEnvelope[];
-  actions: Array<{
-    action: string;
-    canonPath: string;
-    origPath?: string;
-    instancePath?: string;
-    details?: Record<string, unknown>;
-  }>;
-} {
+): RepairItemsResult {
   const { schema, effective } = args;
   const attempts = Math.max(1, Math.min(5, options?.attempts ?? 1));
   const dialect = detectDialect(schema);
@@ -581,13 +597,7 @@ export function repairItemsAjvDriven(
 
   const repaired: unknown[] = [];
   const diagnostics: DiagnosticEnvelope[] = [];
-  const actions: Array<{
-    action: string;
-    canonPath: string;
-    origPath?: string;
-    instancePath?: string;
-    details?: Record<string, unknown>;
-  }> = [];
+  const actions: RepairAction[] = [];
   for (const original of items) {
     // Fast-path: validate original without cloning to minimize overhead
     let pass = validateFn(original);
@@ -614,7 +624,7 @@ export function repairItemsAjvDriven(
       offending: string,
       objectPtr: string,
       parentPtr: string,
-      errors: AjvError[],
+      errors: AjvErr[],
       baselineDependentKeys: ReadonlySet<string>
     ): { attempted: boolean; renamed: boolean } => {
       const key = makeRenameKey(objectPtr, offending);
@@ -809,7 +819,7 @@ export function repairItemsAjvDriven(
     };
 
     for (let iter = 0; iter < attempts; iter += 1) {
-      const errors = (validateFn as any).errors as AjvError[] | undefined;
+      const errors = (validateFn as any).errors as AjvErr[] | undefined;
       if (!errors || errors.length === 0) break;
       let changed = false;
       const dependentBaselineKeys = new Set(

@@ -100,6 +100,17 @@ export interface FailFastOptions {
 }
 
 /**
+ * Pattern policy for AP:false coverage
+ */
+export interface PatternPolicyOptions {
+  /**
+   * Reaction to unsafe patterns when they would be required for must-cover proofs under AP:false.
+   * Defaults to the strict posture ('error') unless the caller explicitly opts into 'warn'.
+   */
+  unsafeUnderApFalse?: 'error' | 'warn';
+}
+
+/**
  * Conditional schema processing configuration
  */
 export interface ConditionalsOptions {
@@ -182,6 +193,8 @@ export interface PlanOptions {
 
   /** Fail-fast error handling */
   failFast?: FailFastOptions;
+  /** Pattern policy configuration */
+  patternPolicy?: PatternPolicyOptions;
 
   /** Conditional schema processing */
   conditionals?: ConditionalsOptions;
@@ -216,6 +229,7 @@ export interface ResolvedOptions {
 
   complexity: Required<ComplexityOptions>;
   failFast: Required<FailFastOptions>;
+  patternPolicy: Required<PatternPolicyOptions>;
   conditionals: Required<ConditionalsOptions>;
   patternWitness: Required<PatternWitnessOptions>;
   repair: Required<RepairPlanOptions>;
@@ -279,6 +293,10 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
     dynamicRefStrict: 'note',
   },
 
+  patternPolicy: {
+    unsafeUnderApFalse: 'error',
+  },
+
   conditionals: {
     strategy: 'if-aware-lite', // default mapping for rewriteConditionals:'never'
     minThenSatisfaction: 'required-only',
@@ -320,6 +338,10 @@ export function resolveOptions(
     cache: { ...DEFAULT_OPTIONS.cache, ...userOptions.cache },
     complexity: { ...DEFAULT_OPTIONS.complexity, ...userOptions.complexity },
     failFast: { ...DEFAULT_OPTIONS.failFast, ...userOptions.failFast },
+    patternPolicy: {
+      ...DEFAULT_OPTIONS.patternPolicy,
+      ...userOptions.patternPolicy,
+    },
     conditionals: {
       ...DEFAULT_OPTIONS.conditionals,
       ...userOptions.conditionals,
@@ -457,6 +479,13 @@ function validateOptions(options: ResolvedOptions): void {
   if (tweak !== 'preferNul' && tweak !== 'preferAscii') {
     throw new Error(
       "conditionals.exclusivityStringTweak must be 'preferNul' or 'preferAscii'"
+    );
+  }
+
+  const unsafePolicy = options.patternPolicy.unsafeUnderApFalse;
+  if (unsafePolicy !== 'error' && unsafePolicy !== 'warn') {
+    throw new Error(
+      "patternPolicy.unsafeUnderApFalse must be 'error' or 'warn'"
     );
   }
 

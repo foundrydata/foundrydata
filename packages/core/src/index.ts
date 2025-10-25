@@ -1,11 +1,24 @@
 // @foundrydata/core entry point
 
 export * from './types/index.js';
+
+// Normalizer (Task 7)
+export {
+  normalize,
+  type NormalizerNote,
+  type NormalizeOptions,
+  type NormalizeResult,
+} from './transform/schema-normalizer.js';
+
+// Generator (Task 9)
 export {
   generateFromCompose,
   type GeneratorStageOutput,
+  type GeneratorDiagnostic,
   type FoundryGeneratorOptions,
 } from './generator/foundry-generator.js';
+
+// Errors
 export {
   ErrorCode,
   type Severity,
@@ -60,8 +73,13 @@ export {
 } from './diag/validate.js';
 export {
   compose,
+  computeSelectorMemoKey,
   type ComposeOptions,
   type ComposeResult,
+  type ComposeDiagnostics,
+  type BranchDecisionRecord,
+  type NodeDiagnostics,
+  type ContainsNeed,
   type CoverageEntry,
   type CoverageIndex,
 } from './transform/composition-engine.js';
@@ -99,6 +117,11 @@ export {
   formatEpsilon,
   nudgeDetailsForExclusive,
   chooseClosedEnumRenameCandidate,
+  repairItemsAjvDriven,
+  type RepairAction,
+  type RepairItemsResult,
   type RenamePreflightOptions,
   type RenamePreflightResult,
+  type AjvErr,
+  type RepairCtx,
 } from './repair/repair-engine.js';

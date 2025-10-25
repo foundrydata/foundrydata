@@ -1999,7 +1999,7 @@
           "9123",
           "9122"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 3,
         "details": "[Context] §23 interfaces; §22 deliverables.\n- spec://§23#compose-interfaces, spec://§23#repair-interfaces\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§23\",\"anchors\":[\"spec://§23#compose-interfaces\",\"spec://§23#repair-interfaces\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- API mirrors minimal interfaces; do not expose internal caches.\n[Deliverables]\n- packages/core/src/index.ts (exports)\n- type declarations\n[Commands]\n- pnpm -w build\n[Definition of Done]\n- Type tests compile; API docs reflect interface anchors.",
         "testStrategy": "TS compile tests; simple programmatic examples.",
@@ -2012,7 +2012,8 @@
             "file": "packages/core/src/index.ts",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2025-10-25T21:34:48.969Z"
       },
       {
         "id": "22",
@@ -2102,7 +2103,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-25T21:21:57.628Z",
+      "lastModified": "2025-10-25T21:34:48.970Z",
       "taskCount": 52,
       "completedCount": 48,
       "tags": [
