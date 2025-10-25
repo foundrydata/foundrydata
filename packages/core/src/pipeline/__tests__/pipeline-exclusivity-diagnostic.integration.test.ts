@@ -4,12 +4,30 @@ import { executePipeline } from '../orchestrator';
 import { DIAGNOSTIC_CODES } from '../../diag/codes';
 
 describe('Pipeline exclusivity diagnostics (end-to-end)', () => {
-  it('emits exclusivityRand diagnostic when resolving oneOf in Generate', async () => {
+  it('emits exclusivity diagnostics only when a tweak is applied', async () => {
     const schema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
       oneOf: [
-        { type: 'string', const: 'x' },
-        { type: 'string', const: 'y' },
+        {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            kind: { const: 'alpha' },
+            guard: { const: true },
+            payload: { type: 'string', minLength: 1 },
+          },
+          required: ['kind', 'guard', 'payload'],
+        },
+        {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            kind: { const: 'alpha' },
+            guard: { const: true },
+            payload: { type: 'string', minLength: 1, pattern: '^-+$' },
+          },
+          required: ['kind', 'payload'],
+        },
       ],
     } as const;
 
@@ -26,18 +44,7 @@ describe('Pipeline exclusivity diagnostics (end-to-end)', () => {
       (d) => d.code === DIAGNOSTIC_CODES.EXCLUSIVITY_TWEAK_STRING
     );
     expect(diag).toBeDefined();
-    expect(typeof diag?.scoreDetails?.exclusivityRand).toBe('number');
-
-    // Snapshot minimal stable fields; exclusivityRand presence checked separately
-    const minimal = { code: diag!.code, canonPath: diag!.canonPath };
-    expect(minimal).toMatchInlineSnapshot(`
-      {
-        "canonPath": "",
-        "code": "EXCLUSIVITY_TWEAK_STRING",
-      }
-    `);
-    const r = diag!.scoreDetails?.exclusivityRand as number;
-    expect(r).toBeGreaterThanOrEqual(0);
-    expect(r).toBeLessThanOrEqual(1);
+    expect(diag?.details).toEqual({ char: '\u0000' });
+    expect(diag?.scoreDetails?.exclusivityRand).toBeUndefined();
   });
 });

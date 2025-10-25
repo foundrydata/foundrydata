@@ -41,8 +41,26 @@ export const apFalseSafeFallbackSchema = {
 export const exclusivityOneOfSchema = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
   oneOf: [
-    { type: 'string', const: 'alpha' },
-    { type: 'string', const: 'beta' },
+    {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        kind: { const: 'alpha' },
+        guard: { const: true },
+        payload: { type: 'string', minLength: 1 },
+      },
+      required: ['kind', 'guard', 'payload'],
+    },
+    {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        kind: { const: 'alpha' },
+        guard: { const: true },
+        payload: { type: 'string', minLength: 1, pattern: '^-+$' },
+      },
+      required: ['kind', 'payload'],
+    },
   ],
 } as const;
 

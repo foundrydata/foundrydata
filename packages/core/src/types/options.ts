@@ -110,6 +110,8 @@ export interface ConditionalsOptions {
     | 'discriminants-only'
     | 'required-only'
     | 'required+bounds';
+  /** Preference for string tweaks during oneOf exclusivity (default: 'preferNul') */
+  exclusivityStringTweak?: 'preferNul' | 'preferAscii';
 }
 
 /**
@@ -280,6 +282,7 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
   conditionals: {
     strategy: 'if-aware-lite', // default mapping for rewriteConditionals:'never'
     minThenSatisfaction: 'required-only',
+    exclusivityStringTweak: 'preferNul',
   },
 
   patternWitness: {
@@ -448,6 +451,13 @@ function validateOptions(options: ResolvedOptions): void {
     typeof options.patternWitness.alphabet !== 'string'
   ) {
     throw new Error('patternWitness.alphabet must be a string when provided');
+  }
+
+  const tweak = options.conditionals.exclusivityStringTweak;
+  if (tweak !== 'preferNul' && tweak !== 'preferAscii') {
+    throw new Error(
+      "conditionals.exclusivityStringTweak must be 'preferNul' or 'preferAscii'"
+    );
   }
 
   if (typeof options.repair.mustCoverGuard !== 'boolean') {

@@ -264,6 +264,74 @@ describe('Foundry generator stage', () => {
     expect(n).toBeCloseTo(0.2, 6);
   });
 
+  it('selects the previous multiple when exclusiveMaximum equals the step', () => {
+    const schema = { type: 'number', exclusiveMaximum: 0.1, multipleOf: 0.1 };
+    const out = generateFromCompose(composeSchema(schema));
+    const n = out.items[0] as number;
+    expect(n).toBe(0);
+  });
+
+  it('selects the next multiple when exclusiveMinimum equals the step', () => {
+    const schema = { type: 'number', exclusiveMinimum: 0.2, multipleOf: 0.1 };
+    const out = generateFromCompose(composeSchema(schema));
+    const n = out.items[0] as number;
+    expect(n).toBeCloseTo(0.3, 6);
+  });
+
+  it('preserves tiny multipleOf values under exclusiveMinimum', () => {
+    const schema = { type: 'number', exclusiveMinimum: 0, multipleOf: 1e-6 };
+    const out = generateFromCompose(composeSchema(schema), {
+      planOptions: { rational: { decimalPrecision: 6 } },
+    });
+    const n = out.items[0] as number;
+    expect(n).toBeCloseTo(1e-6, 12);
+  });
+
+  it('aligns large magnitudes to multiples without rejecting due to tolerance', () => {
+    const schema = {
+      type: 'number',
+      minimum: 1e12,
+      exclusiveMaximum: 1e12 + 3e6,
+      multipleOf: 1e6,
+    };
+    const out = generateFromCompose(composeSchema(schema));
+    const n = out.items[0] as number;
+    expect(n).toBeGreaterThanOrEqual(1e12);
+    expect(n).toBeLessThan(1e12 + 3e6);
+    expect(Math.abs(n % 1e6)).toBeLessThanOrEqual(1e-6);
+  });
+
+  it('uses decimalPrecision epsilon for bare number exclusiveMinimum', () => {
+    const schema = { type: 'number', exclusiveMinimum: 0 };
+    const out = generateFromCompose(composeSchema(schema), {
+      planOptions: { rational: { decimalPrecision: 3 } },
+    });
+    const n = out.items[0] as number;
+    expect(n).toBeCloseTo(0.001, 6);
+  });
+
+  it('uses decimalPrecision epsilon for exclusiveMaximum', () => {
+    const schema = { type: 'number', minimum: 1, exclusiveMaximum: 1.0001 };
+    const out = generateFromCompose(composeSchema(schema), {
+      planOptions: { rational: { decimalPrecision: 4 } },
+    });
+    const n = out.items[0] as number;
+    expect(n).toBeLessThan(1.0001);
+    expect(n).toBeCloseTo(1.0001 - 1e-4, 6);
+  });
+
+  it('honors exclusiveMinimum for integers with fractional bounds', () => {
+    const schema = { type: 'integer', exclusiveMinimum: 0.25 };
+    const out = generateFromCompose(composeSchema(schema));
+    expect(out.items[0]).toBe(1);
+  });
+
+  it('respects exclusiveMinimum after integer multipleOf alignment', () => {
+    const schema = { type: 'integer', exclusiveMinimum: 1.1, multipleOf: 2 };
+    const out = generateFromCompose(composeSchema(schema));
+    expect(out.items[0]).toBe(2);
+  });
+
   it('restricts names under unevaluatedProperties:false to evaluated sources', () => {
     const schema = {
       type: 'object',
