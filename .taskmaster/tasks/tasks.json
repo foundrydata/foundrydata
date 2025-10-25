@@ -2016,7 +2016,7 @@
         "id": "22",
         "title": "CI pipelines (lint, test, bench)",
         "description": "Set up CI with linting, unit/integration tests, and bench gates.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "8000",
           "9000",
@@ -2041,7 +2041,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-10-25T20:49:42.171Z"
+        "updatedAt": "2025-10-25T21:00:31.474Z"
       },
       {
         "id": "23",
@@ -2100,9 +2100,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-25T20:52:59.626Z",
+      "lastModified": "2025-10-25T21:00:31.475Z",
       "taskCount": 52,
-      "completedCount": 46,
+      "completedCount": 47,
       "tags": [
         "feature-simplification"
       ]

@@ -1,42 +1,117 @@
-name: CI (Build & Publish)
+name: FoundryData CI (lint → tests → bench)
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+      - 'release/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  CI: 'true'
+  NODE_VERSION: '20.x'
+  BENCH_P95_BUDGET: '120'
+  BENCH_MEMORY_BUDGET: '512'
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
+
       - name: Install dependencies
         run: npm ci
-      - name: Build
-        run: npm run build
 
-  draft-release:
-    name: Create Draft Release
-    needs: build
+      - name: ESLint
+        run: npm run lint
+
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
+    needs: lint
     steps:
-      - name: Create GitHub Release (draft)
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          draft: true
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  # Publishing is handled by publish-on-tests (after tests success)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit test suite
+        run: npm run test -- packages/core/test/unit
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run integration suite
+        run: npm run test -- packages/core/test/e2e
+
+  bench:
+    name: Bench Gates
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run bench harness (strict budgets)
+        run: npm run bench
+
+      - name: Verify bench gate budgets
+        run: |
+          node -e "const fs=require('fs');\nconst path=require('path');\nconst gatePath=path.join('bench','bench-gate.json');\nif(!fs.existsSync(gatePath)){console.error('bench gate summary missing at',gatePath);process.exit(1);}\nconst summary=JSON.parse(fs.readFileSync(gatePath,'utf8'));\nconst budgets={p95LatencyMs:Number(process.env.BENCH_P95_BUDGET),memoryPeakMB:Number(process.env.BENCH_MEMORY_BUDGET)};\nconst breaches=Object.entries(budgets).filter(([key,limit])=>typeof summary[key]!=='number'||summary[key]>limit).map(([key,limit])=>`${key}=${summary[key]} (limit ${limit})`);\nif(breaches.length){console.error('Bench gate breach:',breaches.join('; '));process.exit(1);}\nconsole.log('Bench gate within budgets',summary);"
+
+      - name: Upload bench gate summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-gate-${{ github.run_id }}
+          path: bench/bench-gate.json
+          if-no-files-found: error
+          retention-days: 14
