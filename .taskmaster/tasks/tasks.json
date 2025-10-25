@@ -1970,7 +1970,7 @@
           "9115",
           "9120"
         ],
-        "status": "pending",
+        "status": "done",
         "complexityScore": 2,
         "details": "[Context] §15 bench protocol; §20 unit/property-based tests.\n- spec://§15#bench-protocol, spec://§20#unit\n[Retrieval]\n- REFONLY::{\"source\":\"FILE\",\"uri\":\"docs/feature-simplification/feature-support-simplification.md\",\"section\":\"§15\",\"anchors\":[\"spec://§15#bench-protocol\"],\"notes\":\"no-embed; fetch-on-demand\"}\n[Key requirements]\n- Curate JSON Schemas and seeds; expose generators for fuzz tests; track metrics expectations.\n[Deliverables]\n- profiles/{simple,medium,pathological}.json\n- packages/core/test/fixtures/*\n[Commands]\n- pnpm -w test; pnpm -w bench\n[Definition of Done]\n- Bench runs on profiles; fixtures imported by tests.",
         "testStrategy": "Bench smoke and fixture validation with AJV.",
@@ -1978,12 +1978,14 @@
           {
             "id": 20001,
             "title": "Create profiles and fixtures",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 8,
             "file": "profiles/simple.json",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-10-25T21:21:57.627Z"
           }
-        ]
+        ],
+        "updatedAt": "2025-10-25T21:21:57.627Z"
       },
       {
         "id": "21",
@@ -2100,9 +2102,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-25T21:00:31.475Z",
+      "lastModified": "2025-10-25T21:21:57.628Z",
       "taskCount": 52,
-      "completedCount": 47,
+      "completedCount": 48,
       "tags": [
         "feature-simplification"
       ]

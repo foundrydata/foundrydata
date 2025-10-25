@@ -6,8 +6,11 @@
   "properties": {
     "orderId": {
       "type": "string",
-      "minLength": 6,
-      "maxLength": 12
+      "pattern": "^[A-Z0-9]{8}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "ready", "processing", "complete"]
     },
     "createdAt": {
       "type": "string",
@@ -17,79 +20,122 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "id": {
-          "type": "string",
-          "format": "uuid"
-        },
-        "name": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 80
-        },
-        "segment": {
-          "type": "string",
-          "enum": ["consumer", "business", "enterprise"]
+        "id": { "type": "string", "format": "uuid" },
+        "segment": { "type": "string", "enum": ["consumer", "business"] },
+        "email": { "type": "string", "format": "email" },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": false,
+          "patternProperties": {
+            "^x-[a-z0-9]+$": {
+              "type": "string",
+              "maxLength": 24
+            }
+          },
+          "propertyNames": {
+            "pattern": "^x-[a-z0-9]+$"
+          }
         }
       },
-      "required": ["id", "name"]
+      "required": ["id", "segment", "email"]
     },
-    "items": {
+    "lineItems": {
       "type": "array",
       "minItems": 1,
-      "maxItems": 8,
+      "maxItems": 12,
+      "contains": {
+        "type": "object",
+        "properties": { "primary": { "const": true } },
+        "required": ["primary"]
+      },
       "items": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
           "sku": {
             "type": "string",
-            "pattern": "^[A-Z0-9]{4,10}$"
+            "maxLength": 32
           },
-          "quantity": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 25
-          },
-          "unitPrice": {
-            "type": "number",
-            "minimum": 0
-          },
+          "quantity": { "type": "integer", "minimum": 0, "maximum": 50 },
+          "unitPrice": { "type": "number", "minimum": 0 },
+          "primary": { "type": "boolean" },
           "options": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
-              "color": { "type": "string", "maxLength": 12 },
+              "color": { "type": "string", "minLength": 1, "maxLength": 12 },
               "size": { "type": "string", "enum": ["xs", "s", "m", "l", "xl"] },
-              "customMessage": { "type": "string", "maxLength": 40 }
+              "notes": { "type": "string", "maxLength": 64 }
             }
           }
         },
         "required": ["sku", "quantity", "unitPrice"]
       }
     },
-    "expedited": {
-      "type": "boolean"
+    "shipments": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "carrier": { "type": "string", "enum": ["ups", "fedex", "dhl"] },
+          "eta": { "type": "string", "format": "date-time" },
+          "tracking": { "type": "string", "pattern": "^[A-Z0-9]{10,18}$" },
+          "expedited": { "type": "boolean" }
+        },
+        "required": ["carrier", "eta"]
+      }
     },
-    "shipBy": {
-      "type": "string",
-      "format": "date"
+    "totals": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "subtotal": { "type": "number", "minimum": 0 },
+        "tax": { "type": "number", "minimum": 0 },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "discount": { "type": "number", "minimum": 0 },
+        "discountCode": { "type": "string", "pattern": "^[A-Z0-9]{4,8}$" }
+      },
+      "required": ["subtotal", "currency"],
+      "dependentRequired": {
+        "discount": ["discountCode"]
+      }
     },
-    "notes": {
-      "type": "string",
-      "maxLength": 256
-    }
+    "notes": { "type": "string", "maxLength": 256 }
   },
-  "required": ["orderId", "createdAt", "customer", "items"],
+  "required": [
+    "orderId",
+    "status",
+    "createdAt",
+    "customer",
+    "lineItems",
+    "totals"
+  ],
+  "dependentRequired": {
+    "shipments": ["lineItems"]
+  },
   "allOf": [
     {
       "if": {
-        "properties": {
-          "expedited": { "const": true }
-        },
-        "required": ["expedited"]
+        "properties": { "status": { "const": "ready" } },
+        "required": ["status"]
       },
       "then": {
-        "required": ["shipBy"]
+        "type": "object",
+        "required": ["shipments"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "status": { "const": "complete" } },
+        "required": ["status"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "shipments": { "type": "array", "minItems": 1 }
+        }
       }
     }
   ]

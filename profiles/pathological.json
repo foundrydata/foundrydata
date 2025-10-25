@@ -3,16 +3,19 @@
   "title": "Pathological Bench Profile",
   "type": "object",
   "unevaluatedProperties": false,
+  "propertyNames": {
+    "pattern": "^(?:kind|payload|metadata|history|flags|attachments)$"
+  },
+  "required": ["kind", "payload", "metadata"],
   "properties": {
     "kind": {
       "type": "string",
       "enum": ["alpha", "beta", "gamma"]
     },
     "payload": {
-      "oneOf": [
+      "anyOf": [
         {
           "type": "object",
-          "additionalProperties": false,
           "properties": {
             "alphaId": { "type": "string", "pattern": "^[a-z]{3}-\\d{2}$" },
             "value": { "type": "number", "minimum": 0, "maximum": 1000 },
@@ -22,13 +25,26 @@
         },
         {
           "type": "object",
-          "additionalProperties": false,
           "properties": {
             "betaRef": { "type": "string", "format": "uri" },
             "status": { "type": "string", "enum": ["pending", "ready", "error"] },
             "retries": { "type": "integer", "minimum": 0, "maximum": 5 }
           },
           "required": ["betaRef", "status"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "gammaMode": { "type": "string", "enum": ["legacy", "stream"] },
+            "checksum": { "type": "string", "pattern": "^[A-F0-9]{12}$" },
+            "chunks": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 8,
+              "items": { "type": "string", "pattern": "^[A-F0-9]{8}$" }
+            }
+          },
+          "required": ["gammaMode"]
         }
       ]
     },
@@ -36,22 +52,22 @@
       "type": "object",
       "additionalProperties": false,
       "minProperties": 1,
-      "dependentRequired": {
-        "createdBy": ["createdAt"],
-        "updatedBy": ["updatedAt"]
-      },
       "properties": {
         "createdAt": { "type": "string", "format": "date-time" },
         "createdBy": { "type": "string", "minLength": 1 },
         "updatedAt": { "type": "string", "format": "date-time" },
         "updatedBy": { "type": "string", "minLength": 1 },
-        "note": { "type": "string", "maxLength": 32 }
+        "note": { "type": "string", "maxLength": 64 }
+      },
+      "dependentRequired": {
+        "createdBy": ["createdAt"],
+        "updatedBy": ["updatedAt"]
       }
     },
     "history": {
       "type": "array",
       "minItems": 1,
-      "maxItems": 15,
+      "maxItems": 25,
       "contains": {
         "type": "object",
         "additionalProperties": false,
@@ -87,18 +103,86 @@
     "flags": {
       "type": "object",
       "additionalProperties": false,
-      "properties": {
-        "primary": { "type": "boolean" },
-        "critical": { "type": "boolean" },
-        "archived": { "type": "boolean" }
-      },
       "propertyNames": {
-        "pattern": "^[a-z][a-z0-9_]{1,10}$"
+        "pattern": "^[a-z][a-z0-9_]{1,12}$"
+      },
+      "patternProperties": {
+        "^x-[a-z0-9_]{1,12}$": { "type": "boolean" }
       },
       "dependentRequired": {
         "critical": ["primary"]
       }
+    },
+    "attachments": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "uri": { "type": "string", "format": "uri" },
+          "checksum": { "type": "string", "pattern": "^[A-F0-9]{8}$" }
+        },
+        "required": ["uri"]
+      }
     }
   },
-  "required": ["kind", "payload", "metadata"]
+  "allOf": [
+    {
+      "if": {
+        "properties": { "kind": { "const": "alpha" } },
+        "required": ["kind"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "properties": {
+              "active": { "const": true }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "kind": { "const": "gamma" } },
+        "required": ["kind"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": { "gammaMode": { "const": "legacy" } },
+                "required": ["gammaMode", "checksum"]
+              },
+              {
+                "type": "object",
+                "properties": { "gammaMode": { "const": "stream" } },
+                "required": ["gammaMode", "chunks"]
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "dependentSchemas": {
+    "flags": {
+      "if": {
+        "properties": { "archived": { "const": true } },
+        "required": ["archived"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "history": { "type": "array", "minItems": 2 }
+        }
+      }
+    }
+  }
 }
