@@ -1,34 +1,21 @@
+import {
+  BENCH_BUDGETS as SHARED_BENCH_BUDGETS,
+  BENCH_SEEDS as SHARED_BENCH_SEEDS,
+  DEFAULT_ITERATIONS as SHARED_DEFAULT_ITERATIONS,
+  benchProfileFixtures,
+} from '../packages/core/test/fixtures/bench-profiles.js';
 import type { BenchProfile, IterationConfig } from './bench-types.js';
 
-export const BENCH_SEEDS = [1, 42, 4242] as const;
-
-export const BENCH_BUDGETS = {
-  p95LatencyMs: 120,
-  memoryPeakMB: 512,
-} as const;
-
+export const BENCH_SEEDS = SHARED_BENCH_SEEDS;
+export const BENCH_BUDGETS = SHARED_BENCH_BUDGETS;
 export const DEFAULT_ITERATIONS: IterationConfig = {
-  warmup: 5,
-  measured: 20,
-} as const;
+  warmup: SHARED_DEFAULT_ITERATIONS.warmup,
+  measured: SHARED_DEFAULT_ITERATIONS.measured,
+};
 
-export const profiles: readonly BenchProfile[] = [
-  {
-    id: 'simple',
-    label: 'Simple profile',
-    schemaPath: new URL('../profiles/simple.json', import.meta.url),
-    generateCount: 64,
-  },
-  {
-    id: 'medium',
-    label: 'Medium profile',
-    schemaPath: new URL('../profiles/medium.json', import.meta.url),
-    generateCount: 48,
-  },
-  {
-    id: 'pathological',
-    label: 'Pathological profile',
-    schemaPath: new URL('../profiles/pathological.json', import.meta.url),
-    generateCount: 16,
-  },
-] as const;
+export const profiles = benchProfileFixtures.map<BenchProfile>((fixture) => ({
+  id: fixture.id,
+  label: fixture.label,
+  schemaPath: fixture.schemaPath,
+  generateCount: fixture.generateCount,
+})) as readonly BenchProfile[];

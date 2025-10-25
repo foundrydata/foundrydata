@@ -8,29 +8,89 @@
       "type": "string",
       "format": "uuid"
     },
-    "name": {
+    "kind": {
       "type": "string",
-      "minLength": 1,
-      "maxLength": 64
+      "enum": ["user", "service"]
     },
-    "email": {
+    "status": {
       "type": "string",
-      "format": "email"
+      "enum": ["active", "disabled", "pending"]
     },
-    "age": {
-      "type": "integer",
-      "minimum": 0,
-      "maximum": 120
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "active": {
+      "type": "boolean"
     },
     "tags": {
       "type": "array",
+      "minItems": 1,
+      "maxItems": 5,
+      "uniqueItems": true,
       "items": {
         "type": "string",
-        "minLength": 1,
-        "maxLength": 16
+        "pattern": "^(?:tag|team):[a-z0-9-]{2,12}$"
       },
-      "maxItems": 6
+      "contains": {
+        "type": "string",
+        "pattern": "^tag:"
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "region": {
+          "type": "string",
+          "enum": ["iad", "dfw", "sfo"]
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 48
+        },
+        "tier": {
+          "type": "string",
+          "enum": ["free", "pro", "enterprise"]
+        }
+      },
+      "required": ["region"]
+    },
+    "contacts": {
+      "type": "array",
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "email": { "type": "string", "format": "email" }
+        },
+        "required": ["name", "email"]
+      }
     }
   },
-  "required": ["id", "name", "email"]
+  "required": ["id", "kind", "status", "createdAt"],
+  "dependentRequired": {
+    "active": ["status"]
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "kind": { "const": "service" } },
+        "required": ["kind"]
+      },
+      "then": {
+        "type": "object",
+        "required": ["metadata"],
+        "properties": {
+          "metadata": {
+            "type": "object",
+            "required": ["tier"]
+          }
+        }
+      }
+    }
+  ]
 }
