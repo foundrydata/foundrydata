@@ -26,6 +26,17 @@ describe('SchemaNormalizer – boolean simplifications', () => {
     expect(noteCodes(result)).toEqual([]);
   });
 
+  it('collapses literal empty allOf to true and preserves pointer maps', () => {
+    const schema = { allOf: [] };
+    const result = normalize(schema);
+
+    expect(result.schema).toBe(true);
+    expect(result.ptrMap.get('')).toBe('/allOf');
+    const rev = result.revPtrMap.get('/allOf');
+    expect(rev).toBeDefined();
+    expect(new Set(rev ?? []).has('')).toBe(true);
+  });
+
   it('inlines oneOf single schema after removing false', () => {
     const schema = {
       oneOf: [false, { type: 'string', minLength: 3 }],
@@ -121,6 +132,28 @@ describe('SchemaNormalizer – boolean simplifications', () => {
     expect(note).toBeDefined();
     expect(note?.canonPath).toBe('/anyOf');
     expect(note?.details).toEqual({ reason: 'unevaluatedInScope' });
+  });
+
+  it('collapses literal empty anyOf to false and preserves pointer maps', () => {
+    const schema = { anyOf: [] };
+    const result = normalize(schema);
+
+    expect(result.schema).toBe(false);
+    expect(result.ptrMap.get('')).toBe('/anyOf');
+    const rev = result.revPtrMap.get('/anyOf');
+    expect(rev).toBeDefined();
+    expect(new Set(rev ?? []).has('')).toBe(true);
+  });
+
+  it('collapses literal empty oneOf to false and preserves pointer maps', () => {
+    const schema = { oneOf: [] };
+    const result = normalize(schema);
+
+    expect(result.schema).toBe(false);
+    expect(result.ptrMap.get('')).toBe('/oneOf');
+    const rev = result.revPtrMap.get('/oneOf');
+    expect(rev).toBeDefined();
+    expect(new Set(rev ?? []).has('')).toBe(true);
   });
 });
 
@@ -223,6 +256,28 @@ describe('SchemaNormalizer – conditional rewrite', () => {
 
     expect(result.schema).toEqual(schema);
     const note = findNote(result, DIAGNOSTIC_CODES.NOT_DEPTH_CAPPED);
+    expect(note).toBeDefined();
+    expect(note?.canonPath).toBe('/if');
+  });
+
+  it('emits IF_REWRITE_DISABLED_ANNOTATION_RISK when annotation keywords are present in the owning object', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        kind: { const: 'A' },
+      },
+      if: ifSchema,
+      then: thenSchema,
+      else: elseSchema,
+    };
+
+    const result = normalize(schema, { rewriteConditionals: 'safe' });
+
+    expect(result.schema).toEqual(schema);
+    const note = findNote(
+      result,
+      DIAGNOSTIC_CODES.IF_REWRITE_DISABLED_ANNOTATION_RISK
+    );
     expect(note).toBeDefined();
     expect(note?.canonPath).toBe('/if');
   });
@@ -393,6 +448,21 @@ describe('SchemaNormalizer – propertyNames rewrite', () => {
     expect(set.has('/additionalProperties')).toBe(true);
   });
 
+  it('emits PNAMES_COMPLEX when required contains non-string entries', () => {
+    const schema = {
+      propertyNames: { enum: ['a', 'b'] },
+      required: ['a', 1] as any,
+    };
+
+    const result = normalize(schema);
+
+    expect(result.schema).toEqual(schema);
+    const note = findNote(result, DIAGNOSTIC_CODES.PNAMES_COMPLEX);
+    expect(note).toBeDefined();
+    expect(note?.canonPath).toBe('');
+    expect(note?.details).toEqual({ reason: 'REQUIRED_KEYS_NOT_COVERED' });
+  });
+
   it('emits REGEX_COMPLEXITY_CAPPED with context "rewrite" when constructed pattern exceeds cap', () => {
     // Use two distinct very-long names so enum is not normalized to const
     const veryLongA = 'a'.repeat(3100);
@@ -480,6 +550,10 @@ describe('SchemaNormalizer – local definitions $ref rewrite', () => {
     expect(result.ptrMap.get('/$ref')).toBe('/$ref');
     // Child origin inside $defs preserves original '/definitions/...'
     expect(result.ptrMap.get('/$defs/Foo/type')).toBe('/definitions/Foo/type');
+
+    const rev = result.revPtrMap.get('/definitions/Foo/type');
+    expect(rev).toBeDefined();
+    expect(new Set(rev ?? []).has('/$defs/Foo/type')).toBe(true);
   });
 
   it('emits DEFS_TARGET_MISSING and preserves original $ref when target not found', () => {
@@ -493,6 +567,7 @@ describe('SchemaNormalizer – local definitions $ref rewrite', () => {
     const note = findNote(result, DIAGNOSTIC_CODES.DEFS_TARGET_MISSING);
     expect(note).toBeDefined();
     expect(note?.canonPath).toBe('/$ref');
+    expect(note?.details).toEqual({ target: '#/$defs/Missing' });
   });
 });
 
