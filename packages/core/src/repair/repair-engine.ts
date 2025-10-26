@@ -10,6 +10,7 @@ import type { ComposeResult } from '../transform/composition-engine.js';
 import {
   createRepairOnlyValidatorAjv,
   extractAjvFlags,
+  prepareSchemaForSourceAjv,
 } from '../util/ajv-source.js';
 import { structuralHash, bucketsEqual } from '../util/struct-hash.js';
 import type { DiagnosticEnvelope } from '../diag/validate.js';
@@ -588,7 +589,8 @@ export function repairItemsAjvDriven(
   const attempts = Math.max(1, Math.min(5, options?.attempts ?? 1));
   const dialect = detectDialect(schema);
   const sourceAjv = createRepairOnlyValidatorAjv({ dialect }, args.planOptions);
-  const validateFn = sourceAjv.compile(schema as object);
+  const { schemaForAjv } = prepareSchemaForSourceAjv(schema, dialect);
+  const validateFn = sourceAjv.compile(schemaForAjv as object);
   const ajvValidator = validateFn as AjvValidateFn;
   const ajvFlags = extractAjvFlags(sourceAjv);
   const decimalPrecision = ajvFlags.multipleOfPrecision ?? 12;

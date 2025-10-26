@@ -29,7 +29,7 @@ Please keep this README updated when adding/removing fixtures.
 - `tsconfig` — **pass** (p95 ≈ 46 ms, memory ≈ 172 MB)
 - `github-workflow` — **fail** (`FINAL_VALIDATION_FAILED`)
 - `openapi-3.1` — **fail** (`FINAL_VALIDATION_FAILED`)
-- `asyncapi-3.0` — **fail** (`reference "http://json-schema.org/draft-07/schema" resolves to more than one schema`)
+- `asyncapi-3.0` — **fail** (`FINAL_VALIDATION_FAILED`)
 - `cloudevents` — **fail** (`FINAL_VALIDATION_FAILED`)
 
 Failures currently exit the script with code 1 but still produce partial metrics and a gate summary so regressions are visible.
