@@ -1,3 +1,5 @@
+/* eslint-disable complexity */
+/* eslint-disable max-lines-per-function */
 import { createRequire } from 'node:module';
 import Ajv, { type Options as AjvOptions } from 'ajv';
 import Ajv2019 from 'ajv/dist/2019.js';
@@ -13,6 +15,27 @@ import {
 export type JsonSchemaDialect = 'draft-04' | 'draft-07' | '2019-09' | '2020-12';
 
 const requireForDraft = createRequire(import.meta.url);
+
+const CANONICAL_META_IDS: Record<JsonSchemaDialect, readonly string[]> = {
+  'draft-04': [
+    'http://json-schema.org/draft-04/schema',
+    'https://json-schema.org/draft-04/schema',
+  ],
+  'draft-07': [
+    'http://json-schema.org/draft-07/schema',
+    'https://json-schema.org/draft-07/schema',
+    'http://json-schema.org/draft-06/schema',
+    'https://json-schema.org/draft-06/schema',
+  ],
+  '2019-09': [
+    'http://json-schema.org/draft/2019-09/schema',
+    'https://json-schema.org/draft/2019-09/schema',
+  ],
+  '2020-12': [
+    'http://json-schema.org/draft/2020-12/schema',
+    'https://json-schema.org/draft/2020-12/schema',
+  ],
+};
 
 export interface SourceAjvFactoryOptions {
   dialect: JsonSchemaDialect;
@@ -167,5 +190,143 @@ export function extractAjvFlags(ajv: Ajv): ExtractedAjvFlags {
     allErrors: opts.allErrors as boolean | undefined,
     multipleOfPrecision: opts.multipleOfPrecision as number | undefined,
     discriminator: opts.discriminator as boolean | undefined,
+  };
+}
+
+type StripResult = {
+  value: unknown;
+  changed: boolean;
+  removed: boolean;
+};
+
+function normalizeMetaIdentifier(identifier: string): string {
+  const trimmed = identifier.trim();
+  const noFragment = trimmed.split('#')[0] ?? trimmed;
+  const lowered = noFragment.toLowerCase();
+  const normalizedProtocol = lowered.replace('https://', 'http://');
+  return normalizedProtocol.endsWith('/')
+    ? normalizedProtocol.slice(0, -1)
+    : normalizedProtocol;
+}
+
+function stripBundledCanonicalMetas(
+  value: unknown,
+  canonicalIds: Set<string>,
+  seen: WeakMap<object, StripResult>
+): StripResult {
+  if (!value || typeof value !== 'object') {
+    return { value, changed: false, removed: false };
+  }
+
+  const cached = seen.get(value as object);
+  if (cached) {
+    return cached;
+  }
+
+  if (Array.isArray(value)) {
+    let changed = false;
+    const clone: unknown[] = [];
+    for (const entry of value) {
+      const result = stripBundledCanonicalMetas(entry, canonicalIds, seen);
+      if (result.removed) {
+        changed = true;
+        continue;
+      }
+      clone.push(result.value);
+      if (result.changed || result.value !== entry) {
+        changed = true;
+      }
+    }
+    const output: StripResult = changed
+      ? { value: clone, changed: true, removed: false }
+      : { value, changed: false, removed: false };
+    seen.set(value as object, output);
+    return output;
+  }
+
+  const obj = value as Record<string, unknown>;
+  const candidateId = typeof obj.$id === 'string' ? obj.$id : undefined;
+  if (candidateId) {
+    const normalized = normalizeMetaIdentifier(candidateId);
+    if (canonicalIds.has(normalized)) {
+      const output: StripResult = {
+        value: undefined,
+        changed: true,
+        removed: true,
+      };
+      seen.set(value as object, output);
+      return output;
+    }
+  }
+
+  let changed = false;
+  const clone: Record<string, unknown> = {};
+  for (const [key, entry] of Object.entries(obj)) {
+    const result = stripBundledCanonicalMetas(entry, canonicalIds, seen);
+    if (result.removed) {
+      changed = true;
+      continue;
+    }
+    clone[key] = result.value;
+    if (result.changed || result.value !== entry) {
+      changed = true;
+    }
+  }
+  const output: StripResult = changed
+    ? { value: clone, changed: true, removed: false }
+    : { value, changed: false, removed: false };
+  seen.set(value as object, output);
+  return output;
+}
+
+function detectDialectFromSchema(schema: unknown): JsonSchemaDialect {
+  if (schema && typeof schema === 'object') {
+    const declared = (schema as Record<string, unknown>)['$schema'];
+    if (typeof declared === 'string') {
+      const lowered = declared.toLowerCase();
+      if (lowered.includes('2020-12')) return '2020-12';
+      if (lowered.includes('2019-09') || lowered.includes('draft-2019')) {
+        return '2019-09';
+      }
+      if (lowered.includes('draft-07') || lowered.includes('draft-06')) {
+        return 'draft-07';
+      }
+      if (lowered.includes('draft-04')) {
+        return 'draft-04';
+      }
+    }
+  }
+  return '2020-12';
+}
+
+export function prepareSchemaForSourceAjv(
+  schema: unknown,
+  dialect?: JsonSchemaDialect
+): { schemaForAjv: unknown; stripped: boolean } {
+  const resolvedDialect = dialect ?? detectDialectFromSchema(schema);
+  const canonicalList = CANONICAL_META_IDS[resolvedDialect];
+  if (!canonicalList || canonicalList.length === 0) {
+    return { schemaForAjv: schema, stripped: false };
+  }
+  if (!schema || typeof schema !== 'object') {
+    return { schemaForAjv: schema, stripped: false };
+  }
+  const canonicalSet = new Set<string>(
+    canonicalList.map((id) => normalizeMetaIdentifier(id))
+  );
+  const result = stripBundledCanonicalMetas(
+    schema,
+    canonicalSet,
+    new WeakMap<object, StripResult>()
+  );
+  if (result.removed) {
+    return { schemaForAjv: schema, stripped: false };
+  }
+  if (!result.changed) {
+    return { schemaForAjv: schema, stripped: false };
+  }
+  return {
+    schemaForAjv: result.value,
+    stripped: true,
   };
 }

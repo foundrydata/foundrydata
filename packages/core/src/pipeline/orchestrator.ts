@@ -1,3 +1,4 @@
+/* eslint-disable max-params */
 /* eslint-disable max-depth */
 /* eslint-disable max-lines */
 /* eslint-disable complexity */
@@ -12,7 +13,11 @@ import {
   type ComposeInput,
 } from '../transform/composition-engine.js';
 import { createPlanningAjv } from '../util/ajv-planning.js';
-import { createSourceAjv, extractAjvFlags } from '../util/ajv-source.js';
+import {
+  createSourceAjv,
+  extractAjvFlags,
+  prepareSchemaForSourceAjv,
+} from '../util/ajv-source.js';
 import { checkAjvStartupParity } from '../util/ajv-gate.js';
 import { MetricsCollector, type MetricPhase } from '../util/metrics.js';
 import { resolveOptions, type ResolvedOptions } from '../types/options.js';
@@ -181,6 +186,10 @@ export async function executePipeline(
   const metrics =
     options.collector ?? new MetricsCollector(options.metrics ?? {});
   const sourceDialect = determineSchemaDialect(schema);
+  const { schemaForAjv: schemaForSourceAjv } = prepareSchemaForSourceAjv(
+    schema,
+    sourceDialect
+  );
   const planOptions = options.generate?.planOptions;
   const resolvedPlanOptions = resolveOptions(planOptions);
   const externalRefStrictPolicy =
@@ -198,7 +207,8 @@ export async function executePipeline(
         options,
         () => externalRefState,
         externalRefStrictPolicy,
-        resolvedPlanOptions
+        resolvedPlanOptions,
+        schemaForSourceAjv
       ),
   };
 
@@ -306,7 +316,7 @@ export async function executePipeline(
         );
       try {
         const sourceAjv = sourceAjvFactory();
-        sourceAjv.compile(schema as object);
+        sourceAjv.compile(schemaForSourceAjv as object);
       } catch (error) {
         const classification = classifyExternalRefFailure({
           schema,
@@ -698,7 +708,8 @@ function createDefaultValidate(
   pipelineOptions: PipelineOptions,
   getExternalRefState: () => ExternalRefState | undefined,
   externalRefPolicy: ResolvedOptions['failFast']['externalRefStrict'],
-  preResolvedPlanOptions?: ResolvedOptions
+  preResolvedPlanOptions?: ResolvedOptions,
+  schemaForSourceAjvOverride?: unknown
 ): StageRunners['validate'] {
   return async (items, schema, options) => {
     const planOptions = pipelineOptions.generate?.planOptions;
@@ -764,9 +775,10 @@ function createDefaultValidate(
       };
     }
 
+    const compileTarget = schemaForSourceAjvOverride ?? schema;
     let validateFn: ValidateFunction;
     try {
-      validateFn = sourceAjv.compile(schema as object);
+      validateFn = sourceAjv.compile(compileTarget as object);
     } catch (error) {
       const classification = classifyExternalRefFailure({
         schema,
