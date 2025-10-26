@@ -22,7 +22,7 @@ import { checkAjvStartupParity } from '../util/ajv-gate.js';
 import { MetricsCollector, type MetricPhase } from '../util/metrics.js';
 import { resolveOptions, type ResolvedOptions } from '../types/options.js';
 import type Ajv from 'ajv';
-import type { ValidateFunction } from 'ajv';
+import type { ErrorObject, ValidateFunction } from 'ajv';
 import {
   generateFromCompose,
   type GeneratorStageOutput,
@@ -102,6 +102,8 @@ interface StageRunners {
     options?: PipelineOptions['validate']
   ) => Promise<ValidateStageResult> | ValidateStageResult;
 }
+
+type AjvKeywordError = ErrorObject<string, Record<string, unknown>, unknown>;
 
 class ExternalRefValidationError extends Error {
   public readonly diagnostic: DiagnosticEnvelope;
@@ -815,18 +817,79 @@ function createDefaultValidate(
       throw error;
     }
     const errors: unknown[] = [];
+    const validationDiagnostics: DiagnosticEnvelope[] = [];
     let allValid = true;
     for (const it of items) {
       const ok = validateFn(it);
       if (!ok) {
         allValid = false;
-        errors.push(validateFn.errors ?? []);
+        const failureErrors = Array.isArray(validateFn.errors)
+          ? (validateFn.errors as AjvKeywordError[]).map((err) => ({ ...err }))
+          : [];
+        errors.push(failureErrors);
+        if (failureErrors.length > 0) {
+          validationDiagnostics.push(...ajvErrorsToDiagnostics(failureErrors));
+        }
       }
     }
     return {
       valid: allValid,
       errors: errors.length ? errors : undefined,
       flags,
+      diagnostics:
+        validationDiagnostics.length > 0 ? validationDiagnostics : undefined,
     };
   };
+}
+
+function normalizeSchemaCanonPath(schemaPath?: string | null): string {
+  if (!schemaPath) {
+    return '';
+  }
+  const trimmed = schemaPath.trim();
+  if (!trimmed || trimmed === '#') {
+    return '';
+  }
+  const withoutHash = trimmed.startsWith('#') ? trimmed.slice(1) : trimmed;
+  if (!withoutHash) {
+    return '';
+  }
+  return withoutHash.startsWith('/') ? withoutHash : `/${withoutHash}`;
+}
+
+function ajvErrorsToDiagnostics(
+  errors: readonly AjvKeywordError[]
+): DiagnosticEnvelope[] {
+  if (!Array.isArray(errors) || errors.length === 0) {
+    return [];
+  }
+  const diagnostics: DiagnosticEnvelope[] = [];
+  for (const err of errors) {
+    if (!err || typeof err !== 'object') {
+      continue;
+    }
+    const keyword =
+      typeof err.keyword === 'string' && err.keyword.length > 0
+        ? err.keyword
+        : 'unknown';
+    const details: Record<string, unknown> = { keyword };
+    if (typeof err.message === 'string' && err.message.length > 0) {
+      details.message = err.message;
+    }
+    if (typeof err.schemaPath === 'string' && err.schemaPath.length > 0) {
+      details.schemaPath = err.schemaPath;
+    }
+    if (typeof err.instancePath === 'string' && err.instancePath.length > 0) {
+      details.instancePath = err.instancePath;
+    }
+    if (err.params !== undefined) {
+      details.params = err.params;
+    }
+    diagnostics.push({
+      code: DIAGNOSTIC_CODES.VALIDATION_KEYWORD_FAILED,
+      canonPath: normalizeSchemaCanonPath(err.schemaPath),
+      details,
+    });
+  }
+  return diagnostics;
 }

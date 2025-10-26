@@ -20,6 +20,22 @@ describe('assertDiagnosticEnvelope', () => {
     ).not.toThrow();
   });
 
+  it('accepts validation keyword diagnostics emitted during final validation', () => {
+    expect(() =>
+      assertDiagnosticEnvelope({
+        code: DIAGNOSTIC_CODES.VALIDATION_KEYWORD_FAILED,
+        canonPath: '/minLength',
+        details: {
+          keyword: 'minLength',
+          message: 'must NOT be shorter than 5 characters',
+          schemaPath: '#/minLength',
+          instancePath: '/payload',
+          params: { limit: 5 },
+        },
+      })
+    ).not.toThrow();
+  });
+
   it('rejects when details duplicate canonPath key anywhere in the payload', () => {
     expect(() =>
       assertDiagnosticEnvelope({
