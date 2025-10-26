@@ -1,4 +1,7 @@
-import type { MetricsSnapshot } from '../packages/core/src/index.js';
+import type {
+  MetricsSnapshot,
+  PipelineOptions,
+} from '../packages/core/src/index.js';
 
 export interface IterationConfig {
   warmup: number;
@@ -41,4 +44,5 @@ export interface RunProfileOverrides {
   seeds?: readonly number[];
   generateCount?: number;
   schema?: unknown;
+  pipelineOverrides?: Partial<PipelineOptions>;
 }

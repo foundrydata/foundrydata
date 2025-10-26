@@ -25,6 +25,7 @@
     "prepublish": "npm run build",
     "prepare": "husky",
     "bench": "tsx scripts/bench.ts",
+    "bench:real-world": "tsx scripts/bench-real-world.ts",
     "task-ready": "npm run lint && npm run typecheck && npm run build && npm run test",
     "task-complete": "npm run task-ready && echo '✅ Task validation passed - ready to mark as complete'",
     "release": "tsx packages/shared/src/release/cli.ts",
