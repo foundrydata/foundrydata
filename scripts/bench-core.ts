@@ -104,7 +104,10 @@ export async function runProfile(
   overrides: RunProfileOverrides = {}
 ): Promise<ProfileSummary> {
   const prepared = await prepareProfile(profile, overrides);
-  const measured = await executeMeasuredIterations(prepared);
+  const measured = await executeMeasuredIterations(
+    prepared,
+    overrides.pipelineOverrides
+  );
   return summariseProfile(prepared, measured);
 }
 
@@ -176,7 +179,8 @@ async function prepareProfile(
 }
 
 async function executeMeasuredIterations(
-  prepared: PreparedProfile
+  prepared: PreparedProfile,
+  pipelineOverrides?: RunProfileOverrides['pipelineOverrides']
 ): Promise<MeasuredData> {
   const totalIterations =
     prepared.iterations.warmup + prepared.iterations.measured;
@@ -189,7 +193,8 @@ async function executeMeasuredIterations(
     const result = await runSingleIteration(
       prepared.schema,
       seed,
-      prepared.generateCount
+      prepared.generateCount,
+      pipelineOverrides
     );
 
     if (index >= prepared.iterations.warmup) {
@@ -261,12 +266,13 @@ async function loadSchema(schemaPath: URL): Promise<unknown> {
 async function runSingleIteration(
   schema: unknown,
   seed: number,
-  generateCount: number
+  generateCount: number,
+  pipelineOverrides?: RunProfileOverrides['pipelineOverrides']
 ): Promise<SingleRunResult> {
   const collector = new MetricsCollector({ verbosity: 'ci' });
   collector.setVerbosity('ci');
 
-  const options: PipelineOptions = {
+  const baseOptions: PipelineOptions = {
     collector,
     metrics: { verbosity: 'ci', enabled: true },
     snapshotVerbosity: 'ci',
@@ -275,6 +281,7 @@ async function runSingleIteration(
       count: generateCount,
     },
   };
+  const options = mergePipelineOptions(baseOptions, pipelineOverrides);
 
   const start = performance.now();
   const result = await executePipeline(schema, options);
@@ -301,6 +308,25 @@ async function runSingleIteration(
     memoryPeakMB: metrics.memoryPeakMB,
     metrics,
   };
+}
+
+function mergePipelineOptions(
+  base: PipelineOptions,
+  overrides?: RunProfileOverrides['pipelineOverrides']
+): PipelineOptions {
+  if (!overrides) {
+    return base;
+  }
+
+  return {
+    ...base,
+    ...overrides,
+    metrics: { ...base.metrics, ...overrides.metrics },
+    generate: { ...base.generate, ...overrides.generate },
+    compose: { ...base.compose, ...overrides.compose },
+    repair: { ...base.repair, ...overrides.repair },
+    validate: { ...base.validate, ...overrides.validate },
+  } satisfies PipelineOptions;
 }
 
 function sampleMemoryUsageMb(): number {

@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import Ajv, { type Options as AjvOptions } from 'ajv';
 import Ajv2019 from 'ajv/dist/2019.js';
 import Ajv2020 from 'ajv/dist/2020.js';
@@ -10,6 +11,8 @@ import {
 } from '../types/options.js';
 
 export type JsonSchemaDialect = 'draft-04' | 'draft-07' | '2019-09' | '2020-12';
+
+const requireForDraft = createRequire(import.meta.url);
 
 export interface SourceAjvFactoryOptions {
   dialect: JsonSchemaDialect;
@@ -106,9 +109,8 @@ function createAjvByDialect(
     case '2020-12':
       return new Ajv2020(flags) as unknown as Ajv;
     case 'draft-04': {
-      // ajv-draft-04 is optional; use CommonJS require only when available
-      // eslint-disable-next-line no-undef
-      const AjvDraft04 = require('ajv-draft-04');
+      // ajv-draft-04 is optional; resolve lazily via createRequire for ESM compatibility
+      const AjvDraft04 = requireForDraft('ajv-draft-04');
       return new AjvDraft04(flags) as unknown as Ajv;
     }
     default:
