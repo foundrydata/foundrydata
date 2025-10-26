@@ -349,6 +349,18 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
       reason: enumSchema(['branch', 'dependent']),
     },
   },
+  [DIAGNOSTIC_CODES.VALIDATION_KEYWORD_FAILED]: {
+    kind: 'object',
+    required: {
+      keyword: { kind: 'string' },
+    },
+    optional: {
+      message: { kind: 'string' },
+      schemaPath: { kind: 'string' },
+      instancePath: { kind: 'string' },
+      params: { kind: 'any' },
+    },
+  },
   [DIAGNOSTIC_CODES.EXCLUSIVITY_TWEAK_STRING]: {
     kind: 'object',
     required: {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { executePipeline } from '../orchestrator';
+import { DIAGNOSTIC_CODES } from '../../diag/codes';
 
 describe('Pipeline final validation failure', () => {
   it('marks pipeline status failed when AJV final validation is invalid', async () => {
@@ -38,5 +39,14 @@ describe('Pipeline final validation failure', () => {
     const last = result.errors[result.errors.length - 1];
     expect(last?.stage).toBe('validate');
     expect(last?.message).toBe('FINAL_VALIDATION_FAILED');
+
+    const validationDiagnostics = result.artifacts.validationDiagnostics;
+    expect(validationDiagnostics).toBeDefined();
+    const firstDiag = validationDiagnostics?.[0];
+    expect(firstDiag?.code).toBe(DIAGNOSTIC_CODES.VALIDATION_KEYWORD_FAILED);
+    expect(firstDiag?.canonPath).toBe('/minLength');
+    expect(firstDiag?.details).toMatchObject({
+      keyword: 'minLength',
+    });
   });
 });
