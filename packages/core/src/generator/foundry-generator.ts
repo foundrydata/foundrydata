@@ -30,6 +30,7 @@ import {
 import { XorShift32 } from '../util/rng.js';
 import { createSourceAjv, type JsonSchemaDialect } from '../util/ajv-source.js';
 import { resolveDynamicRefBinding } from '../util/draft.js';
+import { synthesizePatternExample } from '../util/pattern-literals.js';
 import type Ajv from 'ajv';
 import type { ValidateFunction } from 'ajv';
 
@@ -1705,6 +1706,19 @@ class GeneratorEngine {
         ? Math.max(minLength, Math.floor(schema.maxLength))
         : undefined;
     const padChar = this.normalizedAlphabet[0] ?? 'a';
+
+    if (typeof schema.pattern === 'string') {
+      const patternValue = synthesizePatternExample(schema.pattern);
+      if (patternValue !== undefined) {
+        const patternLength = codePointLength(patternValue);
+        if (
+          patternLength >= minLength &&
+          (maxLength === undefined || patternLength <= maxLength)
+        ) {
+          return patternValue;
+        }
+      }
+    }
 
     // format-aware generation (best-effort when formats are validated)
     if (this.formatRegistry && typeof schema.format === 'string') {

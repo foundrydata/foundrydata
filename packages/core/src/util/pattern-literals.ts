@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 /* eslint-disable max-depth */
 /* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
@@ -248,6 +249,288 @@ function expandCharClass(expression: string): string[] | undefined {
   }
 
   return results;
+}
+
+export function synthesizePatternExample(source: string): string | undefined {
+  let regex: RegExp;
+  try {
+    regex = new RegExp(source, 'u');
+  } catch {
+    return undefined;
+  }
+  const trimmed = stripAnchors(source);
+  const synthesized = synthesizeAlternation(trimmed);
+  if (synthesized === undefined) {
+    return undefined;
+  }
+  return regex.test(synthesized) ? synthesized : undefined;
+}
+
+function stripAnchors(source: string): string {
+  let start = 0;
+  let end = source.length;
+  if (source.startsWith('^')) {
+    start = 1;
+  }
+  if (end - start > 0 && source.endsWith('$') && !source.endsWith('\\$')) {
+    end -= 1;
+  }
+  return source.slice(start, end);
+}
+
+function synthesizeAlternation(source: string): string | undefined {
+  const parts = splitTopLevelAlternatives(source);
+  if (!parts) return undefined;
+  for (const part of parts) {
+    const seq = synthesizeSequence(part);
+    if (seq !== undefined) {
+      return seq;
+    }
+  }
+  return undefined;
+}
+
+function splitTopLevelAlternatives(source: string): string[] | undefined {
+  const parts: string[] = [];
+  let current = '';
+  let escaping = false;
+  let inClass = false;
+  let depth = 0;
+  for (let i = 0; i < source.length; i += 1) {
+    const ch = source[i]!;
+    if (escaping) {
+      current += `\\${ch}`;
+      escaping = false;
+      continue;
+    }
+    if (ch === '\\') {
+      escaping = true;
+      continue;
+    }
+    if (ch === '[' && !inClass) {
+      inClass = true;
+      current += ch;
+      continue;
+    }
+    if (ch === ']' && inClass) {
+      inClass = false;
+      current += ch;
+      continue;
+    }
+    if (!inClass) {
+      if (ch === '(') {
+        depth += 1;
+      } else if (ch === ')') {
+        if (depth === 0) return undefined;
+        depth -= 1;
+      }
+    }
+    if (ch === '|' && !inClass && depth === 0) {
+      parts.push(current);
+      current = '';
+      continue;
+    }
+    current += ch;
+  }
+  if (escaping || inClass || depth !== 0) return undefined;
+  parts.push(current);
+  return parts;
+}
+
+function synthesizeSequence(source: string): string | undefined {
+  let result = '';
+  let index = 0;
+  while (index < source.length) {
+    const unit = parseUnit(source, index);
+    if (!unit) return undefined;
+    index = unit.next;
+    const quant = readQuantifier(source, index);
+    if (quant) {
+      index = quant.next;
+      if (quant.min === 0) {
+        continue;
+      }
+      result += unit.value.repeat(quant.min);
+    } else {
+      result += unit.value;
+    }
+  }
+  return result;
+}
+
+function parseUnit(
+  source: string,
+  index: number
+): { value: string; next: number } | undefined {
+  const ch = source[index];
+  if (ch === undefined) return undefined;
+  if (ch === '\\') {
+    if (index + 1 >= source.length) return undefined;
+    const esc = source[index + 1]!;
+    return { value: resolveEscape(esc), next: index + 2 };
+  }
+  if (ch === '[') {
+    return parseCharClassUnit(source, index);
+  }
+  if (ch === '(') {
+    return parseGroupUnit(source, index);
+  }
+  if (ch === '.') {
+    return { value: 'a', next: index + 1 };
+  }
+  if ('|)}'.includes(ch)) {
+    return undefined;
+  }
+  return { value: ch, next: index + 1 };
+}
+
+function resolveEscape(char: string): string {
+  if (char === 'd') return '0';
+  if (char === 'D') return 'a';
+  if (char === 'w') return 'a';
+  if (char === 'W') return '-';
+  if (char === 's') return ' ';
+  if (char === 'S') return 'a';
+  return char;
+}
+
+function parseCharClassUnit(
+  source: string,
+  index: number
+): { value: string; next: number } | undefined {
+  let i = index + 1;
+  let escaping = false;
+  let negated = false;
+  if (source[i] === '^') {
+    negated = true;
+    i += 1;
+  }
+  if (negated) return undefined;
+  let chosen: string | undefined;
+  while (i < source.length) {
+    const ch = source[i]!;
+    if (escaping) {
+      chosen ??= resolveEscape(ch);
+      escaping = false;
+      i += 1;
+      continue;
+    }
+    if (ch === '\\') {
+      escaping = true;
+      i += 1;
+      continue;
+    }
+    if (ch === ']') {
+      return chosen ? { value: chosen, next: i + 1 } : undefined;
+    }
+    if (
+      i + 2 < source.length &&
+      source[i + 1] === '-' &&
+      source[i + 2] !== ']'
+    ) {
+      chosen ??= ch;
+      i += 3;
+      continue;
+    }
+    if (ch === '[') return undefined;
+    chosen ??= ch;
+    i += 1;
+  }
+  return undefined;
+}
+
+function parseGroupUnit(
+  source: string,
+  index: number
+): { value: string; next: number } | undefined {
+  let depth = 1;
+  let i = index + 1;
+  let escaping = false;
+  let inClass = false;
+  while (i < source.length) {
+    const ch = source[i]!;
+    if (escaping) {
+      escaping = false;
+      i += 1;
+      continue;
+    }
+    if (ch === '\\') {
+      escaping = true;
+      i += 1;
+      continue;
+    }
+    if (ch === '[' && !inClass) {
+      inClass = true;
+      i += 1;
+      continue;
+    }
+    if (ch === ']' && inClass) {
+      inClass = false;
+      i += 1;
+      continue;
+    }
+    if (!inClass) {
+      if (ch === '(') {
+        depth += 1;
+      } else if (ch === ')') {
+        depth -= 1;
+        if (depth === 0) {
+          const inner = source.slice(index + 1, i);
+          if (inner.startsWith('?!') || inner.startsWith('?=')) {
+            return undefined;
+          }
+          if (inner.startsWith('?<')) {
+            return undefined;
+          }
+          const normalized = inner.startsWith('?:') ? inner.slice(2) : inner;
+          const alt = synthesizeAlternation(normalized);
+          if (alt === undefined) return undefined;
+          return { value: alt, next: i + 1 };
+        }
+      }
+    }
+    i += 1;
+  }
+  return undefined;
+}
+
+function readQuantifier(
+  source: string,
+  index: number
+): { min: number; next: number } | undefined {
+  const ch = source[index];
+  if (ch === undefined) return undefined;
+  if (ch === '?') {
+    return { min: 0, next: skipNonGreedy(source, index + 1) };
+  }
+  if (ch === '*') {
+    return { min: 0, next: skipNonGreedy(source, index + 1) };
+  }
+  if (ch === '+') {
+    return { min: 1, next: skipNonGreedy(source, index + 1) };
+  }
+  if (ch !== '{') {
+    return undefined;
+  }
+  let cursor = index + 1;
+  let body = '';
+  while (cursor < source.length && source[cursor] !== '}') {
+    body += source[cursor];
+    cursor += 1;
+  }
+  if (cursor >= source.length) return undefined;
+  const parts = body.split(',');
+  const rawMin = Number.parseInt(parts[0]?.trim() ?? '', 10);
+  if (!Number.isFinite(rawMin) || rawMin < 0) return undefined;
+  const next = skipNonGreedy(source, cursor + 1);
+  return { min: rawMin, next };
+}
+
+function skipNonGreedy(source: string, index: number): number {
+  if (source[index] === '?') {
+    return index + 1;
+  }
+  return index;
 }
 
 export interface RegexScanResult {
