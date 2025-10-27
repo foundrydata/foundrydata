@@ -99,6 +99,8 @@ export interface ComposeDiagnostics {
   caps?: string[];
   branchDecisions?: BranchDecisionRecord[];
   nodes?: Record<string, NodeDiagnostics>;
+  // Run-level diagnostics from resolver pre-phase (canonPath fixed to '#')
+  run?: Array<{ code: DiagnosticCode; canonPath: string; details?: unknown }>;
 }
 
 export interface BranchDecisionRecord {

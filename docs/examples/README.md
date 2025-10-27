@@ -166,6 +166,37 @@ foundrydata generate --schema api-transaction-schema.json --rows 50 --external-r
 
 * There is **no** `--resolve-externals` flag and **no remote dereferencing**. The flag above only sets the policy for encountering external `$ref`; output is still validated against the original schema.&#x20;
 
+
+### Resolver strategies (pre‑phase; opt‑in)
+
+You can optionally enable a pre‑pipeline “Prefetch & Cache Fill” step that fetches external `$ref` targets to a local cache. Core phases remain I/O‑free and validation still uses the original schema.
+
+- `--resolve=local` (default): no network; prefetch disabled.
+- `--resolve=local,schemastore`: allow HTTP(S) prefetch restricted to `json.schemastore.org` (use cache via `--cache-dir`).
+- `--resolve=local,remote`: allow general HTTP(S) prefetch (pre‑phase only); use with `--cache-dir`.
+
+Examples
+
+```bash
+# Development with tsx (no build) — local only (no network)
+npx tsx packages/cli/src/index.ts generate --schema ecommerce-schema.json --rows 20 --resolve=local
+
+# Restrict to SchemaStore and write/read local cache
+foundrydata generate --schema profiles/real-world/asyncapi-3.0.schema.json   --rows 10   --resolve=local,schemastore   --cache-dir "~/.foundrydata/cache"
+
+# General remote (pre-phase only), with cache directory
+foundrydata generate --schema profiles/real-world/asyncapi-3.0.schema.json   --rows 10   --resolve=local,remote   --cache-dir "~/.foundrydata/cache"
+
+# Offline/Lax planning stubs: proceed even if externals are unreachable
+foundrydata generate --schema profiles/real-world/asyncapi-3.0.schema.json   --rows 10   --compat lax   --fail-on-unresolved=false   --resolve=local
+```
+
+Observability
+
+- Run‑level notes are exported under `compose(...).diag.run[]` with `canonPath:"#"` (e.g., `RESOLVER_STRATEGIES_APPLIED`, `RESOLVER_CACHE_HIT`, `RESOLVER_CACHE_MISS_FETCHED`, `RESOLVER_OFFLINE_UNAVAILABLE`).
+- Planning‑time stubs in Lax emit `EXTERNAL_REF_STUBBED` warnings.
+
+
 ---
 
 ## What each example highlights

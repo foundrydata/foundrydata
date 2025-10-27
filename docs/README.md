@@ -17,6 +17,28 @@ This page lists the authoritative documentation that accompanies the Feature Sim
 - Bench & performance gates — `docs/Known-Limits.md#performance-gates`
 - Diagnostics envelope schema — `docs/feature-simplification/feature-support-simplification.md` §19 (referenced by `packages/core/src/diag/schemas.ts`)
 
+## Resolver Extension (R1) — Quick Guide
+
+The optional HTTP(S) resolver is an opt‑in pre‑pipeline step that fetches external `$ref` targets and hydrates a local cache and in‑memory registry. Core phases (`Normalize → Compose → Generate → Repair → Validate`) remain I/O‑free and always validate against the original schema.
+
+- Enable strategies via CLI:
+  - Development (tsx):
+    - `npx tsx packages/cli/src/index.ts generate --schema <file> --resolve=local` (default; no network)
+    - `npx tsx packages/cli/src/index.ts generate --schema <file> --resolve=local,schemastore --cache-dir "~/.foundrydata/cache"`
+  - After build:
+    - `foundrydata generate --schema <file> --resolve=local,remote --cache-dir "~/.foundrydata/cache"`
+- Offline/Lax stubs (planning‑time only):
+  - `--compat lax --fail-on-unresolved=false` maps to Lax mode with `resolver.stubUnresolved:'emptySchema'`.
+  - Planning proceeds with `{}` stubs; final validation applies skip eligibility and sets `validationsPerRow = 0` when skipped.
+- Observability:
+  - Run‑level notes are emitted under `compose(...).diag.run[]` with `canonPath:"#"`:
+    - `RESOLVER_STRATEGIES_APPLIED`, `RESOLVER_CACHE_HIT`, `RESOLVER_CACHE_MISS_FETCHED`, `RESOLVER_OFFLINE_UNAVAILABLE`.
+  - Planning‑time stubs emit `EXTERNAL_REF_STUBBED` warnings (per‑path).
+- Determinism:
+  - Compose/memo cache keys incorporate a `resolver.registryFingerprint` so outcomes are stable for a fixed registry.
+
+See `docs/Known-Limits.md#resolver-r1-scope--limits` for limits and security posture.
+
 ## Architecture & Reference
 
 - High-level architecture: ARCHITECTURE.md
@@ -38,7 +60,7 @@ This page lists the authoritative documentation that accompanies the Feature Sim
 
 ## Operational non-goals
 
-- No remote resolution of external `$ref`; generation operates on local fragments only.
+- No remote resolution of external `$ref` during core phases; generation operates on local fragments only. The optional Resolver pre‑phase (R1) may fetch over HTTP(S) to a local cache/registry used read‑only by core phases.
 - Deterministic generation only (no learned/scenario-based distributions).
 - Generated data is not cached or persisted; every run revalidates against the source schema.
 

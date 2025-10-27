@@ -29,6 +29,8 @@ const PLAN_OPTIONS_SUBKEY_FIELDS = [
   'rational.maxRatBits',
   'rational.qCap',
   'repair.mustCoverGuard',
+  // Resolver stub mode influences effective view behavior (SPEC §14)
+  'resolver.stubUnresolved',
   'trials.maxBranchesToTry',
   'trials.perBranch',
   'trials.skipTrials',

@@ -76,6 +76,17 @@ program
     'string'
   )
   .option('--no-metrics', 'Disable metrics collection')
+  .option(
+    '--resolve <strategies>',
+    'Resolver strategies: local[,remote][,schemastore]',
+    'local'
+  )
+  .option('--cache-dir <path>', 'Resolver cache directory (supports ~)')
+  .option(
+    '--fail-on-unresolved <bool>',
+    'Set false to enable Lax planning stubs (maps to resolver.stubUnresolved=emptySchema)',
+    (v) => String(v)
+  )
   .option('--debug-passes', 'Print effective configuration to stderr')
   .action(async function (this: Command, options) {
     try {

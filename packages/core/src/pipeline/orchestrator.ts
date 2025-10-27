@@ -55,6 +55,12 @@ import {
   summarizeExternalRefs,
   type ExternalRefClassification,
 } from '../util/modes.js';
+import { buildExternalRefProbeSchema } from '../util/modes.js';
+import {
+  prefetchAndBuildRegistry,
+  type ResolverOptions as HttpResolverOptions,
+} from '../resolver/http-resolver.js';
+import { ResolutionRegistry } from '../resolver/registry.js';
 
 const STAGE_SEQUENCE: PipelineStageName[] = [
   'normalize',
@@ -196,6 +202,49 @@ export async function executePipeline(
   );
   const planOptions = options.generate?.planOptions;
   const resolvedPlanOptions = resolveOptions(planOptions);
+  // Optional resolver pre-phase (Extension R1)
+  let resolverRegistry: ResolutionRegistry | undefined;
+  let resolverRunDiags:
+    | Array<{ code: string; canonPath: string; details?: unknown }>
+    | undefined = [];
+  let registryFingerprint: string | undefined;
+  try {
+    // Always log strategies applied for observability (run-level)
+    const strategiesNote = {
+      code: DIAGNOSTIC_CODES.RESOLVER_STRATEGIES_APPLIED as string,
+      canonPath: '#',
+      details: {
+        strategies: resolvedPlanOptions.resolver.strategies,
+        cacheDir: resolvedPlanOptions.resolver.cacheDir,
+      },
+    };
+    resolverRunDiags.push(strategiesNote);
+    if (schemaHasExternalRefs(schema)) {
+      const resolver = resolvedPlanOptions.resolver;
+      const strategies = resolver.strategies ?? ['local'];
+      const mayFetch =
+        strategies.includes('remote') || strategies.includes('schemastore');
+      if (mayFetch) {
+        const { extRefs } = summarizeExternalRefs(schema);
+        const pre = await prefetchAndBuildRegistry(extRefs, {
+          strategies,
+          cacheDir: resolver.cacheDir,
+          allowlist: resolver.allowlist,
+          maxDocs: resolver.maxDocs,
+          maxRefDepth: resolver.maxRefDepth,
+          maxBytesPerDoc: resolver.maxBytesPerDoc,
+          timeoutMs: resolver.timeoutMs,
+          followRedirects: resolver.followRedirects,
+          acceptYaml: resolver.acceptYaml,
+        } as HttpResolverOptions);
+        resolverRegistry = pre.registry;
+        resolverRunDiags = pre.diagnostics;
+        registryFingerprint = resolverRegistry.fingerprint();
+      }
+    }
+  } catch {
+    // Pre-phase failures should not crash core pipeline; they will be reflected by run-level notes.
+  }
   const externalRefStrictPolicy =
     resolvedPlanOptions.failFast.externalRefStrict;
   let externalRefState: ExternalRefState | undefined;
@@ -281,7 +330,7 @@ export async function executePipeline(
   // Compose stage (requires canonical schema from normalize phase)
   metrics.begin(METRIC_PHASE_BY_STAGE.compose);
   try {
-    const composeInput: ComposeInput =
+    let composeInput: ComposeInput =
       normalizeResult ??
       ({
         schema,
@@ -309,8 +358,8 @@ export async function executePipeline(
     const discriminator = Boolean(options.validate?.discriminator);
     if (schemaHasExternalRefs(schema)) {
       const mode = options.mode ?? 'strict';
-      const sourceAjvFactory = (): Ajv =>
-        createSourceAjv(
+      const sourceAjvFactory = (): Ajv => {
+        const ajv = createSourceAjv(
           {
             dialect: sourceDialect,
             validateFormats,
@@ -319,6 +368,22 @@ export async function executePipeline(
           },
           planOptions
         );
+        // Hydrate Source Ajv with resolver registry if available
+        if (resolverRegistry) {
+          for (const entry of resolverRegistry.entries()) {
+            try {
+              (
+                ajv as unknown as {
+                  addSchema: (s: unknown, key?: string) => void;
+                }
+              ).addSchema(entry.schema as object, entry.uri);
+            } catch {
+              // ignore addSchema failures; AJV may reject missing $id
+            }
+          }
+        }
+        return ajv;
+      };
       try {
         const sourceAjv = sourceAjvFactory();
         sourceAjv.compile(schemaForSourceAjv as object);
@@ -388,6 +453,20 @@ export async function executePipeline(
       },
       planOptions
     );
+    // Hydrate planning Ajv with resolver registry for in-planning compiles
+    if (resolverRegistry) {
+      for (const entry of resolverRegistry.entries()) {
+        try {
+          (
+            planningForCompose as unknown as {
+              addSchema: (s: unknown, key?: string) => void;
+            }
+          ).addSchema(entry.schema as object, entry.uri);
+        } catch {
+          // ignore
+        }
+      }
+    }
     const ajvFlags = extractAjvFlags(planningForCompose) as unknown as Record<
       string,
       unknown
@@ -412,8 +491,50 @@ export async function executePipeline(
         ajvClass,
         ajvFlags,
       },
+      // Ensure cache/memo keys incorporate resolver fingerprint per SPEC §14
+      selectorMemoKeyFn: registryFingerprint
+        ? (_: string, __: number) => registryFingerprint as string
+        : undefined,
     };
+    // Apply Lax planning-time stubs when configured and unresolved externals are likely
+    const mode = options.mode ?? 'strict';
+    let stubbedRefs: string[] | undefined;
+    if (
+      mode === 'lax' &&
+      resolvedPlanOptions.resolver.stubUnresolved === 'emptySchema'
+    ) {
+      try {
+        // Determine if unresolved external refs remain after pre-phase
+        const { probe, extRefs } = buildExternalRefProbeSchema(schema);
+        if (Array.isArray(extRefs) && extRefs.length > 0) {
+          composeInput = { ...composeInput, schema: probe };
+          stubbedRefs = extRefs;
+        }
+      } catch {
+        // ignore
+      }
+    }
     const composeResult = runners.compose(composeInput, composeOptions);
+    if (stubbedRefs && stubbedRefs.length > 0) {
+      composeResult.diag = composeResult.diag ?? {};
+      const warn = composeResult.diag.warn ?? [];
+      for (const ref of stubbedRefs) {
+        warn.push({
+          code: DIAGNOSTIC_CODES.EXTERNAL_REF_STUBBED,
+          canonPath: '#',
+          details: { ref, stubKind: 'emptySchema' },
+        });
+      }
+      composeResult.diag.warn = warn;
+    }
+    // Attach run-level resolver diagnostics if present
+    if (resolverRunDiags && resolverRunDiags.length > 0) {
+      composeResult.diag = composeResult.diag ?? {};
+      composeResult.diag.run = [
+        ...(composeResult.diag.run ?? []),
+        ...resolverRunDiags,
+      ];
+    }
     artifacts.effective = composeResult;
 
     const fatalDiagnostics = composeResult.diag?.fatal ?? [];

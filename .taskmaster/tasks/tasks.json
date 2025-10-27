@@ -2133,13 +2133,221 @@
         "priority": "medium",
         "subtasks": [],
         "updatedAt": "2025-10-27T14:02:16.511Z"
+      },
+      {
+        "id": "9127",
+        "title": "Implement Extension R1: HTTP(S) resolver + local cache + offline planning stubs",
+        "description": "Task superseded by #9128 which provides comprehensive breakdown of Extension R1 implementation with full subtask structure. This task serves as historical context for the Extension R1 specification and requirements analysis.",
+        "status": "cancelled",
+        "dependencies": [
+          "4",
+          "12",
+          "14"
+        ],
+        "priority": "high",
+        "details": "**SUPERSEDED BY TASK #9128**\n\nThis task has been replaced by task #9128 which provides a more comprehensive breakdown of Extension R1 implementation with detailed subtasks. Task #9128 includes:\n\n- 16 subtasks covering all aspects of resolver implementation\n- Updated technical architecture aligned with current codebase structure\n- Enhanced test strategy with specific integration test cases\n- Detailed CLI integration specifications\n- Cache system integration with existing infrastructure\n\n**Historical Context**: This task originally specified implementing the optional HTTP(S) resolver extension with prefetch & cache fill, local on-disk cache, in-memory resolution registry, and Lax mode offline planning stubs as specified in SPEC sections §1, §2, §4, §5, §7, §11, §14, §19, §20, §23.\n\n**Migration Note**: Use task #9128 for actual implementation. This task remains for historical reference and maintains the same dependencies (4, 12, 14) which have been properly transferred to the new task structure.\n\n**Key Implementation Files Identified in Codebase Analysis**:\n- `packages/core/src/util/cache.ts` - Existing cache infrastructure to extend\n- `packages/core/src/types/options.ts` - Configuration system for new ResolverOptions\n- `packages/cli/src/flags.ts` - CLI flag parsing infrastructure\n\nThe codebase analysis confirms the architecture proposed in the original specification aligns well with the existing modular structure, particularly the cache and options systems that are already well-established.",
+        "testStrategy": "**TEST STRATEGY MIGRATED TO TASK #9128**\n\nThe comprehensive test strategy has been moved to task #9128 which includes:\n\n**Unit Tests**: Resolver core, cache system, registry management, prefetch logic, Lax mode stubs, CLI integration\n\n**Integration Tests**: \n- R-RESOLVER-ONLINE-01: End-to-end with live HTTP requests\n- R-RESOLVER-OFFLINE-01: Offline behavior with populated cache\n- R-RESOLVER-FINGERPRINT-01: Cache key integration\n- R-RESOLVER-DIAG-01/02: Diagnostic export and Lax mode behavior\n\n**Property-Based Tests**: Cache consistency, registry determinism, URL canonicalization\n\n**Benchmark Tests**: Resolver overhead, cache performance, network concurrency, bench gate compliance\n\n**Acceptance Criteria**: CI passes, bench gates unchanged, ≥80% coverage, CLI help text updated, deterministic behavior\n\nRefer to task #9128 for complete test specifications and implementation guidance.",
+        "subtasks": []
+      },
+      {
+        "id": "9128",
+        "title": "Extension R1: HTTP(S) resolver + local cache + Lax planning stubs",
+        "description": "Implement optional HTTP(S) resolver extension with prefetch & cache fill, local on-disk cache, in-memory resolution registry, and Lax mode offline planning stubs.",
+        "details": "**Context**: Extension R1 is an opt-in HTTP(S) resolver system that enables network I/O only in a pre-pipeline 'Prefetch & Cache Fill' step, keeping core phases (Normalize → Compose → Generate → Repair → Validate) I/O-free. This aligns with SPEC anchors across multiple sections.\n\n**Implementation Requirements**:\n\n1. **Resolver Core Infrastructure** (§4, §23):\n   - Implement `ResolverOptions` interface with `strategies: ['local' | 'remote' | 'schemastore']` (default `['local']`)\n   - Add `cacheDir?: string` with `~` canonicalization support\n   - Add `allowlist?: string[]` for URL filtering\n   - Add `bounds: { timeoutMs: number; maxSizeBytes: number; maxDepth: number }` with defaults\n   - Create `HttpResolver` class with strategy-based fetch logic\n   - Support Schema Store API integration for common schemas\n\n2. **Cache System** (§14, §19):\n   - Implement on-disk cache with atomic write operations\n   - Cache key format: `${stableHash(url)}-${etag || lastModified || 'none'}.json`\n   - Support cache invalidation based on HTTP headers\n   - Add cache metadata file for tracking entries and cleanup\n   - Handle concurrent access and corruption recovery\n\n3. **In-Memory Registry** (§7, §11):\n   - Create `ResolutionRegistry` to store resolved schemas during execution\n   - Map canonical URLs to resolved schema objects\n   - Support fingerprinting for cache key integration (`registryFingerprint`)\n   - Implement read-only access during generation phases\n\n4. **Prefetch & Cache Fill Phase** (§2, §20):\n   - Add pre-pipeline phase that scans schema for external $refs\n   - Implement parallel fetching with concurrency limits\n   - Populate both on-disk cache and in-memory registry\n   - Generate resolution diagnostics with canonical paths\n   - Support retry logic and graceful degradation\n\n5. **Lax Mode Integration** (§11, §12):\n   - Implement `EXTERNAL_REF_STUBBED` diagnostic code\n   - Add planning-time stub generation for unresolved external refs\n   - Maintain deterministic behavior with stub schemas\n   - Integrate with existing external ref policy framework\n\n6. **CLI Integration** (existing CLI structure):\n   - Add `--resolve` flag to enable resolver (default: false)\n   - Add `--cache-dir <path>` flag with `~` expansion\n   - Add `--fail-on-unresolved` flag for strict resolution\n   - Update help text and validation\n\n7. **Cache Key Integration** (§14):\n   - Extend `createCacheKeyContext()` to include `registryFingerprint`\n   - Update `buildBranchMemoKey()` to incorporate resolver state\n   - Ensure cache invalidation when registry changes\n\n8. **Diagnostics Export** (§20, §23):\n   - Add `Compose.diag.run` with resolver diagnostics\n   - Include `canonPath: '#'` for run-level diagnostics\n   - Export resolution success/failure counts and timing\n   - Track cache hit ratios and network requests\n\n**Technical Architecture**:\n- Extend `PlanOptions` interface with `resolver?: ResolverOptions`\n- Add resolver module at `packages/core/src/resolver/`\n- Integrate with existing cache system in `packages/core/src/util/cache.ts`\n- Update pipeline orchestrator to include prefetch phase\n- Maintain compatibility with existing external ref handling\n\n**Key Files to Modify**:\n- `packages/core/src/types/options.ts` - Add ResolverOptions interface\n- `packages/core/src/pipeline/orchestrator.ts` - Add prefetch phase\n- `packages/core/src/util/cache.ts` - Extend cache key system\n- `packages/cli/src/flags.ts` - Add resolver CLI flags\n- `packages/cli/src/index.ts` - Integrate resolver CLI options\n\n**New Files to Create**:\n- `packages/core/src/resolver/http-resolver.ts` - Core resolver implementation\n- `packages/core/src/resolver/cache-manager.ts` - On-disk cache management\n- `packages/core/src/resolver/registry.ts` - In-memory resolution registry\n- `packages/core/src/resolver/prefetch.ts` - Pre-pipeline fetching logic\n- `packages/core/src/resolver/types.ts` - Resolver type definitions",
+        "testStrategy": "**Unit Tests**:\n1. **Resolver Core**: Test HTTP fetching, strategy validation, URL parsing, timeout handling\n2. **Cache System**: Test on-disk persistence, cache invalidation, concurrent access, corruption recovery\n3. **Registry Management**: Test in-memory registry population, read-only access, fingerprinting\n4. **Prefetch Logic**: Test parallel fetching, concurrency limits, retry mechanisms\n5. **Lax Mode Stubs**: Test stub generation, deterministic behavior, diagnostic emission\n6. **CLI Integration**: Test flag parsing, path canonicalization, help text\n\n**Integration Tests**:\n1. **R-RESOLVER-ONLINE-01**: End-to-end test with live HTTP requests to Schema Store\n   - Schema with external refs to common schemas (JSON Schema meta-schema, OpenAPI)\n   - Verify cache population and registry hydration\n   - Assert generated data validates against resolved schemas\n\n2. **R-RESOLVER-OFFLINE-01**: Test offline behavior with populated cache\n   - Pre-populate cache with known schemas\n   - Disable network access\n   - Verify cache-only resolution works correctly\n\n3. **R-RESOLVER-FINGERPRINT-01**: Test cache key integration\n   - Generate data with resolver enabled/disabled\n   - Verify different cache keys and no cache pollution\n   - Test registry fingerprint affects memoization\n\n4. **R-RESOLVER-DIAG-01**: Test diagnostic export\n   - Verify `Compose.diag.run` contains resolver metrics\n   - Check canonical path format and timing data\n   - Test success/failure diagnostic codes\n\n5. **R-RESOLVER-DIAG-02**: Test Lax mode stub behavior\n   - Schema with unresolvable external refs\n   - Verify `EXTERNAL_REF_STUBBED` diagnostics\n   - Assert deterministic stub generation\n\n**Property-Based Tests**:\n1. **Cache Consistency**: Verify cache operations are atomic and consistent\n2. **Registry Determinism**: Same input always produces same registry state\n3. **URL Canonicalization**: Test various URL formats produce consistent cache keys\n\n**Benchmark Tests**:\n1. Measure resolver overhead with/without caching\n2. Test cache performance with various schema sizes\n3. Verify network concurrency limits are respected\n4. Ensure bench gates (p50 ≈ 200-400ms) remain unchanged for local schemas\n\n**Acceptance Criteria**:\n- CI passes all existing and new tests\n- Bench gates unchanged for non-resolver workflows\n- Coverage ≥80% on all touched files\n- CLI help text updated and validated\n- Integration with existing external ref policy\n- Deterministic behavior in both online/offline modes",
+        "status": "done",
+        "dependencies": [
+          "4",
+          "12",
+          "14"
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Scaffold resolver modules and options",
+            "description": "Add packages/core/src/resolver/{http-resolver.ts,cache-store.ts,registry.ts,options.ts,cli-mapping.ts} with ResolverOptions defaults, unioned strategies semantics, built-in schemastore allowlist, and '~' cacheDir canonicalization (absolute path).",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9128,
+            "parentId": "undefined",
+            "updatedAt": "2025-10-27T22:04:00.745Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement cache-store",
+            "description": "On-disk cache separate from plan caches: layout resolver.cacheDir/sha256(uri)/{content.json,meta.json}, meta includes {uri,contentHash,etag?}. Implement canonical JSON hashing (sorted keys, arrays in order, -0→0), atomic writes, '~' expansion, absolute normalized path, bounds (maxDocs, maxRefDepth, maxBytesPerDoc), no TTL by default.",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9128,
+            "parentId": "undefined",
+            "updatedAt": "2025-10-27T22:04:00.748Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement HTTP(S) resolver",
+            "description": "HTTP client with allowlist and strategy union ('local','schemastore','remote'), case-insensitive host matching, followRedirects<=3, timeoutMs, maxBytesPerDoc, acceptYaml normalization. Compute contentHash (SHA-256) and return bytes+meta; respect bounds and disallow network when extension disabled.",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9128,
+            "parentId": "undefined",
+            "updatedAt": "2025-10-27T22:04:00.752Z"
+          },
+          {
+            "id": 4,
+            "title": "Prefetch & Cache Fill pre-phase",
+            "description": "Traverse schema(s) to collect external  URIs (respecting maxRefDepth, maxDocs); fetch via resolver; hydrate on-disk cache; build in-memory registry (uri→{bytes,contentHash}); compute resolver.registryFingerprint per §14; export run-level diagnostics (strategies applied, cache hit/miss, offline unavailable).",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9128,
+            "parentId": "undefined",
+            "updatedAt": "2025-10-27T22:04:00.753Z"
+          },
+          {
+            "id": 5,
+            "title": "Integrate registry into planning/validation",
+            "description": "Compose/Planning AJV receives addSchema for cached documents; core phases perform no I/O; Validate continues to use original schema. Ensure Normalizer/Compose preserve external  verbatim; consult registry read-only. Guard against cross-document dynamicRef.",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9128,
+            "parentId": "undefined",
+            "updatedAt": "2025-10-27T22:04:00.755Z"
+          },
+          {
+            "id": 6,
+            "title": "Cache/memo keys and PlanOptionsSubKey updates",
+            "description": "Include resolver.registryFingerprint in compose/plan cache keys when extension active or stubUnresolved:'emptySchema'. Add 'resolver.stubUnresolved' to PlanOptionsSubKey. Ensure stable JSON encoding and AJV flags parity per §14.",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9128,
+            "parentId": "undefined",
+            "updatedAt": "2025-10-27T22:04:00.757Z"
+          },
+          {
+            "id": 7,
+            "title": "Lax planning stubs and skip eligibility",
+            "description": "When resolver.stubUnresolved:'emptySchema' and Lax, treat unresolved external  as {} in effective view only; emit EXTERNAL_REF_STUBBED; enforce ExternalRefSkipEligibility for final validation skip per §11; keep original schema unchanged.",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9128,
+            "parentId": "undefined",
+            "updatedAt": "2025-10-27T22:04:00.759Z"
+          },
+          {
+            "id": 8,
+            "title": "Diagnostics: run-level and per-path",
+            "description": "Export resolver run-level diagnostics under Compose.diag.run with canonPath:'#': RESOLVER_STRATEGIES_APPLIED, RESOLVER_CACHE_HIT, RESOLVER_CACHE_MISS_FETCHED, RESOLVER_OFFLINE_UNAVAILABLE. Emit EXTERNAL_REF_STUBBED for planning stubs and EXTERNAL_REF_UNRESOLVED per mode; ensure details payloads match §19 mini-schemas.",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9128,
+            "parentId": "undefined",
+            "updatedAt": "2025-10-27T22:04:00.761Z"
+          },
+          {
+            "id": 9,
+            "title": "CLI mapping",
+            "description": "Add CLI flags: --resolve=local[,remote][,schemastore], --cache-dir <path> with '~' expansion, --fail-on-unresolved=false mapping to Lax + resolver.stubUnresolved:'emptySchema'. Update help text and README snippets.",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9128,
+            "parentId": "undefined",
+            "updatedAt": "2025-10-27T22:04:00.763Z"
+          },
+          {
+            "id": 10,
+            "title": "Unit tests: resolver options & cache",
+            "description": "Tests for ResolverOptions defaults, '~' expansion to absolute path, allowlist semantics and unioned strategies; cache-store atomic write/read, canonical JSON hashing, meta.json content; bounds handling (maxBytesPerDoc, maxDocs, followRedirects, timeoutMs).",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9128,
+            "parentId": "undefined",
+            "updatedAt": "2025-10-27T22:04:00.765Z"
+          },
+          {
+            "id": 11,
+            "title": "Integration: R-RESOLVER-ONLINE-01",
+            "description": "With resolver.strategies:['local','remote','schemastore'] and empty cache, resolve https://json.schemastore.org/package and https://www.asyncapi.com/spec/3.0.0.json. Expect RESOLVER_CACHE_MISS_FETCHED then RESOLVER_CACHE_HIT on second run; no EXTERNAL_REF_UNRESOLVED.",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9128,
+            "parentId": "undefined",
+            "updatedAt": "2025-10-27T22:04:00.767Z"
+          },
+          {
+            "id": 12,
+            "title": "Integration: R-RESOLVER-OFFLINE-01",
+            "description": "With network disabled or allowlist excluding hosts and resolver.stubUnresolved:'emptySchema' in Lax, expect RESOLVER_OFFLINE_UNAVAILABLE run-level notes, EXTERNAL_REF_STUBBED warnings, generation proceeds, final validation may be skipped per ExternalRefSkipEligibility (diag.metrics.validationsPerRow=0).",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9128,
+            "parentId": "undefined",
+            "updatedAt": "2025-10-27T22:04:00.770Z"
+          },
+          {
+            "id": 13,
+            "title": "Integration: R-RESOLVER-FINGERPRINT-01",
+            "description": "Change the bytes or set of cached external documents and verify compose/plan cache keys change due to resolver.registryFingerprint; prevent reuse across different registry states.",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9128,
+            "parentId": "undefined",
+            "updatedAt": "2025-10-27T22:04:00.772Z"
+          },
+          {
+            "id": 14,
+            "title": "Integration: R-RESOLVER-DIAG-01/02",
+            "description": "Assert resolver diagnostics under compose(...).diag.run with canonPath:'#': strategies applied (once), cache hit/miss, offline unavailable; ensure no diag.fatal from resolver; verify EXTERNAL_REF_STUBBED is emitted for planning stubs (Lax).",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9128,
+            "parentId": "undefined",
+            "updatedAt": "2025-10-27T22:04:00.774Z"
+          },
+          {
+            "id": 15,
+            "title": "Docs and CLI help updates",
+            "description": "Update README.md, error.md, Known-Limits.md and CLI --help with resolver extension R1, flags, behavior summary, and DoD. Add changelog entries. Ensure acceptance examples (online/offline) are documented.",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9128,
+            "parentId": "undefined",
+            "updatedAt": "2025-10-27T22:04:00.776Z"
+          },
+          {
+            "id": 16,
+            "title": "Bench & CI gates unchanged",
+            "description": "Verify p95 latency ≤120ms and memory ≤512MB on existing profiles remain unchanged for local schemas; ensure resolver pre-phase is excluded from core SLI measurement; add CI toggles/seeding for online/offline tests to ensure reproducibility.",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9128,
+            "parentId": "undefined",
+            "updatedAt": "2025-10-27T22:04:00.777Z"
+          }
+        ],
+        "updatedAt": "2025-10-27T22:04:00.777Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-27T14:02:16.512Z",
-      "taskCount": 54,
-      "completedCount": 54,
+      "lastModified": "2025-10-27T22:04:00.779Z",
+      "taskCount": 56,
+      "completedCount": 55,
       "tags": [
         "feature-simplification"
       ]
