@@ -231,7 +231,10 @@ class GeneratorEngine {
     if (!schema || typeof schema !== 'object') {
       return {};
     }
-    const obj = schema as Record<string, unknown>;
+    const { schema: resolvedSchema, pointer: resolvedPointer } =
+      this.resolveSchemaRef(schema as Record<string, unknown>, canonPath);
+    const obj = resolvedSchema;
+    const effectiveCanonPath = resolvedPointer;
 
     if (Object.prototype.hasOwnProperty.call(obj, 'const')) {
       return obj.const;
@@ -243,9 +246,9 @@ class GeneratorEngine {
     const type = determineType(obj);
     switch (type) {
       case 'object':
-        return this.generateObject(obj, canonPath, itemIndex);
+        return this.generateObject(obj, effectiveCanonPath, itemIndex);
       case 'array':
-        return this.generateArray(obj, canonPath, itemIndex);
+        return this.generateArray(obj, effectiveCanonPath, itemIndex);
       case 'string':
         return this.generateString(obj);
       case 'integer':
@@ -258,13 +261,13 @@ class GeneratorEngine {
         return null;
       default:
         if (Array.isArray(obj.allOf)) {
-          return this.generateAllOf(obj, canonPath, itemIndex);
+          return this.generateAllOf(obj, effectiveCanonPath, itemIndex);
         }
         if (Array.isArray(obj.oneOf)) {
-          return this.generateOneOf(obj, canonPath, itemIndex);
+          return this.generateOneOf(obj, effectiveCanonPath, itemIndex);
         }
         if (Array.isArray(obj.anyOf)) {
-          return this.generateAnyOf(obj, canonPath, itemIndex);
+          return this.generateAnyOf(obj, effectiveCanonPath, itemIndex);
         }
         return {};
     }
@@ -1041,6 +1044,40 @@ class GeneratorEngine {
       return undefined;
     }
     return this.resolveRefTarget(binding.ref);
+  }
+
+  private resolveSchemaRef(
+    schema: Record<string, unknown>,
+    pointer: JsonPointer
+  ): { schema: Record<string, unknown>; pointer: JsonPointer } {
+    let currentSchema: Record<string, unknown> = schema;
+    let currentPointer: JsonPointer = pointer;
+    const seen = new Set<string>();
+    while (true) {
+      const hasStructuralSiblings = hasRefSiblings(currentSchema);
+      let next:
+        | { schema: Record<string, unknown>; pointer: JsonPointer }
+        | undefined;
+      const refValue = currentSchema['$ref'];
+      if (!hasStructuralSiblings && typeof refValue === 'string') {
+        next = this.resolveRefTarget(refValue);
+      } else {
+        const dynamicRefValue = currentSchema['$dynamicRef'];
+        if (!hasStructuralSiblings && typeof dynamicRefValue === 'string') {
+          next = this.resolveDynamicRefTarget(currentPointer, dynamicRefValue);
+        }
+      }
+      if (!next) {
+        break;
+      }
+      if (seen.has(next.pointer)) {
+        break;
+      }
+      seen.add(next.pointer);
+      currentSchema = next.schema;
+      currentPointer = next.pointer;
+    }
+    return { schema: currentSchema, pointer: currentPointer };
   }
 
   private applyDependentRequired(
@@ -2895,6 +2932,38 @@ function resolvePointerInSchema(root: unknown, pointer: JsonPointer): unknown {
     return undefined;
   }
   return node;
+}
+
+const REF_METADATA_KEYS = new Set([
+  '$id',
+  '$schema',
+  '$anchor',
+  '$dynamicAnchor',
+  '$comment',
+  '$defs',
+  'definitions',
+  'description',
+  'title',
+  'default',
+  'examples',
+  'deprecated',
+  'readOnly',
+  'writeOnly',
+  'format',
+  'contentEncoding',
+  'contentMediaType',
+]);
+
+function hasRefSiblings(schema: Record<string, unknown>): boolean {
+  for (const key of Object.keys(schema)) {
+    if (key === '$ref' || key === '$dynamicRef') {
+      continue;
+    }
+    if (!REF_METADATA_KEYS.has(key)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function determineType(schema: Record<string, unknown>): string | undefined {
