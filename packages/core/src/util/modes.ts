@@ -183,6 +183,18 @@ export function summarizeExternalRefs(
   };
 }
 
+/**
+ * Build a "probe" schema by replacing external $ref subtrees with {} while preserving
+ * fragment-only refs and in-document structure. Used for Lax planning-time stubs.
+ */
+export function buildExternalRefProbeSchema(schema: unknown): {
+  probe: unknown;
+  extRefs: string[];
+} {
+  const { probe, extRefs } = collectExternalRefsAndProbe(schema);
+  return { probe, extRefs: Array.from(extRefs) };
+}
+
 function collectExternalRefsAndProbe(schema: unknown): {
   extRefs: Set<string>;
   rawExtRefs: Set<string>;

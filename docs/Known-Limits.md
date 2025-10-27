@@ -4,7 +4,7 @@ This document lists deliberate constraints that keep the pipeline deterministic,
 
 ## Schema ingestion & referencing
 
-- **External `$ref`**: Only in-document references are compiled. Any external URI results in `EXTERNAL_REF_UNRESOLVED` (see `packages/core/src/util/modes.ts`). Callers may downgrade the policy from `error` to `warn`/`ignore`, but validation is skipped only when the lax mode or policy explicitly allows it; generation never dereferences remote content.
+- **External `$ref` (core)**: Only in‑document references are compiled by core phases. Any external URI produces `EXTERNAL_REF_UNRESOLVED` (see `packages/core/src/util/modes.ts`). Callers may downgrade the policy from `error` to `warn`/`ignore`, but validation is skipped only when Lax + skip‑eligibility allow it; generation never performs remote I/O.
 - **`$dynamicRef` / `$recursiveRef`**: These keywords are passed through to AJV. Resolution depth is capped by `guards.maxDynamicScopeHops` (default `2`), preventing runaway scope expansion.
 - **`not` nesting**: Normalization refuses to generate plans when `not` depth exceeds `guards.maxGeneratedNotNesting` (default `2`). Excessive nesting surfaces `NOT_DEPTH_CAPPED` warnings instead of compiling pathological schemas.
 
@@ -34,8 +34,29 @@ This document lists deliberate constraints that keep the pipeline deterministic,
 - **Branch fan-out**: `maxOneOfBranches = 200`, `maxAnyOfBranches = 500`, and `maxPatternProps = 64`. Exceeding any cap emits `COMPLEXITY_CAP_*` diagnostics and prevents further exploration.
 - **Bench expectations**: Regression gates (scripts/bench.ts) enforce `p95 ≤ 120ms` and `memory ≤ 512MB` for the curated benchmark suite. Pipelines exceeding either stop the release process until the regression is understood.
 
-## Out-of-scope / non-goals
+## Resolver (R1) — Scope & Limits
 
-- **Remote dereferencing**: Fetching external resources, schema registries, or HTTP endpoints is intentionally unsupported.
+The Resolver is an opt‑in, pre‑pipeline step that performs HTTP(S) fetches and populates a local on‑disk cache and an in‑memory registry. Core phases remain strictly I/O‑free and validate against the original schema.
+
+- **I/O scope (normative)**: Only the pre‑phase performs network/filesystem I/O. Normalize → Validate never do.
+- **Cache**: Location `resolver.cacheDir` supports POSIX `~` expansion and is canonicalized to an absolute path before I/O. Layout is `cacheDir/sha256(uri)/{content.json,meta.json}` with `meta.json = { uri, contentHash }` and `contentHash = sha256(canonical JSON)`.
+- **No TTL**: The pre‑phase uses whatever bytes are present at the start of the run; refreshing is explicit. Bounds may mark entries unavailable for this run.
+- **Bounds (defaults)**: `maxDocs=64`, `maxRefDepth=16`, `maxBytesPerDoc=5MiB`, `timeoutMs=8000`, `followRedirects=3`.
+- **Strategies & allowlist**:
+  - `local` (default) never fetches.
+  - `schemastore` permits `json.schemastore.org` only (case‑insensitive).
+  - `remote` permits general HTTP(S) hosts, optionally restricted via `allowlist`.
+  - Strategies are unioned left‑to‑right. Host matching uses the URL hostname only.
+- **Determinism**: Compose/memo keys include a `resolver.registryFingerprint = sha256(join("\n", sort([ uri + " " + contentHash ])))` so outcomes are reproducible for a fixed registry state. The fingerprint is included whenever the registry is non‑empty or `stubUnresolved:'emptySchema'` is active.
+- **Diagnostics**:
+  - Run‑level: `RESOLVER_STRATEGIES_APPLIED`, `RESOLVER_CACHE_HIT`, `RESOLVER_CACHE_MISS_FETCHED`, `RESOLVER_OFFLINE_UNAVAILABLE` under `compose(...).diag.run[]` with `canonPath:"#"`.
+  - Per‑path (planning‑time stubs): `EXTERNAL_REF_STUBBED{ ref, stubKind:'emptySchema' }` (Lax only).
+- **CLI mapping**:
+  - `--resolve=local[,remote][,schemastore]` and `--cache-dir <path>`
+  - `--compat lax --fail-on-unresolved=false` ⇒ Lax + planning stubs enabled.
+
+## Out‑of‑scope / non‑goals
+
+- **Remote dereferencing in core**: Fetching during core phases is unsupported. The optional Resolver pre‑phase confines network I/O and never changes the original schema; core phases consult a read‑only registry only.
 - **Scenario/learned distributions**: FoundryData only emits deterministic, spec-compliant data. Any adaptive or learned distributions sit behind future extensions and are not part of the core runtime.
 - **Generated data caching**: Items are produced per request; caching artifacts or replay logs would break determinism and remains outside the current scope.

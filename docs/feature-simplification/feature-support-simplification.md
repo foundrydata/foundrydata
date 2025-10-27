@@ -41,9 +41,11 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
   `diag.metrics.validationsPerRow = 0`. In **Strict**, compile failure on external `$ref` remains a hard error and
   generation **MUST NOT** proceed.
   *Signal:* when not skipped, final validation passes; `diag.metrics.validationsPerRow ≥ 1`.
-* **No network I/O for external `$ref`** (strict by default).
+* **No network I/O during core phases for external `$ref`** (Strict by default).
+  When **Extension R1** is enabled, HTTP(S) fetch is permitted **only** in the pre‑pipeline resolver step; core phases remain I/O‑free.
   *Signal:* `EXTERNAL_REF_UNRESOLVED` (Strict = error; Lax = warn).
 * **Deterministic outcomes for a given `(seed, PlanOptionsSubKey, AJV.major, AJV.flags)`** (see §14 for `PlanOptionsSubKey`).
+  **When Extension R1 is enabled,** outcomes are deterministic for a fixed **resolver registry fingerprint** (§14) in addition to the tuple above.
   *Signal:* stable `diag.chosenBranch`, `diag.scoreDetails.tiebreakRand` at the same canonical pointers; **when RNG is used only in `oneOf` step‑4**, record `diag.scoreDetails.exclusivityRand` at the same `canonPath` and **MUST NOT** synthesize/overwrite `tiebreakRand`.
 * **Documented budgets with explicit degradations**.
   *Signal:* `COMPLEXITY_CAP_*` diagnostics and populated `diag.budget`.
@@ -60,6 +62,10 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
   Both AJV instances **MUST** satisfy the required flags enumerated in §13 (including `unicodeRegExp:true` for both).
   Any deviation is a hard failure with diagnostic **`AJV_FLAGS_MISMATCH`**.
 
+**External `$ref` resolver DoD (Extension R1).**
+• **Online (empty resolver cache):** With `resolver.strategies:['local','remote','schemastore']`, first‑run compilation of the **npm package** schema (`https://json.schemastore.org/package`) and **AsyncAPI 3.0** schema succeeds without `EXTERNAL_REF_UNRESOLVED`; notes show `RESOLVER_CACHE_MISS_FETCHED` followed by `RESOLVER_CACHE_HIT` on subsequent runs.  
+• **Offline / disallowed hosts:** With `resolver.stubUnresolved:'emptySchema'` in **Lax**, unresolved external `$ref` are stubbed for planning with warnings (`RESOLVER_OFFLINE_UNAVAILABLE`, `EXTERNAL_REF_STUBBED`), generation continues, and final validation follows §11 skip‑eligibility (set `diag.metrics.validationsPerRow = 0` when skipped).
+
 > **Conventions.** RFC2119/8174 keywords (MUST/SHOULD/MAY) are normative.
 > “Instance” = generated JSON value validated against the schema.
 
@@ -75,6 +81,10 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
 **Non‑goals (core).**
 
 * Remote dereferencing of external `$ref` (no network/filesystem I/O).
+  **Extension R1 (opt‑in, outside core).** An optional HTTP(S) prefetch & local‑cache resolver is defined in §4 (pipeline pre‑phase), §11 (mode‑specific behavior), §14 (resolver cache), §19 (diagnostics), and §23 (options).
+  It performs network I/O only before `Normalize → Compose → Generate → Repair → Validate` and exposes resolved
+  documents to core phases via a read‑only in‑memory registry. Core behavior and guarantees are unchanged when the
+  extension is disabled.
 * Caching of **generated instances** across runs.
 * Learned/scenario‑based distributions (optional extensions outside core guarantees).
 
@@ -93,7 +103,8 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
 | Strict | No I/O; unresolved ⇒ error | Emit `EXTERNAL_REF_UNRESOLVED`                                     |
 | Lax    | No I/O; unresolved ⇒ warn  | Emit `EXTERNAL_REF_UNRESOLVED` (warn) and attempt local generation |
 
-*Note.* *External* means any `$ref` that is **not** fragment‑only (`#...`) after resolving against the current `$id` base (§11/§12). **No I/O** is performed in any mode.
+*Note.* *External* means any `$ref` that is **not** fragment‑only (`#...`) after resolving against the current `$id` base (§11/§12).  
+**I/O scope (clarification).** Core phases perform **no I/O** in any mode. When **Extension R1** is enabled, a **pre‑pipeline** resolver MAY perform HTTP(S) fetches to populate a local cache/registry used read‑only by core phases. See §§4, 11, 14, 23.
 
 ---
 
@@ -105,7 +116,11 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
 
 * **AJV is the oracle (MUST).** Validate against the **original** schema, not internal transforms.
 * **Deterministic (MUST).** Seeded RNG, bounded attempts, no global state.
-* **No remote deref (MUST).** External `$ref` never trigger I/O.
+* **No remote deref in core (MUST).** Core phases (`Normalize → Compose → Generate → Repair → Validate`) never perform
+  network or filesystem I/O for external `$ref`.  
+  **Extension R1 (opt‑in).** A pre‑pipeline **Prefetch & Cache Fill** step MAY perform HTTP(S) fetches and persist
+  bytes to a local cache/registry that core phases consult read‑only. Core behavior and guarantees remain unchanged
+  when the extension is disabled. See §§4, 11, 14, 19, 23.
 * **Simplicity & separation.** A small number of predictable phases; narrow responsibilities per phase.
 * **Observability by default.** Metrics, budgets, and diagnostics are first‑class.
 
@@ -140,6 +155,9 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
 * **Pipeline clarity.** `Normalize → Compose → Generate → Repair → Validate`.
 
   ```
+  [Optional prefetch & cache fill]   (Extension R1; network I/O permitted)
+     │
+     ▼
   Original
      │
      ▼
@@ -152,6 +170,10 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
   Generate ──► Repair (budgeted, AJV‑driven) ──► Validate (AJV on original)
   ```
 
+**Optional pre‑phase (Extension R1; normative).** When enabled, a **Prefetch & Cache Fill** step runs **before**
+`Normalize`, discovers external `http(s)` `$ref` targets, hydrates a local on‑disk cache (`resolver.cacheDir`), and
+builds an in‑memory **resolution registry** used **read‑only** by core phases. No network I/O occurs after this pre‑phase.
+
 <a id="s4-fail-early"></a>
 * **Fail early when provable, degrade gracefully when not.**
 
@@ -159,6 +181,10 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
 * **Expose observability.** Per‑phase timings and counts (e.g., validations/instance, repairs/instance).
 
 * **Keep outcomes independent of wall‑clock, locale, and environment.** (See §15.)
+
+**Resolver diagnostics export (Extension R1; normative).** Notes produced by the optional **Prefetch & Cache Fill**
+step (e.g., cache hits/misses, strategies applied) **MUST** be exported as **run‑level** entries under
+`Compose.diag.run` with `canonPath:"#"` (see §19/§23). They are non‑fatal and do not alter planning or validation.
 
 ---
 
@@ -178,6 +204,8 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
 | Guards & caps        | `complexity.*` (various)                             | Bound search/analysis; emit diagnostics when capping                                  | §8, §15 |
 | Modes                | **Strict** (default)                                 | External `$ref`: error (no I/O). **Lax**: warn then attempt local generation          | §11     |
 | Caching              | `cache.*`                                            | Cache compiles/plans (not instances); keys include AJV major + flags + options subkey | §14     |
+| External `$ref` resolver (Extension R1) | `resolver.strategies:['local'|'remote'|'schemastore']` (default `['local']`), `resolver.cacheDir:"~/.foundrydata/cache"` | Opt‑in HTTP(S) prefetch + local cache; core phases consult a read‑only registry only. `local` = intra‑document only; `remote` = allow HTTP(S) prefetch; `schemastore` = constrain hosts to `json.schemastore.org` (and aliases). | §4, §11, §14, §23 |
+| Unresolved external `$ref` (Lax stub) | `resolver.stubUnresolved:'none'|'emptySchema'` (default `'none'`) | When `'emptySchema'` and **Lax** mode, treat unresolved external `$ref` as `{}` **for planning only** and emit warnings; the original schema is unchanged; final validation follows §11 skip‑eligibility. | §11, §19, §23 |
 | Patterns under AP:false | `patternPolicy.unsafeUnderApFalse:'error'`        | **Subject to §8**: Strict fail‑fast **only** under **presence pressure** and only when the **Safe** set is empty; otherwise restrict to Safe. Raw `propertyNames.pattern` never triggers fail‑fast. Lax: warn + conservative exclusion. | §8      |
 | Validator config gate    | *(normative, no option)*                    | Enforce AJV flags per §13; fail with `AJV_FLAGS_MISMATCH` on deviation      | §13 |
 | Patterns (witness)         | `patternWitness.{alphabet,maxLength,maxCandidates}` | Bounded and deterministic search domain for pattern witness generation            | §9, §23 |
@@ -189,6 +217,10 @@ Clarification: The build‑time constant `ENUM_CAP` also applies to finite sets 
 
 <a id="s5-precedence"></a>
 **Precedence & compatibility.** Mode (Strict/Lax) defines the baseline; specific `failFast` overrides refine it (see §11).
+
+**CLI mapping (informative).** `--resolve=local[,remote][,schemastore]` and `--cache-dir <path>` populate
+`resolver.strategies` and `resolver.cacheDir`. `--fail-on-unresolved=false` enables **Lax** semantics for external `$ref`
+and sets `resolver.stubUnresolved:'emptySchema'` (planning‑time stubs + warnings).
 **Note on “aggressive”.** The legacy `rewriteConditionals:'aggressive'` is treated as the same as `'safe'` and is kept for compatibility; the default remains `'never'` (see §7/§23).
 **Clarification (normative).** `PlanOptions.conditionals.strategy:'rewrite'` is a **deprecated alias** of `'if‑aware‑lite'`
 and **MUST NOT** enable the §7 normalizer rewrite. Only `NormalizeOptions.rewriteConditionals` controls rewrites.
@@ -336,8 +368,10 @@ Examples:
 2. **References**
 
    * Preserve local `#...`; rewrite `#/definitions/...`→`#/$defs/...` if target exists; note `DEFS_TARGET_MISSING` otherwise.
-   * Preserve **external** `$ref` values verbatim; do **not** dereference or rewrite them. Compose/Validate emit `EXTERNAL_REF_UNRESOLVED`
-     per §11/§12 (Strict=error, Lax=warn). No network or filesystem I/O is performed.
+   * Preserve **external** `$ref` values verbatim; do **not** dereference or rewrite them (core). Compose/Validate emit
+     `EXTERNAL_REF_UNRESOLVED` per §11/§12 (Strict=error, Lax=warn). No network or filesystem I/O is performed by core phases.
+     **Extension R1 (clarification).** Compose MAY consult the resolver’s **in‑memory registry** (pre‑filled in §4) to supply
+     additional schemas to AJV via `addSchema` during planning/validation. The canonical view is unchanged.
    * Don’t cross `$id` boundaries; keep anchors/dynamic anchors intact; no cycle expansion.
 
 3. **Boolean / trivial simplifications (normative)**
@@ -1477,6 +1511,11 @@ Run the evaluation guard before finalizing the action for the object (and before
   If the resolved URI is **fragment‑only** (`#...`), it is **internal**; otherwise it is **external** (includes absolute
   URIs like `http:`, `https:`, `urn:`, `file:` and relative references whose URI‑reference has a non‑empty path to another
   document such as `other.json#/...`). **No I/O** (network or filesystem) is performed in any mode.
+
+  **Extension R1 (resolver; normative).** When `resolver.strategies` permits `remote`/`schemastore`, implementations
+  **MAY** run the §4 pre‑phase to hydrate a local **resolution registry** before `Normalize`. Core phases operate **only**
+  on cached bytes. If, after the pre‑phase, an external `$ref` remains unresolved and `externalRefStrict:'error'` holds,
+  behavior is unchanged (hard error as above).
 * `$dynamic*`: note `DYNAMIC_PRESENT` (no error).
 * Compose & object keywords proceed without feature gates; complexity caps may degrade behavior but never skip validation.
 
@@ -1510,18 +1549,36 @@ Input: original schema S; Source Ajv class/dialect matched per §12.
         and **MUST** set `diag.metrics.validationsPerRow = 0` for affected rows.
       `smallest` is the UTF‑16 lexicographically smallest string in ExtRefs; omit `ref` if none can be determined.
    d) Otherwise ⇒ **MUST NOT** skip; propagate the compilation failure.
-Note (normative): No network or filesystem I/O is performed in any mode.
+**Normative scope of I/O.** Core phases perform **no** network or filesystem I/O in any mode.  
+**Extension R1 (opt‑in).** An optional **pre‑pipeline** step MAY fetch external documents over HTTP(S) and populate a
+local cache/registry. If, after this pre‑phase, an external `$ref` remains unresolved and `externalRefStrict:'error'`
+applies, behavior is unchanged (Strict: hard error; Lax: warn + proceed per §11).
+
+**Extension R1 — planning stubs in Lax (normative).**
+When `resolver.stubUnresolved:'emptySchema'`, any external `$ref` that is not present in the pre‑phase registry **MUST**
+be treated as planning‑time `{}` **in the effective view only** (the original schema is unchanged). Implementations **MUST**
+emit `EXTERNAL_REF_STUBBED{ ref, stubKind:'emptySchema' }` and may proceed with planning/generation deterministically.
+Final AJV validation still uses the **original schema**; apply **ExternalRefSkipEligibility** to decide whether to skip
+validation (`EXTERNAL_REF_UNRESOLVED{ mode:'lax', skippedValidation:true }`). See §19 for payloads.
+
+**Resolver observability (non‑fatal notes).** When the extension is enabled, implementations **SHOULD** record:
+`RESOLVER_STRATEGIES_APPLIED{ strategies, cacheDir }` once per run; `RESOLVER_CACHE_MISS_FETCHED{ ref, bytes, contentHash }`
+on successful prefetch; `RESOLVER_CACHE_HIT{ ref, contentHash }` when serving from cache; and
+`RESOLVER_OFFLINE_UNAVAILABLE{ ref }` when neither cache nor network yields a document.
 
 <a id="s11-strict-vs-lax-summary"></a>
 ### Strict vs Lax (summary)
 
 | Situation                                                  | Strict                          | Lax                            |
 | ---------------------------------------------------------- | ------------------------------- | ------------------------------ |
-| External `$ref`                                            | `error` \*                      | `warn` then attempt (no deref) |
+| External `$ref` (post pre‑phase registry)                  | `error` \* if unresolved        | `warn` then attempt; may stub for planning (§11) |
 | `$dynamicRef` present                                      | `note DYNAMIC_PRESENT`          | `note DYNAMIC_PRESENT`         |
 | Complexity caps                                            | Degrade + diagnostics           | Degrade + diagnostics          |
 | Conditionals strategy (when `rewriteConditionals:'never'`) | `if-aware-lite`                 | Same                           |
 | Budget exhausted                                           | `UNSAT_BUDGET_EXHAUSTED` (fail) | Same                           |
+
+\* configurable via `failFast.externalRefStrict`. **When Extension R1 is enabled,** the pre‑phase MAY populate a
+read‑only registry; core phases still perform no I/O.
 
 \* configurable via `failFast.externalRefStrict`.
 
@@ -1543,8 +1600,10 @@ Note (normative): No network or filesystem I/O is performed in any mode.
 <a id="s12-canonical-2020-view"></a>
 * **Internal canon** — 2020‑12‑like shape; **always** validate against the original schema.
 <a id="s12-refs-and-dynamic"></a>
-* **Refs** — Only fragment‑only refs (`#...`) are considered in‑document; **no network or filesystem I/O**.
-  External `$ref` (see §11 definition) are not dereferenced; emit `EXTERNAL_REF_UNRESOLVED` per mode.
+* **Refs** — Only fragment‑only refs (`#...`) are considered in‑document by core phases; **no network or filesystem I/O** occurs
+  during `Normalize → Compose → Generate → Repair → Validate`. External `$ref` (see §11 definition) are not dereferenced by
+  core phases; emit `EXTERNAL_REF_UNRESOLVED` per mode **unless** the optional pre‑pipeline **resolver registry** (Extension R1)
+  has already provided the target bytes to the validator via `addSchema`/equivalent. Core phases consult the registry read‑only.
 * **Dynamic refs — bounded in‑document resolution (normative).**
 
   * **No I/O.** No network or filesystem I/O is performed. `$dynamicRef` is resolved **only** within the **same document**.
@@ -1650,11 +1709,32 @@ Hierarchical:
 <a id="s14-cache-keys"></a>
 LRU bounded by `lruSize`. Cache keys **MUST** include AJV **major version**, the **Ajv class/dialect** of the producing instance, and the exact set of flags used by the **producing AJV instance**
 (`validateFormats`, `allowUnionTypes`, `strictTypes`, `strictSchema`, `unicodeRegExp`, `coerceTypes`, `multipleOfPrecision`, `discriminator`) and the **PlanOptionsSubKey** (defined below).
+
+**Resolver registry fingerprint (Extension R1; normative).** When the resolver extension is enabled, compose/plan cache
+keys **MUST ALSO** include `resolver.registryFingerprint` to prevent reuse across different registry states.
+**Definition — `resolver.registryFingerprint`.** Let `R` be the in‑memory registry produced by the pre‑phase (map
+`uri → { contentHash }`). Compute:
+```
+registryFingerprint := sha256( join('\n',
+  sortUTF16Asc([ uri + ' ' + contentHash for each (uri,contentHash) in R ])
+))        // lowercase hex
+```
+When `R` is empty, use the constant string `"0"`. The fingerprint **MUST** be included whenever `R` is non‑empty **or**
+`resolver.stubUnresolved:'emptySchema'` (because stubbing affects outcomes).
 <a id="s14-memoization-branch-selection"></a>
 **Non‑goal**: no cache of **generated data** across runs. Memoization is allowed only for **branch selection**
 decisions at compose‑time and **MUST** key on `(canonPath, seed, AJV.major, AJV.flags, PlanOptionsSubKey)`. This includes the dynamic‑scope hop bound via `guards.maxDynamicScopeHops` (see §12).  
 **Normative:** the **pointer component** of the composite key **MUST** be the canonical JSON Pointer `canonPath` (not `canonPtr`). The other components (**seed, AJV.major, AJV.flags, PlanOptionsSubKey**) **MUST** also be included; implementations MAY encode them as separate fields or as a serialized tuple.
 (ε := `10^(−decimalPrecision)` and the **round‑half‑even** rounding mode for `fallback:'decimal'` are implied by `rational.decimalPrecision` within `PlanOptionsSubKey`.)
+
+**Resolver cache (on disk; extension; normative).** The resolver’s on‑disk cache is **separate** from the plan/compile
+caches described above and is addressed by **normalized absolute URI**:
+* Layout: `resolver.cacheDir/sha256(uri)/{content.json, meta.json}` where `meta.json` includes `{ uri, contentHash, etag? }`.
+* `contentHash` is the **SHA‑256** of the document’s canonical JSON (sorted keys, arrays in order, `-0→0`), after optional YAML→JSON normalization when `resolver.acceptYaml === true`.
+* **No TTL by default.** Core phases use only the bytes present at the start of the run; refreshing the cache is an explicit pre‑phase action.
+* **Bounds (normative):** `resolver.maxDocs` (default **64**), `resolver.maxRefDepth` (**16**), `resolver.maxBytesPerDoc` (**5 MiB**),
+  `resolver.timeoutMs` (**8000**), `resolver.followRedirects` (**3**). Exceeding a bound marks the reference as unavailable for this run; no core I/O occurs.
+* **Path canonicalization (normative).** `resolver.cacheDir` **MUST** support POSIX‑style `~` expansion to the current user’s home directory and be resolved to an **absolute** normalized path **before** any cache I/O. Implementations **MUST** create intermediate directories deterministically when missing. The canonicalized path is the one exported in `RESOLVER_STRATEGIES_APPLIED`.
 **Determinism note (normative).** Dynamic‑ref bounded binding in §12 depends on `guards.maxDynamicScopeHops`; including it in `PlanOptionsSubKey` guarantees cache/memo safety when this bound changes.
 **Final memoization key (normative clarification).** When `ComposeOptions.selectorMemoKeyFn` is provided, implementations **MUST NOT** use the function’s return value as the complete key. Let `userKey := selectorMemoKeyFn(canonPath, seed, opts)`. The final memo key **MUST** be derived from the tuple `(canonPath, seed, AJV.major, AJV.flags, PlanOptionsSubKey, userKey)`. Implementations **MUST** append/merge the AJV fields and `PlanOptionsSubKey` even if `userKey` repeats them. For the AJV flags component, use a stable JSON encoding with lexicographically sorted keys.
 
@@ -1679,13 +1759,14 @@ decisions at compose‑time and **MUST** key on `(canonPath, seed, AJV.major, AJ
 'rational.maxRatBits',
 'rational.qCap',
 'repair.mustCoverGuard',
+'resolver.stubUnresolved',
 'trials.maxBranchesToTry',
 'trials.perBranch',
 'trials.skipTrials',
 'trials.skipTrialsIfBranchesGt'
 (affects AP:false rename policy only; included to key rename behavior; no effect on numeric math or tolerances).
 Omitted/undefined fields are not serialized.
-**Normative clarification.** `ENUM_CAP` (the Coverage Index enumeration bound; see §8) is not a PlanOption and MUST NOT be serialized into `PlanOptionsSubKey` or any cache/memo keys.
+**Normative clarification.** `ENUM_CAP` (the Coverage Index enumeration bound; see §8) is not a PlanOption and MUST NOT be serialized into `PlanOptionsSubKey` or any cache/memo keys. When the resolver extension is enabled, compose/plan cache keys MUST additionally include `resolver.registryFingerprint` (see §14).
 **Canonicalization (normative).** When computing `PlanOptionsSubKey`, any
 `conditionals.strategy:'rewrite'` **MUST** be normalized to `'if-aware-lite'`.
 This normalization **MUST NOT** trigger any Normalizer rewrite; only
@@ -1831,7 +1912,8 @@ Use separate LRU spaces for the two AJV instances (planning vs source) to avoid 
 * **`contains`** ✓ (**bag semantics** across `allOf`; independent needs)
 * `multipleOf` ✓ (exact rational with caps and fallbacks)
 * `unevaluated*` ✓ (conservative effective view; preserved for validation)
-* In‑document `$ref` ✓; external `$ref` ✗/warn (configurable; **no remote resolution**, generation on local parts only)
+* In‑document `$ref` ✓; external `$ref` ✗/warn in core (configurable; **no remote resolution in core**, generation on local parts only).
+  **Extension R1 (opt‑in)**: HTTP(S) prefetch + local cache/registry ✓ (outside core phases).
 * `$dynamicRef/$dynamicAnchor/$recursiveRef` \~ (pass‑through; generation conservative; AJV decides)
 
 <a id="s18-notes"></a>
@@ -1856,6 +1938,8 @@ All public outputs and diagnostics **MUST** use the `canonPath` key exclusively.
 **Severity (Compose only; normative).** Severity is conveyed by the container:
 `diag.fatal[]` (hard errors that prevent generation at that `canonPath`) and `diag.warn[]` (non‑fatal notices; generation proceeds).
 Entries in `diag.warn` carry the same `code`/`details` schema as their fatal counterparts.
+
+**Run‑level diagnostics (Extension R1; normative).** The optional HTTP(S) resolver pre‑phase (§4) may emit **run‑level** diagnostics that are not attached to a specific schema location (e.g., cache hits). Implementations **MUST** export such notes under **`Compose.diag.run`** (see §23), each entry using the same envelope and **`canonPath:"#"`** (schema root). These entries are **non‑fatal** and do not influence planning; they document resolver behavior such as `RESOLVER_STRATEGIES_APPLIED`, `RESOLVER_CACHE_HIT`, `RESOLVER_CACHE_MISS_FETCHED`, and `RESOLVER_OFFLINE_UNAVAILABLE`.
 
 <a id="s19-phase-separation"></a>
 ### Phase separation
@@ -1945,6 +2029,41 @@ Provide the following minimal JSON‑Schema‑like shapes for major codes. Only 
   "skippedValidation":{"type":"boolean"}
 }}
 **Normative constraint.** When `skippedValidation === true`, `mode` **MUST** be `'lax'`.
+
+// EXTERNAL_REF_STUBBED  (planning-time substitution; Extension R1)
+{ "type":"object", "required":["ref","stubKind"],
+  "properties":{
+    "ref":{"type":"string"},
+    "stubKind":{"enum":["emptySchema"]}
+}}
+
+// RESOLVER_STRATEGIES_APPLIED  (extension note; run-level)
+{ "type":"object", "required":["strategies","cacheDir"],
+  "properties":{
+    "strategies":{"type":"array","items":{"enum":["local","remote","schemastore"]}},
+    "cacheDir":{"type":"string"}
+}}
+
+// RESOLVER_CACHE_HIT  (extension note)
+{ "type":"object", "required":["ref","contentHash"],
+  "properties":{
+    "ref":{"type":"string"},
+    "contentHash":{"type":"string"}
+}}
+
+// RESOLVER_CACHE_MISS_FETCHED  (extension note)
+{ "type":"object", "required":["ref","bytes","contentHash"],
+  "properties":{
+    "ref":{"type":"string"},
+    "bytes":{"type":"number"},
+    "contentHash":{"type":"string"}
+}}
+
+// RESOLVER_OFFLINE_UNAVAILABLE  (extension warning)
+{ "type":"object", "required":["ref"],
+  "properties":{
+    "ref":{"type":"string"}
+}}
 
 // AJV_FLAGS_MISMATCH
   { "type":"object", "required":["instance","diffs","ajvMajor"],
@@ -2133,7 +2252,9 @@ anchoring and complexity scans and guarantees byte‑for‑byte reproducibility.
 `CONTAINS_NEED_MIN_GT_MAX`,
 `UNSAT_PATTERN_PNAMES`, `UNSAT_DEPENDENT_REQUIRED_AP_FALSE`, `UNSAT_BUDGET_EXHAUSTED`,
 `IF_AWARE_HINT_APPLIED`, `IF_AWARE_HINT_SKIPPED_INSUFFICIENT_INFO`,
-`EXTERNAL_REF_UNRESOLVED`, `UNSAT_REQUIRED_PNAMES`, `UNSAT_MINPROPS_PNAMES`, `UNSAT_REQUIRED_AP_FALSE`,
+`EXTERNAL_REF_UNRESOLVED`, `EXTERNAL_REF_STUBBED`,
+`RESOLVER_STRATEGIES_APPLIED`, `RESOLVER_CACHE_HIT`, `RESOLVER_CACHE_MISS_FETCHED`, `RESOLVER_OFFLINE_UNAVAILABLE`,
+`UNSAT_REQUIRED_PNAMES`, `UNSAT_MINPROPS_PNAMES`, `UNSAT_REQUIRED_AP_FALSE`,
 `UNSAT_AP_FALSE_EMPTY_COVERAGE`, `PNAMES_REWRITE_APPLIED`,
 `AJV_FLAGS_MISMATCH`, `AP_FALSE_UNSAFE_PATTERN`, `MUSTCOVER_INDEX_MISSING`,
 `EVALTRACE_PROP_SOURCE`, `REPAIR_EVAL_GUARD_FAIL`,
@@ -2213,6 +2334,25 @@ anchoring and complexity scans and guarantees byte‑for‑byte reproducibility.
 
 <a id="s20-integration"></a>
 ### Integration
+
+* External `$ref` (strict vs lax): validate emission of `EXTERNAL_REF_UNRESOLVED` and mode-specific behavior (error vs warn + attempt).
+* **Resolver diagnostics (run‑level; Extension R1).**
+  - **R‑RESOLVER‑DIAG‑01** — With `resolver.strategies:['local','remote']` and an empty resolver cache, first run emits
+    `RESOLVER_STRATEGIES_APPLIED` (once) and `RESOLVER_CACHE_MISS_FETCHED` entries; second run emits `RESOLVER_CACHE_HIT`.
+    All appear under `compose(...).diag.run[]` with `canonPath:"#"`; no `diag.fatal` entries are produced.
+  - **R‑RESOLVER‑DIAG‑02** — With network blocked and `resolver.stubUnresolved:'emptySchema'` in Lax, unresolved hosts emit
+    `RESOLVER_OFFLINE_UNAVAILABLE` run‑level notes; generation proceeds with `EXTERNAL_REF_STUBBED` warnings as in §11/§19.
+* **Resolver extension (R1).**
+  - **R‑RESOLVER‑ONLINE‑01** — With `resolver.strategies:['local','remote','schemastore']` and an empty resolver cache,
+    run schemas that depend on `https://json.schemastore.org/package` and `https://www.asyncapi.com/spec/3.0.0.json`.
+    Expect `RESOLVER_CACHE_MISS_FETCHED` on first run, `RESOLVER_CACHE_HIT` afterward, and **no**
+    `EXTERNAL_REF_UNRESOLVED`.
+  - **R‑RESOLVER‑OFFLINE‑01** — With network unavailable (or allowlist excluding the hosts) and
+    `resolver.stubUnresolved:'emptySchema'` in **Lax**, expect `RESOLVER_OFFLINE_UNAVAILABLE` +
+    `EXTERNAL_REF_STUBBED` warnings; generation continues; final validation either passes or is skipped per §11
+    (set `diag.metrics.validationsPerRow = 0` when skipped).
+  - **R‑RESOLVER‑FINGERPRINT‑01** — Change the set or bytes of cached external documents and verify that compose/plan
+    cache keys change (different `resolver.registryFingerprint`), preventing cross‑state reuse.
 
 * Conditionals (with/without `unevaluated*`), nested; verify **no semantic drift** when not rewriting.
 * Composition suites validated by AJV (original schema).
@@ -2295,6 +2435,11 @@ anchoring and complexity scans and guarantees byte‑for‑byte reproducibility.
 * `packages/core/src/util/metrics.ts` (per‑phase timings, counters, validations/row)
   - exports counters for `branchCoverageOneOf`, `enumUsage`, `repairActionsPerRow`.
 * `packages/core/src/util/stable-hash.ts` (optional; size‑gated)
+* `packages/core/src/resolver/http-resolver.ts`        // Extension R1: HTTP(S) fetch, bounds, allowlist
+* `packages/core/src/resolver/cache-store.ts`          // on-disk cache layout, contentHash, meta.json
+* `packages/core/src/resolver/registry.ts`             // in-memory registry (uri → { bytes, contentHash })
+* `packages/core/src/resolver/options.ts`              // ResolverOptions defaults/validation
+* `packages/core/src/resolver/cli-mapping.ts`          // `--resolve`, `--cache-dir`, `--fail-on-unresolved`
 <a id="s22-scripts"></a>
 * `scripts/bench.ts`
 <a id="s22-docs"></a>
@@ -2404,7 +2549,35 @@ export interface PlanOptions {
     maxLength?: number;     // default: 12  (bounds the number of Unicode code points per candidate)
     maxCandidates?: number; // default: 32768
   };
+
+  // External $ref resolver (Extension R1)
+  resolver?: ResolverOptions;
 }
+
+export interface ResolverOptions {
+  /** Resolution strategies. Default: ['local'] */
+  strategies?: Array<'local'|'remote'|'schemastore'>;
+  /** Local on‑disk cache directory. Default: "~/.foundrydata/cache" */
+  cacheDir?: string;
+  /** Planning-time substitution for unresolved external refs in Lax. Default: 'none'. */
+  stubUnresolved?: 'none'|'emptySchema';
+  /** Bounds (determinism & safety) — all optional; defaults shown in §14. */
+  maxDocs?: number;           // default: 64
+  maxRefDepth?: number;       // default: 16
+  maxBytesPerDoc?: number;    // default: 5<<20  (5 MiB)
+  timeoutMs?: number;         // default: 8000
+  followRedirects?: number;   // default: 3
+  acceptYaml?: boolean;       // default: true
+  /** Optional allowlist of hostnames; empty ⇒ no host restriction. */
+  allowlist?: string[];
+}
+/** Semantics (normative).
+ *  Strategies are unioned left-to-right: 'local' always applies; 'schemastore' restricts remote fetches to a fixed allowlist;
+ *  'remote' permits general HTTP(S) fetches (subject to `allowlist` when provided). When both 'schemastore' and 'remote'
+ *  are present, the union of their permissions applies. Host allowlisting is case-insensitive and matches the request
+ *  URL’s hostname only (ports must be explicit in the allowlist if required).
+ *  Built-in allowlist for 'schemastore' (normative): exactly { "json.schemastore.org" }.
+ *  Implementations MAY add mirrors only when configured explicitly via `allowlist`. */
 ```
 
 **Normative (compatibility).** If an implementation still accepts `PlanOptions.complexity.maxEnumCardinality`, `Compose` MUST ignore it for Coverage Index export; outcomes of `coverageIndex.has()` / `enumerate()` MUST NOT depend on it. Implementations MAY reject such input as a configuration error, but MUST NOT change Coverage Index behavior based on it.
@@ -2535,6 +2708,9 @@ export function compose(schema: any, opts?: ComposeOptions): {
      *  { 'COMPLEXITY_CAP_ONEOF','COMPLEXITY_CAP_ANYOF','COMPLEXITY_CAP_ENUM','COMPLEXITY_CAP_CONTAINS','COMPLEXITY_CAP_SCHEMA_SIZE' };
      *  exclude generator-only 'COMPLEXITY_CAP_PATTERNS'; de-duplicate and sort UTF‑16 ascending. See §8. */
     caps?: string[];
+    /** Run-level diagnostics (Extension R1): notes emitted by the optional resolver pre-phase.
+     *  Each entry MUST use `canonPath:"#"` and is non-fatal. See §19. */
+    run?: Array<{ code: string; canonPath: string; details?: unknown }>;
   };
 };
 ```

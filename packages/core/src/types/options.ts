@@ -204,6 +204,25 @@ export interface PlanOptions {
 
   /** Repair-stage configuration */
   repair?: RepairPlanOptions;
+
+  /** External $ref resolver (Extension R1) */
+  resolver?: {
+    /** Resolution strategies. Default: ['local'] */
+    strategies?: Array<'local' | 'remote' | 'schemastore'>;
+    /** Local on-disk cache directory. Default: "~/.foundrydata/cache" */
+    cacheDir?: string;
+    /** Planning-time substitution for unresolved external refs in Lax. Default: 'none'. */
+    stubUnresolved?: 'none' | 'emptySchema';
+    /** Bounds (determinism & safety) */
+    maxDocs?: number; // default: 64
+    maxRefDepth?: number; // default: 16
+    maxBytesPerDoc?: number; // default: 5 MiB
+    timeoutMs?: number; // default: 8000
+    followRedirects?: number; // default: 3
+    acceptYaml?: boolean; // default: true
+    /** Optional allowlist of hostnames; empty ⇒ no host restriction. */
+    allowlist?: string[];
+  };
 }
 
 /**
@@ -233,6 +252,7 @@ export interface ResolvedOptions {
   conditionals: Required<ConditionalsOptions>;
   patternWitness: Required<PatternWitnessOptions>;
   repair: Required<RepairPlanOptions>;
+  resolver: Required<NonNullable<PlanOptions['resolver']>>;
 }
 
 /**
@@ -311,6 +331,18 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
   repair: {
     mustCoverGuard: true,
   },
+  resolver: {
+    strategies: ['local'],
+    cacheDir: pathForDefaultCacheDir(),
+    stubUnresolved: 'none',
+    maxDocs: 64,
+    maxRefDepth: 16,
+    maxBytesPerDoc: 5 * 1024 * 1024,
+    timeoutMs: 8000,
+    followRedirects: 3,
+    acceptYaml: true,
+    allowlist: [],
+  },
 };
 
 /**
@@ -353,6 +385,10 @@ export function resolveOptions(
     repair: {
       ...DEFAULT_OPTIONS.repair,
       ...userOptions.repair,
+    },
+    resolver: {
+      ...DEFAULT_OPTIONS.resolver,
+      ...(userOptions.resolver ?? {}),
     },
   };
 
@@ -492,4 +528,23 @@ function validateOptions(options: ResolvedOptions): void {
   if (typeof options.repair.mustCoverGuard !== 'boolean') {
     throw new Error('repair.mustCoverGuard must be boolean');
   }
+
+  // Validate resolver options
+  const r = options.resolver;
+  const strategiesOk = Array.isArray(r.strategies) && r.strategies.length > 0;
+  if (!strategiesOk) {
+    throw new Error('resolver.strategies must be a non-empty array');
+  }
+  if (r.maxDocs <= 0) throw new Error('resolver.maxDocs must be positive');
+  if (r.maxRefDepth <= 0)
+    throw new Error('resolver.maxRefDepth must be positive');
+  if (r.maxBytesPerDoc <= 0)
+    throw new Error('resolver.maxBytesPerDoc must be positive');
+  if (r.timeoutMs <= 0) throw new Error('resolver.timeoutMs must be positive');
+}
+
+// Utility to provide default cache dir without importing os at module top for SSR friendliness
+function pathForDefaultCacheDir(): string {
+  // Use POSIX-style tilde; will be expanded by resolver implementation before I/O
+  return '~/.foundrydata/cache';
 }

@@ -16,6 +16,10 @@ interface CliOptions {
   dynamicRefStrict?: 'warn' | 'note';
   encodingBigintJson?: 'string' | 'number' | 'error';
   metrics?: boolean;
+  // Resolver extension flags
+  resolve?: string; // e.g., "local,remote,schemastore"
+  cacheDir?: string;
+  failOnUnresolved?: string | boolean;
   // Allow additional CLI options that we don't process
   [key: string]: unknown;
 }
@@ -83,6 +87,36 @@ export function parsePlanOptions(options: CliOptions): Partial<PlanOptions> {
   // Metrics toggle (Commander sets metrics=false when --no-metrics is used)
   if (typeof options.metrics === 'boolean') {
     planOptions.metrics = options.metrics;
+  }
+
+  // Resolver (Extension R1) — map CLI flags when provided
+  const hasResolverFlag =
+    typeof options.resolve === 'string' ||
+    typeof options.cacheDir === 'string' ||
+    options.failOnUnresolved !== undefined;
+  if (hasResolverFlag) {
+    type ResolverOptions = NonNullable<PlanOptions['resolver']>;
+    const base: ResolverOptions = {
+      ...(planOptions.resolver ?? {}),
+    } as ResolverOptions;
+    if (typeof options.resolve === 'string') {
+      const parts = options.resolve
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean) as Array<'local' | 'remote' | 'schemastore'>;
+      if (parts.length > 0) base.strategies = parts;
+    }
+    if (typeof options.cacheDir === 'string') {
+      base.cacheDir = options.cacheDir;
+    }
+    if (
+      (typeof options.failOnUnresolved === 'string' &&
+        options.failOnUnresolved === 'false') ||
+      options.failOnUnresolved === false
+    ) {
+      base.stubUnresolved = 'emptySchema';
+    }
+    planOptions.resolver = base;
   }
 
   return planOptions;
