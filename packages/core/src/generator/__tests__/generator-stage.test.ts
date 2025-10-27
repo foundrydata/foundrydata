@@ -209,15 +209,18 @@ describe('Foundry generator stage', () => {
     expect(arr).toEqual([1]);
   });
 
-  it('handles anyOf by choosing the first branch deterministically', () => {
+  it('handles anyOf by using the branch selected during composition', () => {
     const schema = {
       anyOf: [
         { type: 'string', const: 'x' },
         { type: 'number', const: 7 },
       ],
-    };
-    const out = generateFromCompose(composeSchema(schema));
-    expect(out.items[0]).toBe('x');
+    } as const;
+    const eff = composeSchema(schema);
+    const chosen = eff.diag?.nodes?.['/anyOf']?.chosenBranch?.index ?? 0;
+    const expected = schema.anyOf[chosen]?.const;
+    const out = generateFromCompose(eff);
+    expect(out.items[0]).toBe(expected);
   });
 
   it('merges allOf numeric constraints for simple types', () => {

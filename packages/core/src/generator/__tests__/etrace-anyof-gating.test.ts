@@ -54,11 +54,21 @@ describe('E-Trace anyOf gating under unevaluatedProperties:false', () => {
 
     expect(out.items).toHaveLength(1);
     const obj = out.items[0] as Record<string, unknown>;
-    // enum chooses first
-    expect(obj.kind).toBe('A');
-    // Under branch A, aa is evaluated and allowed by E-Trace guard
-    expect(Object.keys(obj)).toContain('aa');
-    // bb should not be chosen for branch A
-    expect(Object.keys(obj)).not.toContain('bb');
+    const branchPtr = '/anyOf';
+    const chosen = eff.diag?.nodes?.[branchPtr]?.chosenBranch?.index ?? 0;
+    const branch = schema.anyOf[chosen] ?? schema.anyOf[0];
+    const expectedKind = (
+      branch as {
+        properties: { kind: { const: string } };
+      }
+    ).properties.kind.const;
+    expect(obj.kind).toBe(expectedKind);
+    if (expectedKind === 'A') {
+      expect(Object.keys(obj)).toContain('aa');
+      expect(Object.keys(obj)).not.toContain('bb');
+    } else {
+      expect(Object.keys(obj)).toContain('bb');
+      expect(Object.keys(obj)).not.toContain('aa');
+    }
   });
 });

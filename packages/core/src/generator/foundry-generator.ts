@@ -405,11 +405,22 @@ class GeneratorEngine {
       }
       if (Array.isArray(source.oneOf)) {
         const oneOfPointer = appendPointer(pointer, 'oneOf');
-        const chosen = this.getChosenOneOfIndex(oneOfPointer);
+        const chosen = this.getChosenBranchIndex(oneOfPointer);
         if (chosen !== undefined) {
           const branch = source.oneOf[chosen];
           if (isRecord(branch)) {
             const childPointer = appendPointer(oneOfPointer, String(chosen));
+            mergeSchema(branch as Record<string, unknown>, childPointer);
+          }
+        }
+      }
+      if (Array.isArray(source.anyOf)) {
+        const anyOfPointer = appendPointer(pointer, 'anyOf');
+        const chosen = this.getChosenBranchIndex(anyOfPointer);
+        if (chosen !== undefined) {
+          const branch = source.anyOf[chosen];
+          if (isRecord(branch)) {
+            const childPointer = appendPointer(anyOfPointer, String(chosen));
             mergeSchema(branch as Record<string, unknown>, childPointer);
           }
         }
@@ -770,7 +781,7 @@ class GeneratorEngine {
 
     if (Array.isArray(schema.oneOf)) {
       const oneOfPointer = appendPointer(pointer, 'oneOf');
-      const chosen = this.getChosenOneOfIndex(oneOfPointer);
+      const chosen = this.getChosenBranchIndex(oneOfPointer);
       if (chosen !== undefined) {
         const branch = schema.oneOf[chosen];
         if (isRecord(branch)) {
@@ -893,7 +904,7 @@ class GeneratorEngine {
     });
   }
 
-  private getChosenOneOfIndex(canonPath: JsonPointer): number | undefined {
+  private getChosenBranchIndex(canonPath: JsonPointer): number | undefined {
     const node = this.diagNodes?.[canonPath];
     const idx = node?.chosenBranch?.index;
     return typeof idx === 'number' ? idx : undefined;
@@ -2693,12 +2704,15 @@ class GeneratorEngine {
       ? (schema.anyOf as unknown[])
       : [];
     if (branches.length === 0) return {};
-    const branchPath = appendPointer(canonPath, 'anyOf/0');
-    // Generation purposefully sticks to the first branch to stay deterministic.
-    // The E-Trace path still revalidates every passing branch via the Source Ajv
-    // so `unevaluatedProperties:false` evidence includes all applicable `anyOf`
-    // indices even though only branch 0 contributes candidate data.
-    return this.generateValue(branches[0], branchPath, itemIndex);
+    const unionPointer = appendPointer(canonPath, 'anyOf');
+    const chosen = this.getChosenBranchIndex(unionPointer);
+    const fallbackIndex = 0;
+    const index =
+      chosen !== undefined && branches[chosen] !== undefined
+        ? chosen
+        : fallbackIndex;
+    const branchPointer = appendPointer(unionPointer, String(index));
+    return this.generateValue(branches[index]!, branchPointer, itemIndex);
   }
 
   recordPatternWitnessTrial(): void {
