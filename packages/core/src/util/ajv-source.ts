@@ -68,6 +68,7 @@ export function createSourceAjv(
   const baseFlags: AjvOptions = {
     // Source (original schema) flags (REFONLY::{"anchors":["spec://§13#source-ajv"]})
     strictSchema: false,
+    strictTypes: false,
     allowUnionTypes: true,
     unicodeRegExp: true,
     useDefaults: false,
