@@ -31,6 +31,15 @@ export interface ExternalRefFailureAnalysisOptions {
   createSourceAjv: () => Ajv;
 }
 
+export interface ExternalRefSummaryOptions {
+  exclude?: (ref: string) => boolean;
+}
+
+export interface ExternalRefSummary {
+  extRefs: string[];
+  exemplar?: string;
+}
+
 const ABSOLUTE_URI_PATTERN = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
 const SYNTHETIC_ROOT_BASE = 'json-schema://fd.internal/root';
 
@@ -144,6 +153,34 @@ export function createExternalRefDiagnostic(
 
 export function schemaHasExternalRefs(schema: unknown): boolean {
   return collectExternalRefsAndProbe(schema).extRefs.size > 0;
+}
+
+export function summarizeExternalRefs(
+  schema: unknown,
+  options?: ExternalRefSummaryOptions
+): ExternalRefSummary {
+  const { extRefs, rawExtRefs } = collectExternalRefsAndProbe(schema);
+  const filtered = new Set<string>();
+  if (options?.exclude) {
+    for (const ref of extRefs) {
+      if (options.exclude(ref)) {
+        continue;
+      }
+      filtered.add(ref);
+    }
+  } else {
+    for (const ref of extRefs) {
+      filtered.add(ref);
+    }
+  }
+  if (filtered.size === 0) {
+    return { extRefs: [], exemplar: undefined };
+  }
+  const exemplar = selectExemplar(filtered) ?? selectExemplar(rawExtRefs);
+  return {
+    extRefs: Array.from(filtered),
+    exemplar,
+  };
 }
 
 function collectExternalRefsAndProbe(schema: unknown): {

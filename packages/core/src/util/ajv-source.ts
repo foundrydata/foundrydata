@@ -37,6 +37,8 @@ const CANONICAL_META_IDS: Record<JsonSchemaDialect, readonly string[]> = {
   ],
 };
 
+const canonicalMetaCache = new Map<JsonSchemaDialect, Set<string>>();
+
 export interface SourceAjvFactoryOptions {
   dialect: JsonSchemaDialect;
   validateFormats?: boolean;
@@ -330,4 +332,24 @@ export function prepareSchemaForSourceAjv(
     schemaForAjv: result.value,
     stripped: true,
   };
+}
+
+function getCanonicalMetaSet(dialect: JsonSchemaDialect): Set<string> {
+  let cached = canonicalMetaCache.get(dialect);
+  if (!cached) {
+    const canonicalIds = CANONICAL_META_IDS[dialect] ?? [];
+    cached = new Set(canonicalIds.map((id) => normalizeMetaIdentifier(id)));
+    canonicalMetaCache.set(dialect, cached);
+  }
+  return cached;
+}
+
+export function isCanonicalMetaRef(
+  ref: string,
+  dialect: JsonSchemaDialect
+): boolean {
+  if (!ref) return false;
+  const cache = getCanonicalMetaSet(dialect);
+  const normalized = normalizeMetaIdentifier(ref);
+  return cache.has(normalized);
 }
