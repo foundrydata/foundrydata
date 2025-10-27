@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import Ajv from 'ajv';
 import { createSourceAjv } from '../../util/ajv-source';
 import { createPlanningAjv } from '../../util/ajv-planning';
 import {
@@ -66,13 +67,57 @@ describe('AJV startup parity gate', () => {
     }) as any;
     (planning as { __fd_ajvClass?: string }).__fd_ajvClass = 'Ajv2020';
 
-    expect(() =>
+    try {
       checkAjvStartupParity(source as any, planning as any, {
         planningCompilesCanonical2020: true,
         validateFormats: false,
         sourceClass: 'Ajv',
-      })
-    ).toThrow(AjvFlagsMismatchError);
+      });
+      throw new Error('expected AjvFlagsMismatchError');
+    } catch (e: any) {
+      expect(e).toBeInstanceOf(AjvFlagsMismatchError);
+      expect(e.details.diffs.some((d: any) => d.flag === 'unicodeRegExp')).toBe(
+        true
+      );
+    }
+  });
+
+  it('fails when source strictTypes deviates from the tolerant profile', () => {
+    const source = new Ajv({
+      strictSchema: false,
+      strictTypes: true,
+      allowUnionTypes: true,
+      unicodeRegExp: true,
+      useDefaults: false,
+      removeAdditional: false,
+      coerceTypes: false,
+      allErrors: false,
+      validateFormats: false,
+    }) as any;
+    (source as { __fd_ajvClass?: string }).__fd_ajvClass = 'Ajv';
+
+    const planning = createPlanningAjv({
+      validateFormats: false,
+      allowUnionTypes: true,
+    });
+
+    try {
+      checkAjvStartupParity(source as any, planning as any, {
+        planningCompilesCanonical2020: true,
+        validateFormats: false,
+        sourceClass: 'Ajv',
+      });
+      throw new Error('expected AjvFlagsMismatchError');
+    } catch (e: any) {
+      expect(e).toBeInstanceOf(AjvFlagsMismatchError);
+      expect(
+        e.details.diffs.some(
+          (d: any) =>
+            String(d.flag).includes('strictTypes') &&
+            String(d.flag).includes('source')
+        )
+      ).toBe(true);
+    }
   });
 
   it('enforces multipleOfPrecision alignment when provided', () => {

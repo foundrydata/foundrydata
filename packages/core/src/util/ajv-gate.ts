@@ -143,6 +143,37 @@ export function checkAjvStartupParity(
     });
   }
 
+  // strictTypes policy: tolerant source vs strict planning (§13)
+  if (sFlags.strictTypes !== false) {
+    diffs.push({
+      flag: 'strictTypes(source)',
+      expected: false,
+      actual: sFlags.strictTypes,
+    });
+  }
+  if (expect.planningCompilesCanonical2020 && pFlags.strictTypes !== true) {
+    diffs.push({
+      flag: 'strictTypes(planning)',
+      expected: true,
+      actual: pFlags.strictTypes,
+    });
+  }
+
+  if (sFlags.strictSchema !== false) {
+    diffs.push({
+      flag: 'strictSchema(source)',
+      expected: false,
+      actual: sFlags.strictSchema,
+    });
+  }
+  if (expect.planningCompilesCanonical2020 && pFlags.strictSchema !== true) {
+    diffs.push({
+      flag: 'strictSchema(planning)',
+      expected: true,
+      actual: pFlags.strictSchema,
+    });
+  }
+
   // discriminator parity
   if (expect.discriminator !== undefined) {
     if (Boolean(sFlags.discriminator) !== Boolean(expect.discriminator)) {
