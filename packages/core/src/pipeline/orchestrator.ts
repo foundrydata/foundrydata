@@ -17,6 +17,7 @@ import {
   createSourceAjv,
   extractAjvFlags,
   prepareSchemaForSourceAjv,
+  isCanonicalMetaRef,
 } from '../util/ajv-source.js';
 import { checkAjvStartupParity } from '../util/ajv-gate.js';
 import { MetricsCollector, type MetricPhase } from '../util/metrics.js';
@@ -51,6 +52,7 @@ import {
   classifyExternalRefFailure,
   createExternalRefDiagnostic,
   schemaHasExternalRefs,
+  summarizeExternalRefs,
   type ExternalRefClassification,
 } from '../util/modes.js';
 
@@ -306,6 +308,7 @@ export async function executePipeline(
     const validateFormats = Boolean(options.validate?.validateFormats);
     const discriminator = Boolean(options.validate?.discriminator);
     if (schemaHasExternalRefs(schema)) {
+      const mode = options.mode ?? 'strict';
       const sourceAjvFactory = (): Ajv =>
         createSourceAjv(
           {
@@ -326,7 +329,6 @@ export async function executePipeline(
           createSourceAjv: sourceAjvFactory,
         });
         if (classification.skipEligible) {
-          const mode = options.mode ?? 'strict';
           const skipValidation =
             mode === 'lax' ||
             (mode === 'strict' && externalRefStrictPolicy !== 'error');
@@ -345,6 +347,36 @@ export async function executePipeline(
           }
         } else {
           throw error;
+        }
+      }
+      if (!externalRefState) {
+        const externalSummary = summarizeExternalRefs(schema, {
+          exclude: (ref) => isCanonicalMetaRef(ref, sourceDialect),
+        });
+        if (externalSummary.extRefs.length > 0) {
+          const classification: ExternalRefClassification = {
+            extRefs: externalSummary.extRefs,
+            failingRefs: externalSummary.extRefs.slice(),
+            exemplar: externalSummary.exemplar,
+            skipEligible: false,
+            reason: 'no-compile-errors',
+          };
+          const skipValidation =
+            mode === 'lax' ||
+            (mode === 'strict' && externalRefStrictPolicy !== 'error');
+          const diag = createExternalRefDiagnostic(mode, classification, {
+            skipValidation,
+            policy: mode === 'strict' ? externalRefStrictPolicy : undefined,
+          });
+          if (mode === 'strict') {
+            if (externalRefStrictPolicy === 'error') {
+              artifacts.validationDiagnostics = [diag];
+              throw new ExternalRefValidationError(diag);
+            }
+            externalRefState = { diag, classification };
+          } else {
+            externalRefState = { diag, classification };
+          }
         }
       }
     }

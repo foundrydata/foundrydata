@@ -1,5 +1,6 @@
 /* eslint-disable complexity */
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
 
 import { executePipeline } from '../../src/pipeline/orchestrator.js';
 import { DIAGNOSTIC_CODES } from '../../src/diag/codes.js';
@@ -220,6 +221,32 @@ describe('Foundry pipeline integration scenarios', () => {
     expect(laxResult.artifacts.validation?.skippedValidation).toBe(true);
     expect(laxResult.metrics.validationsPerRow).toBe(0);
     expect(laxDiag?.metrics).toMatchObject({ validationsPerRow: 0 });
+  });
+
+  it('fails fast in strict mode for AsyncAPI externals before generation', async () => {
+    const asyncapiSchema = JSON.parse(
+      readFileSync(
+        new URL(
+          '../../../../profiles/real-world/asyncapi-3.0.schema.json',
+          import.meta.url
+        ),
+        'utf-8'
+      )
+    );
+
+    const strictResult = await executePipeline(asyncapiSchema, {
+      mode: 'strict',
+      generate: { count: 1 },
+      validate: { validateFormats: false },
+    });
+
+    expect(strictResult.status).toBe('failed');
+    expect(strictResult.stages.compose.status).toBe('failed');
+    expect(strictResult.stages.generate.status).toBe('skipped');
+    const strictDiag = strictResult.artifacts.validationDiagnostics?.[0];
+    expect(strictDiag?.code).toBe(DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED);
+    expect(strictDiag?.details).toMatchObject({ mode: 'strict' });
+    expect(strictDiag?.details).not.toHaveProperty('skippedValidation', true);
   });
 
   it('records exclusivity diagnostics end-to-end', async () => {
