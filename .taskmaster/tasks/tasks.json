@@ -2118,13 +2118,28 @@
         "priority": "high",
         "subtasks": [],
         "updatedAt": "2025-10-27T11:29:34.987Z"
+      },
+      {
+        "id": "9126",
+        "title": "Fix repair stage to synthesize string required properties correctly when schemas resolve via $ref",
+        "description": "Enhance the repair engine to properly handle string property synthesis when schema resolution involves $ref references that may obscure required property constraints.",
+        "details": "[Context] The repair stage currently has issues synthesizing string properties when schemas use $ref to reference definitions, causing the required property constraints to be missed during repair operations.\n\n[Root Cause Analysis]\n- When schemas use $ref to reference string property definitions, the repair engine may not properly resolve the reference chain to identify required string properties\n- The current repair mapping (§10#mapping) may not account for dereferenced schema contexts where string constraints are defined in external references\n- Property synthesis logic may be operating on the normalized schema without proper $ref resolution for repair-specific operations\n\n[Implementation Requirements]\n1. **Reference Resolution Enhancement**: Extend repair engine to properly traverse $ref chains when identifying required string properties for synthesis\n2. **Context Preservation**: Ensure that when a required property is defined via $ref, the repair engine maintains the full constraint context from the referenced schema\n3. **String Synthesis Logic**: Update string property synthesis to work with dereferenced schemas, ensuring format, pattern, and length constraints are properly applied\n4. **Integration with CoverageIndex**: Ensure the MUSTCOVER index correctly identifies string properties that need synthesis even when defined via $ref\n\n[Technical Approach]\n- Modify repair engine's property analysis phase to follow $ref resolution paths\n- Update string synthesis logic in packages/core/repair/ to handle dereferenced property definitions\n- Ensure epsilon logging captures $ref resolution steps for debugging\n- Integrate with existing AJV-driven repair validation to maintain correctness\n\n[Files to Modify]\n- packages/core/repair/index.ts (main repair orchestration)\n- packages/core/repair/property-synthesis.ts (string property logic)\n- packages/core/util/ref-resolver.ts (if exists, or create for $ref handling)\n- packages/core/repair/coverage-index.ts (MUSTCOVER integration)",
+        "testStrategy": "1. **Unit Tests**: Create test cases with schemas that define required string properties via $ref references\n   - Test schemas with local $ref to definitions section\n   - Test schemas with nested $ref chains (ref -> ref -> string definition)\n   - Verify string properties are correctly synthesized with all constraints (format, pattern, minLength, maxLength)\n\n2. **Integration Tests**: Test repair stage with real-world schemas that use $ref extensively\n   - Use OpenAPI schemas that reference string definitions\n   - Test JSON Schema with complex $ref structures\n   - Verify AJV validation passes after repair operations\n\n3. **Regression Tests**: Ensure existing repair functionality remains intact\n   - Test non-$ref string property synthesis still works\n   - Verify other property types (numbers, arrays, objects) are unaffected\n   - Confirm epsilon logging captures $ref resolution steps\n\n4. **Property-Based Testing**: Generate schemas with various $ref patterns and verify consistent string synthesis\n   - Test with different reference depths\n   - Test with circular reference detection\n   - Verify deterministic behavior across multiple repair passes",
+        "status": "done",
+        "dependencies": [
+          "10",
+          "9110"
+        ],
+        "priority": "medium",
+        "subtasks": [],
+        "updatedAt": "2025-10-27T14:02:16.511Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-27T11:29:34.988Z",
-      "taskCount": 53,
-      "completedCount": 53,
+      "lastModified": "2025-10-27T14:02:16.512Z",
+      "taskCount": 54,
+      "completedCount": 54,
       "tags": [
         "feature-simplification"
       ]

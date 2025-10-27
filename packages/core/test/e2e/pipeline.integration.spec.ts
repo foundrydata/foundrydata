@@ -249,6 +249,32 @@ describe('Foundry pipeline integration scenarios', () => {
     expect(strictDiag?.details).not.toHaveProperty('skippedValidation', true);
   });
 
+  it('repairs AsyncAPI info strings under lax mode', async () => {
+    const asyncapiSchema = JSON.parse(
+      readFileSync(
+        new URL(
+          '../../../../profiles/real-world/asyncapi-3.0.schema.json',
+          import.meta.url
+        ),
+        'utf-8'
+      )
+    );
+
+    const laxResult = await executePipeline(asyncapiSchema, {
+      mode: 'lax',
+      generate: { count: 1, seed: 424242 },
+      validate: { validateFormats: true },
+    });
+
+    expect(laxResult.status).toBe('completed');
+    const repaired = laxResult.artifacts.repaired?.[0] as
+      | { info?: Record<string, unknown> }
+      | undefined;
+    expect(repaired?.info?.title).toBe('');
+    expect(repaired?.info?.version).toBe('');
+    expect(laxResult.artifacts.validation?.valid).toBe(true);
+  });
+
   it('records exclusivity diagnostics end-to-end', async () => {
     const result = await executePipeline(exclusivityOneOfSchema, {
       generate: { count: 1, seed: 42 },
