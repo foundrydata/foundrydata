@@ -1,0 +1,841 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schema.cloudformation.us-east-1.amazonaws.com/provider.definition.schema.v1.json",
+  "title": "CloudFormation Resource Provider Definition MetaSchema",
+  "description": "This schema validates a CloudFormation resource provider definition.",
+  "definitions": {
+    "handlerSchema": {
+      "type": "object",
+      "properties": {
+        "properties": {
+          "$ref": "#/properties/properties"
+        },
+        "required": {
+          "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/stringArray"
+        },
+        "allOf": {
+          "$ref": "#/properties/allOf"
+        },
+        "anyOf": {
+          "$ref": "#/properties/allOf"
+        },
+        "oneOf": {
+          "$ref": "#/properties/allOf"
+        }
+      },
+      "required": [
+        "properties"
+      ],
+      "additionalProperties": false
+    },
+    "handlerDefinitionWithSchemaOverride": {
+      "description": "Defines any execution operations which can be performed on this resource provider",
+      "type": "object",
+      "properties": {
+        "handlerSchema": {
+          "$ref": "#/definitions/handlerSchema"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "additionalItems": false
+        },
+        "timeoutInMinutes": {
+          "description": "Defines the timeout for the entire operation to be interpreted by the invoker of the handler.  The default is 120 (2 hours).",
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 2160,
+          "default": 120
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "permissions"
+      ]
+    },
+    "handlerDefinition": {
+      "description": "Defines any execution operations which can be performed on this resource provider",
+      "type": "object",
+      "properties": {
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "additionalItems": false
+        },
+        "timeoutInMinutes": {
+          "description": "Defines the timeout for the entire operation to be interpreted by the invoker of the handler.  The default is 120 (2 hours).",
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 2160,
+          "default": 120
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "permissions"
+      ]
+    },
+    "replacementStrategy": {
+      "type": "string",
+      "description": "The valid replacement strategies are [create_then_delete] and [delete_then_create]. All other inputs are invalid.",
+      "default": "create_then_delete",
+      "enum": [
+        "create_then_delete",
+        "delete_then_create"
+      ]
+    },
+    "resourceLink": {
+      "type": "object",
+      "properties": {
+        "$comment": {
+          "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/%24comment"
+        },
+        "templateUri": {
+          "type": "string",
+          "pattern": "^(/|https:)"
+        },
+        "mappings": {
+          "type": "object",
+          "patternProperties": {
+            "^[A-Za-z0-9]{1,64}$": {
+              "type": "string",
+              "format": "json-pointer"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "templateUri",
+        "mappings"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "patternProperties": {
+    "^\\$id$": {
+      "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/%24id"
+    }
+  },
+  "properties": {
+    "$schema": {
+      "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/%24schema"
+    },
+    "type": {
+      "$comment": "Resource Type",
+      "type": "string",
+      "const": "RESOURCE"
+    },
+    "typeName": {
+      "$comment": "Resource Type Identifier",
+      "examples": [
+        "Organization::Service::Resource",
+        "AWS::EC2::Instance",
+        "Initech::TPS::Report"
+      ],
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9]{2,64}::[a-zA-Z0-9]{2,64}::[a-zA-Z0-9]{2,64}$"
+    },
+    "$comment": {
+      "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/%24comment"
+    },
+    "title": {
+      "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/title"
+    },
+    "description": {
+      "$comment": "A short description of the resource provider. This will be shown in the AWS CloudFormation console.",
+      "type": "string"
+    },
+    "sourceUrl": {
+      "$comment": "The location of the source code for this resource provider, to help interested parties submit issues or improvements.",
+      "examples": [
+        "https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-s3"
+      ],
+      "type": "string",
+      "pattern": "^https://[0-9a-zA-Z]([-.\\w]*[0-9a-zA-Z])(:[0-9]*)*([?/#].*)?$",
+      "maxLength": 4096
+    },
+    "documentationUrl": {
+      "$comment": "A page with supplemental documentation. The property documentation in schemas should be able to stand alone, but this is an opportunity for e.g. rich examples or more guided documents.",
+      "examples": [
+        "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/CHAP_Using.html"
+      ],
+      "type": "string",
+      "pattern": "^https://[0-9a-zA-Z]([-.\\w]*[0-9a-zA-Z])(:[0-9]*)*([?/#].*)?$",
+      "maxLength": 4096
+    },
+    "taggable": {
+      "description": "(Deprecated, please use new metadata attribute tagging) A boolean flag indicating whether this resource type supports tagging.",
+      "type": "boolean",
+      "default": true
+    },
+    "tagging": {
+      "type": "object",
+      "properties": {
+        "taggable": {
+          "description": "A boolean flag indicating whether this resource type supports tagging.",
+          "type": "boolean",
+          "default": true
+        },
+        "tagOnCreate": {
+          "description": "A boolean flag indicating whether this resource type supports tagging resources upon creation.",
+          "type": "boolean",
+          "default": true
+        },
+        "tagUpdatable": {
+          "description": "A boolean flag indicating whether this resource type supports updatable tagging.",
+          "type": "boolean",
+          "default": true
+        },
+        "cloudFormationSystemTags": {
+          "description": "A boolean flag indicating whether this resource type supports CloudFormation system tags.",
+          "type": "boolean",
+          "default": true
+        },
+        "tagProperty": {
+          "description": "A reference to the Tags property in the schema.",
+          "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/%24ref",
+          "default": "/properties/Tags"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "additionalItems": false
+        }
+      },
+      "required": [
+        "taggable"
+      ],
+      "additionalProperties": false
+    },
+    "replacementStrategy": {
+      "$comment": "The order of replacement for an immutable resource update.",
+      "$ref": "#/definitions/replacementStrategy"
+    },
+    "additionalProperties": {
+      "$comment": "All properties of a resource must be expressed in the schema - arbitrary inputs are not allowed",
+      "type": "boolean",
+      "const": false
+    },
+    "properties": {
+      "type": "object",
+      "patternProperties": {
+        "^[A-Za-z0-9]{1,64}$": {
+          "$ref": "#/properties/allOf/items"
+        }
+      },
+      "additionalProperties": false,
+      "minProperties": 1
+    },
+    "definitions": {
+      "type": "object",
+      "patternProperties": {
+        "^[A-Za-z0-9]{1,64}$": {
+          "$ref": "#/properties/allOf/items"
+        }
+      },
+      "additionalProperties": false
+    },
+    "handlers": {
+      "description": "Defines the provisioning operations which can be performed on this resource type",
+      "type": "object",
+      "properties": {
+        "create": {
+          "$ref": "#/definitions/handlerDefinition"
+        },
+        "read": {
+          "$ref": "#/definitions/handlerDefinition"
+        },
+        "update": {
+          "$ref": "#/definitions/handlerDefinition"
+        },
+        "delete": {
+          "$ref": "#/definitions/handlerDefinition"
+        },
+        "list": {
+          "$ref": "#/definitions/handlerDefinitionWithSchemaOverride"
+        }
+      },
+      "additionalProperties": false
+    },
+    "remote": {
+      "description": "Reserved for CloudFormation use. A namespace to inline remote schemas.",
+      "type": "object",
+      "patternProperties": {
+        "^schema[0-9]+$": {
+          "description": "Reserved for CloudFormation use. A inlined remote schema.",
+          "type": "object",
+          "properties": {
+            "$comment": {
+              "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/%24comment"
+            },
+            "properties": {
+              "$ref": "#/properties/properties"
+            },
+            "definitions": {
+              "$ref": "#/properties/definitions"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "readOnlyProperties": {
+      "description": "A list of JSON pointers to properties that are able to be found in a Read request but unable to be specified by the customer",
+      "$ref": "#/properties/additionalIdentifiers/items"
+    },
+    "writeOnlyProperties": {
+      "description": "A list of JSON pointers to properties (typically sensitive) that are able to be specified by the customer but unable to be returned in a Read request",
+      "$ref": "#/properties/additionalIdentifiers/items"
+    },
+    "conditionalCreateOnlyProperties": {
+      "description": "A list of JSON pointers for properties that can only be updated under certain conditions. For example, you can upgrade the engine version of an RDS DBInstance but you cannot downgrade it.  When updating this property for a resource in a CloudFormation stack, the resource will be replaced if it cannot be updated.",
+      "$ref": "#/properties/additionalIdentifiers/items"
+    },
+    "nonPublicProperties": {
+      "description": "A list of JSON pointers for properties that are hidden. These properties will still be used but will not be visible",
+      "$ref": "#/properties/additionalIdentifiers/items"
+    },
+    "nonPublicDefinitions": {
+      "description": "A list of JSON pointers for definitions that are hidden. These definitions will still be used but will not be visible",
+      "$ref": "#/properties/additionalIdentifiers/items"
+    },
+    "createOnlyProperties": {
+      "description": "A list of JSON pointers to properties that are only able to be specified by the customer when creating a resource. Conversely, any property *not* in this list can be applied to an Update request.",
+      "$ref": "#/properties/additionalIdentifiers/items"
+    },
+    "deprecatedProperties": {
+      "description": "A list of JSON pointers to properties that have been deprecated by the underlying service provider. These properties are still accepted in create & update operations, however they may be ignored, or converted to a consistent model on application. Deprecated properties are not guaranteed to be present in read paths.",
+      "$ref": "#/properties/additionalIdentifiers/items"
+    },
+    "primaryIdentifier": {
+      "description": "A required identifier which uniquely identifies an instance of this resource type. An identifier is a non-zero-length list of JSON pointers to properties that form a single key. An identifier can be a single or multiple properties to support composite-key identifiers.",
+      "$ref": "#/properties/additionalIdentifiers/items"
+    },
+    "additionalIdentifiers": {
+      "description": "An optional list of supplementary identifiers, each of which uniquely identifies an instance of this resource type. An identifier is a non-zero-length list of JSON pointers to properties that form a single key. An identifier can be a single or multiple properties to support composite-key identifiers.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "string",
+          "format": "json-pointer"
+        }
+      }
+    },
+    "required": {
+      "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/stringArray"
+    },
+    "allOf": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "allOf": [
+          {
+            "dependencies": {
+              "enum": {
+                "$comment": "Enforce that properties are strongly typed when enum, or const is specified.",
+                "required": [
+                  "type"
+                ]
+              },
+              "const": {
+                "required": [
+                  "type"
+                ]
+              },
+              "properties": {
+                "$comment": "An object cannot have both defined and undefined properties; therefore, patternProperties is not allowed when properties is specified.",
+                "not": {
+                  "required": [
+                    "patternProperties"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "$comment": "The following subset of draft-07 property references is supported for resource definitions. Nested properties are disallowed and should be specified as a $ref to a definitions block.",
+            "type": "object",
+            "properties": {
+              "insertionOrder": {
+                "description": "When set to true, this flag indicates that the order of insertion of the array will be honored, and that changing the order of the array would indicate a diff",
+                "type": "boolean",
+                "default": true
+              },
+              "arrayType": {
+                "description": "When set to AttributeList, it indicates that the array is of nested type objects, and when set to Standard it indicates that the array consists of primitive types",
+                "type": "string",
+                "default": "Standard",
+                "enum": [
+                  "Standard",
+                  "AttributeList"
+                ]
+              },
+              "$ref": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/%24ref"
+              },
+              "$comment": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/%24comment"
+              },
+              "title": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/title"
+              },
+              "description": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/description"
+              },
+              "examples": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/examples"
+              },
+              "default": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/default"
+              },
+              "multipleOf": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/multipleOf"
+              },
+              "maximum": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/maximum"
+              },
+              "exclusiveMaximum": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/exclusiveMaximum"
+              },
+              "minimum": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/minimum"
+              },
+              "exclusiveMinimum": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/exclusiveMinimum"
+              },
+              "maxLength": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/nonNegativeInteger"
+              },
+              "minLength": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/nonNegativeIntegerDefault0"
+              },
+              "pattern": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/pattern"
+              },
+              "items": {
+                "$comment": "Redefined as just a schema. A list of schemas is not allowed",
+                "$ref": "#/properties/allOf/items",
+                "default": {}
+              },
+              "maxItems": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/nonNegativeInteger"
+              },
+              "minItems": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/nonNegativeIntegerDefault0"
+              },
+              "uniqueItems": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/uniqueItems"
+              },
+              "contains": {
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "$id": "http://json-schema.org/draft-07/schema#",
+                "title": "Core schema meta-schema",
+                "definitions": {
+                  "schemaArray": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "$ref": "#/properties/allOf/items/allOf/1/properties/contains"
+                    }
+                  },
+                  "nonNegativeInteger": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "nonNegativeIntegerDefault0": {
+                    "allOf": [
+                      {
+                        "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/nonNegativeInteger"
+                      },
+                      {
+                        "default": 0
+                      }
+                    ]
+                  },
+                  "simpleTypes": {
+                    "enum": [
+                      "array",
+                      "boolean",
+                      "integer",
+                      "null",
+                      "number",
+                      "object",
+                      "string"
+                    ]
+                  },
+                  "stringArray": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "uniqueItems": true,
+                    "default": []
+                  }
+                },
+                "type": [
+                  "object",
+                  "boolean"
+                ],
+                "properties": {
+                  "$id": {
+                    "type": "string",
+                    "format": "uri-reference"
+                  },
+                  "$schema": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "$ref": {
+                    "type": "string",
+                    "format": "uri-reference"
+                  },
+                  "$comment": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "default": true,
+                  "readOnly": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "writeOnly": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "examples": {
+                    "type": "array",
+                    "items": true
+                  },
+                  "multipleOf": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "maximum": {
+                    "type": "number"
+                  },
+                  "exclusiveMaximum": {
+                    "type": "number"
+                  },
+                  "minimum": {
+                    "type": "number"
+                  },
+                  "exclusiveMinimum": {
+                    "type": "number"
+                  },
+                  "maxLength": {
+                    "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/nonNegativeInteger"
+                  },
+                  "minLength": {
+                    "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/nonNegativeIntegerDefault0"
+                  },
+                  "pattern": {
+                    "type": "string",
+                    "format": "regex"
+                  },
+                  "additionalItems": {
+                    "$ref": "#/properties/allOf/items/allOf/1/properties/contains"
+                  },
+                  "items": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/properties/allOf/items/allOf/1/properties/contains"
+                      },
+                      {
+                        "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/schemaArray"
+                      }
+                    ],
+                    "default": true
+                  },
+                  "maxItems": {
+                    "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/nonNegativeInteger"
+                  },
+                  "minItems": {
+                    "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/nonNegativeIntegerDefault0"
+                  },
+                  "uniqueItems": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "contains": {
+                    "$ref": "#/properties/allOf/items/allOf/1/properties/contains"
+                  },
+                  "maxProperties": {
+                    "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/nonNegativeInteger"
+                  },
+                  "minProperties": {
+                    "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/nonNegativeIntegerDefault0"
+                  },
+                  "required": {
+                    "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/stringArray"
+                  },
+                  "additionalProperties": {
+                    "$ref": "#/properties/allOf/items/allOf/1/properties/contains"
+                  },
+                  "definitions": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "$ref": "#/properties/allOf/items/allOf/1/properties/contains"
+                    },
+                    "default": {}
+                  },
+                  "properties": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "$ref": "#/properties/allOf/items/allOf/1/properties/contains"
+                    },
+                    "default": {}
+                  },
+                  "patternProperties": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "$ref": "#/properties/allOf/items/allOf/1/properties/contains"
+                    },
+                    "propertyNames": {
+                      "format": "regex"
+                    },
+                    "default": {}
+                  },
+                  "dependencies": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/properties/allOf/items/allOf/1/properties/contains"
+                        },
+                        {
+                          "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/stringArray"
+                        }
+                      ]
+                    }
+                  },
+                  "propertyNames": {
+                    "$ref": "#/properties/allOf/items/allOf/1/properties/contains"
+                  },
+                  "const": true,
+                  "enum": {
+                    "type": "array",
+                    "items": true,
+                    "minItems": 1,
+                    "uniqueItems": true
+                  },
+                  "type": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/simpleTypes"
+                      },
+                      {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/simpleTypes"
+                        },
+                        "minItems": 1,
+                        "uniqueItems": true
+                      }
+                    ]
+                  },
+                  "format": {
+                    "type": "string"
+                  },
+                  "contentMediaType": {
+                    "type": "string"
+                  },
+                  "contentEncoding": {
+                    "type": "string"
+                  },
+                  "if": {
+                    "$ref": "#/properties/allOf/items/allOf/1/properties/contains"
+                  },
+                  "then": {
+                    "$ref": "#/properties/allOf/items/allOf/1/properties/contains"
+                  },
+                  "else": {
+                    "$ref": "#/properties/allOf/items/allOf/1/properties/contains"
+                  },
+                  "allOf": {
+                    "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/schemaArray"
+                  },
+                  "anyOf": {
+                    "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/schemaArray"
+                  },
+                  "oneOf": {
+                    "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/schemaArray"
+                  },
+                  "not": {
+                    "$ref": "#/properties/allOf/items/allOf/1/properties/contains"
+                  }
+                },
+                "default": true
+              },
+              "maxProperties": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/nonNegativeInteger"
+              },
+              "minProperties": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/nonNegativeIntegerDefault0"
+              },
+              "required": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/stringArray"
+              },
+              "properties": {
+                "type": "object",
+                "patternProperties": {
+                  "^[A-Za-z0-9]{1,64}$": {
+                    "$ref": "#/properties/allOf/items"
+                  }
+                },
+                "additionalProperties": false,
+                "minProperties": 1
+              },
+              "additionalProperties": {
+                "$comment": "All properties of a resource must be expressed in the schema - arbitrary inputs are not allowed",
+                "type": "boolean",
+                "const": false
+              },
+              "patternProperties": {
+                "$comment": "patternProperties allow providers to introduce a specification for key-value pairs, or Map inputs.",
+                "type": "object",
+                "propertyNames": {
+                  "format": "regex"
+                }
+              },
+              "dependencies": {
+                "$comment": "Redefined to capture our properties override.",
+                "type": "object",
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/properties/allOf/items"
+                    },
+                    {
+                      "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/stringArray"
+                    }
+                  ]
+                }
+              },
+              "const": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/const"
+              },
+              "enum": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/enum"
+              },
+              "type": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/type"
+              },
+              "format": {
+                "$ref": "#/properties/allOf/items/allOf/1/properties/contains/properties/format"
+              },
+              "allOf": {
+                "$ref": "#/properties/allOf"
+              },
+              "anyOf": {
+                "$ref": "#/properties/allOf"
+              },
+              "oneOf": {
+                "$ref": "#/properties/allOf"
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "anyOf": {
+      "$ref": "#/properties/allOf"
+    },
+    "oneOf": {
+      "$ref": "#/properties/allOf"
+    },
+    "resourceLink": {
+      "description": "A template-able link to a resource instance. AWS-internal service links must be relative to the AWS console domain. External service links must be absolute, HTTPS URIs.",
+      "$ref": "#/definitions/resourceLink"
+    },
+    "propertyTransform": {
+      "description": "A map which allows resource owners to define a function for a property with possible transformation. This property helps ensure the input to the model is equal to output",
+      "type": "object",
+      "patternProperties": {
+        "^[A-Za-z0-9]{1,64}$": {
+          "type": "string"
+        }
+      }
+    },
+    "typeConfiguration": {
+      "description": "TypeConfiguration to set the configuration data for registry types. This configuration data is not passed through the resource properties in template. One of the possible use cases is configuring auth keys for 3P resource providers.",
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$id": "https://schema.cloudformation.us-east-1.amazonaws.com/provider.configuration.definition.schema.v1.json",
+      "title": "CloudFormation Type Provider Configuration Definition MetaSchema",
+      "type": "object",
+      "properties": {
+        "additionalProperties": {
+          "$comment": "All properties must be expressed in the schema - arbitrary inputs are not allowed",
+          "type": "boolean",
+          "const": false
+        },
+        "deprecatedProperties": {
+          "description": "A list of JSON pointers to properties that have been deprecated by the underlying service provider. These properties are still accepted in create & update operations, however they may be ignored, or converted to a consistent model on application. Deprecated properties are not guaranteed to be present in read paths.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "format": "json-pointer"
+          }
+        },
+        "allOf": {
+          "$ref": "#/properties/allOf"
+        },
+        "anyOf": {
+          "$ref": "#/properties/allOf"
+        },
+        "oneOf": {
+          "$ref": "#/properties/allOf"
+        },
+        "required": {
+          "$ref": "#/properties/allOf/items/allOf/1/properties/contains/definitions/stringArray"
+        },
+        "description": {
+          "$comment": "A short description of the type configuration. This will be shown in the AWS CloudFormation console.",
+          "$ref": "#/properties/description"
+        },
+        "properties": {
+          "type": "object",
+          "patternProperties": {
+            "(?!CloudFormation)^[A-Za-z0-9]{1,64}$": {
+              "$comment": "TypeConfiguration properties starting with `CloudFormation` are reserved for CloudFormation use",
+              "$ref": "#/properties/allOf/items"
+            }
+          },
+          "minProperties": 1,
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "properties",
+        "additionalProperties"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "typeName",
+    "properties",
+    "description",
+    "primaryIdentifier",
+    "additionalProperties"
+  ],
+  "additionalProperties": false
+}

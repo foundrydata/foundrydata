@@ -1,0 +1,380 @@
+{
+  "type": "object",
+  "description": "Unambiguous identification of the account to which credit and debit entries are made. The following fields are optional only for accounts that are switched:\n\n  * Data.Currency  \n  * Data.AccountCategory  \n  * Data.AccountTypeCode\n\nFor all other accounts, the fields must be populated by the ASPSP.",
+  "required": [
+    "AccountId"
+  ],
+  "properties": {
+    "AccountId": {
+      "description": "A unique and immutable identifier used to identify the account resource. This identifier has no meaning to the account owner.",
+      "type": "string",
+      "example": "22289",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "Status": {
+      "description": "Specifies the status of account resource in code form. <br />\nFor a full list of enumeration values refer to `OBInternalAccountStatus1Code` in *OB_Internal_CodeSet* [here](https://github.com/OpenBankingUK/External_Internal_CodeSets)",
+      "type": "string",
+      "example": "Enabled",
+      "enum": [
+        "Deleted",
+        "Disabled",
+        "Enabled",
+        "Pending",
+        "ProForma"
+      ]
+    },
+    "StatusUpdateDateTime": {
+      "description": "Date and time at which the resource status was updated. All dates in the JSON payloads are represented in ISO 8601 date-time format. \nAll date-time fields in responses must include the timezone. An example is below:\n2017-04-05T10:43:07+00:00",
+      "type": "string",
+      "format": "date-time"
+    },
+    "Currency": {
+      "description": "Identification of the currency in which the account is held. \nUsage: Currency should only be used in case one and the same account number covers several currencies\nand the initiating party needs to identify which currency needs to be used for settlement on the account.",
+      "type": "string",
+      "pattern": "^[A-Z]{3,3}$"
+    },
+    "AccountCategory": {
+      "description": "Specifies the type of account (personal or business). <br /> For a full list of enumeration values refer to 'OBInternalAccountType1Code' in *OB_Internal_CodeSet* [here](https://github.com/OpenBankingUK/External_Internal_CodeSets)",
+      "type": "string",
+      "enum": [
+        "Business",
+        "Personal"
+      ]
+    },
+    "AccountTypeCode": {
+      "description": "Specifies the sub type of account (product family group) <br /> For a full list of enumeration values refer to `OBExternalCashAccountType1Code` *OB_Internal_CodeSet* [here](https://github.com/OpenBankingUK/External_Internal_CodeSets)",
+      "type": "string",
+      "enum": [
+        "CACC",
+        "CARD",
+        "CASH",
+        "CHAR",
+        "CISH",
+        "COMM",
+        "CPAC",
+        "LLSV",
+        "LOAN",
+        "MGLD",
+        "MOMA",
+        "NREX",
+        "ODFT",
+        "ONDP",
+        "OTHR",
+        "SACC",
+        "SLRY",
+        "SVGS",
+        "TAXE",
+        "TRAN",
+        "TRAS",
+        "VACC",
+        "NFCA",
+        "MORT",
+        "WALT"
+      ]
+    },
+    "Description": {
+      "description": "Specifies the description of the account type.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 35
+    },
+    "Nickname": {
+      "description": "The nickname of the account, assigned by the account owner in order to provide an additional means of identification of the account.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 70
+    },
+    "OpeningDate": {
+      "description": "Date on which the account and related basic services are effectively operational for the account owner. All dates in the JSON payloads are represented in ISO 8601 date-time format. \nAll date-time fields in responses must include the timezone. An example is below:\n2017-04-05T10:43:07+00:00",
+      "type": "string",
+      "format": "date-time"
+    },
+    "MaturityDate": {
+      "description": "Maturity date of the account. All dates in the JSON payloads are represented in ISO 8601 date-time format. \nAll date-time fields in responses must include the timezone. An example is below:\n2017-04-05T10:43:07+00:00",
+      "type": "string",
+      "format": "date-time"
+    },
+    "SwitchStatus": {
+      "description": "Specifies the switch status for the account, in a coded form. <br /> For a full list of enumeration values refer to `OBInternalSwitchStatusCode` in *OB_Internal_CodeSet* [here](https://github.com/OpenBankingUK/External_Internal_CodeSets)",
+      "type": "string",
+      "x-namespaced-enum": [
+        "UK.CASS.NotSwitched",
+        "UK.CASS.SwitchCompleted"
+      ]
+    },
+    "Account": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "Provides the details to identify an account.",
+        "required": [
+          "SchemeName",
+          "Identification"
+        ],
+        "properties": {
+          "SchemeName": {
+            "description": "Name of the identification scheme, in a coded form as published in an external list. <br /> For a full list of enumeration values refer to `OBInternalAccountIdentification4Code` in *OB_Internal_CodeSet* [here](https://github.com/OpenBankingUK/External_Internal_CodeSets)",
+            "type": "string",
+            "x-namespaced-enum": [
+              "UK.OBIE.BBAN",
+              "UK.OBIE.IBAN",
+              "UK.OBIE.PAN",
+              "UK.OBIE.Paym",
+              "UK.OBIE.SortCodeAccountNumber",
+              "UK.OBIE.Wallet"
+            ]
+          },
+          "Identification": {
+            "description": "Identification assigned by an institution to identify an account. This identification is known by the account owner.",
+            "type": "string",
+            "example": "80200112344562",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "Name": {
+            "description": "The account name is the name or names of the account owner(s) represented at an account level, as displayed by the ASPSP's online channels.\nNote, the account name is not the product name or the nickname of the account.",
+            "type": "string",
+            "example": "Jane Smith",
+            "minLength": 1,
+            "maxLength": 350
+          },
+          "LEI": {
+            "description": "Legal entity identification as an alternate identification for a party. Legal Entity Identifier is a code allocated to a party as described in ISO 17442 \"Financial Services - Legal Entity Identifier (LEI)\".",
+            "type": "string",
+            "example": "IZ9Q00LZEVUKWCQY6X15",
+            "minLength": 1,
+            "maxLength": 20,
+            "pattern": "^[A-Z0-9]{18,18}[0-9]{2,2}$"
+          },
+          "SecondaryIdentification": {
+            "description": "This is secondary identification of the account, as assigned by the account servicing institution. \nThis can be used by building societies to additionally identify accounts with a roll number (in addition to a sort code and account number combination).",
+            "type": "string",
+            "example": "87562298675897",
+            "minLength": 1,
+            "maxLength": 34
+          }
+        }
+      }
+    },
+    "StatementFrequencyAndFormat": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "Frequency and format of statments for an account",
+        "properties": {
+          "Frequency": {
+            "description": "For a full list of enumeration values refer to `OBFrequency2Code` in *OB_Internal_CodeSet* [here](https://github.com/OpenBankingUK/External_internal_CodeSets)",
+            "type": "string",
+            "enum": [
+              "YEAR",
+              "DAIL",
+              "INDA",
+              "MNTH",
+              "QURT",
+              "MIAN",
+              "TEND",
+              "MOVE",
+              "WEEK"
+            ]
+          },
+          "CommunicationMethod": {
+            "description": "For a full list of enumeration values see `OBExternalCommunicationMethod2Code` in *OB_Internal_CodeSet* [here](https://github.com/OpenBankingUK/External_internal_CodeSets) ",
+            "type": "string",
+            "enum": [
+              "EMAL",
+              "FAXI",
+              "FILE",
+              "ONLI",
+              "POST"
+            ]
+          },
+          "Format": {
+            "description": "For a full list of enumeration values refer to `ExternalDocumentFormat1Code` in *OB_Internal_CodeSet* [here](https://github.com/OpenBankingUK/External_internal_CodeSets)",
+            "type": "string",
+            "enum": [
+              "DPDF",
+              "DXML",
+              "SDSH",
+              "WORD",
+              "XSLT"
+            ]
+          },
+          "DeliveryAddress": {
+            "type": "object",
+            "description": "Information that locates and identifies a specific address, as defined by postal services.",
+            "properties": {
+              "AddressType": {
+                "description": "Identifies the nature of the postal address. <br /> For a full set of codes see `OBAddressType2Code` in *OB_Internal_CodeSet* [here](https://github.com/OpenBankingUK/External_Internal_CodeSets).",
+                "type": "string",
+                "example": "BIZZ",
+                "enum": [
+                  "BIZZ",
+                  "DLVY",
+                  "MLTO",
+                  "PBOX",
+                  "ADDR",
+                  "HOME",
+                  "CORR",
+                  "STAT"
+                ]
+              },
+              "Department": {
+                "description": "Identification of a division of a large organisation or building.",
+                "example": "Finance",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70
+              },
+              "SubDepartment": {
+                "description": "Identification of a sub-division of a large organisation or building.",
+                "example": "Payroll",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70
+              },
+              "StreetName": {
+                "description": "Name of a street or thoroughfare.",
+                "type": "string",
+                "example": "Bank Street",
+                "minLength": 1,
+                "maxLength": 140
+              },
+              "BuildingNumber": {
+                "description": "Number that identifies the position of a building on a street.",
+                "type": "string",
+                "example": "11",
+                "minLength": 1,
+                "maxLength": 16
+              },
+              "BuildingName": {
+                "description": "Name of a referenced building.",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140
+              },
+              "Floor": {
+                "description": "Number that identifies the level within a building",
+                "type": "string",
+                "example": "11",
+                "minLength": 1,
+                "maxLength": 70
+              },
+              "UnitNumber": {
+                "description": "Number that identifies the unit of a specific address .",
+                "type": "string",
+                "example": "A88",
+                "minLength": 1,
+                "maxLength": 16
+              },
+              "Room": {
+                "description": "Information that locates and identifies a room to form part of an address",
+                "type": "string",
+                "example": "Basement 03",
+                "minLength": 1,
+                "maxLength": 70
+              },
+              "PostBox": {
+                "description": "Information that locates and identifies a box in a post office assigned to a person or organization, where letters for them are kept until called for.",
+                "type": "string",
+                "example": "PO Box 123456",
+                "minLength": 1,
+                "maxLength": 16
+              },
+              "TownLocationName": {
+                "description": "Name of a built-up area, with defined boundaries, and a local government.",
+                "type": "string",
+                "example": "London",
+                "minLength": 1,
+                "maxLength": 140
+              },
+              "DistrictName": {
+                "description": "Number that of the regional area, known as a district, which forms part of an address",
+                "type": "string",
+                "example": "Greater London",
+                "minLength": 1,
+                "maxLength": 140
+              },
+              "CareOf": {
+                "description": "The 'care of' address is used whenever sending mail to a person or organisation who does not actually live or work at the address. They will receive the mail for the individual.",
+                "type": "string",
+                "example": "Jane Smith",
+                "minLength": 1,
+                "maxLength": 140
+              },
+              "PostCode": {
+                "description": "Identifier consisting of a group of letters and/or numbers that is added to a postal address to assist the sorting of mail.",
+                "type": "string",
+                "example": "EC2N 4AG",
+                "minLength": 1,
+                "maxLength": 16
+              },
+              "TownName": {
+                "description": "Name of a built-up area, with defined boundaries, and a local government.",
+                "type": "string",
+                "example": "London",
+                "minLength": 1,
+                "maxLength": 140
+              },
+              "CountrySubDivision": {
+                "description": "Identifies a subdivision of a country such as state, region, county.",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 35
+              },
+              "Country": {
+                "description": "Nation with its own government.",
+                "type": "string",
+                "pattern": "^[A-Z]{2,2}$"
+              },
+              "AddressLine": {
+                "type": "array",
+                "items": {
+                  "description": "Information that locates and identifies a specific address, as defined by postal services, presented in free format text.",
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 70
+                },
+                "minItems": 0,
+                "maxItems": 7
+              }
+            }
+          }
+        }
+      }
+    },
+    "Servicer": {
+      "type": "object",
+      "required": [
+        "SchemeName",
+        "Identification"
+      ],
+      "description": "Party that manages the account on behalf of the account owner, that is manages the registration and booking of entries on the account, calculates balances on the account and provides information about the account.",
+      "properties": {
+        "SchemeName": {
+          "description": "Name of the identification scheme, in a coded form as published in an external list.<br/> For a full list of enumeration values refer to `OBInternalFinancialInstitutionIdentification4Code` in *OB_Internal_CodeSet* [here](https://github.com/OpenBankingUK/External_Internal_CodeSets)",
+          "type": "string",
+          "example": "UK.OBIE.BICFI",
+          "x-namespaced-enum": [
+            "UK.OBIE.BICFI"
+          ]
+        },
+        "Identification": {
+          "description": "Unique and unambiguous identification of the servicing institution.",
+          "type": "string",
+          "example": "80200112344562",
+          "minLength": 1,
+          "maxLength": 35
+        },
+        "Name": {
+          "description": "Name by which an agent is known and which is usually used to identify that agent.",
+          "type": "string",
+          "example": "Agent Name",
+          "minLength": 1,
+          "maxLength": 140
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
