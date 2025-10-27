@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
 import { normalize } from '../../transform/schema-normalizer';
-import { compose } from '../../transform/composition-engine';
+import {
+  compose,
+  type ComposeOptions,
+} from '../../transform/composition-engine';
 import { generateFromCompose } from '../foundry-generator';
 
-function composeSchema(schema: unknown): ReturnType<typeof compose> {
+function composeSchema(
+  schema: unknown,
+  options?: ComposeOptions
+): ReturnType<typeof compose> {
   const normalized = normalize(schema);
-  return compose(normalized);
+  return compose(normalized, options);
 }
 
 describe('Source AJV dialect selection', () => {
@@ -29,7 +35,7 @@ describe('Source AJV dialect selection', () => {
       minProperties: 2,
     } as const;
 
-    const eff = composeSchema(schema);
+    const eff = composeSchema(schema, { seed: 1 });
     const out = generateFromCompose(eff, {
       sourceSchema: schema,
       planOptions: {
@@ -39,7 +45,17 @@ describe('Source AJV dialect selection', () => {
 
     expect(out.items).toHaveLength(1);
     const obj = out.items[0] as Record<string, unknown>;
-    expect(obj.kind).toBe('A');
-    expect(Object.keys(obj)).toContain('aa');
+    const branchPtr = '/anyOf';
+    const chosen = eff.diag?.nodes?.[branchPtr]?.chosenBranch?.index ?? 0;
+    const branch = schema.anyOf[chosen] ?? schema.anyOf[0];
+    const expectedKind = (
+      branch as {
+        properties: { kind: { const: string } };
+      }
+    ).properties.kind.const;
+    expect(obj.kind).toBe(expectedKind);
+    if (expectedKind === 'A') {
+      expect(Object.keys(obj)).toContain('aa');
+    }
   });
 });

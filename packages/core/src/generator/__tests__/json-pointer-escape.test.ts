@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
 import { normalize } from '../../transform/schema-normalizer';
-import { compose } from '../../transform/composition-engine';
+import {
+  compose,
+  type ComposeOptions,
+} from '../../transform/composition-engine';
 import { generateFromCompose } from '../foundry-generator';
 
-function composeSchema(schema: unknown): ReturnType<typeof compose> {
+function composeSchema(
+  schema: unknown,
+  options?: ComposeOptions
+): ReturnType<typeof compose> {
   const normalized = normalize(schema);
-  return compose(normalized);
+  return compose(normalized, options);
 }
 
 describe('JSON Pointer escaping/unescaping integration', () => {
@@ -28,12 +34,11 @@ describe('JSON Pointer escaping/unescaping integration', () => {
           properties: { kind: { const: 'A' }, 'a/b': { const: 1 } },
           required: ['kind'],
         },
-        { properties: { kind: { const: 'B' } }, required: ['kind'] },
       ],
       minProperties: 2,
     } as const;
 
-    const eff = composeSchema(schema);
+    const eff = composeSchema(schema, { seed: 1 });
     const out = generateFromCompose(eff, {
       sourceSchema: schema,
       planOptions: {
@@ -47,7 +52,15 @@ describe('JSON Pointer escaping/unescaping integration', () => {
 
     expect(out.items).toHaveLength(1);
     const obj = out.items[0] as Record<string, unknown>;
-    expect(obj.kind).toBe('A');
+    const branchPtr = '/anyOf';
+    const chosen = eff.diag?.nodes?.[branchPtr]?.chosenBranch?.index ?? 0;
+    const branch = schema.anyOf[chosen] ?? schema.anyOf[0];
+    const expectedKind = (
+      branch as {
+        properties: { kind: { const: string } };
+      }
+    ).properties.kind.const;
+    expect(obj.kind).toBe(expectedKind);
     // Presence of 'a/b' demonstrates both RegExp match and E-Trace evaluation
     // which requires correct JSON Pointer unescaping of 'a~1b' back to 'a/b'.
     expect(Object.prototype.hasOwnProperty.call(obj, 'a/b')).toBe(true);

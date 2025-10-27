@@ -2103,13 +2103,28 @@
           }
         ],
         "updatedAt": "2025-10-25T23:33:28.505Z"
+      },
+      {
+        "id": "9125",
+        "title": "Ensure generator emits minimal root container for OpenAPI schemas requiring paths/components/webhooks anyOf",
+        "description": "Implement generator logic to handle OpenAPI 3.1 schema root containers that require at least one of paths, components, or webhooks properties via anyOf constraint.",
+        "details": "[Context] OpenAPI 3.1 schemas define a root object with an anyOf constraint requiring at least one of 'paths', 'components', or 'webhooks' properties. The generator must emit minimal valid containers respecting this constraint while following §9 minimal-width policy.\n\n[Implementation Requirements]\n1. **AnyOf Branch Selection**: Apply §8 branch selection algorithm to choose which of the three required properties (paths/components/webhooks) to emit\n2. **Minimal Width Policy**: Following §9#objects-minimal-width, emit only required keys ('openapi', 'info') plus the minimum necessary to satisfy the anyOf constraint\n3. **Container Structure**: Generate appropriate minimal container structures:\n   - paths: empty object {} or minimal valid paths object\n   - components: empty object {} or minimal components structure\n   - webhooks: empty object {} or minimal webhooks structure\n4. **Integration with Effective View**: Use CoverageIndex from Composition Engine (task 8) to determine which properties are in the must-cover set\n5. **Deterministic Selection**: Ensure consistent branch selection based on seed for reproducible generation\n\n[Technical Approach]\n- Modify foundry-generator.ts to detect OpenAPI anyOf root constraints\n- Implement special handling for root-level anyOf that requires container properties\n- Ensure generator respects minimal-width policy while satisfying anyOf requirements\n- Integrate with existing branch selection logic from §8\n- Handle edge cases where multiple branches could be satisfied simultaneously\n\n[Files to Modify]\n- packages/core/src/generator/foundry-generator.ts (main generator logic)\n- Add test cases for OpenAPI 3.1 schema generation scenarios\n\n[SPEC References]\n- spec://§9#objects-minimal-width - minimal width policy for objects\n- spec://§8#branch-selection-algorithm - anyOf/oneOf branch selection\n- spec://§9#if-aware-lite - conditional handling strategies",
+        "testStrategy": "1. **Unit Tests**: Create test cases using the OpenAPI 3.1 schema from profiles/real-world/openapi-3.1.schema.json\n   - Test generation with various seeds to ensure deterministic branch selection\n   - Verify only one of paths/components/webhooks is emitted per generation\n   - Confirm minimal container structure (no extra properties beyond requirements)\n   \n2. **Integration Tests**: \n   - Generate multiple OpenAPI documents and validate against original schema using AJV\n   - Test that generated documents satisfy the anyOf constraint\n   - Verify generated containers are valid OpenAPI structures\n   \n3. **Branch Selection Tests**:\n   - Test all three branches (paths, components, webhooks) can be selected\n   - Verify branch selection is deterministic for given seed\n   - Test interaction with other schema constraints (required properties, minProperties)\n   \n4. **Regression Tests**:\n   - Ensure existing generator functionality remains unaffected\n   - Test performance metrics stay within SLO targets\n   - Verify diagnostics are properly emitted for complex cases",
+        "status": "done",
+        "dependencies": [
+          "9",
+          "8"
+        ],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2025-10-27T11:29:34.987Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-25T23:33:28.506Z",
-      "taskCount": 52,
-      "completedCount": 52,
+      "lastModified": "2025-10-27T11:29:34.988Z",
+      "taskCount": 53,
+      "completedCount": 53,
       "tags": [
         "feature-simplification"
       ]
