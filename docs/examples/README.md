@@ -73,6 +73,80 @@ foundrydata generate --schema quick-test-schema.json --rows 5 > out.json
 
 ---
 
+## Diagnostic & Debugging
+
+### View effective configuration and metrics
+
+```bash
+# Development/testing with tsx (before building)
+npx tsx packages/cli/src/index.ts generate \
+  --schema profiles/real-world/openapi-3.1.schema.json \
+  --rows 10 \
+  --print-metrics \
+  --debug-passes
+
+# After build
+foundrydata generate \
+  --schema profiles/real-world/openapi-3.1.schema.json \
+  --rows 10 \
+  --print-metrics \
+  --debug-passes
+```
+
+**What you'll see:**
+- `--debug-passes` → Effective configuration (rational limits, trials, guards, cache, complexity caps)
+- `--print-metrics` → Pipeline metrics (timings per stage, validationsPerRow, repairPassesPerRow, branch trials)
+
+### Advanced generation options
+
+```bash
+# Increase repair attempts for complex schemas
+foundrydata generate --schema complex.json --rows 100 --repair-attempts 5
+
+# Control conditional rewriting
+foundrydata generate --schema conditional.json --rows 50 --rewrite-conditionals safe
+
+# Skip branch trials for faster generation (score-only selection)
+foundrydata generate --schema large-oneof.json --rows 100 --skip-trials
+
+# Fine-tune branch exploration
+foundrydata generate --schema complex.json --rows 100 \
+  --trials-per-branch 3 \
+  --max-branches-to-try 15 \
+  --skip-trials-if-branches-gt 60
+```
+
+### Test profiles
+
+Real-world schemas are available in `profiles/real-world/`:
+
+```bash
+# OpenAPI 3.1 meta-schema (complex, many conditionals)
+npx tsx packages/cli/src/index.ts generate \
+  --schema profiles/real-world/openapi-3.1.schema.json \
+  --rows 5 \
+  --print-metrics
+
+# JSON Schema Draft-07 meta-schema
+npx tsx packages/cli/src/index.ts generate \
+  --schema profiles/real-world/json-schema-draft-07.json \
+  --rows 5 \
+  --print-metrics
+```
+
+### Understanding metrics output
+
+Key metrics to monitor:
+- `validationsPerRow` → Should be ≤3 for simple/medium schemas (quality indicator)
+- `repairPassesPerRow` → Should be ≤1 for simple/medium schemas (efficiency indicator)
+- `normalizeMs`, `composeMs`, `generateMs`, `repairMs`, `validateMs` → Per-stage timings
+- `branchTrialsTried` → How many branch explorations occurred
+
+**Performance targets** (documented, not guarantees):
+- ~1000 rows (simple/medium): p50 ≈ 200–400 ms
+
+---
+
 ## JSON Schema drafts (what these examples expect)
 
 * ✅ **Draft‑07**, **2019‑09**, **2020‑12** (auto‑detected via `$schema`).
