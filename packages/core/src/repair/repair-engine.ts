@@ -19,6 +19,7 @@ import type Ajv from 'ajv';
 import {
   extractExactLiteralAlternatives,
   isRegexComplexityCapped,
+  synthesizePatternExample,
 } from '../util/pattern-literals.js';
 
 export interface AjvErr {
@@ -481,52 +482,6 @@ function normalizeSchemaPointerFromError(schemaPath: string): string {
 function isUnderPropertyNames(schemaPtr: string): boolean {
   // True when the schema pointer path points inside a /propertyNames subtree
   return /\/propertyNames(?:\/|$)/.test(schemaPtr);
-}
-
-function synthStringFromPattern(patternSource: string): string {
-  // Try anchored alternation: ^(?:a|b|c)$ or ^(a|b)$
-  let m = patternSource.match(/^\^\(\?:?([^()]+)\)\$$/);
-  if (m) {
-    const alts = m[1]!.split('|');
-    if (alts.length > 0) return alts[0] ?? '';
-  }
-  // Anchored literal: ^foo$
-  m = patternSource.match(/^\^([a-zA-Z0-9_-]+)\$$/);
-  if (m) return m[1] ?? '';
-  // Char class with quantifier: ^[a-z]{m,n}$ or ^[A-Z]{m}$ or ^[0-9]{m}$ or underscores/hyphens
-  m = patternSource.match(/^\^\[([a-zA-Z0-9_-]+)\]\{(\d+)(?:,(\d+))?\}\$$/);
-  if (m) {
-    const cls = m[1] ?? '';
-    const min = parseInt(m[2] ?? '1', 10) || 1;
-    const pick = cls.includes('a')
-      ? 'a'
-      : cls.includes('A')
-        ? 'A'
-        : cls.includes('0')
-          ? '0'
-          : 'a';
-    return pick.repeat(min);
-  }
-  // \d, \w with exact/range quantifier
-  m = patternSource.match(/^\^(?:\\d|\\w)\{(\d+)(?:,(\d+))?\}\$$/);
-  if (m) {
-    const min = parseInt(m[1] ?? '1', 10) || 1;
-    const ch = patternSource.includes('\\d') ? '0' : 'a';
-    return ch.repeat(min);
-  }
-  // Simple + quantifier: ^[a-z]+$ / ^\d+$ / ^\w+$
-  if (/^\^\[a-z\]\+\$$/.test(patternSource)) return 'a';
-  if (/^\^\[A-Z\]\+\$$/.test(patternSource)) return 'A';
-  if (
-    /^\^\[0-9\]\+\$$/.test(patternSource) ||
-    /^\^\\d\+\$$/.test(patternSource)
-  )
-    return '0';
-  if (/^\^\\w\+\$$/.test(patternSource)) return 'a';
-  // Dot-star minimal: ^.*$ -> ''
-  if (/^\^\.\*\$$/.test(patternSource)) return '';
-  // Fallback conservative
-  return '';
 }
 
 function codePointLength(value: string): number {
@@ -1350,7 +1305,7 @@ export function repairItemsAjvDriven(
                 : undefined;
           if (t === 'string')
             return typeof sch.pattern === 'string'
-              ? synthStringFromPattern(sch.pattern)
+              ? (synthesizePatternExample(sch.pattern) ?? '')
               : '';
           if (t === 'number' || t === 'integer') return 0;
           if (t === 'boolean') return false;
@@ -1443,7 +1398,7 @@ export function repairItemsAjvDriven(
               ? nodeSchema.pattern
               : undefined;
           if (!patternSource) continue;
-          const candidate = synthStringFromPattern(patternSource);
+          const candidate = synthesizePatternExample(patternSource) ?? '';
           if (instPtr === '') current = candidate as any;
           else setByPointer(current, instPtr, candidate);
           changed = true;
