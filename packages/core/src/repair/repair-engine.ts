@@ -357,6 +357,115 @@ function setByPointer(root: unknown, ptr: string, value: unknown): boolean {
   return true;
 }
 
+interface PointerResolution {
+  origin: string;
+  canon?: string;
+}
+
+interface PointerResolverOptions {
+  propertyName?: string;
+}
+
+function stripPointerPrefix(ptr: string): string {
+  if (!ptr) return '';
+  return ptr.startsWith('#') ? ptr.slice(1) : ptr;
+}
+
+function decodePointerToPath(ptr: string): string {
+  const segments = decodeJsonPointer(ptr);
+  if (segments.length === 0) return '';
+  return segments.join('/');
+}
+
+function createSchemaPointerResolver(
+  schema: unknown,
+  canonical: ComposeResult['canonical']
+): (rawPtr: string, opts?: PointerResolverOptions) => PointerResolution {
+  const cache = new Map<string, PointerResolution>();
+  const revEntries = Array.from(canonical.revPtrMap.entries()).map(
+    ([origin, canonList]) => ({
+      origin,
+      canon: canonList && canonList.length > 0 ? canonList[0] : undefined,
+      decoded: decodePointerToPath(origin),
+    })
+  );
+
+  return (rawPtr: string, opts?: PointerResolverOptions): PointerResolution => {
+    const cacheKey =
+      opts?.propertyName != null ? `${rawPtr}::${opts.propertyName}` : rawPtr;
+    const cached = cache.get(cacheKey);
+    if (cached) return cached;
+
+    const core = stripPointerPrefix(rawPtr);
+    const normalizedRaw =
+      core.length > 0 && core.startsWith('/') ? core.slice(1) : core;
+    type Candidate = {
+      origin: string;
+      canon?: string;
+      node: unknown;
+      decoded: string;
+    };
+    const candidates: Candidate[] = [];
+
+    const directNode = getByPointer(schema, rawPtr);
+    if (directNode !== undefined) {
+      const directCanon = canonical.revPtrMap.get(rawPtr)?.[0];
+      candidates.push({
+        origin: rawPtr,
+        canon: directCanon,
+        node: directNode,
+        decoded: decodePointerToPath(rawPtr),
+      });
+    }
+
+    for (const entry of revEntries) {
+      if (normalizedRaw.length > 0 && !entry.decoded.endsWith(normalizedRaw)) {
+        continue;
+      }
+      const node = getByPointer(schema, entry.origin);
+      if (node === undefined) continue;
+      candidates.push({
+        origin: entry.origin,
+        canon: entry.canon,
+        node,
+        decoded: entry.decoded,
+      });
+    }
+
+    let filtered = candidates;
+    if (opts?.propertyName) {
+      filtered = candidates.filter((candidate) => {
+        const props = (candidate.node as any)?.properties;
+        return (
+          props && typeof props === 'object' && opts.propertyName! in props
+        );
+      });
+      if (filtered.length === 0) filtered = candidates;
+    }
+
+    if (filtered.length === 0) {
+      const fallback: PointerResolution = { origin: rawPtr, canon: undefined };
+      cache.set(cacheKey, fallback);
+      return fallback;
+    }
+
+    filtered.sort((a, b) => {
+      const lenA = a.decoded.length;
+      const lenB = b.decoded.length;
+      if (lenA !== lenB) return lenA - lenB;
+      return a.origin < b.origin ? -1 : a.origin > b.origin ? 1 : 0;
+    });
+
+    const chosen = filtered[0]!;
+    const resolution: PointerResolution = {
+      origin: chosen.origin,
+      canon: chosen.canon,
+    };
+    cache.set(cacheKey, resolution);
+    return resolution;
+  };
+}
+
 function renameKey(
   target: Record<string, unknown>,
   from: string,
@@ -555,6 +664,10 @@ export function repairItemsAjvDriven(
   const repaired: unknown[] = [];
   const diagnostics: DiagnosticEnvelope[] = [];
   const actions: RepairAction[] = [];
+  const resolveSchemaPointer = createSchemaPointerResolver(
+    schema,
+    effective.canonical
+  );
   for (const original of items) {
     // Fast-path: validate original without cloning to minimize overhead
     let pass = validateFn(original);
@@ -597,7 +710,8 @@ export function repairItemsAjvDriven(
       if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
         return { attempted: false, renamed: false };
       }
-      const objectSchema = getByPointer(schema, parentPtr) as any;
+      const resolvedParent = resolveSchemaPointer(parentPtr);
+      const objectSchema = getByPointer(schema, resolvedParent.origin) as any;
       if (!objectSchema || typeof objectSchema !== 'object') {
         return { attempted: false, renamed: false };
       }
@@ -637,11 +751,7 @@ export function repairItemsAjvDriven(
         return { attempted: false, renamed: false };
       }
 
-      const canonCandidates = effective.canonical.revPtrMap.get(parentPtr);
-      const canonPath =
-        canonCandidates && canonCandidates.length > 0
-          ? canonCandidates[0]!
-          : parentPtr;
+      const canonPath = resolvedParent.canon ?? resolvedParent.origin;
       const canonicalNode = getByPointer(
         effective.canonical.schema,
         canonPath
@@ -795,7 +905,8 @@ export function repairItemsAjvDriven(
           if (isUnderPropertyNames(sp)) continue;
           // derive desired type
           const parentPtr = sp.replace(/\/(?:type)(?:\/.*)?$/, '');
-          const nodeSchema = getByPointer(schema, parentPtr) as any;
+          const resolvedParent = resolveSchemaPointer(parentPtr);
+          const nodeSchema = getByPointer(schema, resolvedParent.origin) as any;
           let desired: string | undefined;
           if (typeof nodeSchema?.type === 'string') desired = nodeSchema.type;
           else if (
@@ -837,7 +948,8 @@ export function repairItemsAjvDriven(
         } else if (kw === 'enum') {
           if (isUnderPropertyNames(sp)) continue;
           const parentPtr = sp.replace(/\/(?:enum)(?:\/.*)?$/, '');
-          const nodeSchema = getByPointer(schema, parentPtr) as any;
+          const resolvedParent = resolveSchemaPointer(parentPtr);
+          const nodeSchema = getByPointer(schema, resolvedParent.origin) as any;
           const e = Array.isArray(nodeSchema?.enum)
             ? nodeSchema.enum
             : undefined;
@@ -849,7 +961,8 @@ export function repairItemsAjvDriven(
         } else if (kw === 'const') {
           if (isUnderPropertyNames(sp)) continue;
           const parentPtr = sp.replace(/\/(?:const)(?:\/.*)?$/, '');
-          const nodeSchema = getByPointer(schema, parentPtr) as any;
+          const resolvedParent = resolveSchemaPointer(parentPtr);
+          const nodeSchema = getByPointer(schema, resolvedParent.origin) as any;
           if (!('const' in (nodeSchema ?? {}))) continue;
           const c = (nodeSchema as any).const;
           if (instPtr === '') current = c as any;
@@ -871,12 +984,12 @@ export function repairItemsAjvDriven(
 
         const sp = normalizeSchemaPointerFromError(err.schemaPath);
         const parentPtr = sp.replace(/\/(?:required)(?:\/.*)?$/, '');
-        const objectSchema = getByPointer(schema, parentPtr) as any;
-        const canonCandidatesReq = effective.canonical.revPtrMap.get(parentPtr);
-        const canonPathReq =
-          canonCandidatesReq && canonCandidatesReq.length > 0
-            ? canonCandidatesReq[0]!
-            : parentPtr;
+        const resolvedParent = resolveSchemaPointer(parentPtr, {
+          propertyName: missing,
+        });
+        const objectSchema = getByPointer(schema, resolvedParent.origin) as any;
+        if (!objectSchema || typeof objectSchema !== 'object') continue;
+        const canonPathReq = resolvedParent.canon ?? resolvedParent.origin;
         const props = objectSchema?.properties;
         const sub = props?.[missing];
         const hasDefault = sub && typeof sub === 'object' && 'default' in sub;
@@ -1088,7 +1201,14 @@ export function repairItemsAjvDriven(
           ) {
             const sp = normalizeSchemaPointerFromError(minItemsErr.schemaPath);
             const parentPtr = sp.replace(/\/(?:minItems)(?:\/.*)?$/, '');
-            const nodeSchema = getByPointer(schema, parentPtr) as any;
+            const resolvedParent = resolveSchemaPointer(parentPtr);
+            const nodeSchema = getByPointer(
+              schema,
+              resolvedParent.origin
+            ) as any;
+            if (!nodeSchema || typeof nodeSchema !== 'object') {
+              continue;
+            }
             const itemSchema = nodeSchema?.items;
             const prefixItems = Array.isArray(nodeSchema?.prefixItems)
               ? (nodeSchema.prefixItems as unknown[])
@@ -1161,12 +1281,12 @@ export function repairItemsAjvDriven(
           /\/(?:minimum|maximum|exclusiveMinimum|exclusiveMaximum|multipleOf)(?:\/.*)?$/,
           ''
         );
-        const numericSchema = getByPointer(schema, parentPtr) as any;
-        const canonCandidates2 = effective.canonical.revPtrMap.get(parentPtr);
-        const canonPath2 =
-          canonCandidates2 && canonCandidates2.length > 0
-            ? canonCandidates2[0]!
-            : parentPtr;
+        const resolvedParent = resolveSchemaPointer(parentPtr);
+        const numericSchema = getByPointer(
+          schema,
+          resolvedParent.origin
+        ) as any;
+        const canonPath2 = resolvedParent.canon ?? resolvedParent.origin;
         const isInt = hasIntegerType(numericSchema);
         const eNum = epsilonNumber(decimalPrecision);
         const epsilonStr = formatEpsilon(decimalPrecision);
@@ -1237,14 +1357,14 @@ export function repairItemsAjvDriven(
           /\/(?:contains|minContains|maxContains)(?:\/.*)?$/,
           ''
         );
-        const canonCandidates = effective.canonical.revPtrMap.get(parentPtr);
-        const canonPath =
-          canonCandidates && canonCandidates.length > 0
-            ? canonCandidates[0]!
-            : parentPtr;
+        const resolvedParent = resolveSchemaPointer(parentPtr);
+        const canonPath = resolvedParent.canon ?? resolvedParent.origin;
         let needs = effective.containsBag.get(canonPath);
         if (!needs || needs.length === 0) {
-          const objectSchema = getByPointer(schema, parentPtr) as any;
+          const objectSchema = getByPointer(
+            schema,
+            resolvedParent.origin
+          ) as any;
           if (
             objectSchema &&
             typeof objectSchema === 'object' &&
@@ -1392,7 +1512,8 @@ export function repairItemsAjvDriven(
             continue;
           }
           const parentPtr = sp.replace(/\/(?:pattern)(?:\/.*)?$/, '');
-          const nodeSchema = getByPointer(schema, parentPtr) as any;
+          const resolvedParent = resolveSchemaPointer(parentPtr);
+          const nodeSchema = getByPointer(schema, resolvedParent.origin) as any;
           const patternSource =
             typeof nodeSchema?.pattern === 'string'
               ? nodeSchema.pattern
@@ -1406,12 +1527,12 @@ export function repairItemsAjvDriven(
           const val = getByPointer(current, instPtr);
           if (typeof val !== 'number' || Number.isNaN(val)) continue;
           const parentPtr = sp.replace(/\/(?:multipleOf)(?:\/.*)?$/, '');
-          const numericSchema = getByPointer(schema, parentPtr) as any;
-          const canonCandidates2 = effective.canonical.revPtrMap.get(parentPtr);
-          const canonPath2 =
-            canonCandidates2 && canonCandidates2.length > 0
-              ? canonCandidates2[0]!
-              : parentPtr;
+          const resolvedParent = resolveSchemaPointer(parentPtr);
+          const numericSchema = getByPointer(
+            schema,
+            resolvedParent.origin
+          ) as any;
+          const canonPath2 = resolvedParent.canon ?? resolvedParent.origin;
           const isInt = hasIntegerType(numericSchema);
           const eNum = epsilonNumber(decimalPrecision);
           const epsilonStr = formatEpsilon(decimalPrecision);
