@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { DIAGNOSTIC_CODES, type KnownDiagnosticCode } from './codes.js';
 
 export type MiniSchema =
@@ -127,6 +128,15 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
     optional: {
       alphabet: { kind: 'string' },
       maxLength: { kind: 'number' },
+      tried: { kind: 'number' },
+    },
+  },
+  [DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED]: {
+    kind: 'object',
+    optional: {
+      statesCap: { kind: 'number' },
+      productStatesCap: { kind: 'number' },
+      maxKEnumeration: { kind: 'number' },
       tried: { kind: 'number' },
     },
   },

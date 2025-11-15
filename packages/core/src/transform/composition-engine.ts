@@ -1129,12 +1129,38 @@ class CompositionEngine {
       const nfaResult = buildThompsonNfa(pattern.source);
       const dfaResult = buildDfaFromNfa(nfaResult.nfa);
       const product = buildProductDfa([dfaResult.dfa]);
+
+      if (product.capped || product.summary.capsHit) {
+        this.recordCap(DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED);
+        this.addWarn(
+          canonPath,
+          DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED,
+          {
+            productStatesCap: product.stateCount,
+          }
+        );
+        return undefined;
+      }
+
       const { maxLength, maxCandidates } = this.resolvedOptions.patternWitness;
 
       const bfsResult = bfsEnumerate(product.dfa, ENUM_CAP, {
         maxLength,
         maxCandidates,
       });
+
+      if (bfsResult.capped) {
+        this.recordCap(DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED);
+        this.addWarn(
+          canonPath,
+          DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED,
+          {
+            maxKEnumeration: ENUM_CAP,
+            tried: bfsResult.tried,
+          }
+        );
+        return undefined;
+      }
 
       if (!bfsResult.words.length) {
         return undefined;
