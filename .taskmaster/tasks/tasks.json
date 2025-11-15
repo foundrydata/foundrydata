@@ -2362,7 +2362,7 @@
         "id": "1",
         "title": "Establish invariants & diagnostics scaffold",
         "description": "Lay down AJV-oracle invariant, dual AJV instances, deterministic RNG, and the diagnostics envelope in code.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "21"
         ],
@@ -2429,13 +2429,14 @@
         ],
         "complexity": 8,
         "recommendedSubtasks": 5,
-        "expansionPrompt": "Break down the foundational scaffolding into distinct components: AJV dual instance setup with parity validation, deterministic xorshift32 RNG implementation, comprehensive diagnostic envelope system with code registry, orchestrator integration, and determinism utilities. Consider error handling patterns and testing strategies for each component."
+        "expansionPrompt": "Break down the foundational scaffolding into distinct components: AJV dual instance setup with parity validation, deterministic xorshift32 RNG implementation, comprehensive diagnostic envelope system with code registry, orchestrator integration, and determinism utilities. Consider error handling patterns and testing strategies for each component.",
+        "updatedAt": "2025-11-15T19:04:23.631Z"
       },
       {
         "id": "2",
         "title": "Regex policy: anchored-safe check + complexity caps",
         "description": "Implement anchored-safe classification (^...$, no look-around/backrefs) and complexity cap (length + quantified groups).",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "1"
         ],
@@ -2493,7 +2494,8 @@
         ],
         "complexity": 7,
         "recommendedSubtasks": 4,
-        "expansionPrompt": "Implement regex classification system with pattern parsing, anchored-safe detection logic, complexity scoring algorithm, diagnostic emission for capped patterns, and integration with existing pattern utilities. Include comprehensive test coverage for edge cases in regex analysis."
+        "expansionPrompt": "Implement regex classification system with pattern parsing, anchored-safe detection logic, complexity scoring algorithm, diagnostic emission for capped patterns, and integration with existing pattern utilities. Include comprehensive test coverage for edge cases in regex analysis.",
+        "updatedAt": "2025-11-15T19:09:23.543Z"
       },
       {
         "id": "3",
@@ -3641,9 +3643,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-15T18:59:42.075Z",
+      "lastModified": "2025-11-15T19:09:23.545Z",
       "taskCount": 21,
-      "completedCount": 1,
+      "completedCount": 3,
       "tags": [
         "jsg-p1-automata-smt"
       ]
