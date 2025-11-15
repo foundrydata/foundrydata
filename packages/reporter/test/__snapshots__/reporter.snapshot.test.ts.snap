@@ -1,0 +1,816 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`reporter snapshots > produces a stable HTML report for profiles/simple.json > simple-html-report 1`] = `
+"<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>JSON Schema Report – profiles/simple.json</title>
+  <style>body{font-family:system-ui,Segoe UI,sans-serif;margin:0;padding:2rem;background:#f7f7f8;color:#111}
+header.hero{margin-bottom:2rem}
+section{background:#fff;border-radius:0.75rem;padding:1.5rem;margin-bottom:1.5rem;box-shadow:0 1px 4px rgba(15,23,42,.08)}
+h1{margin:0 0 .5rem 0;font-size:2rem}
+.badge{display:inline-flex;align-items:center;padding:0.2rem 0.6rem;border-radius:999px;font-size:0.85rem;font-weight:600;text-transform:capitalize}
+.badge-valid-unchanged{background:#d1fae5;color:#047857}
+.badge-valid-repaired{background:#fef3c7;color:#92400e}
+.badge-invalid{background:#fee2e2;color:#b91c1c}
+table{width:100%;border-collapse:collapse;margin-top:0.5rem}
+th,td{border:1px solid #e5e7eb;padding:0.5rem;text-align:left;font-size:0.9rem}
+pre{background:#0f172a;color:#e0e7ff;padding:0.75rem;border-radius:0.5rem;overflow:auto;font-size:0.85rem}
+ul{padding-left:1.25rem}
+.diag-group{margin-bottom:1rem}
+.diag-group ul{padding-left:1rem}
+.diag-group li{margin-bottom:0.5rem}
+.diag-group pre{margin-top:0.35rem}
+.instances{display:grid;gap:1rem}
+@media(min-width:900px){.instances{grid-template-columns:repeat(2,minmax(0,1fr));}}
+.empty{color:#6b7280;font-style:italic}
+</style>
+</head>
+<body>
+  <header class="hero">
+    <h1>JSON Schema Report – profiles/simple.json</h1>
+    <p>Tool json-schema-reporter 0.1.0 · Engine 0.1.0</p>
+    <p>Timestamp &lt;timestamp&gt; · Seed 123456789</p>
+    <p>3 instances · 3 unchanged · 0 repaired · 0 invalid</p>
+  </header>
+
+  <section>
+    <h2>Timings</h2>
+    <table>
+      <thead><tr><th>Step</th><th>Duration (ms)</th></tr></thead>
+      <tbody><tr><td>normalize</td><td>0</td></tr><tr><td>compose</td><td>0</td></tr><tr><td>generate</td><td>0</td></tr><tr><td>repair</td><td>0</td></tr><tr><td>validate</td><td>0</td></tr></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Diagnostics Summary</h2>
+    <ul>
+      <li>Normalize notes: 0</li>
+      <li>Compose fatal: 0</li>
+      <li>Compose warn: 1</li>
+      <li>Compose unsat hints: 0</li>
+      <li>Compose run-level: 1</li>
+      <li>Repair budget exhausted: 0</li>
+      <li>Validate errors: 0</li>
+    </ul>
+    <div class="diag-grid">
+      <div class="diag-group"><h4>fatal</h4><p class="empty">No entries</p></div>
+      <div class="diag-group"><h4>warn</h4><ul><li><span class="code">CONTAINS_BAG_COMBINED</span> @ /properties/tags<pre>{
+  &quot;bagSize&quot;: 1,
+  &quot;sumMin&quot;: 1,
+  &quot;maxItems&quot;: 5
+}</pre></li></ul></div>
+      <div class="diag-group"><h4>unsatHints</h4><p class="empty">No entries</p></div>
+      <div class="diag-group"><h4>run</h4><ul><li><span class="code">RESOLVER_STRATEGIES_APPLIED</span> @ #<pre>{
+  &quot;strategies&quot;: [
+    &quot;local&quot;
+  ],
+  &quot;cacheDir&quot;: &quot;~/.foundrydata/cache&quot;
+}</pre></li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Coverage Index Snapshot</h2>
+    <table><thead><tr><th>canonPath</th><th>hasUniverse</th><th>enumeratedKeys</th><th>provenance</th></tr></thead><tbody><tr><td>#</td><td>finite</td><td>active, contacts, createdAt, id, kind, metadata, status, tags</td><td>properties</td></tr><tr><td>/allOf/0/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/0/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/0/then/properties/metadata</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/1/anyOf/0/not</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/1/anyOf/1</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/properties/metadata</td><td>finite</td><td>owner, region, tier</td><td>properties</td></tr><tr><td>/properties/contacts/items</td><td>finite</td><td>email, name</td><td>properties</td></tr></tbody></table>
+  </section>
+
+  <section>
+    <h2>Instances</h2>
+    <div class="instances">
+      <article class="instance">
+    <header>
+      <h3>Instance #0</h3>
+      <span class="badge badge-valid-unchanged">valid-unchanged</span>
+    </header>
+    <pre>{
+  &quot;active&quot;: false,
+  &quot;createdAt&quot;: &quot;2024-12-17T11:40:15.000Z&quot;,
+  &quot;id&quot;: &quot;befdd31c-8c8d-450f-a606-de748f114136&quot;,
+  &quot;kind&quot;: &quot;user&quot;,
+  &quot;status&quot;: &quot;active&quot;
+}</pre>
+    <p class="stats">validation errors: 0 · repair actions: 0</p>
+    
+    
+  </article><article class="instance">
+    <header>
+      <h3>Instance #1</h3>
+      <span class="badge badge-valid-unchanged">valid-unchanged</span>
+    </header>
+    <pre>{
+  &quot;active&quot;: false,
+  &quot;createdAt&quot;: &quot;2024-04-03T21:24:13.000Z&quot;,
+  &quot;id&quot;: &quot;48b6fde9-92a3-47b9-b86a-6df749aa6a1e&quot;,
+  &quot;kind&quot;: &quot;user&quot;,
+  &quot;status&quot;: &quot;active&quot;
+}</pre>
+    <p class="stats">validation errors: 0 · repair actions: 0</p>
+    
+    
+  </article><article class="instance">
+    <header>
+      <h3>Instance #2</h3>
+      <span class="badge badge-valid-unchanged">valid-unchanged</span>
+    </header>
+    <pre>{
+  &quot;active&quot;: false,
+  &quot;createdAt&quot;: &quot;2024-09-28T13:14:30.000Z&quot;,
+  &quot;id&quot;: &quot;623a17cf-afa7-4623-8eb5-a40f8419b2bb&quot;,
+  &quot;kind&quot;: &quot;user&quot;,
+  &quot;status&quot;: &quot;active&quot;
+}</pre>
+    <p class="stats">validation errors: 0 · repair actions: 0</p>
+    
+    
+  </article>
+    </div>
+  </section>
+</body>
+</html>"
+`;
+
+exports[`reporter snapshots > produces a stable JSON Report for profiles/simple.json > simple-json-report 1`] = `
+{
+  "compose": {
+    "coverageIndexSnapshot": [
+      {
+        "canonPath": "#",
+        "enumeratedKeys": [
+          "active",
+          "contacts",
+          "createdAt",
+          "id",
+          "kind",
+          "metadata",
+          "status",
+          "tags",
+        ],
+        "hasUniverse": "finite",
+        "provenance": [
+          "properties",
+        ],
+      },
+      {
+        "canonPath": "/allOf/0/if",
+        "hasUniverse": "unknown",
+        "provenance": [],
+      },
+      {
+        "canonPath": "/allOf/0/then",
+        "hasUniverse": "unknown",
+        "provenance": [],
+      },
+      {
+        "canonPath": "/allOf/0/then/properties/metadata",
+        "hasUniverse": "unknown",
+        "provenance": [],
+      },
+      {
+        "canonPath": "/allOf/1/anyOf/0/not",
+        "hasUniverse": "unknown",
+        "provenance": [],
+      },
+      {
+        "canonPath": "/allOf/1/anyOf/1",
+        "hasUniverse": "unknown",
+        "provenance": [],
+      },
+      {
+        "canonPath": "/properties/metadata",
+        "enumeratedKeys": [
+          "owner",
+          "region",
+          "tier",
+        ],
+        "hasUniverse": "finite",
+        "provenance": [
+          "properties",
+        ],
+      },
+      {
+        "canonPath": "/properties/contacts/items",
+        "enumeratedKeys": [
+          "email",
+          "name",
+        ],
+        "hasUniverse": "finite",
+        "provenance": [
+          "properties",
+        ],
+      },
+    ],
+    "result": {
+      "canonical": {
+        "notes": [],
+        "ptrMap": {},
+        "revPtrMap": {},
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "kind": {
+                    "const": "service",
+                  },
+                },
+                "required": [
+                  "kind",
+                ],
+              },
+              "then": {
+                "properties": {
+                  "metadata": {
+                    "required": [
+                      "tier",
+                    ],
+                    "type": "object",
+                  },
+                },
+                "required": [
+                  "metadata",
+                ],
+                "type": "object",
+              },
+            },
+            {
+              "anyOf": [
+                {
+                  "not": {
+                    "required": [
+                      "active",
+                    ],
+                  },
+                },
+                {
+                  "required": [
+                    "active",
+                    "status",
+                  ],
+                },
+              ],
+            },
+          ],
+          "dependentRequired": {
+            "active": [
+              "status",
+            ],
+          },
+          "properties": {
+            "active": {
+              "type": "boolean",
+            },
+            "contacts": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "email": {
+                    "format": "email",
+                    "type": "string",
+                  },
+                  "name": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "name",
+                  "email",
+                ],
+                "type": "object",
+              },
+              "maxItems": 2,
+              "type": "array",
+            },
+            "createdAt": {
+              "format": "date-time",
+              "type": "string",
+            },
+            "id": {
+              "format": "uuid",
+              "type": "string",
+            },
+            "kind": {
+              "enum": [
+                "user",
+                "service",
+              ],
+              "type": "string",
+            },
+            "metadata": {
+              "additionalProperties": false,
+              "properties": {
+                "owner": {
+                  "maxLength": 48,
+                  "minLength": 1,
+                  "type": "string",
+                },
+                "region": {
+                  "enum": [
+                    "iad",
+                    "dfw",
+                    "sfo",
+                  ],
+                  "type": "string",
+                },
+                "tier": {
+                  "enum": [
+                    "free",
+                    "pro",
+                    "enterprise",
+                  ],
+                  "type": "string",
+                },
+              },
+              "required": [
+                "region",
+              ],
+              "type": "object",
+            },
+            "status": {
+              "enum": [
+                "active",
+                "disabled",
+                "pending",
+              ],
+              "type": "string",
+            },
+            "tags": {
+              "contains": {
+                "pattern": "^tag:",
+                "type": "string",
+              },
+              "items": {
+                "pattern": "^(?:tag|team):[a-z0-9-]{2,12}$",
+                "type": "string",
+              },
+              "maxItems": 5,
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true,
+            },
+          },
+          "required": [
+            "id",
+            "kind",
+            "status",
+            "createdAt",
+          ],
+          "title": "Simple Bench Profile",
+          "type": "object",
+        },
+      },
+      "containsBag": {},
+      "coverageIndex": {},
+      "diag": {
+        "branchDecisions": [
+          {
+            "budget": {
+              "limit": 4,
+              "skipped": false,
+              "tried": 4,
+            },
+            "canonPath": "/allOf/1/anyOf",
+            "chosenBranch": {
+              "index": 1,
+              "score": 0,
+            },
+            "kind": "anyOf",
+            "memoKey": "{"ajvClass":"Ajv2020","ajvFlags":{"allErrors":false,"allowUnionTypes":true,"coerceTypes":false,"discriminator":false,"multipleOfPrecision":12,"strictSchema":true,"strictTypes":true,"unicodeRegExp":true,"validateFormats":true},"ajvMajor":0,"canonPath":"/allOf/1/anyOf","planOptionsSubKey":"{\\"complexity.maxAnyOfBranches\\":500,\\"complexity.maxContainsNeeds\\":16,\\"complexity.maxOneOfBranches\\":200,\\"complexity.maxPatternProps\\":64,\\"conditionals.exclusivityStringTweak\\":\\"preferNul\\",\\"conditionals.minThenSatisfaction\\":\\"required-only\\",\\"conditionals.strategy\\":\\"if-aware-lite\\",\\"guards.maxDynamicScopeHops\\":2,\\"guards.maxGeneratedNotNesting\\":2,\\"patternWitness.alphabet\\":\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\",\\"patternWitness.maxCandidates\\":32768,\\"patternWitness.maxLength\\":12,\\"rational.decimalPrecision\\":12,\\"rational.fallback\\":\\"decimal\\",\\"rational.maxLcmBits\\":128,\\"rational.maxRatBits\\":128,\\"repair.mustCoverGuard\\":true,\\"resolver.stubUnresolved\\":\\"none\\",\\"trials.maxBranchesToTry\\":12,\\"trials.perBranch\\":2,\\"trials.skipTrials\\":false,\\"trials.skipTrialsIfBranchesGt\\":50}","seed":1,"userKey":""}",
+            "scoreDetails": {
+              "orderedIndices": [
+                0,
+                1,
+              ],
+              "scoresByIndex": {
+                "0": 0,
+                "1": 0,
+              },
+              "tiebreakRand": 0.9651062113698572,
+              "topKIndices": [
+                0,
+                1,
+              ],
+              "topScoreIndices": [
+                0,
+                1,
+              ],
+            },
+          },
+        ],
+        "metrics": {
+          "memoKeys": 1,
+        },
+        "nodes": {
+          "/allOf/1/anyOf": {
+            "budget": {
+              "limit": 4,
+              "skipped": false,
+              "tried": 4,
+            },
+            "chosenBranch": {
+              "index": 1,
+              "score": 0,
+            },
+            "scoreDetails": {
+              "orderedIndices": [
+                0,
+                1,
+              ],
+              "scoresByIndex": {
+                "0": 0,
+                "1": 0,
+              },
+              "tiebreakRand": 0.9651062113698572,
+              "topKIndices": [
+                0,
+                1,
+              ],
+              "topScoreIndices": [
+                0,
+                1,
+              ],
+            },
+          },
+        },
+        "run": [
+          {
+            "canonPath": "#",
+            "code": "RESOLVER_STRATEGIES_APPLIED",
+            "details": {
+              "cacheDir": "~/.foundrydata/cache",
+              "strategies": [
+                "local",
+              ],
+            },
+          },
+        ],
+        "warn": [
+          {
+            "canonPath": "/properties/tags",
+            "code": "CONTAINS_BAG_COMBINED",
+            "details": {
+              "bagSize": 1,
+              "maxItems": 5,
+              "sumMin": 1,
+            },
+          },
+        ],
+      },
+    },
+  },
+  "instances": [
+    {
+      "data": {
+        "active": false,
+        "createdAt": "2024-12-17T11:40:15.000Z",
+        "id": "befdd31c-8c8d-450f-a606-de748f114136",
+        "kind": "user",
+        "status": "active",
+      },
+      "index": 0,
+      "outcome": "valid-unchanged",
+    },
+    {
+      "data": {
+        "active": false,
+        "createdAt": "2024-04-03T21:24:13.000Z",
+        "id": "48b6fde9-92a3-47b9-b86a-6df749aa6a1e",
+        "kind": "user",
+        "status": "active",
+      },
+      "index": 1,
+      "outcome": "valid-unchanged",
+    },
+    {
+      "data": {
+        "active": false,
+        "createdAt": "2024-09-28T13:14:30.000Z",
+        "id": "623a17cf-afa7-4623-8eb5-a40f8419b2bb",
+        "kind": "user",
+        "status": "active",
+      },
+      "index": 2,
+      "outcome": "valid-unchanged",
+    },
+  ],
+  "meta": {
+    "engineVersion": "0.1.0",
+    "seed": 123456789,
+    "timestamp": "<timestamp>",
+    "toolName": "json-schema-reporter",
+    "toolVersion": "0.1.0",
+  },
+  "metrics": {
+    "composeMs": 0,
+    "evalTraceChecks": 0,
+    "evalTraceProved": 0,
+    "generateMs": 0,
+    "memoryPeakMB": 0,
+    "normalizeMs": 0,
+    "p50LatencyMs": 0,
+    "p95LatencyMs": 0,
+    "repairActionsPerRow": 0,
+    "repairMs": 0,
+    "repairPassesPerRow": 0,
+    "validateMs": 0,
+    "validationsPerRow": 0,
+  },
+  "normalize": {
+    "result": {
+      "notes": [],
+      "ptrMap": {},
+      "revPtrMap": {},
+      "schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "service",
+                },
+              },
+              "required": [
+                "kind",
+              ],
+            },
+            "then": {
+              "properties": {
+                "metadata": {
+                  "required": [
+                    "tier",
+                  ],
+                  "type": "object",
+                },
+              },
+              "required": [
+                "metadata",
+              ],
+              "type": "object",
+            },
+          },
+          {
+            "anyOf": [
+              {
+                "not": {
+                  "required": [
+                    "active",
+                  ],
+                },
+              },
+              {
+                "required": [
+                  "active",
+                  "status",
+                ],
+              },
+            ],
+          },
+        ],
+        "dependentRequired": {
+          "active": [
+            "status",
+          ],
+        },
+        "properties": {
+          "active": {
+            "type": "boolean",
+          },
+          "contacts": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "email": {
+                  "format": "email",
+                  "type": "string",
+                },
+                "name": {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string",
+                },
+              },
+              "required": [
+                "name",
+                "email",
+              ],
+              "type": "object",
+            },
+            "maxItems": 2,
+            "type": "array",
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+          },
+          "kind": {
+            "enum": [
+              "user",
+              "service",
+            ],
+            "type": "string",
+          },
+          "metadata": {
+            "additionalProperties": false,
+            "properties": {
+              "owner": {
+                "maxLength": 48,
+                "minLength": 1,
+                "type": "string",
+              },
+              "region": {
+                "enum": [
+                  "iad",
+                  "dfw",
+                  "sfo",
+                ],
+                "type": "string",
+              },
+              "tier": {
+                "enum": [
+                  "free",
+                  "pro",
+                  "enterprise",
+                ],
+                "type": "string",
+              },
+            },
+            "required": [
+              "region",
+            ],
+            "type": "object",
+          },
+          "status": {
+            "enum": [
+              "active",
+              "disabled",
+              "pending",
+            ],
+            "type": "string",
+          },
+          "tags": {
+            "contains": {
+              "pattern": "^tag:",
+              "type": "string",
+            },
+            "items": {
+              "pattern": "^(?:tag|team):[a-z0-9-]{2,12}$",
+              "type": "string",
+            },
+            "maxItems": 5,
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true,
+          },
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "createdAt",
+        ],
+        "title": "Simple Bench Profile",
+        "type": "object",
+      },
+    },
+  },
+  "planOptions": {},
+  "repair": {
+    "actions": [],
+  },
+  "schemaHash": "90bda501792002e303e0bab10e728dc4ebfe755d273be5d8a59a91e25b6a3b99",
+  "schemaId": "profiles/simple.json",
+  "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/simple.json",
+  "summary": {
+    "diagnosticsCount": {
+      "composeFatal": 0,
+      "composeRunLevel": 1,
+      "composeUnsatHints": 0,
+      "composeWarn": 1,
+      "normalizeNotes": 0,
+      "repairBudgetExhausted": 0,
+      "validateErrors": 0,
+    },
+    "invalid": 0,
+    "timings": {
+      "composeMs": 0,
+      "generateMs": 0,
+      "normalizeMs": 0,
+      "repairMs": 0,
+      "validateMs": 0,
+    },
+    "totalInstances": 3,
+    "validRepaired": 0,
+    "validUnchanged": 3,
+  },
+  "validate": {
+    "errors": [],
+  },
+}
+`;
+
+exports[`reporter snapshots > produces a stable Markdown report for profiles/simple.json > simple-markdown-report 1`] = `
+"# JSON Schema Report – profiles/simple.json
+
+- Tool: json-schema-reporter 0.1.0
+- Engine: 0.1.0
+- Timestamp: <timestamp>
+- Seed: 123456789
+- Instances: 3
+  - valid (unchanged): 3
+  - valid (repaired): 0
+  - invalid: 0
+
+## Timings
+
+| Step | Duration (ms) |
+|---|---|
+| normalize | 0 |
+| compose | 0 |
+| generate | 0 |
+| repair | 0 |
+| validate | 0 |
+
+## Diagnostics
+
+### Summary
+- Normalize notes: 0
+- Compose fatal: 0
+- Compose warn: 1
+- Compose unsat hints: 0
+- Compose run-level: 1
+- Repair budget exhausted: 0
+- Validate errors: 0
+
+### Compose diagnostics
+- fatal: none
+- warn: 1
+  - CONTAINS_BAG_COMBINED @ /properties/tags ({"bagSize":1,"sumMin":1,"maxItems":5})
+- unsatHints: none
+- run: 1
+  - RESOLVER_STRATEGIES_APPLIED @ # ({"strategies":["local"],"cacheDir":"~/.foundrydata/cache"})
+
+## Coverage Index (snapshot)
+
+| canonPath | hasUniverse | enumeratedKeys | provenance |
+|---|---|---|---|
+| # | finite | active, contacts, createdAt, id (+4 more) | properties |
+| /allOf/0/if | unknown | — |  |
+| /allOf/0/then | unknown | — |  |
+| /allOf/0/then/properties/metadata | unknown | — |  |
+| /allOf/1/anyOf/0/not | unknown | — |  |
+| /allOf/1/anyOf/1 | unknown | — |  |
+| /properties/metadata | finite | owner, region, tier | properties |
+| /properties/contacts/items | finite | email, name | properties |
+
+## Instances
+
+### Instance #0 — valid-unchanged
+
+\`\`\`json
+{
+  "active": false,
+  "createdAt": "2024-12-17T11:40:15.000Z",
+  "id": "befdd31c-8c8d-450f-a606-de748f114136",
+  "kind": "user",
+  "status": "active"
+}
+\`\`\`
+- validation errors: 0 | repair actions: 0
+
+### Instance #1 — valid-unchanged
+
+\`\`\`json
+{
+  "active": false,
+  "createdAt": "2024-04-03T21:24:13.000Z",
+  "id": "48b6fde9-92a3-47b9-b86a-6df749aa6a1e",
+  "kind": "user",
+  "status": "active"
+}
+\`\`\`
+- validation errors: 0 | repair actions: 0
+
+### Instance #2 — valid-unchanged
+
+\`\`\`json
+{
+  "active": false,
+  "createdAt": "2024-09-28T13:14:30.000Z",
+  "id": "623a17cf-afa7-4623-8eb5-a40f8419b2bb",
+  "kind": "user",
+  "status": "active"
+}
+\`\`\`
+- validation errors: 0 | repair actions: 0"
+`;

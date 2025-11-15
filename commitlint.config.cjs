@@ -15,13 +15,13 @@ module.exports = {
         'build', // Changes to build process
         'ci', // CI configuration
         'chore', // Other changes that don't modify src or test files
-        'revert', // Reverts a previous commit
+        'revert', // Reverts a previous commit,
       ],
     ],
     'scope-enum': [
       2,
       'always',
-      ['core', 'cli', 'api', 'shared', 'deps', 'release', 'config'],
+      ['core', 'cli', 'api', 'shared', 'deps', 'release', 'config', 'reporter'],
     ],
     'subject-case': [2, 'never', ['start-case', 'pascal-case', 'upper-case']],
     'subject-empty': [2, 'never'],

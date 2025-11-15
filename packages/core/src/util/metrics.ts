@@ -34,6 +34,8 @@ export interface MetricsSnapshot {
   branchCoverageOneOf?: Record<string, BranchCoverageOneOfEntry>;
   enumUsage?: Record<string, Record<string, number>>;
   repairActionsPerRow?: number;
+  evalTraceChecks?: number;
+  evalTraceProved?: number;
 }
 
 type MetricsPhaseKey = (typeof METRIC_PHASES)[MetricPhase];
@@ -61,6 +63,8 @@ const DEFAULT_COUNTERS: MetricsSnapshot = {
   memoryPeakMB: 0,
   p50LatencyMs: 0,
   p95LatencyMs: 0,
+  evalTraceChecks: 0,
+  evalTraceProved: 0,
 };
 
 export interface MetricsCollectorOptions {

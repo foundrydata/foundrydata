@@ -1,0 +1,585 @@
+{
+  "schemaId": "profiles/simple.json",
+  "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/simple.json",
+  "schemaHash": "90bda501792002e303e0bab10e728dc4ebfe755d273be5d8a59a91e25b6a3b99",
+  "planOptions": {},
+  "meta": {
+    "toolName": "json-schema-reporter",
+    "toolVersion": "0.1.0",
+    "engineVersion": "0.1.0",
+    "timestamp": "2025-11-15T11:45:06.908Z",
+    "seed": 123456789
+  },
+  "normalize": {
+    "result": {
+      "schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Simple Bench Profile",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "user",
+              "service"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "disabled",
+              "pending"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "tags": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^(?:tag|team):[a-z0-9-]{2,12}$"
+            },
+            "contains": {
+              "type": "string",
+              "pattern": "^tag:"
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "region": {
+                "type": "string",
+                "enum": [
+                  "iad",
+                  "dfw",
+                  "sfo"
+                ]
+              },
+              "owner": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 48
+              },
+              "tier": {
+                "type": "string",
+                "enum": [
+                  "free",
+                  "pro",
+                  "enterprise"
+                ]
+              }
+            },
+            "required": [
+              "region"
+            ]
+          },
+          "contacts": {
+            "type": "array",
+            "maxItems": 2,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email"
+                }
+              },
+              "required": [
+                "name",
+                "email"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "createdAt"
+        ],
+        "dependentRequired": {
+          "active": [
+            "status"
+          ]
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "service"
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            },
+            "then": {
+              "type": "object",
+              "required": [
+                "metadata"
+              ],
+              "properties": {
+                "metadata": {
+                  "type": "object",
+                  "required": [
+                    "tier"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "anyOf": [
+              {
+                "not": {
+                  "required": [
+                    "active"
+                  ]
+                }
+              },
+              {
+                "required": [
+                  "active",
+                  "status"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "ptrMap": {},
+      "revPtrMap": {},
+      "notes": []
+    }
+  },
+  "compose": {
+    "result": {
+      "canonical": {
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Simple Bench Profile",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "user",
+                "service"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "active",
+                "disabled",
+                "pending"
+              ]
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "active": {
+              "type": "boolean"
+            },
+            "tags": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 5,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^(?:tag|team):[a-z0-9-]{2,12}$"
+              },
+              "contains": {
+                "type": "string",
+                "pattern": "^tag:"
+              }
+            },
+            "metadata": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "region": {
+                  "type": "string",
+                  "enum": [
+                    "iad",
+                    "dfw",
+                    "sfo"
+                  ]
+                },
+                "owner": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 48
+                },
+                "tier": {
+                  "type": "string",
+                  "enum": [
+                    "free",
+                    "pro",
+                    "enterprise"
+                  ]
+                }
+              },
+              "required": [
+                "region"
+              ]
+            },
+            "contacts": {
+              "type": "array",
+              "maxItems": 2,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                },
+                "required": [
+                  "name",
+                  "email"
+                ]
+              }
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "status",
+            "createdAt"
+          ],
+          "dependentRequired": {
+            "active": [
+              "status"
+            ]
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "kind": {
+                    "const": "service"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              },
+              "then": {
+                "type": "object",
+                "required": [
+                  "metadata"
+                ],
+                "properties": {
+                  "metadata": {
+                    "type": "object",
+                    "required": [
+                      "tier"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "anyOf": [
+                {
+                  "not": {
+                    "required": [
+                      "active"
+                    ]
+                  }
+                },
+                {
+                  "required": [
+                    "active",
+                    "status"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "ptrMap": {},
+        "revPtrMap": {},
+        "notes": []
+      },
+      "containsBag": {},
+      "coverageIndex": {},
+      "diag": {
+        "warn": [
+          {
+            "code": "CONTAINS_BAG_COMBINED",
+            "canonPath": "/properties/tags",
+            "details": {
+              "bagSize": 1,
+              "sumMin": 1,
+              "maxItems": 5
+            }
+          }
+        ],
+        "branchDecisions": [
+          {
+            "canonPath": "/allOf/1/anyOf",
+            "kind": "anyOf",
+            "chosenBranch": {
+              "index": 1,
+              "score": 0
+            },
+            "scoreDetails": {
+              "orderedIndices": [
+                0,
+                1
+              ],
+              "topScoreIndices": [
+                0,
+                1
+              ],
+              "topKIndices": [
+                0,
+                1
+              ],
+              "tiebreakRand": 0.9651062113698572,
+              "scoresByIndex": {
+                "0": 0,
+                "1": 0
+              }
+            },
+            "budget": {
+              "tried": 4,
+              "limit": 4,
+              "skipped": false
+            },
+            "memoKey": "{\"ajvClass\":\"Ajv2020\",\"ajvFlags\":{\"allErrors\":false,\"allowUnionTypes\":true,\"coerceTypes\":false,\"discriminator\":false,\"multipleOfPrecision\":12,\"strictSchema\":true,\"strictTypes\":true,\"unicodeRegExp\":true,\"validateFormats\":true},\"ajvMajor\":0,\"canonPath\":\"/allOf/1/anyOf\",\"planOptionsSubKey\":\"{\\\"complexity.maxAnyOfBranches\\\":500,\\\"complexity.maxContainsNeeds\\\":16,\\\"complexity.maxOneOfBranches\\\":200,\\\"complexity.maxPatternProps\\\":64,\\\"conditionals.exclusivityStringTweak\\\":\\\"preferNul\\\",\\\"conditionals.minThenSatisfaction\\\":\\\"required-only\\\",\\\"conditionals.strategy\\\":\\\"if-aware-lite\\\",\\\"guards.maxDynamicScopeHops\\\":2,\\\"guards.maxGeneratedNotNesting\\\":2,\\\"patternWitness.alphabet\\\":\\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\\",\\\"patternWitness.maxCandidates\\\":32768,\\\"patternWitness.maxLength\\\":12,\\\"rational.decimalPrecision\\\":12,\\\"rational.fallback\\\":\\\"decimal\\\",\\\"rational.maxLcmBits\\\":128,\\\"rational.maxRatBits\\\":128,\\\"repair.mustCoverGuard\\\":true,\\\"resolver.stubUnresolved\\\":\\\"none\\\",\\\"trials.maxBranchesToTry\\\":12,\\\"trials.perBranch\\\":2,\\\"trials.skipTrials\\\":false,\\\"trials.skipTrialsIfBranchesGt\\\":50}\",\"seed\":1,\"userKey\":\"\"}"
+          }
+        ],
+        "nodes": {
+          "/allOf/1/anyOf": {
+            "chosenBranch": {
+              "index": 1,
+              "score": 0
+            },
+            "scoreDetails": {
+              "orderedIndices": [
+                0,
+                1
+              ],
+              "topScoreIndices": [
+                0,
+                1
+              ],
+              "topKIndices": [
+                0,
+                1
+              ],
+              "tiebreakRand": 0.9651062113698572,
+              "scoresByIndex": {
+                "0": 0,
+                "1": 0
+              }
+            },
+            "budget": {
+              "tried": 4,
+              "limit": 4,
+              "skipped": false
+            }
+          }
+        },
+        "metrics": {
+          "memoKeys": 1
+        },
+        "run": [
+          {
+            "code": "RESOLVER_STRATEGIES_APPLIED",
+            "canonPath": "#",
+            "details": {
+              "strategies": [
+                "local"
+              ],
+              "cacheDir": "~/.foundrydata/cache"
+            }
+          }
+        ]
+      }
+    },
+    "coverageIndexSnapshot": [
+      {
+        "canonPath": "#",
+        "enumeratedKeys": [
+          "active",
+          "contacts",
+          "createdAt",
+          "id",
+          "kind",
+          "metadata",
+          "status",
+          "tags"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/allOf/0/if",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/allOf/0/then",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/allOf/0/then/properties/metadata",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/allOf/1/anyOf/0/not",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/allOf/1/anyOf/1",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/properties/metadata",
+        "enumeratedKeys": [
+          "owner",
+          "region",
+          "tier"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/properties/contacts/items",
+        "enumeratedKeys": [
+          "email",
+          "name"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      }
+    ]
+  },
+  "repair": {
+    "actions": []
+  },
+  "validate": {
+    "errors": []
+  },
+  "instances": [
+    {
+      "index": 0,
+      "data": {
+        "active": false,
+        "createdAt": "2024-12-17T11:40:15.000Z",
+        "id": "befdd31c-8c8d-450f-a606-de748f114136",
+        "kind": "user",
+        "status": "active"
+      },
+      "outcome": "valid-unchanged"
+    },
+    {
+      "index": 1,
+      "data": {
+        "active": false,
+        "createdAt": "2024-04-03T21:24:13.000Z",
+        "id": "48b6fde9-92a3-47b9-b86a-6df749aa6a1e",
+        "kind": "user",
+        "status": "active"
+      },
+      "outcome": "valid-unchanged"
+    },
+    {
+      "index": 2,
+      "data": {
+        "active": false,
+        "createdAt": "2024-09-28T13:14:30.000Z",
+        "id": "623a17cf-afa7-4623-8eb5-a40f8419b2bb",
+        "kind": "user",
+        "status": "active"
+      },
+      "outcome": "valid-unchanged"
+    }
+  ],
+  "metrics": {
+    "normalizeMs": 1.3919579999999883,
+    "composeMs": 3.3478330000000085,
+    "generateMs": 1.8192080000000033,
+    "repairMs": 19.233959,
+    "validateMs": 12.826291999999995,
+    "validationsPerRow": 3,
+    "repairPassesPerRow": 0,
+    "memoryPeakMB": 0,
+    "p50LatencyMs": 0,
+    "p95LatencyMs": 0,
+    "evalTraceChecks": 0,
+    "evalTraceProved": 0,
+    "repairActionsPerRow": 0
+  },
+  "summary": {
+    "totalInstances": 3,
+    "validUnchanged": 3,
+    "validRepaired": 0,
+    "invalid": 0,
+    "timings": {
+      "normalizeMs": 1.3919579999999883,
+      "composeMs": 3.3478330000000085,
+      "generateMs": 1.8192080000000033,
+      "repairMs": 19.233959,
+      "validateMs": 12.826291999999995
+    },
+    "diagnosticsCount": {
+      "normalizeNotes": 0,
+      "composeFatal": 0,
+      "composeWarn": 1,
+      "composeUnsatHints": 0,
+      "composeRunLevel": 1,
+      "repairBudgetExhausted": 0,
+      "validateErrors": 0
+    }
+  }
+}
