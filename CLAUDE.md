@@ -44,7 +44,7 @@ main (legacy)
 * **What**: JSON Schema → Test Data Generator with a compliance guarantee (AJV as oracle)
 * **Why**: Generate thousands of valid records fast (targets per spec)
 * **How**: `foundrydata generate --schema user.json --rows 10000`
-* **Unique**: Built‑in scenario‑based generation for edge cases and stress tests
+* **Unique (roadmap)**: Scenario‑based generation for edge cases and stress tests (not yet exposed as a CLI flag)
 * **Philosophy**: Deterministic, schema‑true data with explicit limits
 
 ---
@@ -52,6 +52,8 @@ main (legacy)
 ## 🎯 Scenario‑Based Generation
 
 Generate targeted datasets for different testing aims:
+
+> Note: the `--scenario` flag illustrated below is a design example; the current CLI does not yet implement scenario selection. Use plain `--rows` for now.
 
 ```bash
 # Standard generation - realistic data
@@ -87,7 +89,7 @@ foundrydata generate --schema user.json --rows 100 --scenario errors
 ### MVP Constraints (v0.1)
 
 * **Performance**: Adhere to spec SLO/SLI (e.g., \~1K simple/medium rows p50 ≈ 200–400 ms).
-* **Bundle**: <1 MB (core package)
+* **Bundle target**: <1 MB (core package; current builds may exceed this while optimization work is ongoing)
 * **Runtime**: Single Node.js process, offline‑friendly
 
 ### JSON Schema Support (high‑level)
@@ -318,7 +320,7 @@ If using Claude Code with MCP, you can access:
 - Direct JSON parsing bypasses business logic and validation
 
 **Always use**:
-- Slash commands: `/tm:show:show-task <id>`, `/tm:list:list-tasks`, `/complete-task <id>`
+- Slash commands: `/project:tm/show <id>`, `/project:tm/list`, `/complete-task <id>`
 - CLI: `npx task-master show <id>`, `npx task-master list`
 
 **Never**:
@@ -332,7 +334,7 @@ If using Claude Code with MCP, you can access:
 
 ```bash
 # ✅ CORRECT: Use slash command
-/tm:show:show-task 9100
+/project:tm/show 9100
 
 # ✅ CORRECT: Use CLI
 npx task-master show 9100
@@ -347,7 +349,7 @@ mcp__task-master-ai__get_task(id: "9100")
 Read(.taskmaster/tasks/tasks.json)
 ```
 
-**Quick Reference**: See [.claude/TASK_MASTER_QUICK_REF.md](./.claude/TASK_MASTER_QUICK_REF.md) for all available commands.
+**Quick Reference**: See [.claude/TM_COMMANDS_GUIDE.md](./.claude/TM_COMMANDS_GUIDE.md) for all available commands.
 
 #### REFONLY Policy — Anchor-Based SPEC References
 
@@ -376,9 +378,9 @@ spec://§<n>#<slug> → docs/feature-simplification/feature-support-simplificati
 * **Never use direct Read on large docs without grep anchors first**
 * Confirm you had read the entire doc if asked
 
-**SPEC Reading Protocol (for feature-support-simplification.md, 2676 lines)**
+**SPEC Reading Protocol (feature-support-simplification.md)**
 
-The SPEC is too large (2676 lines) to read without precision. Always use this protocol:
+The SPEC is too large to read without precision. Always use this protocol:
 
 1. **Grep Section Bounds** (parallel tool calls)
    ```typescript
@@ -410,11 +412,11 @@ The SPEC is too large (2676 lines) to read without precision. Always use this pr
 // For §N, grep anchors s{N}- and s{N+1}-, calculate limit
 const readSection = (n: number) => {
   const [start, end] = grepBounds(`s${n}-`, `s${n+1}-`);
-  return Read({ offset: start, limit: end - start || (2676 - start) });
+  return Read({ offset: start, limit: end - start });
 };
 ```
 
-**For Last Section**: Use EOF (2676) as end bound.
+**For Last Section**: Use file EOF as end bound (for example, total line count from `wc -l`).
 
 **Alternative for Short Sections** (<200 lines):
 ```typescript
