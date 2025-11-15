@@ -2359,7 +2359,7 @@
   "jsg-p1-automata-smt": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "Establish invariants & diagnostics scaffold",
         "description": "Lay down AJV-oracle invariant, dual AJV instances, deterministic RNG, and the diagnostics envelope in code.",
         "status": "done",
@@ -2433,7 +2433,7 @@
         "updatedAt": "2025-11-15T19:04:23.631Z"
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "Regex policy: anchored-safe check + complexity caps",
         "description": "Implement anchored-safe classification (^...$, no look-around/backrefs) and complexity cap (length + quantified groups).",
         "status": "done",
@@ -2498,7 +2498,7 @@
         "updatedAt": "2025-11-15T19:09:23.543Z"
       },
       {
-        "id": "3",
+        "id": 3,
         "title": "Implement Thompson NFA",
         "description": "Restricted-regex to NFA (Thompson) for anchored-safe patterns.",
         "status": "done",
@@ -2589,7 +2589,7 @@
         "updatedAt": "2025-11-15T19:14:37.952Z"
       },
       {
-        "id": "4",
+        "id": 4,
         "title": "DFA subset construction + caps",
         "description": "Determinize NFA under caps; expose reachability and accepting states.",
         "status": "done",
@@ -2669,7 +2669,7 @@
         "updatedAt": "2025-11-15T19:32:27.562Z"
       },
       {
-        "id": "5",
+        "id": 5,
         "title": "Product/intersection DFA for AP:false conjuncts",
         "description": "Compose per-conjunct DFAs (properties, patternProperties, propertyNames-guard) into a product DFA.",
         "status": "done",
@@ -2736,7 +2736,7 @@
         "updatedAt": "2025-11-15T19:43:04.653Z"
       },
       {
-        "id": "6",
+        "id": 6,
         "title": "Decide emptiness & finiteness",
         "description": "Add emptiness (reachability to any accepting state) and finiteness (cycle detection on co-accessible subgraph).",
         "status": "done",
@@ -2789,7 +2789,7 @@
         "updatedAt": "2025-11-15T19:58:11.497Z"
       },
       {
-        "id": "7",
+        "id": 7,
         "title": "BFS witnesses (shortest then UTF‑16)",
         "description": "Enumerate minimal witness names using BFS with stable symbol order.",
         "status": "done",
@@ -2842,7 +2842,7 @@
         "updatedAt": "2025-11-15T20:19:36.008Z"
       },
       {
-        "id": "8",
+        "id": 8,
         "title": "Compose integration & CoverageIndex",
         "description": "Wire name automata into composition-engine and expose CoverageIndex API.",
         "status": "done",
@@ -2954,7 +2954,7 @@
         "updatedAt": "2025-11-15T20:25:55.154Z"
       },
       {
-        "id": "9",
+        "id": 9,
         "title": "Early-UNSAT diagnostics for objects",
         "description": "Emit object-level UNSAT: empty coverage under presence pressure; required vs propertyNames; minProperties vs finite coverage.",
         "status": "done",
@@ -3007,7 +3007,7 @@
         "updatedAt": "2025-11-15T21:01:20.792Z"
       },
       {
-        "id": "10",
+        "id": 10,
         "title": "Strict/Lax policy for AP:false and external $ref",
         "description": "Implement strict fail-fast on unsafe/capped patterns under presence pressure; handle unresolved external $ref.",
         "status": "done",
@@ -3060,7 +3060,7 @@
         "updatedAt": "2025-11-15T21:25:35.937Z"
       },
       {
-        "id": "11",
+        "id": 11,
         "title": "Arrays: bagged contains + UNSAT rules",
         "description": "Model contains as bag; prove UNSAT when Σ(min_i) > maxItems; handle disjointness and overlap unknown.",
         "status": "done",
@@ -3125,7 +3125,7 @@
         "updatedAt": "2025-11-15T21:13:42.951Z"
       },
       {
-        "id": "12",
+        "id": 12,
         "title": "Numbers: bounds & rational multipleOf",
         "description": "Implement bound contradictions and rational multipleOf consistent with AJV.",
         "status": "pending",
@@ -3187,7 +3187,7 @@
         "expansionPrompt": "Implement numerical bound checking with rational arithmetic, multipleOf consistency with AJV, contradiction detection, and precise snapping algorithms. Include comprehensive testing for floating-point edge cases and boundary conditions."
       },
       {
-        "id": "13",
+        "id": 13,
         "title": "Optional local SMT (QF_LIA) stub with timeout",
         "description": "Feature-flagged local solver to assist arrays/numbers; strict timeout with SOLVER_TIMEOUT fallback.",
         "status": "pending",
@@ -3240,7 +3240,7 @@
         "expansionPrompt": "Design SMT solver interface with WASM compatibility, timeout handling with graceful fallback, feature flag integration, and solver-timeout diagnostic emission. Include mock implementations for testing and integration patterns."
       },
       {
-        "id": "14",
+        "id": 14,
         "title": "Generator integration with CoverageIndex",
         "description": "Use CoverageIndex to pick names; minimal value witnesses; arrays satisfy contains then uniqueItems.",
         "status": "pending",
@@ -3305,7 +3305,7 @@
         "expansionPrompt": "Integrate CoverageIndex into generator for deterministic name selection, minimal witness generation, array constraint satisfaction, and enum/const precedence handling. Include if-aware-lite preservation and comprehensive pipeline testing."
       },
       {
-        "id": "15",
+        "id": 15,
         "title": "Repair engine consistency & stagnation guard",
         "description": "Ensure AJV-driven repairs remain idempotent and bounded; keep stagnation guard behavior.",
         "status": "pending",
@@ -3357,7 +3357,7 @@
         "expansionPrompt": "Enhance repair engine with idempotency guarantees, stagnation detection and prevention, AJV-driven repair consistency, and bounded iteration logic. Include comprehensive testing for repair convergence and edge cases."
       },
       {
-        "id": "16",
+        "id": 16,
         "title": "Validate stage: enforce AJV parity & metrics",
         "description": "Final validation on original schema; enforce AJV parity; collect per-phase metrics.",
         "status": "pending",
@@ -3411,7 +3411,7 @@
         "expansionPrompt": "Implement final validation stage with AJV parity enforcement, comprehensive metrics collection across all pipeline phases, validation against original schema, and performance tracking. Include detailed error reporting and metrics visualization."
       },
       {
-        "id": "17",
+        "id": 17,
         "title": "CLI flags & OpenAPI driver (prefer-examples, NDJSON)",
         "description": "Expose CLI flags and minimal OpenAPI driver hooks for mocks/tests.",
         "status": "pending",
@@ -3464,7 +3464,7 @@
         "expansionPrompt": "Implement CLI flag parsing with comprehensive options, OpenAPI driver integration for schema selection, NDJSON output formatting, and example preference handling. Include command-line interface testing and integration with existing CLI structure."
       },
       {
-        "id": "18",
+        "id": 18,
         "title": "Acceptance tests: objects automata",
         "description": "DFA emptiness; BFS witnesses; strict unsafe pattern; required vs propertyNames; minProperties vs coverage.",
         "status": "pending",
@@ -3531,7 +3531,7 @@
         "expansionPrompt": "Create comprehensive acceptance test suite for DFA emptiness scenarios, BFS witness validation, strict pattern enforcement testing, and property conflict detection. Include test fixtures for complex schema scenarios and automated verification of diagnostic codes."
       },
       {
-        "id": "19",
+        "id": 19,
         "title": "Acceptance tests: arrays, refs, determinism",
         "description": "Contains vs maxItems; external $ref strict/lax; determinism with fixed seed.",
         "status": "pending",
@@ -3585,7 +3585,7 @@
         "expansionPrompt": "Develop acceptance tests for array constraint violations, external reference policy behavior, and deterministic output validation. Include snapshot testing for output stability and comprehensive coverage of edge cases."
       },
       {
-        "id": "20",
+        "id": 20,
         "title": "Unit tests: regex/NFA/DFA/product/coverage-index/numbers",
         "description": "Granular unit tests for policy and automata plumbing, and multipleOf behavior.",
         "status": "pending",
@@ -3684,7 +3684,7 @@
         "expansionPrompt": "Create granular unit test suites for regex policy validation, NFA/DFA construction algorithms, product automaton correctness, coverage index functionality, and numerical operations. Include edge case testing, performance benchmarks, and algorithmic correctness verification."
       },
       {
-        "id": "21",
+        "id": 21,
         "title": "JSG-P1 Preparation: Requirements Analysis and Structured TODO",
         "description": "Comprehensive analysis of jsg-p1-automata-smt.md document to extract normative requirements and create structured implementation roadmap by pipeline phases.",
         "details": "[Context]\n\n**Must read**: docs/jsg-p1-automata-smt.md — Complete document analysis (324 lines)\n\n**Objective**: Extract all normative requirements (MUST, MUST NOT, SHALL, MAY) from the JSG-P1 specification and structure them by the 5-stage pipeline: Normalize → Compose → Generate → Repair → Validate.\n\n[Implementation Steps]\n\n1. **Full Document Analysis** (0-324 lines)\n   - Identify all normative language (MUST, MUST NOT, SHALL, MAY per RFC-2119)\n   - Extract technical requirements for each system component\n   - Map requirements to pipeline stages and cross-cutting concerns\n\n2. **Name Automata Requirements** (§4.3)\n   - DFA construction rules for `additionalProperties:false`\n   - Product automaton intersection logic\n   - Finiteness detection and BFS enumeration\n   - Early-UNSAT proof conditions\n   - Complexity caps and fallback behaviors\n\n3. **Arrays/Numbers Requirements** (§4.5)\n   - Contains bag semantics and UNSAT rules\n   - Rational multipleOf handling\n   - Optional local SMT solver integration\n   - Timeout and fallback strategies\n\n4. **AJV Oracle Requirements** (§0, §4.7)\n   - Original schema validation invariants\n   - AJV options parity enforcement\n   - Error handling for validation mismatches\n\n5. **Diagnostics Requirements** (§5)\n   - Error envelope format: {code, canonPath, details}\n   - Specific error codes and their conditions\n   - CoverageIndex API specifications\n   - Metrics collection requirements\n\n6. **CLI/OpenAPI Interface Requirements** (§7)\n   - Command-line flag specifications\n   - NDJSON output format\n   - Example preference handling\n   - Driver adapter requirements\n\n[Deliverable Structure]\n\n```\n.taskmaster/docs/jsg-p1-requirements-analysis.md\n├── Executive Summary\n├── Pipeline Phase Requirements\n│   ├── Stage 1: Normalize\n│   ├── Stage 2: Compose  \n│   ├── Stage 3: Generate\n│   ├── Stage 4: Repair\n│   └── Stage 5: Validate\n├── Cross-Cutting Requirements\n│   ├── Determinism\n│   ├── Performance SLOs\n│   ├── Error Handling\n│   └── Observability\n├── Implementation Priority Matrix\n└── Task Dependencies Analysis\n```\n\nThis analysis will serve as the foundational document for implementing tasks 1-20, ensuring comprehensive coverage of all JSG-P1 requirements with proper sequencing and dependency management.",
@@ -3694,6 +3694,21 @@
         "priority": "high",
         "subtasks": [],
         "updatedAt": "2025-11-15T18:59:42.074Z"
+      },
+      {
+        "id": 22,
+        "title": "Centralize regex diagnostics through RegexAnalysis",
+        "description": "Consolidate all regex diagnostic generation to use RegexAnalysis.diagnostics as single source of truth, routing to appropriate pipeline stages while preserving existing coverage and UNSAT behaviors.",
+        "details": "Refactor the current dual diagnostic emission pattern to eliminate duplication and ensure consistency:\n\n1. **Central Diagnostic Generation**: Modify `analyzeRegexPattern()` in composition-engine.ts to use `analyzeRegex()` and extract diagnostics from `RegexAnalysis.diagnostics` instead of manually checking `compileError` and `complexityCapped` flags.\n\n2. **Normalize Stage Integration**: Update schema-normalizer.ts methods `recordPnamesComplex()` calls to route `REGEX_COMPLEXITY_CAPPED` and `REGEX_COMPILE_ERROR` through the centralized diagnostic flow while preserving the existing note addition behavior.\n\n3. **Compose Stage Integration**: Ensure composition-engine.ts `addCoverageRegexWarn()` calls consume diagnostics from the RegexAnalysis object, maintaining the current warning emission for coverage context.\n\n4. **Preserve Existing Behavior**: Maintain all current coverage decisions, additionalProperties:false logic, and UNSAT determination flows. The refactor must not change when patterns are considered unsafe or how they affect object composition.\n\n5. **Diagnostic Routing**: Implement consistent routing where Normalize stage gets `notes` and Compose stage gets `diag.warn` entries, both sourced from the same RegexAnalysis.diagnostics array.\n\n6. **Context Preservation**: Ensure the `context` field ('coverage' vs 'rewrite') is correctly passed through and appears in final diagnostic details.\n\nKey files to modify:\n- transform/name-automata/regex.ts (RegexAnalysis interface)\n- transform/composition-engine.ts (analyzeRegexPattern function)\n- transform/schema-normalizer.ts (diagnostic emission points)",
+        "testStrategy": "1. **Unit Tests**: Verify analyzeRegexPattern() produces identical diagnostic objects as before refactor for both REGEX_COMPLEXITY_CAPPED and REGEX_COMPILE_ERROR cases. 2. **Integration Tests**: Confirm pipeline tests show same diagnostic routing - notes in normalize phase, warnings in compose phase. 3. **Regression Tests**: Validate that coverage decisions, AP:false behavior, and UNSAT determinations remain unchanged. 4. **Diagnostic Consistency**: Test that context field correctly reflects 'coverage' or 'rewrite' in final diagnostic output.",
+        "status": "pending",
+        "dependencies": [
+          1,
+          2,
+          9
+        ],
+        "priority": "medium",
+        "subtasks": []
       }
     ],
     "metadata": {
@@ -3703,7 +3718,10 @@
       "completedCount": 12,
       "tags": [
         "jsg-p1-automata-smt"
-      ]
+      ],
+      "created": "2025-11-15T22:11:37.859Z",
+      "description": "Tasks for jsg-p1-automata-smt context",
+      "updated": "2025-11-15T22:12:26.885Z"
     }
   }
 }
