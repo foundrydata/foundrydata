@@ -191,6 +191,15 @@ export interface PlanOptions {
   /** Complexity caps configuration */
   complexity?: ComplexityOptions;
 
+  /**
+   * Enable experimental local SMT reasoning for arrays/numbers (default: false)
+   */
+  enableLocalSMT?: boolean;
+  /**
+   * Timeout budget in milliseconds for local SMT calls (default: 25)
+   */
+  solverTimeoutMs?: number;
+
   /** Fail-fast error handling */
   failFast?: FailFastOptions;
   /** Pattern policy configuration */
@@ -243,6 +252,8 @@ export interface ResolvedOptions {
   cache: Required<CacheOptions>;
 
   metrics: boolean;
+  enableLocalSMT: boolean;
+  solverTimeoutMs: number;
   disablePatternOverlapAnalysis: boolean;
   disableDeepFreeze: boolean;
 
@@ -296,6 +307,8 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
   },
 
   metrics: true,
+  enableLocalSMT: false,
+  solverTimeoutMs: 25,
   disablePatternOverlapAnalysis: false,
   disableDeepFreeze: false,
 
@@ -495,6 +508,16 @@ function validateOptions(options: ResolvedOptions): void {
   }
   if (options.complexity.bailOnUnsatAfter <= 0) {
     throw new Error('complexity.bailOnUnsatAfter must be positive');
+  }
+
+  if (typeof options.enableLocalSMT !== 'boolean') {
+    throw new Error('enableLocalSMT must be boolean');
+  }
+  if (
+    !Number.isFinite(options.solverTimeoutMs) ||
+    options.solverTimeoutMs <= 0
+  ) {
+    throw new Error('solverTimeoutMs must be a positive finite number');
   }
 
   // Validate pattern witness options

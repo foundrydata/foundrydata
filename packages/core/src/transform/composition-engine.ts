@@ -40,6 +40,7 @@ import {
   isNumericLikeSchema,
   type NumericBoundsCheckInput,
 } from './numbers/bounds.js';
+import { probeLocalSmtUsage } from './smt/solver.js';
 
 type CoverageProvenance =
   | 'properties'
@@ -281,6 +282,7 @@ class CompositionEngine {
   private readonly branchDiagnostics = new Map<string, BranchDecisionRecord>();
   private readonly containsIndex = new Map<string, ContainsNeed[]>();
   private readonly coverageRegexWarnKeys = new Set<string>();
+  private readonly localSmtEnabled: boolean;
   private nameDfaSummary?: {
     states: number;
     finite: boolean;
@@ -308,6 +310,7 @@ class CompositionEngine {
     });
     this.resolvedOptions = resolved;
     this.planOptionsSnapshot = resolved as unknown as PlanOptions;
+    this.localSmtEnabled = resolved.enableLocalSMT === true;
     // Initialize memo cache: external if provided, else bounded internal LRU per SPEC §14
     if (options?.memoCache) {
       this.memoCache = options.memoCache;
@@ -535,6 +538,8 @@ class CompositionEngine {
       return;
     }
 
+    this.maybeRecordSolverTimeoutProbe('arrayCardinality', canonPath);
+
     const evaluated = this.evaluateContainsBag(reducedNeeds, schema, canonPath);
     if (evaluated.length === 0) {
       this.containsIndex.delete(canonPath);
@@ -564,6 +569,7 @@ class CompositionEngine {
     };
     const result = checkNumericBounds(input);
     if (!result.contradictory || !result.reason) return;
+    this.maybeRecordSolverTimeoutProbe('numericBounds', canonPath);
     this.addFatal(canonPath, DIAGNOSTIC_CODES.UNSAT_NUMERIC_BOUNDS, {
       reason: result.reason,
       type: kind,
@@ -577,6 +583,24 @@ class CompositionEngine {
         typeof schema.exclusiveMaximum === 'number'
           ? schema.exclusiveMaximum
           : null,
+    });
+  }
+
+  private maybeRecordSolverTimeoutProbe(
+    problemKind: string,
+    canonPath: string
+  ): void {
+    if (!this.localSmtEnabled) return;
+    const outcome = probeLocalSmtUsage({
+      enableLocalSMT: this.localSmtEnabled,
+      solverTimeoutMs: this.resolvedOptions.solverTimeoutMs,
+    });
+    if (outcome !== 'unknown') return;
+    const timeoutMs = this.resolvedOptions.solverTimeoutMs;
+    this.addWarn(canonPath, DIAGNOSTIC_CODES.SOLVER_TIMEOUT, {
+      timeoutMs,
+      reason: 'unknown',
+      problemKind,
     });
   }
 

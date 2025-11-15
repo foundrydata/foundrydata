@@ -19,6 +19,31 @@ Checks:
 - bench: npm run bench
 - diag-schema: true
 
+Task: 13   Title: Optional local SMT (QF_LIA) stub with timeout
+Anchors: [spec://§1#goal, spec://§4#pipeline, spec://§8#composition-engine, spec://§8#numbers-multipleof, spec://§9#arrays-contains]
+
+Touched files:
+- PLAN.md
+- packages/core/src/types/options.ts
+- packages/core/src/transform/smt/solver.ts
+- packages/core/src/transform/composition-engine.ts
+- packages/core/src/diag/codes.ts
+- packages/core/src/diag/schemas.ts
+- packages/core/src/transform/__tests__/smt-solver.spec.ts
+
+Approach:
+This task introduces an optional, feature-flagged local SMT interface focused on QF_LIA that can be wired into the existing arrays and numbers reasoning without changing default behavior. I will extend PlanOptions and the resolved options to carry an enableLocalSMT flag and a solverTimeoutMs budget, with conservative defaults that keep the feature disabled unless explicitly requested, and ensure these options are available both in the pipeline orchestrator and within the composition engine. On the transform side, I will add a new transform/smt/solver.ts module that defines a WASM-capable QF_LIA problem/result interface and a small manager that can enforce a timeout budget (expressed in milliseconds) while remaining a stub that does not yet alter any unsat proofs or witnesses. In the composition engine, I will thread the resolved SMT options into the engine state and, when enableLocalSMT is true, invoke the stub around array contains bags and numeric bound checks in a way that surfaces a non-fatal SOLVER_TIMEOUT diagnostic when the stub reports timeout or unknown, then immediately falls back to the existing rule-based reasoning. Finally, I will update the diagnostic code table and detail schemas to include SOLVER_TIMEOUT, and add focused unit tests that exercise the SMT solver stub in isolation (including a fake slow backend to trigger the timeout path) and a small compose-level test that enables the flag and asserts that SOLVER_TIMEOUT is emitted while the underlying array/number behavior stays identical to the baseline.
+
+Risks/Unknowns:
+- The SMT interface must be expressive enough for future backends without overcommitting to a particular encoding today; keeping the problem model minimal but typed is important.
+- Although the stub is designed to be no-op by default, wiring it into compose must avoid any unintended changes to diagnostics or performance when enableLocalSMT is left at its default value.
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
+
 Task: 15   Title: Repair engine consistency & stagnation guard
 Anchors: [spec://§4#pipeline, spec://§8-composition-engine, spec://§9#generator, spec://§10-repair-engine, spec://§21-risks]
 
