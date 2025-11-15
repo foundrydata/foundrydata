@@ -18,3 +18,24 @@ Checks:
 - test: npm run test
 - bench: npm run bench
 - diag-schema: true
+
+Task: 7   Title: BFS witnesses (shortest then UTF-16)
+Anchors: [spec://§1#goal, spec://§3#apfalse-unsafe-pattern-policy, spec://§4#pipeline, spec://§4#must-cover-under-additionalproperties-false, spec://§8#acceptance-tests]
+
+Touched files:
+- PLAN.md
+- packages/core/src/transform/name-automata/bfs.ts
+- packages/core/src/transform/__tests__/name-automata/bfs.spec.ts
+
+Approach:
+This task introduces a small, focused BFS module for name automata that can enumerate witness property names in a way that matches the JSG-P1 ordering requirements. I will implement a generic breadth-first search over DFAs (including the existing product DFA) that walks transitions keyed by UTF-16 code units, always exploring shorter words first and, within each length, ordering outgoing edges by increasing code unit. For each visited state, when it is accepting, the current word is recorded as a witness while the search continues until either k witnesses are found or a configurable candidate budget is exhausted. The BFS will respect caps via a simple configuration object (maximum word length and maximum explored edges), returning a result that includes the discovered witnesses, the number of candidates tried, and whether the search hit its budget. New unit tests under transform/__tests__/name-automata will exercise three scenarios: basic two-vs three-letter ordering, the spec’s `(x|y)[a-z]` acceptance example to ensure witnesses are `["xa","ya"]`, and a product-DFA scenario to confirm that ordering and acceptance properties hold when composing multiple conjunct automata.
+
+Risks/Unknowns:
+- The existing DFA and product DFA implementations approximate character ranges; the BFS module must work with these approximations without attempting to “fix” them in this task.
+- Caps are surfaced only via the BFS result structure for now; wiring these into diagnostics and CoverageIndex will be handled by later tasks.
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
