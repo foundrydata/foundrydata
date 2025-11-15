@@ -1,17 +1,17 @@
-Task: 4   Title: DFA subset construction + caps
+Task: 5   Title: Product/intersection DFA for AP:false conjuncts
 Anchors: [spec://§0#terminology, spec://§1#goal, spec://§3#apfalse-unsafe-pattern-policy, spec://§4#pipeline, spec://§8#acceptance-tests]
 
 Touched files:
 - PLAN.md
-- packages/core/src/transform/name-automata/dfa.ts
-- packages/core/src/transform/__tests__/nfa-dfa-basic.spec.ts
+- packages/core/src/transform/name-automata/product.ts
+- packages/core/src/transform/__tests__/product-dfa.spec.ts
 
 Approach:
-This task takes the Thompson NFA for anchored-safe patterns and determinizes it into a DFA suitable for name automata under AP:false, while enforcing explicit caps to avoid state explosion. I will implement classical subset construction over NfaState sets to build DfaStates with a transition table keyed by code-unit ranges, tracking the number of DFA states created and marking the result as capped when a configurable maxDfaStates limit is exceeded. On top of this I will add a UTF-16-compatible membership check that iterates through string code units in order and follows the DFA transitions, keeping behavior consistent with the NFA’s use of charCodeAt. A simple minimization step will be provided for small automata (e.g., merging obviously equivalent dead states) without over-optimizing, and the module will expose a compact API that returns the DFA, state counts, and cap flag for use in the later product/intersection and CoverageIndex tasks. Unit tests will extend the existing nfa-dfa-basic suite to compare NFA-based acceptance (via a small test-only interpreter) with DFA.accepts on simple and bounded patterns, and to exercise the cap path by constructing DFAs with artificially low maxDfaStates.
+This task composes per-conjunct DFAs (properties, patternProperties, and propertyNames guards) into a single product DFA that represents the intersection language required by AP:false must-cover semantics. I will implement a product construction over an array of DFAs, where each product state is a tuple of component state IDs, and the accepting condition is that all components are in accepting states. During construction I will track reachability from the product start state and prune unreachable states, and I will enforce a maxProductStates cap that short-circuits construction and returns a capped result that callers can treat as “approximate but sound”. The product module will expose a small API that returns the product DFA, the number of states, and a capped flag so that Compose can later emit NAME_AUTOMATON_COMPLEXITY_CAPPED diagnostics when used under AP:false with presence pressure. Unit tests will create small DFAs for simple literal and pattern-based name languages, verify that the product accepts exactly the intersection, and exercise the cap path by setting a very low maxProductStates and checking that the capped flag is set while still preserving soundness (no false positives).
 
 Risks/Unknowns:
-- Care must be taken to keep the DFA representation small and predictable so it can be intersected later without triggering caps too eagerly.
-- A full Hopcroft-style minimization may be overkill; a simpler heuristic minimizer may be preferable initially and refined in later tasks.
+- The product DFA may grow quickly in state count even for modest inputs; caps must be conservative but not so tight that they prevent useful intersections in realistic schemas.
+- NAME_AUTOMATON_COMPLEXITY_CAPPED diagnostics will be wired in a later integration task; this module will focus on returning enough metadata for Compose to decide when to emit them.
 
 Checks:
 - build: npm run build
