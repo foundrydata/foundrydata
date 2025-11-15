@@ -1,6 +1,6 @@
-/* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
 import { DIAGNOSTIC_CODES } from '../../diag/codes.js';
+import { scanRegexSource } from '../../util/pattern-literals.js';
 
 export type RegexContext = 'coverage' | 'rewrite';
 
@@ -64,37 +64,6 @@ function isEscaped(pattern: string, index: number): boolean {
   return (backslashes & 1) === 1;
 }
 
-function hasLookaround(pattern: string): boolean {
-  // Conservative heuristic: treat any of these tokens as lookaround.
-  // False positives (e.g. inside character classes) are acceptable for safety.
-  return (
-    pattern.includes('(?=') ||
-    pattern.includes('(?!') ||
-    pattern.includes('(?<=') ||
-    pattern.includes('(?<!')
-  );
-}
-
-function hasBackreference(pattern: string): boolean {
-  for (let i = 0; i < pattern.length; i += 1) {
-    const ch = pattern[i];
-    if (ch !== '\\' || isEscaped(pattern, i)) {
-      continue;
-    }
-    const next = pattern[i + 1];
-    if (next !== undefined) {
-      if (next >= '1' && next <= '9') {
-        return true;
-      }
-      if (next >= '0' && next <= '9') {
-        // Skip \0 and similar numeric escapes that are not backrefs
-        continue;
-      }
-    }
-  }
-  return false;
-}
-
 export function computeRegexComplexity(pattern: string): {
   complexityScore: number;
   quantifiedGroups: number;
@@ -148,20 +117,17 @@ export function analyzeRegex(
     });
   }
 
-  const anchored =
-    patternSource.length >= 2 &&
-    patternSource[0] === '^' &&
-    !isEscaped(patternSource, 0) &&
-    patternSource[patternSource.length - 1] === '$' &&
-    !isEscaped(patternSource, patternSource.length - 1);
-
-  const lookaround = hasLookaround(patternSource);
-  const backreference = hasBackreference(patternSource);
+  const scan = scanRegexSource(patternSource);
+  const anchored = scan.anchoredStart && scan.anchoredEnd;
+  const lookaround = scan.hasLookAround;
+  const backreference = scan.hasBackReference;
 
   const { complexityScore, quantifiedGroups } =
     computeRegexComplexity(patternSource);
 
-  const capped = complexityScore > maxComplexity;
+  const structuralCap = scan.complexityCapped;
+  const thresholdCap = complexityScore > maxComplexity;
+  const capped = structuralCap || thresholdCap;
   if (!compileError && capped) {
     diagnostics.push({
       code: DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED,

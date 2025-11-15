@@ -2501,7 +2501,7 @@
         "id": "3",
         "title": "Implement Thompson NFA",
         "description": "Restricted-regex to NFA (Thompson) for anchored-safe patterns.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "2"
         ],
@@ -2585,7 +2585,8 @@
         ],
         "complexity": 9,
         "recommendedSubtasks": 6,
-        "expansionPrompt": "Build Thompson NFA construction with regex AST parsing, NFA state machine implementation, character class handling, quantifier support, Unicode awareness, and memory predictability measures. Include NFA size tracking and visualization utilities for debugging."
+        "expansionPrompt": "Build Thompson NFA construction with regex AST parsing, NFA state machine implementation, character class handling, quantifier support, Unicode awareness, and memory predictability measures. Include NFA size tracking and visualization utilities for debugging.",
+        "updatedAt": "2025-11-15T19:14:37.952Z"
       },
       {
         "id": "4",
@@ -3643,9 +3644,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-15T19:09:23.545Z",
+      "lastModified": "2025-11-15T19:14:37.953Z",
       "taskCount": 21,
-      "completedCount": 3,
+      "completedCount": 4,
       "tags": [
         "jsg-p1-automata-smt"
       ]
