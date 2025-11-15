@@ -26,6 +26,152 @@ export interface ProductBuildResult {
   dfa: ProductDfa;
   stateCount: number;
   capped: boolean;
+  summary: ProductSummary;
+}
+
+export interface ProductSummary {
+  states: number;
+  finite: boolean;
+  capsHit?: boolean;
+  empty: boolean;
+}
+
+function computeProductSummary(
+  dfa: ProductDfa,
+  capped: boolean
+): ProductSummary {
+  const totalStates = dfa.states.length;
+  if (totalStates === 0) {
+    return {
+      states: 0,
+      finite: true,
+      capsHit: capped || undefined,
+      empty: true,
+    };
+  }
+
+  const reachable = new Set<number>();
+  const stack: number[] = [dfa.start];
+  reachable.add(dfa.start);
+  while (stack.length > 0) {
+    const id = stack.pop()!;
+    const st = dfa.states[id];
+    if (!st) continue;
+    for (const target of st.transitions.values()) {
+      if (!reachable.has(target)) {
+        reachable.add(target);
+        stack.push(target);
+      }
+    }
+  }
+
+  const reverseAdj = new Map<number, number[]>();
+  for (const st of dfa.states) {
+    if (!reachable.has(st.id)) continue;
+    for (const target of st.transitions.values()) {
+      if (!reachable.has(target)) continue;
+      const arr = reverseAdj.get(target);
+      if (arr) {
+        arr.push(st.id);
+      } else {
+        reverseAdj.set(target, [st.id]);
+      }
+    }
+  }
+
+  const coAccessible = new Set<number>();
+  const revStack: number[] = [];
+  for (const st of dfa.states) {
+    if (reachable.has(st.id) && st.accepting) {
+      coAccessible.add(st.id);
+      revStack.push(st.id);
+    }
+  }
+
+  while (revStack.length > 0) {
+    const id = revStack.pop()!;
+    const preds = reverseAdj.get(id);
+    if (!preds) continue;
+    for (const p of preds) {
+      if (!coAccessible.has(p)) {
+        coAccessible.add(p);
+        revStack.push(p);
+      }
+    }
+  }
+
+  // Empty language iff no reachable & co-accessible accepting state exists.
+  let empty = true;
+  for (const st of dfa.states) {
+    if (st.accepting && reachable.has(st.id) && coAccessible.has(st.id)) {
+      empty = false;
+      break;
+    }
+  }
+
+  // Finite language iff there is no cycle in the reachable & co-accessible subgraph.
+  const finite = isFiniteLanguage(dfa, reachable, coAccessible);
+
+  return {
+    states: totalStates,
+    finite,
+    capsHit: capped || undefined,
+    empty,
+  };
+}
+
+function isFiniteLanguage(
+  dfa: ProductDfa,
+  reachable: Set<number>,
+  coAccessible: Set<number>
+): boolean {
+  const WHITE = 0;
+  const GRAY = 1;
+  const BLACK = 2;
+  const color = new Map<number, number>();
+
+  const dfs = (id: number): boolean => {
+    color.set(id, GRAY);
+    const st = dfa.states[id];
+    if (!st) {
+      color.set(id, BLACK);
+      return true;
+    }
+    for (const target of st.transitions.values()) {
+      if (!reachable.has(target) || !coAccessible.has(target)) {
+        continue;
+      }
+      const c = color.get(target) ?? WHITE;
+      if (c === GRAY) {
+        // Cycle detected.
+        return false;
+      }
+      if (c === WHITE) {
+        if (!dfs(target)) {
+          return false;
+        }
+      }
+    }
+    color.set(id, BLACK);
+    return true;
+  };
+
+  const start = dfa.start;
+  if (!reachable.has(start)) {
+    return true;
+  }
+
+  for (const id of reachable) {
+    if (!coAccessible.has(id)) continue;
+    const c = color.get(id) ?? WHITE;
+    if (c === WHITE) {
+      if (!dfs(id)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 function dfaStep(
@@ -66,7 +212,8 @@ export function buildProductDfa(
       ],
       accepts: () => true,
     };
-    return { dfa: empty, stateCount: 1, capped: false };
+    const summary = computeProductSummary(empty, false);
+    return { dfa: empty, stateCount: 1, capped: false, summary };
   }
 
   const maxStates = options?.maxProductStates ?? 4096;
@@ -184,5 +331,6 @@ export function buildProductDfa(
     dfa: productDfa,
     stateCount: states.length,
     capped,
+    summary: computeProductSummary(productDfa, capped),
   };
 }

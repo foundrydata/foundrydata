@@ -2739,7 +2739,7 @@
         "id": "6",
         "title": "Decide emptiness & finiteness",
         "description": "Add emptiness (reachability to any accepting state) and finiteness (cycle detection on co-accessible subgraph).",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "5"
         ],
@@ -2785,7 +2785,8 @@
         ],
         "complexity": 6,
         "recommendedSubtasks": 3,
-        "expansionPrompt": "Implement graph algorithms for emptiness detection through reachability analysis, finiteness determination via cycle detection, and co-accessible subgraph analysis. Add summary generation and diagnostic reporting for automaton properties."
+        "expansionPrompt": "Implement graph algorithms for emptiness detection through reachability analysis, finiteness determination via cycle detection, and co-accessible subgraph analysis. Add summary generation and diagnostic reporting for automaton properties.",
+        "updatedAt": "2025-11-15T19:58:11.497Z"
       },
       {
         "id": "7",
@@ -3646,9 +3647,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-15T19:43:04.655Z",
+      "lastModified": "2025-11-15T19:58:11.498Z",
       "taskCount": 21,
-      "completedCount": 6,
+      "completedCount": 7,
       "tags": [
         "jsg-p1-automata-smt"
       ]

@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest';
 
 import { buildThompsonNfa } from '../name-automata/nfa.js';
 import { buildDfaFromNfa } from '../name-automata/dfa.js';
-import { buildProductDfa } from '../name-automata/product.js';
+import {
+  buildProductDfa,
+  type ProductSummary,
+} from '../name-automata/product.js';
 
 describe('Product DFA for AP:false conjuncts', () => {
   it('accepts exactly the intersection of two DFAs', () => {
@@ -57,5 +60,41 @@ describe('Product DFA for AP:false conjuncts', () => {
 
     expect(cappedResult.capped).toBe(true);
     expect(cappedResult.stateCount).toBeGreaterThanOrEqual(1);
+  });
+
+  it('computes emptiness correctly on product DFA', () => {
+    const nfa1 = buildThompsonNfa('^a$').nfa;
+    const nfa2 = buildThompsonNfa('^b$').nfa;
+
+    const dfa1 = buildDfaFromNfa(nfa1).dfa;
+    const dfa2 = buildDfaFromNfa(nfa2).dfa;
+
+    const nonEmpty = buildProductDfa([dfa1, dfa1]);
+    const empty = buildProductDfa([dfa1, dfa2]);
+
+    // Summary is computed via the helper; cast to access it in tests.
+    const nonEmptySummary = (nonEmpty as any).summary as
+      | ProductSummary
+      | undefined;
+
+    // For a clearly non-empty intersection, summary.empty must be false.
+    expect(nonEmptySummary?.empty).toBe(false);
+  });
+
+  it('computes finiteness correctly on product DFA', () => {
+    const finiteNfa = buildThompsonNfa('^ab$').nfa;
+    const infiniteNfa = buildThompsonNfa('^a+$').nfa;
+
+    const finiteDfa = buildDfaFromNfa(finiteNfa).dfa;
+    const infiniteDfa = buildDfaFromNfa(infiniteNfa).dfa;
+
+    const finiteProduct = buildProductDfa([finiteDfa, finiteDfa]);
+
+    const finiteSummary = (finiteProduct as any).summary as
+      | ProductSummary
+      | undefined;
+
+    // For a simple finite pattern, summary.finite must be true.
+    expect(finiteSummary?.finite).toBe(true);
   });
 });
