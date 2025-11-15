@@ -2359,7 +2359,7 @@
   "jsg-p1-automata-smt": {
     "tasks": [
       {
-        "id": 1,
+        "id": "1",
         "title": "Establish invariants & diagnostics scaffold",
         "description": "Lay down AJV-oracle invariant, dual AJV instances, deterministic RNG, and the diagnostics envelope in code.",
         "status": "pending",
@@ -2377,7 +2377,8 @@
             "dependencies": [],
             "details": "Create dual AJV instance setup in orchestrator.ts with identical configuration options. Implement parity validation that compares configurations and throws AJV_OPTIONS_MISMATCH on mismatch. Both instances must have unicodeRegExp:true and identical settings to ensure consistent behavior between planning and validation phases.",
             "status": "pending",
-            "testStrategy": "Unit tests for AJV instance creation, parity validation, and error throwing on configuration mismatches"
+            "testStrategy": "Unit tests for AJV instance creation, parity validation, and error throwing on configuration mismatches",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -2386,7 +2387,8 @@
             "dependencies": [],
             "details": "Create packages/core/src/util/determinism.ts with xorshift32 algorithm implementation. RNG must be seeded using combination of user seed and canonical path to ensure deterministic output. Remove any dependencies on global state, system time, or locale settings to guarantee reproducible results across environments.",
             "status": "pending",
-            "testStrategy": "Unit tests for RNG determinism - same seed produces identical sequences, different seeds produce different sequences"
+            "testStrategy": "Unit tests for RNG determinism - same seed produces identical sequences, different seeds produce different sequences",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -2395,7 +2397,8 @@
             "dependencies": [],
             "details": "Create packages/core/src/diag/ directory structure with diagnostic envelope type definitions and central code registry. Design extensible system for diagnostic codes including AJV_OPTIONS_MISMATCH and other core error types. Implement standardized format for diagnostic messages with canonical path tracking.",
             "status": "pending",
-            "testStrategy": "Unit tests for diagnostic envelope creation, code registry lookup, and message formatting"
+            "testStrategy": "Unit tests for diagnostic envelope creation, code registry lookup, and message formatting",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -2408,7 +2411,8 @@
             ],
             "details": "Modify packages/core/src/pipeline/orchestrator.ts to integrate all foundational components. Connect dual AJV instances with parity checking, initialize deterministic RNG for reproducible behavior, and wire diagnostic reporting throughout the orchestration flow. Establish error handling patterns for the entire pipeline.",
             "status": "pending",
-            "testStrategy": "Integration tests for orchestrator initialization, smoke tests with mismatched AJV options, end-to-end determinism validation"
+            "testStrategy": "Integration tests for orchestrator initialization, smoke tests with mismatched AJV options, end-to-end determinism validation",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -2419,17 +2423,21 @@
             ],
             "details": "Extend packages/core/src/util/determinism.ts with utilities for validating deterministic behavior, seeding management, and thread safety checks. Implement helper functions for canonical path generation, seed derivation, and determinism testing. Ensure all utilities support the foundational invariants required by the pipeline.",
             "status": "pending",
-            "testStrategy": "Unit tests for determinism utilities, thread safety validation, and canonical path generation consistency"
+            "testStrategy": "Unit tests for determinism utilities, thread safety validation, and canonical path generation consistency",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 8,
+        "recommendedSubtasks": 5,
+        "expansionPrompt": "Break down the foundational scaffolding into distinct components: AJV dual instance setup with parity validation, deterministic xorshift32 RNG implementation, comprehensive diagnostic envelope system with code registry, orchestrator integration, and determinism utilities. Consider error handling patterns and testing strategies for each component."
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "Regex policy: anchored-safe check + complexity caps",
         "description": "Implement anchored-safe classification (^...$, no look-around/backrefs) and complexity cap (length + quantified groups).",
         "status": "pending",
         "dependencies": [
-          1
+          "1"
         ],
         "priority": "high",
         "details": "- Create transform/name-automata/regex.ts with parser/validator and complexity scoring.\n- Emit REGEX_COMPLEXITY_CAPPED or REGEX_COMPILE_ERROR when applicable.\n- Non-safe/capped patterns must be guards only (no proofs/automata).",
@@ -2442,7 +2450,8 @@
             "dependencies": [],
             "details": "Create transform/name-automata/regex.ts with RegexParser class that can parse regex patterns into AST nodes, identify anchors (^, $), detect lookaround assertions and backreferences. Include basic validation to catch malformed patterns and emit REGEX_COMPILE_ERROR diagnostics.",
             "status": "pending",
-            "testStrategy": "Unit tests for valid/invalid regex parsing, malformed pattern detection, AST structure verification"
+            "testStrategy": "Unit tests for valid/invalid regex parsing, malformed pattern detection, AST structure verification",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -2453,7 +2462,8 @@
             ],
             "details": "Implement anchored-safe detection that verifies patterns start with ^ and end with $, contain no lookaround assertions (?=, ?!, ?<=, ?<!), and no backreferences (\\1, \\2, etc.). Create RegexClassifier class with isAnchoredSafe() method that returns boolean classification.",
             "status": "pending",
-            "testStrategy": "Test cases for anchored patterns, unanchored patterns, lookaround detection, backref detection, edge cases"
+            "testStrategy": "Test cases for anchored patterns, unanchored patterns, lookaround detection, backref detection, edge cases",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -2464,7 +2474,8 @@
             ],
             "details": "Implement complexity scoring that calculates pattern complexity based on total length and number of quantified groups (+, *, {n,m}). Define complexity thresholds and create ComplexityScorer class with score() method. Emit REGEX_COMPLEXITY_CAPPED diagnostic when patterns exceed defined limits.",
             "status": "pending",
-            "testStrategy": "Unit tests for complexity calculation, threshold enforcement, quantifier counting, cap emission"
+            "testStrategy": "Unit tests for complexity calculation, threshold enforcement, quantifier counting, cap emission",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -2476,17 +2487,21 @@
             ],
             "details": "Integrate RegexParser, RegexClassifier, and ComplexityScorer into existing pattern processing pipeline. Ensure non-safe or complexity-capped patterns are restricted to guards only with no proof/automata generation. Add integration points with name-automata system and diagnostic emission.",
             "status": "pending",
-            "testStrategy": "Integration tests with existing pattern utilities, guard restriction verification, end-to-end pattern processing"
+            "testStrategy": "Integration tests with existing pattern utilities, guard restriction verification, end-to-end pattern processing",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Implement regex classification system with pattern parsing, anchored-safe detection logic, complexity scoring algorithm, diagnostic emission for capped patterns, and integration with existing pattern utilities. Include comprehensive test coverage for edge cases in regex analysis."
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "Implement Thompson NFA",
         "description": "Restricted-regex to NFA (Thompson) for anchored-safe patterns.",
         "status": "pending",
         "dependencies": [
-          2
+          "2"
         ],
         "priority": "high",
         "details": "- File: transform/name-automata/nfa.ts.\n- Support classes, grouping, alternation, ?,*,+, bounded quantifiers; Unicode aware.\n- Keep memory predictable; expose NFA size for caps.",
@@ -2501,7 +2516,8 @@
             ],
             "details": "Implement regex AST parsing in transform/name-automata/nfa.ts. Parse character classes, grouping, alternation, quantifiers (?, *, +, {n,m}), and basic atoms. Build AST nodes for each construct. Ensure Unicode awareness and validate against anchored-safe patterns from task 2. Handle parsing errors gracefully with appropriate diagnostics.",
             "status": "pending",
-            "testStrategy": "Unit tests for parsing various regex constructs, error handling for invalid patterns, and AST structure validation"
+            "testStrategy": "Unit tests for parsing various regex constructs, error handling for invalid patterns, and AST structure validation",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -2512,7 +2528,8 @@
             ],
             "details": "Create NFA state classes with unique IDs, transition maps for character ranges and epsilon moves. Implement state creation, linking, and traversal methods. Include start and accept state management. Ensure memory-efficient representation and provide state counting for complexity caps. Add debugging utilities for state visualization.",
             "status": "pending",
-            "testStrategy": "Unit tests for state creation, transition management, and memory usage validation"
+            "testStrategy": "Unit tests for state creation, transition management, and memory usage validation",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -2523,7 +2540,8 @@
             ],
             "details": "Implement Thompson construction for each AST node type: character classes, concatenation, alternation, and quantifiers. Create NFA fragments with proper epsilon transitions. Handle Unicode character ranges correctly. Ensure construction preserves anchored semantics and maintains predictable memory usage.",
             "status": "pending",
-            "testStrategy": "Unit tests for each construction algorithm, verification of NFA correctness against simple regex patterns"
+            "testStrategy": "Unit tests for each construction algorithm, verification of NFA correctness against simple regex patterns",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -2534,7 +2552,8 @@
             ],
             "details": "Create character range representation for NFA transitions. Support Unicode character classes including \\d, \\w, \\s and their negations. Handle Unicode code point ranges efficiently. Implement range merging and intersection operations. Ensure compatibility with AJV's Unicode handling.",
             "status": "pending",
-            "testStrategy": "Unit tests for character class operations, Unicode range handling, and compatibility with AJV validation"
+            "testStrategy": "Unit tests for character class operations, Unicode range handling, and compatibility with AJV validation",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -2545,7 +2564,8 @@
             ],
             "details": "Implement quantifier handling in Thompson construction. Create appropriate epsilon transition patterns for each quantifier type. Handle bounded quantifiers {n,m} with unrolling strategies. Ensure memory predictability for large bounds and implement caps when necessary. Include zero-width matching detection.",
             "status": "pending",
-            "testStrategy": "Unit tests for all quantifier types, bounded quantifier edge cases, and memory usage validation"
+            "testStrategy": "Unit tests for all quantifier types, bounded quantifier edge cases, and memory usage validation",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -2557,17 +2577,21 @@
             ],
             "details": "Implement NFA size calculation based on state count and transition density. Add memory usage tracking during construction. Implement complexity caps that abort construction when limits are exceeded. Expose NFA size metrics for upstream caps decision-making. Include diagnostic emission for complexity-capped patterns.",
             "status": "pending",
-            "testStrategy": "Unit tests for size calculation accuracy, memory cap enforcement, and diagnostic emission"
+            "testStrategy": "Unit tests for size calculation accuracy, memory cap enforcement, and diagnostic emission",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 9,
+        "recommendedSubtasks": 6,
+        "expansionPrompt": "Build Thompson NFA construction with regex AST parsing, NFA state machine implementation, character class handling, quantifier support, Unicode awareness, and memory predictability measures. Include NFA size tracking and visualization utilities for debugging."
       },
       {
-        "id": 4,
+        "id": "4",
         "title": "DFA subset construction + caps",
         "description": "Determinize NFA under caps; expose reachability and accepting states.",
         "status": "pending",
         "dependencies": [
-          3
+          "3"
         ],
         "priority": "high",
         "details": "- File: transform/name-automata/dfa.ts.\n- Subset construction with early-abort on cap; record states count.\n- Export membership check compatible with UTF-16 iteration.",
@@ -2580,7 +2604,8 @@
             "dependencies": [],
             "details": "Implement the classical subset construction algorithm that converts an NFA to DFA by: 1) Computing epsilon closures for state sets, 2) Building powerset states where each DFA state represents a set of NFA states, 3) Computing transitions between powerset states, 4) Tracking accepting states based on NFA accepting state membership. Handle edge cases like empty state sets and unreachable states.",
             "status": "pending",
-            "testStrategy": "Unit tests with small NFAs to verify correct determinization and language equivalence"
+            "testStrategy": "Unit tests with small NFAs to verify correct determinization and language equivalence",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -2591,7 +2616,8 @@
             ],
             "details": "Add state count tracking during subset construction and implement early-abort when maxDFAStates cap is reached. Emit NAME_AUTOMATON_COMPLEXITY_CAPPED diagnostic when terminating early. Maintain partial DFA construction state for debugging. Record final states count in metadata for observability.",
             "status": "pending",
-            "testStrategy": "Unit tests that trigger caps with pathological patterns and verify diagnostic emission"
+            "testStrategy": "Unit tests that trigger caps with pathological patterns and verify diagnostic emission",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -2602,7 +2628,8 @@
             ],
             "details": "Implement DFA.accepts(string) method that iterates through UTF-16 code units correctly, handling surrogate pairs and Unicode normalization. Use state transition table for O(n) membership checking. Ensure compatibility with JavaScript string indexing and iteration patterns used in the generator.",
             "status": "pending",
-            "testStrategy": "Unit tests with Unicode strings including surrogate pairs and emoji to verify correct acceptance"
+            "testStrategy": "Unit tests with Unicode strings including surrogate pairs and emoji to verify correct acceptance",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -2614,7 +2641,8 @@
             ],
             "details": "Implement Hopcroft's algorithm or table-filling method to minimize the DFA after construction. Merge states that have identical transition behavior and accepting status. Update transition table and state mappings accordingly. Only apply minimization if state count exceeds a threshold to avoid overhead on small automata.",
             "status": "pending",
-            "testStrategy": "Unit tests verifying minimized DFA has same language acceptance with fewer states"
+            "testStrategy": "Unit tests verifying minimized DFA has same language acceptance with fewer states",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -2628,17 +2656,21 @@
             ],
             "details": "Export DFA class with methods: accepts(string), getStateCount(), getAcceptingStates(), isReachable(state). Implement reachability analysis to identify dead states. Provide metadata about construction process including original NFA size, final DFA size, and whether caps were triggered. Integrate with name-automata module structure.",
             "status": "pending",
-            "testStrategy": "Integration tests with composition engine and unit tests for all exported interfaces"
+            "testStrategy": "Integration tests with composition engine and unit tests for all exported interfaces",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 9,
+        "recommendedSubtasks": 5,
+        "expansionPrompt": "Implement deterministic finite automaton subset construction with powerset state management, early-abort logic for complexity caps, UTF-16 compatible membership checking, state minimization, and performance optimization for large automata."
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "Product/intersection DFA for AP:false conjuncts",
         "description": "Compose per-conjunct DFAs (properties, patternProperties, propertyNames-guard) into a product DFA.",
         "status": "pending",
         "dependencies": [
-          4
+          "4"
         ],
         "priority": "high",
         "details": "- File: transform/name-automata/product.ts.\n- Build product only for conjuncts that enforce additionalProperties:false.\n- Reachability trimming to reduce state blow-up; apply maxProductStates; emit NAME_AUTOMATON_COMPLEXITY_CAPPED on cap.",
@@ -2651,7 +2683,8 @@
             "dependencies": [],
             "details": "Implement the product construction in transform/name-automata/product.ts. Build cross-product of state spaces from input DFAs (properties, patternProperties, propertyNames-guard). Handle epsilon transitions and state labeling. Ensure the product DFA accepts only strings accepted by ALL input DFAs. Include proper error handling for malformed input DFAs.",
             "status": "pending",
-            "testStrategy": "Unit tests with 2-3 simple DFAs, verify cartesian product states and acceptance conditions"
+            "testStrategy": "Unit tests with 2-3 simple DFAs, verify cartesian product states and acceptance conditions",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -2662,7 +2695,8 @@
             ],
             "details": "Implement breadth-first or depth-first traversal from initial state to mark reachable states. Remove unreachable states and their transitions. Update state numbering after pruning. Track pruning statistics for diagnostics. Ensure the pruned DFA maintains equivalent language acceptance.",
             "status": "pending",
-            "testStrategy": "Test with DFAs that have unreachable states, verify pruning removes them without affecting language"
+            "testStrategy": "Test with DFAs that have unreachable states, verify pruning removes them without affecting language",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -2674,7 +2708,8 @@
             ],
             "details": "Monitor state count during product construction. When maxProductStates threshold is reached, emit NAME_AUTOMATON_COMPLEXITY_CAPPED diagnostic and apply fallback strategy (conservative approximation or early termination). Ensure the capped result is still sound for additionalProperties:false enforcement, even if less precise.",
             "status": "pending",
-            "testStrategy": "Test with complex patterns that would generate large state spaces, verify capping triggers and fallback behavior"
+            "testStrategy": "Test with complex patterns that would generate large state spaces, verify capping triggers and fallback behavior",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -2687,17 +2722,21 @@
             ],
             "details": "Integrate product DFA with existing AP:false handling in composition engine. Ensure product DFA is only built for schemas that enforce additionalProperties:false. Add comprehensive test suite covering multiple conjunct scenarios, edge cases with complex pattern intersections, and validation that the product correctly rejects property names not accepted by all conjuncts.",
             "status": "pending",
-            "testStrategy": "End-to-end tests with schemas having multiple patternProperties and properties under AP:false, verify correct acceptance/rejection"
+            "testStrategy": "End-to-end tests with schemas having multiple patternProperties and properties under AP:false, verify correct acceptance/rejection",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 8,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Develop DFA product construction for conjunct intersection, state reachability analysis, pruning strategies for state explosion prevention, and integration with additionalProperties:false semantics. Include comprehensive testing for multi-pattern scenarios."
       },
       {
-        "id": 6,
+        "id": "6",
         "title": "Decide emptiness & finiteness",
         "description": "Add emptiness (reachability to any accepting state) and finiteness (cycle detection on co-accessible subgraph).",
         "status": "pending",
         "dependencies": [
-          5
+          "5"
         ],
         "priority": "high",
         "details": "- Extend product.ts to compute emptiness/finite.\n- Expose summary: {states, finite, capsHit?}.",
@@ -2710,7 +2749,8 @@
             "dependencies": [],
             "details": "Add reachability analysis function in product.ts that performs BFS/DFS traversal from initial state to check if any accepting states can be reached. Return boolean indicating emptiness (true if no accepting states reachable). Include proper error handling for malformed automata.",
             "status": "pending",
-            "testStrategy": "Unit tests with empty automata (no accepting states reachable) and non-empty automata (accepting states reachable)"
+            "testStrategy": "Unit tests with empty automata (no accepting states reachable) and non-empty automata (accepting states reachable)",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -2721,7 +2761,8 @@
             ],
             "details": "Implement cycle detection using DFS with back-edge detection on the co-accessible subgraph (states that can reach accepting states). If cycles exist in co-accessible states, language is infinite. Use proper graph coloring (white/gray/black) to detect back edges efficiently.",
             "status": "pending",
-            "testStrategy": "Unit tests with finite languages (no cycles in co-accessible states) and infinite languages (cycles present)"
+            "testStrategy": "Unit tests with finite languages (no cycles in co-accessible states) and infinite languages (cycles present)",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -2733,17 +2774,21 @@
             ],
             "details": "Extend product.ts to return summary object with format {states: number, finite: boolean, capsHit?: boolean}. Include state count from automaton, finiteness result from cycle detection, and optional caps hit indicator for complexity limits. Add proper TypeScript types and integration with existing diagnostic system.",
             "status": "pending",
-            "testStrategy": "Integration tests verifying summary format and correctness of all fields across various automaton types"
+            "testStrategy": "Integration tests verifying summary format and correctness of all fields across various automaton types",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 6,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Implement graph algorithms for emptiness detection through reachability analysis, finiteness determination via cycle detection, and co-accessible subgraph analysis. Add summary generation and diagnostic reporting for automaton properties."
       },
       {
-        "id": 7,
+        "id": "7",
         "title": "BFS witnesses (shortest then UTF‑16)",
         "description": "Enumerate minimal witness names using BFS with stable symbol order.",
         "status": "pending",
         "dependencies": [
-          6
+          "6"
         ],
         "priority": "high",
         "details": "- File: transform/name-automata/bfs.ts.\n- Produce k shortest words; order by length then UTF-16 lexicographic.\n- Guard enumerate() exposure: only when finiteness proven and not solely from raw propertyNames.enum.",
@@ -2756,7 +2801,8 @@
             "dependencies": [],
             "details": "Implement the core BFS traversal logic in transform/name-automata/bfs.ts. The algorithm should explore states level by level, tracking path lengths and accumulating symbol sequences. Include proper queue management and state visitation tracking to ensure complete exploration of the automaton's reachable accepting states.",
             "status": "pending",
-            "testStrategy": "Unit tests for BFS traversal correctness, path finding accuracy, and proper queue behavior with various automaton structures."
+            "testStrategy": "Unit tests for BFS traversal correctness, path finding accuracy, and proper queue behavior with various automaton structures.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -2767,7 +2813,8 @@
             ],
             "details": "Create the ordering mechanism that processes BFS results and applies the dual-criteria sort: primary by length (ascending), secondary by UTF-16 code point comparison. This ensures deterministic, reproducible output across different runs and environments. Include proper handling of Unicode characters and edge cases in string comparison.",
             "status": "pending",
-            "testStrategy": "Acceptance tests verifying two-letter and three-letter enumeration results match expected order, with stable sorting across multiple runs."
+            "testStrategy": "Acceptance tests verifying two-letter and three-letter enumeration results match expected order, with stable sorting across multiple runs.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -2779,19 +2826,23 @@
             ],
             "details": "Implement the safety mechanism that checks automaton finiteness before allowing enumeration exposure. The guard must verify that the language is finite (no infinite loops) and that the enumeration adds value beyond simple propertyNames.enum extraction. Include proper error handling and diagnostic messages when guards fail, ensuring the system degrades gracefully for unsafe cases.",
             "status": "pending",
-            "testStrategy": "Unit tests for guard behavior with finite vs infinite automata, and integration tests ensuring enumerate() is only exposed when conditions are met."
+            "testStrategy": "Unit tests for guard behavior with finite vs infinite automata, and integration tests ensuring enumerate() is only exposed when conditions are met.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 5,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Implement breadth-first enumeration algorithm with stable UTF-16 lexicographic ordering, shortest path finding for minimal witnesses, and guard logic for finiteness requirements. Include proper handling of edge cases and length constraints."
       },
       {
-        "id": 8,
+        "id": "8",
         "title": "Compose integration & CoverageIndex",
         "description": "Wire name automata into composition-engine and expose CoverageIndex API.",
         "status": "pending",
         "dependencies": [
-          5,
-          6,
-          7
+          "5",
+          "6",
+          "7"
         ],
         "priority": "high",
         "details": "- Touch: packages/core/src/transform/composition-engine.ts.\n- For each object with AP:false across allOf: build DFAs for `properties` (literals) and `patternProperties` (anchored-safe).\n- `propertyNames`: guard-only; optional additive rewrite behind flag with PNAMES_REWRITE_APPLIED and synthetic provenance.\n- Expose coverageIndex.has(name) (pure) and enumerate?(k) when finite; include provenance and nameDfaSummary.",
@@ -2804,7 +2855,8 @@
             "dependencies": [],
             "details": "Modify packages/core/src/transform/composition-engine.ts to import and integrate name automata functionality. Add necessary imports for DFA building, establish integration points for processing objects with AP:false, and set up the foundation for CoverageIndex API exposure.",
             "status": "pending",
-            "testStrategy": "Unit tests for successful integration without breaking existing composition engine functionality"
+            "testStrategy": "Unit tests for successful integration without breaking existing composition engine functionality",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -2815,7 +2867,8 @@
             ],
             "details": "For each object with AP:false across allOf conjuncts, build DFAs for properties (literals) and patternProperties (anchored-safe patterns). Implement the logic to traverse allOf structures, identify relevant properties, and construct appropriate DFAs using the name automata system from previous tasks.",
             "status": "pending",
-            "testStrategy": "Unit tests verifying correct DFA construction for various property combinations and pattern types"
+            "testStrategy": "Unit tests verifying correct DFA construction for various property combinations and pattern types",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -2826,7 +2879,8 @@
             ],
             "details": "Implement propertyNames as guard-only by default. Add optional additive rewrite functionality behind PNAMES_REWRITE_APPLIED flag with synthetic provenance tracking. Ensure proper flag handling and provenance metadata for rewritten schemas.",
             "status": "pending",
-            "testStrategy": "Unit tests for both guard-only and rewrite modes, verifying flag behavior and provenance tracking"
+            "testStrategy": "Unit tests for both guard-only and rewrite modes, verifying flag behavior and provenance tracking",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -2837,17 +2891,21 @@
             ],
             "details": "Expose coverageIndex.has(name) as a pure function for property name checking. Implement optional enumerate(k) method available only when finite enumeration is possible. Include provenance tracking and nameDfaSummary in the API. Ensure proper error handling and performance characteristics.",
             "status": "pending",
-            "testStrategy": "Acceptance tests for coverageIndex.has() correctness on literals and patterns, enumerate() availability validation, and provenance accuracy"
+            "testStrategy": "Acceptance tests for coverageIndex.has() correctness on literals and patterns, enumerate() availability validation, and provenance accuracy",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Integrate name automata into composition engine with CoverageIndex API design, DFA building for properties and patterns, propertyNames handling with rewrite flags, and provenance tracking. Include comprehensive API testing and performance validation."
       },
       {
-        "id": 9,
+        "id": "9",
         "title": "Early-UNSAT diagnostics for objects",
         "description": "Emit object-level UNSAT: empty coverage under presence pressure; required vs propertyNames; minProperties vs finite coverage.",
         "status": "pending",
         "dependencies": [
-          8
+          "8"
         ],
         "priority": "high",
         "details": "- Emit UNSAT_AP_FALSE_EMPTY_COVERAGE with proof summary.\n- Emit UNSAT_REQUIRED_VS_PROPERTYNAMES.\n- Emit UNSAT_MINPROPERTIES_VS_COVERAGE.",
@@ -2860,7 +2918,8 @@
             "dependencies": [],
             "details": "Add detection logic in composition-engine.ts to identify when AP:false combined with required properties results in impossible coverage. Emit UNSAT_AP_FALSE_EMPTY_COVERAGE diagnostic with proof summary including conflicting constraints and coverage analysis. Include provenance tracking for diagnostic context.",
             "status": "pending",
-            "testStrategy": "Unit tests for various AP:false scenarios with required properties; edge cases with complex property patterns"
+            "testStrategy": "Unit tests for various AP:false scenarios with required properties; edge cases with complex property patterns",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -2871,7 +2930,8 @@
             ],
             "details": "Add logic to detect when required property names violate propertyNames constraints (enum, pattern, etc.). Emit UNSAT_REQUIRED_VS_PROPERTYNAMES diagnostic with detailed conflict analysis. Handle both literal and pattern-based propertyNames constraints with comprehensive proof generation.",
             "status": "pending",
-            "testStrategy": "Acceptance tests covering required vs propertyNames.enum conflicts; pattern-based propertyNames violations"
+            "testStrategy": "Acceptance tests covering required vs propertyNames.enum conflicts; pattern-based propertyNames violations",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -2883,18 +2943,22 @@
             ],
             "details": "Add detection for scenarios where minProperties value is greater than the finite set of allowed properties under coverage constraints. Emit UNSAT_MINPROPERTIES_VS_COVERAGE diagnostic with coverage analysis and property count calculations. Handle both finite and infinite coverage scenarios with appropriate proof summaries.",
             "status": "pending",
-            "testStrategy": "Edge case tests with various minProperties values against finite property sets; boundary condition testing"
+            "testStrategy": "Edge case tests with various minProperties values against finite property sets; boundary condition testing",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 6,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Implement UNSAT detection logic for empty coverage scenarios, required property conflicts, and minProperties violations. Add diagnostic code emission with detailed proof summaries and comprehensive test scenarios for edge cases."
       },
       {
-        "id": 10,
+        "id": "10",
         "title": "Strict/Lax policy for AP:false and external $ref",
         "description": "Implement strict fail-fast on unsafe/capped patterns under presence pressure; handle unresolved external $ref.",
         "status": "pending",
         "dependencies": [
-          8,
-          1
+          "8",
+          "1"
         ],
         "priority": "high",
         "details": "- Strict: AP_FALSE_UNSAFE_PATTERN fatal after safe-only attempt.\n- Lax: same code as warn, conservative exclusion.\n- External $ref: Strict→EXTERNAL_REF_UNRESOLVED{mode:\"strict\"}; Lax→warn + skippedValidation:true only if cause is exclusively external refs.",
@@ -2907,7 +2971,8 @@
             "dependencies": [],
             "details": "Implement policy enumeration (strict/lax), policy context threading through composition engine, and policy-specific error emission logic. Create base classes for policy-aware error handling and mode-specific behavior switches. This forms the foundation for all policy-specific behaviors in subsequent subtasks.",
             "status": "pending",
-            "testStrategy": "Unit tests for policy context creation, mode switching, and basic error emission patterns"
+            "testStrategy": "Unit tests for policy context creation, mode switching, and basic error emission patterns",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -2918,7 +2983,8 @@
             ],
             "details": "Create unsafe pattern detection logic for AP:false scenarios under presence pressure. In strict mode: emit AP_FALSE_UNSAFE_PATTERN as fatal error after safe-only attempt fails. In lax mode: emit same diagnostic as warning and apply conservative exclusion logic. Integrate with composition engine's must-cover analysis.",
             "status": "pending",
-            "testStrategy": "Acceptance tests comparing strict vs lax behavior on unsafe AP:false patterns; verify fatal vs warning emission"
+            "testStrategy": "Acceptance tests comparing strict vs lax behavior on unsafe AP:false patterns; verify fatal vs warning emission",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -2929,17 +2995,21 @@
             ],
             "details": "Handle unresolved external $ref differently based on policy mode. Strict mode: emit EXTERNAL_REF_UNRESOLVED with mode:strict metadata. Lax mode: emit warning and set skippedValidation:true only when failure cause is exclusively due to external refs. Integrate with reference resolution pipeline and validator skip logic.",
             "status": "pending",
-            "testStrategy": "Acceptance tests for external $ref resolution failure paths in both strict and lax modes; verify error vs warning emission and validation skipping behavior"
+            "testStrategy": "Acceptance tests for external $ref resolution failure paths in both strict and lax modes; verify error vs warning emission and validation skipping behavior",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 6,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Implement policy enforcement for strict vs lax modes, external reference resolution handling, error emission for unsafe patterns, and conservative exclusion logic. Include comprehensive testing for different policy scenarios and reference resolution failures."
       },
       {
-        "id": 11,
+        "id": "11",
         "title": "Arrays: bagged contains + UNSAT rules",
         "description": "Model contains as bag; prove UNSAT when Σ(min_i) > maxItems; handle disjointness and overlap unknown.",
         "status": "pending",
         "dependencies": [
-          1
+          "1"
         ],
         "priority": "high",
         "details": "- File: transform/arrays/contains-bag.ts.\n- Deterministic choice when uniqueItems:true.\n- Emit UNSAT_CONTAINS_VS_MAXITEMS when provable.",
@@ -2952,7 +3022,8 @@
             "dependencies": [],
             "details": "Set up transform/arrays/contains-bag.ts with basic bag modeling structure. Implement the core contains constraint modeling that treats contains as a bag operation rather than exact matching. Include interfaces for bag constraint representation and basic validation logic.",
             "status": "pending",
-            "testStrategy": "Unit tests for basic bag constraint modeling and interface validation"
+            "testStrategy": "Unit tests for basic bag constraint modeling and interface validation",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -2963,7 +3034,8 @@
             ],
             "details": "Implement the mathematical proof logic that detects when Σ(min_i) > maxItems, making the schema unsatisfiable. Emit UNSAT_CONTAINS_VS_MAXITEMS diagnostic when this condition is provably true. Include sum calculation and constraint violation detection.",
             "status": "pending",
-            "testStrategy": "Unit tests with various min/max combinations that trigger UNSAT conditions"
+            "testStrategy": "Unit tests with various min/max combinations that trigger UNSAT conditions",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -2974,7 +3046,8 @@
             ],
             "details": "Create deterministic choice algorithms that handle uniqueItems:true constraint in combination with contains bag modeling. Ensure that when uniqueItems is enabled, the bag generation produces consistent, deterministic results while respecting the contains constraints.",
             "status": "pending",
-            "testStrategy": "Unit tests for uniqueItems stability and deterministic output with fixed seeds"
+            "testStrategy": "Unit tests for uniqueItems stability and deterministic output with fixed seeds",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -2986,17 +3059,21 @@
             ],
             "details": "Implement analysis for disjoint contains constraints and handle scenarios where overlap between different contains constraints cannot be determined. Include logic for constraint intersection analysis and fallback behavior when disjointness cannot be proven.",
             "status": "pending",
-            "testStrategy": "Acceptance tests for complex array constraint scenarios with overlapping and disjoint contains rules"
+            "testStrategy": "Acceptance tests for complex array constraint scenarios with overlapping and disjoint contains rules",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Implement contains bag modeling with deterministic choice algorithms, UNSAT proof generation for impossible constraints, disjointness analysis, and uniqueItems handling. Include comprehensive testing for complex array constraint scenarios."
       },
       {
-        "id": 12,
+        "id": "12",
         "title": "Numbers: bounds & rational multipleOf",
         "description": "Implement bound contradictions and rational multipleOf consistent with AJV.",
         "status": "pending",
         "dependencies": [
-          1
+          "1"
         ],
         "priority": "medium",
         "details": "- Files: transform/numbers/bounds.ts, transform/numbers/multiple-of.ts.\n- Exact rational snapping consistent with AJV.\n- Diagnostics on contradictions.",
@@ -3009,7 +3086,8 @@
             "dependencies": [],
             "details": "Implement in transform/numbers/bounds.ts: Check for contradictory bounds (min > max), handle inclusive/exclusive boundaries, detect empty ranges, and emit BOUNDS_CONTRADICTION diagnostic. Include edge cases like Number.MAX_SAFE_INTEGER and floating-point precision limits.",
             "status": "pending",
-            "testStrategy": "Unit tests for contradictory bounds, edge cases with inclusive/exclusive combinations, and diagnostic emission"
+            "testStrategy": "Unit tests for contradictory bounds, edge cases with inclusive/exclusive combinations, and diagnostic emission",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -3018,7 +3096,8 @@
             "dependencies": [],
             "details": "Implement in transform/numbers/multiple-of.ts: Use rational number representation to avoid floating-point precision errors. Implement exact division checks, GCD calculations for multiple multipleOf constraints, and maintain consistency with AJV's multipleOf validation algorithm.",
             "status": "pending",
-            "testStrategy": "Unit tests for rational arithmetic precision, multiple multipleOf constraints, and AJV consistency verification"
+            "testStrategy": "Unit tests for rational arithmetic precision, multiple multipleOf constraints, and AJV consistency verification",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -3030,7 +3109,8 @@
             ],
             "details": "Combine bounds and multipleOf logic to snap generated numbers to valid values. Handle edge cases where snapping might violate bounds, implement bidirectional snapping (up/down), and ensure exact consistency with AJV's validation results. Include handling for very large numbers and precision limits.",
             "status": "pending",
-            "testStrategy": "Integration tests combining bounds and multipleOf, floating-point edge cases, and AJV consistency validation"
+            "testStrategy": "Integration tests combining bounds and multipleOf, floating-point edge cases, and AJV consistency validation",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -3041,18 +3121,22 @@
             ],
             "details": "Implement test cases for: Number.EPSILON precision issues, very large/small numbers near limits, floating-point representation edge cases, subnormal numbers, infinity handling, and NaN edge cases. Include property-based testing for numerical stability and AJV consistency across the full range of valid inputs.",
             "status": "pending",
-            "testStrategy": "Property-based tests for numerical stability, edge case regression tests, and comprehensive AJV consistency validation"
+            "testStrategy": "Property-based tests for numerical stability, edge case regression tests, and comprehensive AJV consistency validation",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 6,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Implement numerical bound checking with rational arithmetic, multipleOf consistency with AJV, contradiction detection, and precise snapping algorithms. Include comprehensive testing for floating-point edge cases and boundary conditions."
       },
       {
-        "id": 13,
+        "id": "13",
         "title": "Optional local SMT (QF_LIA) stub with timeout",
         "description": "Feature-flagged local solver to assist arrays/numbers; strict timeout with SOLVER_TIMEOUT fallback.",
         "status": "pending",
         "dependencies": [
-          11,
-          12
+          "11",
+          "12"
         ],
         "priority": "low",
         "details": "- File: transform/smt/solver.ts (WASM-capable interface).\n- Flag: enableLocalSMT + solverTimeoutMs.\n- On timeout/unknown: emit SOLVER_TIMEOUT and fall back to rules.",
@@ -3065,7 +3149,8 @@
             "dependencies": [],
             "details": "Implement the base SMT solver interface with methods for QF_LIA query solving, WASM module loading capabilities, and proper TypeScript interfaces. Include solver state management, query encoding/decoding, and result handling. Design should be extensible for future solver backends while maintaining type safety.",
             "status": "pending",
-            "testStrategy": "Unit tests with mock WASM module and interface validation"
+            "testStrategy": "Unit tests with mock WASM module and interface validation",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -3076,7 +3161,8 @@
             ],
             "details": "Implement timeout wrapper around SMT solver calls using Promise.race or AbortController. On timeout or solver failure, emit SOLVER_TIMEOUT diagnostic and fall back to existing rule-based generation. Ensure clean resource cleanup and proper error propagation. Handle both synchronous timeouts and asynchronous solver failures.",
             "status": "pending",
-            "testStrategy": "Unit tests with artificial timeout injection and fallback verification"
+            "testStrategy": "Unit tests with artificial timeout injection and fallback verification",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -3088,19 +3174,23 @@
             ],
             "details": "Integrate the SMT solver into the composition engine with enableLocalSMT feature flag control. Add solverTimeoutMs to PlanOptions configuration. Wire solver calls into array and number constraint checking during composition phase. Ensure solver is only invoked when flag is enabled and gracefully degrades when disabled or unavailable.",
             "status": "pending",
-            "testStrategy": "Integration tests with flag enabled/disabled scenarios and mock solver implementations"
+            "testStrategy": "Integration tests with flag enabled/disabled scenarios and mock solver implementations",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 5,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Design SMT solver interface with WASM compatibility, timeout handling with graceful fallback, feature flag integration, and solver-timeout diagnostic emission. Include mock implementations for testing and integration patterns."
       },
       {
-        "id": 14,
+        "id": "14",
         "title": "Generator integration with CoverageIndex",
         "description": "Use CoverageIndex to pick names; minimal value witnesses; arrays satisfy contains then uniqueItems.",
         "status": "pending",
         "dependencies": [
-          8,
-          11,
-          12
+          "8",
+          "11",
+          "12"
         ],
         "priority": "high",
         "details": "- Touch: packages/core/src/generator/foundry-generator.ts.\n- Deterministic ordering; if-aware-lite preserved.\n- Respect enum/const precedence vs broad type.",
@@ -3113,7 +3203,8 @@
             "dependencies": [],
             "details": "Update the object property generation logic in foundry-generator.ts to call coverageIndex.has(name) and enumerate() methods from the composition engine. Ensure the generator respects the deterministic ordering from CoverageIndex and preserves if-aware-lite conditional handling. Replace any existing name selection logic with CoverageIndex-driven approach.",
             "status": "pending",
-            "testStrategy": "Unit tests for deterministic name selection with fixed seeds; verify same names generated across runs"
+            "testStrategy": "Unit tests for deterministic name selection with fixed seeds; verify same names generated across runs",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -3124,7 +3215,8 @@
             ],
             "details": "Implement witness generation that produces minimal valid values for schema validation. Ensure enum and const values take precedence over broader type constraints. The witness generation should work with the CoverageIndex integration and maintain deterministic output with seeded randomness.",
             "status": "pending",
-            "testStrategy": "Unit tests for minimal witness generation; verify enum/const precedence over type constraints"
+            "testStrategy": "Unit tests for minimal witness generation; verify enum/const precedence over type constraints",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -3135,7 +3227,8 @@
             ],
             "details": "Integrate with the bagged contains logic from contains-bag.ts to generate arrays that satisfy contains requirements first, then apply uniqueItems deduplication. Ensure the generation respects maxItems limits and handles UNSAT conditions when Σ(min_i) > maxItems. Maintain deterministic ordering when uniqueItems is true.",
             "status": "pending",
-            "testStrategy": "Integration tests with contains-bag.ts; verify contains satisfaction before uniqueItems application"
+            "testStrategy": "Integration tests with contains-bag.ts; verify contains satisfaction before uniqueItems application",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -3146,17 +3239,21 @@
             ],
             "details": "Implement pipeline tests that validate the complete generator integration with CoverageIndex. Tests should verify deterministic outputs with fixed seeds, proper name selection through CoverageIndex, minimal witness generation, and array constraint satisfaction. Include tests for enum/const precedence and if-aware-lite preservation.",
             "status": "pending",
-            "testStrategy": "Pipeline integration tests; snapshot testing for deterministic output verification; cross-run stability tests"
+            "testStrategy": "Pipeline integration tests; snapshot testing for deterministic output verification; cross-run stability tests",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Integrate CoverageIndex into generator for deterministic name selection, minimal witness generation, array constraint satisfaction, and enum/const precedence handling. Include if-aware-lite preservation and comprehensive pipeline testing."
       },
       {
-        "id": 15,
+        "id": "15",
         "title": "Repair engine consistency & stagnation guard",
         "description": "Ensure AJV-driven repairs remain idempotent and bounded; keep stagnation guard behavior.",
         "status": "pending",
         "dependencies": [
-          14
+          "14"
         ],
         "priority": "medium",
         "details": "- Touch: packages/core/src/repair/repair-engine.ts.\n- Typical fixes: bounds clamp, add required, rational snap, uniqueItems dedupe.\n- Stop when errors no longer reduce (bailOnUnsatAfter).",
@@ -3169,7 +3266,8 @@
             "dependencies": [],
             "details": "Implement RepairEngine class in packages/core/src/repair/repair-engine.ts with idempotent repair operations. Track applied repairs to prevent duplicate applications. Include convergence detection by monitoring error reduction between iterations. Implement bailOnUnsatAfter logic to prevent infinite loops when repairs fail to reduce errors.",
             "status": "pending",
-            "testStrategy": "Unit tests for idempotency - verify same repair applied twice produces identical results. Test convergence detection with mock AJV errors that stabilize after N iterations."
+            "testStrategy": "Unit tests for idempotency - verify same repair applied twice produces identical results. Test convergence detection with mock AJV errors that stabilize after N iterations.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -3180,7 +3278,8 @@
             ],
             "details": "Implement repair actions in repair-engine.ts: bounds clamp for numbers exceeding min/max, add missing required properties with appropriate defaults, rational multipleOf snapping for precise alignment, and uniqueItems array deduplication. Each action should be AJV-driven based on validation error keywords and maintain idempotency.",
             "status": "pending",
-            "testStrategy": "Integration tests with real AJV validation errors. Verify each repair action resolves its target error type. Test that repairs don't introduce new violations or break existing valid properties."
+            "testStrategy": "Integration tests with real AJV validation errors. Verify each repair action resolves its target error type. Test that repairs don't introduce new violations or break existing valid properties.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -3192,19 +3291,23 @@
             ],
             "details": "Add stagnation guard that monitors error count reduction across repair iterations. Stop repairs when errors no longer decrease for configurable attempts (bailOnUnsatAfter). Implement bounded iteration with maximum repair passes. Emit diagnostics when stagnation is detected or iteration limits are reached. Ensure graceful degradation when repairs cannot converge.",
             "status": "pending",
-            "testStrategy": "Integration tests for stagnation scenarios - schemas where repairs cannot reduce all errors. Verify proper stopping behavior and diagnostic emission. Test edge cases where repair actions conflict or create cycles."
+            "testStrategy": "Integration tests for stagnation scenarios - schemas where repairs cannot reduce all errors. Verify proper stopping behavior and diagnostic emission. Test edge cases where repair actions conflict or create cycles.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 6,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Enhance repair engine with idempotency guarantees, stagnation detection and prevention, AJV-driven repair consistency, and bounded iteration logic. Include comprehensive testing for repair convergence and edge cases."
       },
       {
-        "id": 16,
+        "id": "16",
         "title": "Validate stage: enforce AJV parity & metrics",
         "description": "Final validation on original schema; enforce AJV parity; collect per-phase metrics.",
         "status": "pending",
         "dependencies": [
-          1,
-          14,
-          15
+          "1",
+          "14",
+          "15"
         ],
         "priority": "high",
         "details": "- Orchestrator validates only against the original schema.\n- Record normalizeMs/composeMs/generateMs/repairMs/validateMs, validationsPerRow, repairPassesPerRow, cap hits.",
@@ -3217,7 +3320,8 @@
             "dependencies": [],
             "details": "Create validate.ts module with AJV orchestration that validates against original schema. Implement parity enforcement between planning and original AJV instances. Ensure validation uses original schema not transformed/normalized version. Handle validation errors and provide detailed error reporting with canonical paths.",
             "status": "pending",
-            "testStrategy": "Unit tests for validation success/failure cases, parity enforcement triggers AJV_OPTIONS_MISMATCH error"
+            "testStrategy": "Unit tests for validation success/failure cases, parity enforcement triggers AJV_OPTIONS_MISMATCH error",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -3228,7 +3332,8 @@
             ],
             "details": "Implement metrics collection for normalizeMs, composeMs, generateMs, repairMs, validateMs timing. Track validationsPerRow and repairPassesPerRow counters. Record complexity cap hits and performance bottlenecks. Create metrics aggregation and reporting utilities with structured output format.",
             "status": "pending",
-            "testStrategy": "Verify all metrics are captured correctly, performance tracking accuracy, metrics presence validation"
+            "testStrategy": "Verify all metrics are captured correctly, performance tracking accuracy, metrics presence validation",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -3240,18 +3345,22 @@
             ],
             "details": "Integrate validate stage into orchestrator.ts pipeline flow. Implement error handling for validation failures with detailed diagnostics. Connect metrics collection to orchestrator execution. Ensure proper cleanup and resource management. Add validation stage configuration options and failure mode handling.",
             "status": "pending",
-            "testStrategy": "E2E tests ensuring validation stage integration, error propagation, metrics collection in full pipeline execution"
+            "testStrategy": "E2E tests ensuring validation stage integration, error propagation, metrics collection in full pipeline execution",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 5,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Implement final validation stage with AJV parity enforcement, comprehensive metrics collection across all pipeline phases, validation against original schema, and performance tracking. Include detailed error reporting and metrics visualization."
       },
       {
-        "id": 17,
+        "id": "17",
         "title": "CLI flags & OpenAPI driver (prefer-examples, NDJSON)",
         "description": "Expose CLI flags and minimal OpenAPI driver hooks for mocks/tests.",
         "status": "pending",
         "dependencies": [
-          14,
-          16
+          "14",
+          "16"
         ],
         "priority": "medium",
         "details": "- CLI: json-gen schema.json --mode strict --seed 123 --prefer-examples --n 10 --out ndjson.\n- Driver: select content/schema; prefer example/examples.default; export NDJSON; no network I/O in core.\n- Thin adapters MSW/Prism out of core.",
@@ -3264,7 +3373,8 @@
             "dependencies": [],
             "details": "Extend packages/cli/ to parse flags: --mode strict, --seed 123, --prefer-examples, --n 10, --out ndjson. Use Commander.js for consistent CLI interface. Validate flag combinations and provide helpful error messages. Integrate with existing CLI structure from tasks 14 and 16.",
             "status": "pending",
-            "testStrategy": "Unit tests for flag parsing validation and error handling. Manual smoke tests for CLI usability."
+            "testStrategy": "Unit tests for flag parsing validation and error handling. Manual smoke tests for CLI usability.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -3275,7 +3385,8 @@
             ],
             "details": "Build driver in packages/core/src/ that parses OpenAPI specs, extracts schemas from content types, and prioritizes example/examples.default over generated data. No network I/O in core - handle local spec files only. Export clean API for schema selection and example extraction.",
             "status": "pending",
-            "testStrategy": "Fixture-based tests with sample OpenAPI specs. Verify schema extraction and example preference logic."
+            "testStrategy": "Fixture-based tests with sample OpenAPI specs. Verify schema extraction and example preference logic.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -3287,19 +3398,23 @@
             ],
             "details": "Implement NDJSON formatter that outputs one JSON object per line. Integrate CLI flags, OpenAPI driver, and output formatting into cohesive command: json-gen schema.json --mode strict --seed 123 --prefer-examples --n 10 --out ndjson. Ensure proper error handling and validation throughout the pipeline.",
             "status": "pending",
-            "testStrategy": "End-to-end integration tests with real OpenAPI specs. Snapshot tests for NDJSON output format consistency."
+            "testStrategy": "End-to-end integration tests with real OpenAPI specs. Snapshot tests for NDJSON output format consistency.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 4,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Implement CLI flag parsing with comprehensive options, OpenAPI driver integration for schema selection, NDJSON output formatting, and example preference handling. Include command-line interface testing and integration with existing CLI structure."
       },
       {
-        "id": 18,
+        "id": "18",
         "title": "Acceptance tests: objects automata",
         "description": "DFA emptiness; BFS witnesses; strict unsafe pattern; required vs propertyNames; minProperties vs coverage.",
         "status": "pending",
         "dependencies": [
-          8,
-          9,
-          10
+          "8",
+          "9",
+          "10"
         ],
         "priority": "high",
         "details": "- Files under: packages/core/src/transform/__tests__/name-automata and tests/acceptance.\n- Recreate scenarios from the spec.",
@@ -3312,7 +3427,8 @@
             "dependencies": [],
             "details": "Create comprehensive test fixtures under packages/core/src/transform/__tests__/name-automata/ that cover DFA emptiness detection, BFS witness generation, and validation scenarios. Include schemas with empty languages, finite languages, and infinite languages. Fixtures should test reachability to accepting states and proper witness ordering.",
             "status": "pending",
-            "testStrategy": "Unit tests for each fixture with expected emptiness results and witness validation"
+            "testStrategy": "Unit tests for each fixture with expected emptiness results and witness validation",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -3323,7 +3439,8 @@
             ],
             "details": "Develop test suite covering strict unsafe pattern detection and enforcement. Include scenarios with additionalProperties:false under presence pressure, testing both strict fail-fast behavior and lax warning modes. Verify proper diagnostic code emission (AP_FALSE_UNSAFE_PATTERN) and conservative exclusion behavior.",
             "status": "pending",
-            "testStrategy": "Acceptance tests comparing strict vs lax behavior with diagnostic code assertions"
+            "testStrategy": "Acceptance tests comparing strict vs lax behavior with diagnostic code assertions",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -3334,7 +3451,8 @@
             ],
             "details": "Create test scenarios covering conflicts between required properties and propertyNames constraints. Include edge cases where required properties cannot satisfy propertyNames patterns, testing UNSAT_REQUIRED_VS_PROPERTYNAMES diagnostic emission. Verify proper conflict detection and resolution in both strict and lax modes.",
             "status": "pending",
-            "testStrategy": "Acceptance tests with proof summary validation and diagnostic code verification"
+            "testStrategy": "Acceptance tests with proof summary validation and diagnostic code verification",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -3347,19 +3465,23 @@
             ],
             "details": "Develop comprehensive test suite for minProperties validation against finite property coverage. Include scenarios where minProperties cannot be satisfied due to limited property coverage, testing UNSAT_MINPROPERTIES_VS_COVERAGE diagnostic emission. Verify proper handling of edge cases and boundary conditions in coverage calculation.",
             "status": "pending",
-            "testStrategy": "Run full acceptance suite with assertions on diagnostic codes and witness order validation"
+            "testStrategy": "Run full acceptance suite with assertions on diagnostic codes and witness order validation",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 5,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Create comprehensive acceptance test suite for DFA emptiness scenarios, BFS witness validation, strict pattern enforcement testing, and property conflict detection. Include test fixtures for complex schema scenarios and automated verification of diagnostic codes."
       },
       {
-        "id": 19,
+        "id": "19",
         "title": "Acceptance tests: arrays, refs, determinism",
         "description": "Contains vs maxItems; external $ref strict/lax; determinism with fixed seed.",
         "status": "pending",
         "dependencies": [
-          11,
-          10,
-          16
+          "11",
+          "10",
+          "16"
         ],
         "priority": "high",
         "details": "- Arrays impossible contains; unresolved refs behavior; stable outputs same seed.",
@@ -3374,7 +3496,8 @@
             ],
             "details": "Implement tests in tests/acceptance/arrays/ covering: impossible contains vs maxItems scenarios, bag semantics validation, UNSAT_CONTAINS_VS_MAXITEMS diagnostic emission, uniqueItems ordering stability, and edge cases with multiple contains constraints against array size limits.",
             "status": "pending",
-            "testStrategy": "Snapshot testing for diagnostic codes and error messages; verify UNSAT detection accuracy"
+            "testStrategy": "Snapshot testing for diagnostic codes and error messages; verify UNSAT detection accuracy",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -3386,7 +3509,8 @@
             ],
             "details": "Create test suite in tests/acceptance/refs/ covering: strict mode external $ref errors, lax mode fallback behavior, diagnostic emission for unresolved references, $dynamicRef preservation, and edge cases with nested external references across different policy configurations.",
             "status": "pending",
-            "testStrategy": "Policy configuration matrix testing; error code validation and fallback behavior verification"
+            "testStrategy": "Policy configuration matrix testing; error code validation and fallback behavior verification",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -3395,22 +3519,26 @@
             "dependencies": [],
             "details": "Build determinism test suite in tests/acceptance/determinism/ covering: fixed seed reproducibility across runs, snapshot testing for output stability, branch selection consistency, RNG state validation, and cross-platform determinism verification with comprehensive edge case coverage.",
             "status": "pending",
-            "testStrategy": "Snapshot testing with fixed seeds; multi-run output comparison; cross-platform validation"
+            "testStrategy": "Snapshot testing with fixed seeds; multi-run output comparison; cross-platform validation",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 5,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Develop acceptance tests for array constraint violations, external reference policy behavior, and deterministic output validation. Include snapshot testing for output stability and comprehensive coverage of edge cases."
       },
       {
-        "id": 20,
+        "id": "20",
         "title": "Unit tests: regex/NFA/DFA/product/coverage-index/numbers",
         "description": "Granular unit tests for policy and automata plumbing, and multipleOf behavior.",
         "status": "pending",
         "dependencies": [
-          2,
-          3,
-          4,
-          5,
-          7,
-          12
+          "2",
+          "3",
+          "4",
+          "5",
+          "7",
+          "12"
         ],
         "priority": "medium",
         "details": "- regex-policy.spec.ts, nfa-dfa-basic.spec.ts, product-finiteness.spec.ts, coverage-index.enumerate-guard.spec.ts, numbers.multiple-of.spec.ts.",
@@ -3425,7 +3553,8 @@
             ],
             "details": "Implement test suite covering regex pattern validation, policy enforcement, edge cases with special characters, Unicode handling, and performance benchmarks for pattern matching. Test both valid and invalid regex patterns, boundary conditions, and integration with JSON Schema regex requirements.",
             "status": "pending",
-            "testStrategy": "Unit tests with edge case coverage, performance benchmarks, and regex pattern validation"
+            "testStrategy": "Unit tests with edge case coverage, performance benchmarks, and regex pattern validation",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -3436,7 +3565,8 @@
             ],
             "details": "Test NFA construction from regex patterns, DFA conversion algorithms, state minimization, epsilon transitions, acceptance states, and deterministic behavior. Include tests for automaton equivalence, reachability analysis, and state space optimization.",
             "status": "pending",
-            "testStrategy": "Algorithmic correctness verification with state machine testing and automaton theory validation"
+            "testStrategy": "Algorithmic correctness verification with state machine testing and automaton theory validation",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -3447,7 +3577,8 @@
             ],
             "details": "Test product automaton construction from multiple DFAs, intersection semantics, state explosion handling, reachability trimming, and maxProductStates cap enforcement. Verify NAME_AUTOMATON_COMPLEXITY_CAPPED diagnostic emission and product correctness.",
             "status": "pending",
-            "testStrategy": "Product automaton correctness with intersection testing and complexity cap validation"
+            "testStrategy": "Product automaton correctness with intersection testing and complexity cap validation",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -3459,7 +3590,8 @@
             ],
             "details": "Test CoverageIndex enumeration logic, guard condition evaluation, deterministic ordering, name selection algorithms, and integration with generator. Verify stable outputs, coverage completeness, and proper guard enforcement for property name generation.",
             "status": "pending",
-            "testStrategy": "Coverage index functionality with deterministic testing and enumeration validation"
+            "testStrategy": "Coverage index functionality with deterministic testing and enumeration validation",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -3470,7 +3602,8 @@
             ],
             "details": "Test exact rational snapping, multipleOf arithmetic consistency with AJV, bound contradiction detection, mixed inclusive/exclusive bounds, decimal precision handling, and diagnostic emission for contradictory constraints. Verify numerical stability and edge cases.",
             "status": "pending",
-            "testStrategy": "Rational arithmetic testing with AJV consistency verification and numerical precision validation"
+            "testStrategy": "Rational arithmetic testing with AJV consistency verification and numerical precision validation",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -3485,26 +3618,35 @@
             ],
             "details": "Configure CI pipeline integration for all test suites, establish test coverage thresholds, performance benchmarks, and ensure all tests pass consistently. Set up proper test reporting, failure diagnostics, and maintain CI green status as required by test strategy.",
             "status": "pending",
-            "testStrategy": "CI integration with coverage thresholds and performance benchmarks to ensure all unit suites pass"
+            "testStrategy": "CI integration with coverage thresholds and performance benchmarks to ensure all unit suites pass",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 6,
+        "recommendedSubtasks": 6,
+        "expansionPrompt": "Create granular unit test suites for regex policy validation, NFA/DFA construction algorithms, product automaton correctness, coverage index functionality, and numerical operations. Include edge case testing, performance benchmarks, and algorithmic correctness verification."
       },
       {
-        "id": 21,
+        "id": "21",
         "title": "JSG-P1 Preparation: Requirements Analysis and Structured TODO",
         "description": "Comprehensive analysis of jsg-p1-automata-smt.md document to extract normative requirements and create structured implementation roadmap by pipeline phases.",
         "details": "[Context]\n\n**Must read**: docs/jsg-p1-automata-smt.md — Complete document analysis (324 lines)\n\n**Objective**: Extract all normative requirements (MUST, MUST NOT, SHALL, MAY) from the JSG-P1 specification and structure them by the 5-stage pipeline: Normalize → Compose → Generate → Repair → Validate.\n\n[Implementation Steps]\n\n1. **Full Document Analysis** (0-324 lines)\n   - Identify all normative language (MUST, MUST NOT, SHALL, MAY per RFC-2119)\n   - Extract technical requirements for each system component\n   - Map requirements to pipeline stages and cross-cutting concerns\n\n2. **Name Automata Requirements** (§4.3)\n   - DFA construction rules for `additionalProperties:false`\n   - Product automaton intersection logic\n   - Finiteness detection and BFS enumeration\n   - Early-UNSAT proof conditions\n   - Complexity caps and fallback behaviors\n\n3. **Arrays/Numbers Requirements** (§4.5)\n   - Contains bag semantics and UNSAT rules\n   - Rational multipleOf handling\n   - Optional local SMT solver integration\n   - Timeout and fallback strategies\n\n4. **AJV Oracle Requirements** (§0, §4.7)\n   - Original schema validation invariants\n   - AJV options parity enforcement\n   - Error handling for validation mismatches\n\n5. **Diagnostics Requirements** (§5)\n   - Error envelope format: {code, canonPath, details}\n   - Specific error codes and their conditions\n   - CoverageIndex API specifications\n   - Metrics collection requirements\n\n6. **CLI/OpenAPI Interface Requirements** (§7)\n   - Command-line flag specifications\n   - NDJSON output format\n   - Example preference handling\n   - Driver adapter requirements\n\n[Deliverable Structure]\n\n```\n.taskmaster/docs/jsg-p1-requirements-analysis.md\n├── Executive Summary\n├── Pipeline Phase Requirements\n│   ├── Stage 1: Normalize\n│   ├── Stage 2: Compose  \n│   ├── Stage 3: Generate\n│   ├── Stage 4: Repair\n│   └── Stage 5: Validate\n├── Cross-Cutting Requirements\n│   ├── Determinism\n│   ├── Performance SLOs\n│   ├── Error Handling\n│   └── Observability\n├── Implementation Priority Matrix\n└── Task Dependencies Analysis\n```\n\nThis analysis will serve as the foundational document for implementing tasks 1-20, ensuring comprehensive coverage of all JSG-P1 requirements with proper sequencing and dependency management.",
         "testStrategy": "1. **Completeness Verification**: Cross-reference extracted requirements against original document to ensure 100% normative language coverage. 2. **Pipeline Mapping**: Verify all requirements are properly categorized by pipeline stage with clear implementation guidance. 3. **Dependency Analysis**: Confirm task sequence 1-20 aligns with requirement dependencies identified in analysis. 4. **Requirements Traceability**: Each requirement must map to specific implementation tasks with acceptance criteria. 5. **Stakeholder Review**: Requirements document should enable clear task scoping and implementation planning for subsequent JSG-P1 tasks.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2025-11-15T18:59:42.074Z"
       }
     ],
     "metadata": {
-      "created": "2025-11-15T18:28:57.199Z",
-      "updated": "2025-11-15T18:47:26.851Z",
-      "description": "Tasks for jsg-p1-automata-smt context"
+      "version": "1.0.0",
+      "lastModified": "2025-11-15T18:59:42.075Z",
+      "taskCount": 21,
+      "completedCount": 1,
+      "tags": [
+        "jsg-p1-automata-smt"
+      ]
     }
   }
 }
