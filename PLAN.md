@@ -19,6 +19,28 @@ Checks:
 - bench: npm run bench
 - diag-schema: true
 
+Task: 15   Title: Repair engine consistency & stagnation guard
+Anchors: [spec://§4#pipeline, spec://§8-composition-engine, spec://§9#generator, spec://§10-repair-engine, spec://§21-risks]
+
+Touched files:
+- PLAN.md
+- packages/core/src/repair/repair-engine.ts
+- packages/core/src/repair/__tests__/stagnation-guard.test.ts
+- packages/core/test/e2e/pipeline.integration.spec.ts
+
+Approach:
+This task tightens the AJV-driven repair engine so that repairs are both idempotent and explicitly budgeted, and so that a stagnation guard signals when repeated gen→repair→validate cycles cannot make progress. At the engine level, I will keep the existing per-item inner loop but track the error count before each repair pass; iterations will stop early when a pass makes no changes or when the AJV error count fails to decrease. I will wire the loop’s attempt bound to repair options while leaving the long-horizon `complexity.bailOnUnsatAfter` as the outer pipeline budget, so that createDefaultRepair can remain a thin wrapper over repairItemsAjvDriven without embedding cross-stage policy. When the engine exhausts its attempt budget for an item while errors remain, it will surface this as a repair-stage diagnostic using UNSAT_BUDGET_EXHAUSTED, recording how many passes were attempted and the last observed AJV error count, while still returning the best-effort repaired instance for Validate to see. I will add unit tests that construct schemas which deliberately fail to converge under the current actions (e.g., oscillating pattern/length or conflicting constraints) to assert that repeated calls are idempotent, that error counts are monotone non-increasing across iterations, and that UNSAT_BUDGET_EXHAUSTED is emitted with a valid envelope when the guard trips. Finally, I will extend the pipeline integration tests to exercise a repair-heavy schema, checking that repair diagnostics are attached to the repair stage only and that validate still enforces the final AJV result, so the stagnation guard behaves as a cross-stage budget without changing correctness.
+
+Risks/Unknowns:
+- Error-count based stagnation checks must not misfire on schemas where AJV rewrites or reorders errors between passes; tests need to focus on stable patterns where counts reflect real progress.
+- Introducing UNSAT_BUDGET_EXHAUSTED at the repair stage must be coordinated with later tasks that may add cross-stage loops, so I will keep the diagnostic payload minimal and compatible with the existing diag schemas.
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
+
 Task: 14   Title: Generator integration with CoverageIndex
 Anchors: [spec://§1#goal, spec://§4#pipeline, spec://§8#coverage-index-enumerate, spec://§9#generator, spec://§9#objects-minimal-width]
 
