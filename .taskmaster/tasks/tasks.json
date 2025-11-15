@@ -3244,7 +3244,7 @@
         "id": "14",
         "title": "Generator integration with CoverageIndex",
         "description": "Use CoverageIndex to pick names; minimal value witnesses; arrays satisfy contains then uniqueItems.",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           "8",
           "11",
@@ -3304,7 +3304,7 @@
         "complexity": 7,
         "recommendedSubtasks": 4,
         "expansionPrompt": "Integrate CoverageIndex into generator for deterministic name selection, minimal witness generation, array constraint satisfaction, and enum/const precedence handling. Include if-aware-lite preservation and comprehensive pipeline testing.",
-        "updatedAt": "2025-11-15T22:31:52.545Z"
+        "updatedAt": "2025-11-15T22:41:32.120Z"
       },
       {
         "id": "15",
@@ -3715,9 +3715,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-15T22:31:52.546Z",
+      "lastModified": "2025-11-15T22:41:32.121Z",
       "taskCount": 22,
-      "completedCount": 13,
+      "completedCount": 14,
       "tags": [
         "jsg-p1-automata-smt"
       ]
