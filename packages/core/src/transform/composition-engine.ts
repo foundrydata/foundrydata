@@ -1167,10 +1167,10 @@ class CompositionEngine {
     const components: Dfa[] = [];
     let coverageComponentCount = 0;
 
-    // Restrict to the simple and common shapes where automata are most
-    // effective and semantics are straightforward: each coverage-bearing
-    // conjunct must be driven purely by anchored-safe patternProperties
-    // (no named properties or synthetic patterns).
+    // Restrict to shapes where automata are most effective and semantics are
+    // straightforward: each coverage-bearing conjunct must be driven by
+    // anchored-safe patternProperties / synthetic patterns, without named
+    // properties. Named properties are handled via finite enumeration logic.
     for (const conj of conjuncts) {
       const hasCoverageSource =
         conj.hasProperties ||
@@ -1179,16 +1179,18 @@ class CompositionEngine {
       if (!hasCoverageSource) {
         continue;
       }
-      if (conj.named.size > 0 || conj.hasSyntheticPatterns) {
+      if (conj.named.size > 0) {
         return undefined;
       }
-      if (conj.patterns.length !== 1) {
-        return undefined;
+      if (conj.patterns.length === 0) {
+        continue;
       }
 
-      const pattern = conj.patterns[0]!;
+      const patternSource = CompositionEngine.buildCombinedAnchoredPattern(
+        conj.patterns
+      );
       try {
-        const nfaResult = buildThompsonNfa(pattern.source, {
+        const nfaResult = buildThompsonNfa(patternSource, {
           maxStates: NAME_AUTOMATON_MAX_STATES,
         });
         if (nfaResult.capped) {
@@ -1316,6 +1318,38 @@ class CompositionEngine {
       ...(summary.capsHit ? { capsHit: summary.capsHit } : {}),
     };
     this.nameDfaSummary = snapshot;
+  }
+
+  /**
+   * Combine multiple anchored-safe pattern sources into a single anchored-safe
+   * pattern by stripping top-level ^...$ anchors and joining bodies with a
+   * non-capturing alternation. This preserves the anchored-safe guarantees
+   * established during regex analysis.
+   */
+
+  private static stripAnchors(patternSource: string): string {
+    let start = 0;
+    let end = patternSource.length;
+    if (end > 0 && patternSource[0] === '^') {
+      start = 1;
+    }
+    if (end - start > 0 && patternSource[end - 1] === '$') {
+      end -= 1;
+    }
+    return patternSource.slice(start, end);
+  }
+
+  private static buildCombinedAnchoredPattern(
+    patterns: CoveragePatternInfo[]
+  ): string {
+    if (patterns.length === 1) {
+      return patterns[0]!.source;
+    }
+    const bodies = patterns.map((p) =>
+      CompositionEngine.stripAnchors(p.source)
+    );
+    const inner = bodies.join('|');
+    return `^(?:${inner})$`;
   }
 
   private enumerateViaNameAutomata(
