@@ -72,6 +72,15 @@ export default tseslint.config(
     },
   },
 
+  // Browser-oriented React files - rely on TypeScript for globals
+  {
+    name: 'workbench-browser-files',
+    files: ['apps/workbench/src/**/*.{ts,tsx}'],
+    rules: {
+      'no-undef': 'off',
+    },
+  },
+
   // Schema types - allow unknown for JSON Schema compliance
   {
     name: 'schema-types',

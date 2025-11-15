@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "types": ["vite/client"],
+    "paths": {
+      "json-schema-reporter": ["../../packages/reporter/src/model/report.ts"],
+      "json-schema-reporter/*": ["../../packages/reporter/src/*"]
+    }
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "./tsconfig.node.json" }
+  ]
+}
