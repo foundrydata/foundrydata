@@ -572,6 +572,41 @@ describe('Foundry pipeline integration scenarios', () => {
         }
       }
     });
+
+    it('produces stable items for AP:false objects with finite coverage and a fixed seed', async () => {
+      const options = {
+        mode: 'strict' as const,
+        generate: { count: 3, seed: 101 },
+        validate: { validateFormats: false },
+      };
+
+      const first = await executePipeline(
+        dependentAllOfCoverageSchema,
+        options
+      );
+      const second = await executePipeline(
+        dependentAllOfCoverageSchema,
+        options
+      );
+
+      expect(first.artifacts.generated?.items).toEqual(
+        second.artifacts.generated?.items
+      );
+
+      const coverage = first.stages.compose.output?.coverageIndex.get('');
+      expect(coverage).toBeDefined();
+
+      const allowedKeys = new Set(['anchor', 'fallback', 'aux_0', 'aux_1']);
+      const items =
+        (first.artifacts.generated?.items as Record<string, unknown>[]) ?? [];
+      for (const item of items) {
+        const keys = Object.keys(item);
+        for (const key of keys) {
+          expect(coverage?.has(key)).toBe(true);
+          expect(allowedKeys.has(key)).toBe(true);
+        }
+      }
+    });
   });
 
   it('separates coverage regex caps from generator pattern caps', async () => {

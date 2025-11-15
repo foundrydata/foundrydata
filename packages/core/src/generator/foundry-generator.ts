@@ -1329,7 +1329,7 @@ class GeneratorEngine {
       containsContributions
     );
 
-    if (hardCap === undefined) {
+    if (hardCap === undefined && schema.uniqueItems !== true) {
       while (result.length < baseline) {
         const childCanon = appendPointer(canonPath, 'items');
         const value = this.generateValue(itemsSchema, childCanon, itemIndex);

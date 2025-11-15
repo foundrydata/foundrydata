@@ -109,6 +109,27 @@ describe('Foundry generator compliance', () => {
     expect(arr).toEqual(['a', 'b']);
   });
 
+  it('satisfies contains needs for uniqueItems arrays before adding fillers and keeps minimal length', () => {
+    const schema = {
+      type: 'array',
+      contains: { const: 'A' },
+      allOf: [
+        {
+          contains: { const: 'B' },
+          minContains: 1,
+        },
+      ],
+      uniqueItems: true,
+    };
+
+    const { generate } = runPipelineStages(schema);
+    const arr = generate.items[0] as unknown[];
+    expect(arr.length).toBe(2);
+    const values = new Set(arr as string[]);
+    expect(values.has('A')).toBe(true);
+    expect(values.has('B')).toBe(true);
+  });
+
   it('produces deterministic unique fillers without sentinels', () => {
     const schema = {
       type: 'array',

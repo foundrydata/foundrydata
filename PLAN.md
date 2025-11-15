@@ -19,6 +19,28 @@ Checks:
 - bench: npm run bench
 - diag-schema: true
 
+Task: 14   Title: Generator integration with CoverageIndex
+Anchors: [spec://§1#goal, spec://§4#pipeline, spec://§8#coverage-index-enumerate, spec://§9#generator, spec://§9#objects-minimal-width]
+
+Touched files:
+- PLAN.md
+- packages/core/src/generator/foundry-generator.ts
+- packages/core/test/unit/generator.spec.ts
+- packages/core/test/e2e/pipeline.integration.spec.ts
+
+Approach:
+Building on the existing must-cover automata and CoverageIndex from Compose, this task focuses on making the generator’s key selection and value witnesses align tightly with the coverage API while preserving determinism. For object generation, I will treat CoverageIndex.has as the single source of truth for which names are eligible, ensuring that all paths that introduce keys (including required, dependentRequired, conditional hints, and minProperties fillers) consistently gate through the same predicate and respect the minimal-width policy that prefers required keys and only adds optional ones when strictly necessary. Where a finite coverage enumeration is available for an object, generator logic will rely on lexicographically ordered candidate names from properties and anchored-safe pattern witnesses, filtered by CoverageIndex, so that optional keys used to satisfy minProperties are stable and never expand beyond the must-cover intersection or unsafe propertyNames-only domains. For primitive witnesses, I will keep const/enum precedence over type while tightening the numeric and string generators to emit the smallest admissible values compatible with the compose-stage bounds and rational multipleOf rules, so that fillers for arrays and objects use the same earliest-stable generator ordering across runs and seeds. Array generation will continue to satisfy contains needs via the bag extracted in Compose, but I will verify and, if needed, refine the flow so that under uniqueItems the algorithm de-duplicates first, then deterministically re-satisfies all remaining contains needs before filling any extra slots with minimal-stable witnesses, without reordering targeted items. I will add focused tests at the unit and pipeline levels that assert stable outputs for fixed seeds, correct interaction with CoverageIndex for AP:false objects, and the expected interplay between contains, uniqueItems, and minimal fillers.
+
+Risks/Unknowns:
+- The generator already has partial integrations for CoverageIndex and contains bags; tightening behavior must avoid regressions in existing tests while still honoring stricter minimal-width and witness requirements.
+- Numeric witness behavior must remain consistent with Ajv’s multipleOf and bounds semantics even as we bias toward minimal values, so adjustments need to be validated carefully against edge cases.
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
+
 Task: 12   Title: Numbers: bounds & rational multipleOf
 Anchors: [spec://§1#goal, spec://§4#pipeline, spec://§8#numbers-multipleof, spec://§23#plan-options, spec://§8#early-unsat-checks]
 
