@@ -2792,7 +2792,7 @@
         "id": "7",
         "title": "BFS witnesses (shortest then UTF‑16)",
         "description": "Enumerate minimal witness names using BFS with stable symbol order.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "6"
         ],
@@ -2838,7 +2838,8 @@
         ],
         "complexity": 5,
         "recommendedSubtasks": 3,
-        "expansionPrompt": "Implement breadth-first enumeration algorithm with stable UTF-16 lexicographic ordering, shortest path finding for minimal witnesses, and guard logic for finiteness requirements. Include proper handling of edge cases and length constraints."
+        "expansionPrompt": "Implement breadth-first enumeration algorithm with stable UTF-16 lexicographic ordering, shortest path finding for minimal witnesses, and guard logic for finiteness requirements. Include proper handling of edge cases and length constraints.",
+        "updatedAt": "2025-11-15T20:19:36.008Z"
       },
       {
         "id": "8",
@@ -3647,9 +3648,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-15T19:58:11.498Z",
+      "lastModified": "2025-11-15T20:19:36.009Z",
       "taskCount": 21,
-      "completedCount": 7,
+      "completedCount": 8,
       "tags": [
         "jsg-p1-automata-smt"
       ]
