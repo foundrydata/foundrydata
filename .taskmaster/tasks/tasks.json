@@ -2592,7 +2592,7 @@
         "id": "4",
         "title": "DFA subset construction + caps",
         "description": "Determinize NFA under caps; expose reachability and accepting states.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "3"
         ],
@@ -2665,7 +2665,8 @@
         ],
         "complexity": 9,
         "recommendedSubtasks": 5,
-        "expansionPrompt": "Implement deterministic finite automaton subset construction with powerset state management, early-abort logic for complexity caps, UTF-16 compatible membership checking, state minimization, and performance optimization for large automata."
+        "expansionPrompt": "Implement deterministic finite automaton subset construction with powerset state management, early-abort logic for complexity caps, UTF-16 compatible membership checking, state minimization, and performance optimization for large automata.",
+        "updatedAt": "2025-11-15T19:32:27.562Z"
       },
       {
         "id": "5",
@@ -3644,9 +3645,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-15T19:14:37.953Z",
+      "lastModified": "2025-11-15T19:32:27.564Z",
       "taskCount": 21,
-      "completedCount": 4,
+      "completedCount": 5,
       "tags": [
         "jsg-p1-automata-smt"
       ]
