@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable max-lines */
 /* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
 
@@ -14,9 +15,17 @@ import {
   executePipeline,
   PipelineStageError,
   type PipelineResult,
+  selectResponseSchemaAndExample,
+  type OpenApiDriverOptions,
 } from '@foundrydata/core';
 import { renderCLIView } from './render.js';
-import { parsePlanOptions } from './flags.js';
+import {
+  parsePlanOptions,
+  resolveRowCount,
+  resolveCompatMode,
+  resolveOutputFormat,
+  type OutputFormat,
+} from './flags.js';
 
 const program = new Command();
 
@@ -29,8 +38,9 @@ program
   .command('generate')
   .description('Generate test data from schema')
   .option('-s, --schema <file>', 'JSON Schema file path')
-  .option('-c, --count <number>', 'Number of items to generate', '1')
+  .option('-c, --count <number>', 'Number of items to generate')
   .option('-r, --rows <number>', 'Alias for --count')
+  .option('-n, --n <number>', 'Alias for --count')
   .option('--seed <number>', 'Deterministic seed', '424242')
   .option('--locale <string>', 'Locale (e.g., en, fr)', 'en')
   .option(
@@ -40,6 +50,7 @@ program
   )
   .option('--print-metrics', 'Print pipeline metrics as JSON to stderr', false)
   .option('--compat <mode>', 'Compatibility mode: strict|lax', 'strict')
+  .option('--mode <mode>', 'Execution mode: strict|lax')
   .option(
     '--rewrite-conditionals <mode>',
     'Conditional rewriting: never|safe|aggressive',
@@ -87,6 +98,11 @@ program
     'Set false to enable Lax planning stubs (maps to resolver.stubUnresolved=emptySchema)',
     (v) => String(v)
   )
+  .option('--out <format>', 'Output format: json|ndjson', 'json')
+  .option(
+    '--prefer-examples',
+    'Prefer OpenAPI examples over generated data when available'
+  )
   .option('--debug-passes', 'Print effective configuration to stderr')
   .action(async function (this: Command, options) {
     try {
@@ -98,8 +114,10 @@ program
       const input = JSON.parse(raw);
 
       // Determine compatibility mode early (used by pre-scan and generation)
-      const compat: 'strict' | 'lax' =
-        String(options.compat ?? 'strict') === 'lax' ? 'lax' : 'strict';
+      const compat = resolveCompatMode({
+        mode: options.mode,
+        compat: options.compat,
+      });
 
       // When running in lax mode, scan and log unsupported features (best-effort)
       if (compat === 'lax') {
@@ -136,9 +154,15 @@ program
       }
 
       const schemaForGen = input;
-      const count = Number(options.rows ?? options.count ?? 1);
+      const count = resolveRowCount({
+        rows: options.rows,
+        count: options.count,
+        n: options.n,
+      });
       const seed = Number(options.seed ?? 424242);
       const repairAttempts = Number(options.repairAttempts ?? 1);
+      const outFormat: OutputFormat = resolveOutputFormat(options.out);
+      const preferExamples = options.preferExamples === true;
 
       // Parse CLI options into PlanOptions
       const command = this;
@@ -166,6 +190,7 @@ program
           count,
           seed,
           planOptions,
+          preferExamples,
         },
         repair: {
           attempts: repairAttempts,
@@ -175,7 +200,193 @@ program
         },
       });
 
-      handlePipelineOutput(pipelineResult, options.printMetrics === true);
+      handlePipelineOutput(
+        pipelineResult,
+        options.printMetrics === true,
+        outFormat
+      );
+    } catch (err: unknown) {
+      await handleCliError(err);
+    }
+  });
+
+program
+  .command('openapi')
+  .description('Generate fixtures from an OpenAPI document')
+  .option('-s, --spec <file>', 'OpenAPI document file path')
+  .option('--operation-id <id>', 'OpenAPI operationId to target')
+  .option('--path <path>', 'Fallback path when operationId is not provided')
+  .option(
+    '--method <method>',
+    'HTTP method (e.g., GET, post). Used with --path when operationId is absent.'
+  )
+  .option('-c, --count <number>', 'Number of items to generate')
+  .option('-r, --rows <number>', 'Alias for --count')
+  .option('-n, --n <number>', 'Alias for --count')
+  .option('--seed <number>', 'Deterministic seed', '424242')
+  .option(
+    '--repair-attempts <number>',
+    'Per-item retry attempts on validation failure',
+    '1'
+  )
+  .option('--print-metrics', 'Print pipeline metrics as JSON to stderr', false)
+  .option('--compat <mode>', 'Compatibility mode: strict|lax', 'strict')
+  .option('--mode <mode>', 'Execution mode: strict|lax')
+  .option(
+    '--rewrite-conditionals <mode>',
+    'Conditional rewriting: never|safe|aggressive',
+    'never'
+  )
+  .option('--debug-freeze', 'Enable debug freeze for development')
+  .option('--skip-trials', 'Skip branch trials, use score-only selection')
+  .option('--trials-per-branch <number>', 'Number of trials per branch', (v) =>
+    parseInt(v, 10)
+  )
+  .option(
+    '--max-branches-to-try <number>',
+    'Maximum branches in Top-K selection',
+    (v) => parseInt(v, 10)
+  )
+  .option(
+    '--skip-trials-if-branches-gt <number>',
+    'Skip trials when branch count exceeds this',
+    (v) => parseInt(v, 10)
+  )
+  .option(
+    '--external-ref-strict <mode>',
+    'External $ref handling: error|warn|ignore',
+    'error'
+  )
+  .option(
+    '--dynamic-ref-strict <mode>',
+    'Dynamic $ref handling: warn|note',
+    'note'
+  )
+  .option(
+    '--encoding-bigint-json <mode>',
+    'BigInt JSON encoding: string|number|error',
+    'string'
+  )
+  .option('--no-metrics', 'Disable metrics collection')
+  .option(
+    '--resolve <strategies>',
+    'Resolver strategies: local[,remote][,schemastore]',
+    'local'
+  )
+  .option('--cache-dir <path>', 'Resolver cache directory (supports ~)')
+  .option(
+    '--fail-on-unresolved <bool>',
+    'Set false to enable Lax planning stubs (maps to resolver.stubUnresolved=emptySchema)',
+    (v) => String(v)
+  )
+  .option('--out <format>', 'Output format: json|ndjson', 'json')
+  .option(
+    '--prefer-examples',
+    'Prefer OpenAPI examples over generated data when available'
+  )
+  .option(
+    '--status <code>',
+    'HTTP status code to select from responses (e.g., 200)'
+  )
+  .option(
+    '--content-type <type>',
+    'Content type to select from response content (e.g., application/json)'
+  )
+  .option('--debug-passes', 'Print effective configuration to stderr')
+  .action(async function (this: Command, options) {
+    try {
+      const specPath = options.spec as string | undefined;
+      if (!specPath) throw new Error('Missing --spec <file>');
+      const abs = path.resolve(process.cwd(), specPath);
+      if (!fs.existsSync(abs)) throw new Error(`Spec file not found: ${abs}`);
+      const raw = fs.readFileSync(abs, 'utf8');
+      const document = JSON.parse(raw);
+
+      const compat = resolveCompatMode({
+        mode: options.mode,
+        compat: options.compat,
+      });
+      const outFormat: OutputFormat = resolveOutputFormat(options.out);
+      const preferExamples = options.preferExamples === true;
+      const count = resolveRowCount({
+        rows: options.rows,
+        count: options.count,
+        n: options.n,
+      });
+      const seed = Number(options.seed ?? 424242);
+      const repairAttempts = Number(options.repairAttempts ?? 1);
+
+      const driverOptions: OpenApiDriverOptions = {
+        operationId: options.operationId,
+        path: options.path,
+        method: options.method,
+        status: options.status,
+        contentType: options.contentType,
+        preferExamples,
+      };
+
+      const selection = selectResponseSchemaAndExample(document, driverOptions);
+      let schemaForGen = selection.schema as unknown;
+
+      // When preferExamples is enabled and the driver surfaced an example that
+      // is not already schema-level, attach it as schema.example so that the
+      // generator's preferExamples logic can reuse it while preserving AJV
+      // validation semantics (example is an annotation keyword).
+      if (
+        preferExamples &&
+        selection.example !== undefined &&
+        schemaForGen &&
+        typeof schemaForGen === 'object' &&
+        !Array.isArray(schemaForGen)
+      ) {
+        const schemaObj = schemaForGen as Record<string, unknown>;
+        if (!Object.prototype.hasOwnProperty.call(schemaObj, 'example')) {
+          schemaForGen = {
+            ...schemaObj,
+            example: selection.example,
+          };
+        }
+      }
+
+      const command = this;
+      const cliPlanOptions = { ...options } as Parameters<
+        typeof parsePlanOptions
+      >[0];
+      if (command.getOptionValueSource('rewriteConditionals') === 'default') {
+        delete cliPlanOptions.rewriteConditionals;
+      }
+      const planOptions = parsePlanOptions(cliPlanOptions);
+      const resolvedOptions = resolveOptions(planOptions);
+
+      if (options.debugPasses) {
+        process.stderr.write(
+          `[foundrydata] effective config: ${JSON.stringify(resolvedOptions, null, 2)}\n`
+        );
+      }
+
+      const pipelineResult = await executePipeline(schemaForGen as object, {
+        mode: compat,
+        metrics: { enabled: options.metrics !== false },
+        compose: { planOptions },
+        generate: {
+          count,
+          seed,
+          planOptions,
+          preferExamples,
+        },
+        repair: {
+          attempts: repairAttempts,
+        },
+        validate: {
+          validateFormats: true,
+        },
+      });
+
+      handlePipelineOutput(
+        pipelineResult,
+        options.printMetrics === true,
+        outFormat
+      );
     } catch (err: unknown) {
       await handleCliError(err);
     }
@@ -183,7 +394,8 @@ program
 
 function handlePipelineOutput(
   result: PipelineResult,
-  printMetrics: boolean
+  printMetrics: boolean,
+  outFormat: OutputFormat
 ): void {
   if (result.status !== 'completed') {
     // If validation-time diagnostics were produced (e.g., AJV_FLAGS_MISMATCH),
@@ -205,7 +417,14 @@ function handlePipelineOutput(
     ? repairedItems
     : (generatedStage?.items ?? []);
 
-  process.stdout.write(JSON.stringify(items, null, 2) + '\n');
+  if (outFormat === 'ndjson') {
+    const lines = items.map((item) => JSON.stringify(item ?? null));
+    if (lines.length > 0) {
+      process.stdout.write(lines.join('\n') + '\n');
+    }
+  } else {
+    process.stdout.write(JSON.stringify(items, null, 2) + '\n');
+  }
 
   if (printMetrics) {
     process.stderr.write(

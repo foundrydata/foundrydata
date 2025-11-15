@@ -3425,7 +3425,7 @@
         "id": "17",
         "title": "CLI flags & OpenAPI driver (prefer-examples, NDJSON)",
         "description": "Expose CLI flags and minimal OpenAPI driver hooks for mocks/tests.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "14",
           "16"
@@ -3440,9 +3440,10 @@
             "description": "Add command-line argument parsing for all required flags including mode, seed, prefer-examples, count, and output format options.",
             "dependencies": [],
             "details": "Extend packages/cli/ to parse flags: --mode strict, --seed 123, --prefer-examples, --n 10, --out ndjson. Use Commander.js for consistent CLI interface. Validate flag combinations and provide helpful error messages. Integrate with existing CLI structure from tasks 14 and 16.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for flag parsing validation and error handling. Manual smoke tests for CLI usability.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-15T23:40:45.230Z"
           },
           {
             "id": 2,
@@ -3452,9 +3453,10 @@
               1
             ],
             "details": "Build driver in packages/core/src/ that parses OpenAPI specs, extracts schemas from content types, and prioritizes example/examples.default over generated data. No network I/O in core - handle local spec files only. Export clean API for schema selection and example extraction.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Fixture-based tests with sample OpenAPI specs. Verify schema extraction and example preference logic.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-15T23:40:46.274Z"
           },
           {
             "id": 3,
@@ -3465,20 +3467,22 @@
               2
             ],
             "details": "Implement NDJSON formatter that outputs one JSON object per line. Integrate CLI flags, OpenAPI driver, and output formatting into cohesive command: json-gen schema.json --mode strict --seed 123 --prefer-examples --n 10 --out ndjson. Ensure proper error handling and validation throughout the pipeline.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "End-to-end integration tests with real OpenAPI specs. Snapshot tests for NDJSON output format consistency.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-15T23:40:47.346Z"
           }
         ],
         "complexity": 4,
         "recommendedSubtasks": 3,
-        "expansionPrompt": "Implement CLI flag parsing with comprehensive options, OpenAPI driver integration for schema selection, NDJSON output formatting, and example preference handling. Include command-line interface testing and integration with existing CLI structure."
+        "expansionPrompt": "Implement CLI flag parsing with comprehensive options, OpenAPI driver integration for schema selection, NDJSON output formatting, and example preference handling. Include command-line interface testing and integration with existing CLI structure.",
+        "updatedAt": "2025-11-15T23:40:47.346Z"
       },
       {
         "id": "18",
         "title": "Acceptance tests: objects automata",
         "description": "DFA emptiness; BFS witnesses; strict unsafe pattern; required vs propertyNames; minProperties vs coverage.",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [
           "8",
           "9",
@@ -3539,7 +3543,8 @@
         ],
         "complexity": 5,
         "recommendedSubtasks": 4,
-        "expansionPrompt": "Create comprehensive acceptance test suite for DFA emptiness scenarios, BFS witness validation, strict pattern enforcement testing, and property conflict detection. Include test fixtures for complex schema scenarios and automated verification of diagnostic codes."
+        "expansionPrompt": "Create comprehensive acceptance test suite for DFA emptiness scenarios, BFS witness validation, strict pattern enforcement testing, and property conflict detection. Include test fixtures for complex schema scenarios and automated verification of diagnostic codes.",
+        "updatedAt": "2025-11-15T23:34:37.504Z"
       },
       {
         "id": "19",
@@ -3724,9 +3729,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-15T23:27:04.537Z",
+      "lastModified": "2025-11-15T23:40:47.347Z",
       "taskCount": 22,
-      "completedCount": 17,
+      "completedCount": 18,
       "tags": [
         "jsg-p1-automata-smt"
       ]

@@ -151,6 +151,10 @@ export interface PipelineOptions {
     count?: number;
     seed?: number;
     planOptions?: Partial<PlanOptions>;
+    /**
+     * Prefer schema-level examples when present for the root instance.
+     */
+    preferExamples?: boolean;
   };
   repair?: {
     attempts?: number;

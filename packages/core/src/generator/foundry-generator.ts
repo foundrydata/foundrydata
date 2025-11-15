@@ -114,6 +114,12 @@ export interface FoundryGeneratorOptions {
   /** Mirror planning AJV flags to maintain parity per SPEC §§12–13 */
   validateFormats?: boolean;
   discriminator?: boolean;
+  /**
+   * When true, prefer using schema-level examples (example/examples)
+   * for the root instance when available, falling back to generation
+   * when no example is present.
+   */
+  preferExamples?: boolean;
 }
 
 export function generateFromCompose(
@@ -158,6 +164,7 @@ class GeneratorEngine {
   private readonly pendingExclusivityRand = new Map<JsonPointer, number>();
   private readonly stringTweakOrder: ReadonlyArray<'\u0000' | 'a'>;
   private readonly multipleOfEpsilon: number;
+  private readonly preferExamples: boolean;
 
   constructor(effective: ComposeResult, options: FoundryGeneratorOptions) {
     this.options = options;
@@ -193,6 +200,7 @@ class GeneratorEngine {
     this.multipleOfEpsilon = Number.parseFloat(
       `1e-${this.resolved.rational.decimalPrecision}`
     );
+    this.preferExamples = options.preferExamples === true;
   }
 
   private readonly rootSchema: Schema | unknown;
@@ -235,6 +243,15 @@ class GeneratorEngine {
       this.resolveSchemaRef(schema as Record<string, unknown>, canonPath);
     const obj = resolvedSchema;
     const effectiveCanonPath = resolvedPointer;
+
+    // CLI/JSG-P1: when preferExamples is enabled, honor root-level
+    // schema examples when present, falling back to generation when not.
+    if (this.preferExamples && canonPath === '') {
+      const example = extractPreferredExample(obj);
+      if (example !== undefined) {
+        return example;
+      }
+    }
 
     if (Object.prototype.hasOwnProperty.call(obj, 'const')) {
       return obj.const;
@@ -2759,6 +2776,19 @@ class GeneratorEngine {
       },
     });
   }
+}
+
+function extractPreferredExample(
+  schema: Record<string, unknown>
+): unknown | undefined {
+  if (Object.prototype.hasOwnProperty.call(schema, 'example')) {
+    return (schema as { example?: unknown }).example;
+  }
+  const exs = (schema as { examples?: unknown }).examples;
+  if (Array.isArray(exs) && exs.length > 0) {
+    return exs[0];
+  }
+  return undefined;
 }
 
 class PatternEnumerator {

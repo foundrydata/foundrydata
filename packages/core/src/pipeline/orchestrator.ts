@@ -881,6 +881,7 @@ function createDefaultGenerate(
       count: options?.count,
       seed: options?.seed,
       planOptions: options?.planOptions,
+      preferExamples: pipelineOptions.generate?.preferExamples,
       metrics,
       sourceSchema,
       validateFormats: pipelineOptions.validate?.validateFormats,
