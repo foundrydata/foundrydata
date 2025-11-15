@@ -1,0 +1,45 @@
+# Task ID: 4
+# Title: DFA subset construction + caps
+# Status: pending
+# Dependencies: 3
+# Priority: high
+# Description: Determinize NFA under caps; expose reachability and accepting states.
+# Details:
+- File: transform/name-automata/dfa.ts.
+- Subset construction with early-abort on cap; record states count.
+- Export membership check compatible with UTF-16 iteration.
+
+# Test Strategy:
+Unit tests: language equivalence on small patterns; cap-trigger path returns diagnostic.
+
+# Subtasks:
+## 1. Implement subset construction algorithm core [pending]
+### Dependencies: None
+### Description: Create the core subset construction algorithm to determinize NFAs by computing powerset states and transition functions.
+### Details:
+Implement the classical subset construction algorithm that converts an NFA to DFA by: 1) Computing epsilon closures for state sets, 2) Building powerset states where each DFA state represents a set of NFA states, 3) Computing transitions between powerset states, 4) Tracking accepting states based on NFA accepting state membership. Handle edge cases like empty state sets and unreachable states.
+
+## 2. Add early-abort logic for complexity caps [pending]
+### Dependencies: 4.1
+### Description: Implement early termination when state explosion exceeds configured complexity caps to prevent exponential blowup.
+### Details:
+Add state count tracking during subset construction and implement early-abort when maxDFAStates cap is reached. Emit NAME_AUTOMATON_COMPLEXITY_CAPPED diagnostic when terminating early. Maintain partial DFA construction state for debugging. Record final states count in metadata for observability.
+
+## 3. Implement UTF-16 compatible membership checking [pending]
+### Dependencies: 4.1
+### Description: Create efficient string membership testing that works correctly with JavaScript's UTF-16 string representation.
+### Details:
+Implement DFA.accepts(string) method that iterates through UTF-16 code units correctly, handling surrogate pairs and Unicode normalization. Use state transition table for O(n) membership checking. Ensure compatibility with JavaScript string indexing and iteration patterns used in the generator.
+
+## 4. Implement state minimization optimization [pending]
+### Dependencies: 4.1, 4.2
+### Description: Add DFA minimization to reduce state count and improve performance by merging equivalent states.
+### Details:
+Implement Hopcroft's algorithm or table-filling method to minimize the DFA after construction. Merge states that have identical transition behavior and accepting status. Update transition table and state mappings accordingly. Only apply minimization if state count exceeds a threshold to avoid overhead on small automata.
+
+## 5. Create DFA module exports and integration [pending]
+### Dependencies: 4.1, 4.2, 4.3, 4.4
+### Description: Expose the complete DFA interface with reachability analysis and accepting state information for composition engine integration.
+### Details:
+Export DFA class with methods: accepts(string), getStateCount(), getAcceptingStates(), isReachable(state). Implement reachability analysis to identify dead states. Provide metadata about construction process including original NFA size, final DFA size, and whether caps were triggered. Integrate with name-automata module structure.
+

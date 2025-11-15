@@ -1,0 +1,49 @@
+# Task ID: 20
+# Title: Unit tests: regex/NFA/DFA/product/coverage-index/numbers
+# Status: pending
+# Dependencies: 2, 3, 4, 5, 7, 12
+# Priority: medium
+# Description: Granular unit tests for policy and automata plumbing, and multipleOf behavior.
+# Details:
+- regex-policy.spec.ts, nfa-dfa-basic.spec.ts, product-finiteness.spec.ts, coverage-index.enumerate-guard.spec.ts, numbers.multiple-of.spec.ts.
+
+# Test Strategy:
+All unit suites must pass; CI green.
+
+# Subtasks:
+## 1. Implement regex-policy.spec.ts unit test suite [pending]
+### Dependencies: 20.1
+### Description: Create comprehensive unit tests for regex policy validation including pattern compilation, validation logic, and error handling.
+### Details:
+Implement test suite covering regex pattern validation, policy enforcement, edge cases with special characters, Unicode handling, and performance benchmarks for pattern matching. Test both valid and invalid regex patterns, boundary conditions, and integration with JSON Schema regex requirements.
+
+## 2. Implement nfa-dfa-basic.spec.ts algorithmic correctness tests [pending]
+### Dependencies: 20.1
+### Description: Create unit tests for NFA/DFA construction algorithms, state transitions, and automaton correctness verification.
+### Details:
+Test NFA construction from regex patterns, DFA conversion algorithms, state minimization, epsilon transitions, acceptance states, and deterministic behavior. Include tests for automaton equivalence, reachability analysis, and state space optimization.
+
+## 3. Implement product-finiteness.spec.ts for product automaton testing [pending]
+### Dependencies: 20.5
+### Description: Create unit tests for product DFA construction, intersection correctness, and finiteness analysis.
+### Details:
+Test product automaton construction from multiple DFAs, intersection semantics, state explosion handling, reachability trimming, and maxProductStates cap enforcement. Verify NAME_AUTOMATON_COMPLEXITY_CAPPED diagnostic emission and product correctness.
+
+## 4. Implement coverage-index.enumerate-guard.spec.ts functionality tests [pending]
+### Dependencies: 20.1, 20.12
+### Description: Create unit tests for coverage index enumeration, guard conditions, and deterministic name selection.
+### Details:
+Test CoverageIndex enumeration logic, guard condition evaluation, deterministic ordering, name selection algorithms, and integration with generator. Verify stable outputs, coverage completeness, and proper guard enforcement for property name generation.
+
+## 5. Implement numbers.multiple-of.spec.ts rational arithmetic tests [pending]
+### Dependencies: 20.12
+### Description: Create unit tests for rational multipleOf operations, bound contradictions, and AJV consistency.
+### Details:
+Test exact rational snapping, multipleOf arithmetic consistency with AJV, bound contradiction detection, mixed inclusive/exclusive bounds, decimal precision handling, and diagnostic emission for contradictory constraints. Verify numerical stability and edge cases.
+
+## 6. Integration and CI pipeline validation for all test suites [pending]
+### Dependencies: 20.1, 20.2, 20.3, 20.4, 20.5
+### Description: Ensure all unit test suites integrate properly with CI pipeline and maintain green status.
+### Details:
+Configure CI pipeline integration for all test suites, establish test coverage thresholds, performance benchmarks, and ensure all tests pass consistently. Set up proper test reporting, failure diagnostics, and maintain CI green status as required by test strategy.
+

@@ -1,0 +1,31 @@
+# Task ID: 19
+# Title: Acceptance tests: arrays, refs, determinism
+# Status: pending
+# Dependencies: 11, 10, 16
+# Priority: high
+# Description: Contains vs maxItems; external $ref strict/lax; determinism with fixed seed.
+# Details:
+- Arrays impossible contains; unresolved refs behavior; stable outputs same seed.
+
+# Test Strategy:
+tests/acceptance + pipeline integration; snapshot outputs across runs.
+
+# Subtasks:
+## 1. Array contains vs maxItems acceptance tests [pending]
+### Dependencies: 19.11
+### Description: Create acceptance tests for array constraint violations where contains requirements conflict with maxItems limits, including impossible contains scenarios and UNSAT detection.
+### Details:
+Implement tests in tests/acceptance/arrays/ covering: impossible contains vs maxItems scenarios, bag semantics validation, UNSAT_CONTAINS_VS_MAXITEMS diagnostic emission, uniqueItems ordering stability, and edge cases with multiple contains constraints against array size limits.
+
+## 2. External reference policy acceptance tests [pending]
+### Dependencies: 19.10, 19.16
+### Description: Develop comprehensive acceptance tests for external $ref handling in both strict and lax modes, validating error behavior, fallback mechanisms, and diagnostic emission.
+### Details:
+Create test suite in tests/acceptance/refs/ covering: strict mode external $ref errors, lax mode fallback behavior, diagnostic emission for unresolved references, $dynamicRef preservation, and edge cases with nested external references across different policy configurations.
+
+## 3. Deterministic output validation with seed testing [pending]
+### Dependencies: None
+### Description: Implement determinism acceptance tests ensuring identical outputs for fixed seeds across multiple runs, including snapshot testing for output stability validation.
+### Details:
+Build determinism test suite in tests/acceptance/determinism/ covering: fixed seed reproducibility across runs, snapshot testing for output stability, branch selection consistency, RNG state validation, and cross-platform determinism verification with comprehensive edge case coverage.
+

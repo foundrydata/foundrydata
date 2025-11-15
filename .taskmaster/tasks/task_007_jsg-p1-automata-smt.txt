@@ -1,0 +1,33 @@
+# Task ID: 7
+# Title: BFS witnesses (shortest then UTF‑16)
+# Status: pending
+# Dependencies: 6
+# Priority: high
+# Description: Enumerate minimal witness names using BFS with stable symbol order.
+# Details:
+- File: transform/name-automata/bfs.ts.
+- Produce k shortest words; order by length then UTF-16 lexicographic.
+- Guard enumerate() exposure: only when finiteness proven and not solely from raw propertyNames.enum.
+
+# Test Strategy:
+Acceptance test: enumerate two-letter/three-letter results as expected; order stable.
+
+# Subtasks:
+## 1. Implement core BFS enumeration algorithm [pending]
+### Dependencies: None
+### Description: Create the breadth-first search algorithm that explores the automaton state space to find shortest paths to accepting states, producing minimal witness names.
+### Details:
+Implement the core BFS traversal logic in transform/name-automata/bfs.ts. The algorithm should explore states level by level, tracking path lengths and accumulating symbol sequences. Include proper queue management and state visitation tracking to ensure complete exploration of the automaton's reachable accepting states.
+
+## 2. Implement UTF-16 lexicographic ordering with length priority [pending]
+### Dependencies: 7.1
+### Description: Add stable ordering logic that sorts results first by string length (shortest first), then by UTF-16 lexicographic order for strings of equal length.
+### Details:
+Create the ordering mechanism that processes BFS results and applies the dual-criteria sort: primary by length (ascending), secondary by UTF-16 code point comparison. This ensures deterministic, reproducible output across different runs and environments. Include proper handling of Unicode characters and edge cases in string comparison.
+
+## 3. Implement finiteness guards and enumerate() exposure logic [pending]
+### Dependencies: 7.1, 7.2
+### Description: Add guard logic that only exposes the enumerate() function when finiteness is proven and the result is not solely derived from raw propertyNames.enum values.
+### Details:
+Implement the safety mechanism that checks automaton finiteness before allowing enumeration exposure. The guard must verify that the language is finite (no infinite loops) and that the enumeration adds value beyond simple propertyNames.enum extraction. Include proper error handling and diagnostic messages when guards fail, ensuring the system degrades gracefully for unsafe cases.
+

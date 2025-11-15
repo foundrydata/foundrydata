@@ -1,0 +1,38 @@
+# Task ID: 18
+# Title: Acceptance tests: objects automata
+# Status: pending
+# Dependencies: 8, 9, 10
+# Priority: high
+# Description: DFA emptiness; BFS witnesses; strict unsafe pattern; required vs propertyNames; minProperties vs coverage.
+# Details:
+- Files under: packages/core/src/transform/__tests__/name-automata and tests/acceptance.
+- Recreate scenarios from the spec.
+
+# Test Strategy:
+Run acceptance suite; assert codes and witness order.
+
+# Subtasks:
+## 1. Create DFA emptiness and BFS witness test fixtures [pending]
+### Dependencies: None
+### Description: Implement test fixtures for DFA emptiness scenarios and BFS witness validation covering various schema complexity levels.
+### Details:
+Create comprehensive test fixtures under packages/core/src/transform/__tests__/name-automata/ that cover DFA emptiness detection, BFS witness generation, and validation scenarios. Include schemas with empty languages, finite languages, and infinite languages. Fixtures should test reachability to accepting states and proper witness ordering.
+
+## 2. Implement strict unsafe pattern enforcement tests [pending]
+### Dependencies: 18.1
+### Description: Create acceptance tests for strict pattern enforcement under presence pressure with AP:false scenarios.
+### Details:
+Develop test suite covering strict unsafe pattern detection and enforcement. Include scenarios with additionalProperties:false under presence pressure, testing both strict fail-fast behavior and lax warning modes. Verify proper diagnostic code emission (AP_FALSE_UNSAFE_PATTERN) and conservative exclusion behavior.
+
+## 3. Test required vs propertyNames conflict detection [pending]
+### Dependencies: 18.1
+### Description: Implement comprehensive tests for required properties vs propertyNames conflicts and resolution strategies.
+### Details:
+Create test scenarios covering conflicts between required properties and propertyNames constraints. Include edge cases where required properties cannot satisfy propertyNames patterns, testing UNSAT_REQUIRED_VS_PROPERTYNAMES diagnostic emission. Verify proper conflict detection and resolution in both strict and lax modes.
+
+## 4. Test minProperties vs coverage validation [pending]
+### Dependencies: 18.1, 18.2, 18.3
+### Description: Implement acceptance tests for minProperties constraints against finite property coverage scenarios.
+### Details:
+Develop comprehensive test suite for minProperties validation against finite property coverage. Include scenarios where minProperties cannot be satisfied due to limited property coverage, testing UNSAT_MINPROPERTIES_VS_COVERAGE diagnostic emission. Verify proper handling of edge cases and boundary conditions in coverage calculation.
+

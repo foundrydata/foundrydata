@@ -1,0 +1,33 @@
+# Task ID: 17
+# Title: CLI flags & OpenAPI driver (prefer-examples, NDJSON)
+# Status: pending
+# Dependencies: 14, 16
+# Priority: medium
+# Description: Expose CLI flags and minimal OpenAPI driver hooks for mocks/tests.
+# Details:
+- CLI: json-gen schema.json --mode strict --seed 123 --prefer-examples --n 10 --out ndjson.
+- Driver: select content/schema; prefer example/examples.default; export NDJSON; no network I/O in core.
+- Thin adapters MSW/Prism out of core.
+
+# Test Strategy:
+Manual smoke + unit for flag parsing; fixture generation snapshot.
+
+# Subtasks:
+## 1. Implement CLI flag parsing with comprehensive options [pending]
+### Dependencies: None
+### Description: Add command-line argument parsing for all required flags including mode, seed, prefer-examples, count, and output format options.
+### Details:
+Extend packages/cli/ to parse flags: --mode strict, --seed 123, --prefer-examples, --n 10, --out ndjson. Use Commander.js for consistent CLI interface. Validate flag combinations and provide helpful error messages. Integrate with existing CLI structure from tasks 14 and 16.
+
+## 2. Develop OpenAPI driver for schema selection and example preference [pending]
+### Dependencies: 17.1
+### Description: Create minimal OpenAPI driver that can select content/schema from OpenAPI specs and prefer examples over generated data when available.
+### Details:
+Build driver in packages/core/src/ that parses OpenAPI specs, extracts schemas from content types, and prioritizes example/examples.default over generated data. No network I/O in core - handle local spec files only. Export clean API for schema selection and example extraction.
+
+## 3. Implement NDJSON output formatting and integration [pending]
+### Dependencies: 17.1, 17.2
+### Description: Add NDJSON (newline-delimited JSON) output format support and integrate all components into working CLI command.
+### Details:
+Implement NDJSON formatter that outputs one JSON object per line. Integrate CLI flags, OpenAPI driver, and output formatting into cohesive command: json-gen schema.json --mode strict --seed 123 --prefer-examples --n 10 --out ndjson. Ensure proper error handling and validation throughout the pipeline.
+

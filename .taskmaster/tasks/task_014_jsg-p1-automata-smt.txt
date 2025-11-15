@@ -1,0 +1,39 @@
+# Task ID: 14
+# Title: Generator integration with CoverageIndex
+# Status: pending
+# Dependencies: 8, 11, 12
+# Priority: high
+# Description: Use CoverageIndex to pick names; minimal value witnesses; arrays satisfy contains then uniqueItems.
+# Details:
+- Touch: packages/core/src/generator/foundry-generator.ts.
+- Deterministic ordering; if-aware-lite preserved.
+- Respect enum/const precedence vs broad type.
+
+# Test Strategy:
+Pipeline tests: stable outputs across runs with same seed; coverageIndex used.
+
+# Subtasks:
+## 1. Integrate CoverageIndex into FoundryGenerator for deterministic name selection [pending]
+### Dependencies: None
+### Description: Modify foundry-generator.ts to use CoverageIndex for picking property names in object generation, ensuring deterministic ordering and maintaining if-aware-lite behavior.
+### Details:
+Update the object property generation logic in foundry-generator.ts to call coverageIndex.has(name) and enumerate() methods from the composition engine. Ensure the generator respects the deterministic ordering from CoverageIndex and preserves if-aware-lite conditional handling. Replace any existing name selection logic with CoverageIndex-driven approach.
+
+## 2. Implement minimal value witness generation strategy [pending]
+### Dependencies: 14.1
+### Description: Add logic to generate minimal value witnesses that satisfy schema constraints while maintaining deterministic behavior and enum/const precedence.
+### Details:
+Implement witness generation that produces minimal valid values for schema validation. Ensure enum and const values take precedence over broader type constraints. The witness generation should work with the CoverageIndex integration and maintain deterministic output with seeded randomness.
+
+## 3. Implement array constraint satisfaction for contains and uniqueItems [pending]
+### Dependencies: 14.2
+### Description: Add array generation logic that first satisfies contains constraints then applies uniqueItems deduplication, working with the bagged contains model from task 11.
+### Details:
+Integrate with the bagged contains logic from contains-bag.ts to generate arrays that satisfy contains requirements first, then apply uniqueItems deduplication. Ensure the generation respects maxItems limits and handles UNSAT conditions when Σ(min_i) > maxItems. Maintain deterministic ordering when uniqueItems is true.
+
+## 4. Add comprehensive pipeline tests for generator integration [pending]
+### Dependencies: 14.3
+### Description: Create end-to-end pipeline tests that verify stable outputs across runs with same seed, proper CoverageIndex usage, and integration with composition engine.
+### Details:
+Implement pipeline tests that validate the complete generator integration with CoverageIndex. Tests should verify deterministic outputs with fixed seeds, proper name selection through CoverageIndex, minimal witness generation, and array constraint satisfaction. Include tests for enum/const precedence and if-aware-lite preservation.
+

@@ -1,0 +1,32 @@
+# Task ID: 6
+# Title: Decide emptiness & finiteness
+# Status: pending
+# Dependencies: 5
+# Priority: high
+# Description: Add emptiness (reachability to any accepting state) and finiteness (cycle detection on co-accessible subgraph).
+# Details:
+- Extend product.ts to compute emptiness/finite.
+- Expose summary: {states, finite, capsHit?}.
+
+# Test Strategy:
+Unit tests: empty vs non-empty; finite vs infinite languages.
+
+# Subtasks:
+## 1. Implement reachability analysis for emptiness detection [pending]
+### Dependencies: None
+### Description: Implement graph reachability algorithms to determine if any accepting states are reachable from the initial state in the DFA structure.
+### Details:
+Add reachability analysis function in product.ts that performs BFS/DFS traversal from initial state to check if any accepting states can be reached. Return boolean indicating emptiness (true if no accepting states reachable). Include proper error handling for malformed automata.
+
+## 2. Implement cycle detection for finiteness determination [pending]
+### Dependencies: 6.1
+### Description: Add cycle detection algorithm on co-accessible subgraph to determine if the automaton accepts finite or infinite languages.
+### Details:
+Implement cycle detection using DFS with back-edge detection on the co-accessible subgraph (states that can reach accepting states). If cycles exist in co-accessible states, language is infinite. Use proper graph coloring (white/gray/black) to detect back edges efficiently.
+
+## 3. Add summary generation and diagnostic reporting [pending]
+### Dependencies: 6.1, 6.2
+### Description: Expose automaton properties through summary object containing states count, finiteness flag, and diagnostic information.
+### Details:
+Extend product.ts to return summary object with format {states: number, finite: boolean, capsHit?: boolean}. Include state count from automaton, finiteness result from cycle detection, and optional caps hit indicator for complexity limits. Add proper TypeScript types and integration with existing diagnostic system.
+

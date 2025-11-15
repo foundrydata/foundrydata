@@ -1,0 +1,39 @@
+# Task ID: 2
+# Title: Regex policy: anchored-safe check + complexity caps
+# Status: pending
+# Dependencies: 1
+# Priority: high
+# Description: Implement anchored-safe classification (^...$, no look-around/backrefs) and complexity cap (length + quantified groups).
+# Details:
+- Create transform/name-automata/regex.ts with parser/validator and complexity scoring.
+- Emit REGEX_COMPLEXITY_CAPPED or REGEX_COMPILE_ERROR when applicable.
+- Non-safe/capped patterns must be guards only (no proofs/automata).
+
+# Test Strategy:
+Unit tests for valid/invalid patterns; cap thresholds; error diagnostics.
+
+# Subtasks:
+## 1. Create regex parser and validator foundation [pending]
+### Dependencies: None
+### Description: Implement core regex parsing functionality to analyze pattern structure and extract components for safety classification.
+### Details:
+Create transform/name-automata/regex.ts with RegexParser class that can parse regex patterns into AST nodes, identify anchors (^, $), detect lookaround assertions and backreferences. Include basic validation to catch malformed patterns and emit REGEX_COMPILE_ERROR diagnostics.
+
+## 2. Implement anchored-safe classification logic [pending]
+### Dependencies: 2.1
+### Description: Build safety classification system to determine if regex patterns are anchored-safe according to project requirements.
+### Details:
+Implement anchored-safe detection that verifies patterns start with ^ and end with $, contain no lookaround assertions (?=, ?!, ?<=, ?<!), and no backreferences (\1, \2, etc.). Create RegexClassifier class with isAnchoredSafe() method that returns boolean classification.
+
+## 3. Develop complexity scoring algorithm [pending]
+### Dependencies: 2.1
+### Description: Create complexity analysis system that scores regex patterns based on length and quantified groups to enforce caps.
+### Details:
+Implement complexity scoring that calculates pattern complexity based on total length and number of quantified groups (+, *, {n,m}). Define complexity thresholds and create ComplexityScorer class with score() method. Emit REGEX_COMPLEXITY_CAPPED diagnostic when patterns exceed defined limits.
+
+## 4. Integrate regex policy with pattern utilities and guards [pending]
+### Dependencies: 2.2, 2.3
+### Description: Connect regex classification system with existing pattern utilities and enforce guard-only policy for unsafe patterns.
+### Details:
+Integrate RegexParser, RegexClassifier, and ComplexityScorer into existing pattern processing pipeline. Ensure non-safe or complexity-capped patterns are restricted to guards only with no proof/automata generation. Add integration points with name-automata system and diagnostic emission.
+
