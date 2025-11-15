@@ -44,4 +44,48 @@ describe('rational helpers', () => {
     // After quantization at 2 dp, 1.23 / 0.01 = 123 exactly
     expect(isMultipleDecimalFallback(1.23, 0.01, 2)).toBe(true);
   });
+
+  it('isMultipleWithEpsilon rejects NaN and infinities', () => {
+    expect(isMultipleWithEpsilon(Number.NaN, 0.1, 12)).toBe(false);
+    expect(isMultipleWithEpsilon(1, Number.NaN, 12)).toBe(false);
+    expect(isMultipleWithEpsilon(Number.POSITIVE_INFINITY, 0.1, 12)).toBe(
+      false
+    );
+    expect(isMultipleWithEpsilon(1, Number.POSITIVE_INFINITY, 12)).toBe(false);
+    expect(isMultipleWithEpsilon(Number.NEGATIVE_INFINITY, 0.1, 12)).toBe(
+      false
+    );
+    expect(isMultipleWithEpsilon(1, Number.NEGATIVE_INFINITY, 12)).toBe(false);
+  });
+
+  it('isMultipleWithEpsilon rejects non-positive multipleOf', () => {
+    expect(isMultipleWithEpsilon(1, 0, 12)).toBe(false);
+    expect(isMultipleWithEpsilon(1, -0.1, 12)).toBe(false);
+  });
+
+  it('isMultipleWithEpsilon handles subnormal multiples', () => {
+    const step = Number.MIN_VALUE;
+    const threeSteps = step * 3;
+    expect(isMultipleWithEpsilon(step, step, 12)).toBe(true);
+    expect(isMultipleWithEpsilon(threeSteps, step, 12)).toBe(true);
+  });
+
+  it('isMultipleWithEpsilon behaves sensibly near the precision boundary', () => {
+    const multipleOf = 0.1;
+    const prec = 6;
+    const eps = 10 ** -prec;
+    const base = multipleOf;
+    const valueSlightlyAbove = base * (1 + eps * 1.1);
+    const ok = isMultipleWithEpsilon(base, multipleOf, prec);
+    const notOk = isMultipleWithEpsilon(valueSlightlyAbove, multipleOf, prec);
+    expect(ok).toBe(true);
+    expect(notOk).toBe(false);
+  });
+
+  it('isMultipleDecimalFallback handles NaN and non-positive multiples', () => {
+    expect(isMultipleDecimalFallback(Number.NaN, 0.1, 12)).toBe(false);
+    expect(isMultipleDecimalFallback(1, Number.NaN, 12)).toBe(false);
+    expect(isMultipleDecimalFallback(1, 0, 12)).toBe(false);
+    expect(isMultipleDecimalFallback(1, -0.1, 12)).toBe(false);
+  });
 });
