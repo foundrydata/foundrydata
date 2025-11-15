@@ -125,3 +125,11 @@ export {
   type AjvErr,
   type RepairCtx,
 } from './repair/repair-engine.js';
+
+// OpenAPI driver (Task 17)
+export {
+  selectResponseSchemaAndExample,
+  type OpenApiDriverOptions,
+  type OpenApiSchemaSelection,
+  type OpenApiSchemaSelectionMeta,
+} from './openapi/driver.js';
