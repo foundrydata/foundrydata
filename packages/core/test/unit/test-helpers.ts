@@ -126,7 +126,7 @@ export function compileOneOfBranchValidators(
 
 export function collectCoverageNames(entry: {
   has: (name: string) => boolean;
-  enumerate?: () => string[];
+  enumerate?: (k?: number) => string[];
 }): Set<string> {
   const names = new Set<string>();
   if (entry.enumerate) {

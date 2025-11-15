@@ -42,7 +42,7 @@ type CoverageProvenance =
 
 export interface CoverageEntry {
   has: (name: string) => boolean;
-  enumerate?: () => string[];
+  enumerate?: (k?: number) => string[];
   provenance?: CoverageProvenance[];
 }
 
@@ -176,6 +176,7 @@ export interface ComposeResult {
   canonical: NormalizeResult;
   containsBag: Map<string, ContainsNeed[]>;
   coverageIndex: CoverageIndex;
+  nameDfaSummary?: { states: number; finite: boolean; capsHit?: boolean };
   diag?: ComposeDiagnostics;
 }
 
@@ -274,6 +275,11 @@ class CompositionEngine {
   private readonly branchDiagnostics = new Map<string, BranchDecisionRecord>();
   private readonly containsIndex = new Map<string, ContainsNeed[]>();
   private readonly coverageRegexWarnKeys = new Set<string>();
+  private nameDfaSummary?: {
+    states: number;
+    finite: boolean;
+    capsHit?: boolean;
+  };
 
   constructor(input: ComposeInput, options?: ComposeOptions) {
     this.schema = input.schema;
@@ -334,6 +340,7 @@ class CompositionEngine {
       },
       containsBag: this.containsIndex,
       coverageIndex: this.coverageIndex,
+      nameDfaSummary: this.nameDfaSummary,
       diag,
     };
   }
@@ -820,7 +827,13 @@ class CompositionEngine {
     };
     if (enumerationValues) {
       const snapshot = enumerationValues.slice();
-      coverageEntry.enumerate = () => snapshot.slice();
+      coverageEntry.enumerate = (k?: number) => {
+        if (k === undefined) {
+          return snapshot.slice();
+        }
+        const limit = Math.max(0, Math.floor(k));
+        return snapshot.slice(0, limit);
+      };
     }
     this.coverageIndex.set(canonPath, coverageEntry);
     this.recordPatternOverlapDiagnostics(canonPath, conjuncts);
@@ -1288,7 +1301,21 @@ class CompositionEngine {
       );
     }
 
+    this.updateNameDfaSummary(canonPath, productResult.summary);
     return productResult.summary;
+  }
+
+  private updateNameDfaSummary(
+    canonPath: string,
+    summary: ProductSummary
+  ): void {
+    if (canonPath !== '') return;
+    const snapshot: { states: number; finite: boolean; capsHit?: boolean } = {
+      states: summary.states,
+      finite: summary.finite,
+      ...(summary.capsHit ? { capsHit: summary.capsHit } : {}),
+    };
+    this.nameDfaSummary = snapshot;
   }
 
   private enumerateViaNameAutomata(

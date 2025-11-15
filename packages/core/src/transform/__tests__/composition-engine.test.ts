@@ -159,6 +159,7 @@ describe('CompositionEngine coverage index', () => {
     expect(entry?.has('b')).toBe(true);
     expect(entry?.has('c')).toBe(false);
     expect(entry?.enumerate?.()).toEqual(['a', 'b']);
+    expect(entry?.enumerate?.(1)).toEqual(['a']);
     expect(entry?.provenance).toEqual(['properties']);
   });
 
@@ -195,6 +196,9 @@ describe('CompositionEngine coverage index', () => {
     expect(entry).toBeDefined();
     const enumerated = entry?.enumerate?.() ?? [];
     expect(enumerated.slice(0, 2)).toEqual(['xa', 'ya']);
+    expect(result.nameDfaSummary).toBeDefined();
+    expect(result.nameDfaSummary?.finite).toBe(true);
+    expect(result.nameDfaSummary?.states ?? 0).toBeGreaterThan(0);
   });
 
   it('emits NAME_AUTOMATON_COMPLEXITY_CAPPED when BFS witness search is capped', () => {
