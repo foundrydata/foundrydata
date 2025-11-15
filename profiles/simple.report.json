@@ -7,7 +7,7 @@
     "toolName": "json-schema-reporter",
     "toolVersion": "0.1.0",
     "engineVersion": "0.1.0",
-    "timestamp": "2025-11-15T11:45:06.908Z",
+    "timestamp": "2025-11-15T20:55:36.138Z",
     "seed": 123456789
   },
   "normalize": {
@@ -546,11 +546,11 @@
     }
   ],
   "metrics": {
-    "normalizeMs": 1.3919579999999883,
-    "composeMs": 3.3478330000000085,
-    "generateMs": 1.8192080000000033,
-    "repairMs": 19.233959,
-    "validateMs": 12.826291999999995,
+    "normalizeMs": 1.5617500000000035,
+    "composeMs": 3.734290999999999,
+    "generateMs": 2.2724580000000003,
+    "repairMs": 20.86862499999998,
+    "validateMs": 14.971792000000022,
     "validationsPerRow": 3,
     "repairPassesPerRow": 0,
     "memoryPeakMB": 0,
@@ -566,11 +566,11 @@
     "validRepaired": 0,
     "invalid": 0,
     "timings": {
-      "normalizeMs": 1.3919579999999883,
-      "composeMs": 3.3478330000000085,
-      "generateMs": 1.8192080000000033,
-      "repairMs": 19.233959,
-      "validateMs": 12.826291999999995
+      "normalizeMs": 1.5617500000000035,
+      "composeMs": 3.734290999999999,
+      "generateMs": 2.2724580000000003,
+      "repairMs": 20.86862499999998,
+      "validateMs": 14.971792000000022
     },
     "diagnosticsCount": {
       "normalizeNotes": 0,
