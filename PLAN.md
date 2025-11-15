@@ -19,6 +19,31 @@ Checks:
 - bench: npm run bench
 - diag-schema: true
 
+Task: 12   Title: Numbers: bounds & rational multipleOf
+Anchors: [spec://§1#goal, spec://§4#pipeline, spec://§8#numbers-multipleof, spec://§23#plan-options, spec://§8#early-unsat-checks]
+
+Touched files:
+- PLAN.md
+- packages/core/src/transform/numbers/bounds.ts
+- packages/core/src/transform/numbers/multiple-of.ts
+- packages/core/src/transform/composition-engine.ts
+- packages/core/src/diag/codes.ts
+- packages/core/src/diag/schemas.ts
+- packages/core/src/transform/__tests__/numbers/bounds.spec.ts
+- packages/core/src/transform/__tests__/numbers/multiple-of.spec.ts
+
+Approach:
+This task introduces a small numeric analysis layer in the compose stage so that obvious bound contradictions are detected early and reported as structured diagnostics, while also providing helpers for rational multipleOf checks that align with Ajv’s epsilon-based semantics. I will add a `numbers/bounds` module that normalizes `minimum/maximum/exclusive*` into a canonical lower/upper pair, derives an integer-domain view when `type:'integer'` is in effect, and exposes a pure `checkNumericBounds` function that returns whether the real or integer domain is empty using only monotone comparisons. The composition engine will call this helper for numeric-like schemas (including ones that only express bounds without an explicit `type`), and when a contradiction is proven it will emit a compose-phase fatal diagnostic `UNSAT_NUMERIC_BOUNDS` whose details capture the reason and the raw bound keywords so downstream tooling and tests can assert on behavior. In parallel, I will add a `numbers/multiple-of` module that wraps the existing rational helpers with a `createMultipleOfContext` function and `isAjvMultipleOf` / `snapToNearestMultiple` utilities, ensuring multipleOf checks and snapping use the same `decimalPrecision`-driven tolerance as the planning Ajv when fallback is `decimal` or `float`. Unit tests will exercise the helpers directly (including integer vs real range reasoning and Ajv parity for multipleOf), and composition-engine tests will assert that contradictory numeric schemas surface the new diagnostic without altering existing behavior for satisfiable bounds.
+
+Risks/Unknowns:
+Numeric contradictions that depend on cross-branch `allOf` interactions or deep rational reasoning beyond simple bounds are intentionally left for later tasks to avoid overreaching this change, so coverage is limited to local bound inconsistencies and integer-domain emptiness at a single node.
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
+
 Task: 11   Title: Arrays: bagged contains + UNSAT rules
 Anchors: [spec://§0#terminology, spec://§1#goal, spec://§4#pipeline, spec://§8#early-unsat-checks, spec://§9#arrays-contains]
 

@@ -461,6 +461,10 @@ exports[`reporter snapshots > produces a stable JSON Report for profiles/simple.
           },
         ],
       },
+      "nameDfaSummary": {
+        "finite": true,
+        "states": 47,
+      },
     },
   },
   "instances": [

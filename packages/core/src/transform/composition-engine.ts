@@ -34,6 +34,12 @@ import {
   isSchemaSubset,
   type ContainsNeed,
 } from './arrays/contains-bag.js';
+import {
+  checkNumericBounds,
+  determineNumericKind,
+  isNumericLikeSchema,
+  type NumericBoundsCheckInput,
+} from './numbers/bounds.js';
 
 type CoverageProvenance =
   | 'properties'
@@ -384,6 +390,9 @@ class CompositionEngine {
       this.checkPropertyNamesUnsat(schema, canonPath);
       this.registerCoverageEntry(schema, canonPath);
     }
+    if (isNumericLikeSchema(schema)) {
+      this.checkNumericContradictions(schema, canonPath);
+    }
 
     this.visitComposition(schema, canonPath);
     this.visitObjectChildren(schema, canonPath);
@@ -532,6 +541,43 @@ class CompositionEngine {
       return;
     }
     this.containsIndex.set(canonPath, evaluated);
+  }
+
+  private checkNumericContradictions(
+    schema: Record<string, unknown>,
+    canonPath: string
+  ): void {
+    const kind = determineNumericKind(schema);
+    if (!kind) return;
+    const input: NumericBoundsCheckInput = {
+      kind,
+      minimum: typeof schema.minimum === 'number' ? schema.minimum : undefined,
+      maximum: typeof schema.maximum === 'number' ? schema.maximum : undefined,
+      exclusiveMinimum:
+        typeof schema.exclusiveMinimum === 'number'
+          ? schema.exclusiveMinimum
+          : undefined,
+      exclusiveMaximum:
+        typeof schema.exclusiveMaximum === 'number'
+          ? schema.exclusiveMaximum
+          : undefined,
+    };
+    const result = checkNumericBounds(input);
+    if (!result.contradictory || !result.reason) return;
+    this.addFatal(canonPath, DIAGNOSTIC_CODES.UNSAT_NUMERIC_BOUNDS, {
+      reason: result.reason,
+      type: kind,
+      minimum: typeof schema.minimum === 'number' ? schema.minimum : null,
+      maximum: typeof schema.maximum === 'number' ? schema.maximum : null,
+      exclusiveMinimum:
+        typeof schema.exclusiveMinimum === 'number'
+          ? schema.exclusiveMinimum
+          : null,
+      exclusiveMaximum:
+        typeof schema.exclusiveMaximum === 'number'
+          ? schema.exclusiveMaximum
+          : null,
+    });
   }
 
   private evaluateContainsBag(
