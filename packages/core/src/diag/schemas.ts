@@ -135,9 +135,14 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
     kind: 'object',
     optional: {
       statesCap: { kind: 'number' },
+      observedStates: { kind: 'number' },
       productStatesCap: { kind: 'number' },
+      observedProductStates: { kind: 'number' },
       maxKEnumeration: { kind: 'number' },
+      bfsCandidatesCap: { kind: 'number' },
       tried: { kind: 'number' },
+      triedCandidates: { kind: 'number' },
+      component: enumSchema(['nfa', 'dfa', 'product', 'bfs']),
     },
   },
   [DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED]: {

@@ -1167,10 +1167,10 @@ class CompositionEngine {
     const components: Dfa[] = [];
     let coverageComponentCount = 0;
 
-    // Restrict to shapes where automata are most effective and semantics are
-    // straightforward: each coverage-bearing conjunct must be driven by
-    // anchored-safe patternProperties / synthetic patterns, without named
-    // properties. Named properties are handled via finite enumeration logic.
+    // Construct a DFA(Ci) per conjunct that has at least one coverage source:
+    // named properties, anchored-safe patternProperties, or synthetic patterns.
+    // Named properties are encoded as literal alternatives in the same
+    // anchored-safe regex as the patterns.
     for (const conj of conjuncts) {
       const hasCoverageSource =
         conj.hasProperties ||
@@ -1179,16 +1179,8 @@ class CompositionEngine {
       if (!hasCoverageSource) {
         continue;
       }
-      if (conj.named.size > 0) {
-        return undefined;
-      }
-      if (conj.patterns.length === 0) {
-        continue;
-      }
-
-      const patternSource = CompositionEngine.buildCombinedAnchoredPattern(
-        conj.patterns
-      );
+      const patternSource =
+        CompositionEngine.buildCoveragePatternFromConj(conj);
       try {
         const nfaResult = buildThompsonNfa(patternSource, {
           maxStates: NAME_AUTOMATON_MAX_STATES,
@@ -1339,16 +1331,42 @@ class CompositionEngine {
     return patternSource.slice(start, end);
   }
 
-  private static buildCombinedAnchoredPattern(
-    patterns: CoveragePatternInfo[]
+  private static escapeLiteralForRegex(value: string): string {
+    // Escape all regex metacharacters so that property names are treated as
+    // exact literals in the combined pattern.
+    return value.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
+  }
+
+  private static buildCoveragePatternFromConj(
+    conj: CoverageConjunctInfo
   ): string {
-    if (patterns.length === 1) {
-      return patterns[0]!.source;
+    const parts: string[] = [];
+
+    if (conj.named.size > 0) {
+      const names = Array.from(conj.named.values()).sort();
+      for (const name of names) {
+        parts.push(CompositionEngine.escapeLiteralForRegex(name));
+      }
     }
-    const bodies = patterns.map((p) =>
-      CompositionEngine.stripAnchors(p.source)
-    );
-    const inner = bodies.join('|');
+
+    if (conj.patterns.length > 0) {
+      for (const pattern of conj.patterns) {
+        parts.push(CompositionEngine.stripAnchors(pattern.source));
+      }
+    }
+
+    if (parts.length === 0) {
+      // Should not happen: caller guards on coverage-bearing conjuncts.
+      // Use an explicit empty language pattern as a safe fallback.
+      return '^(?!)$';
+    }
+
+    if (conj.patterns.length === 1 && conj.named.size === 0) {
+      // Preserve original source when there is a single pattern only.
+      return conj.patterns[0]!.source;
+    }
+
+    const inner = parts.join('|');
     return `^(?:${inner})$`;
   }
 
@@ -1434,6 +1452,7 @@ class CompositionEngine {
             maxKEnumeration: ENUM_CAP,
             bfsCandidatesCap: maxCandidates,
             triedCandidates: bfsResult.tried,
+            tried: bfsResult.tried,
             component: 'bfs',
           }
         );
