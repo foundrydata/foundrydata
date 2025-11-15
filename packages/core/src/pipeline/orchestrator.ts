@@ -316,7 +316,7 @@ export async function executePipeline(
     compose: overrides.compose ?? compose,
     generate:
       overrides.generate ?? createDefaultGenerate(metrics, schema, options),
-    repair: overrides.repair ?? createDefaultRepair(options),
+    repair: overrides.repair ?? createDefaultRepair(options, metrics),
     validate:
       overrides.validate ??
       createDefaultValidate(
@@ -816,10 +816,20 @@ export async function executePipeline(
   } catch (error) {
     // If startup parity failed, mirror SPEC-required diagnostic AJV_FLAGS_MISMATCH
     if (error instanceof AjvFlagsMismatchError) {
+      const snapshotForDiag = metrics.snapshotMetrics({
+        verbosity: options.snapshotVerbosity,
+      });
       const diag: DiagnosticEnvelope = {
         code: DIAGNOSTIC_CODES.AJV_FLAGS_MISMATCH,
         canonPath: '',
         details: error.details as unknown,
+        metrics: {
+          validationsPerRow: snapshotForDiag.validationsPerRow,
+          repairPassesPerRow: snapshotForDiag.repairPassesPerRow,
+          p50LatencyMs: snapshotForDiag.p50LatencyMs,
+          p95LatencyMs: snapshotForDiag.p95LatencyMs,
+          memoryPeakMB: snapshotForDiag.memoryPeakMB,
+        },
       };
       try {
         assertDiagnosticEnvelope(diag);
@@ -881,7 +891,8 @@ function createDefaultGenerate(
 }
 
 function createDefaultRepair(
-  pipelineOptions: PipelineOptions
+  pipelineOptions: PipelineOptions,
+  metrics: MetricsCollector
 ): (
   items: unknown[],
   _args: { schema: unknown; effective: ReturnType<typeof compose> },
@@ -897,7 +908,7 @@ function createDefaultRepair(
       return repairItemsAjvDriven(
         items,
         { schema, effective, planOptions },
-        { attempts }
+        { attempts, metrics }
       );
     } catch {
       // Conservative: on any unexpected error, fall back to pass-through

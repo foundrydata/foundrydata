@@ -21,6 +21,7 @@ import {
   isRegexComplexityCapped,
   synthesizePatternExample,
 } from '../util/pattern-literals.js';
+import type { MetricsCollector } from '../util/metrics.js';
 
 export interface AjvErr {
   instancePath: string;
@@ -647,10 +648,11 @@ export function repairItemsAjvDriven(
     effective: ComposeResult;
     planOptions?: Partial<PlanOptions>;
   },
-  options?: { attempts?: number }
+  options?: { attempts?: number; metrics?: MetricsCollector }
 ): RepairItemsResult {
   const { schema, effective } = args;
   const attempts = Math.max(1, Math.min(5, options?.attempts ?? 1));
+  const metrics = options?.metrics;
   const dialect = detectDialect(schema);
   const sourceAjv = createRepairOnlyValidatorAjv({ dialect }, args.planOptions);
   const { schemaForAjv } = prepareSchemaForSourceAjv(schema, dialect);
@@ -1702,6 +1704,10 @@ export function repairItemsAjvDriven(
     }
 
     repaired.push(current);
+
+    if (metrics && cycles > 0) {
+      metrics.addRepairPasses(cycles);
+    }
 
     if (!pass && lastErrorCount > 0 && cycles >= attempts) {
       diagnostics.push({

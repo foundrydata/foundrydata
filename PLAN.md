@@ -63,6 +63,28 @@ Checks:
 - bench: npm run bench
 - diag-schema: true
 
+Task: 16   Title: Validate stage: enforce AJV parity & metrics
+Anchors: [spec://§0#philosophy-invariants, spec://§1#acceptance, spec://§1-config-gate, spec://§5-diagnostics-observability-coverage, spec://§6-non-functional-constraints]
+
+Touched files:
+- PLAN.md
+- packages/core/src/pipeline/orchestrator.ts
+- packages/core/src/repair/repair-engine.ts
+- packages/core/test/e2e/pipeline.integration.spec.ts
+
+Approach:
+This task hardens the Validate stage so that AJV always acts as the oracle on the original schema while exposing consistent observability and metrics. I will keep the dual-AJV startup gate (source vs planning) but enrich the AJV parity diagnostic with a metrics payload derived from the shared MetricsCollector, ensuring that parity failures still carry per-run SLO context such as validations per row and latency/memory counters. On the metrics side, I will thread the collector into the default repair runner and the AJV-driven repair engine so that each successful repair iteration increments repairPassesPerRow, matching the existing validationsPerRow accounting in Validate and letting the bench harness compute per-row averages over sample sizes. The Validate stage will continue to compile against a semantics-preserving view of the original schema and attach diagnostics only in the Validate phase, with strict mode still treating external $ref failures as hard errors and lax mode emitting EXTERNAL_REF_UNRESOLVED with skippedValidation evidence and zero validations per row. Finally, I will extend the end-to-end pipeline tests to cover both parity failures and repair-heavy runs: one scenario will deliberately desynchronize planning AJV flags to assert that an AJV parity error surfaces with metrics attached, and another will override the generator to produce invalid items so that the repair stage performs at least one pass and the resulting metrics show a positive repairPassesPerRow count.
+
+Risks/Unknowns:
+- Threading the metrics collector into the repair engine must not perturb the public repairItemsAjvDriven API for existing callers; the new hook must remain optional and side-effect-only.
+- Attaching metrics to parity diagnostics needs to remain lightweight and respect verbosity settings so CI-style runs can rely on them without incurring heavy payloads in runtime mode.
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
+
 Task: 12   Title: Numbers: bounds & rational multipleOf
 Anchors: [spec://§1#goal, spec://§4#pipeline, spec://§8#numbers-multipleof, spec://§23#plan-options, spec://§8#early-unsat-checks]
 
