@@ -20,8 +20,11 @@ import { resolveDynamicRefBinding } from '../util/draft.js';
 import { extractExactLiteralAlternatives } from '../util/pattern-literals.js';
 import { analyzeRegex } from './name-automata/regex.js';
 import { buildThompsonNfa } from './name-automata/nfa.js';
-import { buildDfaFromNfa } from './name-automata/dfa.js';
-import { buildProductDfa } from './name-automata/product.js';
+import { buildDfaFromNfa, type Dfa } from './name-automata/dfa.js';
+import {
+  buildProductDfa,
+  type ProductSummary,
+} from './name-automata/product.js';
 import { bfsEnumerate } from './name-automata/bfs.js';
 import {
   applyContainsSubsumption,
@@ -189,6 +192,9 @@ export interface SelectorMemoKeyInput {
 }
 
 export type ComposeInput = NormalizeResult;
+
+const NAME_AUTOMATON_MAX_STATES = 4096;
+const NAME_AUTOMATON_MAX_PRODUCT_STATES = 4096;
 
 export function compose(
   input: ComposeInput,
@@ -650,16 +656,30 @@ class CompositionEngine {
       }
     }
 
-    // Build per-conjunct DFAs for coverage-bearing sources and derive a product
-    // DFA representing the must-cover language A. When automata cannot be
-    // built (e.g., due to regex caps), fall back to the existing predicate.
+    // Build per-conjunct DFAs for coverage-bearing sources and derive an
+    // optional product DFA summary for the must-cover language. When automata
+    // cannot be built (e.g., due to regex caps or complex shapes), fall back
+    // to the existing predicate semantics for CoverageIndex.has.
+    const nameAutomatonSummary = this.buildNameAutomatonProductSummary(
+      conjuncts,
+      canonPath
+    );
+
     const hasName = this.createCoveragePredicate(conjuncts);
 
     let safeIntersectionExists = false;
-    for (const candidate of candidateNames) {
-      if (hasName(candidate)) {
-        safeIntersectionExists = true;
-        break;
+    if (
+      nameAutomatonSummary &&
+      !nameAutomatonSummary.empty &&
+      !nameAutomatonSummary.capsHit
+    ) {
+      safeIntersectionExists = true;
+    } else {
+      for (const candidate of candidateNames) {
+        if (hasName(candidate)) {
+          safeIntersectionExists = true;
+          break;
+        }
       }
     }
 
@@ -866,6 +886,23 @@ class CompositionEngine {
       const hasOnlyPropertyNamesGating =
         !hasAnyCoverageSource &&
         conjuncts.some((conj) => conj.gatingEnum || conj.gatingPattern);
+
+      const automatonEmpty =
+        nameAutomatonSummary &&
+        nameAutomatonSummary.empty &&
+        !nameAutomatonSummary.capsHit;
+
+      // Strong emptiness: anchored-safe coverage/gating automata have an empty
+      // product language under presence pressure. In this case, short-circuit
+      // with UNSAT_AP_FALSE_EMPTY_COVERAGE and do not emit approximation hints.
+      if (automatonEmpty && hasAnyCoverageSource) {
+        this.addFatal(
+          canonPath,
+          DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
+          buildUnsatDetails(schema)
+        );
+        return;
+      }
 
       // SPEC §8 Early unsat: provably empty coverage under presence pressure.
       // Provable iff there are NO coverage sources (no named properties, no
@@ -1110,6 +1147,150 @@ class CompositionEngine {
     return results;
   }
 
+  private buildNameAutomatonProductSummary(
+    conjuncts: CoverageConjunctInfo[],
+    canonPath: string
+  ): ProductSummary | undefined {
+    const components: Dfa[] = [];
+    let coverageComponentCount = 0;
+
+    // Restrict to the simple and common shapes where automata are most
+    // effective and semantics are straightforward: each coverage-bearing
+    // conjunct must be driven purely by anchored-safe patternProperties
+    // (no named properties or synthetic patterns).
+    for (const conj of conjuncts) {
+      const hasCoverageSource =
+        conj.hasProperties ||
+        conj.patterns.length > 0 ||
+        conj.hasSyntheticPatterns;
+      if (!hasCoverageSource) {
+        continue;
+      }
+      if (conj.named.size > 0 || conj.hasSyntheticPatterns) {
+        return undefined;
+      }
+      if (conj.patterns.length !== 1) {
+        return undefined;
+      }
+
+      const pattern = conj.patterns[0]!;
+      try {
+        const nfaResult = buildThompsonNfa(pattern.source, {
+          maxStates: NAME_AUTOMATON_MAX_STATES,
+        });
+        if (nfaResult.capped) {
+          this.recordCap(DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED);
+          this.addWarn(
+            canonPath,
+            DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED,
+            {
+              statesCap: NAME_AUTOMATON_MAX_STATES,
+              observedStates: nfaResult.stateCount,
+              component: 'nfa',
+            }
+          );
+          return undefined;
+        }
+
+        const dfaResult = buildDfaFromNfa(nfaResult.nfa, {
+          maxDfaStates: NAME_AUTOMATON_MAX_STATES,
+        });
+        if (dfaResult.capped) {
+          this.recordCap(DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED);
+          this.addWarn(
+            canonPath,
+            DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED,
+            {
+              statesCap: NAME_AUTOMATON_MAX_STATES,
+              observedStates: dfaResult.stateCount,
+              component: 'dfa',
+            }
+          );
+          return undefined;
+        }
+        components.push(dfaResult.dfa);
+        coverageComponentCount += 1;
+      } catch {
+        // If automaton construction fails for any coverage-bearing conjunct,
+        // bail out and fall back to predicate-based coverage.
+        return undefined;
+      }
+    }
+
+    // Incorporate anchored-safe propertyNames.pattern gating (when present)
+    // as additional DFA components. These remain gating-only for coverage
+    // enumeration but can participate in emptiness proofs.
+    for (const conj of conjuncts) {
+      if (!conj.gatingPattern) continue;
+      const patternSource = conj.gatingPattern.source;
+      try {
+        const nfaResult = buildThompsonNfa(patternSource, {
+          maxStates: NAME_AUTOMATON_MAX_STATES,
+        });
+        if (nfaResult.capped) {
+          this.recordCap(DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED);
+          this.addWarn(
+            canonPath,
+            DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED,
+            {
+              statesCap: NAME_AUTOMATON_MAX_STATES,
+              observedStates: nfaResult.stateCount,
+              component: 'nfa',
+            }
+          );
+          return undefined;
+        }
+
+        const dfaResult = buildDfaFromNfa(nfaResult.nfa, {
+          maxDfaStates: NAME_AUTOMATON_MAX_STATES,
+        });
+        if (dfaResult.capped) {
+          this.recordCap(DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED);
+          this.addWarn(
+            canonPath,
+            DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED,
+            {
+              statesCap: NAME_AUTOMATON_MAX_STATES,
+              observedStates: dfaResult.stateCount,
+              component: 'dfa',
+            }
+          );
+          return undefined;
+        }
+        components.push(dfaResult.dfa);
+      } catch {
+        return undefined;
+      }
+    }
+
+    // Automaton-based proofs are meaningful only when at least one
+    // coverage-bearing conjunct participates. Gating-only schemas (e.g.,
+    // raw propertyNames.pattern without §7 rewrite) fall back to the
+    // existing predicate-based logic and early-unsat hints.
+    if (coverageComponentCount === 0 || components.length === 0) {
+      return undefined;
+    }
+
+    const productResult = buildProductDfa(components, {
+      maxProductStates: NAME_AUTOMATON_MAX_PRODUCT_STATES,
+    });
+
+    if (productResult.capped || productResult.summary.capsHit) {
+      this.recordCap(DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED);
+      this.addWarn(
+        canonPath,
+        DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED,
+        {
+          productStatesCap: NAME_AUTOMATON_MAX_PRODUCT_STATES,
+          observedProductStates: productResult.stateCount,
+          component: 'product',
+        }
+      );
+    }
+
+    return productResult.summary;
+  }
+
   private enumerateViaNameAutomata(
     conjuncts: CoverageConjunctInfo[],
     canonPath: string,
@@ -1126,8 +1307,40 @@ class CompositionEngine {
 
     const pattern = conj.patterns[0]!;
     try {
-      const nfaResult = buildThompsonNfa(pattern.source);
-      const dfaResult = buildDfaFromNfa(nfaResult.nfa);
+      const nfaResult = buildThompsonNfa(pattern.source, {
+        maxStates: NAME_AUTOMATON_MAX_STATES,
+      });
+      if (nfaResult.capped) {
+        this.recordCap(DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED);
+        this.addWarn(
+          canonPath,
+          DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED,
+          {
+            statesCap: NAME_AUTOMATON_MAX_STATES,
+            observedStates: nfaResult.stateCount,
+            component: 'nfa',
+          }
+        );
+        return undefined;
+      }
+
+      const dfaResult = buildDfaFromNfa(nfaResult.nfa, {
+        maxDfaStates: NAME_AUTOMATON_MAX_STATES,
+      });
+      if (dfaResult.capped) {
+        this.recordCap(DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED);
+        this.addWarn(
+          canonPath,
+          DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED,
+          {
+            statesCap: NAME_AUTOMATON_MAX_STATES,
+            observedStates: dfaResult.stateCount,
+            component: 'dfa',
+          }
+        );
+        return undefined;
+      }
+
       const product = buildProductDfa([dfaResult.dfa]);
 
       if (product.capped || product.summary.capsHit) {
@@ -1136,7 +1349,9 @@ class CompositionEngine {
           canonPath,
           DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED,
           {
-            productStatesCap: product.stateCount,
+            productStatesCap: NAME_AUTOMATON_MAX_PRODUCT_STATES,
+            observedProductStates: product.stateCount,
+            component: 'product',
           }
         );
         return undefined;
@@ -1156,7 +1371,9 @@ class CompositionEngine {
           DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED,
           {
             maxKEnumeration: ENUM_CAP,
-            tried: bfsResult.tried,
+            bfsCandidatesCap: maxCandidates,
+            triedCandidates: bfsResult.tried,
+            component: 'bfs',
           }
         );
         return undefined;
