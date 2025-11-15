@@ -1511,6 +1511,7 @@ Run the evaluation guard before finalizing the action for the object (and before
   If the resolved URI is **fragment‑only** (`#...`), it is **internal**; otherwise it is **external** (includes absolute
   URIs like `http:`, `https:`, `urn:`, `file:` and relative references whose URI‑reference has a non‑empty path to another
   document such as `other.json#/...`). **No I/O** (network or filesystem) is performed in any mode.
+  **Clarification (policies).** In Strict mode, `failFast.externalRefStrict` MAY adjust how `EXTERNAL_REF_UNRESOLVED` is surfaced (e.g., policy metadata or reporting), but it **MUST NOT** enable skipping final validation or allow the pipeline to continue past this hard stop when compilation fails solely due to unresolved external `$ref`.
 
   **Extension R1 (resolver; normative).** When `resolver.strategies` permits `remote`/`schemastore`, implementations
   **MAY** run the §4 pre‑phase to hydrate a local **resolution registry** before `Normalize`. Core phases operate **only**
