@@ -542,6 +542,43 @@ describe('Foundry pipeline integration scenarios', () => {
         expect.arrayContaining(['propertyNamesSynthetic'])
       );
     });
+
+    it('produces stable objects aligned with CoverageIndex for rewritten propertyNames enums', async () => {
+      const options = {
+        generate: { count: 3, seed: 41 },
+        validate: { validateFormats: false },
+      };
+
+      const first = await executePipeline(
+        propertyNamesRewriteEnumSchema,
+        options
+      );
+      const second = await executePipeline(
+        propertyNamesRewriteEnumSchema,
+        options
+      );
+
+      expect(first.artifacts.generated?.items).toEqual(
+        second.artifacts.generated?.items
+      );
+
+      const composeOutput = first.stages.compose.output!;
+      const coverage = composeOutput.coverageIndex.get('');
+      expect(coverage).toBeDefined();
+
+      const names = coverage?.enumerate?.() ?? [];
+      expect(names).toEqual(['alpha', 'beta']);
+
+      const generatedItems =
+        (first.artifacts.generated?.items as Record<string, unknown>[]) ?? [];
+      for (const item of generatedItems) {
+        const keys = Object.keys(item);
+        for (const key of keys) {
+          expect(coverage?.has(key)).toBe(true);
+          expect(names.includes(key)).toBe(true);
+        }
+      }
+    });
   });
 
   describe('Cross-keyword object integration', () => {
