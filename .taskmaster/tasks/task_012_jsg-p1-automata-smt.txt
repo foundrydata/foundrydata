@@ -1,0 +1,39 @@
+# Task ID: 12
+# Title: Numbers: bounds & rational multipleOf
+# Status: pending
+# Dependencies: 1
+# Priority: medium
+# Description: Implement bound contradictions and rational multipleOf consistent with AJV.
+# Details:
+- Files: transform/numbers/bounds.ts, transform/numbers/multiple-of.ts.
+- Exact rational snapping consistent with AJV.
+- Diagnostics on contradictions.
+
+# Test Strategy:
+Unit + acceptance on mixed inclusive/exclusive bounds and multipleOf.
+
+# Subtasks:
+## 1. Implement bounds contradiction detection [pending]
+### Dependencies: None
+### Description: Create bounds checking logic that detects contradictory minimum/maximum constraints and emits appropriate diagnostics when bounds are impossible to satisfy.
+### Details:
+Implement in transform/numbers/bounds.ts: Check for contradictory bounds (min > max), handle inclusive/exclusive boundaries, detect empty ranges, and emit BOUNDS_CONTRADICTION diagnostic. Include edge cases like Number.MAX_SAFE_INTEGER and floating-point precision limits.
+
+## 2. Implement rational multipleOf arithmetic [pending]
+### Dependencies: None
+### Description: Create exact rational arithmetic for multipleOf constraints that maintains precision and consistency with AJV validation behavior.
+### Details:
+Implement in transform/numbers/multiple-of.ts: Use rational number representation to avoid floating-point precision errors. Implement exact division checks, GCD calculations for multiple multipleOf constraints, and maintain consistency with AJV's multipleOf validation algorithm.
+
+## 3. Implement precise snapping algorithms [pending]
+### Dependencies: 12.1, 12.2
+### Description: Create number snapping logic that adjusts generated values to satisfy multipleOf constraints while respecting bounds, with exact precision matching AJV behavior.
+### Details:
+Combine bounds and multipleOf logic to snap generated numbers to valid values. Handle edge cases where snapping might violate bounds, implement bidirectional snapping (up/down), and ensure exact consistency with AJV's validation results. Include handling for very large numbers and precision limits.
+
+## 4. Add comprehensive floating-point edge case testing [pending]
+### Dependencies: 12.3
+### Description: Create comprehensive test suite covering floating-point precision edge cases, boundary conditions, and numerical corner cases for bounds and multipleOf implementation.
+### Details:
+Implement test cases for: Number.EPSILON precision issues, very large/small numbers near limits, floating-point representation edge cases, subnormal numbers, infinity handling, and NaN edge cases. Include property-based testing for numerical stability and AJV consistency across the full range of valid inputs.
+

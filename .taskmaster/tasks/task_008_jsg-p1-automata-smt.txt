@@ -1,0 +1,40 @@
+# Task ID: 8
+# Title: Compose integration & CoverageIndex
+# Status: pending
+# Dependencies: 5, 6, 7
+# Priority: high
+# Description: Wire name automata into composition-engine and expose CoverageIndex API.
+# Details:
+- Touch: packages/core/src/transform/composition-engine.ts.
+- For each object with AP:false across allOf: build DFAs for `properties` (literals) and `patternProperties` (anchored-safe).
+- `propertyNames`: guard-only; optional additive rewrite behind flag with PNAMES_REWRITE_APPLIED and synthetic provenance.
+- Expose coverageIndex.has(name) (pure) and enumerate?(k) when finite; include provenance and nameDfaSummary.
+
+# Test Strategy:
+Acceptance: coverageIndex.has() correctness on literals/patterns; enumerate() present only when allowed.
+
+# Subtasks:
+## 1. Wire name automata into composition-engine.ts [pending]
+### Dependencies: None
+### Description: Integrate the name automata system into the existing composition engine, establishing the core connection points and API surface.
+### Details:
+Modify packages/core/src/transform/composition-engine.ts to import and integrate name automata functionality. Add necessary imports for DFA building, establish integration points for processing objects with AP:false, and set up the foundation for CoverageIndex API exposure.
+
+## 2. Build DFAs for properties and patternProperties [pending]
+### Dependencies: 8.1
+### Description: Implement DFA construction for literal properties and anchored-safe pattern properties in objects with additionalProperties:false across allOf conjuncts.
+### Details:
+For each object with AP:false across allOf conjuncts, build DFAs for properties (literals) and patternProperties (anchored-safe patterns). Implement the logic to traverse allOf structures, identify relevant properties, and construct appropriate DFAs using the name automata system from previous tasks.
+
+## 3. Implement propertyNames handling with rewrite flags [pending]
+### Dependencies: 8.2
+### Description: Add propertyNames support with guard-only behavior and optional additive rewrite behind feature flag with proper provenance tracking.
+### Details:
+Implement propertyNames as guard-only by default. Add optional additive rewrite functionality behind PNAMES_REWRITE_APPLIED flag with synthetic provenance tracking. Ensure proper flag handling and provenance metadata for rewritten schemas.
+
+## 4. Expose CoverageIndex API with provenance [pending]
+### Dependencies: 8.3
+### Description: Design and implement the CoverageIndex API with has(name) method, optional enumerate(k) for finite cases, and comprehensive provenance tracking.
+### Details:
+Expose coverageIndex.has(name) as a pure function for property name checking. Implement optional enumerate(k) method available only when finite enumeration is possible. Include provenance tracking and nameDfaSummary in the API. Ensure proper error handling and performance characteristics.
+

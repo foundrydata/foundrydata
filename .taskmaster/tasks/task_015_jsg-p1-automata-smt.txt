@@ -1,0 +1,33 @@
+# Task ID: 15
+# Title: Repair engine consistency & stagnation guard
+# Status: pending
+# Dependencies: 14
+# Priority: medium
+# Description: Ensure AJV-driven repairs remain idempotent and bounded; keep stagnation guard behavior.
+# Details:
+- Touch: packages/core/src/repair/repair-engine.ts.
+- Typical fixes: bounds clamp, add required, rational snap, uniqueItems dedupe.
+- Stop when errors no longer reduce (bailOnUnsatAfter).
+
+# Test Strategy:
+Integration test: repair reduces AJV errors; stops when no progress.
+
+# Subtasks:
+## 1. Implement repair engine core with idempotency guarantees [pending]
+### Dependencies: None
+### Description: Build the foundational repair engine structure with idempotency tracking and convergence detection mechanisms.
+### Details:
+Implement RepairEngine class in packages/core/src/repair/repair-engine.ts with idempotent repair operations. Track applied repairs to prevent duplicate applications. Include convergence detection by monitoring error reduction between iterations. Implement bailOnUnsatAfter logic to prevent infinite loops when repairs fail to reduce errors.
+
+## 2. Implement AJV-driven repair actions for common schema violations [pending]
+### Dependencies: 15.1
+### Description: Add specific repair actions for bounds clamping, required property addition, rational snapping, and uniqueItems deduplication.
+### Details:
+Implement repair actions in repair-engine.ts: bounds clamp for numbers exceeding min/max, add missing required properties with appropriate defaults, rational multipleOf snapping for precise alignment, and uniqueItems array deduplication. Each action should be AJV-driven based on validation error keywords and maintain idempotency.
+
+## 3. Add stagnation guard and bounded iteration logic [pending]
+### Dependencies: 15.1, 15.2
+### Description: Implement stagnation detection to prevent infinite repair loops and enforce iteration bounds with proper diagnostics.
+### Details:
+Add stagnation guard that monitors error count reduction across repair iterations. Stop repairs when errors no longer decrease for configurable attempts (bailOnUnsatAfter). Implement bounded iteration with maximum repair passes. Emit diagnostics when stagnation is detected or iteration limits are reached. Ensure graceful degradation when repairs cannot converge.
+
