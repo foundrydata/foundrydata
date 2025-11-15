@@ -201,6 +201,25 @@ describe('CompositionEngine coverage index', () => {
     expect(result.nameDfaSummary?.states ?? 0).toBeGreaterThan(0);
   });
 
+  it('exposes nameDfaSummary for simple AP:false object with properties and patternProperties', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        id: { type: 'string' },
+      },
+      patternProperties: {
+        '^(?:foo|bar)$': {},
+      },
+    };
+
+    const result = compose(makeInput(schema));
+    const summary = result.nameDfaSummary;
+    expect(summary).toBeDefined();
+    expect(summary?.states).toBeGreaterThan(0);
+    expect(summary?.finite).toBe(true);
+  });
+
   it('emits NAME_AUTOMATON_COMPLEXITY_CAPPED when BFS witness search is capped', () => {
     const schema = {
       type: 'object',
@@ -335,12 +354,17 @@ describe('CompositionEngine coverage index', () => {
     expect(entry?.has('alpha')).toBe(false);
     expect(entry?.has('beta')).toBe(false);
     expect(entry?.has('gamma')).toBe(false);
-    const hint = result.diag?.unsatHints?.find(
-      (record) => record.code === DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE
+    const fatal = result.diag?.fatal?.find(
+      (entry) => entry.code === DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE
     );
-    expect(hint).toBeDefined();
-    const warnCodes = result.diag?.warn?.map((entry) => entry.code) ?? [];
-    expect(warnCodes).toContain(DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX);
+    expect(fatal).toBeDefined();
+    expect(fatal?.canonPath).toBe('');
+    expect(fatal?.details).toEqual({ required: ['alpha'] });
+
+    const hasHint = (result.diag?.unsatHints ?? []).some(
+      (h) => h.code === DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE
+    );
+    expect(hasHint).toBe(false);
   });
 
   it('takes strong DFA-based emptiness when patternProperties and propertyNames.pattern disagree under presence pressure', () => {
