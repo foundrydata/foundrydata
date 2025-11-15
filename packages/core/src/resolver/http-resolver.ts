@@ -7,6 +7,7 @@ import {
   readFromCache,
   writeToCache,
 } from './cache-store.js';
+import { summarizeExternalRefs } from '../util/modes.js';
 
 export interface ResolverOptions {
   strategies?: Array<'local' | 'remote' | 'schemastore'>;
@@ -91,10 +92,15 @@ export async function prefetchAndBuildRegistry(
 
   const seenDocs = new Set<string>();
   const maxDocs = options.maxDocs ?? 64;
+  const maxDepth = options.maxRefDepth ?? 16;
+  const queue: Array<{ doc: string; depth: number }> = [];
   for (const ref of extRefs) {
-    if (registry.size() >= maxDocs) break;
     const doc = stripFragment(ref);
-    if (!doc || seenDocs.has(doc)) continue;
+    if (doc) queue.push({ doc, depth: 0 });
+  }
+  while (queue.length > 0 && registry.size() < maxDocs) {
+    const { doc, depth } = queue.shift()!;
+    if (seenDocs.has(doc)) continue;
     seenDocs.add(doc);
     try {
       const url = new URL(doc);
@@ -112,6 +118,19 @@ export async function prefetchAndBuildRegistry(
             canonPath: '#',
             details: { ref: doc, contentHash: cached.contentHash },
           });
+          if (depth < maxDepth) {
+            try {
+              const nested = summarizeExternalRefs(cached.schema).extRefs;
+              for (const r of nested) {
+                const child = stripFragment(r);
+                if (child && !seenDocs.has(child)) {
+                  queue.push({ doc: child, depth: depth + 1 });
+                }
+              }
+            } catch {
+              // Ignore errors while scanning nested external refs from cache; prefetch coverage stays best-effort.
+            }
+          }
           continue;
         }
       }
@@ -150,6 +169,19 @@ export async function prefetchAndBuildRegistry(
           contentHash: cached.contentHash,
         },
       });
+      if (depth < maxDepth) {
+        try {
+          const nested = summarizeExternalRefs(schema).extRefs;
+          for (const r of nested) {
+            const child = stripFragment(r);
+            if (child && !seenDocs.has(child)) {
+              queue.push({ doc: child, depth: depth + 1 });
+            }
+          }
+        } catch {
+          // Ignore errors while scanning nested external refs from network responses.
+        }
+      }
     } catch {
       diags.push({
         code: 'RESOLVER_OFFLINE_UNAVAILABLE',

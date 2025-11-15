@@ -208,6 +208,69 @@ export async function executePipeline(
     | Array<{ code: string; canonPath: string; details?: unknown }>
     | undefined = [];
   let registryFingerprint: string | undefined;
+  // Track seen $id across AJV hydration to avoid duplicate-id conflicts
+  const seenSchemaIds = new Map<string, string>();
+  function hydrateAjvWithRegistry(
+    ajv: Ajv,
+    registry: ResolutionRegistry,
+    run:
+      | Array<{ code: string; canonPath: string; details?: unknown }>
+      | undefined
+  ): void {
+    const collectIds = (node: unknown, acc: Set<string>): void => {
+      if (!node || typeof node !== 'object') return;
+      if (Array.isArray(node)) {
+        for (const it of node) collectIds(it, acc);
+        return;
+      }
+      const rec = node as Record<string, unknown>;
+      const raw = rec['$id'];
+      if (typeof raw === 'string') {
+        const t = raw.trim();
+        if (t) acc.add(t);
+      }
+      for (const v of Object.values(rec)) collectIds(v, acc);
+    };
+    const add = (s: unknown, key: string): void => {
+      (
+        ajv as unknown as { addSchema: (schema: unknown, key?: string) => void }
+      ).addSchema(s, key);
+    };
+    for (const entry of registry.entries()) {
+      try {
+        // Detect duplicate $id at any depth before adding
+        const ids = new Set<string>();
+        collectIds(entry.schema, ids);
+        let conflict = false;
+        for (const id of ids) {
+          const existing = seenSchemaIds.get(id);
+          if (existing && existing !== entry.uri) {
+            conflict = true;
+            run?.push({
+              code: 'RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID',
+              canonPath: '#',
+              details: { id, ref: entry.uri, existingRef: existing },
+            });
+          }
+        }
+        if (conflict) continue;
+        add(entry.schema as object, entry.uri);
+        for (const id of ids) {
+          if (!seenSchemaIds.has(id)) seenSchemaIds.set(id, entry.uri);
+        }
+      } catch (e) {
+        run?.push({
+          code: 'RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID',
+          canonPath: '#',
+          details: {
+            ref: entry.uri,
+            error: e instanceof Error ? e.message : String(e),
+          },
+        });
+        // skip on error
+      }
+    }
+  }
   try {
     // Always log strategies applied for observability (run-level)
     const strategiesNote = {
@@ -368,19 +431,9 @@ export async function executePipeline(
           },
           planOptions
         );
-        // Hydrate Source Ajv with resolver registry if available
+        // Hydrate Source Ajv with resolver registry if available (skip duplicate $id)
         if (resolverRegistry) {
-          for (const entry of resolverRegistry.entries()) {
-            try {
-              (
-                ajv as unknown as {
-                  addSchema: (s: unknown, key?: string) => void;
-                }
-              ).addSchema(entry.schema as object, entry.uri);
-            } catch {
-              // ignore addSchema failures; AJV may reject missing $id
-            }
-          }
+          hydrateAjvWithRegistry(ajv, resolverRegistry, resolverRunDiags);
         }
         return ajv;
       };
@@ -455,17 +508,11 @@ export async function executePipeline(
     );
     // Hydrate planning Ajv with resolver registry for in-planning compiles
     if (resolverRegistry) {
-      for (const entry of resolverRegistry.entries()) {
-        try {
-          (
-            planningForCompose as unknown as {
-              addSchema: (s: unknown, key?: string) => void;
-            }
-          ).addSchema(entry.schema as object, entry.uri);
-        } catch {
-          // ignore
-        }
-      }
+      hydrateAjvWithRegistry(
+        planningForCompose,
+        resolverRegistry,
+        resolverRunDiags
+      );
     }
     const ajvFlags = extractAjvFlags(planningForCompose) as unknown as Record<
       string,
