@@ -628,6 +628,37 @@ describe('CompositionEngine contains bag', () => {
     expect(fatal?.details).toEqual({ min: 3, max: 2 });
   });
 
+  it('emits fatal when minContains exceeds maxItems', () => {
+    const schema = {
+      type: 'array',
+      maxItems: 2,
+      contains: {},
+      minContains: 3,
+    };
+
+    const result = compose(makeInput(schema));
+    const fatals =
+      result.diag?.fatal?.filter(
+        (entry) =>
+          entry.code === DIAGNOSTIC_CODES.CONTAINS_UNSAT_BY_SUM &&
+          entry.canonPath === ''
+      ) ?? [];
+    expect(fatals.length).toBeGreaterThan(0);
+    expect(fatals[0]?.details).toMatchObject({
+      sumMin: 3,
+      maxItems: 2,
+      disjointness: 'provable',
+    });
+
+    const hints =
+      result.diag?.unsatHints?.filter(
+        (entry) =>
+          entry.code === DIAGNOSTIC_CODES.CONTAINS_UNSAT_BY_SUM &&
+          entry.canonPath === ''
+      ) ?? [];
+    expect(hints.length).toBe(0);
+  });
+
   it('detects unsatisfiable sum when needs are disjoint', () => {
     const schema = {
       type: 'array',
