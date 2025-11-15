@@ -675,6 +675,13 @@ export function repairItemsAjvDriven(
       repaired.push(original);
       continue;
     }
+
+    let lastErrorCount =
+      Array.isArray((validateFn as any).errors) &&
+      (validateFn as any).errors.length > 0
+        ? (validateFn as any).errors.length
+        : 0;
+    let cycles = 0;
     let current = deepClone(original);
 
     type RenameRegistryEntry =
@@ -889,6 +896,7 @@ export function repairItemsAjvDriven(
       const errors = (validateFn as any).errors as AjvErr[] | undefined;
       if (!errors || errors.length === 0) break;
       let changed = false;
+      cycles += 1;
       const dependentBaselineKeys = new Set(
         (errors ?? [])
           .filter((err) => isDependentConstraintError(err))
@@ -1214,13 +1222,16 @@ export function repairItemsAjvDriven(
               ? (nodeSchema.prefixItems as unknown[])
               : [];
             const synthFrom = (s: any): unknown => {
-              if (s && typeof s === 'object' && 'default' in s)
-                return (s as any).default;
+              if (!s || typeof s !== 'object') return null;
+              if ('default' in s) return (s as any).default;
+              if (Array.isArray((s as any).enum) && (s as any).enum.length > 0)
+                return (s as any).enum[0];
+              if ('const' in s) return (s as any).const;
               const t =
-                typeof s?.type === 'string'
-                  ? s.type
-                  : Array.isArray(s?.type)
-                    ? s.type[0]
+                typeof (s as any).type === 'string'
+                  ? (s as any).type
+                  : Array.isArray((s as any).type)
+                    ? (s as any).type[0]
                     : undefined;
               switch (t) {
                 case 'string':
@@ -1676,10 +1687,32 @@ export function repairItemsAjvDriven(
       if (!changed) break;
       // Revalidate after a repair iteration
       pass = validateFn(current);
+      const nextErrors = (validateFn as any).errors as AjvErr[] | undefined;
+      const nextErrorCount = Array.isArray(nextErrors) ? nextErrors.length : 0;
+      if (nextErrorCount <= 0) {
+        lastErrorCount = 0;
+        break;
+      }
+      if (nextErrorCount >= lastErrorCount) {
+        lastErrorCount = nextErrorCount;
+        break;
+      }
+      lastErrorCount = nextErrorCount;
       if (pass) break;
     }
 
     repaired.push(current);
+
+    if (!pass && lastErrorCount > 0 && cycles >= attempts) {
+      diagnostics.push({
+        code: DIAGNOSTIC_CODES.UNSAT_BUDGET_EXHAUSTED,
+        canonPath: '#',
+        details: {
+          cycles,
+          lastErrorCount,
+        },
+      });
+    }
   }
 
   return { items: repaired, diagnostics, actions };
