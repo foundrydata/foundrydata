@@ -39,3 +39,23 @@ Checks:
 - test: npm run test
 - bench: npm run bench
 - diag-schema: true
+
+Task: 8   Title: Compose integration & CoverageIndex
+Anchors: [spec://§1#goal, spec://§3#apfalse-unsafe-pattern-policy, spec://§4#must-cover-under-additionalproperties-false, spec://§4#decision-finiteness-witnesses, spec://§8#acceptance-tests]
+
+Touched files:
+- PLAN.md
+- packages/core/src/transform/composition-engine.ts
+
+Approach:
+This task wires the name automata subsystem into the composition stage so that CoverageIndex is backed by the product DFA described in the spec. For each AP:false object (including allOf conjuncts), I will treat exact property keys as single-word DFAs, compile anchored-safe patternProperties via NFA→DFA with caps, and treat propertyNames as guard-only unless a future flag-gated rewrite explicitly marks synthetic patterns. The product DFA across all relevant conjunct DFAs will provide a precise must-cover language A; CoverageIndex.has(name) will delegate to this product automaton, and when finiteness is proven I will use the existing BFS helper to implement enumerate(k) with shortest-length-then-UTF-16 ordering, while still honoring the prohibition on exposing enumerate() when finiteness comes solely from raw propertyNames.enum without rewrite evidence. I will also surface a compact nameDfaSummary (states, finite, capsHit?) in diagnostics to align with the observability requirements, and keep the existing early-UNSAT logic in place for contexts where automata are not yet applied.
+
+Risks/Unknowns:
+- The current heuristic coverageIndex implementation is already used by generator tests; integration must be done carefully to preserve observable behavior where the spec requires it, while making coverage semantics more precise under AP:false.
+- nameDfaSummary will be produced internally in CompositionEngine for now; additional wiring into public diagnostics surfaces may be required by later tasks.
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
