@@ -3062,7 +3062,7 @@
         "id": "11",
         "title": "Arrays: bagged contains + UNSAT rules",
         "description": "Model contains as bag; prove UNSAT when Σ(min_i) > maxItems; handle disjointness and overlap unknown.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "1"
         ],
@@ -3120,7 +3120,8 @@
         ],
         "complexity": 7,
         "recommendedSubtasks": 4,
-        "expansionPrompt": "Implement contains bag modeling with deterministic choice algorithms, UNSAT proof generation for impossible constraints, disjointness analysis, and uniqueItems handling. Include comprehensive testing for complex array constraint scenarios."
+        "expansionPrompt": "Implement contains bag modeling with deterministic choice algorithms, UNSAT proof generation for impossible constraints, disjointness analysis, and uniqueItems handling. Include comprehensive testing for complex array constraint scenarios.",
+        "updatedAt": "2025-11-15T21:13:42.951Z"
       },
       {
         "id": "12",
@@ -3696,9 +3697,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-15T21:01:20.793Z",
+      "lastModified": "2025-11-15T21:13:42.952Z",
       "taskCount": 21,
-      "completedCount": 10,
+      "completedCount": 11,
       "tags": [
         "jsg-p1-automata-smt"
       ]
