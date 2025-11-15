@@ -12,7 +12,7 @@
 2. **Refactor complet** : **ne pas** utiliser le legacy comme référence (sauf exception formalisée).
 3. **REFONLY** : référencer la SPEC par **anchors** uniquement (pas de copie de prose).
 4. **Boucle** : `get_task` → `set_status(in-progress)` → anchors (max 5) → **PLAN.md** → **PATCH+TESTS** (≥80% sur fichiers touchés) → **build/test/bench** → **diag-schema** → **commit** (template) → `set_status(done)`.
-5. **Diagnostics** : phase correcte, champs obligatoires (`tiebreakRand`, `exclusivityRand`, `budget`).
+5. **Diagnostics** : enveloppe `{code, canonPath, details}`, phase correcte, champs obligatoires (`tiebreakRand`, `exclusivityRand`, `budget`).
 6. **AP:false** : pas d’expansion via `propertyNames.enum` sans `PNAMES_REWRITE_APPLIED`; fail-fast uniquement sous **presence pressure**.
 7. **AJV** : deux instances, flags **identiques** (cf. SPEC §§12–13).
 8. **Quotas contexte** : ≤5 anchors/itération, ≤2 sections SPEC complètes (via Grep bornes + Read calculé).
@@ -217,9 +217,10 @@ Règles : (a) le JSON externe (si présent) doit parser ; (b) **après** suppres
 {
   "$schema": "http://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "required": ["code", "phase", "details"],
+  "required": ["code", "canonPath", "phase", "details"],
   "properties": {
     "code": { "type": "string", "minLength": 1 },
+    "canonPath": { "type": "string", "minLength": 1 },
     "phase": { "type": "string", "enum": ["Normalize", "Compose", "Generate", "Repair", "Validate"] },
     "details": { "type": "object" },
     "budget": {
