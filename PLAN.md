@@ -19,6 +19,29 @@ Checks:
 - bench: npm run bench
 - diag-schema: true
 
+Task: 11   Title: Arrays: bagged contains + UNSAT rules
+Anchors: [spec://§0#terminology, spec://§1#goal, spec://§4#pipeline, spec://§8#early-unsat-checks, spec://§9#arrays-contains]
+
+Touched files:
+- PLAN.md
+- packages/core/src/transform/arrays/contains-bag.ts
+- packages/core/src/transform/composition-engine.ts
+- packages/core/src/generator/foundry-generator.ts
+- packages/core/src/index.ts
+
+Approach:
+This task consolidates the array `contains` handling into a dedicated transform module that implements the SPEC’s bag semantics and early UNSAT reasoning while keeping AJV as the oracle. I will extract the existing ContainsNeed structure, allOf aggregation and subsumption, and the effective maxItems computation from the composition engine into `transform/arrays/contains-bag.ts`, preserving the normalized bag shape and the current disjointness and subset checks for needs. The composition engine will delegate to this module to build and normalize the bag and then apply the existing early-UNSAT rules: per-need min/max sanity checks, Σ min_i versus the effective maxItems bound, provable disjointness vs overlap-unknown hints, and subset-contradiction between needs with positive min and blockers with max = 0. The generator already enforces the bag and `uniqueItems` ordering, so I will rewire it to consume the ContainsNeed type from the new module without changing behavior, keeping the minimal-length policy and the deterministic “de-dup → re-satisfy bag → enforce uniqueItems” order. I will rely on the current composition-engine tests for bag construction, UNSAT diagnostics, and caps, plus the generator and repair tests for contains, to validate that the refactor preserves observable outputs while making the arrays logic reusable for future SMT-backed extensions.
+
+Risks/Unknowns:
+- Moving helper functions for subset and disjointness checks into a shared arrays module must not alter their semantics or introduce subtle differences in how schemas are compared across phases.
+- If per-file coverage drops for the new module after extraction, I may need to add a focused unit test to exercise edge cases without duplicating the existing composition-engine scenarios.
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
+
 Task: 9   Title: Early-UNSAT diagnostics for objects
 Anchors: [spec://§1#goal, spec://§3#apfalse-unsafe-pattern-policy, spec://§4#pipeline, spec://§8#apfalse-must-cover, spec://§8#early-unsat-checks]
 

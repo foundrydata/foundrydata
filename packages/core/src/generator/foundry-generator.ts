@@ -13,7 +13,7 @@ import type {
   CoverageEntry,
   NodeDiagnostics,
 } from '../transform/composition-engine.js';
-import type { ContainsNeed } from '../transform/composition-engine.js';
+import type { ContainsNeed } from '../transform/arrays/contains-bag.js';
 import type { NormalizerNote } from '../transform/schema-normalizer.js';
 import type { MetricsCollector } from '../util/metrics.js';
 import {

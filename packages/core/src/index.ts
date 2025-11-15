@@ -79,10 +79,10 @@ export {
   type ComposeDiagnostics,
   type BranchDecisionRecord,
   type NodeDiagnostics,
-  type ContainsNeed,
   type CoverageEntry,
   type CoverageIndex,
 } from './transform/composition-engine.js';
+export type { ContainsNeed } from './transform/arrays/contains-bag.js';
 export { executePipeline } from './pipeline/orchestrator.js';
 export {
   PipelineStageError,
