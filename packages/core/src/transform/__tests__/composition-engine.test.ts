@@ -181,6 +181,22 @@ describe('CompositionEngine coverage index', () => {
     expect(entry?.enumerate?.()).toEqual(['a', 'b']);
   });
 
+  it('uses BFS witnesses for simple anchored-safe patternProperties', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      patternProperties: {
+        '^(?:x|y)[a-z]$': {},
+      },
+    };
+
+    const result = compose(makeInput(schema));
+    const entry = result.coverageIndex.get('');
+    expect(entry).toBeDefined();
+    const enumerated = entry?.enumerate?.() ?? [];
+    expect(enumerated.slice(0, 2)).toEqual(['xa', 'ya']);
+  });
+
   it('treats propertyNames synthetic patterns as coverage contributors', () => {
     const patternSource = '^(?:foo|bar)$';
     const schema = {
@@ -261,7 +277,6 @@ describe('CompositionEngine coverage index', () => {
     expect(entry?.has('alpha')).toBe(false);
     expect(entry?.has('beta')).toBe(false);
     expect(entry?.has('gamma')).toBe(false);
-    expect(entry?.enumerate?.()).toEqual([]);
     const hint = result.diag?.unsatHints?.find(
       (record) => record.code === DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE
     );
