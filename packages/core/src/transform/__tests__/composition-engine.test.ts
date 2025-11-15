@@ -1061,6 +1061,55 @@ describe('CompositionEngine early-unsat with propertyNames', () => {
   });
 });
 
+describe('CompositionEngine AP:false coverage early-unsat', () => {
+  it('emits UNSAT_REQUIRED_VS_PROPERTYNAMES when required keys are rejected by propertyNames under AP:false', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      required: ['a', 'b'],
+      propertyNames: { enum: ['a'] },
+    } as const;
+
+    const result = compose(makeInput(schema));
+    const fatal = result.diag?.fatal ?? [];
+    const found = fatal.find(
+      (e) =>
+        e.code === DIAGNOSTIC_CODES.UNSAT_REQUIRED_VS_PROPERTYNAMES &&
+        e.canonPath === ''
+    );
+    expect(found).toBeDefined();
+    expect(found?.details).toEqual({
+      required: ['b'],
+      propertyNames: ['a'],
+    });
+  });
+
+  it('emits UNSAT_MINPROPERTIES_VS_COVERAGE when finite coverage has fewer names than minProperties', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      minProperties: 3,
+      properties: {
+        a: { type: 'string' },
+        b: { type: 'string' },
+      },
+    } as const;
+
+    const result = compose(makeInput(schema));
+    const fatal = result.diag?.fatal ?? [];
+    const found = fatal.find(
+      (e) =>
+        e.code === DIAGNOSTIC_CODES.UNSAT_MINPROPERTIES_VS_COVERAGE &&
+        e.canonPath === ''
+    );
+    expect(found).toBeDefined();
+    expect(found?.details).toEqual({
+      minProperties: 3,
+      coverageSize: 2,
+    });
+  });
+});
+
 describe('CompositionEngine schema byte-size cap', () => {
   it('emits COMPLEXITY_CAP_SCHEMA_SIZE when canonical JSON exceeds limit', () => {
     const schema = {

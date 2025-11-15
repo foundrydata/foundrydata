@@ -20,6 +20,30 @@ describe('assertDiagnosticEnvelope', () => {
     ).not.toThrow();
   });
 
+  it('accepts UNSAT_REQUIRED_VS_PROPERTYNAMES and UNSAT_MINPROPERTIES_VS_COVERAGE detail shapes', () => {
+    expect(() =>
+      assertDiagnosticEnvelope({
+        code: DIAGNOSTIC_CODES.UNSAT_REQUIRED_VS_PROPERTYNAMES,
+        canonPath: '',
+        details: {
+          required: ['a', 'b'],
+          propertyNames: ['a'],
+        },
+      })
+    ).not.toThrow();
+
+    expect(() =>
+      assertDiagnosticEnvelope({
+        code: DIAGNOSTIC_CODES.UNSAT_MINPROPERTIES_VS_COVERAGE,
+        canonPath: '',
+        details: {
+          minProperties: 3,
+          coverageSize: 2,
+        },
+      })
+    ).not.toThrow();
+  });
+
   it('accepts validation keyword diagnostics emitted during final validation', () => {
     expect(() =>
       assertDiagnosticEnvelope({

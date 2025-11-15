@@ -684,6 +684,7 @@ class CompositionEngine {
     }
 
     let enumerationValues: string[] | undefined;
+    let enumerationIsComplete = false;
     if (enumerationEligible) {
       const enumerationCandidates = candidateFromGating ?? new Set<string>();
       if (!candidateFromGating) {
@@ -733,6 +734,7 @@ class CompositionEngine {
       } else if (filtered.length > 0) {
         filtered.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
         enumerationValues = filtered;
+        enumerationIsComplete = true;
       }
     } else if (
       !safeIntersectionExists &&
@@ -800,6 +802,57 @@ class CompositionEngine {
     }
     this.coverageIndex.set(canonPath, coverageEntry);
     this.recordPatternOverlapDiagnostics(canonPath, conjuncts);
+
+    // Early-UNSAT: required keys rejected by propertyNames gating under AP:false.
+    const directRequired = Array.isArray(schema.required)
+      ? (schema.required as unknown[]).filter(
+          (v): v is string => typeof v === 'string'
+        )
+      : [];
+    const pn = schema.propertyNames;
+    if (
+      pn &&
+      typeof pn === 'object' &&
+      directRequired.length > 0 &&
+      candidateFromGating &&
+      candidateFromGating.size > 0
+    ) {
+      const requiredOut = directRequired.filter(
+        (name) => !candidateFromGating.has(name)
+      );
+      if (requiredOut.length > 0) {
+        const propertyNamesDomain = Array.from(
+          candidateFromGating.values()
+        ).sort();
+        this.addFatal(
+          canonPath,
+          DIAGNOSTIC_CODES.UNSAT_REQUIRED_VS_PROPERTYNAMES,
+          {
+            required: requiredOut,
+            propertyNames: propertyNamesDomain,
+          }
+        );
+      }
+    }
+
+    // Early-UNSAT: finite coverage smaller than minProperties.
+    if (
+      enumerationIsComplete &&
+      enumerationValues &&
+      enumerationValues.length > 0 &&
+      typeof schema.minProperties === 'number' &&
+      schema.minProperties > 0 &&
+      schema.minProperties > enumerationValues.length
+    ) {
+      this.addFatal(
+        canonPath,
+        DIAGNOSTIC_CODES.UNSAT_MINPROPERTIES_VS_COVERAGE,
+        {
+          minProperties: schema.minProperties,
+          coverageSize: enumerationValues.length,
+        }
+      );
+    }
 
     if (!safeIntersectionExists && presencePressure) {
       const hasAnyCoverageSource = conjuncts.some(

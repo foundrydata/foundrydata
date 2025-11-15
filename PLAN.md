@@ -19,6 +19,29 @@ Checks:
 - bench: npm run bench
 - diag-schema: true
 
+Task: 9   Title: Early-UNSAT diagnostics for objects
+Anchors: [spec://§1#goal, spec://§3#apfalse-unsafe-pattern-policy, spec://§4#pipeline, spec://§8#apfalse-must-cover, spec://§8#early-unsat-checks]
+
+Touched files:
+- PLAN.md
+- packages/core/src/diag/codes.ts
+- packages/core/src/diag/schemas.ts
+- packages/core/src/transform/composition-engine.ts
+- packages/core/src/transform/__tests__/composition-engine.test.ts
+
+Approach:
+This task refines the composition engine’s object-level early-UNSAT reasoning on top of the AP:false must-cover automata so that diagnostics match the P1 spec. Building on the existing CoverageIndex and name automata, I will treat the global language A (intersection of DFA conjuncts plus propertyNames gating) as the single source of truth for object key feasibility. First, I will ensure `UNSAT_AP_FALSE_EMPTY_COVERAGE` is emitted consistently when A is provably empty under presence pressure, using the existing emptiness and presence detectors and carrying a small proof summary in details. Next, I will introduce two new compose-phase diagnostics: `UNSAT_REQUIRED_VS_PROPERTYNAMES` when any required key is rejected by A, and `UNSAT_MINPROPERTIES_VS_COVERAGE` when A is finite and its cardinality is strictly less than `minProperties`. These checks will run after the coverage predicate and any finite enumeration are available, reusing the same candidate sets and respecting the prohibition on exposing enumerate() when finiteness derives solely from raw propertyNames.enum. I will update the diagnostic code table, detail schemas, and phase allow-list, then extend the composition-engine tests and end-to-end pipeline tests with acceptance scenarios that cover each UNSAT case and assert the expected payload shapes.
+
+Risks/Unknowns:
+- Care is needed to avoid double-reporting legacy propertyNames UNSAT codes and the new coverage-based ones; this task will prefer coverage-based diagnostics while keeping legacy behavior only where the automata path does not apply.
+- Computing finite coverage size must respect existing caps and guardrails so that UNSAT_MINPROPERTIES_VS_COVERAGE is emitted only when finiteness and cardinality are provable without relying on unsafe patterns.
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
+
 Task: 7   Title: BFS witnesses (shortest then UTF-16)
 Anchors: [spec://§1#goal, spec://§3#apfalse-unsafe-pattern-policy, spec://§4#pipeline, spec://§4#must-cover-under-additionalproperties-false, spec://§8#acceptance-tests]
 

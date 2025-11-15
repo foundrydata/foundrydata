@@ -57,6 +57,15 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
       required: stringArray,
     },
   },
+  [DIAGNOSTIC_CODES.UNSAT_REQUIRED_VS_PROPERTYNAMES]: {
+    kind: 'object',
+    required: {
+      required: stringArray,
+    },
+    optional: {
+      propertyNames: stringArray,
+    },
+  },
   [DIAGNOSTIC_CODES.UNSAT_PATTERN_PNAMES]: {
     kind: 'object',
     required: { enumSize: { kind: 'number' } },
@@ -70,6 +79,13 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
   [DIAGNOSTIC_CODES.UNSAT_MINPROPS_PNAMES]: {
     kind: 'object',
     required: { minProperties: { kind: 'number' } },
+  },
+  [DIAGNOSTIC_CODES.UNSAT_MINPROPERTIES_VS_COVERAGE]: {
+    kind: 'object',
+    required: {
+      minProperties: { kind: 'number' },
+      coverageSize: { kind: 'number' },
+    },
   },
   [DIAGNOSTIC_CODES.CONTAINS_UNSAT_BY_SUM]: {
     kind: 'object',
