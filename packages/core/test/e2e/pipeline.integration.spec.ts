@@ -223,6 +223,81 @@ describe('Foundry pipeline integration scenarios', () => {
     expect(laxDiag?.metrics).toMatchObject({ validationsPerRow: 0 });
   });
 
+  it("respects patternPolicy.unsafeUnderApFalse 'warn' in strict mode without changing coverage", async () => {
+    const result = await executePipeline(apFalseUnsafePatternSchema, {
+      mode: 'strict',
+      generate: {
+        count: 1,
+        planOptions: {
+          patternPolicy: { unsafeUnderApFalse: 'warn' },
+        },
+      },
+      validate: { validateFormats: false },
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.stages.compose.status).toBe('completed');
+
+    const composeOutput = result.stages.compose.output!;
+    const fatalCodes =
+      composeOutput.diag?.fatal?.map((entry) => entry.code) ?? [];
+    expect(fatalCodes).not.toContain(DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN);
+
+    const warnCodes =
+      composeOutput.diag?.warn?.map((entry) => entry.code) ?? [];
+    expect(warnCodes).toEqual(
+      expect.arrayContaining([
+        DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN,
+        DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX,
+      ])
+    );
+
+    const generated = result.artifacts.generated;
+    expect(Array.isArray(generated?.items)).toBe(true);
+    const keys = (generated?.items ?? []).flatMap((value) =>
+      Object.keys((value ?? {}) as Record<string, unknown>)
+    );
+    expect(new Set(keys)).toEqual(new Set());
+  });
+
+  it("respects patternPolicy.unsafeUnderApFalse 'warn' in lax mode and keeps conservative coverage", async () => {
+    const result = await executePipeline(apFalseUnsafePatternSchema, {
+      mode: 'lax',
+      generate: {
+        count: 1,
+        planOptions: {
+          patternPolicy: { unsafeUnderApFalse: 'warn' },
+        },
+      },
+      validate: { validateFormats: false },
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.stages.compose.status).toBe('completed');
+    expect(result.stages.validate.status).toBe('completed');
+
+    const composeOutput = result.stages.compose.output!;
+    const fatalCodes =
+      composeOutput.diag?.fatal?.map((entry) => entry.code) ?? [];
+    expect(fatalCodes).not.toContain(DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN);
+
+    const warnCodes =
+      composeOutput.diag?.warn?.map((entry) => entry.code) ?? [];
+    expect(warnCodes).toEqual(
+      expect.arrayContaining([
+        DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN,
+        DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX,
+      ])
+    );
+
+    const generated = result.artifacts.generated;
+    expect(Array.isArray(generated?.items)).toBe(true);
+    const keys = (generated?.items ?? []).flatMap((value) =>
+      Object.keys((value ?? {}) as Record<string, unknown>)
+    );
+    expect(new Set(keys)).toEqual(new Set());
+  });
+
   it('fails fast in strict mode for AsyncAPI externals before generation', async () => {
     const asyncapiSchema = JSON.parse(
       readFileSync(

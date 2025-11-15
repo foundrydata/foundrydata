@@ -914,7 +914,11 @@ class CompositionEngine {
       // AP_FALSE_UNSAFE_PATTERN.
       if (unsafeIssues.length > 0 && !hasOnlyPropertyNamesGating) {
         const detail = this.buildApFalseUnsafeDetail(unsafeIssues);
-        if (this.mode === 'strict') {
+        const unsafePolicy =
+          this.resolvedOptions.patternPolicy.unsafeUnderApFalse;
+        const shouldFailFast =
+          this.mode === 'strict' && unsafePolicy === 'error';
+        if (shouldFailFast) {
           this.addFatal(
             canonPath,
             DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN,

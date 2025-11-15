@@ -105,3 +105,25 @@ Checks:
 - test: npm run test
 - bench: npm run bench
 - diag-schema: true
+
+Task: 10   Title: Strict/Lax policy for AP:false and external $ref
+Anchors: [spec://§1#goal, spec://§3#apfalse-unsafe-pattern-policy, spec://§4#pipeline, spec://§8#apfalse-must-cover, spec://§11-external-ref-probe]
+
+Touched files:
+- PLAN.md
+- packages/core/src/transform/composition-engine.ts
+- packages/core/src/transform/__tests__/composition-engine.test.ts
+- packages/core/test/e2e/pipeline.integration.spec.ts
+
+Approach:
+This task wires the SPEC’s Strict/Lax policy knobs into both the AP:false unsafe-pattern handling and the external $ref flow so that behavior is controlled uniformly by pipeline mode plus the dedicated policy options. For AP:false, I will keep the existing must-cover and presence-pressure machinery but gate the fatal AP_FALSE_UNSAFE_PATTERN diagnostic on both Strict mode and patternPolicy.unsafeUnderApFalse === 'error', downgrading it to a warning when callers opt into 'warn' while still enforcing conservative exclusion via the existing CoverageIndex. For external $ref, I will rely on the existing classification and probe logic but ensure diagnostics always carry the correct {mode, policy?, skippedValidation?} payload and that Strict mode continues to treat EXTERNAL_REF_UNRESOLVED as a hard failure regardless of policy, while Lax mode only skips validation when the failure is exclusively attributable to external refs. I will add focused unit tests at the composition-engine layer and end-to-end pipeline tests to cover Strict vs Lax behavior and the policy overrides, keeping diagnostics envelopes conformant with the diag schemas.
+
+Risks/Unknowns:
+- Changing the severity of AP_FALSE_UNSAFE_PATTERN under a 'warn' policy must not alter coverage or key generation semantics, only whether Compose causes the pipeline to fail fast.
+- External-ref diagnostics already exist; care is needed to avoid duplicating or changing codes while tightening payloads and policies.
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true

@@ -3010,7 +3010,7 @@
         "id": "10",
         "title": "Strict/Lax policy for AP:false and external $ref",
         "description": "Implement strict fail-fast on unsafe/capped patterns under presence pressure; handle unresolved external $ref.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "8",
           "1"
@@ -3056,7 +3056,8 @@
         ],
         "complexity": 6,
         "recommendedSubtasks": 3,
-        "expansionPrompt": "Implement policy enforcement for strict vs lax modes, external reference resolution handling, error emission for unsafe patterns, and conservative exclusion logic. Include comprehensive testing for different policy scenarios and reference resolution failures."
+        "expansionPrompt": "Implement policy enforcement for strict vs lax modes, external reference resolution handling, error emission for unsafe patterns, and conservative exclusion logic. Include comprehensive testing for different policy scenarios and reference resolution failures.",
+        "updatedAt": "2025-11-15T21:25:35.937Z"
       },
       {
         "id": "11",
@@ -3697,9 +3698,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-15T21:13:42.952Z",
+      "lastModified": "2025-11-15T21:25:35.938Z",
       "taskCount": 21,
-      "completedCount": 11,
+      "completedCount": 12,
       "tags": [
         "jsg-p1-automata-smt"
       ]
