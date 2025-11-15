@@ -1414,7 +1414,10 @@ class GeneratorEngine {
     attempt: number
   ): unknown | undefined {
     if (schema === false) return undefined;
-    if (schema === true) return attempt === 0 ? {} : undefined;
+    if (schema === true) {
+      // Earliest stable generator for unconstrained items is the minimal object.
+      return attempt === 0 ? {} : undefined;
+    }
     if (!schema || typeof schema !== 'object') return undefined;
     const node = schema as Record<string, unknown>;
 
@@ -1433,6 +1436,14 @@ class GeneratorEngine {
         return this.buildUniqueIntegerCandidate(node, attempt);
       case 'number':
         return this.buildUniqueNumberCandidate(node, attempt);
+      case 'array':
+        // Earliest stable generator for arrays is the empty array; rely on Repair
+        // to satisfy additional bounds when needed.
+        return attempt === 0 ? [] : undefined;
+      case 'object':
+        // Earliest stable generator for objects is the empty object; additional
+        // bounds are handled by downstream Repair when necessary.
+        return attempt === 0 ? {} : undefined;
       case 'boolean':
         if (attempt === 0) return false;
         if (attempt === 1) return true;
