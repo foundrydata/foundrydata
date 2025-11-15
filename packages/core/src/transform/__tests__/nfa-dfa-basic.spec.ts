@@ -5,6 +5,11 @@ import {
   type Nfa,
   type NfaState,
 } from '../name-automata/nfa.js';
+import {
+  buildDfaFromNfa,
+  type Dfa,
+  type DfaBuildResult,
+} from '../name-automata/dfa.js';
 
 function epsilonClosure(
   states: NfaState[],
@@ -58,7 +63,11 @@ function nfaAccepts(nfa: Nfa, input: string): boolean {
   return current.has(nfa.accept);
 }
 
-describe('Thompson NFA construction', () => {
+function dfaAccepts(dfa: Dfa, input: string): boolean {
+  return dfa.accepts(input);
+}
+
+describe('Thompson NFA construction + DFA subset', () => {
   it('accepts simple anchored literal pattern', () => {
     const { nfa, stateCount } = buildThompsonNfa('^foo$');
 
@@ -127,5 +136,32 @@ describe('Thompson NFA construction', () => {
       expect(state.id).toBeGreaterThanOrEqual(0);
       expect(state.id).toBeLessThan(stateCount);
     }
+  });
+
+  it('determinizes NFA to DFA with equivalent language on simple patterns', () => {
+    const { nfa } = buildThompsonNfa('^ab+c$');
+    const dfaResult: DfaBuildResult = buildDfaFromNfa(nfa);
+
+    expect(dfaResult.capped).toBe(false);
+
+    const accepted = ['abc', 'abbc', 'abbbc', 'abbbbc'];
+    const rejected = ['ac', 'ab', 'abb'];
+
+    for (const word of accepted) {
+      expect(nfaAccepts(nfa, word)).toBe(true);
+      expect(dfaAccepts(dfaResult.dfa, word)).toBe(true);
+    }
+    for (const word of rejected) {
+      expect(nfaAccepts(nfa, word)).toBe(false);
+      expect(dfaAccepts(dfaResult.dfa, word)).toBe(false);
+    }
+  });
+
+  it('honors maxDfaStates cap and marks the result as capped', () => {
+    const { nfa } = buildThompsonNfa('^(?:a|b|c|d)+$');
+    const cappedResult = buildDfaFromNfa(nfa, { maxDfaStates: 2 });
+
+    expect(cappedResult.capped).toBe(true);
+    expect(cappedResult.stateCount).toBeGreaterThanOrEqual(2);
   });
 });
