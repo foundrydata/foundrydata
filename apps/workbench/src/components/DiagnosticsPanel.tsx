@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { JSX } from 'react';
 import type {
@@ -109,63 +110,76 @@ function DiagnosticsFilters({
   );
 }
 
-function DiagnosticsTable({
+function DiagnosticsTable(props: DiagnosticsTableProps): JSX.Element {
+  return (
+    <div className="table-scroll">
+      <table>
+        <DiagnosticsTableHeader />
+        <DiagnosticsTableBody {...props} />
+      </table>
+    </div>
+  );
+}
+
+function DiagnosticsTableHeader(): JSX.Element {
+  return (
+    <thead>
+      <tr>
+        <th>Kind</th>
+        <th>Code</th>
+        <th>Canon Path</th>
+        <th>Details</th>
+      </tr>
+    </thead>
+  );
+}
+
+function DiagnosticsTableBody({
   diagnostics,
   focusedCanonPath,
   onSelectCanonPath,
 }: DiagnosticsTableProps): JSX.Element {
+  if (!diagnostics.length) {
+    return (
+      <tbody>
+        <tr>
+          <td colSpan={4} style={{ textAlign: 'center', padding: '0.5rem' }}>
+            No diagnostics match the active filters.
+          </td>
+        </tr>
+      </tbody>
+    );
+  }
+
   return (
-    <div className="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>Kind</th>
-            <th>Code</th>
-            <th>Canon Path</th>
-            <th>Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          {diagnostics.map((item, index) => (
-            <tr
-              key={`${item.kind}-${item.diag.code}-${item.diag.canonPath}-${index}`}
-            >
-              <td>{item.kind}</td>
-              <td>{item.diag.code}</td>
-              <td
-                className={
-                  item.diag.canonPath === focusedCanonPath
-                    ? 'focused-path'
-                    : undefined
-                }
-                onClick={() =>
-                  item.diag.canonPath &&
-                  onSelectCanonPath?.(item.diag.canonPath)
-                }
-                style={{ cursor: onSelectCanonPath ? 'pointer' : 'default' }}
-              >
-                {item.diag.canonPath || '(root)'}
-              </td>
-              <td>
-                <div className="details-block">
-                  {formatDetailsPreview(item.diag.details)}
-                </div>
-              </td>
-            </tr>
-          ))}
-          {!diagnostics.length && (
-            <tr>
-              <td
-                colSpan={4}
-                style={{ textAlign: 'center', padding: '0.5rem' }}
-              >
-                No diagnostics match the active filters.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+    <tbody>
+      {diagnostics.map((item, index) => (
+        <tr
+          key={`${item.kind}-${item.diag.code}-${item.diag.canonPath}-${index}`}
+        >
+          <td>{item.kind}</td>
+          <td>{item.diag.code}</td>
+          <td
+            className={
+              item.diag.canonPath === focusedCanonPath
+                ? 'focused-path'
+                : undefined
+            }
+            onClick={() =>
+              item.diag.canonPath && onSelectCanonPath?.(item.diag.canonPath)
+            }
+            style={{ cursor: onSelectCanonPath ? 'pointer' : 'default' }}
+          >
+            {item.diag.canonPath || '(root)'}
+          </td>
+          <td>
+            <div className="details-block">
+              {formatDetailsPreview(item.diag.details)}
+            </div>
+          </td>
+        </tr>
+      ))}
+    </tbody>
   );
 }
 

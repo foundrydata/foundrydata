@@ -276,6 +276,74 @@ button.primary:hover {
   font-size: 0.95rem;
 }
 
+.operator-view h2 {
+  margin-top: 0;
+}
+
+.operator-overall {
+  display: flex;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+  background: #f8fafc;
+}
+
+.operator-overall h3 {
+  margin: 0 0 0.25rem;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.status-ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-limited {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.status-blocked {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.operator-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.operator-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.operator-card-header {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
 .key-values {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));

@@ -44,7 +44,7 @@ function TimingsTable({
           {entries.map((entry) => (
             <tr key={entry.key as string}>
               <td>{entry.label}</td>
-              <td>{timings[entry.key]}</td>
+              <td>{formatNumber(timings[entry.key])}</td>
             </tr>
           ))}
         </tbody>
@@ -90,7 +90,7 @@ function MetricsTable({
           {metricEntries.map(([label, value]) => (
             <tr key={label}>
               <td>{label}</td>
-              <td>{typeof value === 'number' ? value : 'n/a'}</td>
+              <td>{formatNumber(value)}</td>
             </tr>
           ))}
         </tbody>
@@ -132,4 +132,11 @@ export default function OverviewPanel({
       <MetricsTable metrics={metrics} />
     </section>
   );
+}
+
+function formatNumber(value: number | undefined, decimals = 2): string {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return '-';
+  }
+  return value.toFixed(decimals);
 }
