@@ -3191,7 +3191,7 @@
         "id": "13",
         "title": "Optional local SMT (QF_LIA) stub with timeout",
         "description": "Feature-flagged local solver to assist arrays/numbers; strict timeout with SOLVER_TIMEOUT fallback.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "11",
           "12"
@@ -3206,9 +3206,10 @@
             "description": "Create the core SMT solver interface in transform/smt/solver.ts with WASM-capable design and proper typing for QF_LIA queries.",
             "dependencies": [],
             "details": "Implement the base SMT solver interface with methods for QF_LIA query solving, WASM module loading capabilities, and proper TypeScript interfaces. Include solver state management, query encoding/decoding, and result handling. Design should be extensible for future solver backends while maintaining type safety.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests with mock WASM module and interface validation",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-15T23:26:54.442Z"
           },
           {
             "id": 2,
@@ -3218,9 +3219,10 @@
               1
             ],
             "details": "Implement timeout wrapper around SMT solver calls using Promise.race or AbortController. On timeout or solver failure, emit SOLVER_TIMEOUT diagnostic and fall back to existing rule-based generation. Ensure clean resource cleanup and proper error propagation. Handle both synchronous timeouts and asynchronous solver failures.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests with artificial timeout injection and fallback verification",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-15T23:27:00.517Z"
           },
           {
             "id": 3,
@@ -3231,14 +3233,16 @@
               2
             ],
             "details": "Integrate the SMT solver into the composition engine with enableLocalSMT feature flag control. Add solverTimeoutMs to PlanOptions configuration. Wire solver calls into array and number constraint checking during composition phase. Ensure solver is only invoked when flag is enabled and gracefully degrades when disabled or unavailable.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Integration tests with flag enabled/disabled scenarios and mock solver implementations",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-15T23:27:04.535Z"
           }
         ],
         "complexity": 5,
         "recommendedSubtasks": 3,
-        "expansionPrompt": "Design SMT solver interface with WASM compatibility, timeout handling with graceful fallback, feature flag integration, and solver-timeout diagnostic emission. Include mock implementations for testing and integration patterns."
+        "expansionPrompt": "Design SMT solver interface with WASM compatibility, timeout handling with graceful fallback, feature flag integration, and solver-timeout diagnostic emission. Include mock implementations for testing and integration patterns.",
+        "updatedAt": "2025-11-15T23:27:04.535Z"
       },
       {
         "id": "14",
@@ -3720,9 +3724,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-15T23:06:28.088Z",
+      "lastModified": "2025-11-15T23:27:04.537Z",
       "taskCount": 22,
-      "completedCount": 16,
+      "completedCount": 17,
       "tags": [
         "jsg-p1-automata-smt"
       ]

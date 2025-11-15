@@ -216,6 +216,16 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
       exclusiveMaximum: numberOrNull,
     },
   },
+  [DIAGNOSTIC_CODES.SOLVER_TIMEOUT]: {
+    kind: 'object',
+    required: {
+      timeoutMs: { kind: 'number' },
+    },
+    optional: {
+      reason: enumSchema(['timeout', 'unknown']),
+      problemKind: { kind: 'string' },
+    },
+  },
   [DIAGNOSTIC_CODES.CONTAINS_NEED_MIN_GT_MAX]: {
     kind: 'object',
     required: {
