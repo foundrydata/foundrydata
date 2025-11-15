@@ -46,7 +46,7 @@ foundrydata generate --schema user.json --rows 1000 --seed 42
 # Print metrics (timings, validations/row, etc.) to stderr
 foundrydata generate --schema user.json --rows 1000 --print-metrics
 
-# External refs policy (no remote resolution; policy only)
+# External refs policy (no remote resolution by default; policy only)
 # Values: error | warn | ignore  (default: error)
 foundrydata generate --schema api.json --rows 50 --external-ref-strict warn
 
@@ -55,7 +55,7 @@ foundrydata generate --schema user.json --rows 100 --compat lax
 ```
 
 * Generated **data goes to stdout**; **metrics/errors go to stderr** (for easy piping in CI).
-* There is **no network dereferencing** of external `$ref`. The `--external-ref-strict` flag only sets the policy for how to proceed when such refs are present; validation is always against the original schema.
+* By default the resolver runs in **local-only** mode (no network); external `$ref` are not fetched unless you explicitly opt into remote/registry strategies via the resolver options (e.g., CLI `--resolve`). The `--external-ref-strict` flag controls how unresolved externals affect the run; validation is always against the original schema.
 
 ---
 
@@ -93,7 +93,7 @@ Normalize → Compose → Generate → Repair → Validate
 * **Objects** — Must-cover intersection when `additionalProperties:false` across `allOf`; `patternProperties` overlap analysis; `propertyNames`; `dependent*`; `unevaluated*` preserved for validation.
 * **Arrays** — Tuples (`prefixItems`), implicit max length with `items:false`; `contains` uses **bag semantics** across `allOf`; `uniqueItems` with structural hashing.
 * **Numbers** — Exact **rational** `multipleOf` with bit/LCM caps and controlled fallbacks (`decimal`/`float`).
-* **Refs** — In-document `$ref` supported; **external `$ref`**: default **error**, policy configurable; no remote resolution; `$dynamicRef/*` preserved.
+* **Refs** — In-document `$ref` supported; **external `$ref`**: default **error**, policy configurable; remote/registry resolution is opt‑in via the resolver extension (otherwise treated as unresolved with diagnostics); `$dynamicRef/*` preserved.
 
 ---
 
@@ -107,13 +107,16 @@ foundrydata generate --schema <path> --rows <n> [options]
 
 **Selected options**
 
-| Option                           | Description                                                                           |
-| -------------------------------- | ------------------------------------------------------------------------------------- |
-| `--rows <n>`                     | Number of rows to generate.                                                           |
-| `--seed <n>`                     | Deterministic seed.                                                                   |
-| `--print-metrics`                | Print structured metrics to **stderr**.                                               |
-| `--external-ref-strict <policy>` | Policy for external `$ref`: `error` (default) \| `warn` \| `ignore`. No network I/O.  |
-| `--compat <mode>`                | Optional compatibility surface (e.g., `lax` to relax non-critical checks).            |
+| Option                            | Description                                                                                                                                                |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--rows <n>`                      | Number of rows to generate.                                                                                                                                |
+| `--seed <n>`                      | Deterministic seed.                                                                                                                                        |
+| `--print-metrics`                 | Print structured metrics to **stderr**.                                                                                                                    |
+| `--external-ref-strict <policy>`  | Policy for external `$ref`: `error` (default) \| `warn` \| `ignore`. Controls handling of unresolved externals; network resolution is governed separately by resolver options such as `--resolve`. |
+| `--compat <mode>`                 | Optional compatibility surface (e.g., `lax` to relax non-critical checks).                                                                                 |
+| `--resolve <strategies>`          | Resolver strategies for external `$ref`: comma-separated list of `local`, `remote`, `schemastore`. Default is `local` (offline-friendly; no network).     |
+| `--cache-dir <path>`              | Override on-disk cache directory used by the resolver extension when fetching and caching external schemas.                                                |
+| `--fail-on-unresolved <bool>`     | When set to `false` in Lax mode, enables planning-time stubs for unresolved externals (maps to `resolver.stubUnresolved = 'emptySchema'` in plan options). |
 
 **Examples**
 
@@ -146,16 +149,13 @@ const schema = {
 const result = await executePipeline(schema, {
   mode: 'strict', // or 'lax'
   metrics: { enabled: true },
-  compose: {
+  generate: {
+    count: 100,
+    seed: 42,
     planOptions: {
       // Default conditional policy: no rewrite; generator uses if-aware-lite hints
       rewriteConditionals: 'never',
     }
-  },
-  generate: {
-    count: 100,
-    seed: 42,
-    planOptions: {}
   },
   repair: {
     attempts: 1
@@ -219,7 +219,7 @@ Example metrics are printed to **stderr** when `--print-metrics` is enabled.
 | Complexity caps                         | degrade with diagnostics | same                                                                                     |
 | Conditional strategy when not rewriting | **if-aware-lite**        | same                                                                                     |
 
-Behavior and policies are defined by the spec; there is **no remote resolution** in either mode.
+Behavior and policies are defined by the spec. Strict vs Lax does **not** change whether remote lookup is used; remote/registry resolution is always opt‑in via resolver configuration (default is local‑only, offline‑friendly).
 
 ---
 
@@ -229,15 +229,15 @@ Behavior and policies are defined by the spec; there is **no remote resolution**
 * **Typecheck**: `npm run typecheck`
 * **Tests**: `npm run test`
 * **Formatting**: `npm run format`
-* **Monorepo structure**: `packages/core` (engine), `packages/cli` (CLI), `packages/shared`, `packages/api` (future).
+* **Monorepo structure**: `packages/core` (engine), `packages/cli` (CLI), `packages/shared`, `packages/reporter` (reporting + bench harness).
 
 ---
 
 ## Testing (high level)
 
-* **Unit per stage**: normalizer (golden + notes), composer (must-cover, bagged `contains`, rationals), generator (deterministic + enum/const precedence), repair (idempotence, snapping), validator (pointer mapping).
-* **Integration**: multi-draft validation against the **original** schema; conditional semantics; oneOf exclusivity after refinement; early-unsat suites.
-* **Bench/CI**: 🚧 *Under development* — Benchmark suite being rebuilt for the refactor to track p50/p95, quality SLI, caps triggers, and optional memory peak.
+* **Unit per stage**: `packages/core/src/transform/__tests__` (normalizer + composer), `packages/core/src/generator/__tests__` (determinism, precedence, coverage), `packages/core/src/repair/__tests__` (idempotence, snapping), plus `diag`/`util` units (e.g. draft detection, dynamic refs).
+* **Pipeline & integration**: `packages/core/src/pipeline/__tests__` and `packages/core/test/e2e/pipeline.integration.spec.ts` cover end‑to‑end `executePipeline`, AJV flags parity, external `$ref`/`$dynamicRef` policies, skip‑flow, exclusivity diagnostics, and final validation against the original schema.
+* **Reporter & bench/CI**: `packages/reporter/test/reporter.snapshot.test.ts` fixes stable JSON/Markdown/HTML reports, and `packages/reporter/test/bench.runner.test.ts` exercises the bench runner + summary used by repo‑level bench scripts to track p50/p95, caps triggers, and optional memory peak.
 
 ---
 
