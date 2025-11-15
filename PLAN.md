@@ -1,4 +1,4 @@
-Task: 5   Title: Product/intersection DFA for AP:false conjuncts
+Task: 6   Title: Decide emptiness & finiteness
 Anchors: [spec://§0#terminology, spec://§1#goal, spec://§3#apfalse-unsafe-pattern-policy, spec://§4#pipeline, spec://§8#acceptance-tests]
 
 Touched files:
@@ -7,11 +7,11 @@ Touched files:
 - packages/core/src/transform/__tests__/product-dfa.spec.ts
 
 Approach:
-This task composes per-conjunct DFAs (properties, patternProperties, and propertyNames guards) into a single product DFA that represents the intersection language required by AP:false must-cover semantics. I will implement a product construction over an array of DFAs, where each product state is a tuple of component state IDs, and the accepting condition is that all components are in accepting states. During construction I will track reachability from the product start state and prune unreachable states, and I will enforce a maxProductStates cap that short-circuits construction and returns a capped result that callers can treat as “approximate but sound”. The product module will expose a small API that returns the product DFA, the number of states, and a capped flag so that Compose can later emit NAME_AUTOMATON_COMPLEXITY_CAPPED diagnostics when used under AP:false with presence pressure. Unit tests will create small DFAs for simple literal and pattern-based name languages, verify that the product accepts exactly the intersection, and exercise the cap path by setting a very low maxProductStates and checking that the capped flag is set while still preserving soundness (no false positives).
+This task extends the product DFA module so that Compose can decide, for a given AP:false object, whether the name language is empty (no accepting paths) and whether it is finite (no cycles on states that can reach acceptance). I will add graph analysis helpers on top of the product DFA structure: one to mark states reachable from the start, one to find states co-accessible to any accepting state, and a cycle detector restricted to this co-accessible subgraph. The product builder will then return a small summary object `{states, finite, capsHit?}` alongside the existing flags so that downstream code can emit `UNSAT_AP_FALSE_EMPTY_COVERAGE` when the language is provably empty and set `nameDfaSummary` and `NAME_AUTOMATON_COMPLEXITY_CAPPED` diagnostics when caps are hit. Unit tests will construct product DFAs for clearly empty vs non-empty combinations and for finite vs infinite patterns (e.g., with and without self-loops), asserting that emptiness and finiteness are detected correctly and that caps propagate into the summary when maxProductStates is used.
 
 Risks/Unknowns:
-- The product DFA may grow quickly in state count even for modest inputs; caps must be conservative but not so tight that they prevent useful intersections in realistic schemas.
-- NAME_AUTOMATON_COMPLEXITY_CAPPED diagnostics will be wired in a later integration task; this module will focus on returning enough metadata for Compose to decide when to emit them.
+- Care must be taken to run cycle detection only on the co-accessible subgraph to avoid unnecessary work and false positives for infinite languages that are irrelevant to acceptance.
+- The summary will initially be internal to the product module; wiring it into diagnostics and CoverageIndex will be handled by later tasks.
 
 Checks:
 - build: npm run build
