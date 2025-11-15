@@ -786,6 +786,30 @@ describe('CompositionEngine AP:false strict vs lax', () => {
     expect(coverageEntry?.enumerate?.()).toEqual([]);
   });
 
+  it('honors patternPolicy.unsafeUnderApFalse="warn" in strict mode by downgrading to warning', () => {
+    const result = compose(makeInput(unsafePatternSchema), {
+      mode: 'strict',
+      planOptions: { patternPolicy: { unsafeUnderApFalse: 'warn' } },
+    });
+    const diag = result.diag;
+    expect(diag).toBeDefined();
+
+    const fatalCodes = diag?.fatal?.map((entry) => entry.code) ?? [];
+    expect(fatalCodes).not.toContain(DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN);
+
+    const warnCodes = diag?.warn?.map((entry) => entry.code) ?? [];
+    expect(warnCodes).toEqual(
+      expect.arrayContaining([
+        DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN,
+        DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX,
+      ])
+    );
+
+    const coverageEntry = result.coverageIndex.get('');
+    expect(coverageEntry).toBeDefined();
+    expect(coverageEntry?.enumerate?.()).toEqual([]);
+  });
+
   it('does not emit AP_FALSE_UNSAFE_PATTERN for raw propertyNames.pattern gating without rewrite', () => {
     const schema = {
       type: 'object',
