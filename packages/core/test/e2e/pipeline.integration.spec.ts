@@ -1122,6 +1122,42 @@ describe('Foundry pipeline integration scenarios', () => {
     expect(result.stages.validate.error?.cause).toBeInstanceOf(
       AjvFlagsMismatchError
     );
+    const diag = result.artifacts.validationDiagnostics?.[0];
+    expect(diag?.code).toBe(DIAGNOSTIC_CODES.AJV_FLAGS_MISMATCH);
+    expect(diag?.metrics).toBeDefined();
+    expect(diag?.metrics).toMatchObject({
+      validationsPerRow: result.metrics.validationsPerRow,
+      repairPassesPerRow: result.metrics.repairPassesPerRow,
+    });
+  });
+
+  it('accumulates repair passes into metrics when repair mutates items', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        a: { type: 'string' },
+      },
+      required: ['a'],
+    };
+
+    const result = await executePipeline(
+      schema,
+      {
+        generate: { count: 1 },
+        validate: { validateFormats: false },
+      },
+      {
+        generate: async () => ({
+          items: [{ a: 123 }],
+          diagnostics: [],
+        }),
+      }
+    );
+
+    expect(result.status).toBe('completed');
+    expect(result.metrics.repairPassesPerRow).toBeGreaterThan(0);
   });
 
   it('does not rely on non-validating anyOf branch under unevaluatedProperties:false (T-UEP-TRACE-02)', async () => {

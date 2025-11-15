@@ -3363,7 +3363,7 @@
         "id": "16",
         "title": "Validate stage: enforce AJV parity & metrics",
         "description": "Final validation on original schema; enforce AJV parity; collect per-phase metrics.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "1",
           "14",
@@ -3379,9 +3379,10 @@
             "description": "Set up final validation stage that validates generated data against the original schema using AJV, ensuring parity between planning and original instances",
             "dependencies": [],
             "details": "Create validate.ts module with AJV orchestration that validates against original schema. Implement parity enforcement between planning and original AJV instances. Ensure validation uses original schema not transformed/normalized version. Handle validation errors and provide detailed error reporting with canonical paths.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for validation success/failure cases, parity enforcement triggers AJV_OPTIONS_MISMATCH error",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-15T23:06:20.072Z"
           },
           {
             "id": 2,
@@ -3391,9 +3392,10 @@
               1
             ],
             "details": "Implement metrics collection for normalizeMs, composeMs, generateMs, repairMs, validateMs timing. Track validationsPerRow and repairPassesPerRow counters. Record complexity cap hits and performance bottlenecks. Create metrics aggregation and reporting utilities with structured output format.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify all metrics are captured correctly, performance tracking accuracy, metrics presence validation",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-15T23:06:24.306Z"
           },
           {
             "id": 3,
@@ -3404,14 +3406,16 @@
               2
             ],
             "details": "Integrate validate stage into orchestrator.ts pipeline flow. Implement error handling for validation failures with detailed diagnostics. Connect metrics collection to orchestrator execution. Ensure proper cleanup and resource management. Add validation stage configuration options and failure mode handling.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "E2E tests ensuring validation stage integration, error propagation, metrics collection in full pipeline execution",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-15T23:06:28.087Z"
           }
         ],
         "complexity": 5,
         "recommendedSubtasks": 3,
-        "expansionPrompt": "Implement final validation stage with AJV parity enforcement, comprehensive metrics collection across all pipeline phases, validation against original schema, and performance tracking. Include detailed error reporting and metrics visualization."
+        "expansionPrompt": "Implement final validation stage with AJV parity enforcement, comprehensive metrics collection across all pipeline phases, validation against original schema, and performance tracking. Include detailed error reporting and metrics visualization.",
+        "updatedAt": "2025-11-15T23:06:28.087Z"
       },
       {
         "id": "17",
@@ -3716,9 +3720,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-15T22:54:00.613Z",
+      "lastModified": "2025-11-15T23:06:28.088Z",
       "taskCount": 22,
-      "completedCount": 15,
+      "completedCount": 16,
       "tags": [
         "jsg-p1-automata-smt"
       ]
