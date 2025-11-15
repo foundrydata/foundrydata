@@ -60,4 +60,18 @@ describe('name automata BFS witnesses', () => {
       .sort((a, b) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0));
     expect(words).toEqual(sorted);
   });
+
+  it('respects candidate budget on infinite languages', () => {
+    const nfa = buildThompsonNfa('^[ab]+$').nfa;
+    const dfa = buildDfaFromNfa(nfa).dfa;
+
+    const { words, tried, capped } = bfsEnumerate(dfa, 10, {
+      maxLength: 8,
+      maxCandidates: 5,
+    });
+
+    expect(capped).toBe(true);
+    expect(tried).toBeGreaterThan(0);
+    expect(words.length).toBeGreaterThan(0);
+  });
 });
