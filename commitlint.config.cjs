@@ -21,7 +21,7 @@ module.exports = {
     'scope-enum': [
       2,
       'always',
-      ['core', 'cli', 'api', 'shared', 'deps', 'release', 'config', 'reporter'],
+      ['core', 'cli', 'api', 'shared', 'deps', 'release', 'config', 'reporter', 'docs', 'tests'],
     ],
     'subject-case': [2, 'never', ['start-case', 'pascal-case', 'upper-case']],
     'subject-empty': [2, 'never'],

@@ -91,7 +91,7 @@ A preparatory step (not part of the normative pipeline): draft detection, basic 
 * **Guarantee scope:** 100 % compliance only for **full pipeline** runs.
 * Pointer mapping for precise errors; phase metrics collection.
 
-**Module:** `packages/core/src/validator/`.
+**Module:** `packages/core/src/pipeline/orchestrator.ts`.
 
 ---
 
@@ -168,16 +168,18 @@ foundrydata/
 ├── packages/
 │   ├── core/
 │   │   ├── src/
-│   │   │   ├── transform/        # Normalize + Compose
+│   │   │   ├── transform/        # Normalize + Compose (stages 1–2)
 │   │   │   ├── generator/        # Stage 3
 │   │   │   ├── repair/           # Stage 4
-│   │   │   ├── validator/        # Stage 5
+│   │   │   ├── pipeline/         # Orchestrator, AJV wiring, metrics (stage 5 + flow)
+│   │   │   ├── diag/             # Diagnostics schemas, codes, validation helpers
+│   │   │   ├── errors/           # Error codes and presentation helpers
 │   │   │   ├── util/             # RNG, metrics, rational, hashing, ptr-map
 │   │   │   └── types/
 │   │   └── package.json
-│   ├── cli/                      # CLI (Commander.js)
-│   └── shared/
-│   └── api/                     # REST API (future)
+│   ├── cli/                      # Core CLI entrypoints
+│   ├── shared/                   # Shared type-level & runtime utilities
+│   └── reporter/                 # Reporting + bench harness on top of the core pipeline
 ```
 
 This structure is unchanged; descriptions now reflect the clarified contracts above.
@@ -194,9 +196,9 @@ This structure is unchanged; descriptions now reflect the clarified contracts ab
 
 ## Testing Alignment (high level)
 
-* **Unit per stage:** normalizer golden tests (notes asserted), composer merges & early‑unsat, generator determinism & precedence, repair idempotence & error reduction, validator pointer mapping.
-* **Integration:** multi‑draft validation against **original** schema; `oneOf` exclusivity after refinement; conditional semantics unchanged when not rewriting.
-* **Bench/CI:** track p50/p95, quality SLI, caps triggers, optional memory peak.
+* **Unit per stage:** `packages/core/src/transform/__tests__` for normalizer + composer, `packages/core/src/generator/__tests__` for generator determinism/precedence/coverage, `packages/core/src/repair/__tests__` for repair idempotence and error reduction, plus `diag`/`util` unit tests (e.g. draft detection, dynamic refs).
+* **Pipeline & policy integration:** `packages/core/src/pipeline/__tests__` and `packages/core/test/e2e/pipeline.integration.spec.ts` cover end‑to‑end `executePipeline` behavior, AJV parity, external `$ref`/`$dynamicRef` policies, skip‑flow modes, exclusivity diagnostics, and final validation against the original schema.
+* **Reporter & bench harness:** `packages/reporter/test/reporter.snapshot.test.ts` fixes stable JSON/Markdown/HTML reports, and `packages/reporter/test/bench.runner.test.ts` exercises the bench runner + summary output used by the repo‑level bench/CI workflows (including p50/p95 and caps behavior at the reporting layer).
 
 ---
 
@@ -206,7 +208,3 @@ This structure is unchanged; descriptions now reflect the clarified contracts ab
 * Documentation hub for simplification work (pipelines, CLI/API examples) — language and option names harmonized here (e.g., no `--resolve-externals`; policy flag instead).
 * Prior architecture baseline used as structural scaffold for module layout and naming.
 * Developer guidance for assistants (aligned with the same invariants and SLO/SLI framing).
-
----
-
-> **Change summary (what’s clarified vs. previous doc):** default **no conditional rewrite** with `if‑aware‑lite` hints; **no remote `$ref` resolution**; **two AJV configs** (formats annotative by default); **cache keys include AJV major + flags** with **separate LRUs**; **tuples/`items:false` implicit max** and **bagged `contains` unsat checks**; guarantee scope limited to the **full pipeline**; SLO/SLI targets stated as **p50** with quality SLI. 
