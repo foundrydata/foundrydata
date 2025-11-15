@@ -17,10 +17,8 @@ import {
 } from '../types/options.js';
 import type { NormalizeResult, NormalizerNote } from './schema-normalizer.js';
 import { resolveDynamicRefBinding } from '../util/draft.js';
-import {
-  extractExactLiteralAlternatives,
-  scanRegexSource,
-} from '../util/pattern-literals.js';
+import { extractExactLiteralAlternatives } from '../util/pattern-literals.js';
+import { analyzeRegex } from './name-automata/regex.js';
 
 type CoverageProvenance =
   | 'properties'
@@ -1795,6 +1793,18 @@ function analyzeRegexPattern(source: string): PatternAnalysis {
     complexityCapped: false,
   };
 
+  const policy = analyzeRegex(source, {
+    context: 'coverage',
+  });
+
+  if (policy.compileError) {
+    analysis.compileError = new Error('REGEX_COMPILE_ERROR');
+    return analysis;
+  }
+
+  analysis.complexityCapped = policy.capped;
+  analysis.anchoredSafe = policy.isAnchoredSafe;
+
   let compiled: RegExp | undefined;
   try {
     compiled = new RegExp(source, 'u');
@@ -1803,15 +1813,6 @@ function analyzeRegexPattern(source: string): PatternAnalysis {
       error instanceof Error ? error : new Error(String(error));
     return analysis;
   }
-
-  const scan = scanRegexSource(source);
-  analysis.complexityCapped = scan.complexityCapped;
-  analysis.anchoredSafe =
-    scan.anchoredStart &&
-    scan.anchoredEnd &&
-    !scan.hasLookAround &&
-    !scan.hasBackReference &&
-    !scan.complexityCapped;
 
   if (analysis.anchoredSafe) {
     analysis.compiled = compiled;
