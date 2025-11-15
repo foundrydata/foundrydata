@@ -255,7 +255,7 @@ describe('classifyExternalRefFailure', () => {
     });
   });
 
-  it('allows strict diagnostics to record skipped validation when requested', () => {
+  it('does not record skippedValidation for strict diagnostics even when requested', () => {
     const classification = {
       extRefs: ['https://example.com/external.schema.json#/Supplier'],
       failingRefs: ['https://example.com/external.schema.json#/Supplier'],
@@ -270,9 +270,9 @@ describe('classifyExternalRefFailure', () => {
 
     expect(diag.details).toMatchObject({
       mode: 'strict',
-      skippedValidation: true,
       policy: 'warn',
     });
-    expect(diag.metrics).toEqual({ validationsPerRow: 0 });
+    expect(diag.details).not.toHaveProperty('skippedValidation');
+    expect(diag.metrics).toBeUndefined();
   });
 });

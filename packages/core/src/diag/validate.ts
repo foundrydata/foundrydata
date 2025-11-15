@@ -173,13 +173,7 @@ if (externalRefValidator) {
       return false;
     }
 
-    const policy = value.policy;
-    if (
-      value.skippedValidation === true &&
-      mode !== 'lax' &&
-      policy !== 'warn' &&
-      policy !== 'ignore'
-    ) {
+    if (value.skippedValidation === true && mode !== 'lax') {
       return false;
     }
 

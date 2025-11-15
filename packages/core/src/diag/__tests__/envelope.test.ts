@@ -93,7 +93,7 @@ describe('assertDiagnosticEnvelope', () => {
           policy: 'warn',
         },
       })
-    ).not.toThrow();
+    ).toThrow(/expected shape/);
 
     expect(() =>
       assertDiagnosticEnvelope({

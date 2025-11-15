@@ -966,13 +966,11 @@ function createDefaultValidate(
     };
 
     const externalState = getExternalRefState();
-    if (externalState?.classification.skipEligible) {
-      const shouldEmitDiag =
-        mode === 'strict' ? externalRefPolicy !== 'ignore' : true;
+    if (externalState?.classification.skipEligible && mode === 'lax') {
       return {
         valid: true,
         skippedValidation: true,
-        diagnostics: shouldEmitDiag ? [externalState.diag] : undefined,
+        diagnostics: [externalState.diag],
         flags,
       };
     }
@@ -988,11 +986,8 @@ function createDefaultValidate(
         createSourceAjv: sourceAjvFactory,
       });
       if (classification.skipEligible) {
-        const skipValidation =
-          mode === 'lax' ||
-          (mode === 'strict' && externalRefPolicy !== 'error');
         const diag = createExternalRefDiagnostic(mode, classification, {
-          skipValidation,
+          skipValidation: mode === 'lax',
           policy: mode === 'strict' ? externalRefPolicy : undefined,
         });
         if (mode === 'lax') {
@@ -1003,16 +998,8 @@ function createDefaultValidate(
             flags,
           };
         }
-        if (externalRefPolicy === 'error') {
-          throw new ExternalRefValidationError(diag);
-        }
-        const shouldEmitDiag = externalRefPolicy !== 'ignore';
-        return {
-          valid: true,
-          skippedValidation: true,
-          diagnostics: shouldEmitDiag ? [diag] : undefined,
-          flags,
-        };
+        // In Strict mode, treat unresolved external $ref as a hard failure
+        throw new ExternalRefValidationError(diag);
       }
       throw error;
     }
