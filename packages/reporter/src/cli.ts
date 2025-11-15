@@ -10,6 +10,7 @@ import { Report } from './model/report.js';
 import { runEngineOnSchema } from './engine/runner.js';
 import { renderMarkdownReport } from './render/markdown.js';
 import { renderHtmlReport } from './render/html.js';
+import { runBench } from './bench/runner.js';
 
 const SUPPORTED_FORMATS = ['json', 'markdown', 'html'] as const;
 type OutputFormat = (typeof SUPPORTED_FORMATS)[number];
@@ -177,7 +178,41 @@ function createProgram(): Command {
     .description('Reporting layer CLI for JSON Schema pipelines');
 
   registerRunCommand(program);
+  registerBenchCommand(program);
   return program;
+}
+
+function registerBenchCommand(program: Command): void {
+  program
+    .command('bench')
+    .description(
+      'Run multiple schemas defined in a bench config file and aggregate results.'
+    )
+    .requiredOption('--config <path>', 'Path to bench config JSON file')
+    .option(
+      '--out-dir <dir>',
+      'Directory where bench artifacts will be written',
+      'bench-reports'
+    )
+    .option(
+      '--format <list>',
+      'Comma separated list of formats (json,markdown,html). Default: json'
+    )
+    .option('--seed <number>', 'Default seed applied to all schemas', (value) =>
+      Number.parseInt(value, 10)
+    )
+    .action(async (cmdOptions) => {
+      const formats = parseFormats(cmdOptions.format);
+      const summary = await runBench({
+        configPath: cmdOptions.config,
+        outDir: cmdOptions.outDir,
+        format: formats,
+        seed: Number.isFinite(cmdOptions.seed) ? cmdOptions.seed : undefined,
+      });
+      process.stdout.write(
+        `Bench run completed: ${summary.schemas.length} schemas, ${summary.totals.instances} instances.\n`
+      );
+    });
 }
 
 export async function runCli(argv = process.argv): Promise<void> {

@@ -1,0 +1,7 @@
+[
+  {
+    "id": "simple",
+    "schema": "../../../../profiles/simple.json",
+    "maxInstances": 2
+  }
+]
