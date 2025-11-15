@@ -197,6 +197,30 @@ describe('CompositionEngine coverage index', () => {
     expect(enumerated.slice(0, 2)).toEqual(['xa', 'ya']);
   });
 
+  it('emits NAME_AUTOMATON_COMPLEXITY_CAPPED when BFS witness search is capped', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      patternProperties: {
+        '^(?:x|y)[a-z]$': {},
+      },
+    };
+
+    const result = compose(makeInput(schema), {
+      planOptions: {
+        patternWitness: { maxCandidates: 1 },
+      },
+    });
+
+    const warnCodes = result.diag?.warn?.map((entry) => entry.code) ?? [];
+    expect(warnCodes).toContain(
+      DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED
+    );
+    expect(result.diag?.caps).toContain(
+      DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED
+    );
+  });
+
   it('emits NAME_AUTOMATON_COMPLEXITY_CAPPED and falls back when BFS witness budget is capped', () => {
     const schema = {
       type: 'object',
@@ -313,6 +337,34 @@ describe('CompositionEngine coverage index', () => {
     expect(hint).toBeDefined();
     const warnCodes = result.diag?.warn?.map((entry) => entry.code) ?? [];
     expect(warnCodes).toContain(DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX);
+  });
+
+  it('takes strong DFA-based emptiness when patternProperties and propertyNames.pattern disagree under presence pressure', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      patternProperties: {
+        '^[a-z]{3}$': {},
+      },
+      propertyNames: {
+        pattern: '^[a-z]{2}$',
+      },
+      minProperties: 1,
+    } as const;
+
+    const result = compose(makeInput(schema));
+    const fatal = result.diag?.fatal?.find(
+      (entry) => entry.code === DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE
+    );
+    expect(fatal).toBeDefined();
+    expect(fatal?.canonPath).toBe('');
+    expect(fatal?.details).toEqual({ minProperties: 1 });
+
+    const hints =
+      result.diag?.unsatHints?.filter(
+        (entry) => entry.code === DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE
+      ) ?? [];
+    expect(hints.length).toBe(0);
   });
 
   it('short-circuits UNSAT_AP_FALSE_EMPTY_COVERAGE in strict mode when must-cover set is provably empty under presence pressure', () => {
