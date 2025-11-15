@@ -646,6 +646,144 @@ describe('Foundry pipeline integration scenarios', () => {
     });
   });
 
+  describe('Objects automata coverage diagnostics', () => {
+    it('emits UNSAT_REQUIRED_VS_PROPERTYNAMES when required keys are outside propertyNames domain', async () => {
+      const schema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          allowed: { type: 'string' },
+        },
+        required: ['forbidden'],
+        propertyNames: {
+          enum: ['allowed'],
+        },
+      } as const;
+
+      const result = await executePipeline(schema, {
+        generate: { count: 0 },
+        validate: { validateFormats: false },
+      });
+
+      const composeOutput = result.stages.compose.output!;
+      const fatalCodes =
+        composeOutput.diag?.fatal?.map((entry) => entry.code) ?? [];
+      expect(fatalCodes).toContain(
+        DIAGNOSTIC_CODES.UNSAT_REQUIRED_VS_PROPERTYNAMES
+      );
+
+      const conflict = composeOutput.diag?.fatal?.find(
+        (entry) =>
+          entry.code === DIAGNOSTIC_CODES.UNSAT_REQUIRED_VS_PROPERTYNAMES
+      );
+      expect(conflict?.canonPath).toBe('');
+      expect(conflict?.details).toMatchObject({
+        required: ['forbidden'],
+        propertyNames: ['allowed'],
+      });
+    });
+
+    it('emits UNSAT_MINPROPERTIES_VS_COVERAGE when minProperties exceeds finite coverage', async () => {
+      const schema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          a: { type: 'string' },
+          b: { type: 'string' },
+        },
+        required: ['a'],
+        minProperties: 3,
+        propertyNames: {
+          enum: ['a', 'b'],
+        },
+      } as const;
+
+      const result = await executePipeline(schema, {
+        generate: { count: 0 },
+        validate: { validateFormats: false },
+      });
+
+      const composeOutput = result.stages.compose.output!;
+      const fatalCodes =
+        composeOutput.diag?.fatal?.map((entry) => entry.code) ?? [];
+      expect(fatalCodes).toContain(
+        DIAGNOSTIC_CODES.UNSAT_MINPROPERTIES_VS_COVERAGE
+      );
+
+      const conflict = composeOutput.diag?.fatal?.find(
+        (entry) =>
+          entry.code === DIAGNOSTIC_CODES.UNSAT_MINPROPERTIES_VS_COVERAGE
+      );
+      expect(conflict?.canonPath).toBe('');
+      expect(conflict?.details).toMatchObject({
+        minProperties: 3,
+        coverageSize: 2,
+      });
+
+      const coverage = composeOutput.coverageIndex.get('');
+      expect(coverage?.enumerate?.()).toEqual(['a', 'b']);
+    });
+
+    it('emits UNSAT_AP_FALSE_EMPTY_COVERAGE when propertyNames gating yields empty coverage under presence pressure', async () => {
+      const schema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object',
+        additionalProperties: false,
+        required: ['must'],
+        propertyNames: {
+          enum: ['allowed'],
+        },
+      } as const;
+
+      const result = await executePipeline(schema, {
+        mode: 'strict',
+        generate: { count: 0 },
+        validate: { validateFormats: false },
+      });
+
+      const composeOutput = result.stages.compose.output!;
+      const fatalCodes =
+        composeOutput.diag?.fatal?.map((entry) => entry.code) ?? [];
+      expect(fatalCodes).toContain(
+        DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE
+      );
+
+      const coverage = composeOutput.coverageIndex.get('');
+      expect(coverage).toBeDefined();
+      expect(coverage?.has('must')).toBe(false);
+      expect(coverage?.enumerate).toBeUndefined();
+    });
+
+    it('uses BFS witnesses to enumerate finite coverage for patternProperties-driven AP:false objects', async () => {
+      const schema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object',
+        additionalProperties: false,
+        minProperties: 2,
+        patternProperties: {
+          '^(?:x|y)[a-z]$': { type: 'string' },
+        },
+      } as const;
+
+      const result = await executePipeline(schema, {
+        mode: 'strict',
+        generate: { count: 0 },
+        validate: { validateFormats: false },
+      });
+
+      const composeOutput = result.stages.compose.output!;
+      const coverage = composeOutput.coverageIndex.get('');
+      expect(coverage).toBeDefined();
+      const witnesses = coverage?.enumerate?.(2) ?? [];
+      expect(witnesses).toEqual(['xa', 'ya']);
+      for (const key of witnesses) {
+        expect(coverage?.has(key)).toBe(true);
+      }
+    });
+  });
+
   it('separates coverage regex caps from generator pattern caps', async () => {
     const result = await executePipeline(patternCapsSchema, {
       generate: {

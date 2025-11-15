@@ -3482,7 +3482,7 @@
         "id": "18",
         "title": "Acceptance tests: objects automata",
         "description": "DFA emptiness; BFS witnesses; strict unsafe pattern; required vs propertyNames; minProperties vs coverage.",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           "8",
           "9",
@@ -3498,9 +3498,10 @@
             "description": "Implement test fixtures for DFA emptiness scenarios and BFS witness validation covering various schema complexity levels.",
             "dependencies": [],
             "details": "Create comprehensive test fixtures under packages/core/src/transform/__tests__/name-automata/ that cover DFA emptiness detection, BFS witness generation, and validation scenarios. Include schemas with empty languages, finite languages, and infinite languages. Fixtures should test reachability to accepting states and proper witness ordering.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for each fixture with expected emptiness results and witness validation",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-15T23:56:27.063Z"
           },
           {
             "id": 2,
@@ -3510,9 +3511,10 @@
               1
             ],
             "details": "Develop test suite covering strict unsafe pattern detection and enforcement. Include scenarios with additionalProperties:false under presence pressure, testing both strict fail-fast behavior and lax warning modes. Verify proper diagnostic code emission (AP_FALSE_UNSAFE_PATTERN) and conservative exclusion behavior.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Acceptance tests comparing strict vs lax behavior with diagnostic code assertions",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-15T23:56:31.955Z"
           },
           {
             "id": 3,
@@ -3522,9 +3524,10 @@
               1
             ],
             "details": "Create test scenarios covering conflicts between required properties and propertyNames constraints. Include edge cases where required properties cannot satisfy propertyNames patterns, testing UNSAT_REQUIRED_VS_PROPERTYNAMES diagnostic emission. Verify proper conflict detection and resolution in both strict and lax modes.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Acceptance tests with proof summary validation and diagnostic code verification",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-15T23:56:36.487Z"
           },
           {
             "id": 4,
@@ -3536,15 +3539,16 @@
               3
             ],
             "details": "Develop comprehensive test suite for minProperties validation against finite property coverage. Include scenarios where minProperties cannot be satisfied due to limited property coverage, testing UNSAT_MINPROPERTIES_VS_COVERAGE diagnostic emission. Verify proper handling of edge cases and boundary conditions in coverage calculation.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Run full acceptance suite with assertions on diagnostic codes and witness order validation",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-15T23:56:42.615Z"
           }
         ],
         "complexity": 5,
         "recommendedSubtasks": 4,
         "expansionPrompt": "Create comprehensive acceptance test suite for DFA emptiness scenarios, BFS witness validation, strict pattern enforcement testing, and property conflict detection. Include test fixtures for complex schema scenarios and automated verification of diagnostic codes.",
-        "updatedAt": "2025-11-15T23:34:37.504Z"
+        "updatedAt": "2025-11-15T23:56:42.615Z"
       },
       {
         "id": "19",
@@ -3729,9 +3733,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-15T23:40:47.347Z",
+      "lastModified": "2025-11-15T23:56:42.616Z",
       "taskCount": 22,
-      "completedCount": 18,
+      "completedCount": 19,
       "tags": [
         "jsg-p1-automata-smt"
       ]
