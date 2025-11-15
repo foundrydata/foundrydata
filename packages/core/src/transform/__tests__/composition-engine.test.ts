@@ -197,6 +197,36 @@ describe('CompositionEngine coverage index', () => {
     expect(enumerated.slice(0, 2)).toEqual(['xa', 'ya']);
   });
 
+  it('emits NAME_AUTOMATON_COMPLEXITY_CAPPED and falls back when BFS witness budget is capped', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      patternProperties: {
+        '^(?:x|y)[a-z]$': {},
+      },
+    };
+
+    const result = compose(makeInput(schema), {
+      planOptions: {
+        patternWitness: {
+          maxCandidates: 1,
+        },
+      },
+    });
+
+    const entry = result.coverageIndex.get('');
+    expect(entry).toBeDefined();
+    expect(entry?.has('xa')).toBe(true);
+    expect(entry?.enumerate).toBeUndefined();
+
+    const caps = result.diag?.caps ?? [];
+    expect(caps).toContain(DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED);
+    const warnCodes = (result.diag?.warn ?? []).map((w) => w.code);
+    expect(warnCodes).toContain(
+      DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED
+    );
+  });
+
   it('treats propertyNames synthetic patterns as coverage contributors', () => {
     const patternSource = '^(?:foo|bar)$';
     const schema = {
