@@ -203,6 +203,19 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
     kind: 'object',
     required: { decimalPrecision: { kind: 'number' } },
   },
+  [DIAGNOSTIC_CODES.UNSAT_NUMERIC_BOUNDS]: {
+    kind: 'object',
+    required: {
+      reason: enumSchema(['rangeEmpty', 'integerDomainEmpty']),
+    },
+    optional: {
+      type: enumSchema(['integer', 'number']),
+      minimum: numberOrNull,
+      maximum: numberOrNull,
+      exclusiveMinimum: numberOrNull,
+      exclusiveMaximum: numberOrNull,
+    },
+  },
   [DIAGNOSTIC_CODES.CONTAINS_NEED_MIN_GT_MAX]: {
     kind: 'object',
     required: {
