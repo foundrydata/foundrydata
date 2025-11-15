@@ -32,6 +32,30 @@ By default the CLI emits three artefacts per schema:
 | `--max-instances`   | Maximum number of instances to keep in the report              |
 | `--stdout`          | Write the single selected format to stdout instead of a file   |
 
+### Bench mode
+
+The reporter can also run a batch of schemas using a bench config. Each entry describes a schema path and optional overrides (seed, max instances, plan options). Example config:
+
+```json
+[
+  { "id": "simple", "schema": "profiles/simple.json", "maxInstances": 2 },
+  { "id": "medium", "schema": "profiles/medium.json", "seed": 42 }
+]
+```
+
+Run the CLI bench command:
+
+```bash
+npx tsx packages/reporter/src/cli.ts bench \
+  --config packages/reporter/test/fixtures/bench.config.json \
+  --out-dir bench-reports \
+  --format json
+```
+
+Outputs per schema `<id>.report.json` (and optional Markdown/HTML) plus a `bench-summary.json` aggregate aligned with the `BenchRunSummary` contract in [`src/bench/types.ts`](./src/bench/types.ts). Use the workbench bench dashboard to visualize this summary.
+
+If a schema fails to run (missing file, unresolved references, etc.), the bench runner records it with `level: "blocked"` and an `error` message in the summary while continuing with the remaining entries.
+
 ## Report contract
 
 The `Report` interface defined in [`src/model/report.ts`](./src/model/report.ts) is the reporter’s public contract. Key fields:
@@ -69,4 +93,3 @@ Snapshots live in `test/__snapshots__/`. Whenever the rendering or pipeline outp
 - The CLI is ESM (`type": "module"`). Import project files using `.js` extensions (e.g., `../src/engine/runner.js`).
 - `runEngineOnSchema` calls the real core pipeline (`@foundrydata/core/executePipeline`) and normalizes the coverage snapshot, repairs, and validation errors before returning a report.
 - Tests and linting are run from the repo root via `npm run lint`, `npm run test`, and `npm run test:coverage`.
-
