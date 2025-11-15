@@ -1,4 +1,4 @@
-/* eslint-disable max-lines-per-function */
+/* eslint-disable max-lines-per-function, max-lines */
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve, dirname, join, basename } from 'node:path';
 
@@ -10,7 +10,7 @@ import type {
   BenchTotals,
   BenchLevel,
 } from './types.js';
-import type { Report, PlanOptions } from '../model/report.js';
+import type { Report, PlanOptions, ReportSummary } from '../model/report.js';
 import { runEngineOnSchema } from '../engine/runner.js';
 import { renderMarkdownReport } from '../render/markdown.js';
 import { renderHtmlReport } from '../render/html.js';
@@ -93,36 +93,43 @@ async function processBenchEntry({
   formats,
   defaultSeed,
 }: ProcessBenchEntryOptions): Promise<ProcessBenchEntryResult> {
-  const schemaRaw = await readFile(entry.schema, 'utf8');
-  const schema = JSON.parse(schemaRaw);
-  const report = await runEngineOnSchema({
-    schema,
-    schemaId: entry.schemaId ?? entry.id ?? basename(entry.schema),
-    schemaPath: entry.schema,
-    maxInstances: entry.maxInstances,
-    seed: entry.seed ?? defaultSeed,
-    planOptions: entry.planOptions as PlanOptions | undefined,
-  });
+  try {
+    const schemaRaw = await readFile(entry.schema, 'utf8');
+    const schema = JSON.parse(schemaRaw);
+    const report = await runEngineOnSchema({
+      schema,
+      schemaId: entry.schemaId ?? entry.id ?? basename(entry.schema),
+      schemaPath: entry.schema,
+      maxInstances: entry.maxInstances,
+      seed: entry.seed ?? defaultSeed,
+      planOptions: entry.planOptions as PlanOptions | undefined,
+    });
 
-  const reportJsonPath = await writeReportArtifacts(
-    report,
-    entry.id,
-    outDir,
-    formats
-  );
-  return {
-    summary: buildBenchSchemaSummary(
-      entry,
+    const reportJsonPath = await writeReportArtifacts(
       report,
-      reportJsonPath,
-      entry.schema
-    ),
-    meta: {
-      toolName: report.meta.toolName,
-      toolVersion: report.meta.toolVersion,
-      engineVersion: report.meta.engineVersion,
-    },
-  };
+      entry.id,
+      outDir,
+      formats
+    );
+    return {
+      summary: buildBenchSchemaSummaryFromReport(
+        entry,
+        report,
+        reportJsonPath,
+        entry.schema
+      ),
+      meta: {
+        toolName: report.meta.toolName,
+        toolVersion: report.meta.toolVersion,
+        engineVersion: report.meta.engineVersion,
+      },
+    };
+  } catch (error) {
+    return {
+      summary: buildBenchSchemaSummaryFromError(entry, error),
+      meta: {},
+    };
+  }
 }
 
 async function writeReportArtifacts(
@@ -194,6 +201,8 @@ function normalizeBenchEntry(
   };
 }
 
+const RUN_INFO_CODES = new Set<string>(['RESOLVER_STRATEGIES_APPLIED']);
+
 function computeBenchLevelFromReport(report: Report): BenchLevel {
   const diag = report.summary.diagnosticsCount;
   const total = report.summary.totalInstances;
@@ -201,9 +210,12 @@ function computeBenchLevelFromReport(report: Report): BenchLevel {
   if (diag.composeFatal > 0 || diag.validateErrors > 0 || invalidRatio > 0.5) {
     return 'blocked';
   }
+
+  const hasMeaningfulRunDiag = hasNonInformationalRunDiagnostics(report);
+
   if (
     diag.composeWarn > 0 ||
-    diag.composeRunLevel > 0 ||
+    hasMeaningfulRunDiag ||
     report.summary.invalid > 0
   ) {
     return 'limited';
@@ -211,7 +223,15 @@ function computeBenchLevelFromReport(report: Report): BenchLevel {
   return 'ok';
 }
 
-function buildBenchSchemaSummary(
+function hasNonInformationalRunDiagnostics(report: Report): boolean {
+  const runDiags = report.compose?.result?.diag?.run;
+  if (!runDiags || runDiags.length === 0) {
+    return false;
+  }
+  return runDiags.some((diag) => !RUN_INFO_CODES.has(diag.code));
+}
+
+function buildBenchSchemaSummaryFromReport(
   entry: BenchConfigEntry,
   report: Report,
   reportPath: string,
@@ -224,6 +244,21 @@ function buildBenchSchemaSummary(
     reportPath,
     summary: report.summary,
     level: computeBenchLevelFromReport(report),
+  };
+}
+
+function buildBenchSchemaSummaryFromError(
+  entry: BenchConfigEntry,
+  error: unknown
+): BenchSchemaSummary {
+  return {
+    id: entry.id,
+    schemaId: entry.schemaId ?? entry.id ?? basename(entry.schema),
+    schemaPath: entry.schema,
+    reportPath: '',
+    summary: createEmptyReportSummary(),
+    level: 'blocked',
+    error: error instanceof Error ? error.message : String(error),
   };
 }
 
@@ -256,4 +291,22 @@ function normalizeFormats(formats: string[]): string[] {
     new Set(formats.map((value) => value.trim().toLowerCase()).filter(Boolean))
   );
   return lower.includes('json') ? lower : ['json', ...lower];
+}
+
+function createEmptyReportSummary(): ReportSummary {
+  return {
+    totalInstances: 0,
+    validUnchanged: 0,
+    validRepaired: 0,
+    invalid: 0,
+    diagnosticsCount: {
+      normalizeNotes: 0,
+      composeFatal: 0,
+      composeWarn: 0,
+      composeUnsatHints: 0,
+      composeRunLevel: 0,
+      repairBudgetExhausted: 0,
+      validateErrors: 0,
+    },
+  };
 }

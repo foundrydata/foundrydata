@@ -3,5 +3,142 @@
     "id": "simple",
     "schema": "../../../../profiles/simple.json",
     "maxInstances": 2
+  },
+  {
+    "id": "medium",
+    "schema": "../../../../profiles/medium.json",
+    "maxInstances": 1,
+    "seed": 42
+  },
+  {
+    "id": "pathological",
+    "schema": "../../../../profiles/pathological.json",
+    "maxInstances": 1,
+    "seed": 7
+  },
+  {
+    "id": "real-world-appearance-schema",
+    "schema": "../../../../profiles/real-world/appearance.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-asyncapi-3-0-schema",
+    "schema": "../../../../profiles/real-world/asyncapi-3.0.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-cityjson-schema",
+    "schema": "../../../../profiles/real-world/cityjson.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-cityobjects-schema",
+    "schema": "../../../../profiles/real-world/cityobjects.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-cloudevents-schema",
+    "schema": "../../../../profiles/real-world/cloudevents.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-dense-cityjson-bundled-schema",
+    "schema": "../../../../profiles/real-world/dense/cityjson.bundled.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-dense-cloudformation-provider-definition-bundled-schema",
+    "schema": "../../../../profiles/real-world/dense/cloudformation-provider-definition.bundled.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-dense-epcis-2-0-bundled-schema",
+    "schema": "../../../../profiles/real-world/dense/epcis-2.0.bundled.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-dense-kubernetes-deployment-bundled-schema",
+    "schema": "../../../../profiles/real-world/dense/kubernetes-deployment.bundled.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-dense-openbanking-account-info-bundled",
+    "schema": "../../../../profiles/real-world/dense/openbanking-account-info.bundled.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-dense-openbanking-obaccount6-schema",
+    "schema": "../../../../profiles/real-world/dense/openbanking-obaccount6.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-dense-sdm-vehicle-bundled-schema",
+    "schema": "../../../../profiles/real-world/dense/sdm-vehicle.bundled.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-dense-stripe-openapi-bundled-schema",
+    "schema": "../../../../profiles/real-world/dense/stripe-openapi.bundled.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-fhir-schema",
+    "schema": "../../../../profiles/real-world/fhir.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-geomprimitives-schema",
+    "schema": "../../../../profiles/real-world/geomprimitives.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-geomtemplates-schema",
+    "schema": "../../../../profiles/real-world/geomtemplates.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-github-workflow-schema",
+    "schema": "../../../../profiles/real-world/github-workflow.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-google-analytics-event-schema",
+    "schema": "../../../../profiles/real-world/google-analytics-event.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-google-audit-log-entry-schema",
+    "schema": "../../../../profiles/real-world/google-audit-log-entry.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-google-pubsub-event-schema",
+    "schema": "../../../../profiles/real-world/google-pubsub-event.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-kubernetes-deployment-schema",
+    "schema": "../../../../profiles/real-world/kubernetes-deployment.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-metadata-schema",
+    "schema": "../../../../profiles/real-world/metadata.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-npm-package-schema",
+    "schema": "../../../../profiles/real-world/npm-package.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-openapi-3-1-schema",
+    "schema": "../../../../profiles/real-world/openapi-3.1.schema.json",
+    "maxInstances": 1
+  },
+  {
+    "id": "real-world-tsconfig-schema",
+    "schema": "../../../../profiles/real-world/tsconfig.schema.json",
+    "maxInstances": 1
   }
 ]

@@ -15,6 +15,13 @@ body {
   min-height: 100vh;
 }
 
+.loader-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
 .app-shell {
   max-width: 1200px;
   margin: 0 auto;
@@ -50,6 +57,10 @@ header p {
 .drop-panel.drag-active {
   border-color: #6366f1;
   background: #eef2ff;
+}
+
+.bench-upload-panel {
+  min-height: 100%;
 }
 
 .drop-panel input[type='file'] {
@@ -342,6 +353,88 @@ button.primary:hover {
   display: flex;
   gap: 0.5rem;
   align-items: baseline;
+}
+
+.bench-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.bench-level-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.bench-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.bench-meta div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.bench-meta .label::after {
+  content: ':';
+  margin-left: 0.2rem;
+}
+
+.bench-meta strong {
+  word-break: break-all;
+}
+
+.bench-totals .key-values {
+  margin-top: 0.5rem;
+}
+
+.bench-schema-table th,
+.bench-schema-table td {
+  white-space: nowrap;
+}
+
+.bench-schema-table td.schema-id,
+.bench-schema-table td.notes-cell {
+  white-space: normal;
+  max-width: 240px;
+}
+
+.bench-level-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.bench-level-ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.bench-level-limited {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.bench-level-blocked {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.bench-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #475569;
 }
 
 .key-values {

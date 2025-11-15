@@ -8,7 +8,7 @@ import { describe, expect, it, afterEach } from 'vitest';
 import { runBench } from '../src/bench/runner.js';
 
 const FIXTURE_CONFIG = fileURLToPath(
-  new URL('./fixtures/bench.config.json', import.meta.url)
+  new URL('./fixtures/bench.config.smoke.json', import.meta.url)
 );
 
 async function createTempDir(): Promise<string> {
@@ -35,10 +35,19 @@ describe('bench runner', () => {
       seed: 123,
     });
 
-    expect(summary.schemas).toHaveLength(1);
-    expect(summary.schemas[0]?.id).toBe('simple');
-    expect(summary.totals.schemas).toBe(1);
+    expect(summary.schemas).toHaveLength(4);
+    expect(summary.schemas.map((schema) => schema.id)).toEqual([
+      'simple',
+      'medium',
+      'pathological',
+      'missing',
+    ]);
+    expect(summary.totals.schemas).toBe(4);
     expect(summary.totals.instances).toBeGreaterThan(0);
+
+    const missing = summary.schemas.find((schema) => schema.id === 'missing');
+    expect(missing?.level).toBe('blocked');
+    expect(missing?.error).toBeDefined();
 
     await expect(
       access(join(outDir, 'bench-summary.json'))
