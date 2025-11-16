@@ -49,11 +49,11 @@ Please keep this README updated when adding/removing fixtures.
 
 ## Current bench:real-world status (FOUNDRY_BENCH_QUICK=1)
 
-- `npm-package` — **pass** (p95 ≈ 52 ms, memory ≈ 161 MB)
-- `tsconfig` — **pass** (p95 ≈ 46 ms, memory ≈ 172 MB)
-- `github-workflow` — **fail** (`FINAL_VALIDATION_FAILED`)
-- `openapi-3.1` — **fail** (`FINAL_VALIDATION_FAILED`)
-- `asyncapi-3.0` — **fail** (`FINAL_VALIDATION_FAILED`)
-- `cloudevents` — **fail** (`FINAL_VALIDATION_FAILED`)
+- `npm-package` — **pass** (p95 ≈ 49 ms, memory ≈ 156 MB)
+- `tsconfig` — **pass** (p95 ≈ 57 ms, memory ≈ 179 MB)
+- `github-workflow` — **fail** (p95 ≈ 191 ms > 120 ms budget)
+- `openapi-3.1` — **pass** (p95 ≈ 50 ms, memory ≈ 222 MB)
+- `asyncapi-3.0` — **fail** (p95 ≈ 217 ms > 120 ms budget)
+- `cloudevents` — **pass** (p95 ≈ 6 ms, memory ≈ 264 MB)
 
-Failures currently exit the script with code 1 but still produce partial metrics and a gate summary so regressions are visible.
+The real-world gate currently fails because the aggregate p95 latency (dominated by `asyncapi-3.0` and `github-workflow`) exceeds the 120 ms budget; `npm run bench:real-world` exits with code 1 but still emits per-profile metrics and the gate summary so regressions remain visible.
