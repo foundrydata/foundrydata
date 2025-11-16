@@ -36,7 +36,7 @@ To comply with spec://§11#strict (no runtime deref of external `$ref`), we keep
 
 ## Using the fixtures
 
-- **CLI smoke tests**: `npx foundrydata generate --schema profiles/real-world/openapi-3.1.schema.json --rows 10 --seed 42`
+- **CLI smoke tests**: `npx foundrydata generate --schema profiles/real-world/openapi-3.1.schema.json --n 10 --seed 42`
 - **Real-world bench harness (performance gate)**: `npm run bench:real-world` executes the optional dataset with the same seeds `{1,42,4242}` and budgets as spec://§1#bench-sli-gate; set `FOUNDRY_BENCH_QUICK=1` for a 1×3 iteration sanity run. Use this primarily to track p50/p95 latency and memory budgets.
 - **Corpus harness (correctness / UNSAT / caps overview)**:
   - From the repo root you can run:  

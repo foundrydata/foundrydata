@@ -43,7 +43,7 @@ main (legacy)
 
 * **What**: JSON Schema → Test Data Generator with a compliance guarantee (AJV as oracle)
 * **Why**: Generate thousands of valid records fast (targets per spec)
-* **How**: `foundrydata generate --schema user.json --rows 10000`
+* **How**: `foundrydata generate --schema user.json --n 10000`
 * **Unique (roadmap)**: Scenario‑based generation for edge cases and stress tests (not yet exposed as a CLI flag)
 * **Philosophy**: Deterministic, schema‑true data with explicit limits
 
@@ -53,20 +53,20 @@ main (legacy)
 
 Generate targeted datasets for different testing aims:
 
-> Note: the `--scenario` flag illustrated below is a design example; the current CLI does not yet implement scenario selection. Use plain `--rows` for now.
+> Note: the `--scenario` flag illustrated below is a design example; the current CLI does not yet implement scenario selection. Use plain `--n` (or `--count`) for now.
 
 ```bash
 # Standard generation - realistic data
-foundrydata generate --schema user.json --rows 100
+foundrydata generate --schema user.json --n 100
 
 # Edge cases - min/max values, boundary conditions, empty arrays
-foundrydata generate --schema user.json --rows 100 --scenario edge-cases
+foundrydata generate --schema user.json --n 100 --scenario edge-cases
 
 # Stress test - uncommon values, max arrays, near-boundary values
-foundrydata generate --schema user.json --rows 100 --scenario stress-test
+foundrydata generate --schema user.json --n 100 --scenario stress-test
 
 # Error conditions - invalid formats, missing required fields (for testing error handlers)
-foundrydata generate --schema user.json --rows 100 --scenario errors
+foundrydata generate --schema user.json --n 100 --scenario errors
 ```
 
 ---

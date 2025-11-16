@@ -38,32 +38,32 @@ This branch (`feature-simplification`) is a **complete ground-up refactor** of F
 
 ```bash
 # Basic generation — validate schema then generate 100 rows
-foundrydata generate --schema user.json --rows 100
+foundrydata generate --schema user.json --n 100
 
 # Deterministic output — same seed ⇒ same data
-foundrydata generate --schema user.json --rows 1000 --seed 42
+foundrydata generate --schema user.json --n 1000 --seed 42
 
 # Print metrics (timings, validations/row, etc.) to stderr
-foundrydata generate --schema user.json --rows 1000 --print-metrics
+foundrydata generate --schema user.json --n 1000 --print-metrics
 
 # External refs policy (no remote resolution by default; policy only)
 # Values: error | warn | ignore  (default: error)
-foundrydata generate --schema api.json --rows 50 --external-ref-strict warn
+foundrydata generate --schema api.json --n 50 --external-ref-strict warn
 
 # Optional compatibility surface (non-normative toggles, e.g., relax warnings)
-foundrydata generate --schema user.json --rows 100 --compat lax
+foundrydata generate --schema user.json --n 100 --compat lax
 
 # Resolver (HTTP) pre-phase — opt-in
 # Local-only (default): no HTTP(S) fetch
-foundrydata generate --schema real-world.json --rows 10 --resolve=local
+foundrydata generate --schema real-world.json --n 10 --resolve=local
 
 # With HTTP(S) resolver + cache, strict policy (externals must resolve)
-foundrydata generate --schema real-world.json --rows 10 \
+foundrydata generate --schema real-world.json --n 10 \
   --resolve=local,remote --cache-dir "~/.foundrydata/cache" \
   --external-ref-strict error
 
 # With resolver + Lax mode: best-effort planning, skip final validation on unresolved externals
-foundrydata generate --schema real-world.json --rows 10 \
+foundrydata generate --schema real-world.json --n 10 \
   --resolve=local,remote --cache-dir "~/.foundrydata/cache" \
   --external-ref-strict warn --compat lax --debug-passes
 ```
@@ -116,34 +116,41 @@ Normalize → Compose → Generate → Repair → Validate
 ### Usage
 
 ```bash
-foundrydata generate --schema <path> --rows <n> [options]
+foundrydata generate --schema <path> --n <count> [options]
 foundrydata openapi --spec <openapi.json> [selection] [options]
 ```
 
 **Selected options (`generate`)**
 
-| Option                            | Description                                                                                                                                                |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--rows <n>`                      | Number of rows to generate.                                                                                                                                |
-| `--seed <n>`                      | Deterministic seed.                                                                                                                                        |
-| `--print-metrics`                 | Print structured metrics to **stderr**.                                                                                                                    |
-| `--external-ref-strict <policy>`  | Policy for external `$ref`: `error` (default) \| `warn` \| `ignore`. Controls handling of unresolved externals; network resolution is governed separately by resolver options such as `--resolve`. |
-| `--compat <mode>`                 | Optional compatibility surface (e.g., `lax` to relax non-critical checks).                                                                                 |
-| `--resolve <strategies>`          | Resolver strategies for external `$ref`: comma-separated list of `local`, `remote`, `schemastore`. Default is `local` (offline-friendly; no network).     |
-| `--cache-dir <path>`              | Override on-disk cache directory used by the resolver extension when fetching and caching external schemas.                                                |
-| `--fail-on-unresolved <bool>`     | When set to `false` in Lax mode, enables planning-time stubs for unresolved externals (maps to `resolver.stubUnresolved = 'emptySchema'` in plan options). |
+| Option                           | Description                                                                                                                                                                                                                 |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-s, --schema <path>`            | JSON Schema file path (required).                                                                                                                                                                                           |
+| `-c, --count <n>`                | Number of items to generate (primary flag).                                                                                                                                                                                 |
+| `-n, --n <n>`                    | Alias for `--count`; short form used in examples.                                                                                                                                                                           |
+| `-r, --rows <n>`                 | Legacy alias for `--count`; still accepted for backwards compatibility.                                                                                                                                                     |
+| `--seed <n>`                     | Deterministic seed (default: `424242`).                                                                                                                                                                                     |
+| `--out <format>`                 | Output format: `json` \| `ndjson` (default: `json`).                                                                                                                                                                        |
+| `--print-metrics`                | Print structured metrics to **stderr**.                                                                                                                                                                                     |
+| `--no-metrics`                   | Disable metrics collection in the pipeline.                                                                                                                                                                                 |
+| `--mode <mode>`                  | Execution mode: `strict` \| `lax`. Takes precedence over `--compat` when both are provided.                                                                                                                                |
+| `--compat <mode>`                | Compatibility surface: `strict` \| `lax`. Defaults to `strict` when neither `--mode` nor `--compat` is provided.                                                                                                           |
+| `--prefer-examples`              | Prefer schema/OpenAPI examples when present, falling back to generated data.                                                                                                                                                |
+| `--external-ref-strict <policy>` | Policy for external `$ref`: `error` (default) \| `warn` \| `ignore`. Controls handling of unresolved externals; network resolution is governed separately by resolver options such as `--resolve`.                           |
+| `--resolve <strategies>`         | Resolver strategies for external `$ref`: comma-separated list of `local`, `remote`, `schemastore`. Default is `local` (offline-friendly; no network).                                                                      |
+| `--cache-dir <path>`             | Override on-disk cache directory used by the resolver extension when fetching and caching external schemas.                                                                                                                 |
+| `--fail-on-unresolved <bool>`    | When set to `false` in Lax mode, enables planning-time stubs for unresolved externals (maps to `resolver.stubUnresolved = 'emptySchema'` in plan options).                                                                  |
 
 **Examples (`generate`)**
 
 ```bash
 # Basic
-foundrydata generate --schema user.json --rows 100
+foundrydata generate --schema user.json --n 100
 
 # Deterministic + metrics
-foundrydata generate --schema user.json --rows 1000 --seed 42 --print-metrics
+foundrydata generate --schema user.json --n 1000 --seed 42 --print-metrics
 
 # External refs policy (no deref)
-foundrydata generate --schema api.json --rows 50 --external-ref-strict warn
+foundrydata generate --schema api.json --n 50 --external-ref-strict warn
 ```
 
 ### OpenAPI driver (`openapi`)
@@ -188,6 +195,13 @@ The command shares the same core flags as `generate` (`--n/--rows`, `--seed`, `-
 ## Node.js API
 
 > The guarantees below apply to the **full pipeline**. Using individual stages is supported, but final schema compliance is only guaranteed if you execute **Validate** at the end.
+
+**High‑level facades**
+
+- `Normalize(schema, options?)` — runs the normalizer and returns `{ canonSchema, ptrMap, notes }` without mutating the original schema.
+- `Compose(schema, { mode, seed?, planOptions? })` — runs normalization + composition and returns `{ coverageIndex, planDiag, nameDfaSummary? }`.
+- `Generate(k, seed, schema, options?)` — runs the full 5‑stage pipeline and returns an async iterable of instances with an attached `result: Promise<PipelineResult>`.
+- `Validate(instance, originalSchema, options?)` — validates a single instance against the original schema using the same Source AJV posture as the pipeline and returns `{ valid, ajvErrors? }`.
 
 ### High‑level: `Generate` + `Validate`
 
@@ -267,7 +281,8 @@ if (result.status === 'completed') {
 
 **AJV / formats policy**
 
-* By default, formats are **annotative**: `validateFormats:false`. You can enable assertive format validation via `ajv-formats` by setting `validate.validateFormats: true` (or `Validate(..., { validateFormats: true })`) in the pipeline options.
+* At the pipeline level (`executePipeline` and the `Validate` facade), formats are **annotative** by default: `validateFormats:false`. You can enable assertive format validation via `ajv-formats` by setting `validate.validateFormats: true` (or `Validate(..., { validateFormats: true })`) in the options.
+* The high‑level `Generate` facade (and the CLI, which delegates to it) passes `validateFormats:true` to the pipeline by default, so CLI/`Generate` runs perform assertive format validation unless you explicitly opt out.
 
 ---
 
@@ -335,7 +350,3 @@ Behavior and policies are defined by the spec. Strict vs Lax does **not** change
 ## License
 
 MIT (open source first, offline-friendly; see spec philosophy).
-
----
-
-> *This README is aligned to the **Feature Support Simplification Plan** (source of truth for pipeline, feature semantics, defaults, and targets). Where wording differs from earlier docs (e.g., external refs option name, p50 targets, "parse" placement), this file follows the spec.*

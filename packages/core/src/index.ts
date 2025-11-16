@@ -1,22 +1,17 @@
 // @foundrydata/core entry point
 //
 // Public API (today):
+// - Exposes high-level facades Normalize/Compose/Generate/Validate via ./api.js as thin wrappers
+//   over the existing pipeline/orchestrator and stage helpers. The README “Node.js API” section
+//   documents these facades and they are the preferred entry points for most consumers.
 // - Re-exports low-level building blocks: types, normalize(), compose(), generateFromCompose(),
-//   executePipeline(), AJV helpers, diagnostics/metrics, repair engine, and OpenAPI driver.
-// - The 5-stage pipeline (Normalize → Compose → Generate → Repair → Validate) is exposed mainly
-//   via executePipeline and individual stage helpers, rather than dedicated facade functions.
-// - Diagnostics and metrics are available through DiagnosticEnvelope / MetricsCollector
-//   and pipeline artifacts, but there is no single high-level Normalize/Compose/Generate/Validate
-//   Node API surface yet.
+//   executePipeline(), AJV helpers, diagnostics/metrics, repair engine, and OpenAPI driver for
+//   advanced and internal usage.
+// - Diagnostics and metrics are available through DiagnosticEnvelope / MetricsCollector and
+//   pipeline artifacts.
 //
-// TODO (API DX — PARTIALLY DONE):
-// - High-level facades Normalize/Compose/Generate/Validate are now exposed via api.ts as thin,
-//   documented wrappers over the existing pipeline/orchestrator and stage helpers.
-// - Remaining DX work:
-//   - Refine public typings and docs to emphasize the minimal surface (Diagnostics, CoverageIndex,
-//     PipelineResult) and hide incidental internal details where possible.
-//   - Ensure long-term stability guarantees for these facades and align examples in the docs and
-//     reporter/CLI with the preferred Node API entry points.
+// NOTE: When changing the shape or defaults of the high-level facades exported from ./api.js,
+// update the root README “Node.js API” section so CLI/docs/Node examples stay in sync.
 
 // High-level Node API facades (Normalize/Compose/Generate/Validate)
 export * from './api.js';
