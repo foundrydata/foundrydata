@@ -270,28 +270,6 @@ function hydrateAjvWithRegistry(
   }
 }
 
-function determineSchemaDialect(
-  schema: unknown
-): '2020-12' | '2019-09' | 'draft-07' | 'draft-04' {
-  if (schema && typeof schema === 'object') {
-    const sch = (schema as Record<string, unknown>)['$schema'];
-    if (typeof sch === 'string') {
-      const lowered = sch.toLowerCase();
-      if (lowered.includes('2020-12')) return '2020-12';
-      if (lowered.includes('2019-09') || lowered.includes('draft-2019')) {
-        return '2019-09';
-      }
-      if (lowered.includes('draft-07') || lowered.includes('draft-06')) {
-        return 'draft-07';
-      }
-      if (lowered.includes('draft-04') || lowered.endsWith('/schema#')) {
-        return 'draft-04';
-      }
-    }
-  }
-  return '2020-12';
-}
-
 function createInitialStages(): PipelineStages {
   return {
     normalize: { status: 'pending' },
@@ -337,7 +315,7 @@ export async function executePipeline(
 ): Promise<PipelineResult> {
   const metrics =
     options.collector ?? new MetricsCollector(options.metrics ?? {});
-  const sourceDialect = determineSchemaDialect(schema);
+  const sourceDialect = detectDialectFromSchema(schema);
   const { schemaForAjv: schemaForSourceAjv } = prepareSchemaForSourceAjv(
     schema,
     sourceDialect
@@ -524,6 +502,7 @@ export async function executePipeline(
             validateFormats,
             discriminator,
             multipleOfPrecision: expectedMoP,
+            tolerateInvalidPatterns: mode === 'lax',
           },
           planOptions
         );
@@ -1043,8 +1022,10 @@ function createDefaultValidate(
 
     const validateFormats = Boolean(options?.validateFormats);
     const discriminator = Boolean(options?.discriminator);
-    const dialect = determineSchemaDialect(schema);
+    const dialect = detectDialectFromSchema(schema);
     const mode = pipelineOptions.mode ?? 'strict';
+
+    const invalidPatternDiagnostics: DiagnosticEnvelope[] = [];
 
     const sourceAjvFactory = (): Ajv => {
       const ajv = createSourceAjv(
@@ -1053,6 +1034,17 @@ function createDefaultValidate(
           validateFormats,
           discriminator,
           multipleOfPrecision: expectedMoP,
+          tolerateInvalidPatterns: mode === 'lax',
+          onInvalidPatternDraft06:
+            mode === 'lax'
+              ? ({ pattern }) => {
+                  invalidPatternDiagnostics.push({
+                    code: 'DRAFT06_PATTERN_TOLERATED',
+                    canonPath: '',
+                    details: { pattern },
+                  });
+                }
+              : undefined,
         },
         planOptions
       );
@@ -1152,12 +1144,16 @@ function createDefaultValidate(
         }
       }
     }
+    const allDiagnostics =
+      invalidPatternDiagnostics.length > 0 || validationDiagnostics.length > 0
+        ? [...invalidPatternDiagnostics, ...validationDiagnostics]
+        : undefined;
+
     return {
       valid: allValid,
       errors: errors.length ? errors : undefined,
       flags,
-      diagnostics:
-        validationDiagnostics.length > 0 ? validationDiagnostics : undefined,
+      diagnostics: allDiagnostics,
     };
   };
 }
