@@ -6,10 +6,6 @@
 
 ---
 
-**When reviewing code**: If you find legacy patterns or old architecture remnants in the `feature-simplification` branch, they should be removed and replaced with SPEC-compliant implementation.
-
----
-
 ## 🚀 TL;DR — FoundryData in 30 seconds
 
 * **What**: JSON Schema → Test Data Generator with a compliance guarantee (AJV as oracle)
