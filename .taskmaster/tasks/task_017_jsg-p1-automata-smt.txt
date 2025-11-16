@@ -5,7 +5,7 @@
 # Priority: medium
 # Description: Expose CLI flags and minimal OpenAPI driver hooks for mocks/tests.
 # Details:
-- CLI: json-gen schema.json --mode strict --seed 123 --prefer-examples --n 10 --out ndjson.
+- CLI: foundrydata schema.json --mode strict --seed 123 --prefer-examples --n 10 --out ndjson.
 - Driver: select content/schema; prefer example/examples.default; export NDJSON; no network I/O in core.
 - Thin adapters MSW/Prism out of core.
 
@@ -29,5 +29,5 @@ Build driver in packages/core/src/ that parses OpenAPI specs, extracts schemas f
 ### Dependencies: 17.1, 17.2
 ### Description: Add NDJSON (newline-delimited JSON) output format support and integrate all components into working CLI command.
 ### Details:
-Implement NDJSON formatter that outputs one JSON object per line. Integrate CLI flags, OpenAPI driver, and output formatting into cohesive command: json-gen schema.json --mode strict --seed 123 --prefer-examples --n 10 --out ndjson. Ensure proper error handling and validation throughout the pipeline.
+Implement NDJSON formatter that outputs one JSON object per line. Integrate CLI flags, OpenAPI driver, and output formatting into cohesive command: foundrydata schema.json --mode strict --seed 123 --prefer-examples --n 10 --out ndjson. Ensure proper error handling and validation throughout the pipeline.
 
