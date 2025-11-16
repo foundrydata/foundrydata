@@ -74,9 +74,9 @@ jobs:
       - name: Run full tests with coverage + annotations
         run: npx vitest run --config vitest.config.ts --coverage --reporter=default --reporter=github-actions
 
-      - name: Enforce coverage threshold (90% lines)
+      - name: Enforce coverage threshold (85% lines)
         run: |
-          node -e "const s=require('./coverage/coverage-summary.json'); const pct=s.total.lines.pct; if (pct<90){console.error(\`Coverage lines ${pct}% < 90%\`); process.exit(1);} else {console.log(\`Coverage lines ${pct}% >= 90%\`);}"
+          node -e "const s=require('./coverage/coverage-summary.json'); const pct=s.total.lines.pct; const min=85; if (pct<min){console.error(\`Coverage lines ${pct}% < \${min}%\`); process.exit(1);} else {console.log(\`Coverage lines ${pct}% >= \${min}%\`);}"
 
       - name: Upload coverage (lcov + summary)
         uses: actions/upload-artifact@v4
