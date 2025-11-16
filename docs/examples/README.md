@@ -234,7 +234,8 @@ Observability
 
 ## Troubleshooting the examples
 
-* **“External ref” error/warning** — The schema points to an external `$ref`. There is no remote deref; set `--external-ref-strict warn` to proceed best‑effort (still validated against the original).&#x20;
+* **“External ref” error/warning** — The schema points to an external `$ref`. There is no remote deref; set `--external-ref-strict warn` to proceed best-effort (still validated against the original).&#x20;
+  * The corresponding diagnostic code is `EXTERNAL_REF_UNRESOLVED`; run with `--debug-passes` to see which reference failed and under which mode/policy.
 * **Unsatisfiable `contains`** — Check `minContains/maxContains` against `maxItems` and whether needs are mutually exclusive.&#x20;
 * **Format assertions** — If you need strict format validation, use an AJV setup that enables assertive formats; the default is annotative.&#x20;
 
