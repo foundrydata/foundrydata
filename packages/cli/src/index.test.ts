@@ -202,6 +202,80 @@ describe('CLI openapi command', () => {
     expect(stderr).toBe('');
   });
 
+  it('emits 5 deterministic NDJSON payloads for an OpenAPI operationId and validates them via the public API', async () => {
+    const { dir, specPath, responseSchema } = await createOpenApiFixture();
+
+    const runOnce = async (): Promise<{
+      lines: string[];
+      instances: unknown[];
+    }> => {
+      const stdoutChunks: string[] = [];
+      const stderrChunks: string[] = [];
+      const stdoutSpy = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation((chunk: any) => {
+          stdoutChunks.push(String(chunk));
+          return true;
+        });
+      const stderrSpy = vi
+        .spyOn(process.stderr, 'write')
+        .mockImplementation((chunk: any) => {
+          stderrChunks.push(String(chunk));
+          return true;
+        });
+
+      try {
+        await program.parseAsync(
+          [
+            'openapi',
+            '--spec',
+            specPath,
+            '--operation-id',
+            'getUsers',
+            '--n',
+            '5',
+            '--out',
+            'ndjson',
+            '--seed',
+            '1234',
+          ],
+          { from: 'user' }
+        );
+      } finally {
+        stdoutSpy.mockRestore();
+        stderrSpy.mockRestore();
+      }
+
+      const stdout = stdoutChunks.join('');
+      const stderr = stderrChunks.join('');
+
+      const lines = stdout
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+      expect(lines).toHaveLength(5);
+      expect(stderr).toBe('');
+
+      const instances = lines.map((line) => JSON.parse(line));
+      for (const instance of instances) {
+        const res = PublicValidate(instance, responseSchema);
+        expect(res.valid).toBe(true);
+      }
+
+      return { lines, instances };
+    };
+
+    try {
+      const firstRun = await runOnce();
+      const secondRun = await runOnce();
+
+      expect(firstRun.lines).toEqual(secondRun.lines);
+      expect(firstRun.instances).toEqual(secondRun.instances);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('exits with non-zero code and prints an error when selection fails', async () => {
     const { dir, specPath } = await createOpenApiFixture();
 
