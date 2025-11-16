@@ -1,4 +1,25 @@
 // @foundrydata/core entry point
+//
+// Public API (today):
+// - Re-exports low-level building blocks: types, normalize(), compose(), generateFromCompose(),
+//   executePipeline(), AJV helpers, diagnostics/metrics, repair engine, and OpenAPI driver.
+// - The 5-stage pipeline (Normalize → Compose → Generate → Repair → Validate) is exposed mainly
+//   via executePipeline and individual stage helpers, rather than dedicated facade functions.
+// - Diagnostics and metrics are available through DiagnosticEnvelope / MetricsCollector
+//   and pipeline artifacts, but there is no single high-level Normalize/Compose/Generate/Validate
+//   Node API surface yet.
+//
+// TODO (API DX — PARTIALLY DONE):
+// - High-level facades Normalize/Compose/Generate/Validate are now exposed via api.ts as thin,
+//   documented wrappers over the existing pipeline/orchestrator and stage helpers.
+// - Remaining DX work:
+//   - Refine public typings and docs to emphasize the minimal surface (Diagnostics, CoverageIndex,
+//     PipelineResult) and hide incidental internal details where possible.
+//   - Ensure long-term stability guarantees for these facades and align examples in the docs and
+//     reporter/CLI with the preferred Node API entry points.
+
+// High-level Node API facades (Normalize/Compose/Generate/Validate)
+export * from './api.js';
 
 export * from './types/index.js';
 
