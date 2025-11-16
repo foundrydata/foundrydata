@@ -35,41 +35,8 @@
     }
   },
   {
-    "id": "real-world-appearance-schema",
-    "schema": "../../../../profiles/real-world/appearance.schema.json",
-    "maxInstances": 1,
-    "planOptions": {
-      "resolver": {
-        "strategies": ["local", "remote"],
-        "cacheDir": "~/.foundrydata/cache"
-      }
-    }
-  },
-  {
     "id": "real-world-asyncapi-3-0-schema",
     "schema": "../../../../profiles/real-world/asyncapi-3.0.schema.json",
-    "maxInstances": 1,
-    "planOptions": {
-      "resolver": {
-        "strategies": ["local", "remote"],
-        "cacheDir": "~/.foundrydata/cache"
-      }
-    }
-  },
-  {
-    "id": "real-world-cityjson-schema",
-    "schema": "../../../../profiles/real-world/cityjson.schema.json",
-    "maxInstances": 1,
-    "planOptions": {
-      "resolver": {
-        "strategies": ["local", "remote"],
-        "cacheDir": "~/.foundrydata/cache"
-      }
-    }
-  },
-  {
-    "id": "real-world-cityobjects-schema",
-    "schema": "../../../../profiles/real-world/cityobjects.schema.json",
     "maxInstances": 1,
     "planOptions": {
       "resolver": {
@@ -90,118 +57,8 @@
     }
   },
   {
-    "id": "real-world-dense-cityjson-bundled-schema",
-    "schema": "../../../../profiles/real-world/dense/cityjson.bundled.schema.json",
-    "maxInstances": 1,
-    "planOptions": {
-      "resolver": {
-        "strategies": ["local", "remote"],
-        "cacheDir": "~/.foundrydata/cache"
-      }
-    }
-  },
-  {
-    "id": "real-world-dense-cloudformation-provider-definition-bundled-schema",
-    "schema": "../../../../profiles/real-world/dense/cloudformation-provider-definition.bundled.schema.json",
-    "maxInstances": 1,
-    "planOptions": {
-      "resolver": {
-        "strategies": ["local", "remote"],
-        "cacheDir": "~/.foundrydata/cache"
-      }
-    }
-  },
-  {
-    "id": "real-world-dense-epcis-2-0-bundled-schema",
-    "schema": "../../../../profiles/real-world/dense/epcis-2.0.bundled.schema.json",
-    "maxInstances": 1,
-    "planOptions": {
-      "resolver": {
-        "strategies": ["local", "remote"],
-        "cacheDir": "~/.foundrydata/cache"
-      }
-    }
-  },
-  {
-    "id": "real-world-dense-kubernetes-deployment-bundled-schema",
-    "schema": "../../../../profiles/real-world/dense/kubernetes-deployment.bundled.schema.json",
-    "maxInstances": 1,
-    "planOptions": {
-      "resolver": {
-        "strategies": ["local", "remote"],
-        "cacheDir": "~/.foundrydata/cache"
-      }
-    }
-  },
-  {
-    "id": "real-world-dense-openbanking-account-info-bundled",
-    "schema": "../../../../profiles/real-world/dense/openbanking-account-info.bundled.json",
-    "maxInstances": 1,
-    "planOptions": {
-      "resolver": {
-        "strategies": ["local", "remote"],
-        "cacheDir": "~/.foundrydata/cache"
-      }
-    }
-  },
-  {
-    "id": "real-world-dense-openbanking-obaccount6-schema",
-    "schema": "../../../../profiles/real-world/dense/openbanking-obaccount6.schema.json",
-    "maxInstances": 1,
-    "planOptions": {
-      "resolver": {
-        "strategies": ["local", "remote"],
-        "cacheDir": "~/.foundrydata/cache"
-      }
-    }
-  },
-  {
-    "id": "real-world-dense-sdm-vehicle-bundled-schema",
-    "schema": "../../../../profiles/real-world/dense/sdm-vehicle.bundled.schema.json",
-    "maxInstances": 1,
-    "planOptions": {
-      "resolver": {
-        "strategies": ["local", "remote"],
-        "cacheDir": "~/.foundrydata/cache"
-      }
-    }
-  },
-  {
-    "id": "real-world-dense-stripe-openapi-bundled-schema",
-    "schema": "../../../../profiles/real-world/dense/stripe-openapi.bundled.schema.json",
-    "maxInstances": 1,
-    "planOptions": {
-      "resolver": {
-        "strategies": ["local", "remote"],
-        "cacheDir": "~/.foundrydata/cache"
-      }
-    }
-  },
-  {
     "id": "real-world-fhir-schema",
     "schema": "../../../../profiles/real-world/fhir.schema.json",
-    "maxInstances": 1,
-    "planOptions": {
-      "resolver": {
-        "strategies": ["local", "remote"],
-        "cacheDir": "~/.foundrydata/cache"
-      }
-    }
-  },
-  {
-    "id": "real-world-geomprimitives-schema",
-    "schema": "../../../../profiles/real-world/geomprimitives.schema.json",
-    "maxInstances": 1,
-    "planOptions": {
-      "resolver": {
-        "strategies": ["local", "remote"],
-        "cacheDir": "~/.foundrydata/cache"
-      }
-    }
-  },
-  {
-    "id": "real-world-geomtemplates-schema",
-    "schema": "../../../../profiles/real-world/geomtemplates.schema.json",
     "maxInstances": 1,
     "planOptions": {
       "resolver": {
@@ -310,4 +167,3 @@
     }
   }
 ]
-

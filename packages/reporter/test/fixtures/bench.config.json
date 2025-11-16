@@ -17,23 +17,8 @@
     "seed": 7
   },
   {
-    "id": "real-world-appearance-schema",
-    "schema": "../../../../profiles/real-world/appearance.schema.json",
-    "maxInstances": 1
-  },
-  {
     "id": "real-world-asyncapi-3-0-schema",
     "schema": "../../../../profiles/real-world/asyncapi-3.0.schema.json",
-    "maxInstances": 1
-  },
-  {
-    "id": "real-world-cityjson-schema",
-    "schema": "../../../../profiles/real-world/cityjson.schema.json",
-    "maxInstances": 1
-  },
-  {
-    "id": "real-world-cityobjects-schema",
-    "schema": "../../../../profiles/real-world/cityobjects.schema.json",
     "maxInstances": 1
   },
   {
@@ -84,16 +69,6 @@
   {
     "id": "real-world-fhir-schema",
     "schema": "../../../../profiles/real-world/fhir.schema.json",
-    "maxInstances": 1
-  },
-  {
-    "id": "real-world-geomprimitives-schema",
-    "schema": "../../../../profiles/real-world/geomprimitives.schema.json",
-    "maxInstances": 1
-  },
-  {
-    "id": "real-world-geomtemplates-schema",
-    "schema": "../../../../profiles/real-world/geomtemplates.schema.json",
     "maxInstances": 1
   },
   {
