@@ -136,6 +136,30 @@ type ResolverDiagnosticNote = {
   details?: unknown;
 };
 
+function collectSchemaIds(schema: unknown, acc: Set<string>): void {
+  if (!schema || typeof schema !== 'object') return;
+  const seen = new WeakSet<object>();
+  const visit = (node: unknown): void => {
+    if (!node || typeof node !== 'object') return;
+    if (seen.has(node as object)) return;
+    seen.add(node as object);
+    if (Array.isArray(node)) {
+      for (const entry of node) visit(entry);
+      return;
+    }
+    const rec = node as Record<string, unknown>;
+    const raw = rec['$id'];
+    if (typeof raw === 'string') {
+      const trimmed = raw.trim();
+      if (trimmed) acc.add(trimmed);
+    }
+    for (const value of Object.values(rec)) {
+      visit(value);
+    }
+  };
+  visit(schema);
+}
+
 // Hydrate an AJV instance with schemas from the resolver registry, tracking duplicate $id usage
 // across all hydrated schemas to avoid AJV duplicate-id conflicts. Any issues are recorded as
 // resolver run-level diagnostics rather than throwing.
@@ -146,6 +170,9 @@ function hydrateAjvWithRegistry(
   seenSchemaIds: Map<string, string>,
   targetDialect?: JsonSchemaDialect
 ): void {
+  const ajvWithGetSchema = ajv as unknown as {
+    getSchema?: (key: string) => unknown;
+  };
   const collectIds = (node: unknown, acc: Set<string>): void => {
     if (!node || typeof node !== 'object') return;
     if (Array.isArray(node)) {
@@ -169,8 +196,34 @@ function hydrateAjvWithRegistry(
     try {
       if (targetDialect) {
         const docDialect = detectDialectFromSchema(entry.schema);
-        if (docDialect !== targetDialect) {
-          // Ignore documents whose dialect is incompatible with the target AJV instance
+        const hasExplicitSchema =
+          !!entry.schema &&
+          typeof entry.schema === 'object' &&
+          typeof (entry.schema as { $schema?: unknown }).$schema === 'string';
+        if (hasExplicitSchema && docDialect !== targetDialect) {
+          // Ignore documents whose explicitly-declared dialect is incompatible with the target AJV instance
+          continue;
+        }
+      }
+      let uriKey = entry.uri;
+      try {
+        uriKey = new URL(entry.uri).href;
+      } catch {
+        // Fall back to the raw registry URI if normalization via URL fails
+        uriKey = entry.uri;
+      }
+      // If AJV already has a schema registered under this URI key, skip to avoid duplicate-key conflicts.
+      if (typeof ajvWithGetSchema.getSchema === 'function') {
+        const existingByUri = ajvWithGetSchema.getSchema(uriKey);
+        if (typeof existingByUri === 'function') {
+          run?.push({
+            code: 'RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID',
+            canonPath: '#',
+            details: {
+              ref: uriKey,
+              reason: 'uri-already-registered',
+            },
+          });
           continue;
         }
       }
@@ -178,20 +231,31 @@ function hydrateAjvWithRegistry(
       collectIds(entry.schema, ids);
       let conflict = false;
       for (const id of ids) {
-        const existing = seenSchemaIds.get(id);
-        if (existing && existing !== entry.uri) {
+        const existingFromRegistry = seenSchemaIds.get(id);
+        const existingFromAjv =
+          typeof ajvWithGetSchema.getSchema === 'function'
+            ? ajvWithGetSchema.getSchema(id)
+            : undefined;
+        if (
+          existingFromAjv ||
+          (existingFromRegistry && existingFromRegistry !== uriKey)
+        ) {
           conflict = true;
           run?.push({
             code: 'RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID',
             canonPath: '#',
-            details: { id, ref: entry.uri, existingRef: existing },
+            details: {
+              id,
+              ref: uriKey,
+              existingRef: existingFromRegistry ?? 'ajv-existing',
+            },
           });
         }
       }
       if (conflict) continue;
-      add(entry.schema as object, entry.uri);
+      add(entry.schema as object, uriKey);
       for (const id of ids) {
-        if (!seenSchemaIds.has(id)) seenSchemaIds.set(id, entry.uri);
+        if (!seenSchemaIds.has(id)) seenSchemaIds.set(id, uriKey);
       }
     } catch (e) {
       run?.push({
@@ -286,6 +350,15 @@ export async function executePipeline(
   let registryFingerprint: string | undefined;
   // Track seen $id across AJV hydration to avoid duplicate-id conflicts
   const seenSchemaIds = new Map<string, string>();
+  // Seed seenSchemaIds with any $id present in the root schema so that in-document definitions
+  // take precedence over registry documents with the same identifier.
+  const rootIds = new Set<string>();
+  collectSchemaIds(schema, rootIds);
+  for (const id of rootIds) {
+    if (!seenSchemaIds.has(id)) {
+      seenSchemaIds.set(id, 'root-schema');
+    }
+  }
   try {
     // Always log strategies applied for observability (run-level)
     const strategiesNote = {

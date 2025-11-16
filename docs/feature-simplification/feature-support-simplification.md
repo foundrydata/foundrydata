@@ -183,7 +183,10 @@ builds an in‑memory **resolution registry** used **read‑only** by core phase
   1) Hydrate the **Source AJV** by adding each registry document via `addSchema(doc, uri)` **before** calling
      `compile(original)`;
   2) Add any **required meta‑schemas** for each document’s dialect **before** `addSchema` (see §12/§13);
-  3) **Ignore** documents whose dialect is incompatible with the Source AJV class (no I/O fallback).
+  3) **Ignore** documents whose dialect is incompatible with the Source AJV class (no I/O fallback);
+  4) De‑duplicate by normalized `uri` and `$id` **before** `addSchema` by consulting the Source AJV’s registered schemas;
+     when a collision is detected (same `uri` or `$id` already present), the implementation **MUST NOT** call `addSchema`
+     for that registry document and **SHOULD** record a non‑fatal resolver note (run‑level) describing the skip.
 This does not alter the canonical/effective views and performs no network I/O.
 
 <a id="s4-fail-early"></a>
@@ -195,8 +198,9 @@ This does not alter the canonical/effective views and performs no network I/O.
 * **Keep outcomes independent of wall‑clock, locale, and environment.** (See §15.)
 
 **Resolver diagnostics export (Extension R1; normative).** Notes produced by the optional **Prefetch & Cache Fill**
-step (e.g., cache hits/misses, strategies applied) **MUST** be exported as **run‑level** entries under
-`Compose.diag.run` with `canonPath:"#"` (see §19/§23). They are non‑fatal and do not alter planning or validation.
+step (e.g., cache hits/misses, strategies applied, registry documents skipped due to duplicate `uri`/`$id`) **MUST** be
+exported as **run‑level** entries under `Compose.diag.run` with `canonPath:"#"` (see §19/§23). They are non‑fatal and do
+not alter planning or validation.
 
 ---
 
