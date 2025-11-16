@@ -112,7 +112,7 @@ jobs:
 
       - name: Verify bench gate budgets
         run: |
-          node -e "const fs=require('fs');\nconst path=require('path');\nconst gatePath=path.join('bench','bench-gate.json');\nif(!fs.existsSync(gatePath)){console.error('bench gate summary missing at',gatePath);process.exit(1);}\nconst summary=JSON.parse(fs.readFileSync(gatePath,'utf8'));\nconst budgets={p95LatencyMs:Number(process.env.BENCH_P95_BUDGET),memoryPeakMB:Number(process.env.BENCH_MEMORY_BUDGET)};\nconst breaches=Object.entries(budgets).filter(([key,limit])=>typeof summary[key]!=='number'||summary[key]>limit).map(([key,limit])=>`\\${key}=\\${summary[key]} (limit \\${limit})`);\nif(breaches.length){console.error('Bench gate breach:',breaches.join('; '));process.exit(1);}\nconsole.log('Bench gate within budgets',summary);"
+          node -e "const fs=require('fs');\nconst path=require('path');\nconst gatePath=path.join('bench','bench-gate.json');\nif(!fs.existsSync(gatePath)){console.error('bench gate summary missing at',gatePath);process.exit(1);}\nconst summary=JSON.parse(fs.readFileSync(gatePath,'utf8'));\nconst budgets={p95LatencyMs:Number(process.env.BENCH_P95_BUDGET),memoryPeakMB:Number(process.env.BENCH_MEMORY_BUDGET)};\nconst breaches=Object.entries(budgets).filter(([key,limit])=>typeof summary[key]!=='number'||summary[key]>limit).map(([key,limit])=>key+'='+summary[key]+' (limit '+limit+')');\nif(breaches.length){console.error('Bench gate breach:',breaches.join('; '));process.exit(1);}\nconsole.log('Bench gate within budgets',summary);"
 
       - name: Upload bench gate summary
         if: always()
