@@ -26,6 +26,7 @@ import {
   resolveOutputFormat,
   type OutputFormat,
 } from './flags.js';
+import { printComposeDebug } from './debug.js';
 
 const program = new Command();
 
@@ -199,6 +200,10 @@ program
           validateFormats: true,
         },
       });
+
+      if (options.debugPasses) {
+        printComposeDebug(pipelineResult);
+      }
 
       handlePipelineOutput(
         pipelineResult,
@@ -381,6 +386,10 @@ program
           validateFormats: true,
         },
       });
+
+      if (options.debugPasses) {
+        printComposeDebug(pipelineResult);
+      }
 
       handlePipelineOutput(
         pipelineResult,
