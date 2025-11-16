@@ -1565,7 +1565,8 @@ validation (`EXTERNAL_REF_UNRESOLVED{ mode:'lax', skippedValidation:true }`). Se
 **Resolver observability (non‑fatal notes).** When the extension is enabled, implementations **SHOULD** record:
 `RESOLVER_STRATEGIES_APPLIED{ strategies, cacheDir }` once per run; `RESOLVER_CACHE_MISS_FETCHED{ ref, bytes, contentHash }`
 on successful prefetch; `RESOLVER_CACHE_HIT{ ref, contentHash }` when serving from cache; and
-`RESOLVER_OFFLINE_UNAVAILABLE{ ref }` when neither cache nor network yields a document.
+`RESOLVER_OFFLINE_UNAVAILABLE{ ref, reason?, error? }` when neither cache nor network yields a document. `ref` identifies
+the external document; `reason`/`error` are optional hints (e.g., `"no-strategy"`, `"host-not-allowed"`, or `"fetch-error"` with an HTTP status).
 
 <a id="s11-strict-vs-lax-summary"></a>
 ### Strict vs Lax (summary)
