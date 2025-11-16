@@ -1,0 +1,77 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Users API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/users": {
+      "get": {
+        "operationId": "getUsers",
+        "summary": "List users",
+        "responses": {
+          "200": {
+            "description": "Successful response with a list of users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "user_123",
+                    "name": "Alice Example",
+                    "email": "alice@example.com",
+                    "role": "admin"
+                  },
+                  {
+                    "id": "user_456",
+                    "name": "Bob Example",
+                    "email": "bob@example.com",
+                    "role": "member"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "User": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "member",
+              "viewer"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email"
+        ]
+      }
+    }
+  }
+}
