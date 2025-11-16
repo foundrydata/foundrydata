@@ -1,19 +1,22 @@
-Task: 19   Title: Acceptance tests: arrays, refs, determinism
-Anchors: [spec://§11#modes, spec://§11#strict, spec://§11#lax, spec://§15#performance-determinism-metrics, spec://§15#rng]
+Task: 20   Title: Unit tests: regex/NFA/DFA/product/coverage-index/numbers
+Anchors: [spec://§7#object-keywords-pnames-rewrite, spec://§8#coverage-index-export, spec://§8#coverage-index-enumerate, spec://§8#numbers-multipleof, spec://§8#apfalse-must-cover]
 
 Touched files:
 - PLAN.md
-- test/acceptance/arrays/contains-vs-maxitems.spec.ts
-- test/acceptance/refs/external-refs-policy.spec.ts
-- test/acceptance/determinism/deterministic-output.spec.ts
+- packages/core/src/transform/__tests__/regex-policy.spec.ts
+- packages/core/src/transform/__tests__/nfa-dfa-basic.spec.ts
+- packages/core/src/transform/__tests__/product-dfa.spec.ts
+- packages/core/src/transform/__tests__/name-automata/bfs.spec.ts
+- packages/core/src/transform/__tests__/name-automata/product-summary.spec.ts
+- packages/core/src/transform/__tests__/numbers/multiple-of.spec.ts
+- packages/core/src/transform/__tests__/composition-engine.test.ts
 
 Approach:
-I will add high-level acceptance tests that exercise the full pipeline via executePipeline, focusing on three areas: arrays with contains vs maxItems, external $ref policies, and deterministic output under fixed seeds. For arrays, I will introduce tests under test/acceptance/arrays/ that use small schemas with conflicting minContains, maxContains, maxItems, and uniqueItems to validate that the compose phase detects impossible bags, emits the expected CONTAINS_* diagnostics, and fails the pipeline without generating items when the sum of minContains exceeds the effective array capacity. For external references, I will build scenarios under test/acceptance/refs/ that cover strict vs lax modes: in strict mode the Source Ajv compile failure on unresolved external $ref must cause EXTERNAL_REF_UNRESOLVED and a hard stop before generation; in lax mode, the pipeline should use the probe strategy to decide when to set skippedValidation:true while still surfacing EXTERNAL_REF_UNRESOLVED with mode:'lax' and keeping validationsPerRow consistent with the SPEC. For determinism, I will add tests under test/acceptance/determinism/ that run the same schema and options (including seed and mode) multiple times and assert equality of generated items and key diagnostics (e.g., oneOf branch decisions’ scoreDetails.tiebreakRand), without depending on wall-clock-based metrics; these tests will complement existing integration and unit tests by asserting behaviour at the pipeline boundary and ensuring that acceptance-level guarantees hold for arrays, external refs, and RNG-based branch selection.
+I will align the existing unit tests for the regex policy, Thompson NFA and subset-construction DFA, product automata, CoverageIndex, and multipleOf helpers with the P1 automata/SMT spec and the core SPEC anchors. For regex-policy.spec.ts and nfa-dfa-basic.spec.ts, I will verify that classification of anchored-safe patterns, lookaround/backreference detection, and the NFA/DFA construction rules match the restricted grammar and complexity caps defined in §8, including that REGEX_COMPLEXITY_CAPPED and REGEX_COMPILE_ERROR diagnostics are only emitted in the allowed phases. For product-dfa.spec.ts, bfs.spec.ts, and product-summary.spec.ts, I will ensure the tests exercise intersection semantics, emptiness/ finiteness analysis, and BFS witness enumeration order (length then UTF-16) consistent with the name-automata acceptance cases in docs/jsg-p1-automata-smt.md and SPEC §8’s name automata summary. For composition-engine.test.ts I will rely on and, where necessary, refine the existing coverage index tests so that they fully cover the CoverageIndex contract (has/ enumerate/provenance), the AP:false must-cover rules, propertyNames rewrite vs raw gating, and NAME_AUTOMATON_COMPLEXITY_CAPPED/COMPLEXITY_CAP_ENUM behaviour, without changing the public Compose API. For numbers/multiple-of.spec.ts, I will keep the current Ajv-aligned multipleOf tests and extend them if needed to stay consistent with the rational/epsilon policy in §8, ensuring that createMultipleOfContext and isAjvMultipleOf remain aligned with Ajv’s multipleOfPrecision and that snapToNearestMultiple respects the configured decimalPrecision.
 
 Risks/Unknowns:
-- Arrays contains vs maxItems already have detailed unit tests in the composition engine; acceptance tests must avoid over-specifying internal details while still validating the UNSAT behaviour expected by the higher-level spec.
-- External $ref behaviour depends on the interaction between Source Ajv error reporting and the probe schema; tests must remain robust to minor changes in diagnostic shape while still asserting the strict vs lax policy differences (hard stop vs skipped validation).
-- Determinism tests that look at diagnostics or coverage must be careful to ignore timing fields so that harmless performance noise does not cause flaky assertions.
+- The existing automata and coverage-index tests already cover most of the acceptance scenarios; any additional assertions must avoid over-specifying internal shapes so that refactors inside name-automata or composition-engine do not cause unnecessary test churn.
+- multipleOf behaviour is coupled to Ajv’s multipleOfPrecision and rational options; if Ajv changes its tolerance semantics in future versions, the tests may need to be adjusted to keep the “Ajv as oracle” invariant without loosening too much.
 
 Checks:
 - build: npm run build
