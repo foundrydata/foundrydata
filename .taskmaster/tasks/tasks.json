@@ -3732,7 +3732,7 @@
         "description": "Consolidate all regex diagnostic generation to use RegexAnalysis.diagnostics as single source of truth, routing to appropriate pipeline stages while preserving existing coverage and UNSAT behaviors.",
         "details": "Refactor the current dual diagnostic emission pattern to eliminate duplication and ensure consistency:\n\n1. **Central Diagnostic Generation**: Modify `analyzeRegexPattern()` in composition-engine.ts to use `analyzeRegex()` and extract diagnostics from `RegexAnalysis.diagnostics` instead of manually checking `compileError` and `complexityCapped` flags.\n\n2. **Normalize Stage Integration**: Update schema-normalizer.ts methods `recordPnamesComplex()` calls to route `REGEX_COMPLEXITY_CAPPED` and `REGEX_COMPILE_ERROR` through the centralized diagnostic flow while preserving the existing note addition behavior.\n\n3. **Compose Stage Integration**: Ensure composition-engine.ts `addCoverageRegexWarn()` calls consume diagnostics from the RegexAnalysis object, maintaining the current warning emission for coverage context.\n\n4. **Preserve Existing Behavior**: Maintain all current coverage decisions, additionalProperties:false logic, and UNSAT determination flows. The refactor must not change when patterns are considered unsafe or how they affect object composition.\n\n5. **Diagnostic Routing**: Implement consistent routing where Normalize stage gets `notes` and Compose stage gets `diag.warn` entries, both sourced from the same RegexAnalysis.diagnostics array.\n\n6. **Context Preservation**: Ensure the `context` field ('coverage' vs 'rewrite') is correctly passed through and appears in final diagnostic details.\n\nKey files to modify:\n- transform/name-automata/regex.ts (RegexAnalysis interface)\n- transform/composition-engine.ts (analyzeRegexPattern function)\n- transform/schema-normalizer.ts (diagnostic emission points)",
         "testStrategy": "1. **Unit Tests**: Verify analyzeRegexPattern() produces identical diagnostic objects as before refactor for both REGEX_COMPLEXITY_CAPPED and REGEX_COMPILE_ERROR cases. 2. **Integration Tests**: Confirm pipeline tests show same diagnostic routing - notes in normalize phase, warnings in compose phase. 3. **Regression Tests**: Validate that coverage decisions, AP:false behavior, and UNSAT determinations remain unchanged. 4. **Diagnostic Consistency**: Test that context field correctly reflects 'coverage' or 'rewrite' in final diagnostic output.",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           "1",
           "2",
@@ -3746,9 +3746,10 @@
             "description": "Examine existing regex diagnostic emission patterns across composition-engine.ts and schema-normalizer.ts to understand current dual emission architecture and identify consolidation opportunities.",
             "dependencies": [],
             "details": "Use Grep and Read tools to analyze transform/composition-engine.ts analyzeRegexPattern function, transform/schema-normalizer.ts recordPnamesComplex calls, and transform/name-automata/regex.ts RegexAnalysis interface. Document current diagnostic flow patterns, duplication points, and routing behavior between normalize and compose stages.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Manual code analysis and documentation of current patterns",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-16T00:30:59.345Z"
           },
           {
             "id": 2,
@@ -3758,9 +3759,10 @@
               1
             ],
             "details": "Update transform/composition-engine.ts analyzeRegexPattern function to call analyzeRegex() and consume diagnostics from the returned RegexAnalysis.diagnostics array. Remove manual checking of compileError and complexityCapped boolean flags. Ensure diagnostic objects contain proper code, canonPath, and details fields while maintaining existing warning emission behavior.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests verifying identical diagnostic output before and after refactor for REGEX_COMPLEXITY_CAPPED and REGEX_COMPILE_ERROR cases",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-16T00:31:03.318Z"
           },
           {
             "id": 3,
@@ -3770,9 +3772,10 @@
               2
             ],
             "details": "Modify transform/schema-normalizer.ts methods that call recordPnamesComplex() to use RegexAnalysis.diagnostics for diagnostic emission. Ensure REGEX_COMPLEXITY_CAPPED and REGEX_COMPILE_ERROR diagnostics are routed as 'notes' in the normalize stage while maintaining existing coverage decision logic and additionalProperties:false behavior.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Integration tests confirming normalize phase emits notes from centralized diagnostics while preserving existing schema normalization behavior",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-16T00:31:06.869Z"
           },
           {
             "id": 4,
@@ -3782,9 +3785,10 @@
               3
             ],
             "details": "Update transform/composition-engine.ts addCoverageRegexWarn() function to consume diagnostics from RegexAnalysis.diagnostics array. Implement proper routing where compose stage receives diag.warn entries with context field ('coverage' vs 'rewrite') correctly passed through and appearing in final diagnostic details. Maintain current warning emission for coverage context.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests verifying compose stage receives diag.warn entries with proper context field values from centralized diagnostics",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-16T00:31:11.894Z"
           },
           {
             "id": 5,
@@ -3794,19 +3798,20 @@
               4
             ],
             "details": "Execute pipeline integration tests to verify that the refactored centralized diagnostic system preserves all existing behavior: coverage decisions remain identical, additionalProperties:false logic unchanged, UNSAT determination flows unaffected, normalize stage gets notes, compose stage gets diag.warn entries. Verify context preservation and ensure no regression in regex pattern safety evaluation.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Pipeline integration tests comparing before/after behavior for diagnostic emission, coverage decisions, and UNSAT flows across multiple regex complexity scenarios",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-16T00:31:15.480Z"
           }
         ],
-        "updatedAt": "2025-11-16T00:18:59.741Z"
+        "updatedAt": "2025-11-16T00:31:15.480Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-16T00:23:54.956Z",
+      "lastModified": "2025-11-16T00:31:15.481Z",
       "taskCount": 22,
-      "completedCount": 21,
+      "completedCount": 22,
       "tags": [
         "jsg-p1-automata-smt"
       ]

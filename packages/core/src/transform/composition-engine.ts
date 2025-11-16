@@ -18,7 +18,7 @@ import {
 import type { NormalizeResult, NormalizerNote } from './schema-normalizer.js';
 import { resolveDynamicRefBinding } from '../util/draft.js';
 import { extractExactLiteralAlternatives } from '../util/pattern-literals.js';
-import { analyzeRegex } from './name-automata/regex.js';
+import { analyzeRegex, type RegexAnalysis } from './name-automata/regex.js';
 import { buildThompsonNfa } from './name-automata/nfa.js';
 import { buildDfaFromNfa, type Dfa } from './name-automata/dfa.js';
 import {
@@ -1598,27 +1598,14 @@ class CompositionEngine {
         }
 
         const analysis = analyzeRegexPattern(patternSource);
+        for (const diag of analysis.policy.diagnostics) {
+          this.addCoverageRegexWarn(pointer, diag.code, diag.details);
+        }
         if (analysis.compileError) {
-          this.addCoverageRegexWarn(
-            pointer,
-            DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR,
-            {
-              patternSource,
-              context: 'coverage',
-            }
-          );
           this.addApproximation(pointer, 'regexCompileError');
           continue;
         }
         if (analysis.complexityCapped) {
-          this.addCoverageRegexWarn(
-            pointer,
-            DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED,
-            {
-              patternSource,
-              context: 'coverage',
-            }
-          );
           this.addApproximation(pointer, 'regexComplexityCap');
           unsafePatternIssues.push({
             pointer,
@@ -1681,25 +1668,12 @@ class CompositionEngine {
         const patternSource = (propertyNames as Record<string, unknown>)
           .pattern as string;
         const analysis = analyzeRegexPattern(patternSource);
+        for (const diag of analysis.policy.diagnostics) {
+          this.addCoverageRegexWarn(pointer, diag.code, diag.details);
+        }
         if (analysis.compileError) {
-          this.addCoverageRegexWarn(
-            pointer,
-            DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR,
-            {
-              patternSource,
-              context: 'coverage',
-            }
-          );
           this.addApproximation(pointer, 'regexCompileError');
         } else if (analysis.complexityCapped) {
-          this.addCoverageRegexWarn(
-            pointer,
-            DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED,
-            {
-              patternSource,
-              context: 'coverage',
-            }
-          );
           this.addApproximation(pointer, 'regexComplexityCap');
         } else if (!analysis.anchoredSafe || !analysis.compiled) {
           this.addApproximation(pointer, 'nonAnchoredPattern');
@@ -2334,25 +2308,24 @@ interface PatternAnalysis {
   compileError?: Error;
   compiled?: RegExp;
   literalAlternatives?: string[];
+  policy: RegexAnalysis;
 }
 
 function analyzeRegexPattern(source: string): PatternAnalysis {
-  const analysis: PatternAnalysis = {
-    anchoredSafe: false,
-    complexityCapped: false,
-  };
-
   const policy = analyzeRegex(source, {
     context: 'coverage',
   });
+
+  const analysis: PatternAnalysis = {
+    anchoredSafe: policy.isAnchoredSafe,
+    complexityCapped: policy.capped,
+    policy,
+  };
 
   if (policy.compileError) {
     analysis.compileError = new Error('REGEX_COMPILE_ERROR');
     return analysis;
   }
-
-  analysis.complexityCapped = policy.capped;
-  analysis.anchoredSafe = policy.isAnchoredSafe;
 
   let compiled: RegExp | undefined;
   try {
