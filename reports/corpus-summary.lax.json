@@ -1,16 +1,16 @@
 {
-  "mode": "strict",
+  "mode": "lax",
   "seed": 37,
   "instancesPerSchema": 3,
   "results": [
     {
       "id": "asyncapi-3.0.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/asyncapi-3.0.schema.json",
-      "instancesTried": 0,
-      "instancesValid": 0,
+      "instancesTried": 3,
+      "instancesValid": 3,
       "unsat": false,
-      "failFast": true,
+      "failFast": false,
       "diagnostics": [
         {
           "code": "DEFS_TARGET_MISSING",
@@ -440,141 +440,45 @@
           }
         },
         {
-          "code": "EXTERNAL_REF_UNRESOLVED",
-          "canonPath": "",
+          "code": "AP_FALSE_INTERSECTION_APPROX",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json",
           "details": {
-            "mode": "strict",
-            "ref": "http://asyncapi.com/bindings/amqp/0.3.0/channel.json",
-            "failingRefs": [
-              "http://asyncapi.com/definitions/3.0.0/specificationExtension.json",
-              "http://asyncapi.com/definitions/3.0.0/info.json",
-              "http://asyncapi.com/definitions/3.0.0/servers.json",
-              "http://asyncapi.com/definitions/3.0.0/channels.json",
-              "http://asyncapi.com/definitions/3.0.0/operations.json",
-              "http://asyncapi.com/definitions/3.0.0/components.json",
-              "http://asyncapi.com/definitions/3.0.0/contact.json",
-              "http://asyncapi.com/definitions/3.0.0/license.json",
-              "http://asyncapi.com/definitions/3.0.0/Reference.json",
-              "http://asyncapi.com/definitions/3.0.0/tag.json",
-              "http://asyncapi.com/definitions/3.0.0/externalDocs.json",
-              "http://asyncapi.com/definitions/3.0.0/infoExtensions.json",
-              "http://asyncapi.com/definitions/3.0.0/ReferenceObject.json",
-              "http://asyncapi.com/extensions/x/0.1.0/schema.json",
-              "http://asyncapi.com/extensions/linkedin/0.1.0/schema.json",
-              "http://asyncapi.com/definitions/3.0.0/server.json",
-              "http://asyncapi.com/definitions/3.0.0/serverVariables.json",
-              "http://asyncapi.com/definitions/3.0.0/securityRequirements.json",
-              "http://asyncapi.com/definitions/3.0.0/serverBindingsObject.json",
-              "http://asyncapi.com/definitions/3.0.0/serverVariable.json",
-              "http://asyncapi.com/definitions/3.0.0/SecurityScheme.json",
-              "http://asyncapi.com/definitions/3.0.0/userPassword.json",
-              "http://asyncapi.com/definitions/3.0.0/apiKey.json",
-              "http://asyncapi.com/definitions/3.0.0/X509.json",
-              "http://asyncapi.com/definitions/3.0.0/symmetricEncryption.json",
-              "http://asyncapi.com/definitions/3.0.0/asymmetricEncryption.json",
-              "http://asyncapi.com/definitions/3.0.0/HTTPSecurityScheme.json",
-              "http://asyncapi.com/definitions/3.0.0/oauth2Flows.json",
-              "http://asyncapi.com/definitions/3.0.0/openIdConnect.json",
-              "http://asyncapi.com/definitions/3.0.0/SaslSecurityScheme.json",
-              "http://asyncapi.com/definitions/3.0.0/NonBearerHTTPSecurityScheme.json",
-              "http://asyncapi.com/definitions/3.0.0/BearerHTTPSecurityScheme.json",
-              "http://asyncapi.com/definitions/3.0.0/APIKeyHTTPSecurityScheme.json",
-              "http://asyncapi.com/definitions/3.0.0/oauth2Flow.json",
-              "http://asyncapi.com/definitions/3.0.0/oauth2Scopes.json",
-              "http://asyncapi.com/definitions/3.0.0/SaslPlainSecurityScheme.json",
-              "http://asyncapi.com/definitions/3.0.0/SaslScramSecurityScheme.json",
-              "http://asyncapi.com/definitions/3.0.0/SaslGssapiSecurityScheme.json",
-              "http://asyncapi.com/bindings/mqtt/0.2.0/server.json",
-              "http://asyncapi.com/bindings/kafka/0.5.0/server.json",
-              "http://asyncapi.com/bindings/kafka/0.4.0/server.json",
-              "http://asyncapi.com/bindings/kafka/0.3.0/server.json",
-              "http://asyncapi.com/bindings/jms/0.0.1/server.json",
-              "http://asyncapi.com/bindings/ibmmq/0.1.0/server.json",
-              "http://asyncapi.com/bindings/solace/0.4.0/server.json",
-              "http://asyncapi.com/bindings/solace/0.3.0/server.json",
-              "http://asyncapi.com/bindings/solace/0.2.0/server.json",
-              "http://asyncapi.com/bindings/pulsar/0.1.0/server.json",
-              "http://asyncapi.com/definitions/3.0.0/schema.json",
-              "http://asyncapi.com/definitions/3.0.0/channel.json",
-              "http://asyncapi.com/definitions/3.0.0/channelMessages.json",
-              "http://asyncapi.com/definitions/3.0.0/parameters.json",
-              "http://asyncapi.com/definitions/3.0.0/channelBindingsObject.json",
-              "http://asyncapi.com/definitions/3.0.0/messageObject.json",
-              "http://asyncapi.com/definitions/3.0.0/anySchema.json",
-              "http://asyncapi.com/definitions/3.0.0/correlationId.json",
-              "http://asyncapi.com/definitions/3.0.0/messageExampleObject.json",
-              "http://asyncapi.com/definitions/3.0.0/messageBindingsObject.json",
-              "http://asyncapi.com/definitions/3.0.0/messageTrait.json",
-              "http://asyncapi.com/definitions/3.0.0/multiFormatSchema.json",
-              "http://asyncapi.com/definitions/3.0.0/openapiSchema_3_0.json",
-              "http://asyncapi.com/definitions/3.0.0/avroSchema_v1.json",
-              "http://asyncapi.com/definitions/3.0.0/openapiSchema_3_0.json#",
-              "http://asyncapi.com/bindings/http/0.3.0/message.json",
-              "http://asyncapi.com/bindings/http/0.2.0/message.json",
-              "http://asyncapi.com/bindings/amqp/0.3.0/message.json",
-              "http://asyncapi.com/bindings/mqtt/0.2.0/message.json",
-              "http://asyncapi.com/bindings/kafka/0.5.0/message.json",
-              "http://asyncapi.com/bindings/kafka/0.4.0/message.json",
-              "http://asyncapi.com/bindings/kafka/0.3.0/message.json",
-              "http://asyncapi.com/bindings/anypointmq/0.0.1/message.json",
-              "http://asyncapi.com/bindings/jms/0.0.1/message.json",
-              "http://asyncapi.com/bindings/ibmmq/0.1.0/message.json",
-              "http://asyncapi.com/bindings/googlepubsub/0.2.0/message.json",
-              "http://asyncapi.com/bindings/kafka/0.5.0/path/to/user-create.avsc#/UserCreate",
-              "http://asyncapi.com/bindings/kafka/0.4.0/path/to/user-create.avsc#/UserCreate",
-              "http://asyncapi.com/bindings/kafka/0.3.0/path/to/user-create.avsc#/UserCreate",
-              "http://asyncapi.com/definitions/3.0.0/parameter.json",
-              "http://asyncapi.com/bindings/websockets/0.1.0/channel.json",
-              "http://asyncapi.com/bindings/amqp/0.3.0/channel.json",
-              "http://asyncapi.com/bindings/kafka/0.5.0/channel.json",
-              "http://asyncapi.com/bindings/kafka/0.4.0/channel.json",
-              "http://asyncapi.com/bindings/kafka/0.3.0/channel.json",
-              "http://asyncapi.com/bindings/anypointmq/0.0.1/channel.json",
-              "http://asyncapi.com/bindings/jms/0.0.1/channel.json",
-              "http://asyncapi.com/bindings/sns/0.1.0/channel.json",
-              "http://asyncapi.com/bindings/sqs/0.2.0/channel.json",
-              "http://asyncapi.com/bindings/ibmmq/0.1.0/channel.json",
-              "http://asyncapi.com/bindings/googlepubsub/0.2.0/channel.json",
-              "http://asyncapi.com/bindings/pulsar/0.1.0/channel.json",
-              "http://asyncapi.com/definitions/3.0.0/operation.json",
-              "http://asyncapi.com/definitions/3.0.0/operationReply.json",
-              "http://asyncapi.com/definitions/3.0.0/operationTrait.json",
-              "http://asyncapi.com/definitions/3.0.0/operationBindingsObject.json",
-              "http://asyncapi.com/components/messages/userSignedUp",
-              "http://asyncapi.com/components/messages/userSignedUpReply",
-              "http://asyncapi.com/definitions/3.0.0/operationReplyAddress.json",
-              "http://asyncapi.com/definitions/3.0.0/operation.json#/properties/title",
-              "http://asyncapi.com/definitions/3.0.0/operation.json#/properties/summary",
-              "http://asyncapi.com/definitions/3.0.0/operation.json#/properties/description",
-              "http://asyncapi.com/definitions/3.0.0/operation.json#/properties/security",
-              "http://asyncapi.com/definitions/3.0.0/operation.json#/properties/tags",
-              "http://asyncapi.com/definitions/3.0.0/operation.json#/properties/externalDocs",
-              "http://asyncapi.com/bindings/http/0.3.0/operation.json",
-              "http://asyncapi.com/bindings/http/0.2.0/operation.json",
-              "http://asyncapi.com/bindings/amqp/0.3.0/operation.json",
-              "http://asyncapi.com/bindings/mqtt/0.2.0/operation.json",
-              "http://asyncapi.com/bindings/kafka/0.5.0/operation.json",
-              "http://asyncapi.com/bindings/kafka/0.4.0/operation.json",
-              "http://asyncapi.com/bindings/kafka/0.3.0/operation.json",
-              "http://asyncapi.com/bindings/nats/0.1.0/operation.json",
-              "http://asyncapi.com/bindings/sns/0.1.0/operation.json",
-              "http://asyncapi.com/bindings/sqs/0.2.0/operation.json",
-              "http://asyncapi.com/bindings/solace/0.4.0/operation.json",
-              "http://asyncapi.com/bindings/solace/0.3.0/operation.json",
-              "http://asyncapi.com/bindings/solace/0.2.0/operation.json",
-              "http://asyncapi.com/definitions/3.0.0/path/to/user-create.avsc#/UserCreate"
-            ]
+            "reason": "nonAnchoredPattern"
+          }
+        },
+        {
+          "code": "AP_FALSE_INTERSECTION_APPROX",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/$defs/ExternalDocumentation",
+          "details": {
+            "reason": "nonAnchoredPattern"
+          }
+        },
+        {
+          "code": "AP_FALSE_INTERSECTION_APPROX",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/$defs/XML",
+          "details": {
+            "reason": "nonAnchoredPattern"
+          }
+        },
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 23.417249999999996,
-        "composeMs": 112.24899999999997,
-        "generateMs": 0,
-        "repairMs": 0,
-        "validateMs": 0,
-        "validationsPerRow": 0,
-        "repairPassesPerRow": 0
+        "normalizeMs": 20.862875000000003,
+        "composeMs": 127.73195799999999,
+        "generateMs": 2.3617499999999723,
+        "repairMs": 71.306375,
+        "validateMs": 63.28787500000004,
+        "validationsPerRow": 3,
+        "repairPassesPerRow": 3
       },
       "caps": {
         "regexCapped": 0,
@@ -584,7 +488,7 @@
     },
     {
       "id": "cloudevents.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/cloudevents.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
@@ -603,11 +507,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.25941700000004175,
-        "composeMs": 1.601791999999989,
-        "generateMs": 0.9217500000000314,
-        "repairMs": 6.3958749999999895,
-        "validateMs": 4.63737500000002,
+        "normalizeMs": 0.23454199999997627,
+        "composeMs": 0.41500000000002046,
+        "generateMs": 0.5387910000000034,
+        "repairMs": 4.311750000000018,
+        "validateMs": 3.007000000000005,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -619,7 +523,7 @@
     },
     {
       "id": "dense/cityjson.bundled.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/cityjson.bundled.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
@@ -638,11 +542,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 3.7430420000000026,
-        "composeMs": 11.618375000000015,
-        "generateMs": 1.143000000000029,
-        "repairMs": 153.42308300000002,
-        "validateMs": 170.75750000000005,
+        "normalizeMs": 3.9722919999999817,
+        "composeMs": 3.4645419999999945,
+        "generateMs": 0.901834000000008,
+        "repairMs": 133.340958,
+        "validateMs": 152.4217500000001,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -654,26 +558,26 @@
     },
     {
       "id": "dense/cloudformation-provider-definition.bundled.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/cloudformation-provider-definition.bundled.schema.json",
-      "instancesTried": 0,
+      "instancesTried": 3,
       "instancesValid": 0,
       "unsat": true,
       "failFast": true,
       "diagnostics": [
+        {
+          "code": "AP_FALSE_INTERSECTION_APPROX",
+          "canonPath": "/properties/typeConfiguration/properties/properties",
+          "details": {
+            "reason": "nonAnchoredPattern"
+          }
+        },
         {
           "code": "AP_FALSE_UNSAFE_PATTERN",
           "canonPath": "/properties/typeConfiguration/properties/properties",
           "details": {
             "sourceKind": "patternProperties",
             "patternSource": "(?!CloudFormation)^[A-Za-z0-9]{1,64}$"
-          }
-        },
-        {
-          "code": "AP_FALSE_INTERSECTION_APPROX",
-          "canonPath": "/properties/typeConfiguration/properties/properties",
-          "details": {
-            "reason": "nonAnchoredPattern"
           }
         },
         {
@@ -702,11 +606,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 2.453125,
-        "composeMs": 114.56100000000004,
-        "generateMs": 0,
-        "repairMs": 0,
-        "validateMs": 0,
+        "normalizeMs": 1.1059999999999945,
+        "composeMs": 114.03008299999999,
+        "generateMs": 1.2835000000000036,
+        "repairMs": 3.3857080000000224,
+        "validateMs": 4.836208000000056,
         "validationsPerRow": 0,
         "repairPassesPerRow": 0
       },
@@ -718,12 +622,12 @@
     },
     {
       "id": "dense/epcis-2.0.bundled.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/epcis-2.0.bundled.schema.json",
       "instancesTried": 3,
       "instancesValid": 0,
       "unsat": false,
-      "failFast": true,
+      "failFast": false,
       "diagnostics": [
         {
           "code": "RESOLVER_STRATEGIES_APPLIED",
@@ -734,22 +638,14 @@
             ],
             "cacheDir": "~/.foundrydata/cache"
           }
-        },
-        {
-          "code": "SCHEMA_INTERNAL_REF_MISSING",
-          "canonPath": "",
-          "details": {
-            "ref": "https://gs1.github.io/EPCIS/JSON-Schema/EPCIS-JSON-Schema.json#/allOf/3/then/allOf/0/allOf/1/properties/childQuantityList/items/properties/quantity",
-            "mode": "strict"
-          }
         }
       ],
       "metrics": {
-        "normalizeMs": 3.133874999999989,
-        "composeMs": 3.6544999999999845,
-        "generateMs": 0.4619999999999891,
-        "repairMs": 9.57725000000005,
-        "validateMs": 9.722415999999953,
+        "normalizeMs": 2.5515830000000506,
+        "composeMs": 3.3473749999999427,
+        "generateMs": 0.2580000000000382,
+        "repairMs": 7.287959000000001,
+        "validateMs": 8.092000000000098,
         "validationsPerRow": 0,
         "repairPassesPerRow": 0
       },
@@ -761,7 +657,7 @@
     },
     {
       "id": "dense/kubernetes-deployment.bundled.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/kubernetes-deployment.bundled.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
@@ -780,11 +676,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 3.6310419999999795,
-        "composeMs": 2.233041999999955,
-        "generateMs": 0.39066700000000765,
-        "repairMs": 62.05104200000005,
-        "validateMs": 62.678584,
+        "normalizeMs": 3.5659580000000233,
+        "composeMs": 2.291582999999946,
+        "generateMs": 0.2574170000000322,
+        "repairMs": 45.753874999999994,
+        "validateMs": 52.78474999999992,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -796,7 +692,7 @@
     },
     {
       "id": "dense/openbanking-account-info.bundled",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/openbanking-account-info.bundled.json",
       "instancesTried": 3,
       "instancesValid": 3,
@@ -815,11 +711,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 26.459041999999954,
-        "composeMs": 9.119416999999999,
-        "generateMs": 3.77312500000005,
-        "repairMs": 26.655374999999935,
-        "validateMs": 11.026415999999926,
+        "normalizeMs": 23.94670899999994,
+        "composeMs": 7.760500000000093,
+        "generateMs": 3.335709000000179,
+        "repairMs": 23.80633399999988,
+        "validateMs": 9.018791999999848,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -831,7 +727,7 @@
     },
     {
       "id": "dense/openbanking-obaccount6.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/openbanking-obaccount6.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
@@ -850,11 +746,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.3967089999998734,
-        "composeMs": 0.844291000000112,
-        "generateMs": 0.1487090000000535,
-        "repairMs": 10.993625000000065,
-        "validateMs": 12.840584000000035,
+        "normalizeMs": 0.38141600000017206,
+        "composeMs": 0.6574580000001333,
+        "generateMs": 0.12445899999988796,
+        "repairMs": 9.632250000000113,
+        "validateMs": 11.26929099999984,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -866,7 +762,7 @@
     },
     {
       "id": "dense/sdm-vehicle.bundled.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/sdm-vehicle.bundled.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
@@ -885,11 +781,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.69012500000008,
-        "composeMs": 1.0080000000000382,
-        "generateMs": 11.235290999999961,
-        "repairMs": 18.63158300000009,
-        "validateMs": 19.397707999999966,
+        "normalizeMs": 0.7028749999999491,
+        "composeMs": 0.8933749999998781,
+        "generateMs": 8.93116699999996,
+        "repairMs": 15.126874999999927,
+        "validateMs": 16.02870800000005,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -901,7 +797,7 @@
     },
     {
       "id": "dense/stripe-openapi.bundled.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/stripe-openapi.bundled.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
@@ -3188,11 +3084,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 290.56041700000014,
-        "composeMs": 87.695291,
-        "generateMs": 26.815875000000005,
-        "repairMs": 210.59737500000006,
-        "validateMs": 24.176582999999937,
+        "normalizeMs": 230.16029099999992,
+        "composeMs": 74.50379199999998,
+        "generateMs": 22.61999999999989,
+        "repairMs": 224.8113330000001,
+        "validateMs": 22.31987500000014,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3204,7 +3100,7 @@
     },
     {
       "id": "docker_compose_config_schema_v1",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/docker_compose_config_schema_v1.json",
       "instancesTried": 3,
       "instancesValid": 3,
@@ -3248,11 +3144,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.4072919999998703,
-        "composeMs": 31.518291999999974,
-        "generateMs": 0.19287499999995816,
-        "repairMs": 9.702625000000126,
-        "validateMs": 9.63799999999992,
+        "normalizeMs": 0.4057080000000042,
+        "composeMs": 12.67820800000004,
+        "generateMs": 0.09895800000003874,
+        "repairMs": 8.837208000000146,
+        "validateMs": 7.859083000000055,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3264,12 +3160,12 @@
     },
     {
       "id": "docker_compose_spec",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/docker_compose_spec.json",
       "instancesTried": 3,
       "instancesValid": 0,
       "unsat": false,
-      "failFast": true,
+      "failFast": false,
       "diagnostics": [
         {
           "code": "AP_FALSE_INTERSECTION_APPROX",
@@ -3598,23 +3494,14 @@
             ],
             "cacheDir": "~/.foundrydata/cache"
           }
-        },
-        {
-          "code": "VALIDATION_COMPILE_ERROR",
-          "canonPath": "",
-          "details": {
-            "message": "no schema with key or ref \"http://json-schema.org/draft/2019-09/schema#\"",
-            "reason": "no-external-refs",
-            "errorName": "Error"
-          }
         }
       ],
       "metrics": {
-        "normalizeMs": 1.3254170000000158,
-        "composeMs": 94.56854199999998,
-        "generateMs": 0.1805829999998423,
-        "repairMs": 1.0330419999997957,
-        "validateMs": 0.6737920000000486,
+        "normalizeMs": 2.132000000000062,
+        "composeMs": 146.30995900000016,
+        "generateMs": 0.22658400000000256,
+        "repairMs": 0.8599159999998847,
+        "validateMs": 0.5829170000001795,
         "validationsPerRow": 0,
         "repairPassesPerRow": 0
       },
@@ -3626,12 +3513,12 @@
     },
     {
       "id": "fhir.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/fhir.schema.json",
       "instancesTried": 3,
-      "instancesValid": 0,
+      "instancesValid": 3,
       "unsat": false,
-      "failFast": true,
+      "failFast": false,
       "diagnostics": [
         {
           "code": "DEFS_TARGET_MISSING",
@@ -5103,22 +4990,503 @@
           }
         },
         {
-          "code": "VALIDATION_COMPILE_ERROR",
+          "code": "DRAFT06_PATTERN_TOLERATED",
           "canonPath": "",
           "details": {
-            "message": "Invalid regular expression: /^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$/u: Lone quantifier brackets",
-            "reason": "no-external-refs",
-            "errorName": "SyntaxError"
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
+          }
+        },
+        {
+          "code": "DRAFT06_PATTERN_TOLERATED",
+          "canonPath": "",
+          "details": {
+            "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 102.22858400000018,
-        "composeMs": 246.16216600000007,
-        "generateMs": 35.217249999999694,
-        "repairMs": 21.317333999999846,
-        "validateMs": 50.34787499999993,
-        "validationsPerRow": 0,
+        "normalizeMs": 83.72683400000005,
+        "composeMs": 225.17662500000006,
+        "generateMs": 32.156958999999915,
+        "repairMs": 17.72133299999996,
+        "validateMs": 795.5125840000001,
+        "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
       "caps": {
@@ -5129,7 +5497,7 @@
     },
     {
       "id": "GeoJSON.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/GeoJSON.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
@@ -5148,11 +5516,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 1.1325000000001637,
-        "composeMs": 1.0075419999998303,
-        "generateMs": 27.043083000000024,
-        "repairMs": 26.298416999999972,
-        "validateMs": 25.749374999999873,
+        "normalizeMs": 1.0570000000002437,
+        "composeMs": 0.9567920000004051,
+        "generateMs": 31.180917000000136,
+        "repairMs": 27.301707999999962,
+        "validateMs": 26.17391699999962,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -5164,7 +5532,7 @@
     },
     {
       "id": "github-workflow.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/github-workflow.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
@@ -5238,11 +5606,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 3.6214999999997417,
-        "composeMs": 165.36512500000026,
-        "generateMs": 5.2097499999999854,
-        "repairMs": 24.49583399999983,
-        "validateMs": 35.6018339999996,
+        "normalizeMs": 2.7299580000003516,
+        "composeMs": 159.57508400000006,
+        "generateMs": 4.739584000000377,
+        "repairMs": 24.435083000000304,
+        "validateMs": 32.220540999999685,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -5254,7 +5622,7 @@
     },
     {
       "id": "google-analytics-event.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/google-analytics-event.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
@@ -5273,11 +5641,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.3206249999998363,
-        "composeMs": 0.5145840000000135,
-        "generateMs": 0.05983399999968242,
-        "repairMs": 5.931500000000142,
-        "validateMs": 4.894792000000052,
+        "normalizeMs": 0.5405829999999696,
+        "composeMs": 0.6391669999998157,
+        "generateMs": 0.07483400000000984,
+        "repairMs": 5.204874999999902,
+        "validateMs": 4.190458000000035,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -5289,7 +5657,7 @@
     },
     {
       "id": "google-audit-log-entry.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/google-audit-log-entry.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
@@ -5308,11 +5676,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.6014169999998558,
-        "composeMs": 0.7283339999999043,
-        "generateMs": 0.07945800000015879,
-        "repairMs": 7.8038329999999405,
-        "validateMs": 6.526541999999608,
+        "normalizeMs": 0.7647910000000593,
+        "composeMs": 0.7866669999998521,
+        "generateMs": 0.07045900000002803,
+        "repairMs": 6.278583000000253,
+        "validateMs": 5.694582999999966,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -5324,7 +5692,7 @@
     },
     {
       "id": "google-pubsub-event.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/google-pubsub-event.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
@@ -5343,11 +5711,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.0975839999996424,
-        "composeMs": 0.3035829999998896,
-        "generateMs": 0.03758300000026793,
-        "repairMs": 2.6609589999998207,
-        "validateMs": 3.019875000000411,
+        "normalizeMs": 0.09075000000029831,
+        "composeMs": 0.2507919999998194,
+        "generateMs": 0.025666999999884865,
+        "repairMs": 1.9847090000002936,
+        "validateMs": 2.2457500000000437,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -5359,31 +5727,45 @@
     },
     {
       "id": "kubernetes-deployment.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/kubernetes-deployment.schema.json",
-      "instancesTried": 0,
+      "instancesTried": 3,
       "instancesValid": 0,
       "unsat": false,
       "failFast": true,
       "diagnostics": [
         {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        },
+        {
           "code": "EXTERNAL_REF_UNRESOLVED",
           "canonPath": "",
           "details": {
-            "mode": "strict",
+            "mode": "lax",
             "ref": "https://kubernetesjsonschema.dev/master/_definitions.json#/definitions/io.k8s.api.apps.v1.DeploymentSpec",
             "failingRefs": [
               "https://kubernetesjsonschema.dev/master/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
-            ]
+            ],
+            "skippedValidation": true
+          },
+          "metrics": {
+            "validationsPerRow": 0
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 0.0623329999998532,
-        "composeMs": 4.937207999999828,
-        "generateMs": 0,
-        "repairMs": 0,
-        "validateMs": 0,
+        "normalizeMs": 0.4010830000001988,
+        "composeMs": 4.178707999999915,
+        "generateMs": 0.040750000000116415,
+        "repairMs": 1.658292000000074,
+        "validateMs": 0.2984580000002097,
         "validationsPerRow": 0,
         "repairPassesPerRow": 0
       },
@@ -5395,7 +5777,7 @@
     },
     {
       "id": "metadata.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/metadata.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
@@ -5414,11 +5796,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.12233299999979863,
-        "composeMs": 0.27262500000006185,
-        "generateMs": 0.038624999999683496,
-        "repairMs": 1.9377909999998337,
-        "validateMs": 2.2617919999997866,
+        "normalizeMs": 0.11129099999971004,
+        "composeMs": 0.19887500000004366,
+        "generateMs": 0.026667000000088592,
+        "repairMs": 1.8175830000000133,
+        "validateMs": 2.0898749999996653,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -5430,31 +5812,52 @@
     },
     {
       "id": "npm-package.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/npm-package.schema.json",
-      "instancesTried": 0,
+      "instancesTried": 3,
       "instancesValid": 0,
       "unsat": false,
       "failFast": true,
       "diagnostics": [
         {
+          "code": "AP_FALSE_INTERSECTION_APPROX",
+          "canonPath": "/properties/exports/oneOf/1",
+          "details": {
+            "reason": "nonAnchoredPattern"
+          }
+        },
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        },
+        {
           "code": "EXTERNAL_REF_UNRESOLVED",
           "canonPath": "",
           "details": {
-            "mode": "strict",
+            "mode": "lax",
             "ref": "https://json.schemastore.org/ava.json",
             "failingRefs": [
               "https://json.schemastore.org/eslintrc.json"
-            ]
+            ],
+            "skippedValidation": true
+          },
+          "metrics": {
+            "validationsPerRow": 0
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 1.3349169999996775,
-        "composeMs": 31.539082999999664,
-        "generateMs": 0,
-        "repairMs": 0,
-        "validateMs": 0,
+        "normalizeMs": 1.9764169999998558,
+        "composeMs": 29.969707999999628,
+        "generateMs": 2.5000410000002375,
+        "repairMs": 7.256290999999692,
+        "validateMs": 0.232499999999618,
         "validationsPerRow": 0,
         "repairPassesPerRow": 0
       },
@@ -5466,7 +5869,7 @@
     },
     {
       "id": "openapi-2017-08-27.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/openapi-2017-08-27.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
@@ -5688,11 +6091,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 2.186916999999994,
-        "composeMs": 28.237832999999682,
-        "generateMs": 0.29599999999982174,
-        "repairMs": 17.595416999999998,
-        "validateMs": 18.632583000000068,
+        "normalizeMs": 1.5717500000000655,
+        "composeMs": 28.383792000000085,
+        "generateMs": 0.24083400000017718,
+        "repairMs": 16.183250000000044,
+        "validateMs": 18.32537500000035,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -5704,7 +6107,7 @@
     },
     {
       "id": "openapi-2024-10-18.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/openapi-2024-10-18.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
@@ -5947,11 +6350,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 1.303791000000274,
-        "composeMs": 4.669082999999773,
-        "generateMs": 0.5900000000001455,
-        "repairMs": 17.8606249999998,
-        "validateMs": 21.517625000000407,
+        "normalizeMs": 1.520292000000154,
+        "composeMs": 5.53366700000015,
+        "generateMs": 0.36566599999969185,
+        "repairMs": 18.018291999999747,
+        "validateMs": 21.106000000000222,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -5963,7 +6366,7 @@
     },
     {
       "id": "openapi-3.1.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/openapi-3.1.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
@@ -6237,11 +6640,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 1.4243750000000546,
-        "composeMs": 1.572791000000052,
-        "generateMs": 6.6563750000000255,
-        "repairMs": 19.572458000000097,
-        "validateMs": 21.31970900000033,
+        "normalizeMs": 1.25262500000008,
+        "composeMs": 1.775583000000097,
+        "generateMs": 6.4529999999999745,
+        "repairMs": 19.24691699999994,
+        "validateMs": 20.92570799999976,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -6253,7 +6656,7 @@
     },
     {
       "id": "tsconfig.schema",
-      "mode": "strict",
+      "mode": "lax",
       "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/tsconfig.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
@@ -6272,11 +6675,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 2.04358400000001,
-        "composeMs": 1.3574579999999514,
-        "generateMs": 0.2609589999997297,
-        "repairMs": 20.30145799999991,
-        "validateMs": 24.05687500000022,
+        "normalizeMs": 2.081709000000046,
+        "composeMs": 1.5033339999999953,
+        "generateMs": 0.2755000000001928,
+        "repairMs": 19.62979200000018,
+        "validateMs": 24.385291999999936,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -6289,11 +6692,11 @@
   ],
   "summary": {
     "totalSchemas": 25,
-    "schemasWithSuccess": 18,
-    "totalInstancesTried": 63,
-    "totalInstancesValid": 54,
+    "schemasWithSuccess": 20,
+    "totalInstancesTried": 75,
+    "totalInstancesValid": 60,
     "unsatCount": 1,
-    "failFastCount": 7,
+    "failFastCount": 3,
     "caps": {
       "regexCapped": 0,
       "nameAutomatonCapped": 13,
