@@ -32,7 +32,7 @@ A preparatory step (not part of the normative pipeline): draft detection, basic 
 
 * **Non‑destructive** transforms; maintain pointer maps (canonical ⇄ original).
 * **Conditionals (default)**: **no rewrite** — `rewriteConditionals: 'never'`. The generator uses `conditionals.strategy: 'if‑aware‑lite'` by default (implicit mapping). **Safe rewrite** is opt‑in and guarded.
-* **References:** preserve in‑document refs; **no remote resolution** of external `$ref`; do not cross `$id` boundaries; keep `$dynamic*` as pass‑through.
+* **References:** preserve in‑document refs; do not perform remote dereferencing of external `$ref` inside this stage; do not cross `$id` boundaries; keep `$dynamic*` as pass‑through. Any optional remote resolution is handled by the pre‑pipeline resolver extension, not by Normalize.
 * **Guards:** cap nested `not` via `guards.maxGeneratedNotNesting`.
 
 **Module:** `packages/core/src/transform/schema-normalizer.ts` (non‑destructive; notes for risky rewrites).
@@ -81,13 +81,13 @@ A preparatory step (not part of the normative pipeline): draft detection, basic 
 
 ### Stage 5 — Validate
 
-**Purpose:** Final compliance check against the **original** schema; pipeline fails on non‑compliance.
+**Purpose:** Final compliance check against the **original** schema; pipeline fails on non‑compliance when validation is executed.
 
 * **Two AJV configurations** (separate caches):
 
   1. **Original‑schema** validator (formats **annotative** by default: `validateFormats:false`).
   2. **Planning/generation** validator (analysis‑friendly flags, `strictTypes:true`).
-     Always validate output against the **original** schema.
+     When validation runs, always validate output against the **original** schema. In Lax mode, when failures are classified as due only to unresolved external `$ref`, this stage may instead record `skippedValidation:true` with diagnostics (no AJV run on items).
 * **Guarantee scope:** 100 % compliance only for **full pipeline** runs.
 * Pointer mapping for precise errors; phase metrics collection.
 
@@ -97,14 +97,14 @@ A preparatory step (not part of the normative pipeline): draft detection, basic 
 
 ## Modes (Strict vs Lax)
 
-| Situation                         | **Strict** (default)                             | **Lax**                                                                                         |
-| --------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| External `$ref`                   | `failFast.externalRefStrict: 'error'` (no deref) | `warn` then attempt generation **without** remote deref; still validate against original schema |
-| `$dynamicRef/*` present           | note only                                        | note only                                                                                       |
-| Complexity caps                   | degrade with diagnostics                         | same                                                                                            |
-| Conditional strategy (no‑rewrite) | `if‑aware‑lite`                                  | same                                                                                            |
+| Situation                         | **Strict** (default)                             | **Lax**                                                                                                            |
+| --------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| External `$ref`                   | `failFast.externalRefStrict: 'error'` (no deref in core pipeline) | `warn` then attempt generation **without** deref in core pipeline; validate where possible or mark validation as skipped on externals |
+| `$dynamicRef/*` present           | note only                                        | note only                                                                                                          |
+| Complexity caps                   | degrade with diagnostics                         | same                                                                                                               |
+| Conditional strategy (no‑rewrite) | `if‑aware‑lite`                                  | same                                                                                                               |
 
-There is **no network resolution** of external `$ref` in either mode.
+Core pipeline stages perform no network I/O for external `$ref` in either mode. When the optional resolver extension is enabled, HTTP(S) fetch happens in a separate pre‑pipeline step, and the pipeline itself only consults the resulting registry.
 
 ---
 
@@ -125,6 +125,8 @@ There is **no network resolution** of external `$ref` in either mode.
 2. **Planning/generation**
 
    * `strictSchema:true`, `strictTypes:true`, `allErrors:false`; formats aligned with policy.
+
+The Source instance is intentionally more tolerant (`strictSchema:false`, `strictTypes:false`), while the planning instance is strict. A startup gate enforces parity for `unicodeRegExp`, `validateFormats`, `multipleOfPrecision` (when relevant) and the presence of format validators across both instances; violations produce an `AJV_FLAGS_MISMATCH` error.
 
 **Cache keys include** AJV **major version** and critical flags (`validateFormats`, `allowUnionTypes`, `strictTypes`). **Separate LRU spaces** are recommended for the two instances.
 
@@ -158,6 +160,8 @@ Hierarchical: `WeakMap` (object identity) → `$id` (when trusted) → size‑ga
 
 **Documented targets (not hard guarantees):**
 For **\~1000 rows (simple/medium)**: **p50 ≈ 200–400 ms**, `validationsPerRow ≤ 3`, `repairPassesPerRow ≤ 1`. Degrade gracefully on pathological schemas (caps, score‑only branch selection, analysis skips).
+
+Repository‑level bench harnesses (`npm run bench`, `npm run bench:real-world`) complement these SLOs by enforcing budgets such as p95 ≤ 120 ms and memory ≤ 512 MB across fixed profiles via `bench/bench-gate*.json`; exceeding those budgets fails the gate but does not change the non‑normative nature of the SLOs.
 
 ---
 
