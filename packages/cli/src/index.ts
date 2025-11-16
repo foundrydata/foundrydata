@@ -23,7 +23,7 @@
 import { Command } from 'commander';
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import {
   ErrorPresenter,
   isFoundryError,
@@ -478,11 +478,10 @@ export async function main(argv: string[] = process.argv): Promise<void> {
 
 export { program };
 
-const entryHref =
-  typeof process.argv[1] === 'string'
-    ? pathToFileURL(process.argv[1]).href
-    : '';
-const isDirectExecution = import.meta.url === entryHref;
+const entryFile =
+  typeof process.argv[1] === 'string' ? fs.realpathSync(process.argv[1]) : '';
+const moduleFile = fileURLToPath(import.meta.url);
+const isDirectExecution = entryFile === moduleFile;
 
 if (isDirectExecution) {
   await main();
