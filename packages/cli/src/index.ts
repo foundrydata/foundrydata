@@ -348,7 +348,31 @@ program
       };
 
       const selection = selectResponseSchemaAndExample(document, driverOptions);
-      let schemaForGen = selection.schema as unknown;
+      const baseSchema = selection.schema as unknown;
+
+      // Attach OpenAPI components to the selected schema so that local
+      // references like "#/components/schemas/User" remain resolvable when
+      // the schema is compiled by AJV in the pipeline.
+      let schemaForGen: unknown = baseSchema;
+      if (
+        baseSchema &&
+        typeof baseSchema === 'object' &&
+        !Array.isArray(baseSchema)
+      ) {
+        const schemaObj = baseSchema as Record<string, unknown>;
+        const components = (document as Record<string, unknown>).components;
+        if (
+          components &&
+          typeof components === 'object' &&
+          !Array.isArray(components) &&
+          !Object.prototype.hasOwnProperty.call(schemaObj, 'components')
+        ) {
+          schemaForGen = {
+            ...schemaObj,
+            components: components as Record<string, unknown>,
+          };
+        }
+      }
 
       // When preferExamples is enabled and the driver surfaced an example that
       // is not already schema-level, attach it as schema.example so that the
