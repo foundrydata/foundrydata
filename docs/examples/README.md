@@ -1,223 +1,169 @@
-Voici d’abord un **contrôle de cohérence** concis du README des *examples*, puis un **nouveau README complet** en anglais qui intègre les corrections.
-
----
-
-## Coherence check (summary)
-
-**Inconsistencies or misleading items vs. the canonical plan:**
-
-1. **External `$ref` handling / CLI flag** — The examples mention `--resolve-externals` (and suggest “bundle externals”). The spec states **no network dereferencing**; behavior is controlled by a **policy** (e.g., `externalRefStrict`) and validation is always against the original schema. Replace with an option that expresses **policy only** and explicitly say “no remote resolution.” &#x20;
-
-2. **Fixed nesting-depth limits** — The examples claim deep nesting “depth > 2” as unsupported. The spec uses **complexity caps with graceful degradation**, not a hard maximum depth. Remove fixed-depth statements and keep to caps/diagnostics framing. &#x20;
-
-3. **`uniqueItems` scope** — One section limits `uniqueItems` to scalars, another later claims deep equality for objects is supported. Align to spec: structural hashing + deep equality are supported for objects. &#x20;
-
-4. **Draft support** — The examples say Draft‑04 “not supported.” The spec allows Draft‑04 **via the normalizer** (compat layer), with validation still against the original; keep this nuance instead of a blanket “not supported.” &#x20;
-
-5. **Number constraints wording** — One bullet implies only inclusive `min/max`; the spec covers exclusive bounds too (per draft). Adjust wording to include exclusive forms. &#x20;
-
-6. **Output option** — The examples show `--output <file>`. The core contract is **data → stdout**, **metrics/errors → stderr**; demonstrate redirection rather than a bespoke output flag (unless the CLI truly implements it). &#x20;
-
-7. **API/CSV forward‑looking claims** — “API in month 3+”, “CSV API‑only” are outside the plan’s normative scope. Remove or clearly mark as future/non‑normative.&#x20;
-
-8. **Guarantee scope** — Keep the “100% compliance” statement but add that it applies to the **full pipeline**; stage‑only usage or unresolved external `$ref` do not carry the guarantee.&#x20;
-
-9. **SLO/SLI reminders** — It helps to restate the documented targets used in examples (`~1K rows simple/medium: p50 ≈ 200–400 ms; validationsPerRow ≤ 3; repairPassesPerRow ≤ 1`).&#x20;
-
----
-
-## **New README (examples) — drop‑in replacement (English)**
-
-````markdown
 # FoundryData — Examples
 
-This directory contains real‑world schemas and usage patterns you can run locally to understand how FoundryData behaves on typical web/API models.  
-**Canonical spec:** Feature Support Simplification Plan (this file aligns terminology and limits with the spec). :contentReference[oaicite:15]{index=15}
+This directory contains real‑world schemas and usage patterns you can run locally to understand how FoundryData behaves on typical web/API models.
+
+All examples are designed to stay aligned with the Feature Support Simplification spec (no network deref in core, AJV as oracle, deterministic generation, graceful degradation under caps).
 
 ---
 
 ## Available example schemas
 
-| File | Scenario it illustrates |
-|------|-------------------------|
-| `ecommerce-schema.json` | Product catalog (objects + patternProperties + enums) |
-| `saas-user-schema.json` | Users, plans, dependent fields, formats (uuid/email) |
-| `api-transaction-schema.json` | Transactions with date‑time, numbers, and oneOf |
-| `team-with-users-schema.json` | Arrays of objects, `uniqueItems`, tuple-ish shapes |
-| `quick-test-schema.json` | Minimal schema for smoke tests |
+| File                       | Scenario it illustrates                                              |
+|----------------------------|---------------------------------------------------------------------|
+| `ecommerce-schema.json`    | Product catalog (objects + patternProperties + enums)               |
+| `saas-user-schema.json`    | SaaS users with plans, flags, formats (uuid/email)                 |
+| `api-transaction-schema.json` | Transactions with date‑time, numbers, and `oneOf`               |
+| `team-with-users-schema.json` | Arrays of objects, `uniqueItems`, tuple‑like shapes             |
+| `quick-test-schema.json`   | Minimal schema for smoke tests                                      |
+| `payment.json`             | Payment request/event payload (contract‑testing focused)            |
+| `llm-output.json`          | Structured LLM summarization output (LLM testing / DX)             |
+| `users-api.json`           | Small OpenAPI 3.1 document for `openapi` CLI fixtures               |
 
-> These schemas are intentionally small and focused on one or two mechanics each. :contentReference[oaicite:16]{index=16}
+These schemas are intentionally small and focused on one or two mechanics each.
 
 ---
 
-## Quick start
+## Quick start (from repo root)
 
 ```bash
 # Generate 100 products
-foundrydata generate --schema ecommerce-schema.json --n 100
+foundrydata generate --schema docs/examples/ecommerce-schema.json --n 100
 
 # Deterministic — same seed => same data
-foundrydata generate --schema saas-user-schema.json --n 50 --seed 42
+foundrydata generate --schema docs/examples/saas-user-schema.json --n 50 --seed 42
 
 # Arrays of objects example
-foundrydata generate --schema team-with-users-schema.json --n 10
+foundrydata generate --schema docs/examples/team-with-users-schema.json --n 10
 
 # Print metrics (timings, validations/row, etc.) to stderr
-foundrydata generate --schema api-transaction-schema.json --n 200 --print-metrics
+foundrydata generate --schema docs/examples/api-transaction-schema.json --n 200 --print-metrics
 
 # Write output to a file (stdout -> redirect)
-foundrydata generate --schema quick-test-schema.json --n 5 > out.json
-````
+foundrydata generate --schema docs/examples/quick-test-schema.json --n 5 > out.json
+```
 
-**Streams:** generated data goes to **stdout**; metrics/errors to **stderr**. This enables simple piping in CI.&#x20;
+Streams: generated data goes to `stdout`; metrics/errors go to `stderr`. This makes piping in CI straightforward.
 
 ---
 
-## Diagnostic & Debugging
+## Product‑oriented scenarios
+
+The following schemas are used in higher‑level product examples:
+
+- `docs/examples/users-api.json` — with `foundrydata openapi` for API mocks / MSW‑style fixtures.
+- `docs/examples/payment.json` — for contract‑testing flows (request/event payloads).
+- `docs/examples/llm-output.json` — for LLM structured output testing.
+
+See `docs/use-cases/product-scenarios.md` and the scripts under `scripts/examples/`:
+
+- `scripts/examples/api-mocks.ts`
+- `scripts/examples/contract-tests.ts`
+- `scripts/examples/llm-output.ts`
+
+Each script calls the public `Generate` / `Validate` APIs with fixed seeds and validates that emitted items are AJV‑valid for the corresponding schema.
+
+---
+
+## Diagnostic & debugging tips
 
 ### View effective configuration and metrics
 
 ```bash
 # Development/testing with tsx (before building)
 npx tsx packages/cli/src/index.ts generate \
-  --schema profiles/real-world/openapi-3.1.schema.json \
+  --schema docs/examples/ecommerce-schema.json \
   --n 10 \
   --print-metrics \
   --debug-passes
 
 # After build
 foundrydata generate \
-  --schema profiles/real-world/openapi-3.1.schema.json \
+  --schema docs/examples/ecommerce-schema.json \
   --n 10 \
   --print-metrics \
   --debug-passes
 ```
 
-**What you'll see:**
-- `--debug-passes` → Effective configuration (rational limits, trials, guards, cache, complexity caps) and compose-time diagnostics/coverage summary (when available)
-- `--print-metrics` → Pipeline metrics (timings per stage, validationsPerRow, repairPassesPerRow, branch trials)
+What you’ll see:
+- `--debug-passes` → effective configuration (rational limits, trials, guards, cache, complexity caps) and, when available, compose‑time diagnostics/coverage.
+- `--print-metrics` → pipeline metrics (per‑stage timings, `validationsPerRow`, `repairPassesPerRow`, branch trials).
 
 ### Advanced generation options
 
 ```bash
 # Increase repair attempts for complex schemas
-foundrydata generate --schema complex.json --n 100 --repair-attempts 5
+foundrydata generate --schema docs/examples/api-transaction-schema.json --n 100 --repair-attempts 3
 
 # Control conditional rewriting
-foundrydata generate --schema conditional.json --n 50 --rewrite-conditionals safe
+foundrydata generate --schema docs/examples/saas-user-schema.json --n 50 --rewrite-conditionals safe
 
 # Skip branch trials for faster generation (score-only selection)
-foundrydata generate --schema large-oneof.json --n 100 --skip-trials
+foundrydata generate --schema docs/examples/api-transaction-schema.json --n 100 --skip-trials
 
 # Fine-tune branch exploration
-foundrydata generate --schema complex.json --n 100 \
+foundrydata generate --schema docs/examples/api-transaction-schema.json --n 100 \
   --trials-per-branch 3 \
   --max-branches-to-try 15 \
   --skip-trials-if-branches-gt 60
 ```
 
-### Test profiles
-
-Real-world schemas are available in `profiles/real-world/`:
-
-```bash
-# OpenAPI 3.1 meta-schema (complex, many conditionals)
-npx tsx packages/cli/src/index.ts generate \
-  --schema profiles/real-world/openapi-3.1.schema.json \
-  --n 5 \
-  --print-metrics
-
-# JSON Schema Draft-07 meta-schema
-npx tsx packages/cli/src/index.ts generate \
-  --schema profiles/real-world/json-schema-draft-07.json \
-  --n 5 \
-  --print-metrics
-```
-
-### Understanding metrics output
-
-Key metrics to monitor:
-- `validationsPerRow` → Should be ≤3 for simple/medium schemas (quality indicator)
-- `repairPassesPerRow` → Should be ≤1 for simple/medium schemas (efficiency indicator)
-- `normalizeMs`, `composeMs`, `generateMs`, `repairMs`, `validateMs` → Per-stage timings
-- `branchTrialsTried` → How many branch explorations occurred
-
-**Performance targets** (documented, not guarantees):
-- ~1000 rows (simple/medium): p50 ≈ 200–400 ms
-
 ---
 
-## OpenAPI driver examples
+## OpenAPI driver example
 
-When you have an OpenAPI 3.1 document, you can generate fixtures directly from a chosen response schema using the `openapi` CLI command. The document is loaded from disk (no network I/O), selection is done via the OpenAPI driver, and data is generated through the same 5‑stage pipeline (`Generate`).
+When you have an OpenAPI 3.1 document, you can generate fixtures directly from a chosen response schema using the `openapi` CLI command. The document is loaded from disk (no network I/O); selection uses the OpenAPI driver; data is generated through the same 5‑stage pipeline.
 
 ```bash
-# By operationId
+# By operationId (users-api.json in this directory)
 foundrydata openapi \
-  --spec profiles/real-world/openapi-3.1-example.json \
-  --operation-id listUsers \
-  --n 3 \
-  --out ndjson
-
-# By path + method
-foundrydata openapi \
-  --spec profiles/real-world/openapi-3.1-example.json \
-  --path /users \
-  --method get \
-  --n 3 \
-  --out ndjson
-
-# Prefer OpenAPI examples when present (fall back to generation)
-foundrydata openapi \
-  --spec profiles/real-world/openapi-3.1-example.json \
-  --operation-id listUsers \
-  --n 3 \
+  --spec docs/examples/users-api.json \
+  --operation-id getUsers \
+  --n 5 \
   --out ndjson \
   --prefer-examples
 ```
 
-Selection and options:
+Relevant options:
 
-- `--operation-id <id>` or `--path <path>` + `--method <method>` choose the operation.
-- Optional `--status <code>` and `--content-type <type>` disambiguate multiple responses/content entries.
-- `--n/--rows`, `--seed`, `--mode/--compat`, `--out json|ndjson`, `--prefer-examples`, `--print-metrics`, `--no-metrics` work the same way as for `generate`.
+- `--operation-id <id>` or `--path <path>` + `--method <method>` to choose the operation.
+- Optional `--status <code>` and `--content-type <type>` if multiple responses/content entries exist.
+- Shared flags with `generate`: `--n/--rows`, `--seed`, `--mode/--compat`, `--out json|ndjson`, `--prefer-examples`, `--print-metrics`, `--no-metrics`.
 
-All items emitted on stdout have been validated by AJV against the selected response schema (AJV remains the oracle).
-
----
-
-## JSON Schema drafts (what these examples expect)
-
-* ✅ **Draft‑07**, **2019‑09**, **2020‑12** (auto‑detected via `$schema`).
-* ⚠️ **Draft‑04**: accepted via the **normalizer** compatibility path; validation still runs against the original schema; behavior can differ for corner cases.&#x20;
-
-**References:** in‑document `$ref` supported. **External `$ref`** are **not dereferenced** (no network I/O). Use policy flags to decide how to proceed when such refs are present (see below). `$dynamicRef/*` are preserved and validated by AJV at the end.&#x20;
+All items printed on stdout have been validated by AJV against the selected response schema (AJV remains the oracle).
 
 ---
 
-## CLI tips for these examples
+## JSON Schema drafts & refs
 
-```bash
-# External refs policy (no remote resolution; policy only)
-# Values: error | warn | ignore   (default: error)
-foundrydata generate --schema api-transaction-schema.json --n 50 --external-ref-strict warn
-```
+- Draft‑07, 2019‑09, 2020‑12 are supported (auto‑detected via `$schema`).
+- Draft‑04 is accepted via the normalizer compatibility path; validation still runs against the original schema (corner cases may differ slightly).
 
-* There is **no** `--resolve-externals` flag and **no remote dereferencing**. The flag above only sets the policy for encountering external `$ref`; output is still validated against the original schema.&#x20;
+References:
 
+- In‑document `$ref` is supported.
+- External `$ref` is not dereferenced by core stages; you control policy with `--external-ref-strict` (`error`/`warn`/`ignore`). Validation is still against the original schema; diagnostics such as `EXTERNAL_REF_UNRESOLVED` explain what happened.
 
-### Resolver strategies (pre‑phase; opt‑in)
+---
 
-You can optionally enable a pre‑pipeline “Prefetch & Cache Fill” step that fetches external `$ref` targets to a local cache. Core phases remain I/O‑free and validation still uses the original schema.
+## Quality & performance (orientation only)
 
-- `--resolve=local` (default): no network; prefetch disabled.
-- `--resolve=local,schemastore`: allow HTTP(S) prefetch restricted to `json.schemastore.org` (use cache via `--cache-dir`).
-- `--resolve=local,remote`: allow general HTTP(S) prefetch (pre‑phase only); use with `--cache-dir`.
+As a rough orientation for simple/medium schemas:
 
-Examples
+- ~1000 rows: p50 ≈ 200–400 ms.
+- `validationsPerRow` ≤ 3.
+- `repairPassesPerRow` ≤ 1.
 
-```bash
-# Development with tsx (no build) — local only (no network)
+These are documented targets, not guarantees. Use `--print-metrics` to inspect actual behavior on your machine.
+
+---
+
+## Contributing new examples
+
+When adding new example schemas:
+
+- Keep them small and focused on one or two mechanics (e.g. `allOf` + `additionalProperties:false`, `oneOf` discriminants, `contains` + `uniqueItems`).
+- Make sure they are usable from the CLI with a single `foundrydata generate` or `foundrydata openapi` command.
+- Add a short comment or entry in this README describing the scenario they illustrate.
 npx tsx packages/cli/src/index.ts generate --schema ecommerce-schema.json --n 20 --resolve=local
 
 # Restrict to SchemaStore and write/read local cache
