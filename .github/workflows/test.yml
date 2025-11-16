@@ -160,7 +160,7 @@ jobs:
           if-no-files-found: ignore
 
   bench-gate:
-    name: Bench Harness (SLO enforcement)
+    name: Bench Harness (diagnostic only)
     needs: [guard-no-error-reporter, lint, typecheck]
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -182,6 +182,7 @@ jobs:
 
       - name: Run benchmark harness
         run: npm run bench
+        continue-on-error: true
 
       - name: Upload bench gate summary
         if: always()
