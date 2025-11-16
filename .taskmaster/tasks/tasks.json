@@ -3554,7 +3554,7 @@
         "id": "19",
         "title": "Acceptance tests: arrays, refs, determinism",
         "description": "Contains vs maxItems; external $ref strict/lax; determinism with fixed seed.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "11",
           "10",
@@ -3572,9 +3572,10 @@
               11
             ],
             "details": "Implement tests in tests/acceptance/arrays/ covering: impossible contains vs maxItems scenarios, bag semantics validation, UNSAT_CONTAINS_VS_MAXITEMS diagnostic emission, uniqueItems ordering stability, and edge cases with multiple contains constraints against array size limits.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Snapshot testing for diagnostic codes and error messages; verify UNSAT detection accuracy",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-16T00:06:45.298Z"
           },
           {
             "id": 2,
@@ -3585,9 +3586,10 @@
               16
             ],
             "details": "Create test suite in tests/acceptance/refs/ covering: strict mode external $ref errors, lax mode fallback behavior, diagnostic emission for unresolved references, $dynamicRef preservation, and edge cases with nested external references across different policy configurations.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Policy configuration matrix testing; error code validation and fallback behavior verification",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-16T00:06:46.382Z"
           },
           {
             "id": 3,
@@ -3595,14 +3597,16 @@
             "description": "Implement determinism acceptance tests ensuring identical outputs for fixed seeds across multiple runs, including snapshot testing for output stability validation.",
             "dependencies": [],
             "details": "Build determinism test suite in tests/acceptance/determinism/ covering: fixed seed reproducibility across runs, snapshot testing for output stability, branch selection consistency, RNG state validation, and cross-platform determinism verification with comprehensive edge case coverage.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Snapshot testing with fixed seeds; multi-run output comparison; cross-platform validation",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-16T00:06:47.475Z"
           }
         ],
         "complexity": 5,
         "recommendedSubtasks": 3,
-        "expansionPrompt": "Develop acceptance tests for array constraint violations, external reference policy behavior, and deterministic output validation. Include snapshot testing for output stability and comprehensive coverage of edge cases."
+        "expansionPrompt": "Develop acceptance tests for array constraint violations, external reference policy behavior, and deterministic output validation. Include snapshot testing for output stability and comprehensive coverage of edge cases.",
+        "updatedAt": "2025-11-16T00:06:47.475Z"
       },
       {
         "id": "20",
@@ -3733,9 +3737,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-15T23:56:42.616Z",
+      "lastModified": "2025-11-16T00:06:47.476Z",
       "taskCount": 22,
-      "completedCount": 19,
+      "completedCount": 20,
       "tags": [
         "jsg-p1-automata-smt"
       ]
