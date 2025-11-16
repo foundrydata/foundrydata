@@ -15,6 +15,7 @@ env:
   NODE_VERSION: '20.x'
   BENCH_P95_BUDGET: '120'
   BENCH_MEMORY_BUDGET: '512'
+  FOUNDRY_BENCH_QUICK: '1'
 
 permissions:
   contents: read

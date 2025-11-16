@@ -166,6 +166,7 @@ jobs:
     timeout-minutes: 15
     env:
       CI: 'true'
+      FOUNDRY_BENCH_QUICK: '1'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
