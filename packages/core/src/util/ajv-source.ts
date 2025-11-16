@@ -1,3 +1,5 @@
+/* eslint-disable max-depth */
+/* eslint-disable max-lines */
 /* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
 import { createRequire } from 'node:module';
@@ -12,7 +14,12 @@ import {
   type ResolvedOptions,
 } from '../types/options.js';
 
-export type JsonSchemaDialect = 'draft-04' | 'draft-07' | '2019-09' | '2020-12';
+export type JsonSchemaDialect =
+  | 'draft-04'
+  | 'draft-06'
+  | 'draft-07'
+  | '2019-09'
+  | '2020-12';
 
 const requireForDraft = createRequire(import.meta.url);
 
@@ -21,11 +28,13 @@ const CANONICAL_META_IDS: Record<JsonSchemaDialect, readonly string[]> = {
     'http://json-schema.org/draft-04/schema',
     'https://json-schema.org/draft-04/schema',
   ],
+  'draft-06': [
+    'http://json-schema.org/draft-06/schema',
+    'https://json-schema.org/draft-06/schema',
+  ],
   'draft-07': [
     'http://json-schema.org/draft-07/schema',
     'https://json-schema.org/draft-07/schema',
-    'http://json-schema.org/draft-06/schema',
-    'https://json-schema.org/draft-06/schema',
   ],
   '2019-09': [
     'http://json-schema.org/draft/2019-09/schema',
@@ -39,11 +48,18 @@ const CANONICAL_META_IDS: Record<JsonSchemaDialect, readonly string[]> = {
 
 const canonicalMetaCache = new Map<JsonSchemaDialect, Set<string>>();
 
+type RegExpEngine = ((pattern: string, flags?: string) => RegExp) & {
+  code: string;
+};
+let draft06PatternFallbackWarned = false;
+
 export interface SourceAjvFactoryOptions {
   dialect: JsonSchemaDialect;
   validateFormats?: boolean;
   multipleOfPrecision?: number;
   discriminator?: boolean;
+  tolerateInvalidPatterns?: boolean;
+  onInvalidPatternDraft06?: (info: { pattern: string }) => void;
 }
 
 /**
@@ -88,7 +104,10 @@ export function createSourceAjv(
         : undefined),
   } as AjvOptions;
 
-  const ajv = createAjvByDialect(options.dialect, baseFlags) as AjvWithMarkers;
+  const ajv = createAjvByDialect(options.dialect, baseFlags, {
+    tolerateInvalidPatternsForDraft06: options.tolerateInvalidPatterns === true,
+    onInvalidPatternDraft06: options.onInvalidPatternDraft06,
+  }) as AjvWithMarkers;
 
   // If formats validation is enabled, add ajv-formats plugin
   if (baseFlags.validateFormats) {
@@ -111,10 +130,18 @@ export function createRepairOnlyValidatorAjv(
   // Ajv does not support toggling after creation; recreate with flag
   const flags = extractAjvFlags(ajv);
   const dialect = options.dialect;
-  const ajv2 = createAjvByDialect(dialect, {
-    ...flags,
-    allErrors: true,
-  } as AjvOptions);
+  const ajv2 = createAjvByDialect(
+    dialect,
+    {
+      ...flags,
+      allErrors: true,
+    } as AjvOptions,
+    {
+      tolerateInvalidPatternsForDraft06:
+        options.tolerateInvalidPatterns === true,
+      onInvalidPatternDraft06: options.onInvalidPatternDraft06,
+    }
+  );
   if (flags.validateFormats) {
     addFormats(ajv2);
     (ajv2 as AjvWithMarkers).__fd_formatsPlugin = true;
@@ -125,9 +152,79 @@ export function createRepairOnlyValidatorAjv(
 
 function createAjvByDialect(
   dialect: JsonSchemaDialect,
-  flags: AjvOptions
+  flags: AjvOptions,
+  options?: {
+    tolerateInvalidPatternsForDraft06?: boolean;
+    onInvalidPatternDraft06?: (info: { pattern: string }) => void;
+  }
 ): Ajv {
   switch (dialect) {
+    case 'draft-06': {
+      const draft06Flags: AjvOptions = {
+        ...flags,
+        // Disable default draft-07 meta and set draft-06 as default meta
+        meta: false,
+        defaultMeta: 'http://json-schema.org/draft-06/schema#',
+      };
+      if (options?.tolerateInvalidPatternsForDraft06) {
+        // Wrap RegExp construction to tolerate legacy patterns that are not valid
+        // JavaScript regular expressions (e.g. stray quantifier brackets) so that
+        // schema compilation does not fail for otherwise usable schemas.
+        const tolerantRegExp = ((pattern: string, flagsParam?: string) => {
+          try {
+            return new RegExp(pattern, flagsParam);
+          } catch (err) {
+            if (err instanceof SyntaxError) {
+              // Fallback: use a permissive pattern that always matches,
+              // effectively disabling the invalid constraint while keeping
+              // compilation alive. This is only enabled in lax-like modes.
+              const fallback = new RegExp('^[\\s\\S]*$', flagsParam);
+              if (options?.onInvalidPatternDraft06) {
+                options.onInvalidPatternDraft06({ pattern });
+              } else if (!draft06PatternFallbackWarned) {
+                // Surface a warning once per process when no callback is provided.
+                console.warn(
+                  '[foundrydata] warning: draft-06 pattern is invalid; ' +
+                    'using tolerant match-all fallback for this schema'
+                );
+                draft06PatternFallbackWarned = true;
+              }
+              return fallback;
+            }
+            throw err;
+          }
+        }) as RegExpEngine;
+        tolerantRegExp.code = 'new RegExp';
+        draft06Flags.code = {
+          ...(flags.code ?? {}),
+          // Ajv will call this via opts.code.regExp in pattern handling.
+          regExp: tolerantRegExp,
+        };
+      }
+      const ajv = new Ajv(draft06Flags);
+      try {
+        const draft06Meta = requireForDraft(
+          'ajv/dist/refs/json-schema-draft-06.json'
+        );
+        // Register the meta-schema once; Ajv normalizes IDs so aliases with
+        // or without "#" resolve to the same schema.
+        ajv.addMetaSchema(draft06Meta);
+      } catch (err) {
+        // If the draft-06 meta-schema cannot be loaded, Ajv will report missing metas on compile.
+        console.warn(
+          '[foundrydata] warning: failed to load draft-06 meta-schema for Ajv:',
+          err instanceof Error ? err.message : String(err)
+        );
+      }
+      // Legacy draft-06 schemas may still use "id" as a schema identifier; Ajv v8
+      // exposes it as a core keyword that always errors, so remove it for Source Ajv.
+      try {
+        ajv.removeKeyword('id');
+      } catch {
+        // Ignore if the keyword is not present or cannot be removed.
+      }
+      return ajv;
+    }
     case 'draft-07':
       return new Ajv(flags);
     case '2019-09':
@@ -148,6 +245,7 @@ export function getAjvClassLabel(
   dialect: JsonSchemaDialect
 ): 'Ajv' | 'Ajv2019' | 'Ajv2020' | 'ajv-draft-04' {
   switch (dialect) {
+    case 'draft-06':
     case 'draft-07':
       return 'Ajv';
     case '2019-09':
@@ -286,17 +384,28 @@ export function detectDialectFromSchema(schema: unknown): JsonSchemaDialect {
   if (schema && typeof schema === 'object') {
     const declared = (schema as Record<string, unknown>)['$schema'];
     if (typeof declared === 'string') {
-      const lowered = declared.toLowerCase();
-      if (lowered.includes('2020-12')) return '2020-12';
+      const normalized = normalizeMetaIdentifier(declared);
+      const lowered = declared.trim().toLowerCase();
+      // 1) Exact match on canonical meta IDs (normalized)
+      for (const dial of Object.keys(
+        CANONICAL_META_IDS
+      ) as JsonSchemaDialect[]) {
+        const cache = getCanonicalMetaSet(dial);
+        if (cache.has(normalized)) {
+          return dial;
+        }
+      }
+      // 2) Historical fallback: generic .../schema or .../schema#
+      if (normalized.endsWith('/schema')) {
+        return 'draft-04';
+      }
+      // 3) Explicit draft markers
       if (lowered.includes('2019-09') || lowered.includes('draft-2019')) {
         return '2019-09';
       }
-      if (lowered.includes('draft-07') || lowered.includes('draft-06')) {
-        return 'draft-07';
-      }
-      if (lowered.includes('draft-04')) {
-        return 'draft-04';
-      }
+      if (lowered.includes('draft-07')) return 'draft-07';
+      if (lowered.includes('draft-06')) return 'draft-06';
+      if (lowered.includes('draft-04')) return 'draft-04';
     }
   }
   return '2020-12';
