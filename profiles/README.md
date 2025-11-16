@@ -37,7 +37,12 @@ To comply with spec://§11#strict (no runtime deref of external `$ref`), we keep
 ## Using the fixtures
 
 - **CLI smoke tests**: `npx foundrydata generate --schema profiles/real-world/openapi-3.1.schema.json --rows 10 --seed 42`
-- **Real-world bench harness**: `npm run bench:real-world` executes the optional dataset with the same seeds `{1,42,4242}` and budgets as spec://§1#bench-sli-gate; set `FOUNDRY_BENCH_QUICK=1` for a 1×3 iteration sanity run.
+- **Real-world bench harness (performance gate)**: `npm run bench:real-world` executes the optional dataset with the same seeds `{1,42,4242}` and budgets as spec://§1#bench-sli-gate; set `FOUNDRY_BENCH_QUICK=1` for a 1×3 iteration sanity run. Use this primarily to track p50/p95 latency and memory budgets.
+- **Corpus harness (correctness / UNSAT / caps overview)**:
+  - From the repo root you can run:  
+    `npm run corpus:real-world` (strict mode) or  
+    `npx json-schema-reporter corpus --corpus profiles/real-world --mode lax --count 5 --seed 123 --out reports/corpus-summary.lax.json`
+  - This produces a `corpus-summary*.json` aligned with `CorpusRunReport` (per-schema success vs UNSAT/fail-fast, caps, and phase metrics). Load this file into the Workbench “corpus-summary.json” panel to explore corpus-level behavior.
 - **Diagnostics review**: capture `--print-metrics` output when running against these schemas to confirm we still emit the per-stage timings mandated by spec://§15#metrics.
 
 Please keep this README updated when adding/removing fixtures.

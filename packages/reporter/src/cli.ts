@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+/* eslint-disable max-lines */
+/* eslint-disable max-lines-per-function */
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
@@ -11,6 +13,7 @@ import { runEngineOnSchema } from './engine/runner.js';
 import { renderMarkdownReport } from './render/markdown.js';
 import { renderHtmlReport } from './render/html.js';
 import { runBench } from './bench/runner.js';
+import { runCorpus } from './corpus/runner.js';
 
 const SUPPORTED_FORMATS = ['json', 'markdown', 'html'] as const;
 type OutputFormat = (typeof SUPPORTED_FORMATS)[number];
@@ -117,7 +120,6 @@ function isCommanderHelpDisplayed(error: unknown): error is { code: string } {
   );
 }
 
-// eslint-disable-next-line max-lines-per-function
 function registerRunCommand(program: Command): void {
   program
     .command('run')
@@ -179,6 +181,7 @@ function createProgram(): Command {
 
   registerRunCommand(program);
   registerBenchCommand(program);
+  registerCorpusCommand(program);
   return program;
 }
 
@@ -212,6 +215,67 @@ function registerBenchCommand(program: Command): void {
       process.stdout.write(
         `Bench run completed: ${summary.schemas.length} schemas, ${summary.totals.instances} instances.\n`
       );
+    });
+}
+
+function registerCorpusCommand(program: Command): void {
+  program
+    .command('corpus')
+    .description(
+      'Run the corpus harness over a directory of schemas and aggregate results.'
+    )
+    .requiredOption('--corpus <dir>', 'Path to the corpus directory')
+    .option('--mode <mode>', 'Pipeline mode to use (strict or lax)', 'strict')
+    .option('--seed <number>', 'Seed applied to all schemas', (value) =>
+      Number.parseInt(value, 10)
+    )
+    .option('--count <number>', 'Instances per schema', (value) =>
+      Number.parseInt(value, 10)
+    )
+    .option(
+      '--out <path>',
+      'Output file for the corpus summary JSON',
+      'corpus-summary.json'
+    )
+    .action(async (cmdOptions) => {
+      const mode =
+        cmdOptions.mode === 'lax' ? 'lax' : ('strict' as 'strict' | 'lax');
+      const seed =
+        Number.isFinite(cmdOptions.seed) && typeof cmdOptions.seed === 'number'
+          ? cmdOptions.seed
+          : 37;
+      const count =
+        Number.isFinite(cmdOptions.count) &&
+        typeof cmdOptions.count === 'number' &&
+        cmdOptions.count > 0
+          ? cmdOptions.count
+          : 3;
+
+      const report = await runCorpus({
+        corpusDir: cmdOptions.corpus,
+        mode,
+        seed,
+        instancesPerSchema: count,
+        outFile: cmdOptions.out,
+      });
+
+      const summary = report.summary;
+      process.stdout.write(
+        [
+          'Corpus run completed:',
+          `schemas=${summary.totalSchemas}`,
+          `success=${summary.schemasWithSuccess}`,
+          `unsat=${summary.unsatCount}`,
+          `failFast=${summary.failFastCount}`,
+          `regexCapped=${summary.caps.regexCapped}`,
+          `nameAutomatonCapped=${summary.caps.nameAutomatonCapped}`,
+          `smtTimeouts=${summary.caps.smtTimeouts}`,
+          `mode=${report.mode}`,
+          `seed=${report.seed}`,
+          `instancesPerSchema=${report.instancesPerSchema}`,
+        ].join(' ')
+      );
+      process.stdout.write(`\nCorpus summary written to ${cmdOptions.out}\n`);
     });
 }
 

@@ -160,7 +160,10 @@ function BenchSchemaTable({
                 <LevelBadge level={schema.level} />
               </td>
               <td className="schema-id">{schema.id}</td>
-              <td className="schema-id" title={schema.schemaPath}>
+              <td
+                className="schema-id schema-path-cell"
+                title={schema.schemaPath}
+              >
                 {schema.schemaId}
               </td>
               <td>{schema.summary.totalInstances}</td>

@@ -1,6 +1,7 @@
 /* eslint-disable max-lines-per-function, max-lines */
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve, dirname, join, basename } from 'node:path';
+import { createRequire } from 'node:module';
 
 import type {
   BenchConfig,
@@ -14,7 +15,12 @@ import type { Report, PlanOptions, ReportSummary } from '../model/report.js';
 import { runEngineOnSchema } from '../engine/runner.js';
 import { renderMarkdownReport } from '../render/markdown.js';
 import { renderHtmlReport } from '../render/html.js';
-import reporterPkg from '../../package.json' assert { type: 'json' };
+
+const requireJson = createRequire(import.meta.url);
+const reporterPkg = requireJson('../../package.json') as {
+  name?: string;
+  version?: string;
+};
 
 export interface BenchRunOptions {
   configPath: string;

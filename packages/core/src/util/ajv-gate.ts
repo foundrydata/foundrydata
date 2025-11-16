@@ -1,9 +1,12 @@
 /* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
 import type Ajv from 'ajv';
-import ajvPkg from 'ajv/package.json';
+import { createRequire } from 'node:module';
 
 import { extractAjvFlags, type ExtractedAjvFlags } from './ajv-source.js';
+
+const requireJson = createRequire(import.meta.url);
+const ajvPkg = requireJson('ajv/package.json') as { version?: string };
 
 export interface AjvGateDiff {
   flag: string;

@@ -1,13 +1,16 @@
 /* eslint-env browser */
+/* eslint-disable max-lines */
 import { useCallback, useState } from 'react';
 import type { JSX, ChangeEventHandler } from 'react';
 import type { Report } from 'json-schema-reporter/model/report';
 import type { BenchRunSummary } from './types/bench';
+import type { CorpusRunReport } from './types/corpus';
 import ReportViewer from './components/ReportViewer';
 import ReportUploadPanel from './components/ReportUploadPanel';
 import BenchDashboard from './components/BenchDashboard';
+import CorpusDashboard from './components/CorpusDashboard';
 
-type ViewMode = 'single' | 'bench' | null;
+type ViewMode = 'single' | 'bench' | 'corpus' | null;
 
 interface UseReportLoaderResult {
   report: Report | null;
@@ -57,6 +60,10 @@ export default function App(): JSX.Element {
     null
   );
   const [benchError, setBenchError] = useState<string | null>(null);
+  const [corpusSummary, setCorpusSummary] = useState<CorpusRunReport | null>(
+    null
+  );
+  const [corpusError, setCorpusError] = useState<string | null>(null);
 
   const handleReportSelected = useCallback(
     async (file: File): Promise<void> => {
@@ -64,6 +71,8 @@ export default function App(): JSX.Element {
       if (success) {
         setBenchSummary(null);
         setBenchError(null);
+        setCorpusSummary(null);
+        setCorpusError(null);
         setMode('single');
       } else {
         setMode('single');
@@ -85,6 +94,8 @@ export default function App(): JSX.Element {
         reset();
         setBenchSummary(parsed);
         setBenchError(null);
+        setCorpusSummary(null);
+        setCorpusError(null);
         setMode('bench');
       } catch (err) {
         console.error('Failed to load bench summary', err);
@@ -100,14 +111,50 @@ export default function App(): JSX.Element {
     [reset]
   );
 
+  const handleCorpusSelected = useCallback(
+    async (file: File): Promise<void> => {
+      try {
+        const payload = await readFileAsText(file);
+        const parsed = JSON.parse(payload) as CorpusRunReport;
+        if (
+          !parsed ||
+          !Array.isArray(parsed.results) ||
+          typeof parsed.summary !== 'object'
+        ) {
+          throw new Error(
+            'Selected file does not look like a corpus summary (missing results array or summary).'
+          );
+        }
+        reset();
+        setBenchSummary(null);
+        setBenchError(null);
+        setCorpusSummary(parsed);
+        setCorpusError(null);
+        setMode('corpus');
+      } catch (err) {
+        console.error('Failed to load corpus summary', err);
+        setCorpusSummary(null);
+        setCorpusError(
+          err instanceof Error
+            ? err.message
+            : 'Unable to parse corpus summary. Please verify the selected file.'
+        );
+        setMode('corpus');
+      }
+    },
+    [reset]
+  );
+
   const resetAll = useCallback((): void => {
     reset();
     setBenchSummary(null);
     setBenchError(null);
+    setCorpusSummary(null);
+    setCorpusError(null);
     setMode(null);
   }, [reset]);
 
-  const showLoaders = !report && !benchSummary;
+  const showLoaders = !report && !benchSummary && !corpusSummary;
 
   return (
     <div className="app-shell">
@@ -116,8 +163,10 @@ export default function App(): JSX.Element {
         <LoaderPanels
           reportError={mode !== 'bench' ? reportError : null}
           benchError={mode === 'bench' ? benchError : null}
+          corpusError={mode === 'corpus' ? corpusError : null}
           onReportSelected={handleReportSelected}
           onBenchSelected={handleBenchSelected}
+          onCorpusSelected={handleCorpusSelected}
         />
       ) : (
         <>
@@ -126,7 +175,12 @@ export default function App(): JSX.Element {
               Load another file
             </button>
           </div>
-          <DetailView mode={mode} report={report} benchSummary={benchSummary} />
+          <DetailView
+            mode={mode}
+            report={report}
+            benchSummary={benchSummary}
+            corpusSummary={corpusSummary}
+          />
         </>
       )}
     </div>
@@ -138,8 +192,9 @@ function AppHeader(): JSX.Element {
     <header>
       <h1>FoundryData Report Workbench</h1>
       <p>
-        Load a single *.report.json artifact or a bench-summary.json produced by
-        the reporter CLI and inspect the results.
+        Load a single *.report.json artifact, a bench-summary.json produced by
+        the reporter CLI, or a corpus-summary.json emitted by the corpus harness
+        and inspect the results.
       </p>
     </header>
   );
@@ -148,13 +203,17 @@ function AppHeader(): JSX.Element {
 function LoaderPanels({
   reportError,
   benchError,
+  corpusError,
   onReportSelected,
   onBenchSelected,
+  onCorpusSelected,
 }: {
   reportError: string | null;
   benchError: string | null;
+  corpusError: string | null;
   onReportSelected: (file: File) => Promise<void> | void;
   onBenchSelected: (file: File) => Promise<void> | void;
+  onCorpusSelected: (file: File) => Promise<void> | void;
 }): JSX.Element {
   return (
     <div className="loader-grid">
@@ -166,6 +225,10 @@ function LoaderPanels({
         onSummarySelected={onBenchSelected}
         error={benchError}
       />
+      <CorpusSummaryUploadPanel
+        onSummarySelected={onCorpusSelected}
+        error={corpusError}
+      />
     </div>
   );
 }
@@ -174,10 +237,12 @@ function DetailView({
   mode,
   report,
   benchSummary,
+  corpusSummary,
 }: {
   mode: ViewMode;
   report: Report | null;
   benchSummary: BenchRunSummary | null;
+  corpusSummary: CorpusRunReport | null;
 }): JSX.Element | null {
   if (mode === 'single' && report) {
     return <ReportViewer report={report} />;
@@ -185,15 +250,47 @@ function DetailView({
   if (mode === 'bench' && benchSummary) {
     return <BenchDashboard summary={benchSummary} />;
   }
+  if (mode === 'corpus' && corpusSummary) {
+    return <CorpusDashboard summary={corpusSummary} />;
+  }
   return null;
 }
 
-function BenchSummaryUploadPanel({
+function BenchSummaryUploadPanel(props: {
+  onSummarySelected: (file: File) => Promise<void> | void;
+  error: string | null;
+}): JSX.Element {
+  return (
+    <SummaryUploadPanel
+      kind="bench"
+      description="Load a bench-summary.json file to view aggregated results."
+      {...props}
+    />
+  );
+}
+
+function CorpusSummaryUploadPanel(props: {
+  onSummarySelected: (file: File) => Promise<void> | void;
+  error: string | null;
+}): JSX.Element {
+  return (
+    <SummaryUploadPanel
+      kind="corpus"
+      description="Load a corpus-summary.json file emitted by the corpus harness to view aggregated results."
+      {...props}
+    />
+  );
+}
+
+function SummaryUploadPanel({
   onSummarySelected,
   error,
+  description,
 }: {
   onSummarySelected: (file: File) => Promise<void> | void;
   error: string | null;
+  description: string;
+  kind: 'bench' | 'corpus';
 }): JSX.Element {
   const handleChange = useCallback<ChangeEventHandler<HTMLInputElement>>(
     (event) => {
@@ -208,7 +305,7 @@ function BenchSummaryUploadPanel({
 
   return (
     <div className="drop-panel bench-upload-panel">
-      <p>Load a bench-summary.json file to view aggregated results.</p>
+      <p>{description}</p>
       <input
         type="file"
         accept="application/json,.json"

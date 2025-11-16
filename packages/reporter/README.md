@@ -71,6 +71,38 @@ npx tsx packages/reporter/src/cli.ts bench \
 
 This config keeps the original real-world schemas (no dense bundles) and forwards resolver options via `planOptions` (typically `resolver.strategies:['local','remote']` and a `cacheDir`). Some schemas may still appear as `level: "blocked"` with `error: "EXTERNAL_REF_UNRESOLVED"` when external `$ref` remain unresolved even after the pre-phase; in that case, use the CLI with `--compat lax --external-ref-strict warn --debug-passes` to explore skip-eligibility and diagnostics.
 
+### Corpus mode (real-world schema harness)
+
+The reporter also exposes a **corpus harness** on top of the core `runCorpusHarnessFromDir` API. It runs the full Normalize → Compose → Generate → Repair → Validate pipeline over a directory of schemas (e.g. `profiles/real-world`) and aggregates per-schema outcomes (success / UNSAT / fail-fast, caps, phase metrics).
+
+From a project that has `json-schema-reporter` installed:
+
+```bash
+npx json-schema-reporter corpus \
+  --corpus profiles/real-world \
+  --mode lax \
+  --count 5 \
+  --seed 123 \
+  --out reports/corpus-summary.lax.json
+```
+
+Options:
+
+| Option              | Description                                                                 |
+|---------------------|-----------------------------------------------------------------------------|
+| `--corpus <dir>`    | Directory containing JSON Schemas (recursively scanned for `*.json`)       |
+| `--mode <mode>`     | Pipeline mode: `strict` or `lax` (default: `strict`)                       |
+| `--seed <number>`   | Seed applied to all schemas (default: `37`)                                |
+| `--count <number>`  | Number of instances to attempt per schema (default: `3`)                   |
+| `--out <path>`      | Output file for the aggregated corpus summary JSON (default: `corpus-summary.json`) |
+
+The output file is a `CorpusRunReport` (see `src/corpus/types.ts`) containing:
+
+- `results[]`: per-schema outcomes (instances tried/valid, UNSAT/fail-fast flags, caps, metrics).
+- `summary`: global aggregates (number of schemas with success, UNSAT/fail-fast counts, cap counters).
+
+You can load this `corpus-summary*.json` into the **Workbench** UI (`apps/workbench`) via the “corpus-summary.json” upload panel to inspect corpus-level behavior alongside individual reports and bench summaries.
+
 ## Report contract
 
 The `Report` interface defined in [`src/model/report.ts`](./src/model/report.ts) is the reporter’s public contract. Key fields:
