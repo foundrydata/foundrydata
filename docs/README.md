@@ -1,6 +1,6 @@
 # FoundryData — Docs Index
 
-This page lists the authoritative documentation that accompanies the Feature Simplification refactor. Each document is source-controlled alongside the implementation so changes stay in lockstep with the pipeline.
+This page lists the authoritative documentation. Each document is source-controlled alongside the implementation so changes stay in lockstep with the pipeline.
 
 ## Specification & Guarantees
 
