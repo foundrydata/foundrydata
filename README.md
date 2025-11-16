@@ -62,23 +62,24 @@ foundrydata generate --schema real-world.json --n 10 \
   --resolve=local,remote --cache-dir "~/.foundrydata/cache" \
   --external-ref-strict error
 
-# With resolver + Lax mode: best-effort planning, skip final validation on unresolved externals
+# With resolver + Lax mode: best-effort planning; may skip final validation when failures are due only to external $ref
 foundrydata generate --schema real-world.json --n 10 \
   --resolve=local,remote --cache-dir "~/.foundrydata/cache" \
   --external-ref-strict warn --compat lax --debug-passes
 ```
 
 * Generated **data goes to stdout**; **metrics/errors go to stderr** (for easy piping in CI).
-* By default the resolver runs in **local-only** mode (no network); external `$ref` are not fetched unless you explicitly opt into remote/registry strategies via the resolver options (e.g., CLI `--resolve`). The `--external-ref-strict` flag controls how unresolved externals affect the run; validation is always against the original schema. When Source AJV fails solely because of unresolved external `$ref`, the pipeline emits an `EXTERNAL_REF_UNRESOLVED` diagnostic whose details (mode, ref, policy, skippedValidation?) are visible with `--debug-passes`.
+* By default the resolver runs in **local-only** mode (no network); external `$ref` are not fetched unless you explicitly opt into remote/registry strategies via the resolver options (e.g., CLI `--resolve`). The `--external-ref-strict` flag controls how unresolved externals affect the run. When final validation runs, it is always performed against the original schema. When Source AJV fails solely because of unresolved external `$ref`, the pipeline emits an `EXTERNAL_REF_UNRESOLVED` diagnostic whose details (mode, ref, policy, skippedValidation?) are visible with `--debug-passes`; in Lax mode this may mark validation as skipped instead of running AJV over generated items.
 
 ---
 
 ## Core invariants
 
-* **AJV is the oracle**: final validation is performed **against the original schema** (not internal transforms).
+* **AJV is the oracle**: when validation is executed, it is performed **against the original schema** (not internal transforms).
 * **Deterministic**: same schema + seed ⇒ same data. Bounded attempts; no global RNG.
 * **Pipeline simplicity** with explicit responsibilities and diagnostics.
 * **Performance targets** and graceful degradation under complexity caps (documented, not hard guarantees).
+* **External `$ref` skip paths (Lax)**: when compile-time failures are due only to unresolved external `$ref` and the run is classified as skip-eligible, the pipeline records `EXTERNAL_REF_UNRESOLVED` with `skippedValidation:true` instead of running final AJV checks; such runs are explicitly outside the strict 100% compliance guarantee.
 
 ---
 
@@ -96,7 +97,7 @@ Normalize → Compose → Generate → Repair → Validate
 * **Compose** — Build an effective view without mutating canonical schema; must-cover for `additionalProperties:false`; bag semantics for `contains`; rational arithmetic for `multipleOf`; deterministic branch scoring/Top-K for `anyOf/oneOf`.
 * **Generate** — Seeded, deterministic generation; `enum/const` outrank `type`; **if-aware-lite** strategy when not rewriting conditionals.
 * **Repair** — AJV-driven corrections (`keyword → action`) with budgets and stagnation guard; idempotent.
-* **Validate** — Final AJV validation **against the original schema**; pipeline fails on non-compliance.
+* **Validate** — Final AJV validation **against the original schema** when executed; pipeline fails on non-compliance. In Lax mode, when failures are classified as due only to unresolved external `$ref`, this stage may instead record `skippedValidation:true` plus diagnostics (no AJV run on items).
 
 ---
 
@@ -312,7 +313,7 @@ if (result.status === 'completed') {
 * **SLO targets** (documented, not hard guarantees): **~1000 rows (simple/medium)** p50 ≈ **200–400 ms**.
 * **Memory**: usage is **tracked**; alerts can be configured in CI. No normative "caps per batch size" in the spec.
 
-> ⚠️ **Note**: Performance benchmarks are currently under development in the refactor branch. These targets are based on the canonical SPEC and will be validated once the benchmark suite is restored.
+> ⚠️ **Note**: Performance benchmarks are enforced via the repo‑level bench harness (`npm run bench`, `npm run bench:real-world`), which writes `bench/bench-gate*.json` and compares p95 latency and peak memory against budgets such as p95 ≤ 120 ms and memory ≤ 512 MB for the configured profiles. These SLOs remain targets rather than strict guarantees, especially for complex real-world schemas.
 
 Example metrics are printed to **stderr** when `--print-metrics` is enabled.
 
@@ -320,12 +321,12 @@ Example metrics are printed to **stderr** when `--print-metrics` is enabled.
 
 ## Strict vs Lax behavior
 
-| Situation                               | **Strict** (default)     | **Lax**                                                                                  |
-| --------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------- |
-| External `$ref`                         | `error` (configurable)   | `warn` then attempt generation **without deref**; still validate against original schema |
-| `$dynamicRef/*` present                 | note only                | note only                                                                                |
-| Complexity caps                         | degrade with diagnostics | same                                                                                     |
-| Conditional strategy when not rewriting | **if-aware-lite**        | same                                                                                     |
+| Situation                               | **Strict** (default)     | **Lax**                                                                                                                                    |
+| --------------------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| External `$ref`                         | `error` (configurable)   | `warn` then attempt generation **without deref**; validate against original schema when possible, or mark validation as skipped on externals |
+| `$dynamicRef/*` present                 | note only                | note only                                                                                                                                    |
+| Complexity caps                         | degrade with diagnostics | same                                                                                                                                         |
+| Conditional strategy when not rewriting | **if-aware-lite**        | same                                                                                                                                         |
 
 Behavior and policies are defined by the spec. Strict vs Lax does **not** change whether remote lookup is used; remote/registry resolution is always opt‑in via resolver configuration (default is local‑only, offline‑friendly).
 
