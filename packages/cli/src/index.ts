@@ -3,16 +3,34 @@
 /* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
 
+// CLI entry point (current state)
+// - Command name: `foundrydata` with subcommands `generate` and `openapi`.
+// - `generate` accepts --schema, --count/--rows/--n, --seed, --mode/--compat, --out, and
+//   many advanced options (rewrite-conditionals, resolver, metrics, etc.), then calls the
+//   high-level Generate Node API from @foundrydata/core and prints JSON/NDJSON.
+// - `openapi` loads an OpenAPI document from disk, selects a response schema (with
+//   --operation-id/--path/--method and --prefer-examples) and also calls Generate internally.
+//
+// TODO (CLI DX — PARTIALLY DONE):
+// - The CLI now delegates to the high-level Generate Node API, preserving strict/lax mode,
+//   seed determinism, prefer-examples, and AJV-oracle validation.
+// - Remaining DX work:
+//   - Simplify the top-level UX (fewer expert flags by default, possibly a shorter alias) while
+//     keeping the existing `foundrydata generate` behavior available or clearly deprecated.
+//   - Document the recommended “happy path” invocations (schema/OpenAPI file → k fixtures →
+//     NDJSON/JSON) and how they map onto Normalize/Compose/Generate/Repair/Validate.
+
 import { Command } from 'commander';
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import {
   ErrorPresenter,
   isFoundryError,
   FoundryError,
   ErrorCode,
   resolveOptions,
-  executePipeline,
+  Generate,
   PipelineStageError,
   type PipelineResult,
   selectResponseSchemaAndExample,
@@ -183,23 +201,15 @@ program
         );
       }
 
-      const pipelineResult = await executePipeline(schemaForGen as object, {
+      const stream = Generate(count, seed, schemaForGen as object, {
         mode: compat,
-        metrics: { enabled: options.metrics !== false },
-        compose: { planOptions },
-        generate: {
-          count,
-          seed,
-          planOptions,
-          preferExamples,
-        },
-        repair: {
-          attempts: repairAttempts,
-        },
-        validate: {
-          validateFormats: true,
-        },
+        metricsEnabled: options.metrics !== false,
+        planOptions,
+        preferExamples,
+        repairAttempts,
+        validateFormats: true,
       });
+      const pipelineResult = await stream.result;
 
       if (options.debugPasses) {
         printComposeDebug(pipelineResult);
@@ -369,23 +379,15 @@ program
         );
       }
 
-      const pipelineResult = await executePipeline(schemaForGen as object, {
+      const stream = Generate(count, seed, schemaForGen as object, {
         mode: compat,
-        metrics: { enabled: options.metrics !== false },
-        compose: { planOptions },
-        generate: {
-          count,
-          seed,
-          planOptions,
-          preferExamples,
-        },
-        repair: {
-          attempts: repairAttempts,
-        },
-        validate: {
-          validateFormats: true,
-        },
+        metricsEnabled: options.metrics !== false,
+        planOptions,
+        preferExamples,
+        repairAttempts,
+        validateFormats: true,
       });
+      const pipelineResult = await stream.result;
 
       if (options.debugPasses) {
         printComposeDebug(pipelineResult);
@@ -463,4 +465,18 @@ async function handleCliError(err: unknown): Promise<never> {
   process.exit(error.getExitCode());
 }
 
-await program.parseAsync().catch(handleCliError);
+export async function main(argv: string[] = process.argv): Promise<void> {
+  await program.parseAsync(argv).catch(handleCliError);
+}
+
+export { program };
+
+const entryHref =
+  typeof process.argv[1] === 'string'
+    ? pathToFileURL(process.argv[1]).href
+    : '';
+const isDirectExecution = import.meta.url === entryHref;
+
+if (isDirectExecution) {
+  await main();
+}
