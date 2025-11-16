@@ -226,6 +226,13 @@ program
   });
 
 program
+  // openapi CLI wiring (current snapshot):
+  // - Uses Generate(...) from @foundrydata/core with mode/seed/count/out, metrics toggle,
+  //   repairAttempts, and preferExamples, reusing the same helpers as `generate`.
+  // - Uses selectResponseSchemaAndExample with --operation-id or --path/--method plus
+  //   --status/--content-type to select the response schema (and example when present).
+  // - Missing before this task: dedicated CLI tests exercising schema selection, NDJSON
+  //   output, and AJV validation via the public Validate API.
   .command('openapi')
   .description('Generate fixtures from an OpenAPI document')
   .option('-s, --spec <file>', 'OpenAPI document file path')

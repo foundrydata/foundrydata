@@ -117,9 +117,10 @@ Normalize → Compose → Generate → Repair → Validate
 
 ```bash
 foundrydata generate --schema <path> --rows <n> [options]
+foundrydata openapi --spec <openapi.json> [selection] [options]
 ```
 
-**Selected options**
+**Selected options (`generate`)**
 
 | Option                            | Description                                                                                                                                                |
 | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -132,7 +133,7 @@ foundrydata generate --schema <path> --rows <n> [options]
 | `--cache-dir <path>`              | Override on-disk cache directory used by the resolver extension when fetching and caching external schemas.                                                |
 | `--fail-on-unresolved <bool>`     | When set to `false` in Lax mode, enables planning-time stubs for unresolved externals (maps to `resolver.stubUnresolved = 'emptySchema'` in plan options). |
 
-**Examples**
+**Examples (`generate`)**
 
 ```bash
 # Basic
@@ -145,11 +146,86 @@ foundrydata generate --schema user.json --rows 1000 --seed 42 --print-metrics
 foundrydata generate --schema api.json --rows 50 --external-ref-strict warn
 ```
 
+### OpenAPI driver (`openapi`)
+
+The `openapi` command lets you target a specific OpenAPI 3.1 response and generate fixtures through the same 5‑stage pipeline:
+
+```bash
+# Select by operationId
+foundrydata openapi \
+  --spec my-api.openapi.json \
+  --operation-id getUsers \
+  --n 3 \
+  --out ndjson
+
+# Select by path + method
+foundrydata openapi \
+  --spec my-api.openapi.json \
+  --path /users \
+  --method get \
+  --n 3 \
+  --out ndjson
+
+# Prefer in‑schema examples when present
+foundrydata openapi \
+  --spec my-api.openapi.json \
+  --operation-id getUsers \
+  --n 3 \
+  --out ndjson \
+  --prefer-examples
+```
+
+Selection flags:
+
+- `--operation-id <id>` — target a specific operation.
+- or `--path <path>` + `--method <method>` — explicit path/method selection.
+- Optional `--status <code>` and `--content-type <type>` when multiple responses/content entries exist.
+
+The command shares the same core flags as `generate` (`--n/--rows`, `--seed`, `--mode/--compat`, `--out json|ndjson`, `--prefer-examples`, `--print-metrics`, `--no-metrics`) and uses the high‑level `Generate` API under the hood. Any item printed as “success” has passed AJV validation against the selected response schema.
+
 ---
 
 ## Node.js API
 
 > The guarantees below apply to the **full pipeline**. Using individual stages is supported, but final schema compliance is only guaranteed if you execute **Validate** at the end.
+
+### High‑level: `Generate` + `Validate`
+
+```ts
+import { Generate, Validate } from '@foundrydata/core';
+
+const schema = {
+  type: 'object',
+  properties: { name: { type: 'string' } },
+  required: ['name'],
+} as const;
+
+// Deterministic generation: same seed => same data
+const stream = Generate(100, 42, schema, {
+  mode: 'strict',
+  preferExamples: false,
+  validateFormats: true,
+});
+
+const result = await stream.result;
+if (result.status !== 'completed') {
+  throw result.errors[0] ?? new Error('Generation pipeline failed');
+}
+
+// Items are already repaired + AJV‑validated against the original schema
+const items =
+  result.artifacts.repaired ?? result.stages.generate.output?.items ?? [];
+
+// Optional: spot‑check with the public Validate API
+for (const item of items) {
+  const v = Validate(item, schema, { validateFormats: true });
+  if (!v.valid) {
+    console.error('Unexpected validation failure', v.ajvErrors);
+  }
+}
+```
+
+### Low‑level: full pipeline (`executePipeline`)
 
 ```ts
 import { executePipeline } from '@foundrydata/core';
@@ -157,7 +233,7 @@ import { executePipeline } from '@foundrydata/core';
 const schema = {
   type: 'object',
   properties: { name: { type: 'string' } },
-  required: ['name']
+  required: ['name'],
 };
 
 const result = await executePipeline(schema, {
@@ -169,18 +245,19 @@ const result = await executePipeline(schema, {
     planOptions: {
       // Default conditional policy: no rewrite; generator uses if-aware-lite hints
       rewriteConditionals: 'never',
-    }
+    },
   },
   repair: {
-    attempts: 1
+    attempts: 1,
   },
   validate: {
-    validateFormats: true // Enable format validation via ajv-formats
-  }
+    validateFormats: true, // Enable format validation via ajv-formats
+  },
 });
 
 if (result.status === 'completed') {
-  const items = result.artifacts.repaired ?? result.stages.generate.output?.items ?? [];
+  const items =
+    result.artifacts.repaired ?? result.stages.generate.output?.items ?? [];
   console.log('Generated', items.length, 'items');
   console.error('Metrics', result.metrics);
 } else {
@@ -190,7 +267,7 @@ if (result.status === 'completed') {
 
 **AJV / formats policy**
 
-* By default, formats are **annotative**: `validateFormats:false`. You can enable assertive format validation via `ajv-formats` by setting `validate.validateFormats: true` in the pipeline options (as shown above).
+* By default, formats are **annotative**: `validateFormats:false`. You can enable assertive format validation via `ajv-formats` by setting `validate.validateFormats: true` (or `Validate(..., { validateFormats: true })`) in the pipeline options.
 
 ---
 
