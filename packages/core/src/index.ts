@@ -133,3 +133,14 @@ export {
   type OpenApiSchemaSelection,
   type OpenApiSchemaSelectionMeta,
 } from './openapi/driver.js';
+
+// Corpus harness (real-world schema runs)
+export {
+  runCorpusHarness,
+  runCorpusHarnessFromDir,
+  discoverCorpusSchemasFromDir,
+  type CorpusSchemaConfig,
+  type CorpusSchemaResult,
+  type CorpusRunSummary,
+  type CorpusRunReport,
+} from './pipeline/corpus-harness.js';

@@ -405,6 +405,13 @@ button.primary:hover {
   max-width: 240px;
 }
 
+.bench-schema-table td.schema-path-cell {
+  white-space: nowrap;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .bench-level-badge {
   display: inline-flex;
   align-items: center;

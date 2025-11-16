@@ -7,7 +7,7 @@ import {
   resolveOptions,
   type PlanOptions,
   type ResolvedOptions,
-} from '../types/options';
+} from '../types/options.js';
 
 const PLAN_OPTIONS_SUBKEY_FIELDS = [
   'complexity.maxAnyOfBranches',

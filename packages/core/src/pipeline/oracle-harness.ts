@@ -12,8 +12,11 @@ import {
   prepareSchemaForSourceAjv,
 } from '../util/ajv-source.js';
 import { resolveOptions } from '../types/options.js';
-import { DIAGNOSTIC_CODES, type DiagnosticCode } from '../diag/codes.js';
 import type { DiagnosticEnvelope } from '../diag/validate.js';
+import {
+  collectAllDiagnosticsFromPipeline,
+  isUnsatOrFailFastCode,
+} from './diagnostic-collector.js';
 
 export type OracleMode = 'strict' | 'lax';
 
@@ -103,7 +106,7 @@ export async function runOracleHarness(
         pipelineResult.stages.generate.status !== 'completed' ||
         pipelineResult.stages.validate.status !== 'completed');
 
-    const allDiagnostics = collectAllDiagnostics(pipelineResult);
+    const allDiagnostics = collectAllDiagnosticsFromPipeline(pipelineResult);
     const unsatDiagnostics = allDiagnostics.filter((diag) =>
       isUnsatOrFailFastCode(diag.code)
     );
@@ -215,81 +218,4 @@ function createSourceAjvForPipeline(
   );
 
   return ajv;
-}
-
-function collectAllDiagnostics(result: PipelineResult): DiagnosticEnvelope[] {
-  const diagnostics: DiagnosticEnvelope[] = [];
-
-  const normalizeNotes = result.stages.normalize.output?.notes ?? [];
-  for (const note of normalizeNotes) {
-    diagnostics.push({
-      code: note.code,
-      canonPath: note.canonPath,
-      details: note.details,
-    });
-  }
-
-  const composeOutput = result.stages.compose.output;
-  const composeDiag = composeOutput?.diag;
-  if (composeDiag) {
-    const addGroup = (
-      entries?:
-        | Array<{ code: DiagnosticCode; canonPath: string; details?: unknown }>
-        | Array<{
-            code: DiagnosticCode;
-            canonPath: string;
-            provable?: boolean;
-            reason?: string;
-            details?: unknown;
-          }>
-    ): void => {
-      if (!entries) return;
-      for (const entry of entries) {
-        diagnostics.push({
-          code: entry.code,
-          canonPath: entry.canonPath,
-          details: ('details' in entry ? entry.details : undefined) as unknown,
-        });
-      }
-    };
-
-    addGroup(composeDiag.fatal);
-    addGroup(composeDiag.warn);
-    addGroup(composeDiag.unsatHints);
-    addGroup(composeDiag.run);
-  }
-
-  const generated = result.artifacts.generated;
-  if (generated?.diagnostics) {
-    for (const entry of generated.diagnostics) {
-      diagnostics.push(entry);
-    }
-  }
-
-  const validationDiagnostics = result.artifacts.validationDiagnostics;
-  if (validationDiagnostics) {
-    diagnostics.push(...validationDiagnostics);
-  }
-
-  const repairDiagnostics = result.artifacts.repairDiagnostics;
-  if (repairDiagnostics) {
-    diagnostics.push(...repairDiagnostics);
-  }
-
-  return diagnostics;
-}
-
-function isUnsatOrFailFastCode(code: DiagnosticCode): boolean {
-  if (typeof code !== 'string') {
-    return false;
-  }
-
-  if (code.startsWith('UNSAT_')) {
-    return true;
-  }
-
-  return (
-    code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN ||
-    code === DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED
-  );
 }
