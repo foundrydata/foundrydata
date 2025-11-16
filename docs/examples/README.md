@@ -147,6 +147,45 @@ Key metrics to monitor:
 
 ---
 
+## OpenAPI driver examples
+
+When you have an OpenAPI 3.1 document, you can generate fixtures directly from a chosen response schema using the `openapi` CLI command. The document is loaded from disk (no network I/O), selection is done via the OpenAPI driver, and data is generated through the same 5‑stage pipeline (`Generate`).
+
+```bash
+# By operationId
+foundrydata openapi \
+  --spec profiles/real-world/openapi-3.1-example.json \
+  --operation-id listUsers \
+  --n 3 \
+  --out ndjson
+
+# By path + method
+foundrydata openapi \
+  --spec profiles/real-world/openapi-3.1-example.json \
+  --path /users \
+  --method get \
+  --n 3 \
+  --out ndjson
+
+# Prefer OpenAPI examples when present (fall back to generation)
+foundrydata openapi \
+  --spec profiles/real-world/openapi-3.1-example.json \
+  --operation-id listUsers \
+  --n 3 \
+  --out ndjson \
+  --prefer-examples
+```
+
+Selection and options:
+
+- `--operation-id <id>` or `--path <path>` + `--method <method>` choose the operation.
+- Optional `--status <code>` and `--content-type <type>` disambiguate multiple responses/content entries.
+- `--n/--rows`, `--seed`, `--mode/--compat`, `--out json|ndjson`, `--prefer-examples`, `--print-metrics`, `--no-metrics` work the same way as for `generate`.
+
+All items emitted on stdout have been validated by AJV against the selected response schema (AJV remains the oracle).
+
+---
+
 ## JSON Schema drafts (what these examples expect)
 
 * ✅ **Draft‑07**, **2019‑09**, **2020‑12** (auto‑detected via `$schema`).
