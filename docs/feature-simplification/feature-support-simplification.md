@@ -40,12 +40,17 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
   affected instance(s): emit `EXTERNAL_REF_UNRESOLVED` with `details.skippedValidation:true` and set
   `diag.metrics.validationsPerRow = 0`. In **Strict**, compile failure on external `$ref` remains a hard error and
   generation **MUST NOT** proceed.
+  **Hydration order (normative).** When **Extension R1** is enabled and a non‑empty resolver registry is available,
+  implementations **MAY** hydrate the **Source AJV** used for the final compile by adding the registry’s documents via
+  `addSchema(...)` **before** `compile(original)`. No network I/O occurs in core phases. The `EXTERNAL_REF_UNRESOLVED`
+  classification in §11 is performed **after** this hydration step.
   *Signal:* when not skipped, final validation passes; `diag.metrics.validationsPerRow ≥ 1`.
 * **No network I/O during core phases for external `$ref`** (Strict by default).
   When **Extension R1** is enabled, HTTP(S) fetch is permitted **only** in the pre‑pipeline resolver step; core phases remain I/O‑free.
   *Signal:* `EXTERNAL_REF_UNRESOLVED` (Strict = error; Lax = warn).
 * **Deterministic outcomes for a given `(seed, PlanOptionsSubKey, AJV.major, AJV.flags)`** (see §14 for `PlanOptionsSubKey`).
-  **When Extension R1 is enabled,** outcomes are deterministic for a fixed **resolver registry fingerprint** (§14) in addition to the tuple above.
+  **When Extension R1 is enabled,** outcomes are deterministic for a fixed **resolver registry fingerprint** (§14) in addition
+  to the tuple above; hydration of the Source AJV **MUST** use the same snapshot as Compose/Plan.
   *Signal:* stable `diag.chosenBranch`, `diag.scoreDetails.tiebreakRand` at the same canonical pointers; **when RNG is used only in `oneOf` step‑4**, record `diag.scoreDetails.exclusivityRand` at the same `canonPath` and **MUST NOT** synthesize/overwrite `tiebreakRand`.
 * **Documented budgets with explicit degradations**.
   *Signal:* `COMPLEXITY_CAP_*` diagnostics and populated `diag.budget`.
@@ -173,6 +178,13 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
 **Optional pre‑phase (Extension R1; normative).** When enabled, a **Prefetch & Cache Fill** step runs **before**
 `Normalize`, discovers external `http(s)` `$ref` targets, hydrates a local on‑disk cache (`resolver.cacheDir`), and
 builds an in‑memory **resolution registry** used **read‑only** by core phases. No network I/O occurs after this pre‑phase.
+**Hydration for final validation (normative).** When the registry is non‑empty and
+`resolver.hydrateFinalAjv !== false`, the implementation **MUST**:
+  1) Hydrate the **Source AJV** by adding each registry document via `addSchema(doc, uri)` **before** calling
+     `compile(original)`;
+  2) Add any **required meta‑schemas** for each document’s dialect **before** `addSchema` (see §12/§13);
+  3) **Ignore** documents whose dialect is incompatible with the Source AJV class (no I/O fallback).
+This does not alter the canonical/effective views and performs no network I/O.
 
 <a id="s4-fail-early"></a>
 * **Fail early when provable, degrade gracefully when not.**
@@ -370,8 +382,10 @@ Examples:
    * Preserve local `#...`; rewrite `#/definitions/...`→`#/$defs/...` if target exists; note `DEFS_TARGET_MISSING` otherwise.
    * Preserve **external** `$ref` values verbatim; do **not** dereference or rewrite them (core). Compose/Validate emit
      `EXTERNAL_REF_UNRESOLVED` per §11/§12 (Strict=error, Lax=warn). No network or filesystem I/O is performed by core phases.
-     **Extension R1 (clarification).** Compose MAY consult the resolver’s **in‑memory registry** (pre‑filled in §4) to supply
-     additional schemas to AJV via `addSchema` during planning/validation. The canonical view is unchanged.
+     **Extension R1 (clarification; normative).** Compose **and** the final validation compilation **MAY** consult the
+     resolver’s **in‑memory registry** (pre‑filled in §4) to supply additional schemas to Ajv via `addSchema`. When the registry
+     is present and hydration is enabled, the **Source AJV MUST be hydrated before `compile(original)`**. The canonical view is
+     unchanged and validation still targets the **original** schema.
    * Don’t cross `$id` boundaries; keep anchors/dynamic anchors intact; no cycle expansion.
 
 3. **Boolean / trivial simplifications (normative)**
@@ -1505,7 +1519,7 @@ Run the evaluation guard before finalizing the action for the object (and before
 
 * Fail early only on non‑normalizable constructs or explicit policy cases.
 * `$ref` external: behavior controlled by `failFast.externalRefStrict` (default `error`). On failure, **emit** `EXTERNAL_REF_UNRESOLVED`.
-  **Normative stop (alignment with §1).** When the **Source Ajv** fails to compile the **original schema** due **solely** to unresolved external `$ref` (per §11/§12 classification; no I/O), the run **MUST NOT** proceed to **Compose/Generate/Repair** for that schema. Treat this as a hard error: emit `EXTERNAL_REF_UNRESOLVED` and abort planning/generation at this root.
+  **Normative stop (alignment with §1).** When, **after any hydration from the §4 registry**, the **Source Ajv** fails to compile the **original schema** due **solely** to unresolved external `$ref` (per §11/§12 classification; no I/O), the run **MUST NOT** proceed to **Compose/Generate/Repair** for that schema. Treat this as a hard error: emit `EXTERNAL_REF_UNRESOLVED` and abort planning/generation at this root.
   **External `$ref` (normative):** Resolve the `$ref` value against the current resolution base (from `$id`).
   <a id="s11-external-ref-classification"></a>
   If the resolved URI is **fragment‑only** (`#...`), it is **internal**; otherwise it is **external** (includes absolute
@@ -1515,8 +1529,8 @@ Run the evaluation guard before finalizing the action for the object (and before
 
   **Extension R1 (resolver; normative).** When `resolver.strategies` permits `remote`/`schemastore`, implementations
   **MAY** run the §4 pre‑phase to hydrate a local **resolution registry** before `Normalize`. Core phases operate **only**
-  on cached bytes. If, after the pre‑phase, an external `$ref` remains unresolved and `externalRefStrict:'error'` holds,
-  behavior is unchanged (hard error as above).
+  on cached bytes. If, after the pre‑phase, and **after hydrating the Source Ajv** when `resolver.hydrateFinalAjv !== false`,
+  an external `$ref` remains unresolved and `externalRefStrict:'error'` holds, behavior is unchanged (hard error as above).
 * `$dynamic*`: note `DYNAMIC_PRESENT` (no error).
 * Compose & object keywords proceed without feature gates; complexity caps may degrade behavior but never skip validation.
 
@@ -1540,11 +1554,13 @@ Run the evaluation guard before finalizing the action for the object (and before
 **Algorithm (normative) — ExternalRefSkipEligibility**
 Input: original schema S; Source Ajv class/dialect matched per §12.
 1) Determine ExtRefs := all `$ref` values classified as **external** by §11/§12.
-2) Attempt compile(S). If it succeeds ⇒ do **not** skip; run final validation normally.
+2) If a non‑empty resolver registry is present **and** `resolver.hydrateFinalAjv !== false`, **first hydrate** the Source Ajv
+   with the registry (see §4) and **then** attempt `compile(S)`. If it succeeds ⇒ do **not** skip; run final validation normally.
 3) If compile(S) fails:
    a) Require: every compile error is for keyword `'$ref'` and its failing reference value is an element of ExtRefs (use the validator’s exposed reference value). **If the validator does not expose the failing reference value for any error, the skip path MUST NOT be taken.**
-   b) Build probe schema S': in-memory copy of S where each external `$ref` subtree is replaced by `{}` (no other changes).
-   c) Attempt compile(S'). If it succeeds **and** ExtRefs.size > 0:
+   b) Build probe schema S': in‑memory copy of S where each external `$ref` subtree is replaced by `{}` (no other changes).
+   c) Attempt `compile(S')` **on the same hydrated Source Ajv instance** (if hydration occurred in step 2). If it succeeds
+      **and** `ExtRefs.size > 0`:
         set `skippedValidation:true`,
         emit `EXTERNAL_REF_UNRESOLVED{ mode:'lax', skippedValidation:true, ref: smallest(ExtRefs), failingRefs?: ExtRefsArray }`,
         and **MUST** set `diag.metrics.validationsPerRow = 0` for affected rows.
@@ -1650,6 +1666,10 @@ Two distinct AJV instances/configs:
    * `validateFormats:false` (**project default**; **AJV default is `true`**). Optional: `validateFormats:true` with `ajv-formats`.
    * `multipleOfPrecision:<integer>` — MUST be set to the same integer value as `PlanOptions.rational.decimalPrecision` whenever `rational.fallback` is `'decimal'` or `'float'`. This guarantees that the ε‑based acceptance rule for `multipleOf` in generation/repair matches Ajv’s validator (see §8).
    * **Ajv class:** `Ajv` / `Ajv2019` / `Ajv2020` / `ajv-draft-04` **as per §12** (match the schema dialect).
+   **Hydration from resolver registry (normative).** When a non‑empty §4 registry is available and
+   `resolver.hydrateFinalAjv !== false`, the implementation **MUST** add registry documents to this **Source AJV**
+   via `addSchema` **before** `compile(original)`. It **MUST** first add any required meta‑schemas for each document’s dialect,
+   and **MUST** ignore documents whose dialect is incompatible with the Source AJV class. No network I/O is performed.
 
 2. <a id="s13-planning-ajv"></a>**Planning/Generation**
 
@@ -1722,7 +1742,9 @@ registryFingerprint := sha256( join('\n',
 ))        // lowercase hex
 ```
 When `R` is empty, use the constant string `"0"`. The fingerprint **MUST** be included whenever `R` is non‑empty **or**
-`resolver.stubUnresolved:'emptySchema'` (because stubbing affects outcomes).
+`resolver.stubUnresolved:'emptySchema'` (because stubbing affects outcomes). **Determinism (Validate).** When hydration of
+the Source AJV is enabled, the final compile and the `EXTERNAL_REF_UNRESOLVED` classification in §11 **MUST** be based on
+the **same** registry snapshot (same `resolver.registryFingerprint`) that was used by Compose/Plan in the same run.
 <a id="s14-memoization-branch-selection"></a>
 **Non‑goal**: no cache of **generated data** across runs. Memoization is allowed only for **branch selection**
 decisions at compose‑time and **MUST** key on `(canonPath, seed, AJV.major, AJV.flags, PlanOptionsSubKey)`. This includes the dynamic‑scope hop bound via `guards.maxDynamicScopeHops` (see §12).  
@@ -2030,7 +2052,8 @@ Provide the following minimal JSON‑Schema‑like shapes for major codes. Only 
   "mode":{"enum":["strict","lax"]},
   "skippedValidation":{"type":"boolean"}
 }}
-**Normative constraint.** When `skippedValidation === true`, `mode` **MUST** be `'lax'`.
+**Normative constraint.** When `skippedValidation === true`, `mode` **MUST** be `'lax'`.  
+**Timing.** In both Strict and Lax, emission occurs **after** any Source‑AJV hydration from the §4 registry when enabled.
 
 // EXTERNAL_REF_STUBBED  (planning-time substitution; Extension R1)
 { "type":"object", "required":["ref","stubKind"],
@@ -2561,6 +2584,11 @@ export interface ResolverOptions {
   strategies?: Array<'local'|'remote'|'schemastore'>;
   /** Local on‑disk cache directory. Default: "~/.foundrydata/cache" */
   cacheDir?: string;
+  /** When true (default when the registry is non‑empty), hydrate the **Source AJV** used for the final validation
+   *  compile by adding the resolver registry before `compile(original)`. No network I/O occurs in core phases.
+   *  When false, the final compile behaves as “strict+offline” (no hydration), while Compose/Plan may still consult
+   *  the registry. */
+  hydrateFinalAjv?: boolean;
   /** Planning-time substitution for unresolved external refs in Lax. Default: 'none'. */
   stubUnresolved?: 'none'|'emptySchema';
   /** Bounds (determinism & safety) — all optional; defaults shown in §14. */

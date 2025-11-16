@@ -231,6 +231,12 @@ export interface PlanOptions {
     acceptYaml?: boolean; // default: true
     /** Optional allowlist of hostnames; empty ⇒ no host restriction. */
     allowlist?: string[];
+    /**
+     * Hydrate the final validation AJV with the resolver registry when Extension R1 is active.
+     * When true, successfully resolved external $ref targets participate in final validation.
+     * Default: true.
+     */
+    hydrateFinalAjv?: boolean;
   };
 }
 
@@ -355,6 +361,7 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
     followRedirects: 3,
     acceptYaml: true,
     allowlist: [],
+    hydrateFinalAjv: true,
   },
 };
 
@@ -564,6 +571,9 @@ function validateOptions(options: ResolvedOptions): void {
   if (r.maxBytesPerDoc <= 0)
     throw new Error('resolver.maxBytesPerDoc must be positive');
   if (r.timeoutMs <= 0) throw new Error('resolver.timeoutMs must be positive');
+  if (typeof r.hydrateFinalAjv !== 'boolean') {
+    throw new Error('resolver.hydrateFinalAjv must be boolean');
+  }
 }
 
 // Utility to provide default cache dir without importing os at module top for SSR friendliness
