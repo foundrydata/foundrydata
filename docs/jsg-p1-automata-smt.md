@@ -208,7 +208,7 @@ function Validate(instance: any, originalSchema: JSONSchema, ajvOpts): ValidateR
 ### 7.2 CLI
 
 ```bash
-json-gen schema.json \
+foundrydata schema.json \
   --mode strict \
   --seed 123 \
   --prefer-examples \

@@ -3431,7 +3431,7 @@
           "16"
         ],
         "priority": "medium",
-        "details": "- CLI: json-gen schema.json --mode strict --seed 123 --prefer-examples --n 10 --out ndjson.\n- Driver: select content/schema; prefer example/examples.default; export NDJSON; no network I/O in core.\n- Thin adapters MSW/Prism out of core.",
+        "details": "- CLI: foundrydata schema.json --mode strict --seed 123 --prefer-examples --n 10 --out ndjson.\n- Driver: select content/schema; prefer example/examples.default; export NDJSON; no network I/O in core.\n- Thin adapters MSW/Prism out of core.",
         "testStrategy": "Manual smoke + unit for flag parsing; fixture generation snapshot.",
         "subtasks": [
           {
@@ -3466,7 +3466,7 @@
               1,
               2
             ],
-            "details": "Implement NDJSON formatter that outputs one JSON object per line. Integrate CLI flags, OpenAPI driver, and output formatting into cohesive command: json-gen schema.json --mode strict --seed 123 --prefer-examples --n 10 --out ndjson. Ensure proper error handling and validation throughout the pipeline.",
+            "details": "Implement NDJSON formatter that outputs one JSON object per line. Integrate CLI flags, OpenAPI driver, and output formatting into cohesive command: foundrydata schema.json --mode strict --seed 123 --prefer-examples --n 10 --out ndjson. Ensure proper error handling and validation throughout the pipeline.",
             "status": "done",
             "testStrategy": "End-to-end integration tests with real OpenAPI specs. Snapshot tests for NDJSON output format consistency.",
             "parentId": "undefined",
