@@ -477,12 +477,6 @@ Impact: ...
 Proposition: ...
 ```
 
-### C) **Exception Legacy (rare)**
-
-* Créer issue `legacy-exception:<slug>`.
-* Décrire **motif**, preuves SPEC, **scope minimal**, **tests de verrouillage**.
-* Autorisation requise avant tout port ciblé ; supprimer dès remplacement SPEC-compliant.
-
 ---
 
 ## Templates prêts à l’emploi
