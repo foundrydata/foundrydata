@@ -1,0 +1,31 @@
+# Task ID: 5
+# Title: PtrMap canon→original
+# Status: done
+# Dependencies: 8000, 9000, 9107, 9122
+# Priority: medium
+# Description: Bidirectional pointer mapping between canonical and original schema pointers.
+# Details:
+[Context] §7 contract exports ptrMap/revPtrMap; §22 deliverables.
+- spec://§7#contract
+- spec://§22#packages-core
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§7","anchors":["spec://§7#contract"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Provide mapCanonToOrig and reverse, plus toOriginalByWalk (longest-prefix walk).
+[Deliverables]
+- packages/core/src/util/ptr-map.ts
+[Commands]
+- pnpm i; pnpm -w build; pnpm -w test
+[Definition of Done]
+- Unit tests cover reverse-walk across nested paths; stable behavior.
+
+# Test Strategy:
+Unit: mapping inlining, longest-prefix reverse resolution; golden tests using tiny canonical vs original trees.
+
+# Subtasks:
+## 5001. Pointer maps and reverse walk [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

@@ -158,3 +158,34 @@ jobs:
           path: |
             ./**/vitest*.log
           if-no-files-found: ignore
+
+  bench-gate:
+    name: Bench Harness (SLO enforcement)
+    needs: [guard-no-error-reporter, lint, typecheck]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run benchmark harness
+        run: npm run bench
+
+      - name: Upload bench gate summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-gate
+          path: bench/bench-gate.json
+          if-no-files-found: ignore

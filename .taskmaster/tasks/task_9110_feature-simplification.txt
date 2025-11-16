@@ -1,0 +1,49 @@
+# Task ID: 9110
+# Title: §10 Repair Engine (AJV-Driven)
+# Status: done
+# Dependencies: 9000
+# Priority: low
+# Description: Reference-only: section §10.
+# Details:
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§10","anchors":["spec://§10#mapping","spec://§10#propertynames-rename-guard","spec://§10#structural-hashing","spec://§10#epsilon-logging","spec://§10#property-order","spec://§10#mustcover-index-missing"],"notes":"no-embed; fetch-on-demand"}
+
+# Test Strategy:
+None.
+
+# Subtasks:
+## 9110001. Index anchor — mapping [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9110002. Index anchor — propertyNames rename guard [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9110003. Index anchor — structural hashing [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9110004. Index anchor — epsilon logging [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9110005. Index anchor — property order [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9110006. Index anchor — MUSTCOVER index missing [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

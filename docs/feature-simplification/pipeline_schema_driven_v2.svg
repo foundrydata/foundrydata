@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="720" viewBox="0 0 1500 720" >
+<rect width="100%" height="100%" fill="white"/>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#111827"/>
+    </marker>
+    <filter id="card" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.15" />
+    </filter>
+    <style>
+      text { font-family: sans-serif; }
+    </style>
+  </defs>
+
+  <!-- Title -->
+  <text x="20" y="34" font-size="22" font-weight="600">
+    Pipeline « compilateur » piloté par schéma (AJV comme oracle)
+  </text>
+  <text x="20" y="58" font-size="13" fill="#374151">
+    Normalize → Compose → Generate → Repair → Validate • Vue effective et validation AJV (schéma original)
+  </text>
+
+  <!-- Input -->
+  <g transform="translate(40,240)">
+    <rect width="180" height="100" rx="16" fill="#F8FAFC" stroke="#CBD5E1" filter="url(#card)"/>
+    <text x="90" y="28" text-anchor="middle" font-size="14" font-weight="600">Entrée</text>
+    <text x="90" y="50" text-anchor="middle" font-size="12">Schéma JSON</text>
+    <text x="90" y="70" text-anchor="middle" font-size="12">+ PlanOptions</text>
+  </g>
+
+  <!-- Stages -->
+  <!-- Normalize -->
+  <g transform="translate(250,240)">
+    <rect width="180" height="100" rx="16" fill="#FFFFFF" stroke="#E5E7EB" filter="url(#card)"/>
+    <text x="90" y="24" text-anchor="middle" font-size="14" font-weight="600">Normalize</text>
+    <text x="90" y="48" text-anchor="middle" font-size="12">Canon 2020-12-like</text>
+    <text x="90" y="66" text-anchor="middle" font-size="12">ptrMap / revPtrMap / notes</text>
+  </g>
+
+  <!-- Compose -->
+  <g transform="translate(460,240)">
+    <rect width="200" height="100" rx="16" fill="#FFFFFF" stroke="#E5E7EB" filter="url(#card)"/>
+    <text x="100" y="24" text-anchor="middle" font-size="14" font-weight="600">Compose</text>
+    <text x="100" y="48" text-anchor="middle" font-size="12">Vue effective (must-cover AP:false</text>
+    <text x="100" y="66" text-anchor="middle" font-size="12">+ bag contains)</text>
+ <text x="100" y="82" text-anchor="middle" font-size="12">Diagnostics + scoring branches</text>
+  </g>
+
+  <!-- Generate -->
+  <g transform="translate(680,240)">
+    <rect width="200" height="100" rx="16" fill="#FFFFFF" stroke="#E5E7EB" filter="url(#card)"/>
+    <text x="100" y="24" text-anchor="middle" font-size="14" font-weight="600">Generate</text>
+    <text x="100" y="48" text-anchor="middle" font-size="12">Déterministe (RNG local)</text>
+    <text x="100" y="66" text-anchor="middle" font-size="12">Trials Top‑K; if‑aware‑lite</text>
+  </g>
+
+  <!-- Repair -->
+  <g transform="translate(900,240)">
+    <rect width="200" height="100" rx="16" fill="#FFFFFF" stroke="#E5E7EB" filter="url(#card)"/>
+    <text x="100" y="24" text-anchor="middle" font-size="14" font-weight="600">Repair</text>
+    <text x="100" y="48" text-anchor="middle" font-size="12">AJV‑driven corrections</text>
+    <text x="100" y="66" text-anchor="middle" font-size="12">Boucles bornées + budget</text>
+  </g>
+
+  <!-- Validate -->
+  <g transform="translate(1120,240)">
+    <rect width="200" height="100" rx="16" fill="#FFFFFF" stroke="#E5E7EB" filter="url(#card)"/>
+    <text x="100" y="24" text-anchor="middle" font-size="14" font-weight="600">Validate</text>
+    <text x="100" y="48" text-anchor="middle" font-size="12">AJV (original schema)</text>
+    <text x="100" y="66" text-anchor="middle" font-size="12">Pipeline fail si non conforme</text>
+  </g>
+
+  <!-- Output -->
+  <g transform="translate(1340,240)">
+    <rect width="180" height="100" rx="16" fill="#F0FDF4" stroke="#86EFAC" filter="url(#card)"/>
+    <text x="90" y="26" text-anchor="middle" font-size="14" font-weight="600">Sortie</text>
+    <text x="90" y="48" text-anchor="middle" font-size="12">Instances générées (rows)</text>
+    <text x="90" y="66" text-anchor="middle" font-size="12">Diagnostics &amp; métriques</text>
+  </g>
+
+  <!-- AJV Oracle (original schema) -->
+  <g transform="translate(1160,110)">
+    <rect width="160" height="60" rx="14" fill="#EEF2FF" stroke="#A5B4FC" filter="url(#card)"/>
+    <text x="80" y="24" text-anchor="middle" font-size="14" font-weight="600">AJV (Source)</text>
+    <text x="80" y="44" text-anchor="middle" font-size="12">Oracle de validation</text>
+  </g>
+
+  <!-- AJV Planning/Generation -->
+  <g transform="translate(940,110)">
+    <rect width="180" height="60" rx="14" fill="#EEF2FF" stroke="#A5B4FC" filter="url(#card)"/>
+    <text x="90" y="24" text-anchor="middle" font-size="14" font-weight="600">AJV (Plan/Gen)</text>
+    <text x="90" y="44" text-anchor="middle" font-size="12">Config stricte (interne)</text>
+  </g>
+
+  <!-- Caches -->
+  <g transform="translate(680,110)">
+    <rect width="240" height="60" rx="14" fill="#FAFAF9" stroke="#D6D3D1" filter="url(#card)"/>
+    <text x="120" y="24" text-anchor="middle" font-size="14" font-weight="600">Caches</text>
+    <text x="120" y="44" text-anchor="middle" font-size="12">AJV LRU (version/flags) • Schema cache</text>
+  </g>
+
+  <!-- Invariants -->
+  <g transform="translate(1140,400)">
+    <rect width="260" height="180" rx="16" fill="#FFFBEB" stroke="#F59E0B" filter="url(#card)"></rect>
+    <text x="130" y="26" text-anchor="middle" font-size="14" font-weight="600">Invariants clés</text>
+    <text x="16" y="52" font-size="12">• Toujours valider sur le schéma d’origine</text>
+    <text x="16" y="72" font-size="12">• enum/const &gt; type lorsqu’en conflit</text>
+    <text x="16" y="92" font-size="12">• RNG local, seedé par chemin</text>
+    <text x="16" y="112" font-size="12">• Vue effective préserve unevaluated*</text>
+    <text x="16" y="132" font-size="12">• Aucune résolution $ref distante</text>
+    <text x="16" y="152" font-size="12">• Aucun cache des données générées</text>
+  </g>
+
+  <!-- Observability bar -->
+  <g transform="translate(280,420)">
+    <rect width="820" height="66" rx="14" fill="#ECFEFF" stroke="#67E8F9" filter="url(#card)"/>
+    <text x="410" y="30" text-anchor="middle" font-size="14" font-weight="600">Observabilité</text>
+    <text x="410" y="50" text-anchor="middle" font-size="12">métriques (validations/instance, réparations/instance) • budgets • diagnostics • timings par phase</text>
+  </g>
+
+  <!-- Policies & Modes -->
+  <g transform="translate(560,510)">
+    <rect width="380" height="110" rx="16" fill="#FEF2F2" stroke="#FCA5A5" filter="url(#card)"/>
+    <text x="190" y="26" text-anchor="middle" font-size="14" font-weight="600">Policies &amp; Modes</text>
+    <text x="190" y="48" text-anchor="middle" font-size="12">Strict / Lax • Caps complexité • Skip‑trials</text>
+    <text x="190" y="68" text-anchor="middle" font-size="12">Stagnation guard (bailOnUnsatAfter)</text>
+    <text x="190" y="88" text-anchor="middle" font-size="12">External $ref: no network I/O</text>
+  </g>
+
+  <!-- Arrows between boxes -->
+  <line x1="220" y1="290" x2="250" y2="290" stroke="#111827" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="430" y1="290" x2="460" y2="290" stroke="#111827" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="660" y1="290" x2="680" y2="290" stroke="#111827" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="880" y1="290" x2="900" y2="290" stroke="#111827" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="1100" y1="290" x2="1120" y2="290" stroke="#111827" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="1320" y1="290" x2="1340" y2="290" stroke="#111827" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- AJV boxes connections -->
+  <line x1="1220" y1="170" x2="1220" y2="240" stroke="#111827" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="1030" y1="170" x2="1030" y2="240" stroke="#4B5563" stroke-width="1.5" stroke-dasharray="5,5"/>
+
+  <!-- Dashed connectors to Observability -->
+  <line x1="340" y1="340" x2="340" y2="420" stroke="#4B5563" stroke-width="1.5" stroke-dasharray="5,5"/>
+  <line x1="560" y1="340" x2="560" y2="420" stroke="#4B5563" stroke-width="1.5" stroke-dasharray="5,5"/>
+  <line x1="780" y1="340" x2="780" y2="420" stroke="#4B5563" stroke-width="1.5" stroke-dasharray="5,5"/>
+  <line x1="1000" y1="340" x2="1000" y2="420" stroke="#4B5563" stroke-width="1.5" stroke-dasharray="5,5"/>
+  <line x1="1220" y1="340" x2="1220" y2="420" stroke="#4B5563" stroke-width="1.5" stroke-dasharray="5,5"/>
+
+  <!-- Dashed connectors from Policies to Generate/Repair -->
+  <line x1="750" y1="510" x2="750" y2="340" stroke="#4B5563" stroke-width="1.5" stroke-dasharray="5,5"/>
+  <line x1="960" y1="510" x2="960" y2="340" stroke="#4B5563" stroke-width="1.5" stroke-dasharray="5,5"/>
+
+  <!-- Legend -->
+  <g transform="translate(40,610)">
+    <rect width="520" height="90" rx="14" fill="#FFFFFF" stroke="#E5E7EB" filter="url(#card)"/>
+    <text x="18" y="28" font-size="12">— Flèche pleine : flux de données/contrats entre passes</text>
+    <text x="18" y="48" font-size="12">— Pointillés : supervision / politiques / AJV (Plan/Gen) influençant l’exécution</text>
+    <text x="18" y="68" font-size="12">— AJV (Source) : autorité de vérité pour la conformité au schéma original</text>
+  </g>
+
+</svg>

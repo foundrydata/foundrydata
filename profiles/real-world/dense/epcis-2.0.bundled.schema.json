@@ -1,0 +1,2139 @@
+{
+  "$id": "https://gs1.github.io/EPCIS/JSON-Schema/EPCIS-JSON-Schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "type"
+  ],
+  "properties": {
+    "type": {
+      "type": "string"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "EPCISDocument"
+            ]
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uri"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "EPCISDocument"
+            ]
+          },
+          "@context": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    {
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "schemaVersion": {
+            "type": "string",
+            "pattern": "^\\d+(\\.\\d+)*$"
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "instanceIdentifier": {
+            "type": "string"
+          },
+          "sender": {
+            "type": "string"
+          },
+          "receiver": {
+            "type": "string"
+          },
+          "epcisHeader": {
+            "type": "object",
+            "properties": {
+              "epcisMasterData": {
+                "type": "object",
+                "properties": {
+                  "vocabularyList": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                        },
+                        "vocabularyElementList": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                              },
+                              "attributes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                                    },
+                                    "attribute": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "object"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "id"
+                                  ]
+                                }
+                              },
+                              "children": {
+                                "type": "array",
+                                "items": {
+                                  "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                                }
+                              }
+                            },
+                            "required": [
+                              "id"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "type"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "epcisMasterData"
+                  ]
+                },
+                {
+                  "$ref": "#/allOf/0/then/propertyNames/anyOf/1"
+                }
+              ]
+            }
+          },
+          "epcisBody": {
+            "type": "object",
+            "properties": {
+              "eventList": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "type"
+                  ],
+                  "allOf": [
+                    {
+                      "if": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "enum": [
+                              "ObjectEvent"
+                            ]
+                          }
+                        }
+                      },
+                      "then": {
+                        "$ref": "#/allOf/2/then/allOf/0"
+                      }
+                    },
+                    {
+                      "if": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "enum": [
+                              "AggregationEvent"
+                            ]
+                          }
+                        }
+                      },
+                      "then": {
+                        "$ref": "#/allOf/3/then/allOf/0"
+                      }
+                    },
+                    {
+                      "if": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "enum": [
+                              "TransactionEvent"
+                            ]
+                          }
+                        }
+                      },
+                      "then": {
+                        "$ref": "#/allOf/6/then/allOf/0"
+                      }
+                    },
+                    {
+                      "if": {
+                        "properties": {
+                          "type": {
+                            "enum": [
+                              "TransformationEvent"
+                            ]
+                          }
+                        }
+                      },
+                      "then": {
+                        "$ref": "#/allOf/5/then/allOf/0"
+                      }
+                    },
+                    {
+                      "if": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "enum": [
+                              "AssociationEvent"
+                            ]
+                          }
+                        }
+                      },
+                      "then": {
+                        "$ref": "#/allOf/4/then/allOf/0"
+                      }
+                    },
+                    {
+                      "if": {
+                        "not": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "enum": [
+                                "AssociationEvent",
+                                "ObjectEvent",
+                                "AggregationEvent",
+                                "TransactionEvent",
+                                "TransformationEvent"
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "then": {
+                        "$ref": "#/allOf/7/then/allOf/0"
+                      }
+                    }
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "required": [
+              "eventList"
+            ]
+          }
+        },
+        "required": [
+          "@context",
+          "type",
+          "schemaVersion",
+          "creationDate",
+          "epcisBody"
+        ],
+        "propertyNames": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "@context",
+                "id",
+                "type",
+                "schemaVersion",
+                "creationDate",
+                "instanceIdentifier",
+                "sender",
+                "receiver",
+                "epcisHeader",
+                "epcisBody"
+              ]
+            },
+            {
+              "type": "string",
+              "format": "uri"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "EPCISQueryDocument"
+            ]
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "@context": {
+            "$ref": "#/allOf/0/then/properties/%40context"
+          },
+          "id": {
+            "$ref": "#/allOf/0/then/properties/id"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "EPCISQueryDocument"
+            ]
+          },
+          "schemaVersion": {
+            "$ref": "#/allOf/0/then/properties/schemaVersion"
+          },
+          "creationDate": {
+            "$ref": "#/allOf/0/then/properties/creationDate"
+          },
+          "epcisBody": {
+            "type": "object",
+            "properties": {
+              "queryResults": {
+                "type": "object",
+                "properties": {
+                  "queryName": {
+                    "type": "string"
+                  },
+                  "subscriptionID": {
+                    "type": "string"
+                  },
+                  "resultsBody": {
+                    "type": "object",
+                    "properties": {
+                      "eventList": {
+                        "$ref": "#/allOf/0/then/properties/epcisBody/properties/eventList"
+                      },
+                      "vocabularyList": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/allOf/0/then/properties/epcisHeader/properties/epcisMasterData/properties/vocabularyList/items"
+                        }
+                      }
+                    },
+                    "required": [
+                      "eventList"
+                    ],
+                    "propertyNames": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "eventList",
+                            "vocabularyList"
+                          ]
+                        },
+                        {
+                          "$ref": "#/allOf/0/then/propertyNames/anyOf/1"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "queryName",
+                  "resultsBody"
+                ],
+                "propertyNames": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "queryName",
+                        "subscriptionID",
+                        "resultsBody"
+                      ]
+                    },
+                    {
+                      "$ref": "#/allOf/0/then/propertyNames/anyOf/1"
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "queryResults"
+            ],
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "queryResults"
+                  ]
+                },
+                {
+                  "$ref": "#/allOf/0/then/propertyNames/anyOf/1"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "@context",
+          "type",
+          "epcisBody"
+        ],
+        "propertyNames": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "@context",
+                "id",
+                "type",
+                "schemaVersion",
+                "creationDate",
+                "epcisBody"
+              ]
+            },
+            {
+              "$ref": "#/allOf/0/then/propertyNames/anyOf/1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "ObjectEvent"
+            ]
+          }
+        }
+      },
+      "then": {
+        "allOf": [
+          {
+            "allOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "@context": {
+                    "$ref": "#/allOf/0/then/properties/%40context"
+                  },
+                  "eventTime": {
+                    "$ref": "#/allOf/0/then/properties/creationDate"
+                  },
+                  "recordTime": {
+                    "$ref": "#/allOf/0/then/properties/creationDate"
+                  },
+                  "eventTimeZoneOffset": {
+                    "type": "string",
+                    "pattern": "^([+]|[-])((0[0-9]|1[0-3]):([0-5][0-9])|14:00)$"
+                  },
+                  "eventID": {
+                    "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                  },
+                  "certificationInfo": {
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                        }
+                      },
+                      {
+                        "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                      }
+                    ]
+                  },
+                  "errorDeclaration": {
+                    "type": "object",
+                    "properties": {
+                      "declarationTime": {
+                        "$ref": "#/allOf/0/then/properties/creationDate"
+                      },
+                      "reason": {
+                        "anyOf": [
+                          {
+                            "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/bizStep/anyOf/0"
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "did_not_occur",
+                              "incorrect_data"
+                            ]
+                          }
+                        ]
+                      },
+                      "correctiveEventIDs": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                        }
+                      }
+                    },
+                    "required": [
+                      "declarationTime"
+                    ],
+                    "propertyNames": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/allOf/0/then/propertyNames/anyOf/1"
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "declarationTime",
+                            "reason",
+                            "correctiveEventIDs"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "eventTime",
+                  "eventTimeZoneOffset"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "ObjectEvent"
+                    ]
+                  },
+                  "epcList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                    },
+                    "uniqueItems": true
+                  },
+                  "quantityList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/6/then/allOf/0/allOf/1/properties/quantityList/items"
+                    }
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "OBSERVE",
+                      "ADD",
+                      "DELETE"
+                    ]
+                  },
+                  "bizStep": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uri",
+                        "pattern": "^(?!(urn:epcglobal:cbv|https?:\\/\\/ns\\.gs1\\.org/cbv\\/))"
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "accepting",
+                          "arriving",
+                          "assembling",
+                          "collecting",
+                          "commissioning",
+                          "consigning",
+                          "creating_class_instance",
+                          "cycle_counting",
+                          "decommissioning",
+                          "departing",
+                          "destroying",
+                          "disassembling",
+                          "dispensing",
+                          "encoding",
+                          "entering_exiting",
+                          "holding",
+                          "inspecting",
+                          "installing",
+                          "killing",
+                          "loading",
+                          "other",
+                          "packing",
+                          "picking",
+                          "receiving",
+                          "removing",
+                          "repackaging",
+                          "repairing",
+                          "replacing",
+                          "reserving",
+                          "retail_selling",
+                          "shipping",
+                          "staging_outbound",
+                          "stock_taking",
+                          "stocking",
+                          "storing",
+                          "transporting",
+                          "unloading",
+                          "unpacking",
+                          "void_shipping",
+                          "sensor_reporting",
+                          "sampling"
+                        ]
+                      }
+                    ]
+                  },
+                  "disposition": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/bizStep/anyOf/0"
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "active",
+                          "container_closed",
+                          "damaged",
+                          "destroyed",
+                          "dispensed",
+                          "disposed",
+                          "encoded",
+                          "expired",
+                          "in_progress",
+                          "in_transit",
+                          "inactive",
+                          "no_pedigree_match",
+                          "non_sellable_other",
+                          "partially_dispensed",
+                          "recalled",
+                          "reserved",
+                          "retail_sold",
+                          "returned",
+                          "sellable_accessible",
+                          "sellable_not_accessible",
+                          "stolen",
+                          "unknown",
+                          "available",
+                          "completeness_verified",
+                          "completeness_inferred",
+                          "conformant",
+                          "container_open",
+                          "mismatch_instance",
+                          "mismatch_class",
+                          "mismatch_quantity",
+                          "needs_replacement",
+                          "non_conformant",
+                          "unavailable"
+                        ]
+                      }
+                    ]
+                  },
+                  "persistentDisposition": {
+                    "allOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "set": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/disposition"
+                            },
+                            "minItems": 1,
+                            "uniqueItems": true
+                          },
+                          "unset": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/disposition"
+                            },
+                            "minItems": 1,
+                            "uniqueItems": true
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "required": [
+                              "set"
+                            ]
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "unset"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "readPoint": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                      }
+                    },
+                    "required": [
+                      "id"
+                    ]
+                  },
+                  "bizLocation": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                      }
+                    },
+                    "required": [
+                      "id"
+                    ]
+                  },
+                  "bizTransactionList": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "anyOf": [
+                            {
+                              "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/bizStep/anyOf/0"
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "bol",
+                                "cert",
+                                "desadv",
+                                "inv",
+                                "pedigree",
+                                "po",
+                                "poc",
+                                "prodorder",
+                                "recadv",
+                                "rma",
+                                "testprd",
+                                "testres",
+                                "upevt"
+                              ]
+                            }
+                          ]
+                        },
+                        "bizTransaction": {
+                          "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                        }
+                      },
+                      "required": [
+                        "bizTransaction"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "sourceList": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "anyOf": [
+                            {
+                              "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/bizStep/anyOf/0"
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "owning_party",
+                                "possessing_party",
+                                "location"
+                              ]
+                            }
+                          ]
+                        },
+                        "source": {
+                          "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "source"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "destinationList": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/sourceList/items/properties/type"
+                        },
+                        "destination": {
+                          "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "destination"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "sensorElementList": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "sensorMetadata": {
+                          "type": "object",
+                          "properties": {
+                            "time": {
+                              "$ref": "#/allOf/0/then/properties/creationDate"
+                            },
+                            "deviceID": {
+                              "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                            },
+                            "deviceMetadata": {
+                              "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                            },
+                            "rawData": {
+                              "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                            },
+                            "startTime": {
+                              "$ref": "#/allOf/0/then/properties/creationDate"
+                            },
+                            "endTime": {
+                              "$ref": "#/allOf/0/then/properties/creationDate"
+                            },
+                            "dataProcessingMethod": {
+                              "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                            },
+                            "bizRules": {
+                              "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                            }
+                          },
+                          "propertyNames": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/allOf/0/then/propertyNames/anyOf/1"
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "time",
+                                  "deviceID",
+                                  "deviceMetadata",
+                                  "rawData",
+                                  "startTime",
+                                  "endTime",
+                                  "dataProcessingMethod",
+                                  "bizRules"
+                                ]
+                              }
+                            ]
+                          }
+                        },
+                        "sensorReport": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "pattern": "^(?!(https?:\\/\\/gs1\\.org\\/voc\\/|https?:\\/\\/www\\.gs1\\.org\\/voc\\/))"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "AbsoluteHumidity",
+                                      "AbsorbedDose",
+                                      "AbsorbedDoseRate",
+                                      "Acceleration",
+                                      "Radioactivity",
+                                      "Altitude",
+                                      "AmountOfSubstance",
+                                      "AmountOfSubstancePerUnitVolume",
+                                      "Angle",
+                                      "AngularAcceleration",
+                                      "AngularMomentum",
+                                      "AngularVelocity",
+                                      "Area",
+                                      "Capacitance",
+                                      "Conductance",
+                                      "Conductivity",
+                                      "Count",
+                                      "Density",
+                                      "Dimensionless",
+                                      "DoseEquivalent",
+                                      "DoseEquivalentRate",
+                                      "DynamicViscosity",
+                                      "ElectricCharge",
+                                      "ElectricCurrent",
+                                      "ElectricCurrentDensity",
+                                      "ElectricFieldStrength",
+                                      "Energy",
+                                      "Exposure",
+                                      "Force",
+                                      "Frequency",
+                                      "Illuminance",
+                                      "Inductance",
+                                      "Irradiance",
+                                      "KinematicViscosity",
+                                      "Length",
+                                      "LinearMomentum",
+                                      "Luminance",
+                                      "LuminousFlux",
+                                      "LuminousIntensity",
+                                      "MagneticFlux",
+                                      "MagneticFluxDensity",
+                                      "MagneticVectorPotential",
+                                      "Mass",
+                                      "MassConcentration",
+                                      "MassFlowRate",
+                                      "MassPerAreaTime",
+                                      "MemoryCapacity",
+                                      "MolalityOfSolute",
+                                      "MolarEnergy",
+                                      "MolarMass",
+                                      "MolarVolume",
+                                      "Power",
+                                      "Pressure",
+                                      "RadiantFlux",
+                                      "RadiantIntensity",
+                                      "RelativeHumidity",
+                                      "Resistance",
+                                      "Resistivity",
+                                      "SolidAngle",
+                                      "SpecificVolume",
+                                      "Speed",
+                                      "SurfaceDensity",
+                                      "SurfaceTension",
+                                      "Temperature",
+                                      "Time",
+                                      "Torque",
+                                      "Voltage",
+                                      "Volume",
+                                      "VolumeFlowRate",
+                                      "VolumeFraction",
+                                      "VolumetricFlux",
+                                      "Wavenumber"
+                                    ]
+                                  }
+                                ]
+                              },
+                              "exception": {
+                                "anyOf": [
+                                  {
+                                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/sensorElementList/items/properties/sensorReport/items/properties/type/anyOf/0"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "ALARM_CONDITION",
+                                      "ERROR_CONDITION"
+                                    ]
+                                  }
+                                ]
+                              },
+                              "deviceID": {
+                                "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                              },
+                              "deviceMetadata": {
+                                "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                              },
+                              "rawData": {
+                                "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                              },
+                              "dataProcessingMethod": {
+                                "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                              },
+                              "bizRules": {
+                                "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                              },
+                              "time": {
+                                "$ref": "#/allOf/0/then/properties/creationDate"
+                              },
+                              "microorganism": {
+                                "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                              },
+                              "chemicalSubstance": {
+                                "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                              },
+                              "coordinateReferenceSystem": {
+                                "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                              },
+                              "value": {
+                                "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/childQuantityList/items/properties/quantity"
+                              },
+                              "component": {
+                                "anyOf": [
+                                  {
+                                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/bizStep/anyOf/0"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "x",
+                                      "y",
+                                      "z",
+                                      "axial_distance",
+                                      "azimuth",
+                                      "height",
+                                      "spherical_radius",
+                                      "polar_angle",
+                                      "elevation_angle",
+                                      "easting",
+                                      "northing",
+                                      "latitude",
+                                      "longitude",
+                                      "altitude"
+                                    ]
+                                  }
+                                ]
+                              },
+                              "stringValue": {
+                                "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/sensorElementList/items/properties/sensorReport/items/properties/uom"
+                              },
+                              "booleanValue": {
+                                "type": "boolean"
+                              },
+                              "hexBinaryValue": {
+                                "type": "string",
+                                "pattern": "^[A-Fa-f0-9]+$"
+                              },
+                              "uriValue": {
+                                "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                              },
+                              "minValue": {
+                                "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/childQuantityList/items/properties/quantity"
+                              },
+                              "maxValue": {
+                                "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/childQuantityList/items/properties/quantity"
+                              },
+                              "meanValue": {
+                                "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/childQuantityList/items/properties/quantity"
+                              },
+                              "sDev": {
+                                "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/childQuantityList/items/properties/quantity"
+                              },
+                              "percRank": {
+                                "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/childQuantityList/items/properties/quantity"
+                              },
+                              "percValue": {
+                                "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/childQuantityList/items/properties/quantity"
+                              },
+                              "uom": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "type"
+                            ],
+                            "propertyNames": {
+                              "anyOf": [
+                                {
+                                  "$ref": "#/allOf/0/then/propertyNames/anyOf/1"
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "type",
+                                    "exception",
+                                    "deviceID",
+                                    "deviceMetadata",
+                                    "rawData",
+                                    "dataProcessingMethod",
+                                    "bizRules",
+                                    "time",
+                                    "microorganism",
+                                    "chemicalSubstance",
+                                    "coordinateReferenceSystem",
+                                    "value",
+                                    "component",
+                                    "stringValue",
+                                    "booleanValue",
+                                    "hexBinaryValue",
+                                    "uriValue",
+                                    "minValue",
+                                    "maxValue",
+                                    "meanValue",
+                                    "sDev",
+                                    "percRank",
+                                    "percValue",
+                                    "uom"
+                                  ]
+                                }
+                              ]
+                            }
+                          },
+                          "minItems": 1
+                        }
+                      },
+                      "required": [
+                        "sensorReport"
+                      ],
+                      "propertyNames": {
+                        "anyOf": [
+                          {
+                            "$ref": "#/allOf/0/then/propertyNames/anyOf/1"
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "sensorMetadata",
+                              "sensorReport"
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "ilmd": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "action"
+                ],
+                "propertyNames": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "@context",
+                            "type",
+                            "eventTime",
+                            "recordTime",
+                            "eventTimeZoneOffset",
+                            "eventID",
+                            "certificationInfo",
+                            "errorDeclaration"
+                          ]
+                        },
+                        {
+                          "$ref": "#/allOf/0/then/propertyNames/anyOf/1"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "string",
+                      "enum": [
+                        "action",
+                        "epcList",
+                        "quantityList",
+                        "bizStep",
+                        "disposition",
+                        "persistentDisposition",
+                        "readPoint",
+                        "bizLocation",
+                        "bizTransactionList",
+                        "sourceList",
+                        "destinationList",
+                        "sensorElementList",
+                        "ilmd"
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "epcList": {
+                        "type": "array",
+                        "minItems": 0,
+                        "items": {
+                          "$ref": "#/allOf/0/then/properties/id"
+                        }
+                      }
+                    },
+                    "required": [
+                      "epcList"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "quantityList": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "$ref": "#/allOf/6/then/allOf/0/allOf/1/properties/quantityList/items"
+                        }
+                      }
+                    },
+                    "required": [
+                      "quantityList"
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "sensorElementList": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/sensorElementList/items"
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": [
+                          "sensorElementList"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "readPoint": {
+                            "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/readPoint"
+                          }
+                        },
+                        "required": [
+                          "readPoint"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "ilmd": {
+                        "not": {}
+                      },
+                      "action": {
+                        "type": "string",
+                        "pattern": "^OBSERVE$"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "ilmd": {
+                        "not": {}
+                      },
+                      "action": {
+                        "type": "string",
+                        "pattern": "^DELETE$"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "pattern": "^ADD$"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "object",
+            "required": [
+              "@context"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "AggregationEvent"
+            ]
+          }
+        }
+      },
+      "then": {
+        "allOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/allOf/2/then/allOf/0/allOf/0"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "AggregationEvent"
+                    ]
+                  },
+                  "parentID": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "childEPCs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                    }
+                  },
+                  "childQuantityList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/6/then/allOf/0/allOf/1/properties/quantityList/items"
+                    }
+                  },
+                  "action": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/action"
+                  },
+                  "bizStep": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/bizStep"
+                  },
+                  "disposition": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/disposition"
+                  },
+                  "readPoint": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/readPoint"
+                  },
+                  "bizLocation": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/bizLocation"
+                  },
+                  "bizTransactionList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/bizTransactionList/items"
+                    }
+                  },
+                  "sourceList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/sourceList/items"
+                    }
+                  },
+                  "destinationList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/destinationList/items"
+                    }
+                  },
+                  "sensorElementList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/sensorElementList/items"
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "action"
+                ],
+                "propertyNames": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/propertyNames/anyOf/0"
+                    },
+                    {
+                      "type": "string",
+                      "enum": [
+                        "parentID",
+                        "childEPCs",
+                        "childQuantityList",
+                        "action",
+                        "bizStep",
+                        "disposition",
+                        "readPoint",
+                        "bizLocation",
+                        "bizTransactionList",
+                        "sourceList",
+                        "destinationList",
+                        "sensorElementList"
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "childEPCs": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "$ref": "#/allOf/0/then/properties/id"
+                        }
+                      }
+                    },
+                    "required": [
+                      "childEPCs"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "childQuantityList": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "$ref": "#/allOf/6/then/allOf/0/allOf/1/properties/quantityList/items"
+                        }
+                      }
+                    },
+                    "required": [
+                      "childQuantityList"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "pattern": "^DELETE$"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "$ref": "#/allOf/2/then/allOf/1"
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "AssociationEvent"
+            ]
+          }
+        }
+      },
+      "then": {
+        "allOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/allOf/2/then/allOf/0/allOf/0"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "AssociationEvent"
+                    ]
+                  },
+                  "parentID": {
+                    "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                  },
+                  "childEPCs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                    }
+                  },
+                  "childQuantityList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/6/then/allOf/0/allOf/1/properties/quantityList/items"
+                    }
+                  },
+                  "action": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/action"
+                  },
+                  "bizStep": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/bizStep"
+                  },
+                  "disposition": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/disposition"
+                  },
+                  "readPoint": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/readPoint"
+                  },
+                  "bizLocation": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/bizLocation"
+                  },
+                  "bizTransactionList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/bizTransactionList/items"
+                    }
+                  },
+                  "sourceList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/sourceList/items"
+                    }
+                  },
+                  "destinationList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/destinationList/items"
+                    }
+                  },
+                  "sensorElementList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/sensorElementList/items"
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "action",
+                  "parentID"
+                ],
+                "propertyNames": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/propertyNames/anyOf/0"
+                    },
+                    {
+                      "type": "string",
+                      "enum": [
+                        "parentID",
+                        "childEPCs",
+                        "childQuantityList",
+                        "action",
+                        "bizStep",
+                        "disposition",
+                        "readPoint",
+                        "bizLocation",
+                        "bizTransactionList",
+                        "sourceList",
+                        "destinationList",
+                        "sensorElementList"
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "childEPCs": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "$ref": "#/allOf/0/then/properties/id"
+                        }
+                      }
+                    },
+                    "required": [
+                      "childEPCs"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "childQuantityList": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "$ref": "#/allOf/6/then/allOf/0/allOf/1/properties/quantityList/items"
+                        }
+                      }
+                    },
+                    "required": [
+                      "childQuantityList"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "pattern": "^DELETE$"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "$ref": "#/allOf/2/then/allOf/1"
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "TransformationEvent"
+            ]
+          }
+        }
+      },
+      "then": {
+        "allOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/allOf/2/then/allOf/0/allOf/0"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "TransformationEvent"
+                    ]
+                  },
+                  "inputEPCList": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/epcList"
+                  },
+                  "inputQuantityList": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/quantityList"
+                  },
+                  "outputEPCList": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/epcList"
+                  },
+                  "outputQuantityList": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/quantityList"
+                  },
+                  "transformationID": {
+                    "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                  },
+                  "bizStep": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/bizStep"
+                  },
+                  "disposition": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/disposition"
+                  },
+                  "persistentDisposition": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/persistentDisposition"
+                  },
+                  "readPoint": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/readPoint"
+                  },
+                  "bizLocation": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/bizLocation"
+                  },
+                  "bizTransactionList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/bizTransactionList/items"
+                    }
+                  },
+                  "sourceList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/sourceList/items"
+                    }
+                  },
+                  "destinationList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/destinationList/items"
+                    }
+                  },
+                  "sensorElementList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/sensorElementList/items"
+                    }
+                  },
+                  "ilmd": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/ilmd"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "propertyNames": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/propertyNames/anyOf/0"
+                    },
+                    {
+                      "type": "string",
+                      "enum": [
+                        "inputEPCList",
+                        "inputQuantityList",
+                        "outputEPCList",
+                        "outputQuantityList",
+                        "transformationID",
+                        "bizStep",
+                        "disposition",
+                        "persistentDisposition",
+                        "readPoint",
+                        "bizLocation",
+                        "bizTransactionList",
+                        "sourceList",
+                        "destinationList",
+                        "sensorElementList",
+                        "ilmd"
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "anyOf": [
+                  {
+                    "allOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "inputEPCList": {
+                                "type": "array",
+                                "minItems": 1,
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "required": [
+                              "inputEPCList"
+                            ]
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "inputQuantityList": {
+                                "type": "array",
+                                "minItems": 1,
+                                "items": {
+                                  "type": "object"
+                                }
+                              }
+                            },
+                            "required": [
+                              "inputQuantityList"
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "outputEPCList": {
+                                "type": "array",
+                                "minItems": 1,
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "required": [
+                              "outputEPCList"
+                            ]
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "outputQuantityList": {
+                                "type": "array",
+                                "minItems": 1,
+                                "items": {
+                                  "type": "object"
+                                }
+                              }
+                            },
+                            "required": [
+                              "outputQuantityList"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "inputEPCList": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "inputEPCList"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "inputQuantityList": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {
+                              "type": "object"
+                            }
+                          }
+                        },
+                        "required": [
+                          "inputQuantityList"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "outputEPCList": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "outputEPCList"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "outputQuantityList": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {
+                              "type": "object"
+                            }
+                          }
+                        },
+                        "required": [
+                          "outputQuantityList"
+                        ]
+                      }
+                    ],
+                    "type": "object",
+                    "required": [
+                      "transformationID"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "$ref": "#/allOf/2/then/allOf/1"
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "TransactionEvent"
+            ]
+          }
+        }
+      },
+      "then": {
+        "allOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/allOf/2/then/allOf/0/allOf/0"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "TransactionEvent"
+                    ]
+                  },
+                  "bizTransactionList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/bizTransactionList/items"
+                    },
+                    "minItems": 1
+                  },
+                  "parentID": {
+                    "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                  },
+                  "epcList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                    }
+                  },
+                  "quantityList": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "epcClass": {
+                          "$ref": "#/allOf/3/then/allOf/0/allOf/1/properties/parentID"
+                        },
+                        "quantity": {
+                          "type": "number"
+                        },
+                        "uom": {
+                          "type": "string",
+                          "pattern": "^[A-Z0-9]{2,3}$"
+                        }
+                      },
+                      "required": [
+                        "epcClass"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "action": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/action"
+                  },
+                  "bizStep": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/bizStep"
+                  },
+                  "disposition": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/disposition"
+                  },
+                  "readPoint": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/readPoint"
+                  },
+                  "bizLocation": {
+                    "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/bizLocation"
+                  },
+                  "sourceList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/sourceList/items"
+                    }
+                  },
+                  "destinationList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/destinationList/items"
+                    }
+                  },
+                  "sensorElementList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/properties/sensorElementList/items"
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "bizTransactionList",
+                  "action"
+                ],
+                "propertyNames": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/allOf/2/then/allOf/0/allOf/1/propertyNames/anyOf/0"
+                    },
+                    {
+                      "type": "string",
+                      "enum": [
+                        "bizTransactionList",
+                        "parentID",
+                        "epcList",
+                        "quantityList",
+                        "action",
+                        "bizStep",
+                        "disposition",
+                        "readPoint",
+                        "bizLocation",
+                        "sourceList",
+                        "destinationList",
+                        "sensorElementList"
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "epcList": {
+                        "type": "array",
+                        "minItems": 0,
+                        "items": {
+                          "$ref": "#/allOf/0/then/properties/id"
+                        }
+                      }
+                    },
+                    "required": [
+                      "epcList"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "quantityList": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "$ref": "#/allOf/6/then/allOf/0/allOf/1/properties/quantityList/items"
+                        }
+                      }
+                    },
+                    "required": [
+                      "quantityList"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "pattern": "^DELETE$"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "$ref": "#/allOf/2/then/allOf/1"
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "not": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "AssociationEvent",
+                "ObjectEvent",
+                "AggregationEvent",
+                "TransactionEvent",
+                "TransformationEvent",
+                "EPCISQueryDocument",
+                "EPCISDocument"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "allOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/allOf/2/then/allOf/0/allOf/0"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "$ref": "#/allOf/0/then/propertyNames/anyOf/1"
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              }
+            ]
+          },
+          {
+            "$ref": "#/allOf/2/then/allOf/1"
+          }
+        ]
+      }
+    }
+  ]
+}

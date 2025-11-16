@@ -1,0 +1,39 @@
+# Task ID: 11
+# Title: Arrays: bagged contains + UNSAT rules
+# Status: pending
+# Dependencies: 1
+# Priority: high
+# Description: Model contains as bag; prove UNSAT when Σ(min_i) > maxItems; handle disjointness and overlap unknown.
+# Details:
+- File: transform/arrays/contains-bag.ts.
+- Deterministic choice when uniqueItems:true.
+- Emit UNSAT_CONTAINS_VS_MAXITEMS when provable.
+
+# Test Strategy:
+Acceptance: impossible contains vs maxItems; uniqueItems order stability.
+
+# Subtasks:
+## 1. Implement contains bag modeling core structure [pending]
+### Dependencies: None
+### Description: Create the foundational contains-bag.ts file with core bag modeling logic for array contains constraints
+### Details:
+Set up transform/arrays/contains-bag.ts with basic bag modeling structure. Implement the core contains constraint modeling that treats contains as a bag operation rather than exact matching. Include interfaces for bag constraint representation and basic validation logic.
+
+## 2. Implement UNSAT proof generation for contains vs maxItems [pending]
+### Dependencies: 11.1
+### Description: Add logic to detect and prove UNSAT conditions when sum of minimum items exceeds maxItems constraint
+### Details:
+Implement the mathematical proof logic that detects when Σ(min_i) > maxItems, making the schema unsatisfiable. Emit UNSAT_CONTAINS_VS_MAXITEMS diagnostic when this condition is provably true. Include sum calculation and constraint violation detection.
+
+## 3. Add deterministic choice algorithm for uniqueItems [pending]
+### Dependencies: 11.1
+### Description: Implement deterministic selection logic when uniqueItems is true to ensure consistent bag item generation
+### Details:
+Create deterministic choice algorithms that handle uniqueItems:true constraint in combination with contains bag modeling. Ensure that when uniqueItems is enabled, the bag generation produces consistent, deterministic results while respecting the contains constraints.
+
+## 4. Implement disjointness and overlap analysis [pending]
+### Dependencies: 11.2, 11.3
+### Description: Add logic to handle disjoint contains constraints and cases where constraint overlap is unknown
+### Details:
+Implement analysis for disjoint contains constraints and handle scenarios where overlap between different contains constraints cannot be determined. Include logic for constraint intersection analysis and fallback behavior when disjointness cannot be proven.
+

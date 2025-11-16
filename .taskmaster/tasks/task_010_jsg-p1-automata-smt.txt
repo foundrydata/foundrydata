@@ -1,0 +1,33 @@
+# Task ID: 10
+# Title: Strict/Lax policy for AP:false and external $ref
+# Status: pending
+# Dependencies: 8, 1
+# Priority: high
+# Description: Implement strict fail-fast on unsafe/capped patterns under presence pressure; handle unresolved external $ref.
+# Details:
+- Strict: AP_FALSE_UNSAFE_PATTERN fatal after safe-only attempt.
+- Lax: same code as warn, conservative exclusion.
+- External $ref: Strict→EXTERNAL_REF_UNRESOLVED{mode:"strict"}; Lax→warn + skippedValidation:true only if cause is exclusively external refs.
+
+# Test Strategy:
+Acceptance: strict vs lax behavior; unresolved refs paths.
+
+# Subtasks:
+## 1. Implement strict/lax policy enforcement framework [pending]
+### Dependencies: None
+### Description: Create the core policy enforcement framework that handles strict vs lax mode switching and policy-specific error handling for unsafe patterns and external references.
+### Details:
+Implement policy enumeration (strict/lax), policy context threading through composition engine, and policy-specific error emission logic. Create base classes for policy-aware error handling and mode-specific behavior switches. This forms the foundation for all policy-specific behaviors in subsequent subtasks.
+
+## 2. Implement AP:false unsafe pattern detection and handling [pending]
+### Dependencies: 10.1
+### Description: Implement detection and handling of unsafe additionalProperties:false patterns with different behaviors for strict vs lax modes.
+### Details:
+Create unsafe pattern detection logic for AP:false scenarios under presence pressure. In strict mode: emit AP_FALSE_UNSAFE_PATTERN as fatal error after safe-only attempt fails. In lax mode: emit same diagnostic as warning and apply conservative exclusion logic. Integrate with composition engine's must-cover analysis.
+
+## 3. Implement external $ref resolution policy handling [pending]
+### Dependencies: 10.1
+### Description: Implement policy-specific handling of unresolved external $ref with appropriate error emission and validation skipping logic.
+### Details:
+Handle unresolved external $ref differently based on policy mode. Strict mode: emit EXTERNAL_REF_UNRESOLVED with mode:strict metadata. Lax mode: emit warning and set skippedValidation:true only when failure cause is exclusively due to external refs. Integrate with reference resolution pipeline and validator skip logic.
+

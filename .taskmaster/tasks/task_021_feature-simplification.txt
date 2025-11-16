@@ -1,0 +1,31 @@
+# Task ID: 21
+# Title: Public API & TS types
+# Status: pending
+# Dependencies: 8000, 9000, 9123, 9122
+# Priority: medium
+# Description: Exported functions and types for normalize/compose/generate/repair; stable signatures.
+# Details:
+[Context] §23 interfaces; §22 deliverables.
+- spec://§23#compose-interfaces, spec://§23#repair-interfaces
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§23","anchors":["spec://§23#compose-interfaces","spec://§23#repair-interfaces"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- API mirrors minimal interfaces; do not expose internal caches.
+[Deliverables]
+- packages/core/src/index.ts (exports)
+- type declarations
+[Commands]
+- pnpm -w build
+[Definition of Done]
+- Type tests compile; API docs reflect interface anchors.
+
+# Test Strategy:
+TS compile tests; simple programmatic examples.
+
+# Subtasks:
+## 21001. Export public API and types [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+

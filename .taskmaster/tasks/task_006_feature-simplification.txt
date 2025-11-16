@@ -1,0 +1,47 @@
+# Task ID: 6
+# Title: Metrics & diagnostic envelope
+# Status: done
+# Dependencies: 8000, 9000, 9115, 9119, 9101
+# Priority: high
+# Description: Diagnostics envelope `{code, canonPath, details?}`, metrics collection, verbosity toggle.
+# Details:
+[Context] §19 envelope & payloads; §15 metrics; §1 acceptance signals.
+- spec://§19#envelope, spec://§19#payloads
+- spec://§15#metrics, spec://§1#acceptance
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§19","anchors":["spec://§19#envelope","spec://§19#payloads"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§15","anchors":["spec://§15#metrics"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Envelope must never duplicate canonPath inside details.
+- Implement metrics fields (normalizeMs..p95LatencyMs) and counters; support verbosity toggle (CI verbose vs runtime normal) without changing shapes.
+[Deliverables]
+- packages/core/src/util/metrics.ts
+- packages/core/src/diag/codes.ts (type tags)
+- packages/core/src/diag/validate.ts (mini-schema assertions for §19.1 where practical)
+[Commands]
+- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench
+[Definition of Done]
+- Diagnostics serialize with correct envelope; metrics accumulate across phases; toggle reduces payload volume but fields exist.
+
+# Test Strategy:
+Unit: envelope guard (no canonPath duplication in details); metrics counters increments; snapshot tests for verbosity modes.
+
+# Subtasks:
+## 6001. Metrics utility [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 6002. Diagnostics code schema helpers [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 6003. Diagnostics validator (payload spot-checks) [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

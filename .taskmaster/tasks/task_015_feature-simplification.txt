@@ -1,0 +1,31 @@
+# Task ID: 15
+# Title: Bench Harness & Gates
+# Status: pending
+# Dependencies: 8000, 9000, 9115, 9101, 9122, 11, 6
+# Priority: high
+# Description: Benchmark harness and CI gates for p95 latency and memory peaks; metrics wiring.
+# Details:
+[Context] §15 bench protocol & SLO/SLI; §1 bench SLI gate.
+- spec://§15#bench-protocol, spec://§15#slo-sli, spec://§1#bench-sli-gate
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§15","anchors":["spec://§15#bench-protocol","spec://§15#slo-sli"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Profiles simple/medium/pathological; seeds {1,42,4242}; fail CI when thresholds exceeded.
+- Depends on Pipeline Orchestrator (task 11) for complete pipeline benchmarking.
+[Deliverables]
+- scripts/bench.ts (wired), CI job to run harness
+[Commands]
+- pnpm -w bench
+[Definition of Done]
+- Bench reports p50/p95 & memory; CI job enforces gates; measures complete pipeline performance.
+
+# Test Strategy:
+CI dry-run with reduced iterations; local harness smoke on sample schemas.
+
+# Subtasks:
+## 1. Extend bench harness + CI wiring [pending]
+### Dependencies: None
+### Description: Implement comprehensive benchmark harness that measures complete pipeline performance including Pipeline Orchestrator from task 11
+### Details:
+Create benchmark harness that measures the full 5-stage pipeline (Normalize → Compose → Generate → Repair → Validate) through the Pipeline Orchestrator. Include profiles for simple/medium/pathological schemas with seeds {1,42,4242}. Wire CI job to enforce performance gates and fail when thresholds exceeded.
+

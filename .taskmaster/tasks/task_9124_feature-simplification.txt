@@ -1,0 +1,31 @@
+# Task ID: 9124
+# Title: §24 Norms & References
+# Status: done
+# Dependencies: 9000
+# Priority: low
+# Description: Reference-only: section §24.
+# Details:
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§24","anchors":["spec://§24#normative","spec://§24#informative","spec://§24#alignment"],"notes":"no-embed; fetch-on-demand"}
+
+# Test Strategy:
+None.
+
+# Subtasks:
+## 9124001. Index anchor — normative refs [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9124002. Index anchor — informative refs [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9124003. Index anchor — alignment table [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

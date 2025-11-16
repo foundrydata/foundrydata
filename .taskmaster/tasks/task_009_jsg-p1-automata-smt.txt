@@ -1,0 +1,33 @@
+# Task ID: 9
+# Title: Early-UNSAT diagnostics for objects
+# Status: pending
+# Dependencies: 8
+# Priority: high
+# Description: Emit object-level UNSAT: empty coverage under presence pressure; required vs propertyNames; minProperties vs finite coverage.
+# Details:
+- Emit UNSAT_AP_FALSE_EMPTY_COVERAGE with proof summary.
+- Emit UNSAT_REQUIRED_VS_PROPERTYNAMES.
+- Emit UNSAT_MINPROPERTIES_VS_COVERAGE.
+
+# Test Strategy:
+Acceptance tests per spec scenarios.
+
+# Subtasks:
+## 1. Implement UNSAT_AP_FALSE_EMPTY_COVERAGE diagnostic [pending]
+### Dependencies: None
+### Description: Detect and emit diagnostics when additionalProperties:false creates empty coverage under presence pressure from required properties or minProperties constraints.
+### Details:
+Add detection logic in composition-engine.ts to identify when AP:false combined with required properties results in impossible coverage. Emit UNSAT_AP_FALSE_EMPTY_COVERAGE diagnostic with proof summary including conflicting constraints and coverage analysis. Include provenance tracking for diagnostic context.
+
+## 2. Implement UNSAT_REQUIRED_VS_PROPERTYNAMES diagnostic [pending]
+### Dependencies: 9.1
+### Description: Detect conflicts between required properties and propertyNames constraints that make object generation impossible.
+### Details:
+Add logic to detect when required property names violate propertyNames constraints (enum, pattern, etc.). Emit UNSAT_REQUIRED_VS_PROPERTYNAMES diagnostic with detailed conflict analysis. Handle both literal and pattern-based propertyNames constraints with comprehensive proof generation.
+
+## 3. Implement UNSAT_MINPROPERTIES_VS_COVERAGE diagnostic [pending]
+### Dependencies: 9.1, 9.2
+### Description: Detect when minProperties requirement exceeds available property coverage, making object generation impossible.
+### Details:
+Add detection for scenarios where minProperties value is greater than the finite set of allowed properties under coverage constraints. Emit UNSAT_MINPROPERTIES_VS_COVERAGE diagnostic with coverage analysis and property count calculations. Handle both finite and infinite coverage scenarios with appropriate proof summaries.
+

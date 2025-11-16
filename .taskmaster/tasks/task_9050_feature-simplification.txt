@@ -1,0 +1,25 @@
+# Task ID: 9050
+# Title: SPEC — Maintenance / Evolution
+# Status: done
+# Dependencies: 9000
+# Priority: low
+# Description: Reference-only: section §24.
+# Details:
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§24","anchors":["spec://§24#normative","spec://§24#alignment"],"notes":"no-embed; fetch-on-demand"}
+
+# Test Strategy:
+None.
+
+# Subtasks:
+## 9050001. Index anchor — normative references [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9050002. Index anchor — reference alignment [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

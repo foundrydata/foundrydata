@@ -1,0 +1,5332 @@
+{
+  "mode": "strict",
+  "seed": 37,
+  "instancesPerSchema": 3,
+  "results": [
+    {
+      "id": "asyncapi-3.0.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/asyncapi-3.0.schema.json",
+      "instancesTried": 0,
+      "instancesValid": 0,
+      "unsat": false,
+      "failFast": true,
+      "diagnostics": [
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/$defs/nonNegativeIntegerDefault0/allOf/0/$ref",
+          "details": {
+            "target": "#/$defs/nonNegativeInteger"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/maxLength/$ref",
+          "details": {
+            "target": "#/$defs/nonNegativeInteger"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/minLength/$ref",
+          "details": {
+            "target": "#/$defs/nonNegativeIntegerDefault0"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/items/anyOf/1/$ref",
+          "details": {
+            "target": "#/$defs/schemaArray"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/maxItems/$ref",
+          "details": {
+            "target": "#/$defs/nonNegativeInteger"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/minItems/$ref",
+          "details": {
+            "target": "#/$defs/nonNegativeIntegerDefault0"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/maxProperties/$ref",
+          "details": {
+            "target": "#/$defs/nonNegativeInteger"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/minProperties/$ref",
+          "details": {
+            "target": "#/$defs/nonNegativeIntegerDefault0"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/required/$ref",
+          "details": {
+            "target": "#/$defs/stringArray"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/dependencies/additionalProperties/anyOf/1/$ref",
+          "details": {
+            "target": "#/$defs/stringArray"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/type/anyOf/0/$ref",
+          "details": {
+            "target": "#/$defs/simpleTypes"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/type/anyOf/1/items/$ref",
+          "details": {
+            "target": "#/$defs/simpleTypes"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/allOf/$ref",
+          "details": {
+            "target": "#/$defs/schemaArray"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/anyOf/$ref",
+          "details": {
+            "target": "#/$defs/schemaArray"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/oneOf/$ref",
+          "details": {
+            "target": "#/$defs/schemaArray"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/not/oneOf/1/$ref",
+          "details": {
+            "target": "#/$defs/Reference"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/allOf/items/oneOf/1/$ref",
+          "details": {
+            "target": "#/$defs/Reference"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/oneOf/items/oneOf/1/$ref",
+          "details": {
+            "target": "#/$defs/Reference"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/anyOf/items/oneOf/1/$ref",
+          "details": {
+            "target": "#/$defs/Reference"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/items/oneOf/1/$ref",
+          "details": {
+            "target": "#/$defs/Reference"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/properties/additionalProperties/oneOf/1/$ref",
+          "details": {
+            "target": "#/$defs/Reference"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/additionalProperties/oneOf/1/$ref",
+          "details": {
+            "target": "#/$defs/Reference"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/discriminator/$ref",
+          "details": {
+            "target": "#/$defs/Discriminator"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/externalDocs/$ref",
+          "details": {
+            "target": "#/$defs/ExternalDocumentation"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/xml/$ref",
+          "details": {
+            "target": "#/$defs/XML"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroSchema/oneOf/0/$ref",
+          "details": {
+            "target": "#/$defs/types"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/0/$ref",
+          "details": {
+            "target": "#/$defs/primitiveType"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/1/$ref",
+          "details": {
+            "target": "#/$defs/primitiveTypeWithMetadata"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/2/$ref",
+          "details": {
+            "target": "#/$defs/customTypeReference"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/3/$ref",
+          "details": {
+            "target": "#/$defs/avroRecord"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/4/$ref",
+          "details": {
+            "target": "#/$defs/avroEnum"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/5/$ref",
+          "details": {
+            "target": "#/$defs/avroArray"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/6/$ref",
+          "details": {
+            "target": "#/$defs/avroMap"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/7/$ref",
+          "details": {
+            "target": "#/$defs/avroFixed"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/8/$ref",
+          "details": {
+            "target": "#/$defs/avroUnion"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/primitiveTypeWithMetadata/properties/type/$ref",
+          "details": {
+            "target": "#/$defs/primitiveType"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/customTypeReference/not/$ref",
+          "details": {
+            "target": "#/$defs/primitiveType"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroUnion/items/$ref",
+          "details": {
+            "target": "#/$defs/avroSchema"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroField/properties/name/$ref",
+          "details": {
+            "target": "#/$defs/name"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroField/properties/type/$ref",
+          "details": {
+            "target": "#/$defs/types"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroField/properties/aliases/items/$ref",
+          "details": {
+            "target": "#/$defs/name"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroRecord/properties/name/$ref",
+          "details": {
+            "target": "#/$defs/name"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroRecord/properties/namespace/$ref",
+          "details": {
+            "target": "#/$defs/namespace"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroRecord/properties/aliases/items/$ref",
+          "details": {
+            "target": "#/$defs/name"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroRecord/properties/fields/items/$ref",
+          "details": {
+            "target": "#/$defs/avroField"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroEnum/properties/name/$ref",
+          "details": {
+            "target": "#/$defs/name"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroEnum/properties/namespace/$ref",
+          "details": {
+            "target": "#/$defs/namespace"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroEnum/properties/aliases/items/$ref",
+          "details": {
+            "target": "#/$defs/name"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroEnum/properties/symbols/items/$ref",
+          "details": {
+            "target": "#/$defs/name"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroArray/properties/name/$ref",
+          "details": {
+            "target": "#/$defs/name"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroArray/properties/namespace/$ref",
+          "details": {
+            "target": "#/$defs/namespace"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroArray/properties/aliases/items/$ref",
+          "details": {
+            "target": "#/$defs/name"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroArray/properties/items/$ref",
+          "details": {
+            "target": "#/$defs/types"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroMap/properties/name/$ref",
+          "details": {
+            "target": "#/$defs/name"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroMap/properties/namespace/$ref",
+          "details": {
+            "target": "#/$defs/namespace"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroMap/properties/aliases/items/$ref",
+          "details": {
+            "target": "#/$defs/name"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroMap/properties/values/$ref",
+          "details": {
+            "target": "#/$defs/types"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroFixed/properties/name/$ref",
+          "details": {
+            "target": "#/$defs/name"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroFixed/properties/namespace/$ref",
+          "details": {
+            "target": "#/$defs/namespace"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroFixed/properties/aliases/items/$ref",
+          "details": {
+            "target": "#/$defs/name"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/oneOf/0/$ref",
+          "details": {
+            "target": "#/$defs/avroSchema"
+          }
+        },
+        {
+          "code": "EXTERNAL_REF_UNRESOLVED",
+          "canonPath": "",
+          "details": {
+            "mode": "strict",
+            "ref": "http://asyncapi.com/bindings/amqp/0.3.0/channel.json",
+            "failingRefs": [
+              "http://asyncapi.com/definitions/3.0.0/specificationExtension.json",
+              "http://asyncapi.com/definitions/3.0.0/info.json",
+              "http://asyncapi.com/definitions/3.0.0/servers.json",
+              "http://asyncapi.com/definitions/3.0.0/channels.json",
+              "http://asyncapi.com/definitions/3.0.0/operations.json",
+              "http://asyncapi.com/definitions/3.0.0/components.json",
+              "http://asyncapi.com/definitions/3.0.0/contact.json",
+              "http://asyncapi.com/definitions/3.0.0/license.json",
+              "http://asyncapi.com/definitions/3.0.0/Reference.json",
+              "http://asyncapi.com/definitions/3.0.0/tag.json",
+              "http://asyncapi.com/definitions/3.0.0/externalDocs.json",
+              "http://asyncapi.com/definitions/3.0.0/infoExtensions.json",
+              "http://asyncapi.com/definitions/3.0.0/ReferenceObject.json",
+              "http://asyncapi.com/extensions/x/0.1.0/schema.json",
+              "http://asyncapi.com/extensions/linkedin/0.1.0/schema.json",
+              "http://asyncapi.com/definitions/3.0.0/server.json",
+              "http://asyncapi.com/definitions/3.0.0/serverVariables.json",
+              "http://asyncapi.com/definitions/3.0.0/securityRequirements.json",
+              "http://asyncapi.com/definitions/3.0.0/serverBindingsObject.json",
+              "http://asyncapi.com/definitions/3.0.0/serverVariable.json",
+              "http://asyncapi.com/definitions/3.0.0/SecurityScheme.json",
+              "http://asyncapi.com/definitions/3.0.0/userPassword.json",
+              "http://asyncapi.com/definitions/3.0.0/apiKey.json",
+              "http://asyncapi.com/definitions/3.0.0/X509.json",
+              "http://asyncapi.com/definitions/3.0.0/symmetricEncryption.json",
+              "http://asyncapi.com/definitions/3.0.0/asymmetricEncryption.json",
+              "http://asyncapi.com/definitions/3.0.0/HTTPSecurityScheme.json",
+              "http://asyncapi.com/definitions/3.0.0/oauth2Flows.json",
+              "http://asyncapi.com/definitions/3.0.0/openIdConnect.json",
+              "http://asyncapi.com/definitions/3.0.0/SaslSecurityScheme.json",
+              "http://asyncapi.com/definitions/3.0.0/NonBearerHTTPSecurityScheme.json",
+              "http://asyncapi.com/definitions/3.0.0/BearerHTTPSecurityScheme.json",
+              "http://asyncapi.com/definitions/3.0.0/APIKeyHTTPSecurityScheme.json",
+              "http://asyncapi.com/definitions/3.0.0/oauth2Flow.json",
+              "http://asyncapi.com/definitions/3.0.0/oauth2Scopes.json",
+              "http://asyncapi.com/definitions/3.0.0/SaslPlainSecurityScheme.json",
+              "http://asyncapi.com/definitions/3.0.0/SaslScramSecurityScheme.json",
+              "http://asyncapi.com/definitions/3.0.0/SaslGssapiSecurityScheme.json",
+              "http://asyncapi.com/bindings/mqtt/0.2.0/server.json",
+              "http://asyncapi.com/bindings/kafka/0.5.0/server.json",
+              "http://asyncapi.com/bindings/kafka/0.4.0/server.json",
+              "http://asyncapi.com/bindings/kafka/0.3.0/server.json",
+              "http://asyncapi.com/bindings/jms/0.0.1/server.json",
+              "http://asyncapi.com/bindings/ibmmq/0.1.0/server.json",
+              "http://asyncapi.com/bindings/solace/0.4.0/server.json",
+              "http://asyncapi.com/bindings/solace/0.3.0/server.json",
+              "http://asyncapi.com/bindings/solace/0.2.0/server.json",
+              "http://asyncapi.com/bindings/pulsar/0.1.0/server.json",
+              "http://asyncapi.com/definitions/3.0.0/schema.json",
+              "http://asyncapi.com/definitions/3.0.0/channel.json",
+              "http://asyncapi.com/definitions/3.0.0/channelMessages.json",
+              "http://asyncapi.com/definitions/3.0.0/parameters.json",
+              "http://asyncapi.com/definitions/3.0.0/channelBindingsObject.json",
+              "http://asyncapi.com/definitions/3.0.0/messageObject.json",
+              "http://asyncapi.com/definitions/3.0.0/anySchema.json",
+              "http://asyncapi.com/definitions/3.0.0/correlationId.json",
+              "http://asyncapi.com/definitions/3.0.0/messageExampleObject.json",
+              "http://asyncapi.com/definitions/3.0.0/messageBindingsObject.json",
+              "http://asyncapi.com/definitions/3.0.0/messageTrait.json",
+              "http://asyncapi.com/definitions/3.0.0/multiFormatSchema.json",
+              "http://asyncapi.com/definitions/3.0.0/openapiSchema_3_0.json",
+              "http://asyncapi.com/definitions/3.0.0/avroSchema_v1.json",
+              "http://asyncapi.com/definitions/3.0.0/openapiSchema_3_0.json#",
+              "http://asyncapi.com/bindings/http/0.3.0/message.json",
+              "http://asyncapi.com/bindings/http/0.2.0/message.json",
+              "http://asyncapi.com/bindings/amqp/0.3.0/message.json",
+              "http://asyncapi.com/bindings/mqtt/0.2.0/message.json",
+              "http://asyncapi.com/bindings/kafka/0.5.0/message.json",
+              "http://asyncapi.com/bindings/kafka/0.4.0/message.json",
+              "http://asyncapi.com/bindings/kafka/0.3.0/message.json",
+              "http://asyncapi.com/bindings/anypointmq/0.0.1/message.json",
+              "http://asyncapi.com/bindings/jms/0.0.1/message.json",
+              "http://asyncapi.com/bindings/ibmmq/0.1.0/message.json",
+              "http://asyncapi.com/bindings/googlepubsub/0.2.0/message.json",
+              "http://asyncapi.com/bindings/kafka/0.5.0/path/to/user-create.avsc#/UserCreate",
+              "http://asyncapi.com/bindings/kafka/0.4.0/path/to/user-create.avsc#/UserCreate",
+              "http://asyncapi.com/bindings/kafka/0.3.0/path/to/user-create.avsc#/UserCreate",
+              "http://asyncapi.com/definitions/3.0.0/parameter.json",
+              "http://asyncapi.com/bindings/websockets/0.1.0/channel.json",
+              "http://asyncapi.com/bindings/amqp/0.3.0/channel.json",
+              "http://asyncapi.com/bindings/kafka/0.5.0/channel.json",
+              "http://asyncapi.com/bindings/kafka/0.4.0/channel.json",
+              "http://asyncapi.com/bindings/kafka/0.3.0/channel.json",
+              "http://asyncapi.com/bindings/anypointmq/0.0.1/channel.json",
+              "http://asyncapi.com/bindings/jms/0.0.1/channel.json",
+              "http://asyncapi.com/bindings/sns/0.1.0/channel.json",
+              "http://asyncapi.com/bindings/sqs/0.2.0/channel.json",
+              "http://asyncapi.com/bindings/ibmmq/0.1.0/channel.json",
+              "http://asyncapi.com/bindings/googlepubsub/0.2.0/channel.json",
+              "http://asyncapi.com/bindings/pulsar/0.1.0/channel.json",
+              "http://asyncapi.com/definitions/3.0.0/operation.json",
+              "http://asyncapi.com/definitions/3.0.0/operationReply.json",
+              "http://asyncapi.com/definitions/3.0.0/operationTrait.json",
+              "http://asyncapi.com/definitions/3.0.0/operationBindingsObject.json",
+              "http://asyncapi.com/components/messages/userSignedUp",
+              "http://asyncapi.com/components/messages/userSignedUpReply",
+              "http://asyncapi.com/definitions/3.0.0/operationReplyAddress.json",
+              "http://asyncapi.com/definitions/3.0.0/operation.json#/properties/title",
+              "http://asyncapi.com/definitions/3.0.0/operation.json#/properties/summary",
+              "http://asyncapi.com/definitions/3.0.0/operation.json#/properties/description",
+              "http://asyncapi.com/definitions/3.0.0/operation.json#/properties/security",
+              "http://asyncapi.com/definitions/3.0.0/operation.json#/properties/tags",
+              "http://asyncapi.com/definitions/3.0.0/operation.json#/properties/externalDocs",
+              "http://asyncapi.com/bindings/http/0.3.0/operation.json",
+              "http://asyncapi.com/bindings/http/0.2.0/operation.json",
+              "http://asyncapi.com/bindings/amqp/0.3.0/operation.json",
+              "http://asyncapi.com/bindings/mqtt/0.2.0/operation.json",
+              "http://asyncapi.com/bindings/kafka/0.5.0/operation.json",
+              "http://asyncapi.com/bindings/kafka/0.4.0/operation.json",
+              "http://asyncapi.com/bindings/kafka/0.3.0/operation.json",
+              "http://asyncapi.com/bindings/nats/0.1.0/operation.json",
+              "http://asyncapi.com/bindings/sns/0.1.0/operation.json",
+              "http://asyncapi.com/bindings/sqs/0.2.0/operation.json",
+              "http://asyncapi.com/bindings/solace/0.4.0/operation.json",
+              "http://asyncapi.com/bindings/solace/0.3.0/operation.json",
+              "http://asyncapi.com/bindings/solace/0.2.0/operation.json",
+              "http://asyncapi.com/definitions/3.0.0/path/to/user-create.avsc#/UserCreate"
+            ]
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 23.80641700000001,
+        "composeMs": 115.80612500000001,
+        "generateMs": 0,
+        "repairMs": 0,
+        "validateMs": 0,
+        "validationsPerRow": 0,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 0,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "cloudevents.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/cloudevents.schema.json",
+      "instancesTried": 3,
+      "instancesValid": 3,
+      "unsat": false,
+      "failFast": false,
+      "diagnostics": [
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 0.24783300000001418,
+        "composeMs": 1.4710829999999646,
+        "generateMs": 1.0018329999999764,
+        "repairMs": 6.502042000000017,
+        "validateMs": 5.454499999999996,
+        "validationsPerRow": 3,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 0,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "dense/cityjson.bundled.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/cityjson.bundled.schema.json",
+      "instancesTried": 3,
+      "instancesValid": 3,
+      "unsat": false,
+      "failFast": false,
+      "diagnostics": [
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 3.5885419999999613,
+        "composeMs": 9.436749999999961,
+        "generateMs": 1.0882499999999595,
+        "repairMs": 153.39241700000002,
+        "validateMs": 189.49675000000002,
+        "validationsPerRow": 3,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 0,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "dense/cloudformation-provider-definition.bundled.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/cloudformation-provider-definition.bundled.schema.json",
+      "instancesTried": 0,
+      "instancesValid": 0,
+      "unsat": true,
+      "failFast": true,
+      "diagnostics": [
+        {
+          "code": "AP_FALSE_UNSAFE_PATTERN",
+          "canonPath": "/properties/typeConfiguration/properties/properties",
+          "details": {
+            "sourceKind": "patternProperties",
+            "patternSource": "(?!CloudFormation)^[A-Za-z0-9]{1,64}$"
+          }
+        },
+        {
+          "code": "AP_FALSE_INTERSECTION_APPROX",
+          "canonPath": "/properties/typeConfiguration/properties/properties",
+          "details": {
+            "reason": "nonAnchoredPattern"
+          }
+        },
+        {
+          "code": "AP_FALSE_INTERSECTION_APPROX",
+          "canonPath": "/properties/typeConfiguration/properties/properties",
+          "details": {
+            "reason": "presencePressure"
+          }
+        },
+        {
+          "code": "UNSAT_AP_FALSE_EMPTY_COVERAGE",
+          "canonPath": "/properties/typeConfiguration/properties/properties",
+          "details": {
+            "minProperties": 1
+          }
+        },
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 1.224375000000009,
+        "composeMs": 143.09970899999996,
+        "generateMs": 0,
+        "repairMs": 0,
+        "validateMs": 0,
+        "validationsPerRow": 0,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 0,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "dense/epcis-2.0.bundled.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/epcis-2.0.bundled.schema.json",
+      "instancesTried": 3,
+      "instancesValid": 0,
+      "unsat": false,
+      "failFast": false,
+      "diagnostics": [
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 3.0774999999999864,
+        "composeMs": 3.9394589999999425,
+        "generateMs": 0.47720800000001873,
+        "repairMs": 10.173625000000015,
+        "validateMs": 10.434542000000079,
+        "validationsPerRow": 0,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 0,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "dense/kubernetes-deployment.bundled.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/kubernetes-deployment.bundled.schema.json",
+      "instancesTried": 3,
+      "instancesValid": 3,
+      "unsat": false,
+      "failFast": false,
+      "diagnostics": [
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 3.8920409999999492,
+        "composeMs": 3.9712500000000546,
+        "generateMs": 0.5922080000000278,
+        "repairMs": 55.709125000000085,
+        "validateMs": 62.2209160000001,
+        "validationsPerRow": 3,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 0,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "dense/openbanking-account-info.bundled",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/openbanking-account-info.bundled.json",
+      "instancesTried": 3,
+      "instancesValid": 3,
+      "unsat": false,
+      "failFast": false,
+      "diagnostics": [
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 25.531999999999925,
+        "composeMs": 10.253708999999844,
+        "generateMs": 2.40237500000012,
+        "repairMs": 29.795084000000088,
+        "validateMs": 10.245374999999967,
+        "validationsPerRow": 3,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 0,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "dense/openbanking-obaccount6.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/openbanking-obaccount6.schema.json",
+      "instancesTried": 3,
+      "instancesValid": 3,
+      "unsat": false,
+      "failFast": false,
+      "diagnostics": [
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 0.46925000000010186,
+        "composeMs": 1.0920000000000982,
+        "generateMs": 0.20929100000012113,
+        "repairMs": 13.071583000000146,
+        "validateMs": 13.680875000000015,
+        "validationsPerRow": 3,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 0,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "dense/sdm-vehicle.bundled.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/sdm-vehicle.bundled.schema.json",
+      "instancesTried": 3,
+      "instancesValid": 3,
+      "unsat": false,
+      "failFast": false,
+      "diagnostics": [
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 0.8097920000000158,
+        "composeMs": 1.100458000000117,
+        "generateMs": 9.759999999999991,
+        "repairMs": 16.795957999999928,
+        "validateMs": 20.909625000000005,
+        "validationsPerRow": 3,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 0,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "dense/stripe-openapi.bundled.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/stripe-openapi.bundled.schema.json",
+      "instancesTried": 3,
+      "instancesValid": 3,
+      "unsat": false,
+      "failFast": false,
+      "diagnostics": [
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/account/properties/business_profile"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/account/properties/groups"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/account/properties/settings"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/account_branding_settings/properties/icon"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/account_branding_settings/properties/logo"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/account_business_profile/properties/annual_revenue"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/account_business_profile/properties/support_address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/application_fee/properties/balance_transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/application_fee/properties/fee_source"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/application_fee/properties/originating_transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/automatic_tax/properties/liability"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/balance_settings_resource_payments/properties/payouts"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/balance_settings_resource_payouts/properties/schedule"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/balance_transaction/properties/source"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/bank_account/properties/account"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/bank_account/properties/customer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/bank_account/properties/future_requirements"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/bank_account/properties/requirements"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing.alert/properties/usage_threshold"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing.credit_balance_transaction/properties/credit"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing.credit_balance_transaction/properties/debit"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing.credit_balance_transaction/properties/test_clock"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing.credit_grant/properties/test_clock"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing.meter_event_adjustment/properties/cancel"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing_bill_resource_invoice_item_parents_invoice_item_parent/properties/subscription_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing_bill_resource_invoicing_lines_common_proration_details/properties/credited_items"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing_bill_resource_invoicing_lines_parents_invoice_line_item_invoice_item_parent/properties/proration_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing_bill_resource_invoicing_lines_parents_invoice_line_item_parent/properties/invoice_item_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing_bill_resource_invoicing_lines_parents_invoice_line_item_parent/properties/subscription_item_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing_bill_resource_invoicing_lines_parents_invoice_line_item_subscription_item_parent/properties/proration_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing_bill_resource_invoicing_parents_invoice_parent/properties/quote_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing_bill_resource_invoicing_parents_invoice_parent/properties/subscription_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing_bill_resource_invoicing_taxes_tax/properties/tax_rate_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing_credit_grants_resource_amount/properties/monetary"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing_credit_grants_resource_balance_credit/properties/credits_application_invoice_voided"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing_credit_grants_resource_balance_debit/properties/credits_applied"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing_details/properties/address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing_portal.configuration/properties/application"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/billing_portal.session/properties/flow"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/card/properties/account"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/card/properties/customer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/charge/properties/application"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/charge/properties/application_fee"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/charge/properties/balance_transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/charge/properties/customer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/charge/properties/failure_balance_transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/charge/properties/fraud_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/charge/properties/on_behalf_of"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/charge/properties/outcome"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/charge/properties/payment_intent"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/charge/properties/payment_method_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/charge/properties/review"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/charge/properties/shipping"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/charge/properties/source_transfer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/charge/properties/transfer_data"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/adaptive_pricing"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/after_expiration"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/collected_information"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/consent"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/consent_collection"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/currency_conversion"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/customer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/customer_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/invoice"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/invoice_creation"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/payment_intent"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/payment_link"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/payment_method_configuration_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/payment_method_options"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/permissions"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/saved_payment_method_options"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/setup_intent"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/shipping_address_collection"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/shipping_cost"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/subscription"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/total_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/checkout.session/properties/wallet_options"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/climate_removals_order_deliveries/properties/location"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/confirmation_token/properties/mandate_data"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/confirmation_token/properties/payment_method_options"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/confirmation_token/properties/payment_method_preview"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/confirmation_token/properties/shipping"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/confirmation_tokens_resource_mandate_data_resource_customer_acceptance/properties/online"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/confirmation_tokens_resource_payment_method_options/properties/card"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/confirmation_tokens_resource_payment_method_preview/properties/customer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/credit_note/properties/customer_balance_transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/credit_note/properties/shipping_cost"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/credit_note_refund/properties/payment_record_refund"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/currency_option/properties/custom_unit_amount"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/customer/properties/address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/customer/properties/cash_balance"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/customer/properties/default_source"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/customer/properties/discount"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/customer/properties/shipping"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/customer/properties/test_clock"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/customer_balance_transaction/properties/checkout_session"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/customer_balance_transaction/properties/credit_note"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/customer_balance_transaction/properties/invoice"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/customer_session_resource_components_resource_customer_sheet/properties/features"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/customer_session_resource_components_resource_mobile_payment_element/properties/features"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/customer_session_resource_components_resource_payment_element/properties/features"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/customer_tax/properties/location"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/deleted_discount/properties/customer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/deleted_discount/properties/promotion_code"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/discount/properties/customer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/discount/properties/promotion_code"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/discount_source/properties/coupon"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/discounts_resource_stackable_discount/properties/coupon"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/discounts_resource_stackable_discount/properties/discount"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/discounts_resource_stackable_discount/properties/promotion_code"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/dispute/properties/payment_intent"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/dispute_enhanced_evidence_visa_compelling_evidence3/properties/disputed_transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/dispute_evidence/properties/cancellation_policy"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/dispute_evidence/properties/customer_communication"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/dispute_evidence/properties/customer_signature"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/dispute_evidence/properties/duplicate_charge_documentation"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/dispute_evidence/properties/receipt"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/dispute_evidence/properties/refund_policy"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/dispute_evidence/properties/service_documentation"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/dispute_evidence/properties/shipping_documentation"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/dispute_evidence/properties/uncategorized_file"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/dispute_visa_compelling_evidence3_disputed_transaction/properties/shipping_address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/dispute_visa_compelling_evidence3_prior_undisputed_transaction/properties/shipping_address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/event/properties/request"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/fee_refund/properties/balance_transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/financial_connections.account/properties/account_holder"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/financial_connections.account/properties/balance"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/financial_connections.account/properties/balance_refresh"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/financial_connections.account/properties/ownership"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/financial_connections.account/properties/ownership_refresh"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/financial_connections.account/properties/transaction_refresh"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/financial_connections.session/properties/account_holder"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/forwarding.request/properties/request_context"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/forwarding.request/properties/request_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/forwarding.request/properties/response_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/gelato_document_report/properties/address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/gelato_document_report/properties/dob"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/gelato_document_report/properties/error"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/gelato_document_report/properties/expiration_date"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/gelato_document_report/properties/issued_date"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/gelato_email_report/properties/error"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/gelato_id_number_report/properties/dob"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/gelato_id_number_report/properties/error"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/gelato_phone_report/properties/error"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/gelato_selfie_report/properties/error"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/gelato_verified_outputs/properties/address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/gelato_verified_outputs/properties/dob"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/identity.verification_session/properties/last_error"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/identity.verification_session/properties/last_verification_report"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/identity.verification_session/properties/options"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/identity.verification_session/properties/provided_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/identity.verification_session/properties/redaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/identity.verification_session/properties/verified_outputs"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoice/properties/application"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoice/properties/confirmation_secret"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoice/properties/customer_address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoice/properties/customer_shipping"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoice/properties/default_payment_method"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoice/properties/default_source"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoice/properties/from_invoice"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoice/properties/last_finalization_error"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoice/properties/latest_revision"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoice/properties/on_behalf_of"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoice/properties/parent"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoice/properties/rendering"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoice/properties/shipping_cost"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoice/properties/shipping_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoice/properties/test_clock"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoice_setting_customer_setting/properties/default_payment_method"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoice_setting_customer_setting/properties/rendering_options"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoice_setting_subscription_schedule_phase_setting/properties/issuer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoiceitem/properties/invoice"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoiceitem/properties/parent"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoiceitem/properties/pricing"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoiceitem/properties/test_clock"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoices_payment_method_options/properties/acss_debit"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoices_payment_method_options/properties/bancontact"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoices_payment_method_options/properties/card"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoices_payment_method_options/properties/customer_balance"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoices_payment_method_options/properties/konbini"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoices_payment_method_options/properties/sepa_debit"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoices_payment_method_options/properties/us_bank_account"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoices_payment_settings/properties/payment_method_options"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoices_resource_invoice_rendering/properties/pdf"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoices_resource_pretax_credit_amount/properties/credit_balance_transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/invoices_resource_shipping_cost/properties/shipping_rate"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.authorization/properties/amount_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.authorization/properties/cardholder"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.authorization/properties/fleet"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.authorization/properties/fuel"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.authorization/properties/network_data"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.authorization/properties/pending_request"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.authorization/properties/token"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.authorization/properties/treasury"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.card/properties/personalization_design"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.card/properties/replaced_by"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.card/properties/replacement_for"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.card/properties/shipping"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.card/properties/wallets"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.cardholder/properties/company"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.cardholder/properties/individual"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.cardholder/properties/spending_controls"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.dispute/properties/treasury"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.personalization_design/properties/card_logo"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.personalization_design/properties/carrier_text"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.transaction/properties/amount_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.transaction/properties/authorization"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.transaction/properties/balance_transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.transaction/properties/cardholder"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.transaction/properties/dispute"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.transaction/properties/network_data"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.transaction/properties/purchase_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.transaction/properties/token"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing.transaction/properties/treasury"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_authorization_fleet_data/properties/cardholder_prompt_data"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_authorization_fleet_data/properties/reported_breakdown"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_authorization_fleet_reported_breakdown/properties/fuel"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_authorization_fleet_reported_breakdown/properties/non_fuel"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_authorization_fleet_reported_breakdown/properties/tax"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_authorization_pending_request/properties/amount_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_authorization_request/properties/amount_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_authorization_verification_data/properties/authentication_exemption"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_authorization_verification_data/properties/three_d_secure"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_card_shipping/properties/address_validation"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_card_shipping/properties/customs"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_card_shipping_address_validation/properties/normalized_address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_cardholder_card_issuing/properties/user_terms_acceptance"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_cardholder_id_document/properties/back"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_cardholder_id_document/properties/front"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_cardholder_individual/properties/card_issuing"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_cardholder_individual/properties/dob"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_cardholder_individual/properties/verification"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_cardholder_verification/properties/document"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_dispute_canceled_evidence/properties/additional_documentation"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_dispute_duplicate_evidence/properties/additional_documentation"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_dispute_duplicate_evidence/properties/card_statement"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_dispute_duplicate_evidence/properties/cash_receipt"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_dispute_duplicate_evidence/properties/check_image"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_dispute_fraudulent_evidence/properties/additional_documentation"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_dispute_merchandise_not_as_described_evidence/properties/additional_documentation"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_dispute_no_valid_authorization_evidence/properties/additional_documentation"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_dispute_not_received_evidence/properties/additional_documentation"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_dispute_other_evidence/properties/additional_documentation"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_dispute_service_not_as_described_evidence/properties/additional_documentation"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_transaction_fleet_data/properties/cardholder_prompt_data"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_transaction_fleet_data/properties/reported_breakdown"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_transaction_fleet_reported_breakdown/properties/fuel"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_transaction_fleet_reported_breakdown/properties/non_fuel"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_transaction_fleet_reported_breakdown/properties/tax"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_transaction_purchase_details/properties/fleet"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_transaction_purchase_details/properties/flight"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_transaction_purchase_details/properties/fuel"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/issuing_transaction_purchase_details/properties/lodging"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/item/properties/price"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/klarna_payer_details/properties/address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/legal_entity_company/properties/address_kana"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/legal_entity_company/properties/address_kanji"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/legal_entity_company/properties/directorship_declaration"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/legal_entity_company/properties/ownership_declaration"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/legal_entity_company/properties/representative_declaration"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/legal_entity_company/properties/verification"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/legal_entity_company_verification_document/properties/back"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/legal_entity_company_verification_document/properties/front"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/legal_entity_person_verification/properties/additional_document"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/legal_entity_person_verification_document/properties/back"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/legal_entity_person_verification_document/properties/front"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/line_item/properties/parent"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/line_item/properties/pricing"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/line_item/properties/subscription"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_attempt_record/properties/customer_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_attempt_record/properties/payment_method_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_attempt_record/properties/shipping_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent/properties/application"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent/properties/automatic_payment_methods"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent/properties/customer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent/properties/last_payment_error"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent/properties/latest_charge"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent/properties/next_action"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent/properties/on_behalf_of"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent/properties/payment_method"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent/properties/payment_method_configuration_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent/properties/payment_method_options"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent/properties/processing"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent/properties/review"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent/properties/shipping"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent/properties/transfer_data"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent_amount_details_line_item/properties/payment_method_options"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent_amount_details_line_item/properties/tax"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent_next_action_konbini_stores/properties/familymart"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent_next_action_konbini_stores/properties/lawson"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent_next_action_konbini_stores/properties/ministop"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent_next_action_konbini_stores/properties/seicomart"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent_payment_method_options_card/properties/installments"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_intent_payment_method_options_card/properties/mandate_options"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_link/properties/application"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_link/properties/consent_collection"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_link/properties/invoice_creation"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_link/properties/on_behalf_of"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_link/properties/payment_intent_data"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_link/properties/restrictions"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_link/properties/shipping_address_collection"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_link/properties/subscription_data"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_link/properties/transfer_data"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_links_resource_automatic_tax/properties/liability"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_links_resource_consent_collection/properties/payment_method_reuse_agreement"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_links_resource_custom_text/properties/after_submit"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_links_resource_custom_text/properties/shipping_address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_links_resource_custom_text/properties/submit"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_links_resource_custom_text/properties/terms_of_service_acceptance"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_links_resource_invoice_creation/properties/invoice_data"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_links_resource_invoice_settings/properties/issuer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_links_resource_invoice_settings/properties/rendering_options"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_links_resource_optional_item/properties/adjustable_quantity"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_links_resource_subscription_data/properties/trial_settings"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method/properties/customer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_card/properties/checks"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_card/properties/generated_from"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_card/properties/networks"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_card/properties/three_d_secure_usage"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_card/properties/wallet"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_card_generated_card/properties/payment_method_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_card_generated_card/properties/setup_attempt"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_card_present/properties/networks"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_card_present/properties/offline"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_card_wallet_masterpass/properties/billing_address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_card_wallet_masterpass/properties/shipping_address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_card_wallet_visa_checkout/properties/billing_address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_card_wallet_visa_checkout/properties/shipping_address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_custom/properties/logo"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_bancontact/properties/generated_sepa_debit"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_bancontact/properties/generated_sepa_debit_mandate"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_card/properties/checks"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_card/properties/installments"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_card/properties/network_token"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_card/properties/three_d_secure"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_card/properties/wallet"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_card_installments/properties/plan"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_card_present/properties/offline"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_card_present/properties/receipt"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_card_wallet_masterpass/properties/billing_address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_card_wallet_masterpass/properties/shipping_address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_card_wallet_visa_checkout/properties/billing_address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_card_wallet_visa_checkout/properties/shipping_address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_ideal/properties/generated_sepa_debit"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_ideal/properties/generated_sepa_debit_mandate"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_interac_present/properties/receipt"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_klarna/properties/payer_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_konbini/properties/store"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_mobilepay/properties/card"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_paypal/properties/seller_protection"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_sofort/properties/generated_sepa_debit"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_details_sofort/properties/generated_sepa_debit_mandate"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_interac_present/properties/networks"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_klarna/properties/dob"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_options_card_installments/properties/plan"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_sepa_debit/properties/generated_from"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_us_bank_account/properties/networks"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_method_us_bank_account/properties/status_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_pages_checkout_session_after_expiration/properties/recovery"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_pages_checkout_session_automatic_tax/properties/liability"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_pages_checkout_session_branding_settings/properties/icon"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_pages_checkout_session_branding_settings/properties/logo"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_pages_checkout_session_collected_information/properties/shipping_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_pages_checkout_session_consent_collection/properties/payment_method_reuse_agreement"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_pages_checkout_session_custom_text/properties/after_submit"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_pages_checkout_session_custom_text/properties/shipping_address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_pages_checkout_session_custom_text/properties/submit"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_pages_checkout_session_custom_text/properties/terms_of_service_acceptance"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_pages_checkout_session_customer_details/properties/address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_pages_checkout_session_discount/properties/coupon"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_pages_checkout_session_discount/properties/promotion_code"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_pages_checkout_session_invoice_settings/properties/issuer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_pages_checkout_session_invoice_settings/properties/rendering_options"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_pages_checkout_session_optional_item/properties/adjustable_quantity"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_pages_checkout_session_shipping_cost/properties/shipping_rate"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_record/properties/customer_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_record/properties/payment_method_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payment_record/properties/shipping_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payments_primitives_payment_records_resource_payment_method_card_details/properties/checks"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payments_primitives_payment_records_resource_payment_method_card_details/properties/network_token"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payments_primitives_payment_records_resource_payment_method_card_details/properties/three_d_secure"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payments_primitives_payment_records_resource_payment_method_card_details/properties/wallet"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payments_primitives_payment_records_resource_payment_method_details/properties/billing_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payout/properties/application_fee"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payout/properties/balance_transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payout/properties/destination"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payout/properties/failure_balance_transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payout/properties/original_payout"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payout/properties/reversed_by"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/payout/properties/trace_id"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/person/properties/address_kana"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/person/properties/address_kanji"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/person/properties/future_requirements"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/person/properties/requirements"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/person/properties/us_cfpb_data"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/person_additional_tos_acceptances/properties/account"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/person_us_cfpb_data/properties/ethnicity_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/person_us_cfpb_data/properties/race_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/plan/properties/product"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/plan/properties/transform_usage"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/portal_flows_flow/properties/subscription_cancel"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/portal_flows_flow/properties/subscription_update"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/portal_flows_flow/properties/subscription_update_confirm"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/portal_flows_flow_after_completion/properties/hosted_confirmation"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/portal_flows_flow_after_completion/properties/redirect"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/portal_flows_flow_subscription_cancel/properties/retention"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/portal_flows_retention/properties/coupon_offer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/price/properties/custom_unit_amount"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/price/properties/recurring"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/price/properties/transform_quantity"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/product/properties/default_price"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/product/properties/package_dimensions"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/product/properties/tax_code"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/promotion_code/properties/customer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/promotion_codes_resource_promotion/properties/coupon"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/quote/properties/application"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/quote/properties/customer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/quote/properties/from_quote"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/quote/properties/invoice"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/quote/properties/on_behalf_of"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/quote/properties/subscription"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/quote/properties/subscription_schedule"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/quote/properties/test_clock"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/quote/properties/transfer_data"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/quotes_resource_automatic_tax/properties/liability"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/quotes_resource_computed/properties/recurring"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/refund/properties/balance_transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/refund/properties/charge"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/refund/properties/payment_intent"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/refund/properties/source_transfer_reversal"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/refund/properties/transfer_reversal"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/reporting.report_run/properties/result"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/review/properties/charge"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/review/properties/ip_address_location"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/review/properties/session"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/scheduled_query_run/properties/file"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/schedules_phase_automatic_tax/properties/liability"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/sepa_debit_generated_from/properties/charge"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/sepa_debit_generated_from/properties/setup_attempt"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_attempt/properties/application"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_attempt/properties/customer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_attempt/properties/on_behalf_of"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_attempt/properties/setup_error"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_attempt_payment_method_details_bancontact/properties/generated_sepa_debit"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_attempt_payment_method_details_bancontact/properties/generated_sepa_debit_mandate"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_attempt_payment_method_details_card/properties/checks"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_attempt_payment_method_details_card/properties/three_d_secure"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_attempt_payment_method_details_card/properties/wallet"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_attempt_payment_method_details_card_present/properties/generated_card"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_attempt_payment_method_details_card_present/properties/offline"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_attempt_payment_method_details_ideal/properties/generated_sepa_debit"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_attempt_payment_method_details_ideal/properties/generated_sepa_debit_mandate"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_attempt_payment_method_details_sofort/properties/generated_sepa_debit"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_attempt_payment_method_details_sofort/properties/generated_sepa_debit_mandate"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_intent/properties/application"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_intent/properties/automatic_payment_methods"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_intent/properties/customer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_intent/properties/last_setup_error"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_intent/properties/latest_attempt"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_intent/properties/mandate"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_intent/properties/next_action"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_intent/properties/on_behalf_of"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_intent/properties/payment_method"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_intent/properties/payment_method_configuration_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_intent/properties/payment_method_options"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_intent/properties/single_use_mandate"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/setup_intent_payment_method_options_card/properties/mandate_options"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/shipping_rate/properties/delivery_estimate"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/shipping_rate/properties/tax_code"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/shipping_rate_delivery_estimate/properties/maximum"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/shipping_rate_delivery_estimate/properties/minimum"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/source/properties/owner"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/source_owner/properties/address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/source_owner/properties/verified_address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription/properties/application"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription/properties/billing_cycle_anchor_config"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription/properties/billing_thresholds"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription/properties/cancellation_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription/properties/default_payment_method"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription/properties/default_source"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription/properties/latest_invoice"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription/properties/on_behalf_of"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription/properties/pause_collection"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription/properties/payment_settings"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription/properties/pending_invoice_item_interval"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription/properties/pending_setup_intent"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription/properties/pending_update"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription/properties/schedule"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription/properties/test_clock"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription/properties/transfer_data"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription/properties/trial_settings"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription_automatic_tax/properties/liability"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription_item/properties/billing_thresholds"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription_schedule/properties/application"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription_schedule/properties/current_phase"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription_schedule/properties/subscription"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription_schedule/properties/test_clock"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription_schedule_configuration_item/properties/billing_thresholds"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription_schedule_phase_configuration/properties/billing_thresholds"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription_schedule_phase_configuration/properties/default_payment_method"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription_schedule_phase_configuration/properties/invoice_settings"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription_schedule_phase_configuration/properties/on_behalf_of"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription_schedule_phase_configuration/properties/transfer_data"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription_schedules_resource_default_settings/properties/billing_thresholds"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription_schedules_resource_default_settings/properties/default_payment_method"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription_schedules_resource_default_settings/properties/on_behalf_of"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription_schedules_resource_default_settings/properties/transfer_data"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscription_schedules_resource_default_settings_automatic_tax/properties/liability"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscriptions_resource_billing_mode/properties/flexible"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscriptions_resource_payment_method_options/properties/acss_debit"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscriptions_resource_payment_method_options/properties/bancontact"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscriptions_resource_payment_method_options/properties/card"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscriptions_resource_payment_method_options/properties/customer_balance"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscriptions_resource_payment_method_options/properties/konbini"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscriptions_resource_payment_method_options/properties/sepa_debit"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscriptions_resource_payment_method_options/properties/us_bank_account"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/subscriptions_resource_payment_settings/properties/payment_method_options"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/tax.calculation/properties/ship_from_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/tax.calculation/properties/shipping_cost"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/tax.settings/properties/head_office"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/tax.transaction/properties/reversal"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/tax.transaction/properties/ship_from_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/tax.transaction/properties/shipping_cost"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/tax.transaction_line_item/properties/reversal"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/tax_id/properties/customer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/tax_id/properties/owner"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/tax_id/properties/verification"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/tax_product_resource_customer_details/properties/address"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/tax_product_resource_line_item_tax_breakdown/properties/tax_rate_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/tax_product_resource_tax_rate_details/properties/flat_amount"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/tax_rate/properties/flat_amount"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/terminal.reader/properties/action"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/terminal.reader/properties/location"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/terminal_reader_reader_resource_input/properties/custom_text"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/terminal_reader_reader_resource_set_reader_display_action/properties/cart"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/thresholds_resource_usage_alert_filter/properties/customer"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/topup/properties/balance_transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/topup/properties/source"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/transfer/properties/balance_transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/transfer/properties/destination"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/transfer/properties/source_transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/transfer_reversal/properties/balance_transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/transfer_reversal/properties/destination_payment_refund"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/transfer_reversal/properties/source_refund"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.credit_reversal/properties/transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.debit_reversal/properties/linked_flows"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.debit_reversal/properties/transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.financial_account/properties/platform_restrictions"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.inbound_transfer/properties/failure_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.inbound_transfer/properties/origin_payment_method_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.inbound_transfer/properties/transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.outbound_payment/properties/destination_payment_method_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.outbound_payment/properties/end_user_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.outbound_payment/properties/returned_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.outbound_payment/properties/tracking_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.outbound_transfer/properties/returned_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.outbound_transfer/properties/tracking_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.received_credit/properties/reversal_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.received_credit/properties/transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.received_debit/properties/reversal_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.received_debit/properties/transaction"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.transaction/properties/flow_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury.transaction_entry/properties/flow_details"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury_financial_accounts_resource_status_details/properties/closed"
+        },
+        {
+          "code": "OAS_NULLABLE_KEEP_ANNOT",
+          "canonPath": "/components/schemas/treasury_received_credits_resource_linked_flows/properties/source_flow_details"
+        },
+        {
+          "code": "COMPLEXITY_CAP_SCHEMA_SIZE",
+          "canonPath": "",
+          "details": {
+            "limit": 2000000,
+            "observed": 3645458
+          }
+        },
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 271.06162500000005,
+        "composeMs": 86.02470799999992,
+        "generateMs": 26.229583000000048,
+        "repairMs": 244.965375,
+        "validateMs": 35.865291999999954,
+        "validationsPerRow": 3,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 0,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "fhir.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/fhir.schema.json",
+      "instancesTried": 3,
+      "instancesValid": 0,
+      "unsat": false,
+      "failFast": false,
+      "diagnostics": [
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Meta/properties/versionId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ElementDefinition/properties/condition/items/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ElementDefinition_Constraint/properties/key/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ElementDefinition_Mapping/properties/identity/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Account/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ActivityDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ActorDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/AdministrableProductDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/AdverseEvent/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/AllergyIntolerance/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Appointment/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/AppointmentResponse/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ArtifactAssessment/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/AuditEvent/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Basic/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Binary/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/BiologicallyDerivedProduct/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/BiologicallyDerivedProductDispense/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/BodyStructure/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Bundle/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/CapabilityStatement/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/CarePlan/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/CareTeam/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ChargeItem/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ChargeItemDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Citation/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Claim/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ClaimResponse/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ClinicalImpression/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ClinicalUseDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/CodeSystem/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Communication/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/CommunicationRequest/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/CompartmentDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Composition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ConceptMap/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Condition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ConditionDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Consent/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Contract/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Coverage/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/CoverageEligibilityRequest/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/CoverageEligibilityResponse/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/DetectedIssue/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Device/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/DeviceAssociation/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/DeviceDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/DeviceDispense/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/DeviceMetric/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/DeviceRequest/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/DeviceUsage/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/DiagnosticReport/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/DocumentReference/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Encounter/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/EncounterHistory/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Endpoint/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/EnrollmentRequest/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/EnrollmentResponse/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/EpisodeOfCare/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/EventDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Evidence/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/EvidenceReport/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/EvidenceVariable/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/EvidenceVariable_Characteristic/properties/linkId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/EvidenceVariable_Characteristic/properties/definitionId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ExampleScenario/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ExplanationOfBenefit/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/FamilyMemberHistory/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Flag/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/FormularyItem/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/GenomicStudy/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Goal/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/GraphDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/GraphDefinition/properties/start/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/GraphDefinition_Node/properties/nodeId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/GraphDefinition_Link/properties/sourceId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/GraphDefinition_Link/properties/targetId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Group/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/GuidanceResponse/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/HealthcareService/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ImagingSelection/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ImagingSelection/properties/studyUid/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ImagingSelection/properties/seriesUid/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ImagingSelection/properties/frameOfReferenceUid/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ImagingSelection_Instance/properties/uid/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ImagingStudy/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ImagingStudy_Series/properties/uid/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ImagingStudy_Instance/properties/uid/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Immunization/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ImmunizationEvaluation/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ImmunizationRecommendation/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ImplementationGuide/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ImplementationGuide/properties/packageId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ImplementationGuide_DependsOn/properties/packageId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ImplementationGuide_Resource/properties/groupingId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Ingredient/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/InsurancePlan/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/InventoryItem/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/InventoryReport/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Invoice/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Library/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Linkage/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/List/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Location/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ManufacturedItemDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Measure/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/MeasureReport/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Medication/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/MedicationAdministration/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/MedicationDispense/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/MedicationKnowledge/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/MedicationRequest/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/MedicationStatement/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/MedicinalProductDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/MessageDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/MessageHeader/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/MolecularSequence/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/NamingSystem/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/NutritionIntake/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/NutritionOrder/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/NutritionProduct/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Observation/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ObservationDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/OperationDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/OperationOutcome/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Organization/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/OrganizationAffiliation/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/PackagedProductDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Parameters/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Patient/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/PaymentNotice/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/PaymentReconciliation/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Permission/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Person/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/PlanDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/PlanDefinition_Action/properties/goalId/items/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/PlanDefinition_Input/properties/relatedData/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/PlanDefinition_RelatedAction/properties/targetId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Practitioner/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/PractitionerRole/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Procedure/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Provenance/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Questionnaire/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/QuestionnaireResponse/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/RegulatedAuthorization/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/RelatedPerson/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/RequestOrchestration/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/RequestOrchestration_Input/properties/relatedData/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/RequestOrchestration_RelatedAction/properties/targetId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Requirements/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Requirements_Statement/properties/key/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ResearchStudy/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ResearchStudy_ComparisonGroup/properties/linkId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ResearchSubject/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ResearchSubject/properties/assignedComparisonGroup/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ResearchSubject/properties/actualComparisonGroup/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/RiskAssessment/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Schedule/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/SearchParameter/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ServiceRequest/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Slot/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Specimen/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/SpecimenDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/StructureDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/StructureDefinition_Mapping/properties/identity/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/StructureMap/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/StructureMap_Const/properties/name/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/StructureMap_Group/properties/name/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/StructureMap_Group/properties/extends/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/StructureMap_Input/properties/name/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/StructureMap_Rule/properties/name/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/StructureMap_Source/properties/context/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/StructureMap_Source/properties/variable/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/StructureMap_Target/properties/variable/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/StructureMap_Target/properties/listRuleId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/StructureMap_Dependent/properties/name/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Subscription/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/SubscriptionStatus/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/SubscriptionTopic/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Substance/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/SubstanceDefinition/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/SubstanceNucleicAcid/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/SubstancePolymer/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/SubstanceProtein/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/SubstanceReferenceInformation/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/SubstanceSourceMaterial/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/SupplyDelivery/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/SupplyRequest/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Task/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/TerminologyCapabilities/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/TestPlan/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/TestReport/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/TestScript/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/TestScript_Variable/properties/sourceId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/TestScript_Operation/properties/requestId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/TestScript_Operation/properties/responseId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/TestScript_Operation/properties/sourceId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/TestScript_Operation/properties/targetId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/TestScript_Assert/properties/sourceId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/TestScript_Assert/properties/validateProfileId/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/Transport/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/ValueSet/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/VerificationResult/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "DEFS_TARGET_MISSING",
+          "canonPath": "/$defs/VisionPrescription/properties/id/$ref",
+          "details": {
+            "target": "#/$defs/id"
+          }
+        },
+        {
+          "code": "COMPLEXITY_CAP_SCHEMA_SIZE",
+          "canonPath": "",
+          "details": {
+            "limit": 2000000,
+            "observed": 3435810
+          }
+        },
+        {
+          "code": "TRIALS_SKIPPED_LARGE_ONEOF",
+          "canonPath": "/oneOf",
+          "details": {
+            "reason": "largeOneOf"
+          }
+        },
+        {
+          "code": "TRIALS_SKIPPED_LARGE_ONEOF",
+          "canonPath": "/$defs/ResourceList/oneOf",
+          "details": {
+            "reason": "largeOneOf"
+          }
+        },
+        {
+          "code": "NAME_AUTOMATON_COMPLEXITY_CAPPED",
+          "canonPath": "/$defs/ElementDefinition",
+          "details": {
+            "statesCap": 4096,
+            "observedStates": 4096,
+            "component": "nfa"
+          }
+        },
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 95.31525000000033,
+        "composeMs": 259.4250000000002,
+        "generateMs": 35.97933400000011,
+        "repairMs": 21.44879200000014,
+        "validateMs": 54.231083000000126,
+        "validationsPerRow": 0,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 1,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "github-workflow.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/github-workflow.schema.json",
+      "instancesTried": 3,
+      "instancesValid": 3,
+      "unsat": false,
+      "failFast": false,
+      "diagnostics": [
+        {
+          "code": "NAME_AUTOMATON_COMPLEXITY_CAPPED",
+          "canonPath": "/properties/on/oneOf/2/properties/workflow_call/properties/inputs",
+          "details": {
+            "maxKEnumeration": 10000,
+            "bfsCandidatesCap": 32768,
+            "triedCandidates": 32768,
+            "tried": 32768,
+            "component": "bfs"
+          }
+        },
+        {
+          "code": "NAME_AUTOMATON_COMPLEXITY_CAPPED",
+          "canonPath": "/properties/on/oneOf/2/properties/workflow_call/properties/outputs",
+          "details": {
+            "maxKEnumeration": 10000,
+            "bfsCandidatesCap": 32768,
+            "triedCandidates": 32768,
+            "tried": 32768,
+            "component": "bfs"
+          }
+        },
+        {
+          "code": "NAME_AUTOMATON_COMPLEXITY_CAPPED",
+          "canonPath": "/properties/on/oneOf/2/properties/workflow_call/properties/secrets",
+          "details": {
+            "maxKEnumeration": 10000,
+            "bfsCandidatesCap": 32768,
+            "triedCandidates": 32768,
+            "tried": 32768,
+            "component": "bfs"
+          }
+        },
+        {
+          "code": "NAME_AUTOMATON_COMPLEXITY_CAPPED",
+          "canonPath": "/properties/on/oneOf/2/properties/workflow_dispatch/properties/inputs",
+          "details": {
+            "maxKEnumeration": 10000,
+            "bfsCandidatesCap": 32768,
+            "triedCandidates": 32768,
+            "tried": 32768,
+            "component": "bfs"
+          }
+        },
+        {
+          "code": "NAME_AUTOMATON_COMPLEXITY_CAPPED",
+          "canonPath": "/properties/jobs",
+          "details": {
+            "maxKEnumeration": 10000,
+            "bfsCandidatesCap": 32768,
+            "triedCandidates": 32768,
+            "tried": 32768,
+            "component": "bfs"
+          }
+        },
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 1.725832999999966,
+        "composeMs": 70.64379099999996,
+        "generateMs": 4.976458000000093,
+        "repairMs": 30.975166000000172,
+        "validateMs": 38.94541699999991,
+        "validationsPerRow": 3,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 5,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "google-analytics-event.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/google-analytics-event.schema.json",
+      "instancesTried": 3,
+      "instancesValid": 3,
+      "unsat": false,
+      "failFast": false,
+      "diagnostics": [
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 0.31079200000021956,
+        "composeMs": 0.5031249999997272,
+        "generateMs": 0.05787499999996726,
+        "repairMs": 7.540834000000359,
+        "validateMs": 6.433041999999659,
+        "validationsPerRow": 3,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 0,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "google-audit-log-entry.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/google-audit-log-entry.schema.json",
+      "instancesTried": 3,
+      "instancesValid": 3,
+      "unsat": false,
+      "failFast": false,
+      "diagnostics": [
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 0.5811659999999392,
+        "composeMs": 0.7523750000000291,
+        "generateMs": 0.08112499999970169,
+        "repairMs": 6.947625000000244,
+        "validateMs": 6.120708999999806,
+        "validationsPerRow": 3,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 0,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "google-pubsub-event.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/google-pubsub-event.schema.json",
+      "instancesTried": 3,
+      "instancesValid": 3,
+      "unsat": false,
+      "failFast": false,
+      "diagnostics": [
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 0.09429099999988466,
+        "composeMs": 0.2707909999999174,
+        "generateMs": 0.03054199999996854,
+        "repairMs": 2.3557080000000497,
+        "validateMs": 3.362833000000137,
+        "validationsPerRow": 3,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 0,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "kubernetes-deployment.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/kubernetes-deployment.schema.json",
+      "instancesTried": 0,
+      "instancesValid": 0,
+      "unsat": false,
+      "failFast": true,
+      "diagnostics": [
+        {
+          "code": "EXTERNAL_REF_UNRESOLVED",
+          "canonPath": "",
+          "details": {
+            "mode": "strict",
+            "ref": "https://kubernetesjsonschema.dev/master/_definitions.json#/definitions/io.k8s.api.apps.v1.DeploymentSpec",
+            "failingRefs": [
+              "https://kubernetesjsonschema.dev/master/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
+            ]
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 0.05095899999969333,
+        "composeMs": 4.6609159999998155,
+        "generateMs": 0,
+        "repairMs": 0,
+        "validateMs": 0,
+        "validationsPerRow": 0,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 0,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "metadata.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/metadata.schema.json",
+      "instancesTried": 3,
+      "instancesValid": 3,
+      "unsat": false,
+      "failFast": false,
+      "diagnostics": [
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 0.11133299999983137,
+        "composeMs": 0.2737499999998363,
+        "generateMs": 0.03904099999999744,
+        "repairMs": 1.9375410000002375,
+        "validateMs": 2.5366659999999683,
+        "validationsPerRow": 3,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 0,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "npm-package.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/npm-package.schema.json",
+      "instancesTried": 0,
+      "instancesValid": 0,
+      "unsat": false,
+      "failFast": true,
+      "diagnostics": [
+        {
+          "code": "EXTERNAL_REF_UNRESOLVED",
+          "canonPath": "",
+          "details": {
+            "mode": "strict",
+            "ref": "https://json.schemastore.org/ava.json",
+            "failingRefs": [
+              "https://json.schemastore.org/eslintrc.json"
+            ]
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 1.1694170000000668,
+        "composeMs": 32.933208999999806,
+        "generateMs": 0,
+        "repairMs": 0,
+        "validateMs": 0,
+        "validationsPerRow": 0,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 0,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "openapi-3.1.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/openapi-3.1.schema.json",
+      "instancesTried": 3,
+      "instancesValid": 3,
+      "unsat": false,
+      "failFast": false,
+      "diagnostics": [
+        {
+          "code": "ANYOF_SIMPLIFICATION_SKIPPED_UNEVALUATED",
+          "canonPath": "/anyOf",
+          "details": {
+            "reason": "unevaluatedInScope"
+          }
+        },
+        {
+          "code": "ONEOF_SIMPLIFICATION_SKIPPED_UNEVALUATED",
+          "canonPath": "/$defs/parameter/oneOf",
+          "details": {
+            "reason": "unevaluatedInScope"
+          }
+        },
+        {
+          "code": "ALLOF_SIMPLIFICATION_SKIPPED_UNEVALUATED",
+          "canonPath": "/$defs/parameter/dependentSchemas/schema/allOf",
+          "details": {
+            "reason": "unevaluatedInScope"
+          }
+        },
+        {
+          "code": "ALLOF_SIMPLIFICATION_SKIPPED_UNEVALUATED",
+          "canonPath": "/$defs/media-type/allOf",
+          "details": {
+            "reason": "unevaluatedInScope"
+          }
+        },
+        {
+          "code": "ALLOF_SIMPLIFICATION_SKIPPED_UNEVALUATED",
+          "canonPath": "/$defs/encoding/allOf",
+          "details": {
+            "reason": "unevaluatedInScope"
+          }
+        },
+        {
+          "code": "ONEOF_SIMPLIFICATION_SKIPPED_UNEVALUATED",
+          "canonPath": "/$defs/link/oneOf",
+          "details": {
+            "reason": "unevaluatedInScope"
+          }
+        },
+        {
+          "code": "ONEOF_SIMPLIFICATION_SKIPPED_UNEVALUATED",
+          "canonPath": "/$defs/header/oneOf",
+          "details": {
+            "reason": "unevaluatedInScope"
+          }
+        },
+        {
+          "code": "ALLOF_SIMPLIFICATION_SKIPPED_UNEVALUATED",
+          "canonPath": "/$defs/security-scheme/allOf",
+          "details": {
+            "reason": "unevaluatedInScope"
+          }
+        },
+        {
+          "code": "PNAMES_COMPLEX",
+          "canonPath": "/$defs/components/patternProperties/^(schemas|responses|parameters|examples|requestBodies|headers|securitySchemes|links|callbacks|pathItems)$",
+          "details": {
+            "reason": "UNEVALUATED_IN_SCOPE"
+          }
+        },
+        {
+          "code": "PNAMES_COMPLEX",
+          "canonPath": "/$defs/content",
+          "details": {
+            "reason": "UNEVALUATED_IN_SCOPE"
+          }
+        },
+        {
+          "code": "DYNAMIC_PRESENT",
+          "canonPath": "/$defs/components/properties/schemas/additionalProperties"
+        },
+        {
+          "code": "DYNAMIC_PRESENT",
+          "canonPath": "/$defs/parameter/properties/schema"
+        },
+        {
+          "code": "DYNAMIC_PRESENT",
+          "canonPath": "/$defs/media-type/properties/schema"
+        },
+        {
+          "code": "DYNAMIC_PRESENT",
+          "canonPath": "/$defs/header/properties/schema"
+        },
+        {
+          "code": "DYNAMIC_PRESENT",
+          "canonPath": "/$defs/schema"
+        },
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        },
+        {
+          "code": "EVALTRACE_PROP_SOURCE",
+          "phase": "generate",
+          "canonPath": "/$defs/info",
+          "details": {
+            "name": "title",
+            "via": [
+              "properties"
+            ]
+          }
+        },
+        {
+          "code": "EVALTRACE_PROP_SOURCE",
+          "phase": "generate",
+          "canonPath": "/$defs/info",
+          "details": {
+            "name": "version",
+            "via": [
+              "properties"
+            ]
+          }
+        },
+        {
+          "code": "EVALTRACE_PROP_SOURCE",
+          "phase": "generate",
+          "canonPath": "",
+          "details": {
+            "name": "info",
+            "via": [
+              "properties"
+            ]
+          }
+        },
+        {
+          "code": "EVALTRACE_PROP_SOURCE",
+          "phase": "generate",
+          "canonPath": "",
+          "details": {
+            "name": "openapi",
+            "via": [
+              "properties"
+            ]
+          }
+        },
+        {
+          "code": "EVALTRACE_PROP_SOURCE",
+          "phase": "generate",
+          "canonPath": "",
+          "details": {
+            "name": "webhooks",
+            "via": [
+              "properties"
+            ]
+          }
+        },
+        {
+          "code": "EVALTRACE_PROP_SOURCE",
+          "phase": "generate",
+          "canonPath": "/$defs/info",
+          "details": {
+            "name": "title",
+            "via": [
+              "properties"
+            ]
+          }
+        },
+        {
+          "code": "EVALTRACE_PROP_SOURCE",
+          "phase": "generate",
+          "canonPath": "/$defs/info",
+          "details": {
+            "name": "version",
+            "via": [
+              "properties"
+            ]
+          }
+        },
+        {
+          "code": "EVALTRACE_PROP_SOURCE",
+          "phase": "generate",
+          "canonPath": "",
+          "details": {
+            "name": "info",
+            "via": [
+              "properties"
+            ]
+          }
+        },
+        {
+          "code": "EVALTRACE_PROP_SOURCE",
+          "phase": "generate",
+          "canonPath": "",
+          "details": {
+            "name": "openapi",
+            "via": [
+              "properties"
+            ]
+          }
+        },
+        {
+          "code": "EVALTRACE_PROP_SOURCE",
+          "phase": "generate",
+          "canonPath": "",
+          "details": {
+            "name": "webhooks",
+            "via": [
+              "properties"
+            ]
+          }
+        },
+        {
+          "code": "EVALTRACE_PROP_SOURCE",
+          "phase": "generate",
+          "canonPath": "/$defs/info",
+          "details": {
+            "name": "title",
+            "via": [
+              "properties"
+            ]
+          }
+        },
+        {
+          "code": "EVALTRACE_PROP_SOURCE",
+          "phase": "generate",
+          "canonPath": "/$defs/info",
+          "details": {
+            "name": "version",
+            "via": [
+              "properties"
+            ]
+          }
+        },
+        {
+          "code": "EVALTRACE_PROP_SOURCE",
+          "phase": "generate",
+          "canonPath": "",
+          "details": {
+            "name": "info",
+            "via": [
+              "properties"
+            ]
+          }
+        },
+        {
+          "code": "EVALTRACE_PROP_SOURCE",
+          "phase": "generate",
+          "canonPath": "",
+          "details": {
+            "name": "openapi",
+            "via": [
+              "properties"
+            ]
+          }
+        },
+        {
+          "code": "EVALTRACE_PROP_SOURCE",
+          "phase": "generate",
+          "canonPath": "",
+          "details": {
+            "name": "webhooks",
+            "via": [
+              "properties"
+            ]
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 1.290791999999783,
+        "composeMs": 1.6300000000001091,
+        "generateMs": 6.411958000000141,
+        "repairMs": 25.071915999999874,
+        "validateMs": 25.02979200000027,
+        "validationsPerRow": 3,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 0,
+        "smtTimeouts": 0
+      }
+    },
+    {
+      "id": "tsconfig.schema",
+      "mode": "strict",
+      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/tsconfig.schema.json",
+      "instancesTried": 3,
+      "instancesValid": 3,
+      "unsat": false,
+      "failFast": false,
+      "diagnostics": [
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local"
+            ],
+            "cacheDir": "~/.foundrydata/cache"
+          }
+        }
+      ],
+      "metrics": {
+        "normalizeMs": 2.0982500000000073,
+        "composeMs": 2.3301250000004075,
+        "generateMs": 0.28604200000017954,
+        "repairMs": 23.555708000000322,
+        "validateMs": 29.65866700000015,
+        "validationsPerRow": 3,
+        "repairPassesPerRow": 0
+      },
+      "caps": {
+        "regexCapped": 0,
+        "nameAutomatonCapped": 0,
+        "smtTimeouts": 0
+      }
+    }
+  ],
+  "summary": {
+    "totalSchemas": 20,
+    "schemasWithSuccess": 14,
+    "totalInstancesTried": 48,
+    "totalInstancesValid": 42,
+    "unsatCount": 1,
+    "failFastCount": 4,
+    "caps": {
+      "regexCapped": 0,
+      "nameAutomatonCapped": 6,
+      "smtTimeouts": 0
+    }
+  }
+}

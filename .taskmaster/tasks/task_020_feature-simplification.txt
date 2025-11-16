@@ -1,0 +1,31 @@
+# Task ID: 20
+# Title: Fixtures & Bench profiles
+# Status: pending
+# Dependencies: 8000, 9000, 9115, 9120
+# Priority: medium
+# Description: Provide test fixtures and bench profiles (simple/medium/pathological); property-based generators for fuzzing.
+# Details:
+[Context] §15 bench protocol; §20 unit/property-based tests.
+- spec://§15#bench-protocol, spec://§20#unit
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§15","anchors":["spec://§15#bench-protocol"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Curate JSON Schemas and seeds; expose generators for fuzz tests; track metrics expectations.
+[Deliverables]
+- profiles/{simple,medium,pathological}.json
+- packages/core/test/fixtures/*
+[Commands]
+- pnpm -w test; pnpm -w bench
+[Definition of Done]
+- Bench runs on profiles; fixtures imported by tests.
+
+# Test Strategy:
+Bench smoke and fixture validation with AJV.
+
+# Subtasks:
+## 20001. Create profiles and fixtures [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+

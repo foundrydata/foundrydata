@@ -1,0 +1,56 @@
+# Task ID: 1
+# Title: Scaffolding & Monorepo
+# Status: done
+# Dependencies: 8000, 9000, 9106, 9122
+# Priority: high
+# Description: Initialize monorepo, packages, basic build/test/bench harness, and docs skeleton.
+# Details:
+[Context] SPEC anchors (§6 phases; §22 deliverables).
+- §6: spec://§6#phases
+- §22: spec://§22#packages-core, spec://§22#scripts, spec://§22#docs
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§6","anchors":["spec://§6#phases"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§22","anchors":["spec://§22#packages-core","spec://§22#scripts","spec://§22#docs"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Monorepo (pnpm, TS), packages under packages/core per §22.
+- Wire scripts/bench.ts and basic test runner.
+- Do not implement semantics here; only scaffolding.
+[Deliverables]
+- Create files per §22, including: docs/feature-simplification/feature-support-simplification.md (SPEC path reference only), package workspaces, tsconfig, eslint.
+[Commands]
+- pnpm i
+- pnpm -w build
+- pnpm -w test
+- pnpm -w bench
+[Definition of Done]
+- Workspace builds; tests execute (empty suites OK); bench script runs and prints placeholders.
+- Lint passes; CI workflow skeleton present.
+
+# Test Strategy:
+Smoke tests: build succeeds; unit test runner executes a trivial test; bench script prints headers.
+
+# Subtasks:
+## 1001. Create workspace root (pnpm, TS configs) [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 1002. Init core package [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 1003. Bench harness entry [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 1004. Docs skeleton [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

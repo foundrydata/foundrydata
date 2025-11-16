@@ -1,0 +1,37 @@
+# Task ID: 9101
+# Title: §1 Goal
+# Status: done
+# Dependencies: 9000
+# Priority: low
+# Description: Reference-only: section §1.
+# Details:
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§1","anchors":["spec://§1#goal","spec://§1#acceptance","spec://§1#bench-sli-gate","spec://§1#config-gate"],"notes":"no-embed; fetch-on-demand"}
+
+# Test Strategy:
+None.
+
+# Subtasks:
+## 9101001. Index anchor — goal [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9101002. Index anchor — acceptance [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9101003. Index anchor — bench SLI gate [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9101004. Index anchor — config gate [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

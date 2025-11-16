@@ -3,7 +3,7 @@
  * - No business logic; formats into environment-specific view objects
  */
 
-import { getHttpStatus, type ErrorCode } from './codes';
+import { getHttpStatus, type ErrorCode } from './codes.js';
 import type {
   ErrorContext,
   FoundryError,
