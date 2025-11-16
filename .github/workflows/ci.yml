@@ -43,6 +43,12 @@ jobs:
       - name: ESLint
         run: npm run lint
 
+      - name: Typecheck (tests config)
+        run: npm run typecheck
+
+      - name: Typecheck (project references)
+        run: npm run typecheck:build
+
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest

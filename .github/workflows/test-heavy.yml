@@ -227,3 +227,55 @@ jobs:
           name: memory-test-logs
           path: ./**/vitest*.log
           if-no-files-found: ignore
+
+  corpus-harness:
+    name: Corpus Harness (real-world strict)
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(toJson(github.event.pull_request.labels), 'run-perf')) }}
+    needs: [typecheck]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run corpus harness (real-world strict)
+        run: npm run corpus:real-world
+
+      - name: Upload corpus reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corpus-reports
+          path: reports/*.json
+          if-no-files-found: ignore
+
+  oracle-harness:
+    name: Oracle Harness (AJV invariants)
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(toJson(github.event.pull_request.labels), 'run-perf')) }}
+    needs: [typecheck]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run AJV-oracle harness
+        run: npm run oracle:harness
