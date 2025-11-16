@@ -94,7 +94,7 @@ foundrydata generate \
 ```
 
 **What you'll see:**
-- `--debug-passes` → Effective configuration (rational limits, trials, guards, cache, complexity caps)
+- `--debug-passes` → Effective configuration (rational limits, trials, guards, cache, complexity caps) and compose-time diagnostics/coverage summary (when available)
 - `--print-metrics` → Pipeline metrics (timings per stage, validationsPerRow, repairPassesPerRow, branch trials)
 
 ### Advanced generation options
