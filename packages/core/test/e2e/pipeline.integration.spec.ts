@@ -290,6 +290,125 @@ describe('Foundry pipeline integration scenarios', () => {
     expect(Array.isArray(generated?.items)).toBe(true);
   });
 
+  it('skips registry documents whose $id collide with root schema ids during hydration', async () => {
+    const rootSchema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      $id: 'https://example.com/root.json',
+      type: 'object',
+      $defs: {
+        extension: {
+          $id: 'https://example.com/specificationExtension.json',
+          type: 'object',
+          additionalProperties: true,
+        },
+      },
+      properties: {
+        ext: {
+          $ref: 'https://example.com/specificationExtension.json',
+        },
+      },
+    } as const;
+
+    const registry = new ResolutionRegistry();
+    registry.add({
+      uri: 'https://example.com/specificationExtension.json',
+      schema: {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        $id: 'https://example.com/specificationExtension.json',
+        type: 'object',
+        additionalProperties: false,
+      },
+      contentHash: 'spec-ext-hash',
+    });
+
+    const resolverSpy = vi
+      .spyOn(HttpResolver, 'prefetchAndBuildRegistry')
+      .mockResolvedValue({
+        registry,
+        diagnostics: [],
+        cacheDir: undefined,
+      });
+
+    const result = await executePipeline(rootSchema, {
+      mode: 'strict',
+      generate: {
+        count: 1,
+        planOptions: {
+          resolver: {
+            strategies: ['local', 'remote'],
+            cacheDir: '/tmp/foundrydata-resolver-cache',
+          },
+        },
+      },
+      validate: { validateFormats: false },
+    });
+
+    expect(resolverSpy).toHaveBeenCalledTimes(1);
+    expect(result.status).toBe('completed');
+    expect(result.stages.compose.status).toBe('completed');
+    expect(result.stages.validate.status).toBe('completed');
+
+    const composeOutput = result.stages.compose.output!;
+    const run = composeOutput.diag?.run ?? [];
+    const skipped = run.filter(
+      (entry) => entry.code === 'RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID'
+    );
+    expect(skipped.length).toBeGreaterThan(0);
+    const hasRootExistingRef = skipped.some((entry) => {
+      const details = entry.details as { existingRef?: unknown } | undefined;
+      return details?.existingRef === 'root-schema';
+    });
+    expect(hasRootExistingRef).toBe(true);
+  });
+
+  it('treats hydrateFinalAjv=false as strict+offline even when registry is present', async () => {
+    const registry = new ResolutionRegistry();
+    registry.add({
+      uri: 'https://example.com/external-supplier.schema.json',
+      schema: {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          id: { type: 'integer', minimum: 0 },
+          name: { type: 'string', minLength: 1 },
+        },
+        required: ['id', 'name'],
+      },
+      contentHash: 'test-hash-offline',
+    });
+
+    const resolverSpy = vi
+      .spyOn(HttpResolver, 'prefetchAndBuildRegistry')
+      .mockResolvedValue({
+        registry,
+        diagnostics: [],
+        cacheDir: undefined,
+      });
+
+    const result = await executePipeline(externalRefSchema, {
+      mode: 'strict',
+      generate: {
+        count: 1,
+        planOptions: {
+          resolver: {
+            strategies: ['local', 'remote'],
+            cacheDir: '/tmp/foundrydata-resolver-cache',
+            hydrateFinalAjv: false,
+          },
+        },
+      },
+      validate: { validateFormats: false },
+    });
+
+    expect(resolverSpy).toHaveBeenCalledTimes(1);
+    expect(result.status).toBe('failed');
+    expect(result.stages.compose.status).toBe('failed');
+    const diag = result.artifacts.validationDiagnostics?.[0];
+    expect(diag?.code).toBe(DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED);
+    expect(diag?.details).toMatchObject({ mode: 'strict' });
+  });
+
   it("respects patternPolicy.unsafeUnderApFalse 'warn' in strict mode without changing coverage", async () => {
     const result = await executePipeline(apFalseUnsafePatternSchema, {
       mode: 'strict',
