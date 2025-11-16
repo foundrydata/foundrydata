@@ -54,19 +54,19 @@ This directory contains real‑world schemas and usage patterns you can run loca
 
 ```bash
 # Generate 100 products
-foundrydata generate --schema ecommerce-schema.json --rows 100
+foundrydata generate --schema ecommerce-schema.json --n 100
 
 # Deterministic — same seed => same data
-foundrydata generate --schema saas-user-schema.json --rows 50 --seed 42
+foundrydata generate --schema saas-user-schema.json --n 50 --seed 42
 
 # Arrays of objects example
-foundrydata generate --schema team-with-users-schema.json --rows 10
+foundrydata generate --schema team-with-users-schema.json --n 10
 
 # Print metrics (timings, validations/row, etc.) to stderr
-foundrydata generate --schema api-transaction-schema.json --rows 200 --print-metrics
+foundrydata generate --schema api-transaction-schema.json --n 200 --print-metrics
 
 # Write output to a file (stdout -> redirect)
-foundrydata generate --schema quick-test-schema.json --rows 5 > out.json
+foundrydata generate --schema quick-test-schema.json --n 5 > out.json
 ````
 
 **Streams:** generated data goes to **stdout**; metrics/errors to **stderr**. This enables simple piping in CI.&#x20;
@@ -81,14 +81,14 @@ foundrydata generate --schema quick-test-schema.json --rows 5 > out.json
 # Development/testing with tsx (before building)
 npx tsx packages/cli/src/index.ts generate \
   --schema profiles/real-world/openapi-3.1.schema.json \
-  --rows 10 \
+  --n 10 \
   --print-metrics \
   --debug-passes
 
 # After build
 foundrydata generate \
   --schema profiles/real-world/openapi-3.1.schema.json \
-  --rows 10 \
+  --n 10 \
   --print-metrics \
   --debug-passes
 ```
@@ -101,16 +101,16 @@ foundrydata generate \
 
 ```bash
 # Increase repair attempts for complex schemas
-foundrydata generate --schema complex.json --rows 100 --repair-attempts 5
+foundrydata generate --schema complex.json --n 100 --repair-attempts 5
 
 # Control conditional rewriting
-foundrydata generate --schema conditional.json --rows 50 --rewrite-conditionals safe
+foundrydata generate --schema conditional.json --n 50 --rewrite-conditionals safe
 
 # Skip branch trials for faster generation (score-only selection)
-foundrydata generate --schema large-oneof.json --rows 100 --skip-trials
+foundrydata generate --schema large-oneof.json --n 100 --skip-trials
 
 # Fine-tune branch exploration
-foundrydata generate --schema complex.json --rows 100 \
+foundrydata generate --schema complex.json --n 100 \
   --trials-per-branch 3 \
   --max-branches-to-try 15 \
   --skip-trials-if-branches-gt 60
@@ -124,13 +124,13 @@ Real-world schemas are available in `profiles/real-world/`:
 # OpenAPI 3.1 meta-schema (complex, many conditionals)
 npx tsx packages/cli/src/index.ts generate \
   --schema profiles/real-world/openapi-3.1.schema.json \
-  --rows 5 \
+  --n 5 \
   --print-metrics
 
 # JSON Schema Draft-07 meta-schema
 npx tsx packages/cli/src/index.ts generate \
   --schema profiles/real-world/json-schema-draft-07.json \
-  --rows 5 \
+  --n 5 \
   --print-metrics
 ```
 
@@ -200,7 +200,7 @@ All items emitted on stdout have been validated by AJV against the selected resp
 ```bash
 # External refs policy (no remote resolution; policy only)
 # Values: error | warn | ignore   (default: error)
-foundrydata generate --schema api-transaction-schema.json --rows 50 --external-ref-strict warn
+foundrydata generate --schema api-transaction-schema.json --n 50 --external-ref-strict warn
 ```
 
 * There is **no** `--resolve-externals` flag and **no remote dereferencing**. The flag above only sets the policy for encountering external `$ref`; output is still validated against the original schema.&#x20;
@@ -218,22 +218,22 @@ Examples
 
 ```bash
 # Development with tsx (no build) — local only (no network)
-npx tsx packages/cli/src/index.ts generate --schema ecommerce-schema.json --rows 20 --resolve=local
+npx tsx packages/cli/src/index.ts generate --schema ecommerce-schema.json --n 20 --resolve=local
 
 # Restrict to SchemaStore and write/read local cache
-foundrydata generate --schema profiles/real-world/asyncapi-3.0.schema.json   --rows 10   --resolve=local,schemastore   --cache-dir "~/.foundrydata/cache"
+foundrydata generate --schema profiles/real-world/asyncapi-3.0.schema.json   --n 10   --resolve=local,schemastore   --cache-dir "~/.foundrydata/cache"
 
 # General remote (pre-phase only), with cache directory
-foundrydata generate --schema profiles/real-world/asyncapi-3.0.schema.json   --rows 10   --resolve=local,remote   --cache-dir "~/.foundrydata/cache"
+foundrydata generate --schema profiles/real-world/asyncapi-3.0.schema.json   --n 10   --resolve=local,remote   --cache-dir "~/.foundrydata/cache"
 
 # Remote + Lax: best-effort planning with possible skip of final validation on unresolved externals
 foundrydata generate --schema profiles/real-world/kubernetes-deployment.schema.json \
-  --rows 1 --seed 101 \
+  --n 1 --seed 101 \
   --resolve=local,remote --cache-dir "~/.foundrydata/cache" \
   --external-ref-strict warn --compat lax --debug-passes
 
 # Offline/Lax planning stubs: proceed even if externals are unreachable
-foundrydata generate --schema profiles/real-world/asyncapi-3.0.schema.json   --rows 10   --compat lax   --fail-on-unresolved=false   --resolve=local
+foundrydata generate --schema profiles/real-world/asyncapi-3.0.schema.json   --n 10   --compat lax   --fail-on-unresolved=false   --resolve=local
 ```
 
 Observability
@@ -250,7 +250,7 @@ Observability
 * **Objects under `additionalProperties:false`:** `ecommerce-schema.json` demonstrates the **must‑cover** intersection across `allOf`.&#x20;
 * **Arrays with `contains`:** `team-with-users-schema.json` exercises **bag semantics** (`min/maxContains`) and `uniqueItems` interaction.&#x20;
 * **Numbers:** `api-transaction-schema.json` includes `multipleOf` cases (exact rational with documented caps/fallbacks).&#x20;
-* **Formats:** `saas-user-schema.json` uses `uuid`, `email`, `date-time`. By default, formats are **annotative** (assertive validation is opt‑in).&#x20;
+* **Formats:** `saas-user-schema.json` uses `uuid`, `email`, `date-time`. When you call the high‑level `Generate` facade or use the CLI, formats are validated by default (`validateFormats:true`); at the lower pipeline level (`executePipeline`/`Validate`), formats are **annotative** unless you explicitly enable assertive validation.&#x20;
 
 ---
 

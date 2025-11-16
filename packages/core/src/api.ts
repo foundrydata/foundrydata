@@ -19,6 +19,10 @@ import {
   prepareSchemaForSourceAjv,
 } from './util/ajv-source.js';
 
+// NOTE: The root README “Node.js API” section documents Normalize/Compose/Generate/Validate
+// using the facades exported from this module. Any change to their signatures or defaults
+// should be reflected in that README section to keep docs and DX in sync.
+
 export type Mode = 'strict' | 'lax';
 
 export interface Diagnostic {
