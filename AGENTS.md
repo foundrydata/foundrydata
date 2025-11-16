@@ -9,7 +9,6 @@
 ## TL;DR opératoire
 
 1. **Source de vérité** : SPEC > AGENTS.md > notes Tasks.
-2. **Refactor complet** : **ne pas** utiliser le legacy comme référence (sauf exception formalisée).
 3. **REFONLY** : référencer la SPEC par **anchors** uniquement (pas de copie de prose).
 4. **Boucle** : `get_task` → `set_status(in-progress)` → anchors (max 5) → **PLAN.md** → **PATCH+TESTS** (≥80% sur fichiers touchés) → **build/test/bench** → **diag-schema** → **commit** (template) → `set_status(done)`.
 5. **Diagnostics** : enveloppe `{code, canonPath, details}`, phase correcte, champs obligatoires (`tiebreakRand`, `exclusivityRand`, `budget`).
@@ -18,16 +17,6 @@
 8. **Quotas contexte** : ≤5 anchors/itération, ≤2 sections SPEC complètes (via Grep bornes + Read calculé).
 9. **Bench gates** : `p95 ≤ 120ms`, `mem ≤ 512MB`.
 10. **Escalade** : SPEC ambiguë/contradictoire → bloquer, produire `SPEC-QUESTION.md`.
-
----
-
-## Contexte projet — Refactor complet
-
-* Branche `feature-simplification` = **réécriture from scratch** suivant la SPEC.
-* **Interdits** sans exception documentée :
-
-  * Référencer/porter le legacy pour comportements/architecture.
-  * Conserver dettes/contournements du legacy.
 
 ---
 

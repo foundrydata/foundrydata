@@ -6,35 +6,6 @@
 
 ---
 
-## ⚠️ CRITICAL: Complete Refactor Context
-
-**This is a complete ground-up refactor of an existing legacy codebase.**
-
-### Legacy vs. Refactor
-
-- **Legacy code exists** in the `main` branch with a different architecture
-- **`feature-simplification` branch**: Complete rewrite following the new SPEC
-- **Do NOT reference legacy implementation** for feature behavior or design decisions
-- **Do NOT port legacy code patterns** unless explicitly specified in SPEC
-- **Do NOT assume legacy features should be preserved** unless documented in SPEC
-
-### What This Means for Implementation
-
-1. **SPEC is the ONLY authority** — Legacy code is NOT a reference
-2. **Clean slate implementation** — Build from scratch per SPEC architecture
-3. **No legacy debt** — Don't preserve old patterns, workarounds, or technical debt
-4. **New pipeline** — 5-stage architecture (Normalize → Compose → Generate → Repair → Validate)
-5. **Breaking changes expected** — This is intentional and documented
-
-### Branch Strategy
-
-```
-main (legacy)
-└── feature-simplification (complete refactor)
-    ├── tasks 1..24 (new implementation per SPEC)
-    └── clean architecture, no legacy carryover
-```
-
 **When reviewing code**: If you find legacy patterns or old architecture remnants in the `feature-simplification` branch, they should be removed and replaced with SPEC-compliant implementation.
 
 ---
@@ -446,7 +417,6 @@ npm run test
 
 * Avoid TypeScript escape hatches (`as any`, `// @ts-ignore`, non‑null assertions) unless justified and documented.
 * Don't delete failing code/tests to "green" the suite; fix root causes.
-* **NEVER reference or port legacy code patterns** — This is a complete refactor.
 
 ### Implementation Bias Prevention
 
@@ -542,22 +512,19 @@ Semantics, caps, and fallbacks are governed by the spec.
 
 When implementing features on the `feature-simplification` branch, always follow these rules:
 
-1. **Complete refactor** — Legacy code is NOT a reference; SPEC is the ONLY authority
-2. **SPEC is truth** — Do not enlarge scope beyond what SPEC mandates
-3. **REFONLY anchors** — Reference SPEC sections by anchor only; no text duplication
-4. **Small context** — Load only anchors required by current task via Grep + Read with offset
-5. **Numeric order** — Implement tasks 1..24 in sequence, respecting dependencies
-6. **Clean slate** — Build from scratch per SPEC architecture; no legacy carryover
-7. **AJV is oracle** — Validate against original schema (not transforms)
-8. **Pipeline integrity** — Normalize → Compose → Generate → Repair → Validate
-9. **80% coverage** — Maintain test coverage on all touched files
-10. **Bench gates** — Adhere to p50 ≈ 200-400ms for simple/medium schemas (~1K rows)
-11. **Task Master CLI** — Use `/project:tm/` commands or MCP tools; never parse `.taskmaster/tasks/tasks.json` directly
-12. **No scope creep** — Do not add features, edge cases, or behaviors not specified in SPEC
-13. **Quality first** — Run `npm run task-ready` before marking tasks complete
-
+1. **SPEC is truth** — Do not enlarge scope beyond what SPEC mandates
+2. **REFONLY anchors** — Reference SPEC sections by anchor only; no text duplication
+3. **Small context** — Load only anchors required by current task via Grep + Read with offset
+4. **Numeric order** — Implement tasks 1..24 in sequence, respecting dependencies
+5. **Clean slate** — Build from scratch per SPEC architecture; no legacy carryover
+6. **AJV is oracle** — Validate against original schema (not transforms)
+7. **Pipeline integrity** — Normalize → Compose → Generate → Repair → Validate
+8. **80% coverage** — Maintain test coverage on all touched files
+9. **Bench gates** — Adhere to p50 ≈ 200-400ms for simple/medium schemas (~1K rows)
+10. **Task Master CLI** — Use `/project:tm/` commands or MCP tools; never parse `.taskmaster/tasks/tasks.json` directly
+11. **No scope creep** — Do not add features, edge cases, or behaviors not specified in SPEC
+12. **Quality first** — Run `npm run task-ready` before marking tasks complete
 **When in doubt, refer to SPEC. When SPEC is unclear, escalate.**
-**Never reference legacy code — this is a complete refactor.**
 
 ---
 

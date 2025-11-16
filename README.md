@@ -5,16 +5,9 @@
 
 ---
 
-## ⚠️ Refactor Status
-
-This branch (`feature-simplification`) is a **complete ground-up refactor** of FoundryData following the new architectural SPEC.
-
 **Implementation Status:**
-- ✅ **Implemented**: CLI, 5-Stage Pipeline, Core Generation Engine
-- 🚧 **In Progress**: Performance Benchmarks, Comprehensive Test Coverage
+- ✅ **Implemented**: CLI, 5-Stage Pipeline, Core Generation Engine, Performance Benchmarks, Comprehensive Test Coverage
 - 📋 **Planned**: REST API (`packages/api/`)
-
-**Note**: Some documented features (e.g., performance benchmarks) are being rebuilt for the refactor. The architecture and API signatures described here reflect the new implementation.
 
 ---
 
