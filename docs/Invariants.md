@@ -33,7 +33,7 @@ This note captures the cross-phase guarantees implemented inside `packages/core`
 
 - The repair engine is AJV-driven: each attempted fix replays validation against the planning AJV before accepting the mutation, and diagnostics like `REPAIR_PNAMES_PATTERN_ENUM` capture any renames or deletions that were required to preserve must-cover guarantees.
 - Repair budgets (`budget.tried`, `budget.limit`, `budget.reason`) are always recorded when a guard prevents convergence, and `UNSAT_BUDGET_EXHAUSTED` is emitted before items are surfaced to Validate.
-- Validation reuses the source AJV instance with the same flags checked at startup. External references remain blocked—`EXTERNAL_REF_UNRESOLVED` is emitted with policy, mode, and `skippedValidation` evidence when configured to warn or ignore.
+- Validation reuses the source AJV instance with the same flags checked at startup. External references remain blocked—`EXTERNAL_REF_UNRESOLVED` is emitted with policy, mode, optional `failingRefs`, and `skippedValidation` evidence when configured to warn or ignore.
 
 ## Observability & determinism
 

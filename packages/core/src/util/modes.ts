@@ -136,6 +136,9 @@ export function createExternalRefDiagnostic(
   if (classification.exemplar) {
     details.ref = classification.exemplar;
   }
+  if (classification.failingRefs && classification.failingRefs.length > 0) {
+    details.failingRefs = Array.from(classification.failingRefs);
+  }
   if (mode === 'lax' && shouldSkip) {
     details.skippedValidation = true;
     metrics = { validationsPerRow: 0 };

@@ -187,6 +187,12 @@ foundrydata generate --schema profiles/real-world/asyncapi-3.0.schema.json   --r
 # General remote (pre-phase only), with cache directory
 foundrydata generate --schema profiles/real-world/asyncapi-3.0.schema.json   --rows 10   --resolve=local,remote   --cache-dir "~/.foundrydata/cache"
 
+# Remote + Lax: best-effort planning with possible skip of final validation on unresolved externals
+foundrydata generate --schema profiles/real-world/kubernetes-deployment.schema.json \
+  --rows 1 --seed 101 \
+  --resolve=local,remote --cache-dir "~/.foundrydata/cache" \
+  --external-ref-strict warn --compat lax --debug-passes
+
 # Offline/Lax planning stubs: proceed even if externals are unreachable
 foundrydata generate --schema profiles/real-world/asyncapi-3.0.schema.json   --rows 10   --compat lax   --fail-on-unresolved=false   --resolve=local
 ```

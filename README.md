@@ -52,10 +52,24 @@ foundrydata generate --schema api.json --rows 50 --external-ref-strict warn
 
 # Optional compatibility surface (non-normative toggles, e.g., relax warnings)
 foundrydata generate --schema user.json --rows 100 --compat lax
+
+# Resolver (HTTP) pre-phase — opt-in
+# Local-only (default): no HTTP(S) fetch
+foundrydata generate --schema real-world.json --rows 10 --resolve=local
+
+# With HTTP(S) resolver + cache, strict policy (externals must resolve)
+foundrydata generate --schema real-world.json --rows 10 \
+  --resolve=local,remote --cache-dir "~/.foundrydata/cache" \
+  --external-ref-strict error
+
+# With resolver + Lax mode: best-effort planning, skip final validation on unresolved externals
+foundrydata generate --schema real-world.json --rows 10 \
+  --resolve=local,remote --cache-dir "~/.foundrydata/cache" \
+  --external-ref-strict warn --compat lax --debug-passes
 ```
 
 * Generated **data goes to stdout**; **metrics/errors go to stderr** (for easy piping in CI).
-* By default the resolver runs in **local-only** mode (no network); external `$ref` are not fetched unless you explicitly opt into remote/registry strategies via the resolver options (e.g., CLI `--resolve`). The `--external-ref-strict` flag controls how unresolved externals affect the run; validation is always against the original schema. When Source AJV fails solely because of unresolved external `$ref`, the pipeline emits an `EXTERNAL_REF_UNRESOLVED` diagnostic whose details (mode, ref, policy) are visible with `--debug-passes`.
+* By default the resolver runs in **local-only** mode (no network); external `$ref` are not fetched unless you explicitly opt into remote/registry strategies via the resolver options (e.g., CLI `--resolve`). The `--external-ref-strict` flag controls how unresolved externals affect the run; validation is always against the original schema. When Source AJV fails solely because of unresolved external `$ref`, the pipeline emits an `EXTERNAL_REF_UNRESOLVED` diagnostic whose details (mode, ref, policy, skippedValidation?) are visible with `--debug-passes`.
 
 ---
 

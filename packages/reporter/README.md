@@ -58,6 +58,19 @@ If a schema fails to run (missing file, unresolved references, etc.), the bench 
 
 When the failure comes from unresolved external `$ref`, the summary will typically show `error: "EXTERNAL_REF_UNRESOLVED"` for that entry. To inspect the underlying diagnostic in detail (e.g., which ref failed and in which mode), run the schema in isolation via the core CLI with `--debug-passes` or the reporter `run` command and inspect the resulting `*.report.json`.
 
+### Bench with HTTP resolver (with-resolver config)
+
+For runs that exercise the HTTP(S) resolver pre-phase (Extension R1), use the `bench.config.with-resolver.json` config:
+
+```bash
+npx tsx packages/reporter/src/cli.ts bench \
+  --config packages/reporter/test/fixtures/bench.config.with-resolver.json \
+  --out-dir bench-reports-with-resolver \
+  --format json
+```
+
+This config keeps the original real-world schemas (no dense bundles) and forwards resolver options via `planOptions` (typically `resolver.strategies:['local','remote']` and a `cacheDir`). Some schemas may still appear as `level: "blocked"` with `error: "EXTERNAL_REF_UNRESOLVED"` when external `$ref` remain unresolved even after the pre-phase; in that case, use the CLI with `--compat lax --external-ref-strict warn --debug-passes` to explore skip-eligibility and diagnostics.
+
 ## Report contract
 
 The `Report` interface defined in [`src/model/report.ts`](./src/model/report.ts) is the reporter’s public contract. Key fields:
