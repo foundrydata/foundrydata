@@ -1,5 +1,4 @@
 /* eslint-disable complexity */
-/* eslint-disable max-lines-per-function */
 import type { PipelineResult } from '@foundrydata/core';
 
 /**

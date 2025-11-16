@@ -26,6 +26,8 @@ import {
 import { AjvFlagsMismatchError } from '../../src/util/ajv-gate.js';
 import * as AjvPlanning from '../../src/util/ajv-planning.js';
 import { createPlanOptionsSubKey } from '../../src/util/cache.js';
+import { ResolutionRegistry } from '../../src/resolver/registry.js';
+import * as HttpResolver from '../../src/resolver/http-resolver.js';
 
 describe('Foundry pipeline integration scenarios', () => {
   afterEach(() => {
@@ -221,6 +223,71 @@ describe('Foundry pipeline integration scenarios', () => {
     expect(laxResult.artifacts.validation?.skippedValidation).toBe(true);
     expect(laxResult.metrics.validationsPerRow).toBe(0);
     expect(laxDiag?.metrics).toMatchObject({ validationsPerRow: 0 });
+  });
+
+  it('hydrates final validation Ajv with resolver registry when remote resolver is enabled', async () => {
+    const registry = new ResolutionRegistry();
+    registry.add({
+      uri: 'https://example.com/external-supplier.schema.json',
+      schema: {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          id: { type: 'integer', minimum: 0 },
+          name: { type: 'string', minLength: 1 },
+        },
+        required: ['id', 'name'],
+      },
+      contentHash: 'test-hash',
+    });
+
+    const resolverSpy = vi
+      .spyOn(HttpResolver, 'prefetchAndBuildRegistry')
+      .mockResolvedValue({
+        registry,
+        diagnostics: [
+          {
+            code: 'RESOLVER_CACHE_HIT',
+            canonPath: '#',
+            details: {
+              ref: 'https://example.com/external-supplier.schema.json',
+              contentHash: 'test-hash',
+            },
+          },
+        ],
+        cacheDir: undefined,
+      });
+
+    const result = await executePipeline(externalRefSchema, {
+      mode: 'strict',
+      generate: {
+        count: 1,
+        planOptions: {
+          resolver: {
+            strategies: ['local', 'remote'],
+            cacheDir: '/tmp/foundrydata-resolver-cache',
+          },
+        },
+      },
+      validate: { validateFormats: false },
+    });
+
+    expect(resolverSpy).toHaveBeenCalledTimes(1);
+    expect(result.status).toBe('completed');
+    expect(result.stages.compose.status).toBe('completed');
+    expect(result.stages.validate.status).toBe('completed');
+
+    const validationDiags = result.artifacts.validationDiagnostics;
+    if (validationDiags) {
+      const codes = validationDiags.map((d) => d.code);
+      expect(codes).not.toContain(DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED);
+    }
+
+    const validation = result.artifacts.validation;
+    expect(validation?.skippedValidation).not.toBe(true);
+    const generated = result.artifacts.generated;
+    expect(Array.isArray(generated?.items)).toBe(true);
   });
 
   it("respects patternPolicy.unsafeUnderApFalse 'warn' in strict mode without changing coverage", async () => {

@@ -282,7 +282,7 @@ function stripBundledCanonicalMetas(
   return output;
 }
 
-function detectDialectFromSchema(schema: unknown): JsonSchemaDialect {
+export function detectDialectFromSchema(schema: unknown): JsonSchemaDialect {
   if (schema && typeof schema === 'object') {
     const declared = (schema as Record<string, unknown>)['$schema'];
     if (typeof declared === 'string') {
