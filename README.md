@@ -190,6 +190,8 @@ Selection flags:
 
 The command shares the same core flags as `generate` (`--n/--rows`, `--seed`, `--mode/--compat`, `--out json|ndjson`, `--prefer-examples`, `--print-metrics`, `--no-metrics`) and uses the high‑level `Generate` API under the hood. Any item printed as “success” has passed AJV validation against the selected response schema.
 
+For end‑to‑end product scenarios (API mocks/MSW fixtures, contract tests, LLM structured outputs) with concrete CLI and Node examples, see `docs/use-cases/product-scenarios.md`.
+
 ---
 
 ## Node.js API
