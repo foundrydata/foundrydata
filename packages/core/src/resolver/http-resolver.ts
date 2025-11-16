@@ -138,7 +138,7 @@ export async function prefetchAndBuildRegistry(
         diags.push({
           code: 'RESOLVER_OFFLINE_UNAVAILABLE',
           canonPath: '#',
-          details: { ref: doc },
+          details: { ref: doc, reason: 'no-strategy' },
         });
         continue;
       }
@@ -146,7 +146,7 @@ export async function prefetchAndBuildRegistry(
         diags.push({
           code: 'RESOLVER_OFFLINE_UNAVAILABLE',
           canonPath: '#',
-          details: { ref: doc },
+          details: { ref: doc, reason: 'host-not-allowed' },
         });
         continue;
       }
@@ -182,11 +182,20 @@ export async function prefetchAndBuildRegistry(
           // Ignore errors while scanning nested external refs from network responses.
         }
       }
-    } catch {
+    } catch (error) {
       diags.push({
         code: 'RESOLVER_OFFLINE_UNAVAILABLE',
         canonPath: '#',
-        details: { ref: doc },
+        details: {
+          ref: doc,
+          reason: 'fetch-error',
+          error:
+            error instanceof Error
+              ? error.message
+              : typeof error === 'string'
+                ? error
+                : undefined,
+        },
       });
     }
   }
