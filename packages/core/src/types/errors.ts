@@ -8,7 +8,7 @@ import {
   ErrorCode,
   type Severity,
   getExitCode as _getExitCode,
-} from '../errors/codes';
+} from '../errors/codes.js';
 
 /**
  * Typed error context shared across error types

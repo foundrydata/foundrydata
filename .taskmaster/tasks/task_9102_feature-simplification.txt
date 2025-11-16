@@ -1,0 +1,37 @@
+# Task ID: 9102
+# Title: §2 Scope
+# Status: done
+# Dependencies: 9000
+# Priority: low
+# Description: Reference-only: section §2.
+# Details:
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§2","anchors":["spec://§2#in-scope","spec://§2#non-goals","spec://§2#environment","spec://§2#modes"],"notes":"no-embed; fetch-on-demand"}
+
+# Test Strategy:
+None.
+
+# Subtasks:
+## 9102001. Index anchor — in-scope [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9102002. Index anchor — non-goals [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9102003. Index anchor — environment & drafts [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9102004. Index anchor — modes [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

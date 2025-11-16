@@ -1,0 +1,33 @@
+# Task ID: 13
+# Title: Optional local SMT (QF_LIA) stub with timeout
+# Status: pending
+# Dependencies: 11, 12
+# Priority: low
+# Description: Feature-flagged local solver to assist arrays/numbers; strict timeout with SOLVER_TIMEOUT fallback.
+# Details:
+- File: transform/smt/solver.ts (WASM-capable interface).
+- Flag: enableLocalSMT + solverTimeoutMs.
+- On timeout/unknown: emit SOLVER_TIMEOUT and fall back to rules.
+
+# Test Strategy:
+Unit: inject fake timeout; ensure graceful fallback and diagnostics.
+
+# Subtasks:
+## 1. Design SMT solver interface with WASM compatibility [pending]
+### Dependencies: None
+### Description: Create the core SMT solver interface in transform/smt/solver.ts with WASM-capable design and proper typing for QF_LIA queries.
+### Details:
+Implement the base SMT solver interface with methods for QF_LIA query solving, WASM module loading capabilities, and proper TypeScript interfaces. Include solver state management, query encoding/decoding, and result handling. Design should be extensible for future solver backends while maintaining type safety.
+
+## 2. Implement timeout handling with graceful fallback [pending]
+### Dependencies: 13.1
+### Description: Add timeout mechanism with solverTimeoutMs configuration and graceful fallback to rule-based generation when timeout occurs.
+### Details:
+Implement timeout wrapper around SMT solver calls using Promise.race or AbortController. On timeout or solver failure, emit SOLVER_TIMEOUT diagnostic and fall back to existing rule-based generation. Ensure clean resource cleanup and proper error propagation. Handle both synchronous timeouts and asynchronous solver failures.
+
+## 3. Integrate feature flag and solver configuration [pending]
+### Dependencies: 13.1, 13.2
+### Description: Add enableLocalSMT feature flag integration and solver configuration options to the generation pipeline.
+### Details:
+Integrate the SMT solver into the composition engine with enableLocalSMT feature flag control. Add solverTimeoutMs to PlanOptions configuration. Wire solver calls into array and number constraint checking during composition phase. Ensure solver is only invoked when flag is enabled and gracefully degrades when disabled or unavailable.
+

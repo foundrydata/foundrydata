@@ -1,0 +1,79 @@
+# Task ID: 8000
+# Title: AGENT — Operating mode for Claude Code
+# Status: done
+# Dependencies: None
+# Priority: medium
+# Description: Execution discipline and guardrails for building from SPEC via anchors only.
+# Details:
+[Agent Instructions — Minimal + Guardrails]
+[Goal]
+
+* Execute implementation tasks strictly per SPEC; SPEC is the single source of truth for semantics. Do not enlarge feature scope.
+  [Retrieval]
+* REFONLY via SPEC anchors. Do not paste SPEC text verbatim into tasks.
+* Runtime mapping: spec://§<n>#<slug> → docs/feature-simplification/feature-support-simplification.md#s<n>-<slug>.
+* Keep working context small: load only anchors required by the current task.
+  [Execution order]
+
+1. Read §0 metadata (task 9000).
+2. Build the reference index from 9100..9124 (anchors only).
+3. Implement tasks 1..24 in numeric order, respecting declared dependencies.
+4. Run tests and bench; validate Definition of Done.
+5. **Staging**: For `propertyNames` rewrite, implement **enum-only** in P0; **pattern-form** deferred to **P2 (#23)**.
+   [Environment]
+
+* Node >= 18; TypeScript; pnpm; monorepo layout under packages/core/* (per SPEC §22).
+  [Commands]
+* pnpm i
+* pnpm -w build
+* pnpm -w test
+* pnpm -w bench
+  [Diagnostics — phase separation]
+* REGEX_COMPLEXITY_CAPPED appears only from Normalize/Compose, with details.context ∈ {'coverage','rewrite'}.
+* COMPLEXITY_CAP_PATTERNS appears only from the Generator (pattern-witness search).
+* Compose-time caps (COMPLEXITY_CAP_ONEOF/ANYOF/ENUM/CONTAINS/SCHEMA_SIZE) are planning-only; never emit them from the Generator.
+  [Branch bookkeeping (per SPEC §8)]
+* Score-only path: record diag.scoreDetails.tiebreakRand EVEN WHEN |T|=1.
+* Score-only budget: diag.budget = { skipped:true, tried:0, limit = trials.perBranch × K_effective, reason ∈ {'skipTrialsFlag','largeOneOf','largeAnyOf','complexityCap'} }, where K_effective = min(maxBranchesToTry, branches.length AFTER Compose-time caps).
+* oneOf exclusivity step-4: if RNG is used (only when b* no longer passes), record diag.scoreDetails.exclusivityRand.
+  [AP:false coverage guardrails]
+* Under additionalProperties:false, NEVER expand coverage from propertyNames.enum unless PNAMES_REWRITE_APPLIED is present.
+* Fail-fast (AP_FALSE_UNSAFE_PATTERN) ONLY when presence pressure exists at the object (effectiveMinProperties > 0 OR effectiveRequiredKeys ≠ ∅ OR an active dependentRequired antecedent). Otherwise, proceed via conservative exclusion (no fail-fast).
+* Raw propertyNames.pattern NEVER triggers AP_FALSE_UNSAFE_PATTERN; it is gating-only unless PNAMES_REWRITE_APPLIED.
+  [Unevaluated guard]
+* For unevaluatedProperties:false, only emit property names guaranteed “evaluated” by an applicator at the SAME instance location, either present directly OR reachable through an APPLIED subschema at that location (e.g., allOf conjuncts, the selected anyOf/oneOf branch, the active then/else of if, or a $ref target). dependentSchemas does not evaluate by itself; only applicators inside its active subschema do.
+  [AJV Config Gate (per SPEC §§12–13)]
+* Two Ajv instances: Source (original schema) and Planning/Generation (canonical view). Both MUST set unicodeRegExp:true.
+* Ajv class MUST match the source schema dialect (Ajv / Ajv2019 / Ajv2020 / ajv-draft-04). Do not mix 2020-12 with earlier drafts in the same instance.
+* validateFormats MUST be identical on both instances (both false, or both true with ajv-formats). Mismatches ⇒ AJV_FLAGS_MISMATCH.
+* allowUnionTypes policy consistent with responsibilities (enabled on Planning/Generation when compiling union-typed canonical views).
+* If discriminator is claimed, set discriminator:true on BOTH instances; otherwise disabled on both.
+* multipleOfPrecision MUST equal PlanOptions.rational.decimalPrecision on BOTH instances whenever rational.fallback ∈ {'decimal','float'}; mismatches ⇒ AJV_FLAGS_MISMATCH.
+  [Definition of Done]
+* Files delivered per subtasks; tests green with ≥80% coverage on touched files.
+* Diagnostics conform to SPEC §19.1 mini-schemas.
+* Final AJV validation runs against the original schema (not the canonical/effective view).
+* Bench gates (SPEC §15) satisfied: p95LatencyMs ≤ 120 ms and memoryPeakMB ≤ 512 MB on required profiles.
+  [Diagnostics verbosity]
+* Provide a verbosity toggle: “CI verbose” (full diagnostics/metrics) vs “runtime normal” (reduced payloads) **without** changing §19.1 shapes.
+  [Self-audit before emit]
+* All SPEC task records 9100..9124: details = REFONLY; no SPEC text duplicated elsewhere.
+* Validate REFONLY: outer JSON parses; after stripping `REFONLY::`, inner JSON parses; reject if invalid.
+* Branch selection score-only invariants satisfied (tiebreakRand, budget.skipped/tried/limit/reason as above).
+* oneOf exclusivity: if RNG used at step-4, exclusivityRand recorded.
+* No REGEX_COMPLEXITY_CAPPED from Generator; no COMPLEXITY_CAP_PATTERNS from Normalize/Compose/Rewrite.
+* AP:false: no coverage expansion from propertyNames without PNAMES_REWRITE_APPLIED.
+* Repair rename guard under AP:false: use ctx.isNameInMustCover(canonPath, name) from Compose’s CoverageIndex; if absent, do NOT rename and emit MUSTCOVER_INDEX_MISSING{guard:true}.
+* External $ref handling: Strict ⇒ error EXTERNAL_REF_UNRESOLVED; Lax ⇒ warn + attempt; if Source Ajv compile fails solely due to unresolved externals, skip final validation with details.skippedValidation:true and set diag.metrics.validationsPerRow = 0.
+* Unique subtask ids are enforced (e.g., taskId*1000 + ordinal).
+
+# Test Strategy:
+N/A — process guardrails only.
+
+# Subtasks:
+## 8000001. Author AGENT runbook (execution order, guardrails, DoD) [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

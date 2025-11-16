@@ -1,0 +1,32 @@
+# Task ID: 16
+# Title: Validate stage: enforce AJV parity & metrics
+# Status: pending
+# Dependencies: 1, 14, 15
+# Priority: high
+# Description: Final validation on original schema; enforce AJV parity; collect per-phase metrics.
+# Details:
+- Orchestrator validates only against the original schema.
+- Record normalizeMs/composeMs/generateMs/repairMs/validateMs, validationsPerRow, repairPassesPerRow, cap hits.
+
+# Test Strategy:
+E2E test: failing parity triggers AJV_OPTIONS_MISMATCH; metrics are present.
+
+# Subtasks:
+## 1. Implement AJV validation orchestration against original schema [pending]
+### Dependencies: None
+### Description: Set up final validation stage that validates generated data against the original schema using AJV, ensuring parity between planning and original instances
+### Details:
+Create validate.ts module with AJV orchestration that validates against original schema. Implement parity enforcement between planning and original AJV instances. Ensure validation uses original schema not transformed/normalized version. Handle validation errors and provide detailed error reporting with canonical paths.
+
+## 2. Implement comprehensive metrics collection across pipeline phases [pending]
+### Dependencies: 16.1
+### Description: Add timing and performance metrics collection for all pipeline stages with detailed tracking of validation counts and repair passes
+### Details:
+Implement metrics collection for normalizeMs, composeMs, generateMs, repairMs, validateMs timing. Track validationsPerRow and repairPassesPerRow counters. Record complexity cap hits and performance bottlenecks. Create metrics aggregation and reporting utilities with structured output format.
+
+## 3. Integrate validation stage with orchestrator and error handling [pending]
+### Dependencies: 16.1, 16.2
+### Description: Connect validation stage to main pipeline orchestrator with proper error handling, metrics integration, and comprehensive reporting
+### Details:
+Integrate validate stage into orchestrator.ts pipeline flow. Implement error handling for validation failures with detailed diagnostics. Connect metrics collection to orchestrator execution. Ensure proper cleanup and resource management. Add validation stage configuration options and failure mode handling.
+

@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pathological Bench Profile",
+  "type": "object",
+  "unevaluatedProperties": false,
+  "propertyNames": {
+    "pattern": "^(?:kind|payload|metadata|history|flags|attachments)$"
+  },
+  "required": ["kind", "payload", "metadata"],
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": ["alpha", "beta", "gamma"]
+    },
+    "payload": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "alphaId": { "type": "string", "pattern": "^[a-z]{3}-\\d{2}$" },
+            "value": { "type": "number", "minimum": 0, "maximum": 1000 },
+            "active": { "type": "boolean" }
+          },
+          "required": ["alphaId", "value"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "betaRef": { "type": "string", "format": "uri" },
+            "status": { "type": "string", "enum": ["pending", "ready", "error"] },
+            "retries": { "type": "integer", "minimum": 0, "maximum": 5 }
+          },
+          "required": ["betaRef", "status"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "gammaMode": { "type": "string", "enum": ["legacy", "stream"] },
+            "checksum": { "type": "string", "pattern": "^[A-F0-9]{12}$" },
+            "chunks": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 8,
+              "items": { "type": "string", "pattern": "^[A-F0-9]{8}$" }
+            }
+          },
+          "required": ["gammaMode"]
+        }
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "createdAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string", "minLength": 1 },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "updatedBy": { "type": "string", "minLength": 1 },
+        "note": { "type": "string", "maxLength": 64 }
+      },
+      "dependentRequired": {
+        "createdBy": ["createdAt"],
+        "updatedBy": ["updatedAt"]
+      }
+    },
+    "history": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 25,
+      "contains": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "event": { "type": "string", "enum": ["created", "updated", "archived"] },
+          "at": { "type": "string", "format": "date-time" }
+        },
+        "required": ["event", "at"]
+      },
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "event": { "type": "string" },
+              "payload": { "type": "object" }
+            },
+            "required": ["event"]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "snapshot": { "type": "object" },
+              "checksum": { "type": "string", "pattern": "^[A-F0-9]{6}$" }
+            },
+            "required": ["snapshot", "checksum"]
+          }
+        ]
+      }
+    },
+    "flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]{1,12}$"
+      },
+      "patternProperties": {
+        "^x-[a-z0-9_]{1,12}$": { "type": "boolean" }
+      },
+      "dependentRequired": {
+        "critical": ["primary"]
+      }
+    },
+    "attachments": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "uri": { "type": "string", "format": "uri" },
+          "checksum": { "type": "string", "pattern": "^[A-F0-9]{8}$" }
+        },
+        "required": ["uri"]
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "kind": { "const": "alpha" } },
+        "required": ["kind"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "properties": {
+              "active": { "const": true }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "kind": { "const": "gamma" } },
+        "required": ["kind"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": { "gammaMode": { "const": "legacy" } },
+                "required": ["gammaMode", "checksum"]
+              },
+              {
+                "type": "object",
+                "properties": { "gammaMode": { "const": "stream" } },
+                "required": ["gammaMode", "chunks"]
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "dependentSchemas": {
+    "flags": {
+      "if": {
+        "properties": { "archived": { "const": true } },
+        "required": ["archived"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "history": { "type": "array", "minItems": 2 }
+        }
+      }
+    }
+  }
+}

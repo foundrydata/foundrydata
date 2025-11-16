@@ -1,0 +1,32 @@
+# Task ID: 18
+# Title: Integration & e2e
+# Status: pending
+# Dependencies: 8000, 9000, 9120, 9111, 9112, 11
+# Priority: high
+# Description: End-to-end scenarios covering modes, AP:false unsafe patterns, oneOf exclusivity refinement.
+# Details:
+[Context] §20 integration; §8/§11 behaviors.
+- spec://§20#integration
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§20","anchors":["spec://§20#integration"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Validate Strict vs Lax external $ref handling; exclusivity tweaks logged; AP:false fail-fast vs Safe proof.
+- Test complete Pipeline Orchestrator (task 11) implementation including Normalize → Compose → Generate → Repair → Validate stages
+- Validate mode-specific behaviors routed by Modes task through Pipeline Orchestrator
+[Deliverables]
+- packages/core/test/e2e/*.spec.ts
+[Commands]
+- pnpm -w test
+[Definition of Done]
+- e2e suites pass; run logs show expected diagnostics and exclusivityRand when applicable; complete pipeline validation with all modes and AP:false patterns.
+
+# Test Strategy:
+Implement scenarios listed in §20 integration bullets; assert payload shapes and locus. Test complete FoundryGenerator pipeline orchestration with Strict/Lax modes, external $ref handling, and AP:false unsafe patterns validation.
+
+# Subtasks:
+## 1. Write e2e pipeline orchestration scenarios [pending]
+### Dependencies: None
+### Description: Create comprehensive e2e tests validating the complete 5-stage pipeline implementation from task 11
+### Details:
+Implement end-to-end tests that validate the complete Pipeline Orchestrator implementation including: 1) Normalize → Compose → Generate → Repair → Validate flow; 2) Metrics collection across all stages; 3) Proper error propagation; 4) Mode-specific routing (Strict/Lax); 5) External $ref handling behaviors; 6) AP:false unsafe pattern detection and handling. Tests should reference packages/core/src/generator/foundry-generator.ts orchestration logic and validate against original schema per AJV oracle principle.
+

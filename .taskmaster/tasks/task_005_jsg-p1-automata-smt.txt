@@ -1,0 +1,39 @@
+# Task ID: 5
+# Title: Product/intersection DFA for AP:false conjuncts
+# Status: pending
+# Dependencies: 4
+# Priority: high
+# Description: Compose per-conjunct DFAs (properties, patternProperties, propertyNames-guard) into a product DFA.
+# Details:
+- File: transform/name-automata/product.ts.
+- Build product only for conjuncts that enforce additionalProperties:false.
+- Reachability trimming to reduce state blow-up; apply maxProductStates; emit NAME_AUTOMATON_COMPLEXITY_CAPPED on cap.
+
+# Test Strategy:
+Unit tests on 2–3 conjunct intersections; verify pruning and acceptance.
+
+# Subtasks:
+## 1. Implement DFA product construction algorithm [pending]
+### Dependencies: None
+### Description: Create the core product construction algorithm that composes multiple DFAs into a single product DFA for additionalProperties:false conjuncts.
+### Details:
+Implement the product construction in transform/name-automata/product.ts. Build cross-product of state spaces from input DFAs (properties, patternProperties, propertyNames-guard). Handle epsilon transitions and state labeling. Ensure the product DFA accepts only strings accepted by ALL input DFAs. Include proper error handling for malformed input DFAs.
+
+## 2. Implement state reachability analysis and pruning [pending]
+### Dependencies: 5.1
+### Description: Add reachability analysis to identify and remove unreachable states from the product DFA to prevent state explosion.
+### Details:
+Implement breadth-first or depth-first traversal from initial state to mark reachable states. Remove unreachable states and their transitions. Update state numbering after pruning. Track pruning statistics for diagnostics. Ensure the pruned DFA maintains equivalent language acceptance.
+
+## 3. Add state explosion prevention with maxProductStates cap [pending]
+### Dependencies: 5.1, 5.2
+### Description: Implement state count monitoring and graceful degradation when the product DFA exceeds maxProductStates threshold.
+### Details:
+Monitor state count during product construction. When maxProductStates threshold is reached, emit NAME_AUTOMATON_COMPLEXITY_CAPPED diagnostic and apply fallback strategy (conservative approximation or early termination). Ensure the capped result is still sound for additionalProperties:false enforcement, even if less precise.
+
+## 4. Integrate with additionalProperties:false semantics and comprehensive testing [pending]
+### Dependencies: 5.1, 5.2, 5.3
+### Description: Wire the product DFA construction into the additionalProperties:false validation logic and add comprehensive test coverage for multi-pattern scenarios.
+### Details:
+Integrate product DFA with existing AP:false handling in composition engine. Ensure product DFA is only built for schemas that enforce additionalProperties:false. Add comprehensive test suite covering multiple conjunct scenarios, edge cases with complex pattern intersections, and validation that the product correctly rejects property names not accepted by all conjuncts.
+

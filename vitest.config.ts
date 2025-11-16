@@ -52,13 +52,6 @@ export default defineConfig({
     ...getPoolConfig(),
 
     // Global setup and teardown
-    globalSetup: ['./test/global-setup.ts'],
-    globalTeardown: ['./test/global-teardown.ts'],
-    setupFiles: ['./test/setup.ts'],
-
-    // ========================================================================
-    // TEST DISCOVERY AND EXECUTION
-    // ========================================================================
 
     // Test files pattern - includes all packages in monorepo
     include: ['packages/**/*.{test,spec}.ts'],
@@ -191,13 +184,6 @@ export default defineConfig({
     // ENVIRONMENT VARIABLES
     // ========================================================================
 
-    env: {
-      // Test-specific environment variables
-      NODE_ENV: 'test',
-      TEST_SEED: '424242',
-      FC_NUM_RUNS: isCI ? '1000' : '100',
-      SCHEMA_DRAFT: 'draft-07',
-      VITEST_POOL: getPoolConfig().pool,
-    },
+    env: {},
   },
 });

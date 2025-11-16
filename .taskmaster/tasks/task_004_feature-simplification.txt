@@ -1,0 +1,39 @@
+# Task ID: 4
+# Title: Structural hashing & stable-hash
+# Status: pending
+# Dependencies: 8000, 9000, 9110, 9114, 9124
+# Priority: medium
+# Description: Implement structural hashing for uniqueItems and stable schema hashing for cache.
+# Details:
+[Context] §10 structural hashing; §14 stable-hash.
+- spec://§10#structural-hashing
+- spec://§14#stable-hash
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§10","anchors":["spec://§10#structural-hashing"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§14","anchors":["spec://§14#stable-hash"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- SHA-256 over canonical JSON (sorted keys, arrays in order, -0→0, BigInt stringified); confirm collisions with deepEqual.
+[Deliverables]
+- packages/core/src/util/struct-hash.ts
+- packages/core/src/util/stable-hash.ts
+[Commands]
+- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench
+[Definition of Done]
+- uniqueItems de-dupe via hash+confirm; stableHash returns deterministic digest; tests cover -0 normalization.
+
+# Test Strategy:
+Unit: hashing determinism; collision buckets with deepEqual confirmation; array/object ordering tests.
+
+# Subtasks:
+## 4001. Structural hash for instances [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 4002. Stable hash for schema [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+

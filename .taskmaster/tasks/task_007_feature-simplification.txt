@@ -1,0 +1,40 @@
+# Task ID: 7
+# Title: Normalizer
+# Status: pending
+# Dependencies: 5, 6, 13, 8000, 9000, 9107, 9108, 9112
+# Priority: high
+# Description: Draft unification, boolean/trivial simplifications with unevaluated guards, conditional rewrite (safe), propertyNames rewrite (P0: enum-only).
+# Details:
+[Context] §7 pass order; conditionals rewrite; propertyNames rewrite; note codes; §8 interplay.
+- spec://§7#pass-order, spec://§7#conditionals-rewrite, spec://§7#object-keywords-pnames-rewrite, spec://§7#note-codes
+- spec://§8#regex-complexity-cap
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§7","anchors":["spec://§7#pass-order","spec://§7#conditionals-rewrite","spec://§7#object-keywords-pnames-rewrite","spec://§7#note-codes"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Unevaluated* guard blocks simplifications and conditional rewrites where specified.
+- PropertyNames rewrite: **P0 implements enum-only**; anchored-pattern form is deferred to **P2 (#23)**.
+- When rewrite applies, log PNAMES_REWRITE_APPLIED and keep original node; add-only synthetic entries.
+[Deliverables]
+- packages/core/src/transform/schema-normalizer.ts
+- packages/core/src/parser/json-schema-parser.ts
+[Commands]
+- pnpm i; pnpm -w build; pnpm -w test
+[Definition of Done]
+- Notes emitted per §7; enum-based rewrite adds synthetic patternProperties + AP:false in canonical view; no semantic drift in AJV final validation.
+
+# Test Strategy:
+Golden tests on notes; rewrite acceptance/refusal; guard with unevaluated*; draft conversions; size-1 enum→const in canonical view only.
+
+# Subtasks:
+## 7001. Normalizer core (passes, guards, notes) [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 7002. Lean JSON Schema parser [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+

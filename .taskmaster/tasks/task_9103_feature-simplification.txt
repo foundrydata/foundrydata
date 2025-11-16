@@ -1,0 +1,31 @@
+# Task ID: 9103
+# Title: §3 Principles & Invariants
+# Status: done
+# Dependencies: 9000
+# Priority: low
+# Description: Reference-only: section §3.
+# Details:
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§3","anchors":["spec://§3#core-principles","spec://§3#invariants","spec://§3#apfalse-unsafe-pattern-policy"],"notes":"no-embed; fetch-on-demand"}
+
+# Test Strategy:
+None.
+
+# Subtasks:
+## 9103001. Index anchor — core principles [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9103002. Index anchor — invariants [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9103003. Index anchor — AP:false unsafe-pattern policy [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

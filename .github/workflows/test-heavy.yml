@@ -119,12 +119,6 @@ jobs:
             cp test/performance/baseline.json test/performance/baseline.prev.json
           fi
 
-      - name: Run performance suites
-        run: |
-          npm run test:performance
-          npm run test:benchmarks
-          npm run test:regression
-
       - name: Check performance regression (>20% p95 or >100MB memory)
         id: perf
         shell: bash

@@ -1,0 +1,47 @@
+# Task ID: 1
+# Title: Establish invariants & diagnostics scaffold
+# Status: pending
+# Dependencies: 21
+# Priority: high
+# Description: Lay down AJV-oracle invariant, dual AJV instances, deterministic RNG, and the diagnostics envelope in code.
+# Details:
+- Add two AJV instances (planning vs original) with unicodeRegExp:true on both.
+- Enforce parity check and throw AJV_OPTIONS_MISMATCH on mismatch.
+- Introduce xorshift32 RNG seeded by (seed, canonPath); remove any global/time/locale dependence.
+- Implement Diagnostic envelope {code, canonPath, details} and central registry of codes.
+- Touch files: packages/core/src/pipeline/orchestrator.ts, packages/core/src/diag/*, packages/core/src/util/determinism.ts
+
+# Test Strategy:
+Unit tests for RNG determinism and AJV parity; smoke test orchestrator with mismatched options.
+
+# Subtasks:
+## 1. Implement dual AJV instances with parity validation [pending]
+### Dependencies: None
+### Description: Set up two AJV instances (planning vs original) with unicodeRegExp:true and enforce parity checking with AJV_OPTIONS_MISMATCH error handling.
+### Details:
+Create dual AJV instance setup in orchestrator.ts with identical configuration options. Implement parity validation that compares configurations and throws AJV_OPTIONS_MISMATCH on mismatch. Both instances must have unicodeRegExp:true and identical settings to ensure consistent behavior between planning and validation phases.
+
+## 2. Create xorshift32 deterministic RNG implementation [pending]
+### Dependencies: None
+### Description: Implement xorshift32 random number generator seeded by (seed, canonPath) to eliminate global/time/locale dependencies.
+### Details:
+Create packages/core/src/util/determinism.ts with xorshift32 algorithm implementation. RNG must be seeded using combination of user seed and canonical path to ensure deterministic output. Remove any dependencies on global state, system time, or locale settings to guarantee reproducible results across environments.
+
+## 3. Design diagnostic envelope system and code registry [pending]
+### Dependencies: None
+### Description: Implement Diagnostic envelope structure with {code, canonPath, details} and create central registry for diagnostic codes.
+### Details:
+Create packages/core/src/diag/ directory structure with diagnostic envelope type definitions and central code registry. Design extensible system for diagnostic codes including AJV_OPTIONS_MISMATCH and other core error types. Implement standardized format for diagnostic messages with canonical path tracking.
+
+## 4. Integrate orchestrator with invariants and diagnostics [pending]
+### Dependencies: 1.1, 1.2, 1.3
+### Description: Update orchestrator.ts to incorporate dual AJV instances, deterministic RNG, and diagnostic reporting infrastructure.
+### Details:
+Modify packages/core/src/pipeline/orchestrator.ts to integrate all foundational components. Connect dual AJV instances with parity checking, initialize deterministic RNG for reproducible behavior, and wire diagnostic reporting throughout the orchestration flow. Establish error handling patterns for the entire pipeline.
+
+## 5. Implement determinism utilities and validation [pending]
+### Dependencies: 1.2
+### Description: Create utility functions for deterministic behavior validation and thread safety verification across the system.
+### Details:
+Extend packages/core/src/util/determinism.ts with utilities for validating deterministic behavior, seeding management, and thread safety checks. Implement helper functions for canonical path generation, seed derivation, and determinism testing. Ensure all utilities support the foundational invariants required by the pipeline.
+

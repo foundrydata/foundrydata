@@ -2,6 +2,6 @@
  * Type definitions exports
  */
 
-export * from './result';
-export * from './schema';
-export * from './errors';
+export * from './schema.js';
+export * from './errors.js';
+export * from './options.js';

@@ -1,0 +1,50 @@
+# Task ID: 2
+# Title: Dual AJV & Config Gate
+# Status: done
+# Dependencies: 8000, 9000, 9113, 9101, 9112
+# Priority: high
+# Description: Introduce Source vs Planning AJV instances and enforce startup parity gates.
+# Details:
+[Context] §13 startup-config-check; §12 Ajv class selection; §1 config gate.
+- spec://§13#startup-config-check
+- spec://§12#ajv-class-selection
+- spec://§1#config-gate
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§13","anchors":["spec://§13#startup-config-check"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§12","anchors":["spec://§12#ajv-class-selection"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§1","anchors":["spec://§1#config-gate"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Two AJV instances with identical `unicodeRegExp:true` and `validateFormats` parity.
+- Align `multipleOfPrecision` to PlanOptions.rational.decimalPrecision on both instances.
+- Fail with AJV_FLAGS_MISMATCH and include diffs per §13 when deviations are detected.
+[Deliverables]
+- packages/core/src/util/ajv-source.ts
+- packages/core/src/util/ajv-planning.ts
+- packages/core/src/util/ajv-gate.ts (validation of flags; diagnostic assembly)
+[Commands]
+- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench
+[Definition of Done]
+- Gate refuses mismatched flags/classes; exports include ajvMajor and diff payloads; unit tests cover unicodeRegExp and multipleOfPrecision parity.
+
+# Test Strategy:
+Unit: simulate mismatched flags (e.g., unicodeRegExp:false) → AJV_FLAGS_MISMATCH. Draft mapping to Ajv*/Ajv2020. Integration: successful compile on simple schemas; failure on external $ref remains for modes task.
+
+# Subtasks:
+## 2001. Source AJV factory [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2002. Planning AJV factory [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2003. Startup config checker [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

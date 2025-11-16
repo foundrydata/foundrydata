@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Medium Bench Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "orderId": {
+      "type": "string",
+      "pattern": "^[A-Z0-9]{8}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "ready", "processing", "complete"]
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "customer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "segment": { "type": "string", "enum": ["consumer", "business"] },
+        "email": { "type": "string", "format": "email" },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": false,
+          "patternProperties": {
+            "^x-[a-z0-9]+$": {
+              "type": "string",
+              "maxLength": 24
+            }
+          },
+          "propertyNames": {
+            "pattern": "^x-[a-z0-9]+$"
+          }
+        }
+      },
+      "required": ["id", "segment", "email"]
+    },
+    "lineItems": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "contains": {
+        "type": "object",
+        "properties": { "primary": { "const": true } },
+        "required": ["primary"]
+      },
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "sku": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "quantity": { "type": "integer", "minimum": 0, "maximum": 50 },
+          "unitPrice": { "type": "number", "minimum": 0 },
+          "primary": { "type": "boolean" },
+          "options": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "color": { "type": "string", "minLength": 1, "maxLength": 12 },
+              "size": { "type": "string", "enum": ["xs", "s", "m", "l", "xl"] },
+              "notes": { "type": "string", "maxLength": 64 }
+            }
+          }
+        },
+        "required": ["sku", "quantity", "unitPrice"]
+      }
+    },
+    "shipments": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "carrier": { "type": "string", "enum": ["ups", "fedex", "dhl"] },
+          "eta": { "type": "string", "format": "date-time" },
+          "tracking": { "type": "string", "pattern": "^[A-Z0-9]{10,18}$" },
+          "expedited": { "type": "boolean" }
+        },
+        "required": ["carrier", "eta"]
+      }
+    },
+    "totals": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "subtotal": { "type": "number", "minimum": 0 },
+        "tax": { "type": "number", "minimum": 0 },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "discount": { "type": "number", "minimum": 0 },
+        "discountCode": { "type": "string", "pattern": "^[A-Z0-9]{4,8}$" }
+      },
+      "required": ["subtotal", "currency"],
+      "dependentRequired": {
+        "discount": ["discountCode"]
+      }
+    },
+    "notes": { "type": "string", "maxLength": 256 }
+  },
+  "required": [
+    "orderId",
+    "status",
+    "createdAt",
+    "customer",
+    "lineItems",
+    "totals"
+  ],
+  "dependentRequired": {
+    "shipments": ["lineItems"]
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "ready" } },
+        "required": ["status"]
+      },
+      "then": {
+        "type": "object",
+        "required": ["shipments"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "status": { "const": "complete" } },
+        "required": ["status"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "shipments": { "type": "array", "minItems": 1 }
+        }
+      }
+    }
+  ]
+}

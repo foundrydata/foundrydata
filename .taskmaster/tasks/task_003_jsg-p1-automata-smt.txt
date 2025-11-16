@@ -1,0 +1,51 @@
+# Task ID: 3
+# Title: Implement Thompson NFA
+# Status: pending
+# Dependencies: 2
+# Priority: high
+# Description: Restricted-regex to NFA (Thompson) for anchored-safe patterns.
+# Details:
+- File: transform/name-automata/nfa.ts.
+- Support classes, grouping, alternation, ?,*,+, bounded quantifiers; Unicode aware.
+- Keep memory predictable; expose NFA size for caps.
+
+# Test Strategy:
+Unit tests for simple and bounded patterns; NFA size sanity checks.
+
+# Subtasks:
+## 1. Implement regex AST parser for Thompson patterns [pending]
+### Dependencies: 3.2
+### Description: Create a parser to convert restricted regex patterns into an Abstract Syntax Tree (AST) representation suitable for Thompson NFA construction.
+### Details:
+Implement regex AST parsing in transform/name-automata/nfa.ts. Parse character classes, grouping, alternation, quantifiers (?, *, +, {n,m}), and basic atoms. Build AST nodes for each construct. Ensure Unicode awareness and validate against anchored-safe patterns from task 2. Handle parsing errors gracefully with appropriate diagnostics.
+
+## 2. Implement NFA state machine data structures [pending]
+### Dependencies: 3.1
+### Description: Design and implement the core NFA state machine representation with states, transitions, and epsilon transitions.
+### Details:
+Create NFA state classes with unique IDs, transition maps for character ranges and epsilon moves. Implement state creation, linking, and traversal methods. Include start and accept state management. Ensure memory-efficient representation and provide state counting for complexity caps. Add debugging utilities for state visualization.
+
+## 3. Implement Thompson construction algorithms [pending]
+### Dependencies: 3.2
+### Description: Implement the core Thompson construction algorithms to convert AST nodes into NFA fragments and combine them.
+### Details:
+Implement Thompson construction for each AST node type: character classes, concatenation, alternation, and quantifiers. Create NFA fragments with proper epsilon transitions. Handle Unicode character ranges correctly. Ensure construction preserves anchored semantics and maintains predictable memory usage.
+
+## 4. Implement character class and Unicode handling [pending]
+### Dependencies: 3.3
+### Description: Implement comprehensive character class support with Unicode awareness for NFA transitions.
+### Details:
+Create character range representation for NFA transitions. Support Unicode character classes including \d, \w, \s and their negations. Handle Unicode code point ranges efficiently. Implement range merging and intersection operations. Ensure compatibility with AJV's Unicode handling.
+
+## 5. Implement quantifier support with bounded repetition [pending]
+### Dependencies: 3.3
+### Description: Add support for quantifiers including ?, *, +, and bounded quantifiers {n,m} with proper NFA construction.
+### Details:
+Implement quantifier handling in Thompson construction. Create appropriate epsilon transition patterns for each quantifier type. Handle bounded quantifiers {n,m} with unrolling strategies. Ensure memory predictability for large bounds and implement caps when necessary. Include zero-width matching detection.
+
+## 6. Implement NFA size tracking and memory caps [pending]
+### Dependencies: 3.4, 3.5
+### Description: Add NFA size measurement and memory predictability features with appropriate complexity caps.
+### Details:
+Implement NFA size calculation based on state count and transition density. Add memory usage tracking during construction. Implement complexity caps that abort construction when limits are exceeded. Expose NFA size metrics for upstream caps decision-making. Include diagnostic emission for complexity-capped patterns.
+

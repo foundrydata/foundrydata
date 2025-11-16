@@ -1,0 +1,169 @@
+[
+  {
+    "id": "simple",
+    "schema": "../../../../profiles/simple.json",
+    "maxInstances": 2,
+    "planOptions": {
+      "resolver": {
+        "strategies": ["local", "remote"],
+        "cacheDir": "~/.foundrydata/cache"
+      }
+    }
+  },
+  {
+    "id": "medium",
+    "schema": "../../../../profiles/medium.json",
+    "maxInstances": 1,
+    "seed": 42,
+    "planOptions": {
+      "resolver": {
+        "strategies": ["local", "remote"],
+        "cacheDir": "~/.foundrydata/cache"
+      }
+    }
+  },
+  {
+    "id": "pathological",
+    "schema": "../../../../profiles/pathological.json",
+    "maxInstances": 1,
+    "seed": 7,
+    "planOptions": {
+      "resolver": {
+        "strategies": ["local", "remote"],
+        "cacheDir": "~/.foundrydata/cache"
+      }
+    }
+  },
+  {
+    "id": "real-world-asyncapi-3-0-schema",
+    "schema": "../../../../profiles/real-world/asyncapi-3.0.schema.json",
+    "maxInstances": 1,
+    "planOptions": {
+      "resolver": {
+        "strategies": ["local", "remote"],
+        "cacheDir": "~/.foundrydata/cache"
+      }
+    }
+  },
+  {
+    "id": "real-world-cloudevents-schema",
+    "schema": "../../../../profiles/real-world/cloudevents.schema.json",
+    "maxInstances": 1,
+    "planOptions": {
+      "resolver": {
+        "strategies": ["local", "remote"],
+        "cacheDir": "~/.foundrydata/cache"
+      }
+    }
+  },
+  {
+    "id": "real-world-fhir-schema",
+    "schema": "../../../../profiles/real-world/fhir.schema.json",
+    "maxInstances": 1,
+    "planOptions": {
+      "resolver": {
+        "strategies": ["local", "remote"],
+        "cacheDir": "~/.foundrydata/cache"
+      }
+    }
+  },
+  {
+    "id": "real-world-github-workflow-schema",
+    "schema": "../../../../profiles/real-world/github-workflow.schema.json",
+    "maxInstances": 1,
+    "planOptions": {
+      "resolver": {
+        "strategies": ["local", "remote"],
+        "cacheDir": "~/.foundrydata/cache"
+      }
+    }
+  },
+  {
+    "id": "real-world-google-analytics-event-schema",
+    "schema": "../../../../profiles/real-world/google-analytics-event.schema.json",
+    "maxInstances": 1,
+    "planOptions": {
+      "resolver": {
+        "strategies": ["local", "remote"],
+        "cacheDir": "~/.foundrydata/cache"
+      }
+    }
+  },
+  {
+    "id": "real-world-google-audit-log-entry-schema",
+    "schema": "../../../../profiles/real-world/google-audit-log-entry.schema.json",
+    "maxInstances": 1,
+    "planOptions": {
+      "resolver": {
+        "strategies": ["local", "remote"],
+        "cacheDir": "~/.foundrydata/cache"
+      }
+    }
+  },
+  {
+    "id": "real-world-google-pubsub-event-schema",
+    "schema": "../../../../profiles/real-world/google-pubsub-event.schema.json",
+    "maxInstances": 1,
+    "planOptions": {
+      "resolver": {
+        "strategies": ["local", "remote"],
+        "cacheDir": "~/.foundrydata/cache"
+      }
+    }
+  },
+  {
+    "id": "real-world-kubernetes-deployment-schema",
+    "schema": "../../../../profiles/real-world/kubernetes-deployment.schema.json",
+    "maxInstances": 1,
+    "planOptions": {
+      "resolver": {
+        "strategies": ["local", "remote"],
+        "cacheDir": "~/.foundrydata/cache"
+      }
+    }
+  },
+  {
+    "id": "real-world-metadata-schema",
+    "schema": "../../../../profiles/real-world/metadata.schema.json",
+    "maxInstances": 1,
+    "planOptions": {
+      "resolver": {
+        "strategies": ["local", "remote"],
+        "cacheDir": "~/.foundrydata/cache"
+      }
+    }
+  },
+  {
+    "id": "real-world-npm-package-schema",
+    "schema": "../../../../profiles/real-world/npm-package.schema.json",
+    "maxInstances": 1,
+    "planOptions": {
+      "resolver": {
+        "strategies": ["local", "remote"],
+        "cacheDir": "~/.foundrydata/cache"
+      }
+    }
+  },
+  {
+    "id": "real-world-openapi-3-1-schema",
+    "schema": "../../../../profiles/real-world/openapi-3.1.schema.json",
+    "maxInstances": 1,
+    "planOptions": {
+      "resolver": {
+        "strategies": ["local", "remote"],
+        "cacheDir": "~/.foundrydata/cache"
+      }
+    }
+  },
+  {
+    "id": "real-world-tsconfig-schema",
+    "schema": "../../../../profiles/real-world/tsconfig.schema.json",
+    "maxInstances": 1,
+    "planOptions": {
+      "resolver": {
+        "strategies": ["local", "remote"],
+        "cacheDir": "~/.foundrydata/cache"
+      }
+    }
+  }
+]

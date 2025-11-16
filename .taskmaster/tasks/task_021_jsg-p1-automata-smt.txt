@@ -1,0 +1,74 @@
+# Task ID: 21
+# Title: JSG-P1 Preparation: Requirements Analysis and Structured TODO
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Comprehensive analysis of jsg-p1-automata-smt.md document to extract normative requirements and create structured implementation roadmap by pipeline phases.
+# Details:
+[Context]
+
+**Must read**: docs/jsg-p1-automata-smt.md — Complete document analysis (324 lines)
+
+**Objective**: Extract all normative requirements (MUST, MUST NOT, SHALL, MAY) from the JSG-P1 specification and structure them by the 5-stage pipeline: Normalize → Compose → Generate → Repair → Validate.
+
+[Implementation Steps]
+
+1. **Full Document Analysis** (0-324 lines)
+   - Identify all normative language (MUST, MUST NOT, SHALL, MAY per RFC-2119)
+   - Extract technical requirements for each system component
+   - Map requirements to pipeline stages and cross-cutting concerns
+
+2. **Name Automata Requirements** (§4.3)
+   - DFA construction rules for `additionalProperties:false`
+   - Product automaton intersection logic
+   - Finiteness detection and BFS enumeration
+   - Early-UNSAT proof conditions
+   - Complexity caps and fallback behaviors
+
+3. **Arrays/Numbers Requirements** (§4.5)
+   - Contains bag semantics and UNSAT rules
+   - Rational multipleOf handling
+   - Optional local SMT solver integration
+   - Timeout and fallback strategies
+
+4. **AJV Oracle Requirements** (§0, §4.7)
+   - Original schema validation invariants
+   - AJV options parity enforcement
+   - Error handling for validation mismatches
+
+5. **Diagnostics Requirements** (§5)
+   - Error envelope format: {code, canonPath, details}
+   - Specific error codes and their conditions
+   - CoverageIndex API specifications
+   - Metrics collection requirements
+
+6. **CLI/OpenAPI Interface Requirements** (§7)
+   - Command-line flag specifications
+   - NDJSON output format
+   - Example preference handling
+   - Driver adapter requirements
+
+[Deliverable Structure]
+
+```
+.taskmaster/docs/jsg-p1-requirements-analysis.md
+├── Executive Summary
+├── Pipeline Phase Requirements
+│   ├── Stage 1: Normalize
+│   ├── Stage 2: Compose  
+│   ├── Stage 3: Generate
+│   ├── Stage 4: Repair
+│   └── Stage 5: Validate
+├── Cross-Cutting Requirements
+│   ├── Determinism
+│   ├── Performance SLOs
+│   ├── Error Handling
+│   └── Observability
+├── Implementation Priority Matrix
+└── Task Dependencies Analysis
+```
+
+This analysis will serve as the foundational document for implementing tasks 1-20, ensuring comprehensive coverage of all JSG-P1 requirements with proper sequencing and dependency management.
+
+# Test Strategy:
+1. **Completeness Verification**: Cross-reference extracted requirements against original document to ensure 100% normative language coverage. 2. **Pipeline Mapping**: Verify all requirements are properly categorized by pipeline stage with clear implementation guidance. 3. **Dependency Analysis**: Confirm task sequence 1-20 aligns with requirement dependencies identified in analysis. 4. **Requirements Traceability**: Each requirement must map to specific implementation tasks with acceptance criteria. 5. **Stakeholder Review**: Requirements document should enable clear task scoping and implementation planning for subsequent JSG-P1 tasks.

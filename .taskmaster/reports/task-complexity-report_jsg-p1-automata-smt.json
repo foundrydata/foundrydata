@@ -1,0 +1,173 @@
+{
+	"meta": {
+		"generatedAt": "2025-11-15T18:35:30.461Z",
+		"tasksAnalyzed": 20,
+		"totalTasks": 20,
+		"analysisCount": 20,
+		"thresholdScore": 5,
+		"projectName": "Task Master",
+		"usedResearch": true
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 1,
+			"taskTitle": "Establish invariants & diagnostics scaffold",
+			"complexityScore": 8,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the foundational scaffolding into distinct components: AJV dual instance setup with parity validation, deterministic xorshift32 RNG implementation, comprehensive diagnostic envelope system with code registry, orchestrator integration, and determinism utilities. Consider error handling patterns and testing strategies for each component.",
+			"reasoning": "High complexity due to being the foundational task that establishes core architectural patterns. Involves setting up dual AJV instances with complex parity checking, implementing deterministic RNG from scratch, creating diagnostic infrastructure, and ensuring thread safety. Multiple files to touch and foundational patterns that other tasks depend on."
+		},
+		{
+			"taskId": 2,
+			"taskTitle": "Regex policy: anchored-safe check + complexity caps",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Implement regex classification system with pattern parsing, anchored-safe detection logic, complexity scoring algorithm, diagnostic emission for capped patterns, and integration with existing pattern utilities. Include comprehensive test coverage for edge cases in regex analysis.",
+			"reasoning": "High complexity due to regex parsing and analysis requirements. Current code shows partial implementation with `analyzeRegexPattern` function, but needs full parser/validator and complexity scoring. Regex complexity analysis is inherently complex and error-prone."
+		},
+		{
+			"taskId": 3,
+			"taskTitle": "Implement Thompson NFA",
+			"complexityScore": 9,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Build Thompson NFA construction with regex AST parsing, NFA state machine implementation, character class handling, quantifier support, Unicode awareness, and memory predictability measures. Include NFA size tracking and visualization utilities for debugging.",
+			"reasoning": "Very high complexity - implementing a formal automata algorithm from scratch. Requires deep understanding of regex theory, NFA construction, Unicode handling, and memory management. This is algorithmically complex and needs extensive testing."
+		},
+		{
+			"taskId": 4,
+			"taskTitle": "DFA subset construction + caps",
+			"complexityScore": 9,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Implement deterministic finite automaton subset construction with powerset state management, early-abort logic for complexity caps, UTF-16 compatible membership checking, state minimization, and performance optimization for large automata.",
+			"reasoning": "Very high complexity - implementing subset construction algorithm with proper state explosion handling. Requires sophisticated algorithmic knowledge and careful optimization to prevent exponential blowup."
+		},
+		{
+			"taskId": 5,
+			"taskTitle": "Product/intersection DFA for AP:false conjuncts",
+			"complexityScore": 8,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Develop DFA product construction for conjunct intersection, state reachability analysis, pruning strategies for state explosion prevention, and integration with additionalProperties:false semantics. Include comprehensive testing for multi-pattern scenarios.",
+			"reasoning": "High complexity due to product construction algorithm and state explosion management. Builds on task 4 but adds intersection complexity and AP:false specific logic."
+		},
+		{
+			"taskId": 6,
+			"taskTitle": "Decide emptiness & finiteness",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Implement graph algorithms for emptiness detection through reachability analysis, finiteness determination via cycle detection, and co-accessible subgraph analysis. Add summary generation and diagnostic reporting for automaton properties.",
+			"reasoning": "Moderate-high complexity involving graph algorithms on DFA structures. Reachability and cycle detection are well-known algorithms but need careful implementation for DFA context."
+		},
+		{
+			"taskId": 7,
+			"taskTitle": "BFS witnesses (shortest then UTF‑16)",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Implement breadth-first enumeration algorithm with stable UTF-16 lexicographic ordering, shortest path finding for minimal witnesses, and guard logic for finiteness requirements. Include proper handling of edge cases and length constraints.",
+			"reasoning": "Moderate complexity - standard BFS algorithm with ordering constraints. The algorithm is well-defined but requires careful implementation of ordering and enumeration guards."
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "Compose integration & CoverageIndex",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Integrate name automata into composition engine with CoverageIndex API design, DFA building for properties and patterns, propertyNames handling with rewrite flags, and provenance tracking. Include comprehensive API testing and performance validation.",
+			"reasoning": "High complexity due to integration work with existing composition engine. The composition-engine.ts file shows extensive complexity already, and adding automata integration requires careful API design and testing."
+		},
+		{
+			"taskId": 9,
+			"taskTitle": "Early-UNSAT diagnostics for objects",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Implement UNSAT detection logic for empty coverage scenarios, required property conflicts, and minProperties violations. Add diagnostic code emission with detailed proof summaries and comprehensive test scenarios for edge cases.",
+			"reasoning": "Moderate-high complexity involving constraint satisfaction analysis. Requires understanding of JSON Schema semantics and proof generation for UNSAT conditions."
+		},
+		{
+			"taskId": 10,
+			"taskTitle": "Strict/Lax policy for AP:false and external $ref",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Implement policy enforcement for strict vs lax modes, external reference resolution handling, error emission for unsafe patterns, and conservative exclusion logic. Include comprehensive testing for different policy scenarios and reference resolution failures.",
+			"reasoning": "Moderate-high complexity due to policy enforcement logic and external reference handling. Requires careful error handling and mode-specific behavior implementation."
+		},
+		{
+			"taskId": 11,
+			"taskTitle": "Arrays: bagged contains + UNSAT rules",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Implement contains bag modeling with deterministic choice algorithms, UNSAT proof generation for impossible constraints, disjointness analysis, and uniqueItems handling. Include comprehensive testing for complex array constraint scenarios.",
+			"reasoning": "High complexity due to array constraint modeling and proof requirements. Arrays with contains constraints can be mathematically complex, especially with uniqueItems and overlapping constraints."
+		},
+		{
+			"taskId": 12,
+			"taskTitle": "Numbers: bounds & rational multipleOf",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Implement numerical bound checking with rational arithmetic, multipleOf consistency with AJV, contradiction detection, and precise snapping algorithms. Include comprehensive testing for floating-point edge cases and boundary conditions.",
+			"reasoning": "Moderate-high complexity due to numerical precision requirements and AJV consistency. Rational arithmetic and floating-point handling can be tricky with edge cases."
+		},
+		{
+			"taskId": 13,
+			"taskTitle": "Optional local SMT (QF_LIA) stub with timeout",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Design SMT solver interface with WASM compatibility, timeout handling with graceful fallback, feature flag integration, and solver-timeout diagnostic emission. Include mock implementations for testing and integration patterns.",
+			"reasoning": "Moderate complexity - mainly interface design and timeout handling. Since it's optional and has fallback mechanisms, the implementation risk is lower."
+		},
+		{
+			"taskId": 14,
+			"taskTitle": "Generator integration with CoverageIndex",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Integrate CoverageIndex into generator for deterministic name selection, minimal witness generation, array constraint satisfaction, and enum/const precedence handling. Include if-aware-lite preservation and comprehensive pipeline testing.",
+			"reasoning": "High complexity due to integration with existing generator system. The foundry-generator.ts file shows significant complexity, and integrating new coverage logic requires careful testing and determinism preservation."
+		},
+		{
+			"taskId": 15,
+			"taskTitle": "Repair engine consistency & stagnation guard",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Enhance repair engine with idempotency guarantees, stagnation detection and prevention, AJV-driven repair consistency, and bounded iteration logic. Include comprehensive testing for repair convergence and edge cases.",
+			"reasoning": "Moderate-high complexity due to convergence requirements and idempotency guarantees. The existing repair-engine.ts shows complexity, and ensuring consistency while preventing infinite loops requires careful design."
+		},
+		{
+			"taskId": 16,
+			"taskTitle": "Validate stage: enforce AJV parity & metrics",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Implement final validation stage with AJV parity enforcement, comprehensive metrics collection across all pipeline phases, validation against original schema, and performance tracking. Include detailed error reporting and metrics visualization.",
+			"reasoning": "Moderate complexity - mainly metrics collection and validation orchestration. Builds on existing validation patterns but requires comprehensive metrics integration."
+		},
+		{
+			"taskId": 17,
+			"taskTitle": "CLI flags & OpenAPI driver (prefer-examples, NDJSON)",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Implement CLI flag parsing with comprehensive options, OpenAPI driver integration for schema selection, NDJSON output formatting, and example preference handling. Include command-line interface testing and integration with existing CLI structure.",
+			"reasoning": "Moderate complexity - primarily CLI interface and format handling. Lower complexity due to well-defined requirements and existing CLI infrastructure."
+		},
+		{
+			"taskId": 18,
+			"taskTitle": "Acceptance tests: objects automata",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Create comprehensive acceptance test suite for DFA emptiness scenarios, BFS witness validation, strict pattern enforcement testing, and property conflict detection. Include test fixtures for complex schema scenarios and automated verification of diagnostic codes.",
+			"reasoning": "Moderate complexity - test implementation based on existing features. Requires understanding of all implemented features but is primarily test code creation."
+		},
+		{
+			"taskId": 19,
+			"taskTitle": "Acceptance tests: arrays, refs, determinism",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Develop acceptance tests for array constraint violations, external reference policy behavior, and deterministic output validation. Include snapshot testing for output stability and comprehensive coverage of edge cases.",
+			"reasoning": "Moderate complexity - test implementation for array and reference features. Determinism testing requires careful setup but follows established patterns."
+		},
+		{
+			"taskId": 20,
+			"taskTitle": "Unit tests: regex/NFA/DFA/product/coverage-index/numbers",
+			"complexityScore": 6,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Create granular unit test suites for regex policy validation, NFA/DFA construction algorithms, product automaton correctness, coverage index functionality, and numerical operations. Include edge case testing, performance benchmarks, and algorithmic correctness verification.",
+			"reasoning": "Moderate-high complexity due to breadth of testing required. Each component (regex, NFA, DFA, etc.) needs comprehensive unit testing with algorithmic correctness verification."
+		}
+	]
+}

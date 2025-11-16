@@ -1,0 +1,19 @@
+# Task ID: 9111
+# Title: §11 Modes
+# Status: done
+# Dependencies: 9000
+# Priority: low
+# Description: Reference-only: section §11.
+# Details:
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§11","anchors":["spec://§11#external-ref-probe"],"notes":"no-embed; fetch-on-demand"}
+
+# Test Strategy:
+None.
+
+# Subtasks:
+## 9111001. Index anchor — external ref probe (Lax eligibility) [done]
+### Dependencies: None
+### Description: 
+### Details:
+
+

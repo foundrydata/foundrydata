@@ -1,0 +1,35 @@
+# Task ID: 10
+# Title: Repair Engine
+# Status: pending
+# Dependencies: 2, 3, 4, 6, 8, 8000, 9000, 9108, 9110, 9113
+# Priority: high
+# Description: AJV-driven repairs, epsilon logging, AP:false rename guard with CoverageIndex, unevaluated evaluation guard.
+# Details:
+[Context] §10 mapping; epsilon logging; propertyNames rename guard; MUSTCOVER index missing; §9 unevaluated evaluation guard.
+- spec://§10#mapping, spec://§10#epsilon-logging, spec://§10#propertynames-rename-guard, spec://§10#mustcover-index-missing
+- spec://§9#objects-minimal-width (guard interplay) [contextual]
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§10","anchors":["spec://§10#mapping","spec://§10#epsilon-logging","spec://§10#propertynames-rename-guard","spec://§10#mustcover-index-missing"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Log epsilon exactly as "1e-<decimalPrecision>" for non-integer nudges; optional delta for integers.
+- Under AP:false + guard true, require ctx.isNameInMustCover(canonPath,n) before rename; else emit MUSTCOVER_INDEX_MISSING{guard:true}.
+- Evaluation guard for additions/renames when unevaluatedProperties:false applies.
+- Integration with Composition Engine's CoverageIndex API for AP:false rename guard implementation.
+[Deliverables]
+- packages/core/src/repair/repair-engine.ts
+[Commands]
+- pnpm i; pnpm -w build; pnpm -w test
+[Definition of Done]
+- Repairs idempotent; logs include canonPath and origPath; rename preflight per §10 and diagnostics conform to §19.1.
+- CoverageIndex integration for must-cover property name validation under additionalProperties:false constraints.
+
+# Test Strategy:
+Unit: epsilon logging tests (float vs integer); enum-first selection; rename blocked by must-cover or evaluation guard; preflight branch/dependent failures; CoverageIndex integration for AP:false guard validation.
+
+# Subtasks:
+## 1. Implement repair actions & guards [pending]
+### Dependencies: None
+### Description: Implement AJV-driven repair actions with CoverageIndex integration for AP:false rename guards and unevaluated evaluation guards.
+### Details:
+Create repair-engine.ts with AJV-driven repair logic, epsilon logging, and integration with Composition Engine's CoverageIndex for property name validation under additionalProperties:false constraints. Must implement ctx.isNameInMustCover binding and MUSTCOVER_INDEX_MISSING diagnostic emission.
+

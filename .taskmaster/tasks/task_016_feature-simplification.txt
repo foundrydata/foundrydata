@@ -1,0 +1,47 @@
+# Task ID: 16
+# Title: Diagnostics payload conformance
+# Status: done
+# Dependencies: 6, 8000, 9000, 9119, 9108, 9107
+# Priority: high
+# Description: Enforce §19.1 mini-schemas, phase separation, and verbosity toggle exposure.
+# Details:
+[Context] §19 payloads & phase separation; §8 caps separation; verbosity toggle (also in task #6).
+- spec://§19#payloads, spec://§19#phase-separation
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§19","anchors":["spec://§19#payloads","spec://§19#phase-separation"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Validate representative payloads; ensure REGEX_COMPLEXITY_CAPPED appears only from Normalize/Compose; COMPLEXITY_CAP_PATTERNS only from Generator.
+- Expose verbosity switch integrated with metrics (building on task 6 base implementation).
+- Implement phase separation validation ensuring diagnostic codes appear from correct pipeline stages.
+[Deliverables]
+- packages/core/src/diag/schemas.ts (payload mini-schemas)
+- augment packages/core/src/util/metrics.ts (verbosity - extends task 6)
+[Dependencies]
+- Depends on task 6 for base diagnostics envelope structure and metrics collection system
+[Commands]
+- pnpm -w test
+[Definition of Done]
+- Tests cover distinct phases for caps; toggle active without schema-shape drift; validates phase separation conformance.
+
+# Test Strategy:
+Unit: schema validation for several codes; negative tests for misrouted caps; snapshot tests across verbosity modes; phase separation validation tests.
+
+# Subtasks:
+## 1. Mini-schemas & validators for diagnostics [done]
+### Dependencies: None
+### Description: Create TypeScript schemas and validators to enforce diagnostic payload conformance per §19.1
+### Details:
+Implement mini-schemas for diagnostic payloads in packages/core/src/diag/schemas.ts. This includes validating that REGEX_COMPLEXITY_CAPPED codes only appear from Normalize/Compose stages and COMPLEXITY_CAP_PATTERNS only from Generator stage. Build validation logic that ensures phase separation requirements are met.
+
+## 2. Verbosity toggle plumbing integration [done]
+### Dependencies: None
+### Description: Integrate verbosity toggle with existing metrics collection system from task 6
+### Details:
+Extend the base metrics and diagnostics envelope from task 6 by adding verbosity toggle functionality to packages/core/src/util/metrics.ts. This should integrate with the existing PlanOptions.metrics boolean and provide granular control over diagnostic output detail levels without breaking existing schema shapes.
+
+## 3. Phase separation enforcement [done]
+### Dependencies: 16.1
+### Description: Implement validation that diagnostic codes appear only from their designated pipeline phases
+### Details:
+Build enforcement mechanisms to validate that diagnostic codes follow phase separation rules. Ensure REGEX_COMPLEXITY_CAPPED appears only from Normalize/Compose phases and COMPLEXITY_CAP_PATTERNS only from Generator phase. This builds on the mini-schemas from subtask 1 and integrates with the existing pipeline stages.
+

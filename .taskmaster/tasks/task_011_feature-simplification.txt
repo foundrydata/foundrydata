@@ -1,0 +1,78 @@
+# Task ID: 11
+# Title: Pipeline Orchestrator
+# Status: pending
+# Dependencies: 2, 7, 8, 9, 10, 8000, 9000, 9106, 9101, 9113, 9115, 5, 6
+# Priority: high
+# Description: Wire Normalize → Compose → Generate → Repair → Validate; pass metrics and diagnostics through.
+# Details:
+[Context] §4 pipeline; §6 phases; §1 acceptance; §15 metrics.
+- spec://§4#pipeline, spec://§6#phases, spec://§1#acceptance, spec://§15#metrics
+[Retrieval]
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§4","anchors":["spec://§4#pipeline"],"notes":"no-embed; fetch-on-demand"}
+[Key requirements]
+- Final AJV validate against original; support Lax/Strict behaviors routed by Modes task.
+- Wire together Normalize → Compose → Generate → Repair → Validate stages from dependency tasks.
+- Integrate with existing FoundryGenerator structure in packages/core/src/generator/foundry-generator.ts
+- Preserve existing PipelineStage enum and metrics collection patterns
+[Deliverables]
+- packages/core/src/index.ts (main orchestrator entry point)
+- Enhanced packages/core/src/generator/foundry-generator.ts with new pipeline stages
+[Commands]
+- pnpm i; pnpm -w build; pnpm -w test; pnpm -w bench
+[Definition of Done]
+- End-to-end run returns diagnostics+metrics and valid instances on simple cases; errors propagate with correct codes.
+- All five pipeline stages (Normalize, Compose, Generate, Repair, Validate) are wired together
+- Integration with task 2 (Dual AJV), task 7 (Normalizer), task 8 (Composition Engine), task 9 (Generator), and task 10 (Repair Engine)
+
+# Test Strategy:
+Integration smoke: simple schema end-to-end; metrics fields all present; validationsPerRow ≥ 1 unless Lax skip path applies (to be added in task #12). Test all five pipeline stages execute in sequence with proper metrics collection.
+
+# Subtasks:
+## 1. Compose pipeline entrypoint [pending]
+### Dependencies: None
+### Description: Create main orchestrator entry point in packages/core/src/index.ts that coordinates the five-stage pipeline
+### Details:
+Implement the high-level orchestrator function that coordinates Normalize → Compose → Generate → Repair → Validate stages. This should integrate with the existing FoundryGenerator structure and maintain compatibility with current PipelineStage enum and metrics collection patterns. The orchestrator should handle stage dependencies, error propagation, and metrics aggregation across all pipeline stages.
+
+## 2. Integrate Normalizer stage [pending]
+### Dependencies: 11.1
+### Description: Wire task 7 (Normalizer) implementation into the pipeline orchestrator
+### Details:
+Integrate the Normalizer from task 7 as the first stage in the pipeline. Handle draft unification, boolean/trivial simplifications, conditional rewrite options, and propertyNames rewrite. Ensure proper error handling and metrics collection for the normalization stage.
+
+## 3. Integrate Composition Engine stage [pending]
+### Dependencies: 11.2
+### Description: Wire task 8 (Composition Engine) implementation into the pipeline orchestrator
+### Details:
+Integrate the Composition Engine from task 8 as the second stage in the pipeline. Handle effective view building, must-cover additionalProperties:false, bag contains semantics, and rational multipleOf calculations. Ensure proper data flow from Normalizer to Composition stage.
+Deliver the Compose input/output envelope from §23 (`schema`, `ptrMap`, `revPtrMap`, `notes`) so diagnostics can be keyed per `canonPath` and §7 synthetic notes reach the Composition engine.
+
+## 4. Integrate Generator stage [pending]
+### Dependencies: 11.3
+### Description: Wire task 9 (Generator) implementation into the pipeline orchestrator
+### Details:
+Integrate the Generator from task 9 as the third stage in the pipeline. Handle deterministic seeded generation, enum/const precedence, and if-aware-lite generation. Maintain compatibility with existing generator structure in foundry-generator.ts.
+
+## 5. Integrate Repair Engine stage [pending]
+### Dependencies: 11.4
+### Description: Wire task 10 (Repair Engine) implementation into the pipeline orchestrator
+### Details:
+Integrate the Repair Engine from task 10 as the fourth stage in the pipeline. Handle AJV-driven corrections, idempotent repairs, rational snapping, and structural deduplication for uniqueItems. Implement repair budgeting and graceful degradation.
+
+## 6. Integrate Dual AJV Validation stage [pending]
+### Dependencies: 11.5
+### Description: Wire task 2 (Dual AJV) implementation as the final validation stage
+### Details:
+Integrate the Dual AJV system from task 2 as the final validation stage. Ensure validation against original schema, handle Source and Planning AJV instances, and implement proper error reporting with pointer mapping and caching.
+
+## 7. Implement metrics aggregation [pending]
+### Dependencies: 11.6
+### Description: Aggregate metrics from all pipeline stages into comprehensive PipelineMetrics
+### Details:
+Collect and aggregate metrics from all five pipeline stages (normalizeMs, composeMs, generateMs, repairMs, validateMs). Include validationsPerRow, repairPassesPerRow, branchTrialsTried, and memory usage. Ensure compatibility with existing PipelineMetrics interface.
+
+## 8. Implement error propagation [pending]
+### Dependencies: 11.7
+### Description: Ensure proper error handling and propagation across all pipeline stages
+### Details:
+Implement comprehensive error handling that preserves error context across pipeline stages. Handle FoundryError types from each stage, maintain error codes, and ensure diagnostic information is properly aggregated and reported.

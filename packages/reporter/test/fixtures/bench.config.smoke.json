@@ -1,0 +1,24 @@
+[
+  {
+    "id": "simple",
+    "schema": "../../../../profiles/simple.json",
+    "maxInstances": 2
+  },
+  {
+    "id": "medium",
+    "schema": "../../../../profiles/medium.json",
+    "maxInstances": 1,
+    "seed": 42
+  },
+  {
+    "id": "pathological",
+    "schema": "../../../../profiles/pathological.json",
+    "maxInstances": 1,
+    "seed": 7
+  },
+  {
+    "id": "missing",
+    "schema": "../../../../profiles/does-not-exist.json",
+    "maxInstances": 1
+  }
+]
