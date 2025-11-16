@@ -31,6 +31,10 @@ async function loadReport(): Promise<Report> {
 function sanitizeReport(report: Report): Report {
   const next = clone(report);
   next.meta.timestamp = '<timestamp>';
+  // Normalize environment-specific bits so snapshots are stable across machines
+  // The logical identifier is schemaId ("profiles/simple.json"), so we mirror
+  // that here instead of keeping the absolute filesystem path.
+  next.schemaPath = 'profiles/simple.json';
   if (next.metrics) {
     sanitizeMetrics(next.metrics);
   }
