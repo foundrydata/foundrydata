@@ -1,22 +1,19 @@
-Task: 20   Title: Unit tests: regex/NFA/DFA/product/coverage-index/numbers
-Anchors: [spec://§7#object-keywords-pnames-rewrite, spec://§8#coverage-index-export, spec://§8#coverage-index-enumerate, spec://§8#numbers-multipleof, spec://§8#apfalse-must-cover]
+Task: 22   Title: Centralize regex diagnostics through RegexAnalysis
+Anchors: [spec://§2#regex-policy-complexity-caps, spec://§3#name-automata-must-cover, spec://§5#diagnostics, spec://§6#non-functional-constraints, spec://§7#interfaces]
 
 Touched files:
 - PLAN.md
-- packages/core/src/transform/__tests__/regex-policy.spec.ts
-- packages/core/src/transform/__tests__/nfa-dfa-basic.spec.ts
-- packages/core/src/transform/__tests__/product-dfa.spec.ts
-- packages/core/src/transform/__tests__/name-automata/bfs.spec.ts
-- packages/core/src/transform/__tests__/name-automata/product-summary.spec.ts
-- packages/core/src/transform/__tests__/numbers/multiple-of.spec.ts
-- packages/core/src/transform/__tests__/composition-engine.test.ts
+- packages/core/src/transform/name-automata/regex.ts
+- packages/core/src/transform/composition-engine.ts
+- packages/core/src/transform/schema-normalizer.ts
 
 Approach:
-I will align the existing unit tests for the regex policy, Thompson NFA and subset-construction DFA, product automata, CoverageIndex, and multipleOf helpers with the P1 automata/SMT spec and the core SPEC anchors. For regex-policy.spec.ts and nfa-dfa-basic.spec.ts, I will verify that classification of anchored-safe patterns, lookaround/backreference detection, and the NFA/DFA construction rules match the restricted grammar and complexity caps defined in §8, including that REGEX_COMPLEXITY_CAPPED and REGEX_COMPILE_ERROR diagnostics are only emitted in the allowed phases. For product-dfa.spec.ts, bfs.spec.ts, and product-summary.spec.ts, I will ensure the tests exercise intersection semantics, emptiness/ finiteness analysis, and BFS witness enumeration order (length then UTF-16) consistent with the name-automata acceptance cases in docs/jsg-p1-automata-smt.md and SPEC §8’s name automata summary. For composition-engine.test.ts I will rely on and, where necessary, refine the existing coverage index tests so that they fully cover the CoverageIndex contract (has/ enumerate/provenance), the AP:false must-cover rules, propertyNames rewrite vs raw gating, and NAME_AUTOMATON_COMPLEXITY_CAPPED/COMPLEXITY_CAP_ENUM behaviour, without changing the public Compose API. For numbers/multiple-of.spec.ts, I will keep the current Ajv-aligned multipleOf tests and extend them if needed to stay consistent with the rational/epsilon policy in §8, ensuring that createMultipleOfContext and isAjvMultipleOf remain aligned with Ajv’s multipleOfPrecision and that snapToNearestMultiple respects the configured decimalPrecision.
+I will refactor regex handling so that compile and complexity diagnostics are produced once by RegexAnalysis and then routed consistently to the normalize and compose stages. In the transform/name-automata/regex.ts helper I will keep the existing structural scan and complexity scoring, but treat RegexAnalysis.diagnostics as the canonical source of REGEX_COMPLEXITY_CAPPED and REGEX_COMPILE_ERROR entries, parameterised by a RegexContext flag that distinguishes coverage from rewrite usage. In composition-engine.ts I will extend analyzeRegexPattern() to expose the underlying RegexAnalysis object, then update the coverage construction logic for patternProperties and propertyNames.pattern to iterate over RegexAnalysis.diagnostics and feed them through addCoverageRegexWarn() instead of manually emitting diagnostics from boolean flags, while preserving existing approximation reasons, PatternIssue bookkeeping, and coverage/UNSAT behaviour. In schema-normalizer.ts I will remove the ad-hoc regex complexity helper and direct scanRegexSource usage, replace them with analyzeRegex(..., {context:'rewrite'}), and route any REGEX_COMPLEXITY_CAPPED or REGEX_COMPILE_ERROR entries into notes alongside the existing PNAMES_COMPLEX reasons so that normalize-stage diagnostics remain phase-correct but share the same payload shape as compose-stage warnings. Finally, I will run the full build, unit tests, and bench harness to confirm that diagnostic envelopes still validate and that coverage decisions, AP:false semantics, and p95 latency/memory gates remain unchanged.
 
 Risks/Unknowns:
-- The existing automata and coverage-index tests already cover most of the acceptance scenarios; any additional assertions must avoid over-specifying internal shapes so that refactors inside name-automata or composition-engine do not cause unnecessary test churn.
-- multipleOf behaviour is coupled to Ajv’s multipleOfPrecision and rational options; if Ajv changes its tolerance semantics in future versions, the tests may need to be adjusted to keep the “Ajv as oracle” invariant without loosening too much.
+- RegexAnalysis currently enforces a default complexity threshold; reusing it in schema-normalizer must not make propertyNames rewrites significantly more conservative or aggressive than before, so I need to rely primarily on the existing structural caps and keep rewrite gating logic unchanged.
+- Some edge-case patterns may compile differently under the engine used by analyzeRegex versus the unicode-aware RegExp used later for coverage predicates; I must ensure those discrepancies only affect approximation hints and never cause phase-incorrect diagnostics or broken CoverageIndex behaviour.
+- Centralizing diagnostics increases coupling between normalizer and composition engine; tests must be sensitive enough to catch any accidental change in where diagnostics are attached (canonPath) or how often they are emitted.
 
 Checks:
 - build: npm run build

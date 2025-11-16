@@ -5,7 +5,7 @@
 /* eslint-disable max-lines-per-function */
 import { DIAGNOSTIC_CODES } from '../diag/codes.js';
 import type { DiagnosticCode } from '../diag/codes.js';
-import { scanRegexSource } from '../util/pattern-literals.js';
+import { analyzeRegex } from './name-automata/regex.js';
 
 type CanonNode = CanonObjectNode | CanonArrayNode | CanonValueNode;
 
@@ -605,23 +605,28 @@ class SchemaNormalizer {
     }
 
     const patternSource = patternValue;
-    const scan = scanRegexSource(patternSource);
-    if (
-      !scan.anchoredStart ||
-      !scan.anchoredEnd ||
-      scan.hasBackReference ||
-      scan.hasLookAround
-    ) {
+    const policy = analyzeRegex(patternSource, { context: 'rewrite' });
+
+    if (policy.compileError) {
+      this.recordPnamesComplex(objectPointer, 'REGEX_COMPILE_ERROR');
+      for (const diag of policy.diagnostics) {
+        this.addNote(objectPointer, diag.code, diag.details);
+      }
+      return null;
+    }
+
+    if (!policy.anchored || policy.hasBackreference || policy.hasLookaround) {
       this.recordPnamesComplex(objectPointer, 'PATTERN_NOT_ANCHORED');
       return null;
     }
 
-    if (scan.complexityCapped) {
+    if (policy.capped) {
       this.recordPnamesComplex(objectPointer, 'REGEX_COMPLEXITY_CAPPED');
-      this.addNote(objectPointer, DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED, {
-        context: 'rewrite',
-        patternSource,
-      });
+      for (const diag of policy.diagnostics) {
+        if (diag.code === DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED) {
+          this.addNote(objectPointer, diag.code, diag.details);
+        }
+      }
       return null;
     }
 
@@ -1139,12 +1144,22 @@ class SchemaNormalizer {
         .map((value) => escapeRegexLiteral(value))
         .join('|')})$`;
 
-      if (isRegexComplexityCapped(patternSource)) {
+      const policy = analyzeRegex(patternSource, { context: 'rewrite' });
+      if (policy.compileError) {
+        this.recordPnamesComplex(objectPointer, 'REGEX_COMPILE_ERROR');
+        for (const diag of policy.diagnostics) {
+          this.addNote(objectPointer, diag.code, diag.details);
+        }
+        return rebuildObject();
+      }
+
+      if (policy.capped) {
         this.recordPnamesComplex(objectPointer, 'REGEX_COMPLEXITY_CAPPED');
-        this.addNote(objectPointer, DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED, {
-          context: 'rewrite',
-          patternSource,
-        });
+        for (const diag of policy.diagnostics) {
+          if (diag.code === DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED) {
+            this.addNote(objectPointer, diag.code, diag.details);
+          }
+        }
         return rebuildObject();
       }
 
@@ -1939,65 +1954,6 @@ function isBooleanNode(node: CanonNode, expected?: boolean): boolean {
     return false;
   }
   return expected === undefined ? true : node.value === expected;
-}
-
-function isRegexComplexityCapped(source: string): boolean {
-  if (source.length > 4096) {
-    return true;
-  }
-
-  const stack: number[] = [];
-  let inClass = false;
-
-  for (let i = 0; i < source.length; i++) {
-    const ch = source[i];
-
-    if (ch === '\\') {
-      i += 1;
-      continue;
-    }
-
-    if (ch === '[') {
-      if (!inClass) inClass = true;
-      continue;
-    }
-    if (ch === ']' && inClass) {
-      inClass = false;
-      continue;
-    }
-    if (inClass) continue;
-
-    if (ch === '(') {
-      stack.push(i);
-      continue;
-    }
-
-    if (ch === ')' && stack.length > 0) {
-      stack.pop();
-      const nextIndex = i + 1;
-      if (nextIndex >= source.length) {
-        continue;
-      }
-      const nextChar = source[nextIndex]!;
-      if (nextChar === '*' || nextChar === '+' || nextChar === '?') {
-        return true;
-      }
-      if (nextChar === '{') {
-        let j = nextIndex + 1;
-        if (j >= source.length) continue;
-        let valid = false;
-        while (j < source.length && /[0-9,]/.test(source.charAt(j))) {
-          valid = true;
-          j += 1;
-        }
-        if (valid && j < source.length && source.charAt(j) === '}') {
-          return true;
-        }
-      }
-    }
-  }
-
-  return false;
 }
 
 function escapeRegexLiteral(value: string): string {

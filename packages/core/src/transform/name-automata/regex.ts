@@ -97,11 +97,11 @@ export function analyzeRegex(
   patternSource: string,
   options: RegexPolicyOptions
 ): RegexAnalysis {
+  let compileError = false;
   const context = options.context;
   const maxComplexity = options.maxComplexity ?? DEFAULT_MAX_COMPLEXITY;
   const diagnostics: RegexDiagnostic[] = [];
 
-  let compileError = false;
   try {
     // Compile to ensure the pattern is syntactically valid in the target engine.
     // Flags are omitted here; callers control flags via AJV configuration.
