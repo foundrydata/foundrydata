@@ -23,7 +23,7 @@ export interface ContractTestsExampleResult {
 }
 
 export async function runContractTestsExample(): Promise<ContractTestsExampleResult> {
-  const schema = await loadJson('schemas/payment.json');
+  const schema = await loadJson('../../docs/examples/payment.json');
 
   const count = 10;
   const seed = 123;

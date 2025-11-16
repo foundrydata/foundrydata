@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { runApiMocksExample } from '../../../../examples/api-mocks';
-import { runContractTestsExample } from '../../../../examples/contract-tests';
-import { runLlmOutputExample } from '../../../../examples/llm-output';
+import { runApiMocksExample } from '../../../../scripts/examples/api-mocks';
+import { runContractTestsExample } from '../../../../scripts/examples/contract-tests';
+import { runLlmOutputExample } from '../../../../scripts/examples/llm-output';
 
 describe('Product examples — Node API', () => {
   it('API mocks example runs and produces AJV-valid items', async () => {
