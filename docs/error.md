@@ -93,7 +93,7 @@ FoundryData surfaces every approximation, guardrail, and failure through a struc
 | Code | Meaning |
 | --- | --- |
 | `AJV_FLAGS_MISMATCH` | Startup parity check detected flag differences between planning and source AJV instances. Details include the diffed flags and AJV version. |
-| `EXTERNAL_REF_UNRESOLVED` | Source schema references remote `$ref`. Details list exemplar refs, mode, and whether validation was skipped due to policy. |
+| `EXTERNAL_REF_UNRESOLVED` | Source schema references remote `$ref`. Details list an exemplar ref (`ref`), mode, optional `failingRefs:string[]` for all failing externals, and whether validation was skipped due to policy. |
 
 ## Cross-cutting guidance
 

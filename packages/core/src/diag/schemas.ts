@@ -428,6 +428,10 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
       mode: enumSchema(['strict', 'lax']),
       skippedValidation: { kind: 'boolean' },
       policy: enumSchema(['error', 'warn', 'ignore']),
+      failingRefs: {
+        kind: 'array',
+        items: { kind: 'string' },
+      },
     },
   },
 };

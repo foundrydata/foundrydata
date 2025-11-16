@@ -1530,7 +1530,7 @@ Run the evaluation guard before finalizing the action for the object (and before
   • if compilation succeeds, final validation runs normally;  
   • if compilation **fails**, apply the following **eligibility test (normative)** to decide whether to skip validation:
   Let `ExtRefs` be the set of `$ref` values classified as **external** per §11/§12. Create an in‑memory copy of the schema where each external `$ref` subtree is replaced by `{}` (no other changes). If compiling this **probe** schema **succeeds** and `ExtRefs.size > 0`, treat the failure as **likely due only** to unresolved external `$ref` (**heuristic classification**): set `skippedValidation:true`, emit `EXTERNAL_REF_UNRESOLVED` with `details:{ mode:'lax', skippedValidation:true }`, and **MUST** set `diag.metrics.validationsPerRow = 0` for the affected row(s). This classification is heuristic; when uncertain, implementations **MUST NOT** skip validation. If the probe **also fails**, or the probe cannot be performed, **do not** skip validation and propagate the compilation failure. No network or filesystem I/O is performed.
-    **Observability (normative):** When available, include one exemplar unresolved reference as `details.ref := smallest(ExtRefs)`, where `smallest` returns the UTF‑16 lexicographically smallest string in `ExtRefs`. If no stable exemplar can be determined, omit `ref`.
+    **Observability (normative):** When available, include one exemplar unresolved reference as `details.ref := smallest(ExtRefs)`, where `smallest` returns the UTF‑16 lexicographically smallest string in `ExtRefs`. Implementations **MAY** also expose the full set of failing references as `details.failingRefs:string[]`. If no stable exemplar can be determined, omit `ref`.
   **Additional guard (normative).** The skip path above **MUST** be taken **only when** all of the following hold:
   (i) `ExtRefs.size > 0`; (ii) the failing Source Ajv compilation’s error list is non‑empty and **every** error has
   `keyword === '$ref'`, and its failing reference value is an element of `ExtRefs`; and (iii) the probe compilation
@@ -1546,7 +1546,7 @@ Input: original schema S; Source Ajv class/dialect matched per §12.
    b) Build probe schema S': in-memory copy of S where each external `$ref` subtree is replaced by `{}` (no other changes).
    c) Attempt compile(S'). If it succeeds **and** ExtRefs.size > 0:
         set `skippedValidation:true`,
-        emit `EXTERNAL_REF_UNRESOLVED{ mode:'lax', skippedValidation:true, ref: smallest(ExtRefs) }`,
+        emit `EXTERNAL_REF_UNRESOLVED{ mode:'lax', skippedValidation:true, ref: smallest(ExtRefs), failingRefs?: ExtRefsArray }`,
         and **MUST** set `diag.metrics.validationsPerRow = 0` for affected rows.
       `smallest` is the UTF‑16 lexicographically smallest string in ExtRefs; omit `ref` if none can be determined.
    d) Otherwise ⇒ **MUST NOT** skip; propagate the compilation failure.
