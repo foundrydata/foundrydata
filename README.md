@@ -55,7 +55,7 @@ foundrydata generate --schema user.json --rows 100 --compat lax
 ```
 
 * Generated **data goes to stdout**; **metrics/errors go to stderr** (for easy piping in CI).
-* By default the resolver runs in **local-only** mode (no network); external `$ref` are not fetched unless you explicitly opt into remote/registry strategies via the resolver options (e.g., CLI `--resolve`). The `--external-ref-strict` flag controls how unresolved externals affect the run; validation is always against the original schema.
+* By default the resolver runs in **local-only** mode (no network); external `$ref` are not fetched unless you explicitly opt into remote/registry strategies via the resolver options (e.g., CLI `--resolve`). The `--external-ref-strict` flag controls how unresolved externals affect the run; validation is always against the original schema. When Source AJV fails solely because of unresolved external `$ref`, the pipeline emits an `EXTERNAL_REF_UNRESOLVED` diagnostic whose details (mode, ref, policy) are visible with `--debug-passes`.
 
 ---
 

@@ -56,6 +56,8 @@ Outputs per schema `<id>.report.json` (and optional Markdown/HTML) plus a `bench
 
 If a schema fails to run (missing file, unresolved references, etc.), the bench runner records it with `level: "blocked"` and an `error` message in the summary while continuing with the remaining entries.
 
+When the failure comes from unresolved external `$ref`, the summary will typically show `error: "EXTERNAL_REF_UNRESOLVED"` for that entry. To inspect the underlying diagnostic in detail (e.g., which ref failed and in which mode), run the schema in isolation via the core CLI with `--debug-passes` or the reporter `run` command and inspect the resulting `*.report.json`.
+
 ## Report contract
 
 The `Report` interface defined in [`src/model/report.ts`](./src/model/report.ts) is the reporter’s public contract. Key fields:
