@@ -434,4 +434,27 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
       },
     },
   },
+  [DIAGNOSTIC_CODES.SCHEMA_INTERNAL_REF_MISSING]: {
+    kind: 'object',
+    required: {
+      ref: { kind: 'string' },
+    },
+    optional: {
+      mode: enumSchema(['strict', 'lax']),
+      failingRefs: {
+        kind: 'array',
+        items: { kind: 'string' },
+      },
+    },
+  },
+  [DIAGNOSTIC_CODES.VALIDATION_COMPILE_ERROR]: {
+    kind: 'object',
+    required: {
+      message: { kind: 'string' },
+    },
+    optional: {
+      reason: { kind: 'string' },
+      errorName: { kind: 'string' },
+    },
+  },
 };

@@ -1126,7 +1126,42 @@ function createDefaultValidate(
         // In Strict mode, treat unresolved external $ref as a hard failure
         throw new ExternalRefValidationError(diag);
       }
-      throw error;
+      if (
+        !classification.skipEligible &&
+        classification.reason === 'no-external-refs' &&
+        classification.failingRefs.length > 0
+      ) {
+        const primaryRef = classification.failingRefs[0] as string;
+        const diag: DiagnosticEnvelope = {
+          code: DIAGNOSTIC_CODES.SCHEMA_INTERNAL_REF_MISSING,
+          canonPath: '',
+          details: {
+            ref: primaryRef,
+            mode,
+            failingRefs:
+              classification.failingRefs.length > 1
+                ? classification.failingRefs
+                : undefined,
+          },
+        };
+        throw new ExternalRefValidationError(diag);
+      }
+      const err = error instanceof Error ? error : undefined;
+      const details: Record<string, unknown> = {
+        message: err?.message ?? String(error),
+      };
+      if (classification.reason) {
+        details.reason = classification.reason;
+      }
+      if (err?.name) {
+        details.errorName = err.name;
+      }
+      const diag: DiagnosticEnvelope = {
+        code: DIAGNOSTIC_CODES.VALIDATION_COMPILE_ERROR,
+        canonPath: '',
+        details,
+      };
+      throw new ExternalRefValidationError(diag);
     }
     const errors: unknown[] = [];
     const validationDiagnostics: DiagnosticEnvelope[] = [];

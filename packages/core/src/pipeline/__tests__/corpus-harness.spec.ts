@@ -182,4 +182,73 @@ describe('corpus harness', () => {
 
     expect(summarize(first)).toEqual(summarize(second));
   });
+
+  it('emits diagnostics for internal missing $ref and marks schema as failFast', async () => {
+    const schemaWithInternalMissingRef = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      $id: 'https://example.com/internal-missing.json',
+      type: 'object',
+      properties: {
+        a: { $ref: '#/$defs/missing' },
+      },
+      required: ['a'],
+    } as const;
+
+    const report = await runCorpusHarness({
+      schemas: [
+        { id: 'internal-missing-ref', schema: schemaWithInternalMissingRef },
+      ],
+      mode: 'strict',
+      seed: 37,
+      instancesPerSchema: 3,
+      validateFormats: false,
+    });
+
+    const entry = report.results[0];
+    expect(entry).toBeDefined();
+    if (!entry) {
+      throw new Error('Expected internal-missing-ref corpus result');
+    }
+
+    expect(entry.instancesTried).toBeGreaterThan(0);
+    expect(entry.instancesValid).toBe(0);
+    expect(entry.unsat).toBe(false);
+    expect(entry.failFast).toBe(true);
+    const codes = entry.diagnostics.map((diag) => diag.code);
+    expect(codes).toContain(DIAGNOSTIC_CODES.SCHEMA_INTERNAL_REF_MISSING);
+    expect(entry.metrics?.validationsPerRow ?? 0).toBe(0);
+  });
+
+  it('emits validation compile error diagnostics and marks schema as failFast', async () => {
+    const schemaWithBadPattern = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'string',
+      // Intentionally invalid regular expression to trigger AJV compile-time error
+      pattern: '([a-z]+', // missing closing parenthesis
+    } as const;
+
+    const report = await runCorpusHarness({
+      schemas: [
+        { id: 'validation-compile-error', schema: schemaWithBadPattern },
+      ],
+      mode: 'strict',
+      seed: 37,
+      instancesPerSchema: 3,
+      validateFormats: false,
+    });
+
+    const entry = report.results[0];
+    expect(entry).toBeDefined();
+    if (!entry) {
+      throw new Error('Expected validation-compile-error corpus result');
+    }
+
+    expect(entry.instancesTried).toBeGreaterThan(0);
+    expect(entry.instancesValid).toBe(0);
+    expect(entry.unsat).toBe(false);
+    expect(entry.failFast).toBe(true);
+    const codes = entry.diagnostics.map((diag) => diag.code);
+    expect(codes).toContain(DIAGNOSTIC_CODES.VALIDATION_COMPILE_ERROR);
+    expect(entry.metrics?.validationsPerRow ?? 0).toBe(0);
+  });
 });

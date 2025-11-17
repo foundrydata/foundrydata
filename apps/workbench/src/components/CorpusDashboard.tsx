@@ -104,6 +104,7 @@ function CorpusSchemaTable({
           <tr>
             <th>Id</th>
             <th>Mode</th>
+            <th>Health</th>
             <th>Schema path</th>
             <th>Instances tried</th>
             <th>Instances valid</th>
@@ -119,6 +120,7 @@ function CorpusSchemaTable({
             <tr key={schema.id}>
               <td className="schema-id">{schema.id}</td>
               <td>{schema.mode}</td>
+              <td>{formatSchemaHealth(schema)}</td>
               <td
                 className="schema-id schema-path-cell"
                 title={schema.schemaPath}
@@ -148,6 +150,41 @@ function compareSchemas(a: CorpusSchemaResult, b: CorpusSchemaResult): number {
     return a.failFast ? -1 : 1;
   }
   return a.id.localeCompare(b.id);
+}
+
+function formatSchemaHealth(schema: CorpusSchemaResult): string {
+  const instancesValid = schema.instancesValid ?? 0;
+  const diagnostics = (schema as { diagnostics?: Array<{ code: string }> })
+    .diagnostics;
+  const codes = Array.isArray(diagnostics)
+    ? diagnostics.map((d) => d.code)
+    : [];
+
+  if (instancesValid > 0) {
+    return 'ok';
+  }
+
+  if (schema.unsat) {
+    return 'unsat';
+  }
+
+  if (codes.includes('SCHEMA_INTERNAL_REF_MISSING')) {
+    return 'internal-ref error';
+  }
+
+  if (codes.includes('VALIDATION_COMPILE_ERROR')) {
+    return 'validation compile error';
+  }
+
+  if (codes.includes('EXTERNAL_REF_UNRESOLVED')) {
+    return 'external-ref unresolved';
+  }
+
+  if (schema.failFast) {
+    return 'fail-fast';
+  }
+
+  return 'no valid instances';
 }
 
 function formatSchemaPathDisplay(path: string | undefined): string {

@@ -78,6 +78,8 @@ export function isUnsatOrFailFastCode(code: DiagnosticCode): boolean {
 
   return (
     code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN ||
-    code === DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED
+    code === DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED ||
+    code === DIAGNOSTIC_CODES.SCHEMA_INTERNAL_REF_MISSING ||
+    code === DIAGNOSTIC_CODES.VALIDATION_COMPILE_ERROR
   );
 }
