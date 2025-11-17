@@ -1,6 +1,6 @@
 # FoundryData Comprehensive Feature Support
 
-> **Status**: Updated to align with [Feature Support Simplification Plan](feature-simplification/feature-support-simplification.md)
+> **Status**: Updated to align with [Feature Support Simplification Plan](feature-simplification/spec-canonical-json-schema-generator.md)
 > 
 > **Previous limitations have been lifted** - this document now covers the full feature matrix.
 
@@ -90,7 +90,7 @@ These features have **configurable behavior** rather than hard blocks:
 ## Configuration & Tuning
 
 ### PlanOptions (Brief Overview)
-Full specification: [Feature Support Simplification Plan](feature-simplification/feature-support-simplification.md) §5
+Full specification: [Feature Support Simplification Plan](feature-simplification/spec-canonical-json-schema-generator.md) §5
 
 ```typescript
 type PlanOptions = {
@@ -142,4 +142,4 @@ Default mapping between `rewriteConditionals` and `conditionals.strategy`:
 
 ---
 
-**Next**: See [Architecture](../ARCHITECTURE.md) for implementation details or [Feature Simplification Plan](feature-simplification/feature-support-simplification.md) for complete specification.
+**Next**: See [Architecture](../ARCHITECTURE.md) for implementation details or [Feature Simplification Plan](feature-simplification/spec-canonical-json-schema-generator.md) for complete specification.

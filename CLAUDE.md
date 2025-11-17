@@ -324,11 +324,11 @@ Read(.taskmaster/tasks/tasks.json)
 
 **Anchor Mapping**:
 ```
-spec://§<n>#<slug> → docs/feature-simplification/feature-support-simplification.md#s<n>-<slug>
+spec://§<n>#<slug> → docs/feature-simplification/spec-canonical-json-schema-generator.md#s<n>-<slug>
 ```
 
 **Example**:
-- `spec://§8#branch-selection-algorithm` maps to `docs/feature-simplification/feature-support-simplification.md#s8-branch-selection-algorithm`
+- `spec://§8#branch-selection-algorithm` maps to `docs/feature-simplification/spec-canonical-json-schema-generator.md#s8-branch-selection-algorithm`
 
 **Working Context**:
 - **Keep working context small**: Load only anchors required by the current task
@@ -345,7 +345,7 @@ spec://§<n>#<slug> → docs/feature-simplification/feature-support-simplificati
 * **Never use direct Read on large docs without grep anchors first**
 * Confirm you had read the entire doc if asked
 
-**SPEC Reading Protocol (feature-support-simplification.md)**
+**SPEC Reading Protocol (spec-canonical-json-schema-generator.md)**
 
 The SPEC is too large to read without precision. Always use this protocol:
 

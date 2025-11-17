@@ -5,7 +5,7 @@
 # Priority: low
 # Description: Reference-only: section §20.
 # Details:
-REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§20","anchors":["spec://§20#unit","spec://§20#integration","spec://§20#bench-ci","spec://§20#metamorphic"],"notes":"no-embed; fetch-on-demand"}
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§20","anchors":["spec://§20#unit","spec://§20#integration","spec://§20#bench-ci","spec://§20#metamorphic"],"notes":"no-embed; fetch-on-demand"}
 
 # Test Strategy:
 None.

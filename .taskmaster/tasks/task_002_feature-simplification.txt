@@ -10,9 +10,9 @@
 - spec://§12#ajv-class-selection
 - spec://§1#config-gate
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§13","anchors":["spec://§13#startup-config-check"],"notes":"no-embed; fetch-on-demand"}
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§12","anchors":["spec://§12#ajv-class-selection"],"notes":"no-embed; fetch-on-demand"}
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§1","anchors":["spec://§1#config-gate"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§13","anchors":["spec://§13#startup-config-check"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§12","anchors":["spec://§12#ajv-class-selection"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§1","anchors":["spec://§1#config-gate"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Two AJV instances with identical `unicodeRegExp:true` and `validateFormats` parity.
 - Align `multipleOfPrecision` to PlanOptions.rational.decimalPrecision on both instances.

@@ -54,7 +54,7 @@ Audit and fix SPECIFICATION INPUT. Propose minimal, testable, normative patches 
 
 {  
   "spec_tag": "<derive from spec header/status/date if present; else 'unspecified'>",  
-  "file": "feature-support-simplification.md",  
+  "file": "spec-canonical-json-schema-generator.md",  
   "issues": [  
     {  
       "id": "<short-slug>",  

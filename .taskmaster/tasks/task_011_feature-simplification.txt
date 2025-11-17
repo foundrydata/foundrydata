@@ -8,7 +8,7 @@
 [Context] §4 pipeline; §6 phases; §1 acceptance; §15 metrics.
 - spec://§4#pipeline, spec://§6#phases, spec://§1#acceptance, spec://§15#metrics
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§4","anchors":["spec://§4#pipeline"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§4","anchors":["spec://§4#pipeline"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Final AJV validate against original; support Lax/Strict behaviors routed by Modes task.
 - Wire together Normalize → Compose → Generate → Repair → Validate stages from dependency tasks.

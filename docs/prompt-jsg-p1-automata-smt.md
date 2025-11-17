@@ -20,7 +20,7 @@ SPECS & PRECEDENCE
 - Primary normative spec (single source of truth):
   docs/jsg-p1-automata-smt.md
 - Legacy spec (non-normative background ONLY: invariants, diagnostics, AJV parity, Strict/Lax, determinism & metrics):
-  docs/feature-simplification/feature-support-simplification.md
+  docs/feature-simplification/spec-canonical-json-schema-generator.md
 - Precedence rule: If any statement conflicts, **JSG-P1 prevails**.
 
 GOAL

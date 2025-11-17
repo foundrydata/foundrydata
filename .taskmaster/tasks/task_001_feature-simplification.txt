@@ -9,14 +9,14 @@
 - §6: spec://§6#phases
 - §22: spec://§22#packages-core, spec://§22#scripts, spec://§22#docs
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§6","anchors":["spec://§6#phases"],"notes":"no-embed; fetch-on-demand"}
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§22","anchors":["spec://§22#packages-core","spec://§22#scripts","spec://§22#docs"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§6","anchors":["spec://§6#phases"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§22","anchors":["spec://§22#packages-core","spec://§22#scripts","spec://§22#docs"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Monorepo (pnpm, TS), packages under packages/core per §22.
 - Wire scripts/bench.ts and basic test runner.
 - Do not implement semantics here; only scaffolding.
 [Deliverables]
-- Create files per §22, including: docs/feature-simplification/feature-support-simplification.md (SPEC path reference only), package workspaces, tsconfig, eslint.
+- Create files per §22, including: docs/feature-simplification/spec-canonical-json-schema-generator.md (SPEC path reference only), package workspaces, tsconfig, eslint.
 [Commands]
 - pnpm i
 - pnpm -w build

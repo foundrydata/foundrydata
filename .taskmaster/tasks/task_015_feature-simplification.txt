@@ -8,7 +8,7 @@
 [Context] §15 bench protocol & SLO/SLI; §1 bench SLI gate.
 - spec://§15#bench-protocol, spec://§15#slo-sli, spec://§1#bench-sli-gate
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§15","anchors":["spec://§15#bench-protocol","spec://§15#slo-sli"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§15","anchors":["spec://§15#bench-protocol","spec://§15#slo-sli"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Profiles simple/medium/pathological; seeds {1,42,4242}; fail CI when thresholds exceeded.
 - Depends on Pipeline Orchestrator (task 11) for complete pipeline benchmarking.

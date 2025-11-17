@@ -7,7 +7,7 @@ REFERENCE-ONLY, RUNTIME RESOLUTION & RETRIEVAL RULES (must enforce)
 * For every SPEC task (9100..9124), the retrieval descriptor in details MUST resolve at runtime from a FILE:
 
   * "source":"FILE"
-  * "uri":"docs/feature-simplification/feature-support-simplification.md"
+  * "uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md"
 * Do NOT embed or paraphrase SPEC section text in any field of tasks 9100..9124. Never paste verbatim section bodies in details, title, description, testStrategy, or subtasks.
 * For each SPEC task (9100..9124), put a retrieval descriptor (see format below) in details, and index only the relevant anchors in subtasks.file (e.g., "spec://§8#coverage-index-export").
 * Retrieval scope is minimal: fetch only the sections/anchors needed by the dependent implementation tasks; do not pollute the LLM context with unrelated sections.
@@ -17,7 +17,7 @@ ANCHOR RESOLUTION (MUST APPLY)
 
 * The SPEC markdown uses HTML anchors of the form `<a id="sN-slug"></a>` placed immediately before the target headings.
 * Every logical SPEC pointer of the form `spec://§<n>#<slug>` maps to the physical markdown anchor:
-  `docs/feature-simplification/feature-support-simplification.md#s<n>-<slug>`
+  `docs/feature-simplification/spec-canonical-json-schema-generator.md#s<n>-<slug>`
   (i.e., prefix the slug with `s<n>-` and use the file path above).
 * Anchor validation:
 
@@ -40,7 +40,7 @@ Common anchor slugs (reference)
 RETRIEVAL DESCRIPTOR (put this as a JSON string in each SPEC task’s details)
 
 * Format (string content is JSON; escape as needed for valid JSON):
-  REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§<n>","anchors":["spec://§<n>#<slug>",...],"notes":"no-embed; fetch-on-demand"}
+  REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§<n>","anchors":["spec://§<n>#<slug>",...],"notes":"no-embed; fetch-on-demand"}
 
 * Escaping rule (ENFORCED): `details` is a JSON **string** whose content is a JSON **object** prefixed by `REFONLY::`. Therefore, **escape all inner quotes and backslashes** so the outer JSON remains valid. `details` MUST start with `REFONLY::` and the inner content MUST end with `}`.
 
@@ -54,16 +54,16 @@ RETRIEVAL DESCRIPTOR (put this as a JSON string in each SPEC task’s details)
 * Correct examples (copy-style):
 
   * SPEC task with two anchors (escaped for outer JSON string):
-    REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§8","anchors":["spec://§8#coverage-index-export","spec://§8#branch-selection"],"notes":"no-embed; fetch-on-demand"}
+    REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§8","anchors":["spec://§8#coverage-index-export","spec://§8#branch-selection"],"notes":"no-embed; fetch-on-demand"}
 
   * SPEC task with three anchors (escaped):
-    REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§10","anchors":["spec://§10#mapping","spec://§10#propertynames-rename-guard","spec://§10#structural-hashing"],"notes":"no-embed; fetch-on-demand"}
+    REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§10","anchors":["spec://§10#mapping","spec://§10#propertynames-rename-guard","spec://§10#structural-hashing"],"notes":"no-embed; fetch-on-demand"}
 
 REFONLY JSON STRING ESCAPING FOR IMPLEMENTATION TASKS
 
 * If you include a `[Retrieval] REFONLY::{...}` line inside an implementation task’s `details`, that line is **inside a JSON string** as well. Therefore, **escape the inner JSON** exactly the same way as above.
 * Correct example inside `details` (escaped):
-  [Retrieval] REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§22","anchors":["spec://§22#packages-core","spec://§22#scripts"],"notes":"no-embed; fetch-on-demand"}
+  [Retrieval] REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§22","anchors":["spec://§22#packages-core","spec://§22#scripts"],"notes":"no-embed; fetch-on-demand"}
 
 CRITICAL OUTPUT CONSTRAINTS
 
@@ -214,7 +214,7 @@ For EACH implementation task (1..24):
   [Context] SPEC anchors (§…).
   [Retrieval] REFONLY anchors to consult (minimal).
   [Key requirements] MUST/guards/caps to honor (quote ≤200 chars if strictly necessary for tests).
-  [Deliverables] files to create/modify (per §22). Include the SPEC file path: docs/feature-simplification/feature-support-simplification.md.
+  [Deliverables] files to create/modify (per §22). Include the SPEC file path: docs/feature-simplification/spec-canonical-json-schema-generator.md.
   [Commands] `pnpm i`, `pnpm -w build`, `pnpm -w test`, `pnpm -w bench`.
   [Definition of Done] verifiable criteria (green tests, diagnostics conform to §19.1, final AJV validation against original).
   **Additional staging constraint**: For `propertyNames` rewrite, implement **enum-only in P0**; the **pattern-form is deferred to P2 (task #23)**.
@@ -234,7 +234,7 @@ For EACH implementation task (1..24):
   * packages/core/src/index.ts
   * scripts/bench.ts
   * tests: packages/core/test/*.spec.ts
-  * docs: docs/{Invariants.md,Known-Limits.md,Features.md,README.md,feature-simplification/feature-support-simplification.md}
+  * docs: docs/{Invariants.md,Known-Limits.md,Features.md,README.md,feature-simplification/spec-canonical-json-schema-generator.md}
 
 SUBTASK ID POLICY
 
@@ -247,7 +247,7 @@ AGENT TASK 8000 — sample details content (put in English):
 * Execute implementation tasks strictly per SPEC; SPEC is the single source of truth for semantics. Do not enlarge feature scope.
   [Retrieval]
 * REFONLY via SPEC anchors. Do not paste SPEC text verbatim into tasks.
-* Runtime mapping: spec://§<n>#<slug> → docs/feature-simplification/feature-support-simplification.md#s<n>-<slug>.
+* Runtime mapping: spec://§<n>#<slug> → docs/feature-simplification/spec-canonical-json-schema-generator.md#s<n>-<slug>.
 * Keep working context small: load only anchors required by the current task.
   [Execution order]
 
@@ -393,12 +393,12 @@ CHECKLIST BEFORE SENDING
 9. Score-only: tiebreakRand present; diag.budget fields set as specified.
 10. Phase separation of diagnostics respected (no REGEX_COMPLEXITY_CAPPED from Generator; no COMPLEXITY_CAP_PATTERNS from Compose/Rewrite).
 11. Under AP:false, no coverage expansion from propertyNames.enum unless PNAMES_REWRITE_APPLIED.
-12. Anchor resolution sanity: for every spec://§<n>#<slug> emitted, the markdown contains `<a id="s<n>-<slug"></a>` in docs/feature-simplification/feature-support-simplification.md.
+12. Anchor resolution sanity: for every spec://§<n>#<slug> emitted, the markdown contains `<a id="s<n>-<slug"></a>` in docs/feature-simplification/spec-canonical-json-schema-generator.md.
 13. **REFONLY validation**: outer JSON parses; after stripping `REFONLY::`, the inner JSON parses (reject if invalid).
 
 INPUT
 After the line below you will paste the SPEC INLINE.
-Default FILE path for runtime resolution: docs/feature-simplification/feature-support-simplification.md.
+Default FILE path for runtime resolution: docs/feature-simplification/spec-canonical-json-schema-generator.md.
 
 ---SPEC START---
 [PASTE THE FULL SPEC TEXT HERE]

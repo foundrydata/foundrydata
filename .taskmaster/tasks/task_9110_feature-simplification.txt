@@ -5,7 +5,7 @@
 # Priority: low
 # Description: Reference-only: section §10.
 # Details:
-REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§10","anchors":["spec://§10#mapping","spec://§10#propertynames-rename-guard","spec://§10#structural-hashing","spec://§10#epsilon-logging","spec://§10#property-order","spec://§10#mustcover-index-missing"],"notes":"no-embed; fetch-on-demand"}
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§10","anchors":["spec://§10#mapping","spec://§10#propertynames-rename-guard","spec://§10#structural-hashing","spec://§10#epsilon-logging","spec://§10#property-order","spec://§10#mustcover-index-missing"],"notes":"no-embed; fetch-on-demand"}
 
 # Test Strategy:
 None.
