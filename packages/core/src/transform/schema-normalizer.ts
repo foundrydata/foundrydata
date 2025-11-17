@@ -103,6 +103,10 @@ class SchemaNormalizer {
   private readonly options: ResolvedNormalizeOptions;
   private root: CanonNode;
   private notes: NormalizerNote[] = [];
+  private readonly idIndex = new Map<
+    string,
+    { id: string; parentCanonPath: string }
+  >();
 
   constructor(schema: unknown, options?: NormalizeOptions) {
     const guardsOption =
@@ -123,6 +127,7 @@ class SchemaNormalizer {
 
   run(): NormalizeResult {
     this.applyDraftUnification(this.root, '');
+    this.buildIdIndex(this.root, '', '#');
     this.rewriteReferences(this.root, '');
     this.root = this.applyBooleanSimplifications(this.root, '', {
       unevaluatedProps: false,
@@ -166,6 +171,82 @@ class SchemaNormalizer {
     this.notes.push({ canonPath, code, details });
   }
 
+  private buildIdIndex(
+    node: CanonNode,
+    canonPointer: string,
+    parentScopeCanonPath: string
+  ): void {
+    if (node.kind === 'object') {
+      let currentScope = parentScopeCanonPath;
+
+      const idEntryIndex = this.findEntryIndex(node, '$id');
+      if (idEntryIndex !== -1) {
+        const idEntry = node.entries[idEntryIndex];
+        const idNode = idEntry?.node;
+        if (idNode && idNode.kind === 'value') {
+          const rawId = idNode.value;
+          if (typeof rawId === 'string' && isAbsoluteUri(rawId)) {
+            const canonPath = canonPointer === '' ? '#' : `#${canonPointer}`;
+            currentScope = canonPath;
+            this.idIndex.set(canonPath, {
+              id: rawId,
+              parentCanonPath: parentScopeCanonPath,
+            });
+          }
+        }
+      }
+
+      for (const entry of node.entries) {
+        const childPointer = buildPropertyPointer(canonPointer, entry.key);
+        this.buildIdIndex(entry.node, childPointer, currentScope);
+      }
+      return;
+    }
+
+    if (node.kind === 'array') {
+      node.items.forEach((item, index) =>
+        this.buildIdIndex(
+          item,
+          buildIndexPointer(canonPointer, index),
+          parentScopeCanonPath
+        )
+      );
+    }
+  }
+
+  private nearestAbsIdAncestorCanonPath(
+    canonPointer: string
+  ): string | undefined {
+    let current = canonPointer === '' ? '#' : `#${canonPointer}`;
+    // Walk upwards including self
+    // '#' denotes the document root and is the final fallback.
+    while (true) {
+      if (this.idIndex.has(current)) {
+        return current;
+      }
+      if (current === '#') {
+        break;
+      }
+      const withoutHash = current.slice(1); // "/a/b/c"
+      const idx = withoutHash.lastIndexOf('/');
+      if (idx <= 0) {
+        current = '#';
+      } else {
+        current = `#${withoutHash.slice(0, idx)}`;
+      }
+    }
+    return undefined;
+  }
+
+  private hasCanonicalPointerWithin(
+    scopeRootCanonPath: string,
+    fragment: string
+  ): boolean {
+    if (!fragment.startsWith('#')) return false;
+    const joined = `${scopeRootCanonPath}${fragment.slice(1)}`;
+    return this.hasCanonicalPointer(joined);
+  }
+
   private applyDraftUnification(node: CanonNode, pointer: string): void {
     if (node.kind === 'array') {
       node.items.forEach((item, index) =>
@@ -206,7 +287,8 @@ class SchemaNormalizer {
           this.isLocalDefinitionsRef(refValue)
         ) {
           const rewritten = refValue.replace(/^#\/definitions\//, '#/$defs/');
-          if (this.hasCanonicalPointer(rewritten)) {
+          const scopeRoot = this.nearestAbsIdAncestorCanonPath(pointer) ?? '#';
+          if (this.hasCanonicalPointerWithin(scopeRoot, rewritten)) {
             refEntry.node = {
               kind: 'value',
               origin: refEntry.node.origin,
@@ -1848,6 +1930,10 @@ function escapeJsonPointerSegment(segment: string): string {
 
 function unescapeJsonPointerSegment(segment: string): string {
   return segment.replace(/~1/g, '/').replace(/~0/g, '~');
+}
+
+function isAbsoluteUri(value: string): boolean {
+  return /^[A-Za-z][A-Za-z0-9+.-]*:/.test(value);
 }
 
 function resolvePointer(

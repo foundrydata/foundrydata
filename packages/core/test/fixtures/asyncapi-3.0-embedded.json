@@ -1,0 +1,39 @@
+{
+  "$id": "https://example.test/asyncapi-3.0.schema.json",
+  "definitions": {
+    "http://json-schema.org/draft-07/schema": {
+      "$id": "http://json-schema.org/draft-07/schema",
+      "definitions": {
+        "nonNegativeInteger": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "properties": {
+        "maxLength": {
+          "$ref": "#/definitions/nonNegativeInteger"
+        }
+      }
+    },
+    "http://asyncapi.com/definitions/3.0.0/openapiSchema_3_0.json": {
+      "$id": "http://asyncapi.com/definitions/3.0.0/openapiSchema_3_0.json",
+      "definitions": {
+        "Reference": {
+          "type": "object"
+        }
+      },
+      "oneOf": [
+        true,
+        {
+          "$ref": "#/definitions/Reference"
+        }
+      ]
+    }
+  },
+  "properties": {
+    "asyncapi": {
+      "type": "string"
+    }
+  }
+}
+

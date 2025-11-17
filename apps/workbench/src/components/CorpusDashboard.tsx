@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
 import type { JSX } from 'react';
 import type { CorpusRunReport, CorpusSchemaResult } from '../types/corpus';
@@ -161,30 +162,62 @@ function formatSchemaHealth(schema: CorpusSchemaResult): string {
     : [];
 
   if (instancesValid > 0) {
-    return 'ok';
+    const reason = summarizeDiagnosticCodes(codes, { allowSoft: true });
+    return reason ? `ok (${reason})` : 'ok';
   }
 
   if (schema.unsat) {
-    return 'unsat';
-  }
-
-  if (codes.includes('SCHEMA_INTERNAL_REF_MISSING')) {
-    return 'internal-ref error';
-  }
-
-  if (codes.includes('VALIDATION_COMPILE_ERROR')) {
-    return 'validation compile error';
-  }
-
-  if (codes.includes('EXTERNAL_REF_UNRESOLVED')) {
-    return 'external-ref unresolved';
+    const reason = summarizeDiagnosticCodes(codes);
+    return reason ? `unsat (${reason})` : 'unsat';
   }
 
   if (schema.failFast) {
-    return 'fail-fast';
+    const reason = summarizeDiagnosticCodes(codes);
+    return reason ? `fail-fast (${reason})` : 'fail-fast';
   }
 
-  return 'no valid instances';
+  const reason = summarizeDiagnosticCodes(codes);
+  return reason ? `no valid instances (${reason})` : 'no valid instances';
+}
+
+function summarizeDiagnosticCodes(
+  codes: string[],
+  options: { allowSoft?: boolean } = {}
+): string | null {
+  if (!codes.length) return null;
+
+  // Hard-error style reasons (ordered by specificity)
+  if (codes.includes('SCHEMA_INTERNAL_REF_MISSING')) {
+    return 'internal $ref error';
+  }
+  if (codes.includes('VALIDATION_COMPILE_ERROR')) {
+    return 'validation compile error';
+  }
+  if (codes.includes('EXTERNAL_REF_UNRESOLVED')) {
+    return 'external $ref unresolved';
+  }
+
+  if (codes.some((c) => c.startsWith('UNSAT_'))) {
+    return 'unsatisfiable constraints';
+  }
+  if (codes.includes('AP_FALSE_UNSAFE_PATTERN')) {
+    return 'AP:false unsafe pattern';
+  }
+
+  // Soft degradation / caps (shown only when allowSoft=true, e.g. for ok cases)
+  if (options.allowSoft) {
+    if (codes.includes('COMPLEXITY_CAP_SCHEMA_SIZE')) {
+      return 'schema size capped';
+    }
+    if (codes.includes('NAME_AUTOMATON_COMPLEXITY_CAPPED')) {
+      return 'name automaton capped';
+    }
+    if (codes.includes('AP_FALSE_INTERSECTION_APPROX')) {
+      return 'AP:false approximation';
+    }
+  }
+
+  return null;
 }
 
 function formatSchemaPathDisplay(path: string | undefined): string {
