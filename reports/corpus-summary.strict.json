@@ -6,148 +6,1753 @@
     {
       "id": "asyncapi-3.0.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/asyncapi-3.0.schema.json",
-      "instancesTried": 0,
-      "instancesValid": 0,
+      "schemaPath": "asyncapi-3.0.schema.json",
+      "instancesTried": 3,
+      "instancesValid": 3,
       "unsat": false,
-      "failFast": true,
+      "failFast": false,
       "diagnostics": [
         {
-          "code": "EXTERNAL_REF_UNRESOLVED",
-          "canonPath": "",
+          "code": "AP_FALSE_INTERSECTION_APPROX",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json",
           "details": {
-            "mode": "strict",
+            "reason": "nonAnchoredPattern"
+          }
+        },
+        {
+          "code": "AP_FALSE_INTERSECTION_APPROX",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/$defs/ExternalDocumentation",
+          "details": {
+            "reason": "nonAnchoredPattern"
+          }
+        },
+        {
+          "code": "AP_FALSE_INTERSECTION_APPROX",
+          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/$defs/XML",
+          "details": {
+            "reason": "nonAnchoredPattern"
+          }
+        },
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local",
+              "remote",
+              "schemastore"
+            ],
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/specificationExtension.json",
+            "contentHash": "d786486db17801e13bef79678317b844489677dd2c0614588f2e1a01c16eb817"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/info.json",
+            "contentHash": "25b684e7a65e074d73cf0f5f992841a31fde3f28ea45238d7bb34832e71c22f9"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/servers.json",
+            "contentHash": "68bd61eee151db7c8d67fad5eb81dfd9318647f3047cd735fc322cb3c1fbd642"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/channels.json",
+            "contentHash": "5a691470f8f7ef0dad135a2a03eddbee0af37565faa755d555a4d6e16003f4d4"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/operations.json",
+            "contentHash": "89749bc80aa7c9bc2b44b15876effbc496c26722e0276a7ddd15c8d3bce96d6c"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/components.json",
+            "contentHash": "caf0148b0eed3036f483403e973027c86d2e2b66669d56b4dc357288164eb2af"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/contact.json",
+            "contentHash": "3e6700af3fa114c35ca57cb64ce6b566d12781344f43e47aaf16bc05fac13ab0"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/license.json",
+            "contentHash": "edee4c540a6e696bfda251c6a4f3d10cebcfcfebed99c08143d0243567568080"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/Reference.json",
+            "contentHash": "19be5f4989e9446133e058d946caf8c2b0a11c66f88b416a71ab89eaf7b7dbbd"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/tag.json",
+            "contentHash": "82127f30b71413f50f19e585815f93b6fd12d80cf22a01a6b8a8dd3a85ab18b4"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/externalDocs.json",
+            "contentHash": "346522f67e67a80928bbefdccb493e8fe7a1cc163ae5328ec6159bb3a0bcbe7e"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/infoExtensions.json",
+            "contentHash": "cf1f59833b5a713b300465245356ff05e3b3d6856e9e12f583a5136eb65ad939"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/ReferenceObject.json",
+            "contentHash": "ba31a962e1e47144f74d87f3da4a5fcc2bb2758b90a7f0d47222da4ad50aeeb7"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/extensions/x/0.1.0/schema.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/extensions/linkedin/0.1.0/schema.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/server.json",
+            "contentHash": "c984b2fdc3a2899f3a5508cf9071ef785723c050bd380e5f314a6bfebb5f3e5c"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/serverVariables.json",
+            "contentHash": "d809a1d05306afcedc0e42bb4330877b89f426b5da84dfa6a53ed604b3b1d6cc"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/securityRequirements.json",
+            "contentHash": "73b12faba01f5721b008063ed0229bd6fc97f962b258b929216f536369b186cf"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/serverBindingsObject.json",
+            "contentHash": "937ef0f0391f5aaa3bd990602d83e9cdac49a2889debe9bb5b41253e2fe14752"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/serverVariable.json",
+            "contentHash": "fb148a43ff34691dd79a2031e41dabed704215d2abd70ce4da2440a7eeb121b7"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/SecurityScheme.json",
+            "contentHash": "b5e36f599ee0a052a14e311b723d7057d60a569f8c90be0f0ea1acfd4a82eba8"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/userPassword.json",
+            "contentHash": "ef81cb255c0cb77ce9bceab32c480f1cdab14e0ca6be0a1009370e32a083996e"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/apiKey.json",
+            "contentHash": "230632c0acc6c1fed0f2bfbf67b330621d209cfa51fd95279010feebb1d7920c"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/X509.json",
+            "contentHash": "40343123b5fb1ad05aadf84acc4d8ebbfe8a7388e313b868c56ae1cbf9e383fb"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/symmetricEncryption.json",
+            "contentHash": "ba0cc69b24a4ef565867b17aa5bc7cc9f27e6d4d807bbfdf6df0e59a8d128b96"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/asymmetricEncryption.json",
+            "contentHash": "5088ce67f3d070eb09e89a048dc1f54b98a9c3fb3e40c15065f7dbb08ea77e03"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/HTTPSecurityScheme.json",
+            "contentHash": "84ad237ae02422de13d9ab13ada39ea7f21c9249ac559e09ffc9e4be63babaeb"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/oauth2Flows.json",
+            "contentHash": "21601cf07e1d566ec2c57c284798171d8888644e74c175c47900fe7c431a2672"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/openIdConnect.json",
+            "contentHash": "c766aa7af4fc78d841550b2bf654b6d70da94e4b2535bdb23dc059007b6de4b8"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/SaslSecurityScheme.json",
+            "contentHash": "a46d9a5c5b6e85ad1ed3a633f56c4af2c149997db71459cfc8282247ed5cbfb7"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/NonBearerHTTPSecurityScheme.json",
+            "contentHash": "2f6819a56accd08d7a9fdf5e9a101fcb4cd5faae48d8a792b8c31d467f82fd78"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/BearerHTTPSecurityScheme.json",
+            "contentHash": "564a6200f7ff1d823278c2e95871f9aea72cb8ad731f592301cc454a82b8b7d1"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/APIKeyHTTPSecurityScheme.json",
+            "contentHash": "4365776d51c1060995978009b7179ae7502ea38eb672e02ae10a21b368c65e2c"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/oauth2Flow.json",
+            "contentHash": "136f6fb7507e4aca5eeea37ca7b773132fe3a96729a7f3f4d59f18d2ced15e8b"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/oauth2Scopes.json",
+            "contentHash": "46c469dac3eca9efb033e8cb0354b44dd9c65fd86a920e17ea5ead7268d506c7"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/SaslPlainSecurityScheme.json",
+            "contentHash": "ab6bd9e137eb5c08b00d9de46826ec0f76ef63a0824e3b468069f4611ff3b765"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/SaslScramSecurityScheme.json",
+            "contentHash": "5228dd058af10f7723e6b88efa49c9cb34f28e24c784be4a9e967445480dd8c0"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/SaslGssapiSecurityScheme.json",
+            "contentHash": "d2ebbeff16a9a9907e5db8474cee49441cbd12a490fd5ee14db821387033d869"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/mqtt/0.2.0/server.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/kafka/0.5.0/server.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/kafka/0.4.0/server.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/kafka/0.3.0/server.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/jms/0.0.1/server.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/ibmmq/0.1.0/server.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/solace/0.4.0/server.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/solace/0.3.0/server.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/solace/0.2.0/server.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/pulsar/0.1.0/server.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/schema.json",
+            "contentHash": "4dacfacdd02a31ea283e92bdc720ae54e4725d164190c30faa4ea380bb52958a"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://json-schema.org/draft-07/schema",
+            "contentHash": "78096ca40043e922570658ce668522a5d8d2a9286c8522a1148415383eabc93e"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/channel.json",
+            "contentHash": "796866395006b3bfde639bf6935b98dd0a6f0011ec5c179d7d452d55db010d47"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/channelMessages.json",
+            "contentHash": "508fbc4ba1612e0bd4eb18eeb8fe97d51b145f1672b65914c6d6252d4fec427d"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/parameters.json",
+            "contentHash": "910ccd3446009f03c923a479f3f8df8ed7bbbb9153c504dff680f7f33dd91a93"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/channelBindingsObject.json",
+            "contentHash": "e9e7855f31ba9d34782c45391bdbcb543ecf1270580053f4c796b8b4580ecfe1"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/messageObject.json",
+            "contentHash": "0b561af57ad4b5be059cd369be5dde453e173384ffa49c2a4b38ee3cecde47b1"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/anySchema.json",
+            "contentHash": "4f41d9570e055bc2da017937405fdc1114ced2fce656eb0d9896470162cd5beb"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/correlationId.json",
+            "contentHash": "1f70d2ca8abb9a212f74de1ea0641040ba8dafcf5a089470ea09b1d08b00a3d7"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/messageExampleObject.json",
+            "contentHash": "ce60a355554ab19b762078ee9e557c721d4d16775bbedca5faa5adcf372a2b50"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/messageBindingsObject.json",
+            "contentHash": "29bcd80aafb6c528200d06c92d4c0081fdab55234d2f1199cb5c4f4adbdf0469"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/messageTrait.json",
+            "contentHash": "7275eba53710f30daee90a96837bb66a426165fe53cd155659e82dabd97dd9be"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/multiFormatSchema.json",
+            "contentHash": "c567f48dcaf279b93792fcdfff8ba7e7e17a7c6676a61519dc6e87bd3eed156c"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/openapiSchema_3_0.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/avroSchema_v1.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/http/0.3.0/message.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/http/0.2.0/message.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/amqp/0.3.0/message.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/mqtt/0.2.0/message.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/kafka/0.5.0/message.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/kafka/0.4.0/message.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/kafka/0.3.0/message.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/anypointmq/0.0.1/message.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/jms/0.0.1/message.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/ibmmq/0.1.0/message.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/googlepubsub/0.2.0/message.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/kafka/0.5.0/path/to/user-create.avsc",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/kafka/0.4.0/path/to/user-create.avsc",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/kafka/0.3.0/path/to/user-create.avsc",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/parameter.json",
+            "contentHash": "f192c6e073d95865ef7e73ffd04def484bb254f351dc6d12343a52aeadda2283"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/websockets/0.1.0/channel.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
             "ref": "http://asyncapi.com/bindings/amqp/0.3.0/channel.json",
-            "failingRefs": [
-              "http://asyncapi.com/definitions/3.0.0/specificationExtension.json",
-              "http://asyncapi.com/definitions/3.0.0/info.json",
-              "http://asyncapi.com/definitions/3.0.0/servers.json",
-              "http://asyncapi.com/definitions/3.0.0/channels.json",
-              "http://asyncapi.com/definitions/3.0.0/operations.json",
-              "http://asyncapi.com/definitions/3.0.0/components.json",
-              "http://asyncapi.com/definitions/3.0.0/contact.json",
-              "http://asyncapi.com/definitions/3.0.0/license.json",
-              "http://asyncapi.com/definitions/3.0.0/Reference.json",
-              "http://asyncapi.com/definitions/3.0.0/tag.json",
-              "http://asyncapi.com/definitions/3.0.0/externalDocs.json",
-              "http://asyncapi.com/definitions/3.0.0/infoExtensions.json",
-              "http://asyncapi.com/definitions/3.0.0/ReferenceObject.json",
-              "http://asyncapi.com/extensions/x/0.1.0/schema.json",
-              "http://asyncapi.com/extensions/linkedin/0.1.0/schema.json",
-              "http://asyncapi.com/definitions/3.0.0/server.json",
-              "http://asyncapi.com/definitions/3.0.0/serverVariables.json",
-              "http://asyncapi.com/definitions/3.0.0/securityRequirements.json",
-              "http://asyncapi.com/definitions/3.0.0/serverBindingsObject.json",
-              "http://asyncapi.com/definitions/3.0.0/serverVariable.json",
-              "http://asyncapi.com/definitions/3.0.0/SecurityScheme.json",
-              "http://asyncapi.com/definitions/3.0.0/userPassword.json",
-              "http://asyncapi.com/definitions/3.0.0/apiKey.json",
-              "http://asyncapi.com/definitions/3.0.0/X509.json",
-              "http://asyncapi.com/definitions/3.0.0/symmetricEncryption.json",
-              "http://asyncapi.com/definitions/3.0.0/asymmetricEncryption.json",
-              "http://asyncapi.com/definitions/3.0.0/HTTPSecurityScheme.json",
-              "http://asyncapi.com/definitions/3.0.0/oauth2Flows.json",
-              "http://asyncapi.com/definitions/3.0.0/openIdConnect.json",
-              "http://asyncapi.com/definitions/3.0.0/SaslSecurityScheme.json",
-              "http://asyncapi.com/definitions/3.0.0/NonBearerHTTPSecurityScheme.json",
-              "http://asyncapi.com/definitions/3.0.0/BearerHTTPSecurityScheme.json",
-              "http://asyncapi.com/definitions/3.0.0/APIKeyHTTPSecurityScheme.json",
-              "http://asyncapi.com/definitions/3.0.0/oauth2Flow.json",
-              "http://asyncapi.com/definitions/3.0.0/oauth2Scopes.json",
-              "http://asyncapi.com/definitions/3.0.0/SaslPlainSecurityScheme.json",
-              "http://asyncapi.com/definitions/3.0.0/SaslScramSecurityScheme.json",
-              "http://asyncapi.com/definitions/3.0.0/SaslGssapiSecurityScheme.json",
-              "http://asyncapi.com/bindings/mqtt/0.2.0/server.json",
-              "http://asyncapi.com/bindings/kafka/0.5.0/server.json",
-              "http://asyncapi.com/bindings/kafka/0.4.0/server.json",
-              "http://asyncapi.com/bindings/kafka/0.3.0/server.json",
-              "http://asyncapi.com/bindings/jms/0.0.1/server.json",
-              "http://asyncapi.com/bindings/ibmmq/0.1.0/server.json",
-              "http://asyncapi.com/bindings/solace/0.4.0/server.json",
-              "http://asyncapi.com/bindings/solace/0.3.0/server.json",
-              "http://asyncapi.com/bindings/solace/0.2.0/server.json",
-              "http://asyncapi.com/bindings/pulsar/0.1.0/server.json",
-              "http://asyncapi.com/definitions/3.0.0/schema.json",
-              "http://asyncapi.com/definitions/3.0.0/channel.json",
-              "http://asyncapi.com/definitions/3.0.0/channelMessages.json",
-              "http://asyncapi.com/definitions/3.0.0/parameters.json",
-              "http://asyncapi.com/definitions/3.0.0/channelBindingsObject.json",
-              "http://asyncapi.com/definitions/3.0.0/messageObject.json",
-              "http://asyncapi.com/definitions/3.0.0/anySchema.json",
-              "http://asyncapi.com/definitions/3.0.0/correlationId.json",
-              "http://asyncapi.com/definitions/3.0.0/messageExampleObject.json",
-              "http://asyncapi.com/definitions/3.0.0/messageBindingsObject.json",
-              "http://asyncapi.com/definitions/3.0.0/messageTrait.json",
-              "http://asyncapi.com/definitions/3.0.0/multiFormatSchema.json",
-              "http://asyncapi.com/definitions/3.0.0/openapiSchema_3_0.json",
-              "http://asyncapi.com/definitions/3.0.0/avroSchema_v1.json",
-              "http://asyncapi.com/definitions/3.0.0/openapiSchema_3_0.json#",
-              "http://asyncapi.com/bindings/http/0.3.0/message.json",
-              "http://asyncapi.com/bindings/http/0.2.0/message.json",
-              "http://asyncapi.com/bindings/amqp/0.3.0/message.json",
-              "http://asyncapi.com/bindings/mqtt/0.2.0/message.json",
-              "http://asyncapi.com/bindings/kafka/0.5.0/message.json",
-              "http://asyncapi.com/bindings/kafka/0.4.0/message.json",
-              "http://asyncapi.com/bindings/kafka/0.3.0/message.json",
-              "http://asyncapi.com/bindings/anypointmq/0.0.1/message.json",
-              "http://asyncapi.com/bindings/jms/0.0.1/message.json",
-              "http://asyncapi.com/bindings/ibmmq/0.1.0/message.json",
-              "http://asyncapi.com/bindings/googlepubsub/0.2.0/message.json",
-              "http://asyncapi.com/bindings/kafka/0.5.0/path/to/user-create.avsc#/UserCreate",
-              "http://asyncapi.com/bindings/kafka/0.4.0/path/to/user-create.avsc#/UserCreate",
-              "http://asyncapi.com/bindings/kafka/0.3.0/path/to/user-create.avsc#/UserCreate",
-              "http://asyncapi.com/definitions/3.0.0/parameter.json",
-              "http://asyncapi.com/bindings/websockets/0.1.0/channel.json",
-              "http://asyncapi.com/bindings/amqp/0.3.0/channel.json",
-              "http://asyncapi.com/bindings/kafka/0.5.0/channel.json",
-              "http://asyncapi.com/bindings/kafka/0.4.0/channel.json",
-              "http://asyncapi.com/bindings/kafka/0.3.0/channel.json",
-              "http://asyncapi.com/bindings/anypointmq/0.0.1/channel.json",
-              "http://asyncapi.com/bindings/jms/0.0.1/channel.json",
-              "http://asyncapi.com/bindings/sns/0.1.0/channel.json",
-              "http://asyncapi.com/bindings/sqs/0.2.0/channel.json",
-              "http://asyncapi.com/bindings/ibmmq/0.1.0/channel.json",
-              "http://asyncapi.com/bindings/googlepubsub/0.2.0/channel.json",
-              "http://asyncapi.com/bindings/pulsar/0.1.0/channel.json",
-              "http://asyncapi.com/definitions/3.0.0/operation.json",
-              "http://asyncapi.com/definitions/3.0.0/operationReply.json",
-              "http://asyncapi.com/definitions/3.0.0/operationTrait.json",
-              "http://asyncapi.com/definitions/3.0.0/operationBindingsObject.json",
-              "http://asyncapi.com/components/messages/userSignedUp",
-              "http://asyncapi.com/components/messages/userSignedUpReply",
-              "http://asyncapi.com/definitions/3.0.0/operationReplyAddress.json",
-              "http://asyncapi.com/definitions/3.0.0/operation.json#/properties/title",
-              "http://asyncapi.com/definitions/3.0.0/operation.json#/properties/summary",
-              "http://asyncapi.com/definitions/3.0.0/operation.json#/properties/description",
-              "http://asyncapi.com/definitions/3.0.0/operation.json#/properties/security",
-              "http://asyncapi.com/definitions/3.0.0/operation.json#/properties/tags",
-              "http://asyncapi.com/definitions/3.0.0/operation.json#/properties/externalDocs",
-              "http://asyncapi.com/bindings/http/0.3.0/operation.json",
-              "http://asyncapi.com/bindings/http/0.2.0/operation.json",
-              "http://asyncapi.com/bindings/amqp/0.3.0/operation.json",
-              "http://asyncapi.com/bindings/mqtt/0.2.0/operation.json",
-              "http://asyncapi.com/bindings/kafka/0.5.0/operation.json",
-              "http://asyncapi.com/bindings/kafka/0.4.0/operation.json",
-              "http://asyncapi.com/bindings/kafka/0.3.0/operation.json",
-              "http://asyncapi.com/bindings/nats/0.1.0/operation.json",
-              "http://asyncapi.com/bindings/sns/0.1.0/operation.json",
-              "http://asyncapi.com/bindings/sqs/0.2.0/operation.json",
-              "http://asyncapi.com/bindings/solace/0.4.0/operation.json",
-              "http://asyncapi.com/bindings/solace/0.3.0/operation.json",
-              "http://asyncapi.com/bindings/solace/0.2.0/operation.json",
-              "http://asyncapi.com/definitions/3.0.0/path/to/user-create.avsc#/UserCreate"
-            ]
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/kafka/0.5.0/channel.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/kafka/0.4.0/channel.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/kafka/0.3.0/channel.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/anypointmq/0.0.1/channel.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/jms/0.0.1/channel.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/sns/0.1.0/channel.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/sqs/0.2.0/channel.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/ibmmq/0.1.0/channel.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/googlepubsub/0.2.0/channel.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/pulsar/0.1.0/channel.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/operation.json",
+            "contentHash": "806415bb8d05f7068fa8b5d2e93f39a580c8515a6aaf637067b238b6a7bca064"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/operationReply.json",
+            "contentHash": "96df6e485de2afb58029b29214364c5eeb795a5565035a3fb942ac029255e3ee"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/operationTrait.json",
+            "contentHash": "9098edc62adc6c6210de00d11d33fa5c7fc9052d96a5402f0ced976ce3ad5fe8"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/operationBindingsObject.json",
+            "contentHash": "572284f5017019a0447560e0a2339d0954b9a514a5e99476056596124291f47a"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/components/messages/userSignedUp",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/components/messages/userSignedUpReply",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/operationReplyAddress.json",
+            "contentHash": "b18f0e891555a407ae4b1d4a87eda5b1fc5e7d2754115d1d95a8e8dcc25e1c8a"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/http/0.3.0/operation.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/http/0.2.0/operation.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/amqp/0.3.0/operation.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/mqtt/0.2.0/operation.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/kafka/0.5.0/operation.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/kafka/0.4.0/operation.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/kafka/0.3.0/operation.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/nats/0.1.0/operation.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/sns/0.1.0/operation.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/sqs/0.2.0/operation.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/solace/0.4.0/operation.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/solace/0.3.0/operation.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/bindings/solace/0.2.0/operation.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/definitions/3.0.0/path/to/user-create.avsc",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/info.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/servers.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/channels.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/operations.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/components.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/contact.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/license.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/ReferenceObject.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/tag.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/externalDocs.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/server.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/serverVariable.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/SecurityScheme.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/userPassword.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/apiKey.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/X509.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/symmetricEncryption.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/APIKeyHTTPSecurityScheme.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/oauth2Flow.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/Sasl.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/channel.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/parameters.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/messageObject.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/correlationId.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/messageTrait.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/parameter.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/operation.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/operationTrait.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://asyncapi.com/examples/3.0.0/operationReplyAddress.json",
+            "reason": "fetch-error",
+            "error": "HTTP 404"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/specificationExtension.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/specificationExtension.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/info.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/info.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/servers.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/servers.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/channels.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/channels.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/operations.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/operations.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/components.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/components.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/contact.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/contact.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/license.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/license.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/Reference.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/Reference.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/tag.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/tag.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/externalDocs.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/externalDocs.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/infoExtensions.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/infoExtensions.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/ReferenceObject.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/ReferenceObject.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/server.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/server.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/serverVariables.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/serverVariables.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/securityRequirements.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/securityRequirements.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/serverBindingsObject.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/serverBindingsObject.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/serverVariable.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/serverVariable.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/SecurityScheme.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/SecurityScheme.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/userPassword.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/userPassword.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/apiKey.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/apiKey.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/X509.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/X509.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/symmetricEncryption.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/symmetricEncryption.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/asymmetricEncryption.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/asymmetricEncryption.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/HTTPSecurityScheme.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/HTTPSecurityScheme.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/oauth2Flows.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/oauth2Flows.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/openIdConnect.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/openIdConnect.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/SaslSecurityScheme.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/SaslSecurityScheme.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/NonBearerHTTPSecurityScheme.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/NonBearerHTTPSecurityScheme.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/BearerHTTPSecurityScheme.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/BearerHTTPSecurityScheme.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/APIKeyHTTPSecurityScheme.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/APIKeyHTTPSecurityScheme.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/oauth2Flow.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/oauth2Flow.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/oauth2Scopes.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/oauth2Scopes.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/SaslPlainSecurityScheme.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/SaslPlainSecurityScheme.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/SaslScramSecurityScheme.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/SaslScramSecurityScheme.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/SaslGssapiSecurityScheme.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/SaslGssapiSecurityScheme.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/schema.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/schema.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://json-schema.org/draft-07/schema",
+            "reason": "uri-already-registered"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/channel.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/channel.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/channelMessages.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/channelMessages.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/parameters.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/parameters.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/channelBindingsObject.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/channelBindingsObject.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/messageObject.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/messageObject.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/anySchema.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/anySchema.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/correlationId.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/correlationId.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/messageExampleObject.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/messageExampleObject.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/messageBindingsObject.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/messageBindingsObject.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/messageTrait.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/messageTrait.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/multiFormatSchema.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/multiFormatSchema.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/parameter.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/parameter.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/operation.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/operation.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/operationReply.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/operationReply.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/operationTrait.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/operationTrait.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/operationBindingsObject.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/operationBindingsObject.json",
+            "existingRef": "root-schema"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "http://asyncapi.com/definitions/3.0.0/operationReplyAddress.json",
+            "ref": "http://asyncapi.com/definitions/3.0.0/operationReplyAddress.json",
+            "existingRef": "root-schema"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 26.324375000000003,
-        "composeMs": 112.35112500000002,
-        "generateMs": 0,
-        "repairMs": 0,
-        "validateMs": 0,
-        "validationsPerRow": 0,
-        "repairPassesPerRow": 0
+        "normalizeMs": 37.28887500000019,
+        "composeMs": 139.6999169999999,
+        "generateMs": 3.0035420000003796,
+        "repairMs": 76.53504200000043,
+        "validateMs": 63.0717080000004,
+        "validationsPerRow": 3,
+        "repairPassesPerRow": 3
       },
       "caps": {
         "regexCapped": 0,
@@ -158,7 +1763,7 @@
     {
       "id": "cloudevents.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/cloudevents.schema.json",
+      "schemaPath": "cloudevents.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
       "unsat": false,
@@ -169,18 +1774,20 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 0.2915830000000028,
-        "composeMs": 1.979791999999975,
-        "generateMs": 0.9482080000000224,
-        "repairMs": 5.4109169999999835,
-        "validateMs": 4.752250000000004,
+        "normalizeMs": 0.21654099999977916,
+        "composeMs": 0.45883299999968585,
+        "generateMs": 0.482625000000553,
+        "repairMs": 6.674833000000035,
+        "validateMs": 3.265832999999475,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -193,7 +1800,7 @@
     {
       "id": "dense/cityjson.bundled.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/cityjson.bundled.schema.json",
+      "schemaPath": "dense/cityjson.bundled.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
       "unsat": false,
@@ -204,18 +1811,20 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 3.695124999999962,
-        "composeMs": 9.076375000000041,
-        "generateMs": 0.9929169999999772,
-        "repairMs": 143.642083,
-        "validateMs": 163.72458400000005,
+        "normalizeMs": 3.5098330000000715,
+        "composeMs": 4.169125000000349,
+        "generateMs": 0.8841670000001614,
+        "repairMs": 139.49166700000023,
+        "validateMs": 150.78329200000007,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -228,7 +1837,7 @@
     {
       "id": "dense/cloudformation-provider-definition.bundled.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/cloudformation-provider-definition.bundled.schema.json",
+      "schemaPath": "dense/cloudformation-provider-definition.bundled.schema.json",
       "instancesTried": 0,
       "instancesValid": 0,
       "unsat": true,
@@ -268,15 +1877,17 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 2.526666999999975,
-        "composeMs": 118.0709169999999,
+        "normalizeMs": 1.2872499999994034,
+        "composeMs": 98.57225000000017,
         "generateMs": 0,
         "repairMs": 0,
         "validateMs": 0,
@@ -292,7 +1903,7 @@
     {
       "id": "dense/epcis-2.0.bundled.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/epcis-2.0.bundled.schema.json",
+      "schemaPath": "dense/epcis-2.0.bundled.schema.json",
       "instancesTried": 3,
       "instancesValid": 0,
       "unsat": false,
@@ -303,9 +1914,11 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         },
         {
@@ -318,11 +1931,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 3.564292000000023,
-        "composeMs": 3.6277500000001055,
-        "generateMs": 0.44804099999998925,
-        "repairMs": 9.863500000000045,
-        "validateMs": 10.537707999999952,
+        "normalizeMs": 2.7659999999996217,
+        "composeMs": 3.1822919999995065,
+        "generateMs": 0.3666670000002341,
+        "repairMs": 10.166667000000416,
+        "validateMs": 8.084499999999935,
         "validationsPerRow": 0,
         "repairPassesPerRow": 0
       },
@@ -335,7 +1948,7 @@
     {
       "id": "dense/kubernetes-deployment.bundled.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/kubernetes-deployment.bundled.schema.json",
+      "schemaPath": "dense/kubernetes-deployment.bundled.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
       "unsat": false,
@@ -346,18 +1959,20 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 4.206291999999962,
-        "composeMs": 2.2857910000000174,
-        "generateMs": 0.39245900000003076,
-        "repairMs": 56.83304099999998,
-        "validateMs": 59.09858299999996,
+        "normalizeMs": 3.7572919999993246,
+        "composeMs": 2.8518340000000535,
+        "generateMs": 0.34191699999973935,
+        "repairMs": 47.60387499999979,
+        "validateMs": 54.671957999999904,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -370,7 +1985,7 @@
     {
       "id": "dense/openbanking-account-info.bundled",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/openbanking-account-info.bundled.json",
+      "schemaPath": "dense/openbanking-account-info.bundled.json",
       "instancesTried": 3,
       "instancesValid": 3,
       "unsat": false,
@@ -381,18 +1996,20 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 29.56675000000007,
-        "composeMs": 10.961582999999905,
-        "generateMs": 2.54362500000002,
-        "repairMs": 28.28125,
-        "validateMs": 10.129958000000215,
+        "normalizeMs": 24.96545900000001,
+        "composeMs": 8.753166999999848,
+        "generateMs": 2.1143339999998716,
+        "repairMs": 33.77649999999994,
+        "validateMs": 9.802458000000115,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -405,7 +2022,7 @@
     {
       "id": "dense/openbanking-obaccount6.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/openbanking-obaccount6.schema.json",
+      "schemaPath": "dense/openbanking-obaccount6.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
       "unsat": false,
@@ -416,18 +2033,20 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 0.4571249999999054,
-        "composeMs": 0.9882500000001073,
-        "generateMs": 0.16191600000001927,
-        "repairMs": 12.533374999999978,
-        "validateMs": 11.620374999999967,
+        "normalizeMs": 0.3936249999997017,
+        "composeMs": 0.5957079999998314,
+        "generateMs": 0.14087500000005093,
+        "repairMs": 15.011917000000722,
+        "validateMs": 8.479792000000089,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -440,7 +2059,7 @@
     {
       "id": "dense/sdm-vehicle.bundled.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/sdm-vehicle.bundled.schema.json",
+      "schemaPath": "dense/sdm-vehicle.bundled.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
       "unsat": false,
@@ -451,18 +2070,20 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 1.5673750000000837,
-        "composeMs": 1.2975420000000213,
-        "generateMs": 9.920958000000155,
-        "repairMs": 16.968667000000096,
-        "validateMs": 19.369916999999987,
+        "normalizeMs": 0.7653330000002825,
+        "composeMs": 0.9482499999994616,
+        "generateMs": 8.959917000000132,
+        "repairMs": 19.690625000000182,
+        "validateMs": 16.00604199999998,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -475,7 +2096,7 @@
     {
       "id": "dense/stripe-openapi.bundled.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/dense/stripe-openapi.bundled.schema.json",
+      "schemaPath": "dense/stripe-openapi.bundled.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
       "unsat": false,
@@ -2754,18 +4375,20 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 295.81491700000015,
-        "composeMs": 88.77158399999985,
-        "generateMs": 27.1853329999999,
-        "repairMs": 213.57554200000004,
-        "validateMs": 24.667290999999977,
+        "normalizeMs": 251.4722499999998,
+        "composeMs": 78.63054199999988,
+        "generateMs": 23.838957999999366,
+        "repairMs": 200.29483299999993,
+        "validateMs": 22.379041000000143,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -2778,7 +4401,7 @@
     {
       "id": "docker_compose_config_schema_v1",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/docker_compose_config_schema_v1.json",
+      "schemaPath": "docker_compose_config_schema_v1.json",
       "instancesTried": 3,
       "instancesValid": 3,
       "unsat": false,
@@ -2814,18 +4437,20 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 0.40108299999997143,
-        "composeMs": 25.560291000000007,
-        "generateMs": 0.20012500000007094,
-        "repairMs": 8.896332999999913,
-        "validateMs": 11.055124999999862,
+        "normalizeMs": 0.4601670000001832,
+        "composeMs": 28.281999999999243,
+        "generateMs": 0.13833299999987503,
+        "repairMs": 9.409125000000131,
+        "validateMs": 7.624166999999943,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -2838,7 +4463,7 @@
     {
       "id": "docker_compose_spec",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/docker_compose_spec.json",
+      "schemaPath": "docker_compose_spec.json",
       "instancesTried": 3,
       "instancesValid": 0,
       "unsat": false,
@@ -3167,27 +4792,28 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         },
         {
-          "code": "VALIDATION_COMPILE_ERROR",
+          "code": "SCHEMA_INTERNAL_REF_MISSING",
           "canonPath": "",
           "details": {
-            "message": "no schema with key or ref \"http://json-schema.org/draft/2019-09/schema#\"",
-            "reason": "no-external-refs",
-            "errorName": "Error"
+            "ref": "http://json-schema.org/draft/2019-09/meta/core",
+            "mode": "strict"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 1.4710419999998976,
-        "composeMs": 95.86979100000008,
-        "generateMs": 0.2841249999999036,
-        "repairMs": 0.9548330000000078,
-        "validateMs": 0.7119159999999738,
+        "normalizeMs": 1.4363329999996495,
+        "composeMs": 76.62824999999975,
+        "generateMs": 0.24183300000004238,
+        "repairMs": 13.682708999999704,
+        "validateMs": 6.957707999999911,
         "validationsPerRow": 0,
         "repairPassesPerRow": 0
       },
@@ -3200,7 +4826,7 @@
     {
       "id": "fhir.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/fhir.schema.json",
+      "schemaPath": "fhir.schema.json",
       "instancesTried": 3,
       "instancesValid": 0,
       "unsat": false,
@@ -3242,9 +4868,11 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         },
         {
@@ -3258,11 +4886,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 123.24000000000024,
-        "composeMs": 253.04399999999987,
-        "generateMs": 31.889000000000124,
-        "repairMs": 17.811290999999983,
-        "validateMs": 46.10758299999998,
+        "normalizeMs": 109.53908300000057,
+        "composeMs": 230.23462500000005,
+        "generateMs": 33.14479200000005,
+        "repairMs": 23.082790999999816,
+        "validateMs": 48.242583000000195,
         "validationsPerRow": 0,
         "repairPassesPerRow": 0
       },
@@ -3275,7 +4903,7 @@
     {
       "id": "GeoJSON.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/GeoJSON.schema.json",
+      "schemaPath": "GeoJSON.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
       "unsat": false,
@@ -3286,18 +4914,20 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 1.0611669999998412,
-        "composeMs": 1.1150000000002365,
-        "generateMs": 26.144041000000016,
-        "repairMs": 28.07695799999965,
-        "validateMs": 28.77004199999965,
+        "normalizeMs": 1.1547080000000278,
+        "composeMs": 1.071541000000252,
+        "generateMs": 24.98766599999999,
+        "repairMs": 27.413375000000087,
+        "validateMs": 27.37266600000021,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3310,7 +4940,7 @@
     {
       "id": "github-workflow.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/github-workflow.schema.json",
+      "schemaPath": "github-workflow.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
       "unsat": false,
@@ -3376,18 +5006,20 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 3.8073749999998654,
-        "composeMs": 134.25145900000007,
-        "generateMs": 4.7939580000002024,
-        "repairMs": 23.711166999999932,
-        "validateMs": 28.577000000000226,
+        "normalizeMs": 1.9402919999993173,
+        "composeMs": 148.38533300000017,
+        "generateMs": 4.603624999999738,
+        "repairMs": 26.060333000001265,
+        "validateMs": 29.601999999998952,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3400,7 +5032,7 @@
     {
       "id": "google-analytics-event.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/google-analytics-event.schema.json",
+      "schemaPath": "google-analytics-event.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
       "unsat": false,
@@ -3411,18 +5043,20 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 0.33900000000039654,
-        "composeMs": 0.4639159999996991,
-        "generateMs": 0.054874999999810825,
-        "repairMs": 5.707040999999663,
-        "validateMs": 3.9160000000001673,
+        "normalizeMs": 0.31883299999935844,
+        "composeMs": 0.5059579999997368,
+        "generateMs": 0.0652909999989788,
+        "repairMs": 6.279582999999548,
+        "validateMs": 4.443667000001369,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3435,7 +5069,7 @@
     {
       "id": "google-audit-log-entry.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/google-audit-log-entry.schema.json",
+      "schemaPath": "google-audit-log-entry.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
       "unsat": false,
@@ -3446,18 +5080,20 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 0.54037500000004,
-        "composeMs": 0.6080840000004173,
-        "generateMs": 0.06516599999986283,
-        "repairMs": 5.486249999999927,
-        "validateMs": 5.51891599999999,
+        "normalizeMs": 0.5852500000000873,
+        "composeMs": 0.6688329999997222,
+        "generateMs": 0.07154199999968114,
+        "repairMs": 5.961291999999958,
+        "validateMs": 6.028041999999914,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3470,7 +5106,7 @@
     {
       "id": "google-pubsub-event.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/google-pubsub-event.schema.json",
+      "schemaPath": "google-pubsub-event.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
       "unsat": false,
@@ -3481,18 +5117,20 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 0.10216600000012477,
-        "composeMs": 0.22795899999982794,
-        "generateMs": 0.026542000000063126,
-        "repairMs": 1.9245829999999842,
-        "validateMs": 2.1839999999997417,
+        "normalizeMs": 0.0933340000010503,
+        "composeMs": 0.26241599999957543,
+        "generateMs": 0.032916000000113854,
+        "repairMs": 2.0496249999996508,
+        "validateMs": 2.278250000001208,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3505,31 +5143,40 @@
     {
       "id": "kubernetes-deployment.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/kubernetes-deployment.schema.json",
-      "instancesTried": 0,
-      "instancesValid": 0,
+      "schemaPath": "kubernetes-deployment.schema.json",
+      "instancesTried": 3,
+      "instancesValid": 3,
       "unsat": false,
-      "failFast": true,
+      "failFast": false,
       "diagnostics": [
         {
-          "code": "EXTERNAL_REF_UNRESOLVED",
-          "canonPath": "",
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
           "details": {
-            "mode": "strict",
-            "ref": "https://kubernetesjsonschema.dev/master/_definitions.json#/definitions/io.k8s.api.apps.v1.DeploymentSpec",
-            "failingRefs": [
-              "https://kubernetesjsonschema.dev/master/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
-            ]
+            "strategies": [
+              "local",
+              "remote",
+              "schemastore"
+            ],
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "https://kubernetesjsonschema.dev/master/_definitions.json",
+            "contentHash": "14e94481c106bbe47ac6fadaa256d3359effdb95277b5a69e5994859cd74abf8"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 0.043667000000368716,
-        "composeMs": 4.614917000000332,
-        "generateMs": 0,
-        "repairMs": 0,
-        "validateMs": 0,
-        "validationsPerRow": 0,
+        "normalizeMs": 0.07062500000029104,
+        "composeMs": 47.20774999999958,
+        "generateMs": 0.05537499999991269,
+        "repairMs": 2.07720800000061,
+        "validateMs": 27.763708000000406,
+        "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
       "caps": {
@@ -3541,7 +5188,7 @@
     {
       "id": "metadata.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/metadata.schema.json",
+      "schemaPath": "metadata.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
       "unsat": false,
@@ -3552,18 +5199,20 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 0.09791700000005221,
-        "composeMs": 0.22699999999986176,
-        "generateMs": 0.029958999999962543,
-        "repairMs": 1.710833999999977,
-        "validateMs": 2.009957999999642,
+        "normalizeMs": 0.10887499999989814,
+        "composeMs": 0.24016699999992852,
+        "generateMs": 0.03204199999890989,
+        "repairMs": 3.685124999999971,
+        "validateMs": 2.108750000001237,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3576,31 +5225,112 @@
     {
       "id": "npm-package.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/npm-package.schema.json",
-      "instancesTried": 0,
-      "instancesValid": 0,
+      "schemaPath": "npm-package.schema.json",
+      "instancesTried": 3,
+      "instancesValid": 3,
       "unsat": false,
-      "failFast": true,
+      "failFast": false,
       "diagnostics": [
         {
-          "code": "EXTERNAL_REF_UNRESOLVED",
-          "canonPath": "",
+          "code": "AP_FALSE_INTERSECTION_APPROX",
+          "canonPath": "/properties/exports/oneOf/1",
           "details": {
-            "mode": "strict",
+            "reason": "nonAnchoredPattern"
+          }
+        },
+        {
+          "code": "RESOLVER_STRATEGIES_APPLIED",
+          "canonPath": "#",
+          "details": {
+            "strategies": [
+              "local",
+              "remote",
+              "schemastore"
+            ],
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "https://json.schemastore.org/package.json",
+            "contentHash": "c2f3ac9a5289266728beff25a42ab01624941630004ebeea4883a22f44262a54"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "https://json.schemastore.org/eslintrc.json",
+            "contentHash": "f20f8a7cf4c05f7b1490186cbf18b2428e0d172b33c5f10e5a07a0522eb9a006"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "https://json.schemastore.org/prettierrc.json",
+            "contentHash": "82909ed8947a2805b8af6f57c5d780ceaf4af3c4239a5b2e3094df59e54761e6"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "https://json.schemastore.org/stylelintrc.json",
+            "contentHash": "b30453397da7cd8d252ca715ad254241171b480e18dc8d9fe1b68f215720fa6e"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
             "ref": "https://json.schemastore.org/ava.json",
-            "failingRefs": [
-              "https://json.schemastore.org/eslintrc.json"
-            ]
+            "contentHash": "1139ed177f41248bffe826defcbfbecf249f5778cd2798e5fceb75faffdff0f4"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "https://json.schemastore.org/semantic-release.json",
+            "contentHash": "4b01305ed276d6d2a7521dcbafab946a3f4246389a4efa6aba75ab1a4a1305b8"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "https://json.schemastore.org/jscpd.json",
+            "contentHash": "446ae330fc22d530a38a72881f417a9893e7571fca5ed7c4c6d04182e267ace2"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "https://json.schemastore.org/partial-eslint-plugins.json",
+            "contentHash": "9587dbf3065eeb79996acb573d72806ee7198fa2934d29fba797283867db23a5"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "id": "https://json.schemastore.org/package.json",
+            "ref": "https://json.schemastore.org/package.json",
+            "existingRef": "root-schema"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 1.3741250000002765,
-        "composeMs": 28.603000000000065,
-        "generateMs": 0,
-        "repairMs": 0,
-        "validateMs": 0,
-        "validationsPerRow": 0,
+        "normalizeMs": 1.4244589999998425,
+        "composeMs": 699.9522919999999,
+        "generateMs": 3.79541700000118,
+        "repairMs": 10.03099999999904,
+        "validateMs": 680.1848750000008,
+        "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
       "caps": {
@@ -3612,7 +5342,7 @@
     {
       "id": "openapi-2017-08-27.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/openapi-2017-08-27.schema.json",
+      "schemaPath": "openapi-2017-08-27.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
       "unsat": false,
@@ -3819,18 +5549,45 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
+          }
+        },
+        {
+          "code": "RESOLVER_CACHE_HIT",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://json-schema.org/draft-04/schema",
+            "contentHash": "c8aa3d8de08d4e2048ed2d5a223c31f5dcf4dcbc2adcea628e0a522f0e1ba44a"
+          }
+        },
+        {
+          "code": "RESOLVER_OFFLINE_UNAVAILABLE",
+          "canonPath": "#",
+          "details": {
+            "ref": "json-schema://fd.internal/root",
+            "reason": "fetch-error",
+            "error": "fetch failed"
+          }
+        },
+        {
+          "code": "RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID",
+          "canonPath": "#",
+          "details": {
+            "ref": "http://json-schema.org/draft-04/schema",
+            "reason": "uri-already-registered"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 1.3968339999996715,
-        "composeMs": 26.463834000000134,
-        "generateMs": 0.24812500000007276,
-        "repairMs": 17.309166000000005,
-        "validateMs": 18.732041999999637,
+        "normalizeMs": 1.4923749999998108,
+        "composeMs": 28.917583000000377,
+        "generateMs": 0.38758299999972223,
+        "repairMs": 17.200417000000016,
+        "validateMs": 19.65312499999891,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3843,7 +5600,7 @@
     {
       "id": "openapi-2024-10-18.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/openapi-2024-10-18.schema.json",
+      "schemaPath": "openapi-2024-10-18.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
       "unsat": false,
@@ -4078,18 +5835,20 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 1.4504590000001372,
-        "composeMs": 4.642374999999902,
-        "generateMs": 0.5857499999997344,
-        "repairMs": 18.147084000000177,
-        "validateMs": 20.860583000000133,
+        "normalizeMs": 2.045624999998836,
+        "composeMs": 4.71900000000096,
+        "generateMs": 1.363083000000188,
+        "repairMs": 19.231292000000394,
+        "validateMs": 22.611041000000114,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -4102,7 +5861,7 @@
     {
       "id": "openapi-3.1.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/openapi-3.1.schema.json",
+      "schemaPath": "openapi-3.1.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
       "unsat": false,
@@ -4203,9 +5962,11 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         },
         {
@@ -4375,11 +6136,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 1.4320000000002437,
-        "composeMs": 1.6572919999998703,
-        "generateMs": 6.513792000000194,
-        "repairMs": 20.16533299999992,
-        "validateMs": 22.55645800000002,
+        "normalizeMs": 1.3507079999999405,
+        "composeMs": 1.6512500000008004,
+        "generateMs": 6.917207999998936,
+        "repairMs": 25.75866700000006,
+        "validateMs": 22.972458000000188,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -4392,7 +6153,7 @@
     {
       "id": "tsconfig.schema",
       "mode": "strict",
-      "schemaPath": "/Users/fstepho/dev/foundry/foundrydata/profiles/real-world/tsconfig.schema.json",
+      "schemaPath": "tsconfig.schema.json",
       "instancesTried": 3,
       "instancesValid": 3,
       "unsat": false,
@@ -4403,18 +6164,20 @@
           "canonPath": "#",
           "details": {
             "strategies": [
-              "local"
+              "local",
+              "remote",
+              "schemastore"
             ],
-            "cacheDir": "~/.foundrydata/cache"
+            "cacheDir": "/Users/fstepho/.foundrydata/cache"
           }
         }
       ],
       "metrics": {
-        "normalizeMs": 1.988332999999784,
-        "composeMs": 1.4053750000002765,
-        "generateMs": 0.24908400000003894,
-        "repairMs": 20.975582999999915,
-        "validateMs": 24.029250000000047,
+        "normalizeMs": 2.1157919999986916,
+        "composeMs": 1.6349579999987327,
+        "generateMs": 0.25124999999934516,
+        "repairMs": 21.527541999999812,
+        "validateMs": 26.786082999999053,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -4427,11 +6190,11 @@
   ],
   "summary": {
     "totalSchemas": 25,
-    "schemasWithSuccess": 18,
-    "totalInstancesTried": 63,
-    "totalInstancesValid": 54,
+    "schemasWithSuccess": 21,
+    "totalInstancesTried": 72,
+    "totalInstancesValid": 63,
     "unsatCount": 1,
-    "failFastCount": 7,
+    "failFastCount": 4,
     "caps": {
       "regexCapped": 0,
       "nameAutomatonCapped": 13,

@@ -225,12 +225,87 @@ function createAjvByDialect(
       }
       return ajv;
     }
-    case 'draft-07':
-      return new Ajv(flags);
-    case '2019-09':
-      return new Ajv2019(flags) as unknown as Ajv;
-    case '2020-12':
-      return new Ajv2020(flags) as unknown as Ajv;
+    case 'draft-07': {
+      const ajv = new Ajv(flags);
+      try {
+        const canonicalIds = CANONICAL_META_IDS['draft-07'] ?? [];
+        const hasCanonicalMeta = canonicalIds.some((id) =>
+          id ? Boolean(ajv.getSchema(id)) : false
+        );
+        if (!hasCanonicalMeta) {
+          const draft07Meta = requireForDraft(
+            'ajv/dist/refs/json-schema-draft-07.json'
+          );
+          ajv.addMetaSchema(draft07Meta);
+        }
+      } catch (err) {
+        // If the draft-07 meta-schema cannot be loaded, Ajv will report missing metas on compile.
+        console.warn(
+          '[foundrydata] warning: failed to ensure draft-07 meta-schema for Ajv:',
+          err instanceof Error ? err.message : String(err)
+        );
+      }
+      return ajv;
+    }
+    case '2019-09': {
+      const ajv = new Ajv2019(flags) as unknown as Ajv;
+      try {
+        const canonicalIds = CANONICAL_META_IDS['2019-09'] ?? [];
+        const httpsId = canonicalIds[1] ?? canonicalIds[0];
+        const existing =
+          (httpsId && ajv.getSchema(httpsId)?.schema) ?? undefined;
+        const meta2019 =
+          existing ??
+          requireForDraft('ajv/dist/refs/json-schema-2019-09/schema.json');
+        if (meta2019 && typeof meta2019 === 'object') {
+          for (const id of canonicalIds) {
+            if (!id) continue;
+            if (ajv.getSchema(id)) continue;
+            const alias = {
+              ...(meta2019 as Record<string, unknown>),
+              $id: id,
+            };
+            ajv.addMetaSchema(alias);
+          }
+        }
+      } catch (err) {
+        // If the draft-2019-09 meta-schema cannot be loaded, Ajv will report missing metas on compile.
+        console.warn(
+          '[foundrydata] warning: failed to load draft-2019-09 meta-schema for Ajv:',
+          err instanceof Error ? err.message : String(err)
+        );
+      }
+      return ajv;
+    }
+    case '2020-12': {
+      const ajv = new Ajv2020(flags) as unknown as Ajv;
+      try {
+        const canonicalIds = CANONICAL_META_IDS['2020-12'] ?? [];
+        const httpsId = canonicalIds[1] ?? canonicalIds[0];
+        const existing =
+          (httpsId && ajv.getSchema(httpsId)?.schema) ?? undefined;
+        const meta2020 =
+          existing ??
+          requireForDraft('ajv/dist/refs/json-schema-2020-12/schema.json');
+        if (meta2020 && typeof meta2020 === 'object') {
+          for (const id of canonicalIds) {
+            if (!id) continue;
+            if (ajv.getSchema(id)) continue;
+            const alias = {
+              ...(meta2020 as Record<string, unknown>),
+              $id: id,
+            };
+            ajv.addMetaSchema(alias);
+          }
+        }
+      } catch (err) {
+        console.warn(
+          '[foundrydata] warning: failed to load draft-2020-12 meta-schema for Ajv:',
+          err instanceof Error ? err.message : String(err)
+        );
+      }
+      return ajv as unknown as Ajv;
+    }
     case 'draft-04': {
       // ajv-draft-04 is optional; resolve lazily via createRequire for ESM compatibility
       const AjvDraft04 = requireForDraft('ajv-draft-04');

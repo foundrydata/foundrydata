@@ -77,10 +77,14 @@ export async function runReporterCommand(
     throw new Error(`Invalid JSON schema file: ${(error as Error).message}`);
   }
 
+  const schemaRelative =
+    path.relative(process.cwd(), schemaAbsolute) ||
+    path.basename(schemaAbsolute);
+
   const report = await runEngineOnSchema({
     schema,
     schemaId: options.schemaPath,
-    schemaPath: schemaAbsolute,
+    schemaPath: schemaRelative.split(path.sep).join('/'),
     planOptions: undefined,
     maxInstances: options.maxInstances,
     seed: options.seed,

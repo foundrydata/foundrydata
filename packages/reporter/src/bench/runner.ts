@@ -1,6 +1,6 @@
 /* eslint-disable max-lines-per-function, max-lines */
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { resolve, dirname, join, basename } from 'node:path';
+import { resolve, dirname, join, basename, relative, sep } from 'node:path';
 import { createRequire } from 'node:module';
 
 import type {
@@ -100,12 +100,15 @@ async function processBenchEntry({
   defaultSeed,
 }: ProcessBenchEntryOptions): Promise<ProcessBenchEntryResult> {
   try {
-    const schemaRaw = await readFile(entry.schema, 'utf8');
+    const schemaAbsolute = entry.schema;
+    const schemaRaw = await readFile(schemaAbsolute, 'utf8');
     const schema = JSON.parse(schemaRaw);
+    const schemaRelative =
+      relative(process.cwd(), schemaAbsolute) || basename(schemaAbsolute);
     const report = await runEngineOnSchema({
       schema,
       schemaId: entry.schemaId ?? entry.id ?? basename(entry.schema),
-      schemaPath: entry.schema,
+      schemaPath: schemaRelative.split(sep).join('/'),
       maxInstances: entry.maxInstances,
       seed: entry.seed ?? defaultSeed,
       planOptions: entry.planOptions as PlanOptions | undefined,
@@ -122,7 +125,7 @@ async function processBenchEntry({
         entry,
         report,
         reportJsonPath,
-        entry.schema
+        schemaRelative
       ),
       meta: {
         toolName: report.meta.toolName,
@@ -257,10 +260,13 @@ function buildBenchSchemaSummaryFromError(
   entry: BenchConfigEntry,
   error: unknown
 ): BenchSchemaSummary {
+  const schemaAbsolute = entry.schema;
+  const schemaRelative =
+    relative(process.cwd(), schemaAbsolute) || basename(schemaAbsolute);
   return {
     id: entry.id,
     schemaId: entry.schemaId ?? entry.id ?? basename(entry.schema),
-    schemaPath: entry.schema,
+    schemaPath: schemaRelative.split(sep).join('/'),
     reportPath: '',
     summary: createEmptyReportSummary(),
     level: 'blocked',
