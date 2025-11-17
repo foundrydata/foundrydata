@@ -13,433 +13,6 @@
       "failFast": false,
       "diagnostics": [
         {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/$defs/nonNegativeIntegerDefault0/allOf/0/$ref",
-          "details": {
-            "target": "#/$defs/nonNegativeInteger"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/maxLength/$ref",
-          "details": {
-            "target": "#/$defs/nonNegativeInteger"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/minLength/$ref",
-          "details": {
-            "target": "#/$defs/nonNegativeIntegerDefault0"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/items/anyOf/1/$ref",
-          "details": {
-            "target": "#/$defs/schemaArray"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/maxItems/$ref",
-          "details": {
-            "target": "#/$defs/nonNegativeInteger"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/minItems/$ref",
-          "details": {
-            "target": "#/$defs/nonNegativeIntegerDefault0"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/maxProperties/$ref",
-          "details": {
-            "target": "#/$defs/nonNegativeInteger"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/minProperties/$ref",
-          "details": {
-            "target": "#/$defs/nonNegativeIntegerDefault0"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/required/$ref",
-          "details": {
-            "target": "#/$defs/stringArray"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/dependencies/additionalProperties/anyOf/1/$ref",
-          "details": {
-            "target": "#/$defs/stringArray"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/type/anyOf/0/$ref",
-          "details": {
-            "target": "#/$defs/simpleTypes"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/type/anyOf/1/items/$ref",
-          "details": {
-            "target": "#/$defs/simpleTypes"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/allOf/$ref",
-          "details": {
-            "target": "#/$defs/schemaArray"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/anyOf/$ref",
-          "details": {
-            "target": "#/$defs/schemaArray"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/oneOf/$ref",
-          "details": {
-            "target": "#/$defs/schemaArray"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/not/oneOf/1/$ref",
-          "details": {
-            "target": "#/$defs/Reference"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/allOf/items/oneOf/1/$ref",
-          "details": {
-            "target": "#/$defs/Reference"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/oneOf/items/oneOf/1/$ref",
-          "details": {
-            "target": "#/$defs/Reference"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/anyOf/items/oneOf/1/$ref",
-          "details": {
-            "target": "#/$defs/Reference"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/items/oneOf/1/$ref",
-          "details": {
-            "target": "#/$defs/Reference"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/properties/additionalProperties/oneOf/1/$ref",
-          "details": {
-            "target": "#/$defs/Reference"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/additionalProperties/oneOf/1/$ref",
-          "details": {
-            "target": "#/$defs/Reference"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/discriminator/$ref",
-          "details": {
-            "target": "#/$defs/Discriminator"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/externalDocs/$ref",
-          "details": {
-            "target": "#/$defs/ExternalDocumentation"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/xml/$ref",
-          "details": {
-            "target": "#/$defs/XML"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroSchema/oneOf/0/$ref",
-          "details": {
-            "target": "#/$defs/types"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/0/$ref",
-          "details": {
-            "target": "#/$defs/primitiveType"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/1/$ref",
-          "details": {
-            "target": "#/$defs/primitiveTypeWithMetadata"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/2/$ref",
-          "details": {
-            "target": "#/$defs/customTypeReference"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/3/$ref",
-          "details": {
-            "target": "#/$defs/avroRecord"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/4/$ref",
-          "details": {
-            "target": "#/$defs/avroEnum"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/5/$ref",
-          "details": {
-            "target": "#/$defs/avroArray"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/6/$ref",
-          "details": {
-            "target": "#/$defs/avroMap"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/7/$ref",
-          "details": {
-            "target": "#/$defs/avroFixed"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/8/$ref",
-          "details": {
-            "target": "#/$defs/avroUnion"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/primitiveTypeWithMetadata/properties/type/$ref",
-          "details": {
-            "target": "#/$defs/primitiveType"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/customTypeReference/not/$ref",
-          "details": {
-            "target": "#/$defs/primitiveType"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroUnion/items/$ref",
-          "details": {
-            "target": "#/$defs/avroSchema"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroField/properties/name/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroField/properties/type/$ref",
-          "details": {
-            "target": "#/$defs/types"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroField/properties/aliases/items/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroRecord/properties/name/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroRecord/properties/namespace/$ref",
-          "details": {
-            "target": "#/$defs/namespace"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroRecord/properties/aliases/items/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroRecord/properties/fields/items/$ref",
-          "details": {
-            "target": "#/$defs/avroField"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroEnum/properties/name/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroEnum/properties/namespace/$ref",
-          "details": {
-            "target": "#/$defs/namespace"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroEnum/properties/aliases/items/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroEnum/properties/symbols/items/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroArray/properties/name/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroArray/properties/namespace/$ref",
-          "details": {
-            "target": "#/$defs/namespace"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroArray/properties/aliases/items/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroArray/properties/items/$ref",
-          "details": {
-            "target": "#/$defs/types"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroMap/properties/name/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroMap/properties/namespace/$ref",
-          "details": {
-            "target": "#/$defs/namespace"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroMap/properties/aliases/items/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroMap/properties/values/$ref",
-          "details": {
-            "target": "#/$defs/types"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroFixed/properties/name/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroFixed/properties/namespace/$ref",
-          "details": {
-            "target": "#/$defs/namespace"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroFixed/properties/aliases/items/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/oneOf/0/$ref",
-          "details": {
-            "target": "#/$defs/avroSchema"
-          }
-        },
-        {
           "code": "AP_FALSE_INTERSECTION_APPROX",
           "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json",
           "details": {
@@ -472,11 +45,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 20.862875000000003,
-        "composeMs": 127.73195799999999,
-        "generateMs": 2.3617499999999723,
-        "repairMs": 71.306375,
-        "validateMs": 63.28787500000004,
+        "normalizeMs": 23.87424999999999,
+        "composeMs": 142.910792,
+        "generateMs": 3.014542000000006,
+        "repairMs": 76.22358300000002,
+        "validateMs": 61.95458400000001,
         "validationsPerRow": 3,
         "repairPassesPerRow": 3
       },
@@ -507,11 +80,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.23454199999997627,
-        "composeMs": 0.41500000000002046,
-        "generateMs": 0.5387910000000034,
-        "repairMs": 4.311750000000018,
-        "validateMs": 3.007000000000005,
+        "normalizeMs": 0.21125000000000682,
+        "composeMs": 0.4316669999999476,
+        "generateMs": 0.45983400000000074,
+        "repairMs": 4.2683340000000385,
+        "validateMs": 3.08137499999998,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -542,11 +115,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 3.9722919999999817,
-        "composeMs": 3.4645419999999945,
-        "generateMs": 0.901834000000008,
-        "repairMs": 133.340958,
-        "validateMs": 152.4217500000001,
+        "normalizeMs": 3.7894580000000246,
+        "composeMs": 3.5286250000000337,
+        "generateMs": 0.8907920000000331,
+        "repairMs": 129.33041699999995,
+        "validateMs": 155.26745800000003,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -603,14 +176,22 @@
             ],
             "cacheDir": "~/.foundrydata/cache"
           }
+        },
+        {
+          "code": "SCHEMA_INTERNAL_REF_MISSING",
+          "canonPath": "",
+          "details": {
+            "ref": "https://schema.cloudformation.us-east-1.amazonaws.com/provider.definition.schema.v1.json#/properties/allOf/items/allOf/1/properties/contains/properties/$schema",
+            "mode": "lax"
+          }
         }
       ],
       "metrics": {
-        "normalizeMs": 1.1059999999999945,
-        "composeMs": 114.03008299999999,
-        "generateMs": 1.2835000000000036,
-        "repairMs": 3.3857080000000224,
-        "validateMs": 4.836208000000056,
+        "normalizeMs": 1.289166000000023,
+        "composeMs": 117.51724999999999,
+        "generateMs": 1.2239170000000286,
+        "repairMs": 3.2698330000000624,
+        "validateMs": 3.9570420000000013,
         "validationsPerRow": 0,
         "repairPassesPerRow": 0
       },
@@ -627,7 +208,7 @@
       "instancesTried": 3,
       "instancesValid": 0,
       "unsat": false,
-      "failFast": false,
+      "failFast": true,
       "diagnostics": [
         {
           "code": "RESOLVER_STRATEGIES_APPLIED",
@@ -638,14 +219,22 @@
             ],
             "cacheDir": "~/.foundrydata/cache"
           }
+        },
+        {
+          "code": "SCHEMA_INTERNAL_REF_MISSING",
+          "canonPath": "",
+          "details": {
+            "ref": "https://gs1.github.io/EPCIS/JSON-Schema/EPCIS-JSON-Schema.json#/allOf/3/then/allOf/0/allOf/1/properties/childQuantityList/items/properties/quantity",
+            "mode": "lax"
+          }
         }
       ],
       "metrics": {
-        "normalizeMs": 2.5515830000000506,
-        "composeMs": 3.3473749999999427,
-        "generateMs": 0.2580000000000382,
-        "repairMs": 7.287959000000001,
-        "validateMs": 8.092000000000098,
+        "normalizeMs": 3.158333999999968,
+        "composeMs": 3.108957999999916,
+        "generateMs": 0.20595800000000963,
+        "repairMs": 7.7835409999999,
+        "validateMs": 7.5763749999999845,
         "validationsPerRow": 0,
         "repairPassesPerRow": 0
       },
@@ -676,11 +265,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 3.5659580000000233,
-        "composeMs": 2.291582999999946,
-        "generateMs": 0.2574170000000322,
-        "repairMs": 45.753874999999994,
-        "validateMs": 52.78474999999992,
+        "normalizeMs": 3.7665000000000646,
+        "composeMs": 2.2878749999999854,
+        "generateMs": 0.261833999999908,
+        "repairMs": 45.368999999999915,
+        "validateMs": 53.11729200000002,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -711,11 +300,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 23.94670899999994,
-        "composeMs": 7.760500000000093,
-        "generateMs": 3.335709000000179,
-        "repairMs": 23.80633399999988,
-        "validateMs": 9.018791999999848,
+        "normalizeMs": 26.04141699999991,
+        "composeMs": 8.018165999999837,
+        "generateMs": 3.345458000000008,
+        "repairMs": 23.972041999999874,
+        "validateMs": 9.119125000000167,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -746,11 +335,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.38141600000017206,
-        "composeMs": 0.6574580000001333,
-        "generateMs": 0.12445899999988796,
-        "repairMs": 9.632250000000113,
-        "validateMs": 11.26929099999984,
+        "normalizeMs": 0.39150000000017826,
+        "composeMs": 0.7013329999999769,
+        "generateMs": 0.13341700000000856,
+        "repairMs": 10.013290999999981,
+        "validateMs": 11.612250000000131,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -781,11 +370,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.7028749999999491,
-        "composeMs": 0.8933749999998781,
-        "generateMs": 8.93116699999996,
-        "repairMs": 15.126874999999927,
-        "validateMs": 16.02870800000005,
+        "normalizeMs": 0.7659590000000662,
+        "composeMs": 0.9749579999997877,
+        "generateMs": 9.094542000000047,
+        "repairMs": 15.112750000000005,
+        "validateMs": 16.18154199999981,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3084,11 +2673,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 230.16029099999992,
-        "composeMs": 74.50379199999998,
-        "generateMs": 22.61999999999989,
-        "repairMs": 224.8113330000001,
-        "validateMs": 22.31987500000014,
+        "normalizeMs": 253.92450000000008,
+        "composeMs": 73.847125,
+        "generateMs": 22.39687499999991,
+        "repairMs": 191.32283300000017,
+        "validateMs": 21.840791999999965,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3144,11 +2733,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.4057080000000042,
-        "composeMs": 12.67820800000004,
-        "generateMs": 0.09895800000003874,
-        "repairMs": 8.837208000000146,
-        "validateMs": 7.859083000000055,
+        "normalizeMs": 0.4036669999998139,
+        "composeMs": 25.727916999999934,
+        "generateMs": 0.10649999999986903,
+        "repairMs": 8.584667000000081,
+        "validateMs": 8.67795799999999,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3165,7 +2754,7 @@
       "instancesTried": 3,
       "instancesValid": 0,
       "unsat": false,
-      "failFast": false,
+      "failFast": true,
       "diagnostics": [
         {
           "code": "AP_FALSE_INTERSECTION_APPROX",
@@ -3494,14 +3083,23 @@
             ],
             "cacheDir": "~/.foundrydata/cache"
           }
+        },
+        {
+          "code": "VALIDATION_COMPILE_ERROR",
+          "canonPath": "",
+          "details": {
+            "message": "no schema with key or ref \"http://json-schema.org/draft/2019-09/schema#\"",
+            "reason": "no-external-refs",
+            "errorName": "Error"
+          }
         }
       ],
       "metrics": {
-        "normalizeMs": 2.132000000000062,
-        "composeMs": 146.30995900000016,
-        "generateMs": 0.22658400000000256,
-        "repairMs": 0.8599159999998847,
-        "validateMs": 0.5829170000001795,
+        "normalizeMs": 1.36587499999996,
+        "composeMs": 84.5842090000001,
+        "generateMs": 0.2417080000000169,
+        "repairMs": 0.8849159999999756,
+        "validateMs": 0.6227919999998903,
         "validationsPerRow": 0,
         "repairPassesPerRow": 0
       },
@@ -3521,1439 +3119,11 @@
       "failFast": false,
       "diagnostics": [
         {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Meta/properties/versionId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ElementDefinition/properties/condition/items/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ElementDefinition_Constraint/properties/key/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ElementDefinition_Mapping/properties/identity/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Account/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ActivityDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ActorDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/AdministrableProductDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/AdverseEvent/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/AllergyIntolerance/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Appointment/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/AppointmentResponse/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ArtifactAssessment/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/AuditEvent/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Basic/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Binary/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/BiologicallyDerivedProduct/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/BiologicallyDerivedProductDispense/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/BodyStructure/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Bundle/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/CapabilityStatement/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/CarePlan/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/CareTeam/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ChargeItem/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ChargeItemDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Citation/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Claim/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ClaimResponse/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ClinicalImpression/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ClinicalUseDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/CodeSystem/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Communication/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/CommunicationRequest/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/CompartmentDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Composition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ConceptMap/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Condition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ConditionDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Consent/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Contract/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Coverage/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/CoverageEligibilityRequest/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/CoverageEligibilityResponse/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/DetectedIssue/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Device/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/DeviceAssociation/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/DeviceDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/DeviceDispense/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/DeviceMetric/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/DeviceRequest/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/DeviceUsage/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/DiagnosticReport/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/DocumentReference/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Encounter/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/EncounterHistory/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Endpoint/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/EnrollmentRequest/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/EnrollmentResponse/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/EpisodeOfCare/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/EventDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Evidence/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/EvidenceReport/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/EvidenceVariable/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/EvidenceVariable_Characteristic/properties/linkId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/EvidenceVariable_Characteristic/properties/definitionId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ExampleScenario/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ExplanationOfBenefit/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/FamilyMemberHistory/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Flag/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/FormularyItem/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/GenomicStudy/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Goal/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/GraphDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/GraphDefinition/properties/start/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/GraphDefinition_Node/properties/nodeId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/GraphDefinition_Link/properties/sourceId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/GraphDefinition_Link/properties/targetId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Group/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/GuidanceResponse/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/HealthcareService/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ImagingSelection/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ImagingSelection/properties/studyUid/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ImagingSelection/properties/seriesUid/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ImagingSelection/properties/frameOfReferenceUid/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ImagingSelection_Instance/properties/uid/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ImagingStudy/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ImagingStudy_Series/properties/uid/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ImagingStudy_Instance/properties/uid/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Immunization/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ImmunizationEvaluation/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ImmunizationRecommendation/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ImplementationGuide/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ImplementationGuide/properties/packageId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ImplementationGuide_DependsOn/properties/packageId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ImplementationGuide_Resource/properties/groupingId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Ingredient/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/InsurancePlan/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/InventoryItem/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/InventoryReport/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Invoice/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Library/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Linkage/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/List/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Location/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ManufacturedItemDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Measure/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/MeasureReport/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Medication/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/MedicationAdministration/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/MedicationDispense/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/MedicationKnowledge/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/MedicationRequest/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/MedicationStatement/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/MedicinalProductDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/MessageDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/MessageHeader/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/MolecularSequence/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/NamingSystem/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/NutritionIntake/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/NutritionOrder/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/NutritionProduct/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Observation/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ObservationDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/OperationDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/OperationOutcome/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Organization/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/OrganizationAffiliation/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/PackagedProductDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Parameters/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Patient/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/PaymentNotice/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/PaymentReconciliation/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Permission/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Person/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/PlanDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/PlanDefinition_Action/properties/goalId/items/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/PlanDefinition_Input/properties/relatedData/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/PlanDefinition_RelatedAction/properties/targetId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Practitioner/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/PractitionerRole/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Procedure/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Provenance/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Questionnaire/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/QuestionnaireResponse/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/RegulatedAuthorization/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/RelatedPerson/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/RequestOrchestration/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/RequestOrchestration_Input/properties/relatedData/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/RequestOrchestration_RelatedAction/properties/targetId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Requirements/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Requirements_Statement/properties/key/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ResearchStudy/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ResearchStudy_ComparisonGroup/properties/linkId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ResearchSubject/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ResearchSubject/properties/assignedComparisonGroup/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ResearchSubject/properties/actualComparisonGroup/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/RiskAssessment/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Schedule/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/SearchParameter/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ServiceRequest/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Slot/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Specimen/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/SpecimenDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/StructureDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/StructureDefinition_Mapping/properties/identity/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/StructureMap/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/StructureMap_Const/properties/name/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/StructureMap_Group/properties/name/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/StructureMap_Group/properties/extends/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/StructureMap_Input/properties/name/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/StructureMap_Rule/properties/name/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/StructureMap_Source/properties/context/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/StructureMap_Source/properties/variable/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/StructureMap_Target/properties/variable/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/StructureMap_Target/properties/listRuleId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/StructureMap_Dependent/properties/name/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Subscription/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/SubscriptionStatus/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/SubscriptionTopic/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Substance/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/SubstanceDefinition/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/SubstanceNucleicAcid/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/SubstancePolymer/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/SubstanceProtein/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/SubstanceReferenceInformation/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/SubstanceSourceMaterial/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/SupplyDelivery/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/SupplyRequest/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Task/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/TerminologyCapabilities/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/TestPlan/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/TestReport/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/TestScript/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/TestScript_Variable/properties/sourceId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/TestScript_Operation/properties/requestId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/TestScript_Operation/properties/responseId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/TestScript_Operation/properties/sourceId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/TestScript_Operation/properties/targetId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/TestScript_Assert/properties/sourceId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/TestScript_Assert/properties/validateProfileId/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/Transport/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/ValueSet/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/VerificationResult/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/VisionPrescription/properties/id/$ref",
-          "details": {
-            "target": "#/$defs/id"
-          }
-        },
-        {
           "code": "COMPLEXITY_CAP_SCHEMA_SIZE",
           "canonPath": "",
           "details": {
             "limit": 2000000,
-            "observed": 3435810
+            "observed": 3434585
           }
         },
         {
@@ -5481,11 +3651,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 83.72683400000005,
-        "composeMs": 225.17662500000006,
-        "generateMs": 32.156958999999915,
-        "repairMs": 17.72133299999996,
-        "validateMs": 795.5125840000001,
+        "normalizeMs": 98.55008299999986,
+        "composeMs": 225.27312500000016,
+        "generateMs": 31.66300000000001,
+        "repairMs": 16.93187500000022,
+        "validateMs": 802.3062500000001,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -5516,11 +3686,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 1.0570000000002437,
-        "composeMs": 0.9567920000004051,
-        "generateMs": 31.180917000000136,
-        "repairMs": 27.301707999999962,
-        "validateMs": 26.17391699999962,
+        "normalizeMs": 1.1886669999998958,
+        "composeMs": 1.2992090000002463,
+        "generateMs": 24.810791999999765,
+        "repairMs": 24.495208999999704,
+        "validateMs": 28.127166999999645,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -5606,11 +3776,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 2.7299580000003516,
-        "composeMs": 159.57508400000006,
-        "generateMs": 4.739584000000377,
-        "repairMs": 24.435083000000304,
-        "validateMs": 32.220540999999685,
+        "normalizeMs": 1.9936670000001868,
+        "composeMs": 58.58229200000005,
+        "generateMs": 3.941874999999982,
+        "repairMs": 24.24008300000014,
+        "validateMs": 30.854499999999916,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -5641,11 +3811,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.5405829999999696,
-        "composeMs": 0.6391669999998157,
-        "generateMs": 0.07483400000000984,
-        "repairMs": 5.204874999999902,
-        "validateMs": 4.190458000000035,
+        "normalizeMs": 0.3530409999998483,
+        "composeMs": 1.066124999999829,
+        "generateMs": 0.09666699999979755,
+        "repairMs": 4.498916999999892,
+        "validateMs": 3.914375000000291,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -5676,11 +3846,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.7647910000000593,
-        "composeMs": 0.7866669999998521,
-        "generateMs": 0.07045900000002803,
-        "repairMs": 6.278583000000253,
-        "validateMs": 5.694582999999966,
+        "normalizeMs": 0.6136249999999563,
+        "composeMs": 0.6303749999997308,
+        "generateMs": 0.0628750000000764,
+        "repairMs": 5.7543329999998605,
+        "validateMs": 5.680124999999862,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -5711,11 +3881,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.09075000000029831,
-        "composeMs": 0.2507919999998194,
-        "generateMs": 0.025666999999884865,
-        "repairMs": 1.9847090000002936,
-        "validateMs": 2.2457500000000437,
+        "normalizeMs": 0.08662499999991269,
+        "composeMs": 0.22120900000027177,
+        "generateMs": 0.025415999999950145,
+        "repairMs": 2.0715000000000146,
+        "validateMs": 2.8066250000001673,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -5761,11 +3931,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.4010830000001988,
-        "composeMs": 4.178707999999915,
-        "generateMs": 0.040750000000116415,
-        "repairMs": 1.658292000000074,
-        "validateMs": 0.2984580000002097,
+        "normalizeMs": 0.04804199999989578,
+        "composeMs": 3.8720829999997477,
+        "generateMs": 0.03891700000031051,
+        "repairMs": 1.4962080000000242,
+        "validateMs": 0.24608299999999872,
         "validationsPerRow": 0,
         "repairPassesPerRow": 0
       },
@@ -5796,11 +3966,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.11129099999971004,
-        "composeMs": 0.19887500000004366,
-        "generateMs": 0.026667000000088592,
-        "repairMs": 1.8175830000000133,
-        "validateMs": 2.0898749999996653,
+        "normalizeMs": 0.0933749999999236,
+        "composeMs": 0.16770899999983158,
+        "generateMs": 0.02545800000007148,
+        "repairMs": 1.7320420000000922,
+        "validateMs": 2.1116659999997864,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -5853,11 +4023,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 1.9764169999998558,
-        "composeMs": 29.969707999999628,
-        "generateMs": 2.5000410000002375,
-        "repairMs": 7.256290999999692,
-        "validateMs": 0.232499999999618,
+        "normalizeMs": 1.4172090000001845,
+        "composeMs": 29.235749999999825,
+        "generateMs": 3.0753749999998945,
+        "repairMs": 5.649332999999842,
+        "validateMs": 0.21329199999991033,
         "validationsPerRow": 0,
         "repairPassesPerRow": 0
       },
@@ -5876,13 +4046,6 @@
       "unsat": false,
       "failFast": false,
       "diagnostics": [
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/properties/$defs/$ref",
-          "details": {
-            "target": "#/$defs/definitions"
-          }
-        },
         {
           "code": "AP_FALSE_INTERSECTION_APPROX",
           "canonPath": "",
@@ -6091,11 +4254,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 1.5717500000000655,
-        "composeMs": 28.383792000000085,
-        "generateMs": 0.24083400000017718,
-        "repairMs": 16.183250000000044,
-        "validateMs": 18.32537500000035,
+        "normalizeMs": 1.4441670000001068,
+        "composeMs": 25.092333000000053,
+        "generateMs": 0.21500000000014552,
+        "repairMs": 15.855207999999948,
+        "validateMs": 18.1550000000002,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -6350,11 +4513,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 1.520292000000154,
-        "composeMs": 5.53366700000015,
-        "generateMs": 0.36566599999969185,
-        "repairMs": 18.018291999999747,
-        "validateMs": 21.106000000000222,
+        "normalizeMs": 1.4032090000000608,
+        "composeMs": 4.310583000000406,
+        "generateMs": 0.35179199999993216,
+        "repairMs": 17.444500000000062,
+        "validateMs": 20.718415999999706,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -6640,11 +4803,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 1.25262500000008,
-        "composeMs": 1.775583000000097,
-        "generateMs": 6.4529999999999745,
-        "repairMs": 19.24691699999994,
-        "validateMs": 20.92570799999976,
+        "normalizeMs": 1.3147079999998823,
+        "composeMs": 1.4578329999999369,
+        "generateMs": 5.750458999999864,
+        "repairMs": 20.05216700000028,
+        "validateMs": 20.960625000000164,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -6675,11 +4838,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 2.081709000000046,
-        "composeMs": 1.5033339999999953,
-        "generateMs": 0.2755000000001928,
-        "repairMs": 19.62979200000018,
-        "validateMs": 24.385291999999936,
+        "normalizeMs": 1.9023749999996653,
+        "composeMs": 1.7053750000000036,
+        "generateMs": 0.23012500000004366,
+        "repairMs": 20.084499999999935,
+        "validateMs": 25.04883400000017,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -6696,7 +4859,7 @@
     "totalInstancesTried": 75,
     "totalInstancesValid": 60,
     "unsatCount": 1,
-    "failFastCount": 3,
+    "failFastCount": 5,
     "caps": {
       "regexCapped": 0,
       "nameAutomatonCapped": 13,
