@@ -636,6 +636,86 @@ describe('SchemaNormalizer – local definitions $ref rewrite', () => {
     expect(note?.canonPath).toBe('/$ref');
     expect(note?.details).toEqual({ target: '#/$defs/Missing' });
   });
+
+  it('preserves primitive definitions like id and rewrites local refs without DEFS_TARGET_MISSING', () => {
+    const schema = {
+      definitions: {
+        id: {
+          pattern: '^[A-Za-z0-9\\-\\.]{1,64}$',
+          type: 'string',
+        },
+        Meta: {
+          type: 'object',
+          properties: {
+            versionId: {
+              $ref: '#/definitions/id',
+            },
+          },
+        },
+      },
+    } as const;
+
+    const result = normalize(schema);
+
+    expect(result.schema).toEqual({
+      $defs: {
+        id: {
+          pattern: '^[A-Za-z0-9\\-\\.]{1,64}$',
+          type: 'string',
+        },
+        Meta: {
+          type: 'object',
+          properties: {
+            versionId: {
+              $ref: '#/$defs/id',
+            },
+          },
+        },
+      },
+    });
+
+    const missing = result.notes.filter(
+      (note) => note.code === DIAGNOSTIC_CODES.DEFS_TARGET_MISSING
+    );
+    expect(missing.length).toBe(0);
+  });
+
+  it('does not rename properties.definitions and rewrites refs through $defs correctly', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        definitions: {
+          $ref: '#/definitions/schema',
+        },
+      },
+      definitions: {
+        schema: {
+          type: 'object',
+        },
+      },
+    } as const;
+
+    const result = normalize(schema);
+
+    expect(result.schema).toEqual({
+      type: 'object',
+      properties: {
+        definitions: {
+          $ref: '#/$defs/schema',
+        },
+      },
+      $defs: {
+        schema: {
+          type: 'object',
+        },
+      },
+    });
+
+    const missing = result.notes.filter(
+      (note) => note.code === DIAGNOSTIC_CODES.DEFS_TARGET_MISSING
+    );
+    expect(missing.length).toBe(0);
+  });
 });
 
 describe('SchemaNormalizer – dependentRequired guards', () => {

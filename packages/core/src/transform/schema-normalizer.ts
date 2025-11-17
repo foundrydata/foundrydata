@@ -1224,14 +1224,20 @@ class SchemaNormalizer {
 
   private unifyDraftKeywords(node: CanonObjectNode, pointer: string): void {
     this.renameId(node, pointer);
-    this.mergeDefinitions(node);
+    this.mergeDefinitions(node, pointer);
     this.normalizeTupleKeywords(node);
     this.rewriteNullable(node, pointer);
     this.normalizeExclusiveBounds(node, pointer);
   }
 
   private renameId(node: CanonObjectNode, pointer: string): void {
-    if (pointer.endsWith('/properties')) {
+    // Do not rename definition entry keys such as "/definitions/id" or "/$defs/id":
+    // these are schema names, not draft-04 "id" keywords.
+    if (
+      pointer.endsWith('/properties') ||
+      pointer.endsWith('/definitions') ||
+      pointer.endsWith('/$defs')
+    ) {
       return;
     }
     const idIndex = this.findEntryIndex(node, 'id');
@@ -1243,7 +1249,12 @@ class SchemaNormalizer {
     idEntry.key = '$id';
   }
 
-  private mergeDefinitions(node: CanonObjectNode): void {
+  private mergeDefinitions(node: CanonObjectNode, pointer: string): void {
+    // Do not treat property names under "properties" as schema-level definitions,
+    // and do not recurse into $defs containers as if they had nested "definitions" keywords.
+    if (pointer.endsWith('/properties') || pointer.endsWith('/$defs')) {
+      return;
+    }
     const definitionsIndex = this.findEntryIndex(node, 'definitions');
     if (definitionsIndex === -1) return;
 
