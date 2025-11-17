@@ -383,13 +383,19 @@ Examples:
 
 2. **References**
 
-   * Preserve local `#...`; rewrite `#/definitions/...`→`#/$defs/...` if target exists; note `DEFS_TARGET_MISSING` otherwise.
+   * Preserve local `#...`; rewrite `#/definitions/...`→`#/$defs/...` **only within the same `$id` document scope**; see *Scoped `definitions` rewrite* below. When the scoped target is absent, note `DEFS_TARGET_MISSING`.
    * Preserve **external** `$ref` values verbatim; do **not** dereference or rewrite them (core). Compose/Validate emit
      `EXTERNAL_REF_UNRESOLVED` per §11/§12 (Strict=error, Lax=warn). No network or filesystem I/O is performed by core phases.
      **Extension R1 (clarification; normative).** Compose **and** the final validation compilation **MAY** consult the
      resolver’s **in‑memory registry** (pre‑filled in §4) to supply additional schemas to Ajv via `addSchema`. When the registry
      is present and hydration is enabled, the **Source AJV MUST be hydrated before `compile(original)`**. The canonical view is
      unchanged and validation still targets the **original** schema.
+
+   **Scoped `definitions` rewrite (normative).** For any `$ref` whose value is exactly `#/definitions/...`:
+   1) Let **S** be the nearest ancestor (including self) that declares a `$id` with an **absolute** URI; if none exists, **S** is the document root `"#"`.
+   2) Attempt the rewrite **only inside the canonical subtree rooted at `S`**. Rewrite to `#/$defs/...` **iff** the target exists under `S` at that fragment. Implementations **MUST NOT** consult ancestors or siblings outside `S` for this existence check.
+   3) When the target is absent under **S**, **do not rewrite** and **MUST** emit `DEFS_TARGET_MISSING` at the `$ref` operator path. Implementations **MUST NOT** emit this note when the target exists under **S** but not under the global root.
+   4) This rule formalizes “Don’t cross `$id` boundaries” for `definitions → $defs` and prevents spurious notes on embedded meta‑schemas (e.g., JSON Schema draft‑07, OpenAPI lifts, Avro) included under AsyncAPI 3.0 `definitions`.
    * Don’t cross `$id` boundaries; keep anchors/dynamic anchors intact; no cycle expansion.
 
 3. **Boolean / trivial simplifications (normative)**
@@ -555,6 +561,8 @@ Examples:
 
 <a id="s7-pointer-binding"></a>
 ### Pointer binding & note locus (normative)
+
+**Scoping for reference existence checks (normative).** Existence checks used by §7.2 **MUST** be performed against the **scoped canonical subtree** rooted at the nearest `$id` ancestor **S** of the `$ref`. The diagnostic locus remains the `$ref` operator path; implementations **MUST NOT** duplicate `canonPath` inside `details`.
 
 **Binding moment (MUST).** Implementations **MUST** compute `ptrMap` and `revPtrMap` **after all Normalize passes** (§7 Pass Order), by walking the **final canonical tree**. All `notes[].canonPath` **MUST** also be bound against this final tree.
 
@@ -1977,6 +1985,8 @@ Compose/coverage vs Generator: `REGEX_COMPLEXITY_CAPPED` **and `REGEX_COMPILE_ER
 
 <a id="s19-payloads"></a>
 ### 19.1 Details payloads (normative)
+
+**Clarification (normative) — `DEFS_TARGET_MISSING` emission scope.** This note **MUST** be emitted only when the target of a `#/definitions/...` rewrite is absent **within the same `$id` document scope** as the `$ref` (§7.2). Absence at the global root alone is not sufficient grounds for emission.
 
 Provide the following minimal JSON‑Schema‑like shapes for major codes. Only the `details` object is shown in each case.
 
