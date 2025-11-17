@@ -41,7 +41,7 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
   `diag.metrics.validationsPerRow = 0`. In **Strict**, compile failure on external `$ref` remains a hard error and
   generation **MUST NOT** proceed.
   **Hydration order (normative).** When **Extension R1** is enabled and a non‑empty resolver registry is available,
-  implementations **MAY** hydrate the **Source AJV** used for the final compile by adding the registry’s documents via
+  implementations **MUST** hydrate the **Source AJV** used for the final compile by adding the registry’s documents via
   `addSchema(...)` **before** `compile(original)`. No network I/O occurs in core phases. The `EXTERNAL_REF_UNRESOLVED`
   classification in §11 is performed **after** this hydration step.
   *Signal:* when not skipped, final validation passes; `diag.metrics.validationsPerRow ≥ 1`.
@@ -70,6 +70,11 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
 **External `$ref` resolver DoD (Extension R1).**
 • **Online (empty resolver cache):** With `resolver.strategies:['local','remote','schemastore']`, first‑run compilation of the **npm package** schema (`https://json.schemastore.org/package`) and **AsyncAPI 3.0** schema succeeds without `EXTERNAL_REF_UNRESOLVED`; notes show `RESOLVER_CACHE_MISS_FETCHED` followed by `RESOLVER_CACHE_HIT` on subsequent runs.  
 • **Offline / disallowed hosts:** With `resolver.stubUnresolved:'emptySchema'` in **Lax**, unresolved external `$ref` are stubbed for planning with warnings (`RESOLVER_OFFLINE_UNAVAILABLE`, `EXTERNAL_REF_STUBBED`), generation continues, and final validation follows §11 skip‑eligibility (set `diag.metrics.validationsPerRow = 0` when skipped).
+
+**R1 Quick Start (informative).**
+• To enable HTTP(S) resolution in the corpus harness, run: `tsx scripts/run-corpus.ts --corpus profiles/real-world --mode strict --resolve local,remote,schemastore --cache-dir ~/.foundrydata/cache`. The first run populates the cache (`RESOLVER_CACHE_MISS_FETCHED`), subsequent runs reuse it (`RESOLVER_CACHE_HIT`).  
+• To exercise Lax + planning stubs offline, run: `tsx scripts/run-corpus.ts --corpus profiles/real-world --mode lax --resolve local --resolver-stub-unresolved=emptySchema`. For the main CLI, `--compat lax --fail-on-unresolved=false --resolve=local` maps to the same resolver configuration (Lax + planning‑time stubs).  
+• When `--resolve` includes `remote`, HTTP(S) fetch is allowed for any host unless `--allow-host` is present, in which case the allow‑list **restricts** remote hosts. The `schemastore` strategy always permits `json.schemastore.org` even without `--allow-host`.
 
 > **Conventions.** RFC2119/8174 keywords (MUST/SHOULD/MAY) are normative.
 > “Instance” = generated JSON value validated against the schema.
@@ -235,8 +240,7 @@ Clarification: The build‑time constant `ENUM_CAP` also applies to finite sets 
 **Precedence & compatibility.** Mode (Strict/Lax) defines the baseline; specific `failFast` overrides refine it (see §11).
 
 **CLI mapping (informative).** `--resolve=local[,remote][,schemastore]` and `--cache-dir <path>` populate
-`resolver.strategies` and `resolver.cacheDir`. `--fail-on-unresolved=false` enables **Lax** semantics for external `$ref`
-and sets `resolver.stubUnresolved:'emptySchema'` (planning‑time stubs + warnings).
+`resolver.strategies` and `resolver.cacheDir`. Repeated `--allow-host <hostname>` flags extend the resolver host allow‑list (`resolver.allowlist`). `--resolver-hydrate-final-ajv=(true|false)` maps to `resolver.hydrateFinalAjv`. In **Lax**, `--resolver-stub-unresolved=emptySchema` (or the legacy alias `--fail-on-unresolved=false`) enables planning‑time stubs for unresolved external `$ref` by setting `resolver.stubUnresolved:'emptySchema'` (warnings + optional skip per §11).
 **Note on “aggressive”.** The legacy `rewriteConditionals:'aggressive'` is treated as the same as `'safe'` and is kept for compatibility; the default remains `'never'` (see §7/§23).
 **Clarification (normative).** `PlanOptions.conditionals.strategy:'rewrite'` is a **deprecated alias** of `'if‑aware‑lite'`
 and **MUST NOT** enable the §7 normalizer rewrite. Only `NormalizeOptions.rewriteConditionals` controls rewrites.
@@ -1764,8 +1768,8 @@ decisions at compose‑time and **MUST** key on `(canonPath, seed, AJV.major, AJ
 (ε := `10^(−decimalPrecision)` and the **round‑half‑even** rounding mode for `fallback:'decimal'` are implied by `rational.decimalPrecision` within `PlanOptionsSubKey`.)
 
 **Resolver cache (on disk; extension; normative).** The resolver’s on‑disk cache is **separate** from the plan/compile
-caches described above and is addressed by **normalized absolute URI**:
-* Layout: `resolver.cacheDir/sha256(uri)/{content.json, meta.json}` where `meta.json` includes `{ uri, contentHash, etag? }`.
+caches described above and is organized by **normalized absolute URI** and host:
+* Layout: `resolver.cacheDir/<host>/<contentHash>/{content.json, meta.json}` where `<host>` is the lower‑cased hostname of the resolved absolute URI and `meta.json` includes `{ uri, fetchedAt, contentHash, bytes, status }`.
 * `contentHash` is the **SHA‑256** of the document’s canonical JSON (sorted keys, arrays in order, `-0→0`), after optional YAML→JSON normalization when `resolver.acceptYaml === true`.
 * **No TTL by default.** Core phases use only the bytes present at the start of the run; refreshing the cache is an explicit pre‑phase action.
 * **Bounds (normative):** `resolver.maxDocs` (default **64**), `resolver.maxRefDepth` (**16**), `resolver.maxBytesPerDoc` (**5 MiB**),
@@ -2064,7 +2068,8 @@ Provide the following minimal JSON‑Schema‑like shapes for major codes. Only 
 { "type":"object", "properties":{
   "ref":{"type":"string"},
   "mode":{"enum":["strict","lax"]},
-  "skippedValidation":{"type":"boolean"}
+  "skippedValidation":{"type":"boolean"},
+  "failingRefs":{"type":"array","items":{"type":"string"}}
 }}
 **Normative constraint.** When `skippedValidation === true`, `mode` **MUST** be `'lax'`.  
 **Timing.** In both Strict and Lax, emission occurs **after** any Source‑AJV hydration from the §4 registry when enabled.
@@ -2080,7 +2085,7 @@ Provide the following minimal JSON‑Schema‑like shapes for major codes. Only 
 { "type":"object", "required":["strategies","cacheDir"],
   "properties":{
     "strategies":{"type":"array","items":{"enum":["local","remote","schemastore"]}},
-    "cacheDir":{"type":"string"}
+    "cacheDir":{"type":["string","null"]}
 }}
 
 // RESOLVER_CACHE_HIT  (extension note)
@@ -2101,8 +2106,10 @@ Provide the following minimal JSON‑Schema‑like shapes for major codes. Only 
 // RESOLVER_OFFLINE_UNAVAILABLE  (extension warning)
 { "type":"object", "required":["ref"],
   "properties":{
-    "ref":{"type":"string"}
-}}
+    "ref":{"type":"string"},
+    "reason":{"type":"string"},
+    "error":{"type":"string"}
+  }}
 
 // AJV_FLAGS_MISMATCH
   { "type":"object", "required":["instance","diffs","ajvMajor"],
@@ -2478,7 +2485,7 @@ anchoring and complexity scans and guarantees byte‑for‑byte reproducibility.
 * `packages/core/src/resolver/cache-store.ts`          // on-disk cache layout, contentHash, meta.json
 * `packages/core/src/resolver/registry.ts`             // in-memory registry (uri → { bytes, contentHash })
 * `packages/core/src/resolver/options.ts`              // ResolverOptions defaults/validation
-* `packages/core/src/resolver/cli-mapping.ts`          // `--resolve`, `--cache-dir`, `--fail-on-unresolved`
+* `packages/core/src/resolver/cli-mapping.ts`          // `--resolve`, `--cache-dir`, `--allow-host`, `--resolver-hydrate-final-ajv`, `--resolver-stub-unresolved`
 <a id="s22-scripts"></a>
 * `scripts/bench.ts`
 <a id="s22-docs"></a>

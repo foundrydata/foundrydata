@@ -1,6 +1,7 @@
 /* eslint-disable max-depth */
 /* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
+/* global fetch, AbortController */
 import { ResolutionRegistry, stripFragment } from './registry.js';
 import {
   canonicalizeCacheDir,
@@ -19,7 +20,24 @@ export interface ResolverOptions {
   timeoutMs?: number;
   followRedirects?: number;
   acceptYaml?: boolean; // reserved; JSON only here
-  allowlist?: string[]; // additional hosts
+  /**
+   * Legacy allow-list of additional hosts (by hostname).
+   */
+  allowlist?: string[];
+  /**
+   * Optional host allow-list used for remote strategies. Entries may be
+   * hostnames or regular expressions. When empty, remote fetches are allowed
+   * for any host permitted by the active strategies.
+   */
+  allowHosts?: Array<string | RegExp>;
+  /**
+   * Bounded retry count for transient network failures (default: 0).
+   */
+  retries?: number;
+  /**
+   * Optional User-Agent string to send with HTTP(S) requests.
+   */
+  userAgent?: string;
 }
 
 export interface PrefetchResult {
@@ -28,25 +46,57 @@ export interface PrefetchResult {
   cacheDir?: string;
 }
 
-function buildAllowlist(opts: ResolverOptions): Set<string> {
-  const set = new Set<string>();
-  const strategies = opts.strategies ?? ['local'];
-  if (strategies.includes('schemastore')) {
-    set.add('json.schemastore.org');
+function buildExplicitAllowList(opts: ResolverOptions): Array<string | RegExp> {
+  const out: Array<string | RegExp> = [];
+  for (const entry of opts.allowHosts ?? []) {
+    out.push(entry);
   }
-  for (const h of opts.allowlist ?? []) {
-    set.add(h.toLowerCase());
+  for (const host of opts.allowlist ?? []) {
+    const trimmed = host.trim();
+    if (!trimmed) continue;
+    out.push(trimmed.toLowerCase());
   }
-  return set;
+  return out;
+}
+
+function hostMatchesAllow(
+  host: string,
+  allow: Array<string | RegExp>
+): boolean {
+  for (const entry of allow) {
+    if (typeof entry === 'string') {
+      if (host === entry.toLowerCase()) return true;
+    } else if (entry instanceof RegExp) {
+      if (entry.test(host)) return true;
+    }
+  }
+  return false;
 }
 
 function hostAllowed(url: URL, opts: ResolverOptions): boolean {
   const strategies = opts.strategies ?? ['local'];
-  if (strategies.includes('remote')) return true;
-  if (strategies.includes('schemastore')) {
-    const allow = buildAllowlist(opts);
-    return allow.has(url.hostname.toLowerCase());
+  const hasRemote = strategies.includes('remote');
+  const hasSchemastore = strategies.includes('schemastore');
+  if (!hasRemote && !hasSchemastore) return false;
+
+  const host = url.hostname.toLowerCase();
+  const explicitAllow = buildExplicitAllowList(opts);
+  const matchesExplicit = hostMatchesAllow(host, explicitAllow);
+
+  // Remote strategy: general HTTP(S) fetch, optionally restricted by explicit allow-list.
+  if (hasRemote) {
+    if (explicitAllow.length > 0) {
+      if (matchesExplicit) return true;
+    } else {
+      return true;
+    }
   }
+
+  // schemastore strategy: built-in restriction to json.schemastore.org (plus any explicit allow-list entries).
+  if (hasSchemastore && host === 'json.schemastore.org') {
+    return true;
+  }
+
   return false;
 }
 
@@ -54,19 +104,39 @@ async function fetchWithBounds(
   url: URL,
   opts: ResolverOptions
 ): Promise<string> {
-  const controller = new AbortController();
-  const to = setTimeout(() => controller.abort(), opts.timeoutMs ?? 8000);
-  try {
-    const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = await res.text();
-    const max = opts.maxBytesPerDoc ?? 5 * 1024 * 1024;
-    if (Buffer.byteLength(text, 'utf8') > max) {
-      throw new Error('MAX_BYTES_EXCEEDED');
+  const timeoutMs = opts.timeoutMs ?? 8000;
+  const maxBytes = opts.maxBytesPerDoc ?? 5 * 1024 * 1024;
+  const retries = Math.max(0, opts.retries ?? 0);
+  const headers =
+    typeof opts.userAgent === 'string' && opts.userAgent.trim().length > 0
+      ? { 'user-agent': opts.userAgent }
+      : undefined;
+
+  let attempt = 0;
+  for (;;) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, {
+        signal: controller.signal,
+        headers,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      const bytes = Buffer.byteLength(text, 'utf8');
+      if (bytes > maxBytes) {
+        const error = new Error('MAX_BYTES_EXCEEDED');
+        error.name = 'MAX_BYTES_EXCEEDED';
+        throw error;
+      }
+      return text;
+    } catch (error) {
+      if (attempt >= retries) throw error;
+      attempt += 1;
+      continue;
+    } finally {
+      clearTimeout(timer);
     }
-    return text;
-  } finally {
-    clearTimeout(to);
   }
 }
 
@@ -82,13 +152,6 @@ export async function prefetchAndBuildRegistry(
   const cacheDir = options.cacheDir
     ? canonicalizeCacheDir(options.cacheDir)
     : undefined;
-
-  // Emit strategies note
-  diags.push({
-    code: 'RESOLVER_STRATEGIES_APPLIED',
-    canonPath: '#',
-    details: { strategies, cacheDir: cacheDir ?? null },
-  });
 
   const seenDocs = new Set<string>();
   const maxDocs = options.maxDocs ?? 64;
@@ -202,4 +265,3 @@ export async function prefetchAndBuildRegistry(
 
   return { registry, diagnostics: diags, cacheDir };
 }
-/* global fetch, AbortController */

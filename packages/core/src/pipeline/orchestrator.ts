@@ -58,11 +58,12 @@ import {
   type ExternalRefClassification,
 } from '../util/modes.js';
 import { buildExternalRefProbeSchema } from '../util/modes.js';
-import {
-  prefetchAndBuildRegistry,
-  type ResolverOptions as HttpResolverOptions,
-} from '../resolver/http-resolver.js';
 import { ResolutionRegistry } from '../resolver/registry.js';
+import {
+  resolveAllExternalRefs,
+  type ResolverDiagnosticNote,
+  type ResolverOptions as ResolverExtensionOptions,
+} from '../resolver/options.js';
 
 const STAGE_SEQUENCE: PipelineStageName[] = [
   'normalize',
@@ -129,12 +130,6 @@ interface ExternalRefState {
   diag: DiagnosticEnvelope;
   classification: ExternalRefClassification;
 }
-
-type ResolverDiagnosticNote = {
-  code: string;
-  canonPath: string;
-  details?: unknown;
-};
 
 function collectSchemaIds(schema: unknown, acc: Set<string>): void {
   if (!schema || typeof schema !== 'object') return;
@@ -338,38 +333,36 @@ export async function executePipeline(
     }
   }
   try {
-    // Always log strategies applied for observability (run-level)
-    const strategiesNote = {
-      code: DIAGNOSTIC_CODES.RESOLVER_STRATEGIES_APPLIED as string,
-      canonPath: '#',
-      details: {
-        strategies: resolvedPlanOptions.resolver.strategies,
-        cacheDir: resolvedPlanOptions.resolver.cacheDir,
-      },
+    const resolverPlan = resolvedPlanOptions.resolver;
+    const resolverOptions: ResolverExtensionOptions = {
+      strategies: resolverPlan.strategies ?? ['local'],
+      cacheDir: resolverPlan.cacheDir,
+      hydrateFinalAjv: resolverPlan.hydrateFinalAjv,
+      stubUnresolved:
+        resolverPlan.stubUnresolved === 'emptySchema'
+          ? 'emptySchema'
+          : undefined,
+      allowHosts: resolverPlan.allowlist,
+      maxDocs: resolverPlan.maxDocs,
+      maxRefDepth: resolverPlan.maxRefDepth,
+      maxBytesPerDoc: resolverPlan.maxBytesPerDoc,
+      timeoutMs: resolverPlan.timeoutMs,
+      followRedirects: resolverPlan.followRedirects,
+      acceptYaml: resolverPlan.acceptYaml,
     };
-    resolverRunDiags.push(strategiesNote);
-    if (schemaHasExternalRefs(schema)) {
-      const resolver = resolvedPlanOptions.resolver;
-      const strategies = resolver.strategies ?? ['local'];
-      const mayFetch =
-        strategies.includes('remote') || strategies.includes('schemastore');
-      if (mayFetch) {
-        const { extRefs } = summarizeExternalRefs(schema);
-        const pre = await prefetchAndBuildRegistry(extRefs, {
-          strategies,
-          cacheDir: resolver.cacheDir,
-          allowlist: resolver.allowlist,
-          maxDocs: resolver.maxDocs,
-          maxRefDepth: resolver.maxRefDepth,
-          maxBytesPerDoc: resolver.maxBytesPerDoc,
-          timeoutMs: resolver.timeoutMs,
-          followRedirects: resolver.followRedirects,
-          acceptYaml: resolver.acceptYaml,
-        } as HttpResolverOptions);
-        resolverRegistry = pre.registry;
-        resolverRunDiags = pre.diagnostics;
-        registryFingerprint = resolverRegistry.fingerprint();
-      }
+    const resolverResult = await resolveAllExternalRefs(
+      schema as object,
+      resolverOptions
+    );
+    resolverRunDiags = resolverResult.notes;
+    if (resolverResult.registry.size() > 0) {
+      resolverRegistry = resolverResult.registry;
+    }
+    if (
+      resolverResult.registry.size() > 0 ||
+      resolverPlan.stubUnresolved === 'emptySchema'
+    ) {
+      registryFingerprint = resolverResult.registryFingerprint;
     }
   } catch {
     // Pre-phase failures should not crash core pipeline; they will be reflected by run-level notes.
@@ -593,7 +586,8 @@ export async function executePipeline(
         planningForCompose,
         resolverRegistry,
         resolverRunDiags,
-        seenSchemaIds
+        seenSchemaIds,
+        '2020-12'
       );
     }
     const ajvFlags = extractAjvFlags(planningForCompose) as unknown as Record<

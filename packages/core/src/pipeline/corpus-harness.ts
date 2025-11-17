@@ -142,7 +142,7 @@ export async function discoverCorpusSchemasFromDir(
     entries.push({
       id,
       schema,
-      schemaPath: filePath,
+      schemaPath: rel,
     });
   });
 

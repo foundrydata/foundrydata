@@ -421,6 +421,13 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
       char: enumSchema(['\u0000', 'a']),
     },
   },
+  [DIAGNOSTIC_CODES.EXTERNAL_REF_STUBBED]: {
+    kind: 'object',
+    required: {
+      ref: { kind: 'string' },
+      stubKind: enumSchema(['emptySchema']),
+    },
+  },
   [DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED]: {
     kind: 'object',
     optional: {
@@ -432,6 +439,44 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
         kind: 'array',
         items: { kind: 'string' },
       },
+    },
+  },
+  [DIAGNOSTIC_CODES.RESOLVER_STRATEGIES_APPLIED]: {
+    kind: 'object',
+    required: {
+      strategies: {
+        kind: 'array',
+        items: enumSchema(['local', 'remote', 'schemastore']),
+      },
+      cacheDir: {
+        kind: 'union',
+        variants: [{ kind: 'string' }, { kind: 'null' }],
+      },
+    },
+  },
+  [DIAGNOSTIC_CODES.RESOLVER_CACHE_HIT]: {
+    kind: 'object',
+    required: {
+      ref: { kind: 'string' },
+      contentHash: { kind: 'string' },
+    },
+  },
+  [DIAGNOSTIC_CODES.RESOLVER_CACHE_MISS_FETCHED]: {
+    kind: 'object',
+    required: {
+      ref: { kind: 'string' },
+      bytes: { kind: 'number' },
+      contentHash: { kind: 'string' },
+    },
+  },
+  [DIAGNOSTIC_CODES.RESOLVER_OFFLINE_UNAVAILABLE]: {
+    kind: 'object',
+    required: {
+      ref: { kind: 'string' },
+    },
+    optional: {
+      reason: { kind: 'string' },
+      error: { kind: 'string' },
     },
   },
   [DIAGNOSTIC_CODES.SCHEMA_INTERNAL_REF_MISSING]: {
