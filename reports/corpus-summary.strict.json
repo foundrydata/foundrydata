@@ -13,433 +13,6 @@
       "failFast": true,
       "diagnostics": [
         {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/$defs/nonNegativeIntegerDefault0/allOf/0/$ref",
-          "details": {
-            "target": "#/$defs/nonNegativeInteger"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/maxLength/$ref",
-          "details": {
-            "target": "#/$defs/nonNegativeInteger"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/minLength/$ref",
-          "details": {
-            "target": "#/$defs/nonNegativeIntegerDefault0"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/items/anyOf/1/$ref",
-          "details": {
-            "target": "#/$defs/schemaArray"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/maxItems/$ref",
-          "details": {
-            "target": "#/$defs/nonNegativeInteger"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/minItems/$ref",
-          "details": {
-            "target": "#/$defs/nonNegativeIntegerDefault0"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/maxProperties/$ref",
-          "details": {
-            "target": "#/$defs/nonNegativeInteger"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/minProperties/$ref",
-          "details": {
-            "target": "#/$defs/nonNegativeIntegerDefault0"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/required/$ref",
-          "details": {
-            "target": "#/$defs/stringArray"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/dependencies/additionalProperties/anyOf/1/$ref",
-          "details": {
-            "target": "#/$defs/stringArray"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/type/anyOf/0/$ref",
-          "details": {
-            "target": "#/$defs/simpleTypes"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/type/anyOf/1/items/$ref",
-          "details": {
-            "target": "#/$defs/simpleTypes"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/allOf/$ref",
-          "details": {
-            "target": "#/$defs/schemaArray"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/anyOf/$ref",
-          "details": {
-            "target": "#/$defs/schemaArray"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1json-schema.org~1draft-07~1schema/properties/oneOf/$ref",
-          "details": {
-            "target": "#/$defs/schemaArray"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/not/oneOf/1/$ref",
-          "details": {
-            "target": "#/$defs/Reference"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/allOf/items/oneOf/1/$ref",
-          "details": {
-            "target": "#/$defs/Reference"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/oneOf/items/oneOf/1/$ref",
-          "details": {
-            "target": "#/$defs/Reference"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/anyOf/items/oneOf/1/$ref",
-          "details": {
-            "target": "#/$defs/Reference"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/items/oneOf/1/$ref",
-          "details": {
-            "target": "#/$defs/Reference"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/properties/additionalProperties/oneOf/1/$ref",
-          "details": {
-            "target": "#/$defs/Reference"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/additionalProperties/oneOf/1/$ref",
-          "details": {
-            "target": "#/$defs/Reference"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/discriminator/$ref",
-          "details": {
-            "target": "#/$defs/Discriminator"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/externalDocs/$ref",
-          "details": {
-            "target": "#/$defs/ExternalDocumentation"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1openapiSchema_3_0.json/properties/xml/$ref",
-          "details": {
-            "target": "#/$defs/XML"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroSchema/oneOf/0/$ref",
-          "details": {
-            "target": "#/$defs/types"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/0/$ref",
-          "details": {
-            "target": "#/$defs/primitiveType"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/1/$ref",
-          "details": {
-            "target": "#/$defs/primitiveTypeWithMetadata"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/2/$ref",
-          "details": {
-            "target": "#/$defs/customTypeReference"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/3/$ref",
-          "details": {
-            "target": "#/$defs/avroRecord"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/4/$ref",
-          "details": {
-            "target": "#/$defs/avroEnum"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/5/$ref",
-          "details": {
-            "target": "#/$defs/avroArray"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/6/$ref",
-          "details": {
-            "target": "#/$defs/avroMap"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/7/$ref",
-          "details": {
-            "target": "#/$defs/avroFixed"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/types/oneOf/8/$ref",
-          "details": {
-            "target": "#/$defs/avroUnion"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/primitiveTypeWithMetadata/properties/type/$ref",
-          "details": {
-            "target": "#/$defs/primitiveType"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/customTypeReference/not/$ref",
-          "details": {
-            "target": "#/$defs/primitiveType"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroUnion/items/$ref",
-          "details": {
-            "target": "#/$defs/avroSchema"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroField/properties/name/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroField/properties/type/$ref",
-          "details": {
-            "target": "#/$defs/types"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroField/properties/aliases/items/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroRecord/properties/name/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroRecord/properties/namespace/$ref",
-          "details": {
-            "target": "#/$defs/namespace"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroRecord/properties/aliases/items/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroRecord/properties/fields/items/$ref",
-          "details": {
-            "target": "#/$defs/avroField"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroEnum/properties/name/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroEnum/properties/namespace/$ref",
-          "details": {
-            "target": "#/$defs/namespace"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroEnum/properties/aliases/items/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroEnum/properties/symbols/items/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroArray/properties/name/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroArray/properties/namespace/$ref",
-          "details": {
-            "target": "#/$defs/namespace"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroArray/properties/aliases/items/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroArray/properties/items/$ref",
-          "details": {
-            "target": "#/$defs/types"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroMap/properties/name/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroMap/properties/namespace/$ref",
-          "details": {
-            "target": "#/$defs/namespace"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroMap/properties/aliases/items/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroMap/properties/values/$ref",
-          "details": {
-            "target": "#/$defs/types"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroFixed/properties/name/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroFixed/properties/namespace/$ref",
-          "details": {
-            "target": "#/$defs/namespace"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/$defs/avroFixed/properties/aliases/items/$ref",
-          "details": {
-            "target": "#/$defs/name"
-          }
-        },
-        {
-          "code": "DEFS_TARGET_MISSING",
-          "canonPath": "/$defs/http:~1~1asyncapi.com~1definitions~13.0.0~1avroSchema_v1.json/oneOf/0/$ref",
-          "details": {
-            "target": "#/$defs/avroSchema"
-          }
-        },
-        {
           "code": "EXTERNAL_REF_UNRESOLVED",
           "canonPath": "",
           "details": {
@@ -568,8 +141,8 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 25.243291999999997,
-        "composeMs": 110.878792,
+        "normalizeMs": 26.324375000000003,
+        "composeMs": 112.35112500000002,
         "generateMs": 0,
         "repairMs": 0,
         "validateMs": 0,
@@ -603,11 +176,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.3187080000000151,
-        "composeMs": 1.693708000000015,
-        "generateMs": 0.9511249999999905,
-        "repairMs": 6.566499999999962,
-        "validateMs": 5.108791999999994,
+        "normalizeMs": 0.2915830000000028,
+        "composeMs": 1.979791999999975,
+        "generateMs": 0.9482080000000224,
+        "repairMs": 5.4109169999999835,
+        "validateMs": 4.752250000000004,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -638,11 +211,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 3.7563749999999914,
-        "composeMs": 9.40100000000001,
-        "generateMs": 1.0150830000000042,
-        "repairMs": 149.145917,
-        "validateMs": 164.90749999999997,
+        "normalizeMs": 3.695124999999962,
+        "composeMs": 9.076375000000041,
+        "generateMs": 0.9929169999999772,
+        "repairMs": 143.642083,
+        "validateMs": 163.72458400000005,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -702,8 +275,8 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 1.1016250000000127,
-        "composeMs": 133.84825,
+        "normalizeMs": 2.526666999999975,
+        "composeMs": 118.0709169999999,
         "generateMs": 0,
         "repairMs": 0,
         "validateMs": 0,
@@ -745,11 +318,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 2.565666999999962,
-        "composeMs": 3.4787079999999833,
-        "generateMs": 0.4215000000000373,
-        "repairMs": 9.923332999999957,
-        "validateMs": 11.01279199999999,
+        "normalizeMs": 3.564292000000023,
+        "composeMs": 3.6277500000001055,
+        "generateMs": 0.44804099999998925,
+        "repairMs": 9.863500000000045,
+        "validateMs": 10.537707999999952,
         "validationsPerRow": 0,
         "repairPassesPerRow": 0
       },
@@ -780,11 +353,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 3.909915999999953,
-        "composeMs": 3.474207999999976,
-        "generateMs": 0.47895900000003166,
-        "repairMs": 53.067916999999966,
-        "validateMs": 59.43462499999998,
+        "normalizeMs": 4.206291999999962,
+        "composeMs": 2.2857910000000174,
+        "generateMs": 0.39245900000003076,
+        "repairMs": 56.83304099999998,
+        "validateMs": 59.09858299999996,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -815,11 +388,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 23.88195900000005,
-        "composeMs": 9.300082999999972,
-        "generateMs": 2.3781249999999545,
-        "repairMs": 26.966957999999977,
-        "validateMs": 10.164458000000081,
+        "normalizeMs": 29.56675000000007,
+        "composeMs": 10.961582999999905,
+        "generateMs": 2.54362500000002,
+        "repairMs": 28.28125,
+        "validateMs": 10.129958000000215,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -850,11 +423,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.4146249999998872,
-        "composeMs": 1.0099589999999807,
-        "generateMs": 0.1492080000000442,
-        "repairMs": 12.019417000000203,
-        "validateMs": 13.443291000000045,
+        "normalizeMs": 0.4571249999999054,
+        "composeMs": 0.9882500000001073,
+        "generateMs": 0.16191600000001927,
+        "repairMs": 12.533374999999978,
+        "validateMs": 11.620374999999967,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -885,11 +458,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.7383330000000115,
-        "composeMs": 0.9891669999999522,
-        "generateMs": 9.765333000000055,
-        "repairMs": 17.913125000000036,
-        "validateMs": 18.87200000000007,
+        "normalizeMs": 1.5673750000000837,
+        "composeMs": 1.2975420000000213,
+        "generateMs": 9.920958000000155,
+        "repairMs": 16.968667000000096,
+        "validateMs": 19.369916999999987,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3188,11 +2761,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 271.6465420000002,
-        "composeMs": 80.15641699999992,
-        "generateMs": 23.787083000000166,
-        "repairMs": 203.6809169999999,
-        "validateMs": 22.57158400000003,
+        "normalizeMs": 295.81491700000015,
+        "composeMs": 88.77158399999985,
+        "generateMs": 27.1853329999999,
+        "repairMs": 213.57554200000004,
+        "validateMs": 24.667290999999977,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3248,11 +2821,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.3866250000000946,
-        "composeMs": 21.54820800000016,
-        "generateMs": 0.2418750000001637,
-        "repairMs": 8.406291999999894,
-        "validateMs": 9.504333000000088,
+        "normalizeMs": 0.40108299999997143,
+        "composeMs": 25.560291000000007,
+        "generateMs": 0.20012500000007094,
+        "repairMs": 8.896332999999913,
+        "validateMs": 11.055124999999862,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3610,11 +3183,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 1.3041659999998956,
-        "composeMs": 117.39383300000009,
-        "generateMs": 0.1991249999998672,
-        "repairMs": 1.0860419999999067,
-        "validateMs": 0.6870409999999083,
+        "normalizeMs": 1.4710419999998976,
+        "composeMs": 95.86979100000008,
+        "generateMs": 0.2841249999999036,
+        "repairMs": 0.9548330000000078,
+        "validateMs": 0.7119159999999738,
         "validationsPerRow": 0,
         "repairPassesPerRow": 0
       },
@@ -3685,11 +3258,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 106.49062499999991,
-        "composeMs": 241.75762499999973,
-        "generateMs": 34.934792000000016,
-        "repairMs": 23.052208000000064,
-        "validateMs": 54.61220800000001,
+        "normalizeMs": 123.24000000000024,
+        "composeMs": 253.04399999999987,
+        "generateMs": 31.889000000000124,
+        "repairMs": 17.811290999999983,
+        "validateMs": 46.10758299999998,
         "validationsPerRow": 0,
         "repairPassesPerRow": 0
       },
@@ -3720,11 +3293,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 1.1366250000000946,
-        "composeMs": 1.155999999999949,
-        "generateMs": 28.743832999999995,
-        "repairMs": 28.827084000000013,
-        "validateMs": 28.1770419999998,
+        "normalizeMs": 1.0611669999998412,
+        "composeMs": 1.1150000000002365,
+        "generateMs": 26.144041000000016,
+        "repairMs": 28.07695799999965,
+        "validateMs": 28.77004199999965,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3810,11 +3383,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 2.2123750000000655,
-        "composeMs": 64.00891599999977,
-        "generateMs": 5.214124999999967,
-        "repairMs": 25.636625000000095,
-        "validateMs": 31.310457999999926,
+        "normalizeMs": 3.8073749999998654,
+        "composeMs": 134.25145900000007,
+        "generateMs": 4.7939580000002024,
+        "repairMs": 23.711166999999932,
+        "validateMs": 28.577000000000226,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3845,11 +3418,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.29337500000019645,
-        "composeMs": 0.5290420000001177,
-        "generateMs": 0.056749999999738066,
-        "repairMs": 7.706957999999759,
-        "validateMs": 4.5746250000001965,
+        "normalizeMs": 0.33900000000039654,
+        "composeMs": 0.4639159999996991,
+        "generateMs": 0.054874999999810825,
+        "repairMs": 5.707040999999663,
+        "validateMs": 3.9160000000001673,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3880,11 +3453,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.5775000000003274,
-        "composeMs": 0.6554999999998472,
-        "generateMs": 0.07229199999983393,
-        "repairMs": 6.023125000000164,
-        "validateMs": 6.764666000000034,
+        "normalizeMs": 0.54037500000004,
+        "composeMs": 0.6080840000004173,
+        "generateMs": 0.06516599999986283,
+        "repairMs": 5.486249999999927,
+        "validateMs": 5.51891599999999,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3915,11 +3488,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.0820000000003347,
-        "composeMs": 0.24633300000004965,
-        "generateMs": 0.029500000000098225,
-        "repairMs": 2.101542000000336,
-        "validateMs": 2.471542000000227,
+        "normalizeMs": 0.10216600000012477,
+        "composeMs": 0.22795899999982794,
+        "generateMs": 0.026542000000063126,
+        "repairMs": 1.9245829999999842,
+        "validateMs": 2.1839999999997417,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -3951,8 +3524,8 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.05520799999976589,
-        "composeMs": 4.5284999999998945,
+        "normalizeMs": 0.043667000000368716,
+        "composeMs": 4.614917000000332,
         "generateMs": 0,
         "repairMs": 0,
         "validateMs": 0,
@@ -3986,11 +3559,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.09975000000031287,
-        "composeMs": 0.25129199999992125,
-        "generateMs": 0.029332999999951426,
-        "repairMs": 1.8994579999998678,
-        "validateMs": 2.5637079999996786,
+        "normalizeMs": 0.09791700000005221,
+        "composeMs": 0.22699999999986176,
+        "generateMs": 0.029958999999962543,
+        "repairMs": 1.710833999999977,
+        "validateMs": 2.009957999999642,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -4022,8 +3595,8 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 0.9878750000002583,
-        "composeMs": 27.090584000000035,
+        "normalizeMs": 1.3741250000002765,
+        "composeMs": 28.603000000000065,
         "generateMs": 0,
         "repairMs": 0,
         "validateMs": 0,
@@ -4253,11 +3826,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 1.8482920000001286,
-        "composeMs": 27.009665999999925,
-        "generateMs": 0.2384159999996882,
-        "repairMs": 17.9236249999999,
-        "validateMs": 18.546082999999726,
+        "normalizeMs": 1.3968339999996715,
+        "composeMs": 26.463834000000134,
+        "generateMs": 0.24812500000007276,
+        "repairMs": 17.309166000000005,
+        "validateMs": 18.732041999999637,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -4512,11 +4085,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 1.2412499999995816,
-        "composeMs": 5.147625000000062,
-        "generateMs": 0.6596249999997781,
-        "repairMs": 18.489915999999994,
-        "validateMs": 21.467833000000155,
+        "normalizeMs": 1.4504590000001372,
+        "composeMs": 4.642374999999902,
+        "generateMs": 0.5857499999997344,
+        "repairMs": 18.147084000000177,
+        "validateMs": 20.860583000000133,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -4802,11 +4375,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 1.4274999999997817,
-        "composeMs": 1.5729999999998654,
-        "generateMs": 6.988041000000067,
-        "repairMs": 20.432874999999967,
-        "validateMs": 22.76175000000012,
+        "normalizeMs": 1.4320000000002437,
+        "composeMs": 1.6572919999998703,
+        "generateMs": 6.513792000000194,
+        "repairMs": 20.16533299999992,
+        "validateMs": 22.55645800000002,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
@@ -4837,11 +4410,11 @@
         }
       ],
       "metrics": {
-        "normalizeMs": 1.6712910000001102,
-        "composeMs": 1.343499999999949,
-        "generateMs": 0.24625000000014552,
-        "repairMs": 21.64825000000019,
-        "validateMs": 25.195208999999977,
+        "normalizeMs": 1.988332999999784,
+        "composeMs": 1.4053750000002765,
+        "generateMs": 0.24908400000003894,
+        "repairMs": 20.975582999999915,
+        "validateMs": 24.029250000000047,
         "validationsPerRow": 3,
         "repairPassesPerRow": 0
       },
