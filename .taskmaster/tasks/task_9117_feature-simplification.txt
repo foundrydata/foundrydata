@@ -5,7 +5,7 @@
 # Priority: low
 # Description: Reference-only: section §17.
 # Details:
-REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§17","anchors":["spec://§17#invariants-doc","spec://§17#known-limits","spec://§17#features-matrix"],"notes":"no-embed; fetch-on-demand"}
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§17","anchors":["spec://§17#invariants-doc","spec://§17#known-limits","spec://§17#features-matrix"],"notes":"no-embed; fetch-on-demand"}
 
 # Test Strategy:
 None.

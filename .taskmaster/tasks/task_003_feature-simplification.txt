@@ -10,8 +10,8 @@
 - spec://§8#numbers-multipleof
 - spec://§23#plan-options
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§15","anchors":["spec://§15#rng"],"notes":"no-embed; fetch-on-demand"}
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§8","anchors":["spec://§8#numbers-multipleof"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§15","anchors":["spec://§15#rng"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§8","anchors":["spec://§8#numbers-multipleof"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - xorshift32 seeded with (seed >>> 0) ^ fnv1a32(canonPath); export next() and float in [0,1).
 - Rationals: exact math with caps; decimal/float fallback with ε = 10^(−decimalPrecision). Log RAT_* diagnostics via caller.

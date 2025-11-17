@@ -11,7 +11,7 @@
 * Execute implementation tasks strictly per SPEC; SPEC is the single source of truth for semantics. Do not enlarge feature scope.
   [Retrieval]
 * REFONLY via SPEC anchors. Do not paste SPEC text verbatim into tasks.
-* Runtime mapping: spec://§<n>#<slug> → docs/feature-simplification/feature-support-simplification.md#s<n>-<slug>.
+* Runtime mapping: spec://§<n>#<slug> → docs/feature-simplification/spec-canonical-json-schema-generator.md#s<n>-<slug>.
 * Keep working context small: load only anchors required by the current task.
   [Execution order]
 

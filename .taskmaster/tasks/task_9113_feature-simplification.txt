@@ -5,7 +5,7 @@
 # Priority: low
 # Description: Reference-only: section §13.
 # Details:
-REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§13","anchors":["spec://§13#startup-config-check"],"notes":"no-embed; fetch-on-demand"}
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§13","anchors":["spec://§13#startup-config-check"],"notes":"no-embed; fetch-on-demand"}
 
 # Test Strategy:
 None.

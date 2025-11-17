@@ -8,7 +8,7 @@
 [Context] §15 bench protocol; §20 unit/property-based tests.
 - spec://§15#bench-protocol, spec://§20#unit
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§15","anchors":["spec://§15#bench-protocol"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§15","anchors":["spec://§15#bench-protocol"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Curate JSON Schemas and seeds; expose generators for fuzz tests; track metrics expectations.
 [Deliverables]

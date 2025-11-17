@@ -8,7 +8,7 @@
 [Context] §20 unit coverage plan.
 - spec://§20#unit
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§20","anchors":["spec://§20#unit"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§20","anchors":["spec://§20#unit"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Property-based tests using AJV as oracle for oneOf exclusivity, AP:false must-cover, contains bag.
 - Tests must validate against the original schema (not transforms)

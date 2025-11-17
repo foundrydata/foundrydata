@@ -5,7 +5,7 @@
 # Priority: low
 # Description: Reference-only: section §24.
 # Details:
-REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§24","anchors":["spec://§24#normative","spec://§24#informative","spec://§24#alignment"],"notes":"no-embed; fetch-on-demand"}
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§24","anchors":["spec://§24#normative","spec://§24#informative","spec://§24#alignment"],"notes":"no-embed; fetch-on-demand"}
 
 # Test Strategy:
 None.

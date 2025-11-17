@@ -5,7 +5,7 @@
 # Priority: low
 # Description: Reference-only: section §4.
 # Details:
-REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§4","anchors":["spec://§4#pipeline","spec://§4#observability","spec://§4#fail-early"],"notes":"no-embed; fetch-on-demand"}
+REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§4","anchors":["spec://§4#pipeline","spec://§4#observability","spec://§4#fail-early"],"notes":"no-embed; fetch-on-demand"}
 
 # Test Strategy:
 None.

@@ -8,7 +8,7 @@
 [Context] §11 modes; external-ref-probe; draft classification for internal vs external.
 - spec://§11#external-ref-probe
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/feature-support-simplification.md","section":"§11","anchors":["spec://§11#external-ref-probe"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§11","anchors":["spec://§11#external-ref-probe"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Strict: error EXTERNAL_REF_UNRESOLVED; Lax: warn + attempt; heuristic probe to skip validation only when all conditions met; set validationsPerRow=0 when skipped.
 [Deliverables]

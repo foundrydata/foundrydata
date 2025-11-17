@@ -271,10 +271,10 @@ Règles : (a) le JSON externe (si présent) doit parser ; (b) **après** suppres
 **Mapping d'anchor**
 
 ```
-spec://§<n>#<slug> → docs/feature-simplification/feature-support-simplification.md#s<n>-<slug>
+spec://§<n>#<slug> → docs/feature-simplification/spec-canonical-json-schema-generator.md#s<n>-<slug>
 ```
 
-**Procédure de lecture SPEC (feature-support-simplification.md = 2676 lignes)**
+**Procédure de lecture SPEC (spec-canonical-json-schema-generator.md = 2676 lignes)**
 
 Le fichier SPEC est trop volumineux pour lecture sans précision. **Toujours** utiliser ce protocole :
 
@@ -300,7 +300,7 @@ const limit = end - start;  // = 329 lignes pour §7 complet
 
 ```bash
 Read({
-  file_path: 'docs/feature-simplification/feature-support-simplification.md',
+  file_path: 'docs/feature-simplification/spec-canonical-json-schema-generator.md',
   offset: start,
   limit: limit
 })
