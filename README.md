@@ -13,6 +13,7 @@
 
 ## Table of contents
 
+* [Why FoundryData?](#why-foundrydata)
 * [Quick start](#quick-start)
 * [Core invariants](#core-invariants)
 * [Pre-flight & 5-stage pipeline](#pre-flight--5-stage-pipeline)
@@ -24,6 +25,41 @@
 * [Development](#development)
 * [Testing (high level)](#testing-high-level)
 * [License](#license)
+
+---
+
+## Why FoundryData?
+
+FoundryData generates deterministic, schema‑true test data directly from JSON Schemas, so you can trust that every row matches the contract your systems depend on.
+
+- Automatically generate rich test datasets from JSON Schemas.
+- Keep data strictly aligned with the schema (AJV as the oracle).
+- Reproduce exactly the same datasets over time using a seed (for debugging and CI).
+
+## Problems it solves
+
+- Hand‑written fixtures that drift away from the schema and are painful to maintain.
+- “Best‑effort” generators that silently break as soon as schemas become complex or real‑world.
+- Non‑deterministic test data that makes bugs and regressions hard to reproduce.
+
+## Key use cases
+
+- API mocks and contract tests for OpenAPI / AsyncAPI / event schemas.
+- End‑to‑end and load testing with realistic, schema‑driven data.
+- Generating structured data aligned to a schema for LLM outputs.
+
+## What FoundryData adds
+
+- A clear 5‑stage pipeline with explicit diagnostics at each step (Normalize → Compose → Generate → Repair → Validate).
+- Final validation against the original schema via AJV in strict mode.
+- Benchmarked performance and resource usage (p95 latency, memory), tuned for real‑world schemas.
+- Offline‑friendly by default, with tightly controlled external `$ref` resolution.
+
+## Who is it for?
+
+- API and platform teams who want reliable, contract‑driven test data.
+- QA and SRE teams who need reproducible, traceable datasets for CI and incident analysis.
+- Product and data teams who need “production‑like” data for testing without touching real user data.
 
 ---
 
