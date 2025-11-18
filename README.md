@@ -14,6 +14,11 @@
 ## Table of contents
 
 * [Why FoundryData?](#why-foundrydata)
+* [Problems it solves](#problems-it-solves)
+* [Key use cases](#key-use-cases)
+* [What FoundryData adds](#what-foundrydata-adds)
+* [Who is it for?](#who-is-it-for)
+* [Installation](#installation)
 * [Quick start](#quick-start)
 * [Core invariants](#core-invariants)
 * [Pre-flight & 5-stage pipeline](#pre-flight--5-stage-pipeline)
@@ -63,6 +68,29 @@ FoundryData generates deterministic, schema‑true test data directly from JSON 
 
 ---
 
+## Installation
+
+Requires **Node.js 20+** and an environment that supports ES modules.
+
+**CLI**
+
+```bash
+# Try the CLI without a global install
+npx foundrydata generate --schema user.json --n 10
+
+# Or install globally
+npm install -g foundrydata
+foundrydata generate --schema user.json --n 10
+```
+
+**Node.js library**
+
+```bash
+npm install @foundrydata/core
+```
+
+---
+
 ## Quick start
 
 ```bash
@@ -98,7 +126,8 @@ foundrydata generate --schema real-world.json --n 10 \
 ```
 
 * Generated **data goes to stdout**; **metrics/errors go to stderr** (for easy piping in CI).
-* By default the resolver runs in **local-only** mode (no network); external `$ref` are not fetched unless you explicitly opt into remote/registry strategies via the resolver options (e.g., CLI `--resolve`). The `--external-ref-strict` flag controls how unresolved externals affect the run. When final validation runs, it is always performed against the original schema. When Source AJV fails solely because of unresolved external `$ref`, the pipeline emits an `EXTERNAL_REF_UNRESOLVED` diagnostic whose details (mode, ref, policy, skippedValidation?) are visible with `--debug-passes`; in Lax mode this may mark validation as skipped instead of running AJV over generated items.
+* By default the resolver runs in **local-only** mode (no network); external `$ref` are not fetched unless you explicitly opt into remote/registry strategies via `--resolve` (e.g., `local,remote,schemastore`).
+* The `--external-ref-strict` flag controls how unresolved externals affect the run. When final validation runs, it is always performed against the original schema; when failures are due only to unresolved external `$ref`, the pipeline emits an `EXTERNAL_REF_UNRESOLVED` diagnostic whose details (mode, ref, policy, skippedValidation?) are visible with `--debug-passes`. In Lax mode, skip‑eligible runs may mark validation as skipped instead of running AJV over generated items.
 
 ---
 
@@ -170,6 +199,14 @@ foundrydata openapi --spec <openapi.json> [selection] [options]
 | `--cache-dir <path>`             | Override on-disk cache directory used by the resolver extension when fetching and caching external schemas.                                                                                                                 |
 | `--fail-on-unresolved <bool>`    | When set to `false` in Lax mode, enables planning-time stubs for unresolved externals (maps to `resolver.stubUnresolved = 'emptySchema'` in plan options).                                                                  |
 
+For the full set of options, run:
+
+```bash
+foundrydata generate --help
+```
+
+or see `docs/examples/README.md` for more end‑to‑end CLI examples.
+
 **Examples (`generate`)**
 
 ```bash
@@ -225,6 +262,12 @@ For end‑to‑end product scenarios (API mocks/MSW fixtures, contract tests, LL
 ---
 
 ## Node.js API
+
+Install the library with:
+
+```bash
+npm install @foundrydata/core
+```
 
 > The guarantees below apply to the **full pipeline**. Using individual stages is supported, but final schema compliance is only guaranteed if you execute **Validate** at the end.
 
@@ -363,6 +406,8 @@ Behavior and policies are defined by the spec. Strict vs Lax does **not** change
 
 ## Development
 
+From the repository root (`foundrydata-monorepo`, Node.js 20+):
+
 * **Build**: `npm run build`
 * **Typecheck**: `npm run typecheck`
 * **Tests**: `npm run test`
@@ -376,6 +421,8 @@ Behavior and policies are defined by the spec. Strict vs Lax does **not** change
 * **Unit per stage**: `packages/core/src/transform/__tests__` (normalizer + composer), `packages/core/src/generator/__tests__` (determinism, precedence, coverage), `packages/core/src/repair/__tests__` (idempotence, snapping), plus `diag`/`util` units (e.g. draft detection, dynamic refs).
 * **Pipeline & integration**: `packages/core/src/pipeline/__tests__` and `packages/core/test/e2e/pipeline.integration.spec.ts` cover end‑to‑end `executePipeline`, AJV flags parity, external `$ref`/`$dynamicRef` policies, skip‑flow, exclusivity diagnostics, and final validation against the original schema.
 * **Reporter & bench/CI**: `packages/reporter/test/reporter.snapshot.test.ts` fixes stable JSON/Markdown/HTML reports, and `packages/reporter/test/bench.runner.test.ts` exercises the bench runner + summary used by repo‑level bench scripts to track p50/p95, caps triggers, and optional memory peak.
+
+For a broader docs index (spec, limits, examples, testing architecture), see `docs/README.md`.
 
 ---
 

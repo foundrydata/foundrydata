@@ -4,12 +4,12 @@ This page lists the authoritative documentation. Each document is source-control
 
 ## Specification & Guarantees
 
-- Feature Support Simplification Plan — `docs/feature-simplification/spec-canonical-json-schema-generator.md`
+- Feature Support Simplification Plan (canonical spec) — `docs/feature-simplification/spec-canonical-json-schema-generator.md`
 - Cross-phase invariants — `docs/Invariants.md`
 - Known limits and guardrails — `docs/Known-Limits.md`
 - Feature matrix (✓ / ~ / ⚠️) — `docs/Features.md`
 - Phasing and control-plane overview — `docs/feature-simplification/Phasing.md`
-- SPEC overview — `docs/feature-simplification/README.md`
+- Spec overview — `docs/feature-simplification/README.md`
 
 ## Diagnostics & Observability
 
@@ -41,22 +41,22 @@ See `docs/Known-Limits.md#resolver-r1-scope--limits` for limits and security pos
 
 ## Architecture & Reference
 
-- High-level architecture: ARCHITECTURE.md
-- Comprehensive feature reference: docs/COMPREHENSIVE_FEATURE_SUPPORT.md
-- Agents runbook (operational mode): AGENTS.md
+- High-level architecture: `ARCHITECTURE.md`
+- Comprehensive feature reference: `docs/COMPREHENSIVE_FEATURE_SUPPORT.md`
+- Agents runbook (operational mode): `AGENTS.md`
 
 ## Testing
 
-- Testing architecture overview: docs/tests/FoundryData Testing Architecture - Initial State Inventory.md
-- JSON Schema format reference: docs/tests/reference_json_schema_format_v_2.md
-- Test runner config: vitest.config.ts
-- Test entry readme: test/README.md
+- Testing architecture overview: `docs/tests/FoundryData Testing Architecture - Initial State Inventory.md`
+- JSON Schema format reference: `docs/tests/reference_json_schema_format_v_2.md`
+- Test runner config: `vitest.config.ts`
+- Test entry readme: `test/README.md`
 
 ## Examples
 
-- Examples index: docs/examples/README.md
-- Draft schemas: docs/examples/draft-07.json, docs/examples/draft-2019-09.json, docs/examples/draft-2020-12.json
-- Sample domains: docs/examples/saas-user-schema.json, docs/examples/ecommerce-schema.json, docs/examples/api-transaction-schema.json, docs/examples/team-with-users-schema.json
+- Examples index: `docs/examples/README.md`
+- Draft schemas: `docs/examples/draft-07.json`, `docs/examples/draft-2019-09.json`, `docs/examples/draft-2020-12.json`
+- Sample domains: `docs/examples/saas-user-schema.json`, `docs/examples/ecommerce-schema.json`, `docs/examples/api-transaction-schema.json`, `docs/examples/team-with-users-schema.json`
 
 ## Operational non-goals
 
@@ -66,6 +66,9 @@ See `docs/Known-Limits.md#resolver-r1-scope--limits` for limits and security pos
 
 ## Development quick links
 
-- Build: npm run build
-- Typecheck: npm run typecheck
-- Tests: npm run test
+- From the repository root (`foundrydata-monorepo`, Node.js 20+):
+  - Build: `npm run build`
+  - Typecheck: `npm run typecheck`
+  - Tests: `npm run test`
+
+For a product overview and getting started guide, see the project root `README.md`.
