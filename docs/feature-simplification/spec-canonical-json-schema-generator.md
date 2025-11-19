@@ -52,7 +52,7 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
 * **Deterministic outcomes for a given `(seed, PlanOptionsSubKey, AJV.major, AJV.flags)`** (see §14 for `PlanOptionsSubKey`).
   **When Extension R1 is enabled,** outcomes are deterministic for a fixed **resolver registry fingerprint** (§14) in addition
   to the tuple above; hydration of the Source AJV **MUST** use the same snapshot as Compose/Plan.
-  *Signal:* stable `diag.chosenBranch`, `diag.scoreDetails.tiebreakRand` at the same canonical pointers; **when RNG is used only in `oneOf` step‑4**, record `diag.scoreDetails.exclusivityRand` at the same `canonPath` and **MUST NOT** synthesize/overwrite `tiebreakRand`.
+  *Signal:* stable `diag.chosenBranch` and `diag.scoreDetails` at the same canonical pointers, with `tiebreakRand` / `exclusivityRand` recorded according to the rules in §8 “Branch selection”.
 * **Documented budgets with explicit degradations**.
   *Signal:* `COMPLEXITY_CAP_*` diagnostics and populated `diag.budget`.
 
@@ -477,7 +477,7 @@ Examples:
     5) When the above hold, the rewrite is **additive in the canonical view** (the original `propertyNames` remains alongside the added constraints); otherwise preserve the original `propertyNames` only.
     6) **Logging (normative):** On successful rewrite the normalizer **MUST** record a note `PNAMES_REWRITE_APPLIED` at this object’s canonical path with `details:{ kind:'enum'|'pattern', source?:string }`. Implementations **MAY** include the JSON‑unescaped regex `source` in `details.source` for the pattern case. This signal gates coverage usage in §8.
 
-     **Cross‑conjunct note (normative).** When `propertyNames` occurs in a conjunct **without** `additionalProperties:false`, the rewrite (when allowed by §7 preconditions) **adds** `additionalProperties:false` in the **canonical view of that conjunct only**. Consequently this conjunct **does** contribute to the global must‑cover intersection in §8. This does **not** alter the final validation, which always uses the **original schema**. Only conjuncts that enforce `additionalProperties:false` in the canonical/effective view contribute recognizers.
+     **Cross‑conjunct note (normative).** When `propertyNames` occurs in a conjunct **without** `additionalProperties:false`, the rewrite (when allowed by §7 preconditions) **adds** `additionalProperties:false` in the **canonical view of that conjunct only**. Consequently this conjunct **does** contribute to the global must‑cover intersection in §8. This does **not** alter the final validation, which always uses the **original schema**. Only conjuncts that enforce `additionalProperties:false` in the canonical/effective view contribute recognizers. Conversely, when `additionalProperties:false` is already effective for a conjunct (in the original schema or in the canonical view), the §7 rewrite **MUST NOT** introduce new synthetic recognizers from `propertyNames`; in that situation `propertyNames` remains a pure gate and **never** increases coverage, and must‑cover relies solely on `properties` and anchored‑safe `patternProperties` for that conjunct.
      * **Closed enum** form (additive canonicalization; **apply only when preconditions (1), (2) & (4) hold**):
        Given `{"propertyNames":{"enum":[n1,...,nk]}}`, **do not modify the original `propertyNames` node**. Let **`E_str`** be exactly the set of **string** members of the enum after **deduplication then UTF‑16 sorting**; if any non‑string member exists, this violates the type precondition above and the rewrite **MUST NOT** occur. Construct a synthetic anchored‑safe alternation from `E_str` by escaping each literal via `escapeRegexLiteral`. **Add only** the following constraints in the **canonical view** (the original `propertyNames` remains as‑is):
        ```json
@@ -881,7 +881,7 @@ Let `propertyNamesSynthetic_Ci` be the set of **synthetic** anchored‑safe patt
       • Back‑references are present if and only if an **unescaped** `\k<...>` or an **unescaped** `\[1-9]\d*` (e.g., `\1`, `\2`, …) occurs **outside** character classes.
          Clarification: treat these as unescaped backslash sequences in the JSON‑unescaped `source` — either a single `\` followed by `k<...>`, or a single `\` followed by a non‑zero digit and optional more digits. All tests operate on the JSON‑unescaped `source` where backslashes are single code units.
     <a id="s8-regex-complexity-cap"></a>
-    * **Complexity cap (normative):** For coverage analysis only, if a pattern's source length exceeds **4096 UTF‑16 code units** or a textual scan detects a **quantified group**: In the JSON‑unescaped `source` `S`, detect a quantified group via a single left‑to‑right pass that (1) ignores character classes `[...]` and escaped parentheses; (2) maintains a stack of opener indices for **unescaped** `(`; and (3) on an **unescaped** `)` at index `i`, pops its opener and examines index `k = i + 1`. If `k < |S|` and `S[k]` is one of `*`, `+`, `?`, or starts a quantifier `{m}`, `{m,}`, `{m,n}` **adjacent in UTF‑16 (no intervening code units)**, then a quantified group is detected and the pattern is **capped**. Escaped parentheses `\(` and `\)` are ignored, **and text inside bracket character classes `[...]` is not considered** when searching for quantified groups. Treat it as **non‑anchored**. Emit `REGEX_COMPLEXITY_CAPPED` **with** `details:{ context:'coverage', patternSource }` (pattern source = JSON‑unescaped), and when this affects must‑cover, also emit `AP_FALSE_INTERSECTION_APPROX`. This cap also applies to `propertyNames.pattern` when evaluating rewrites in §7. **Note (normative):** this is a conservative over‑approximation used only for must‑cover analysis; patterns flagged by this cap are treated as **non‑anchored** for all must‑cover purposes and emit `REGEX_COMPLEXITY_CAPPED`.
+    * **Complexity cap (normative):** For coverage analysis only, if a pattern's source length exceeds **4096 UTF‑16 code units** or a textual scan detects a **quantified group**: In the JSON‑unescaped `source` `S`, detect a quantified group via a single left‑to‑right pass that (1) ignores character classes `[...]` and escaped parentheses; (2) maintains a stack of opener indices for **unescaped** `(`; and (3) on an **unescaped** `)` at index `i`, pops its opener and examines index `k = i + 1`. If `k < |S|` and `S[k]` is one of `*`, `+`, `?`, or starts a quantifier `{m}`, `{m,}`, `{m,n}` **adjacent in UTF‑16 (no intervening code units)**, then a quantified group is detected and the pattern is **capped**. Escaped parentheses `\(` and `\)` are ignored, **and text inside bracket character classes `[...]` is not considered** when searching for quantified groups. Implementations **MUST NOT** push escaped `(` onto the opener stack nor treat escaped `)` as closers for this scan, even when followed by a quantifier. Treat a capped pattern as **non‑anchored**. Emit `REGEX_COMPLEXITY_CAPPED` **with** `details:{ context:'coverage', patternSource }` (pattern source = JSON‑unescaped), and when this affects must‑cover, also emit `AP_FALSE_INTERSECTION_APPROX`. This cap also applies to `propertyNames.pattern` when evaluating rewrites in §7. **Note (normative):** this is a conservative over‑approximation used only for must‑cover analysis; patterns flagged by this cap are treated as **non‑anchored** for all must‑cover purposes and emit `REGEX_COMPLEXITY_CAPPED`.
     
     **Reference pseudocode (normative) — JSON‑unescaped scanner**
     Inputs and invariants:
@@ -936,11 +936,11 @@ Let `propertyNamesSynthetic_Ci` be the set of **synthetic** anchored‑safe patt
        in Lax: warn `AP_FALSE_UNSAFE_PATTERN` and proceed by conservative exclusion.
      • If presencePressure(O) does not hold ⇒ **MUST NOT** fail‑fast; use conservative exclusion.
 
-  **Coverage-only anchored-subset lifting (non-anchored patterns).** When building the name automaton for must-cover, implementations **MAY** derive a coverage-only anchored subset from a non-anchored regex `p` used in `patternProperties` or `propertyNames.pattern`, without changing AJV validation semantics. In particular:
-  * For “simple” patterns (e.g., unions of literals or pure character-class expressions without lookaround or backreferences), implementations **SHOULD** prefer a strict anchored form `p⊑ = ^(?:p)$/u` and treat it as a safe coverage source, subject to the same regex complexity caps as other anchored-safe patterns.
-  * For general non-anchored patterns that are syntactically safe (no lookaround, no backreferences) but not amenable to the strict form, implementations **MAY** use a substring-based anchored subset `p⊑ = ^.*(?:p).*$/u` for coverage-only proofs. This subset is used solely by the coverage index and name automata; the original pattern remains the only reference for AJV validation.
+  **Coverage-only anchored-subset lifting (non-anchored patterns).** When building the name automaton for must-cover, implementations **MAY** derive an anchored variant from a non-anchored regex `p` used in `patternProperties` or `propertyNames.pattern`, without changing AJV validation semantics. In particular:
+  * For “simple” patterns (e.g., unions of literals or pure character-class expressions without lookaround or backreferences), implementations **SHOULD** prefer a **strictly anchored** form `p⊑ = ^(?:p)$/u`. This form is a true subset of the name language accepted by `p` and is treated as an anchored-safe coverage source, subject to the same regex complexity caps as other anchored-safe patterns. Diagnostics MAY record this case as `anchoredKind:'strict'`.
+  * For general non-anchored patterns that are syntactically safe (no lookaround, no backreferences) but not amenable to the strict form, implementations **MAY** use a **textually anchored but semantically equivalent** variant `p≈ = ^.*(?:p).*$/u` for coverage-only proofs. Because ECMAScript `RegExp.prototype.test` uses search semantics, `p` and `^.*(?:p).*$/u` accept the same set of strings; the latter exists solely to satisfy the anchored-safe textual predicate in this section and **does not** narrow the accepted language. Diagnostics MAY record this case as `anchoredKind:'substring'`.
   * Patterns that are already anchored, or contain lookaround/backreferences, or exceed regex/automaton caps **MUST NOT** be lifted; they remain in the existing “unknown coverage / unsafe under AP:false” category described above.
-  * Diagnostics for coverage approximations **SHOULD** record whether such a subset was used, for example via `AP_FALSE_INTERSECTION_APPROX{ reason:'nonAnchoredPattern', usedAnchoredSubset:true, anchoredKind:'strict'|'substring' }`. When lifting is not applied, `usedAnchoredSubset:false` **SHOULD** be recorded where practical.
+  * Diagnostics for coverage approximations **SHOULD** record whether such an anchored variant was used, for example via `AP_FALSE_INTERSECTION_APPROX{ reason:'nonAnchoredPattern', usedAnchoredSubset:true, anchoredKind:'strict'|'substring' }`. When lifting is not applied, `usedAnchoredSubset:false` **SHOULD** be recorded where practical.
 
   **Exceptions (normative):**
    E1) Patterns that fail to compile with `new RegExp(source,'u')` are **unknown gating** and **MUST NOT**
@@ -1816,6 +1816,12 @@ caches described above and is organized by **normalized absolute URI** and host:
 'patternWitness.alphabet',
 'patternWitness.maxCandidates',
 'patternWitness.maxLength',
+'nameEnum.maxMillis',
+'nameEnum.maxStates',
+'nameEnum.maxQueue',
+'nameEnum.maxDepth',
+'nameEnum.maxResults',
+'nameEnum.beamWidth',
 'rational.decimalPrecision',
 'rational.fallback',
 'rational.maxLcmBits',
@@ -1827,7 +1833,7 @@ caches described above and is organized by **normalized absolute URI** and host:
 'trials.perBranch',
 'trials.skipTrials',
 'trials.skipTrialsIfBranchesGt'
-(affects AP:false rename policy only; included to key rename behavior; no effect on numeric math or tolerances).
+(affects AP:false rename policy, branch trials, and name‑automaton budgets; included to key these behavioral differences; no effect on numeric math or tolerances beyond `rational.*`).
 Omitted/undefined fields are not serialized.
 **Normative clarification.** `ENUM_CAP` (the Coverage Index enumeration bound; see §8) is not a PlanOption and MUST NOT be serialized into `PlanOptionsSubKey` or any cache/memo keys. When the resolver extension is enabled, compose/plan cache keys MUST additionally include `resolver.registryFingerprint` (see §14).
 **Canonicalization (normative).** When computing `PlanOptionsSubKey`, any
@@ -1904,19 +1910,21 @@ Use separate LRU spaces for the two AJV instances (planning vs source) to avoid 
 
 ---
 
-## 7) Must‑Cover (AP:false) — Safe proofs, anchoring, and caps
-**Normative.** When any `allOf` conjunct enforces `additionalProperties:false`, the planner MUST construct a Coverage Index for property names as the intersection of: literal keys from `properties`, and **anchored‑safe & non‑capped** `patternProperties`. `propertyNames` acts only as a guard; it MAY be rewritten additively under strict equivalence preconditions (flag‑gated), in which case synthetic provenance MUST be recorded.
+<a id="s15-must-cover-recap"></a>
+### Must‑Cover (AP:false) — Safe proofs, anchoring, and caps (informative recap)
 
-### 7.1 Safe‑proof fallback
-Before failing on non‑safe or capped patterns, the planner MUST attempt a **safe-only** cover:
-1) build the Coverage Index using only anchored‑safe & non‑capped inputs; 2) if non‑empty and presence pressure holds, proceed with this cover (no `AP_FALSE_UNSAFE_PATTERN` in Strict), attach a **coverage certificate** to diagnostics; 3) if empty and presence pressure holds, emit early‑UNSAT (`UNSAT_AP_FALSE_EMPTY_COVERAGE`/`UNSAT_REQUIRED_VS_PROPERTYNAMES`/`UNSAT_MINPROPERTIES_VS_COVERAGE`).
-If non‑emptiness would require a non‑safe or capped pattern, Strict MUST emit `AP_FALSE_UNSAFE_PATTERN` (fatal) after attempting the safe-only proof; Lax MUST warn and proceed conservatively with `AP_FALSE_INTERSECTION_APPROX`.
+**Informative.** This subsection restates, in condensed form, the must‑cover, anchoring, and regex‑cap rules that are specified normatively in §§7–8 and §19. In case of any discrepancy, §§7–8 and §19 prevail and are the only normative source of truth.
 
-### 7.2 Anchoring policy and regex caps
-Patterns used in coverage MUST be anchored‑safe. Patterns rejected for coverage remain guards at validation time. Implementations MUST distinguish coverage regex caps (`REGEX_COMPLEXITY_CAPPED{context:'coverage'}`) from generation caps (`COMPLEXITY_CAP_PATTERNS{...}`).
+When any `allOf` conjunct enforces `additionalProperties:false`, the planner constructs a Coverage Index for property names as the intersection of: literal keys from `properties`, and **anchored‑safe & non‑capped** `patternProperties`. `propertyNames` acts only as a guard; it may be rewritten additively under strict equivalence preconditions (flag‑gated), in which case synthetic provenance is recorded, as described in §§7–8.
 
-### 7.3 Heuristics & caps
-Implementations MUST enforce `maxAutomatonStates`, `maxProductStates`, `maxKEnumeration`, and `bfsCandidatesCap`, and emit `NAME_AUTOMATON_COMPLEXITY_CAPPED` with a payload consistent with bench outputs.
+#### Safe‑proof fallback
+Before failing on non‑safe or capped patterns, the planner first attempts a **safe-only** cover: (1) build the Coverage Index using only anchored‑safe & non‑capped inputs; (2) if non‑empty and presence pressure holds, proceed with this cover (no `AP_FALSE_UNSAFE_PATTERN` in Strict) and attach a coverage certificate to diagnostics; (3) if empty and presence pressure holds, emit early‑UNSAT hints such as `UNSAT_AP_FALSE_EMPTY_COVERAGE`, `UNSAT_REQUIRED_VS_PROPERTYNAMES`, or `UNSAT_MINPROPERTIES_VS_COVERAGE` per §8. If non‑emptiness would require a non‑safe or capped pattern, Strict emits `AP_FALSE_UNSAFE_PATTERN` after attempting the safe-only proof; Lax warns and proceeds conservatively with `AP_FALSE_INTERSECTION_APPROX`, as already defined in §8.
+
+#### Anchoring policy and regex caps
+Patterns used in coverage are considered only when anchored‑safe per §8. Patterns rejected for coverage remain guards at validation time. Implementations distinguish coverage regex caps (`REGEX_COMPLEXITY_CAPPED{context:'coverage'}`) from generation caps (`COMPLEXITY_CAP_PATTERNS{...}`) and route them to the appropriate phases and severities as specified in §§8 and 19.
+
+#### Heuristics & caps
+Name‑automaton budgets such as `maxAutomatonStates`, `maxProductStates`, `maxKEnumeration`, and `bfsCandidatesCap` follow the automata‑scaling rules and diagnostics described in §8, §15, §19, and R3, including the use of `NAME_AUTOMATON_COMPLEXITY_CAPPED` when caps are hit.
 
 ---
 
@@ -2026,6 +2034,33 @@ Entries in `diag.warn` carry the same `code`/`details` schema as their fatal cou
 Compose/coverage vs Generator: `REGEX_COMPLEXITY_CAPPED` **and `REGEX_COMPILE_ERROR`** are emitted during coverage analysis and §7 rewrites; `COMPLEXITY_CAP_PATTERNS` is emitted only by the Generator during pattern‑witness search. Do not mix the two; their payloads and phases are distinct.  
 **Normalizer‑only codes:** `PNAMES_COMPLEX` and `PNAMES_REWRITE_APPLIED` are produced by the Normalizer (§7) and **MUST NOT** be emitted by Compose/Generator.
 
+**Code ↔ phase table (normative, excerpt).**
+
+| Code                                | Phase(s) allowed        |
+| ----------------------------------- | ----------------------- |
+| PNAMES_COMPLEX                      | Normalize               |
+| PNAMES_REWRITE_APPLIED              | Normalize               |
+| REGEX_COMPLEXITY_CAPPED             | Normalize / Compose     |
+| REGEX_COMPILE_ERROR                 | Normalize / Compose     |
+| AP_FALSE_UNSAFE_PATTERN             | Compose                 |
+| AP_FALSE_INTERSECTION_APPROX        | Compose                 |
+| COMPLEXITY_CAP_ONEOF                | Compose                 |
+| COMPLEXITY_CAP_ANYOF                | Compose                 |
+| COMPLEXITY_CAP_ENUM                 | Compose                 |
+| COMPLEXITY_CAP_CONTAINS             | Compose                 |
+| COMPLEXITY_CAP_SCHEMA_SIZE          | Compose                 |
+| COMPLEXITY_CAP_PATTERNS             | Generate                |
+| NAME_AUTOMATON_COMPLEXITY_CAPPED    | Compose                 |
+| NAME_AUTOMATON_BFS_APPLIED          | Compose                 |
+| NAME_AUTOMATON_BEAM_APPLIED         | Generate                |
+| TARGET_ENUM_NEGATIVE_LOOKAHEADS     | Generate                |
+| TARGET_ENUM_ROUNDROBIN_PATTERNPROPS | Generate                |
+| REPAIR_PNAMES_PATTERN_ENUM          | Repair                  |
+| REPAIR_RENAME_PREFLIGHT_FAIL        | Repair                  |
+| VALIDATION_KEYWORD_FAILED           | Validate                |
+
+**Severity and de‑duplication (coverage regex diagnostics; normative).** Coverage‑time `REGEX_COMPLEXITY_CAPPED{context:'coverage'}` and `REGEX_COMPILE_ERROR{context:'coverage'}` **MUST** be exported as non‑fatal entries in `diag.warn` (never in `diag.fatal`) unless another rule independently escalates the node. When multiple passes observe the same compile or cap event, implementations **MUST** de‑duplicate these diagnostics by `(canonPath, code, details.context, details.patternSource)` before export.
+
 <a id="s19-payloads"></a>
 ### 19.1 Details payloads (normative)
 
@@ -2101,6 +2136,56 @@ Provide the following minimal JSON‑Schema‑like shapes for major codes. Only 
 { "type":"object", "required":["patternSource","context"], "properties":{
   "patternSource":{"type":"string"},
   "context":{"enum":["coverage","rewrite"]}
+}}
+
+// NAME_AUTOMATON_COMPLEXITY_CAPPED
+{ "type":"object", "properties":{
+  "statesCap":{"type":"number"},
+  "observedStates":{"type":"number"},
+  "productStatesCap":{"type":"number"},
+  "observedProductStates":{"type":"number"},
+  "maxKEnumeration":{"type":"number"},
+  "bfsCandidatesCap":{"type":"number"},
+  "tried":{"type":"number"},
+  "triedCandidates":{"type":"number"},
+  "component":{"enum":["nfa","dfa","product","bfs"]}
+}}
+
+// NAME_AUTOMATON_BFS_APPLIED
+{ "type":"object", "properties":{
+  "budget":{"type":"object","properties":{
+    "maxMillis":{"type":"number"},
+    "maxStates":{"type":"number"},
+    "maxQueue":{"type":"number"},
+    "maxDepth":{"type":"number"},
+    "maxResults":{"type":"number"},
+    "beamWidth":{"type":"number"}
+  }},
+  "nodesExpanded":{"type":"number"},
+  "queuePeak":{"type":"number"},
+  "resultsEmitted":{"type":"number"},
+  "elapsedMs":{"type":"number"}
+}}
+
+// NAME_AUTOMATON_BEAM_APPLIED
+{ "type":"object", "required":["beamWidth"],
+  "properties":{
+    "beamWidth":{"type":"number"},
+    "meanScore":{"type":"number"},
+    "topScore":{"type":"number"}
+}}
+
+// TARGET_ENUM_NEGATIVE_LOOKAHEADS
+{ "type":"object", "required":["disallowPrefixes"],
+  "properties":{
+    "disallowPrefixes":{"type":"array","items":{"type":"string"}}
+}}
+
+// TARGET_ENUM_ROUNDROBIN_PATTERNPROPS
+{ "type":"object", "required":["patternsHit","distinctNames"],
+  "properties":{
+    "patternsHit":{"type":"number"},
+    "distinctNames":{"type":"number"}
 }}
 
 // EXTERNAL_REF_UNRESOLVED
@@ -2213,8 +2298,10 @@ Provide the following minimal JSON‑Schema‑like shapes for major codes. Only 
 // AP_FALSE_INTERSECTION_APPROX
 { "type":"object", "properties":{
   "reason":{"enum":["coverageUnknown","nonAnchoredPattern","regexComplexityCap","regexCompileError","presencePressure"]},
-   "requiredOut":{"type":"array","items":{"type":"string"}},
-   "enumSize":{"type":"number"}
+  "requiredOut":{"type":"array","items":{"type":"string"}},
+  "enumSize":{"type":"number"},
+  "usedAnchoredSubset":{"type":"boolean"},
+  "anchoredKind":{"enum":["strict","substring"]}
 }}
 
 // CONTAINS_BAG_COMBINED
@@ -2334,6 +2421,8 @@ anchoring and complexity scans and guarantees byte‑for‑byte reproducibility.
 `TRIALS_SKIPPED_LARGE_ONEOF`, `TRIALS_SKIPPED_LARGE_ANYOF`, `TRIALS_SKIPPED_SCORE_ONLY`, `AP_FALSE_INTERSECTION_APPROX`, `CONTAINS_BAG_COMBINED`, `CONTAINS_UNSAT_BY_SUM`,
 `COMPLEXITY_CAP_ONEOF`, `COMPLEXITY_CAP_ANYOF`, `COMPLEXITY_CAP_PATTERNS`,
 `COMPLEXITY_CAP_ENUM`, `COMPLEXITY_CAP_CONTAINS`, `COMPLEXITY_CAP_SCHEMA_SIZE`, `REGEX_COMPLEXITY_CAPPED`, `REGEX_COMPILE_ERROR`,
+`NAME_AUTOMATON_COMPLEXITY_CAPPED`, `NAME_AUTOMATON_BFS_APPLIED`, `NAME_AUTOMATON_BEAM_APPLIED`,
+`TARGET_ENUM_NEGATIVE_LOOKAHEADS`, `TARGET_ENUM_ROUNDROBIN_PATTERNPROPS`,
 `CONTAINS_NEED_MIN_GT_MAX`,
 `UNSAT_PATTERN_PNAMES`, `UNSAT_DEPENDENT_REQUIRED_AP_FALSE`, `UNSAT_BUDGET_EXHAUSTED`,
 `IF_AWARE_HINT_APPLIED`, `IF_AWARE_HINT_SKIPPED_INSUFFICIENT_INFO`,
@@ -2408,6 +2497,9 @@ anchoring and complexity scans and guarantees byte‑for‑byte reproducibility.
 * T‑ENUM‑PP‑CAP‑01 — Same but with `k = complexity.maxEnumCardinality + 1` literals ⇒ `enumerate()` absent and `COMPLEXITY_CAP_ENUM{ limit, observed:k }` emitted.
 * T‑ENUM‑PP‑REGEX‑01 — `patternProperties: { "^(?:a|b)+" : {} }` (quantified group) ⇒ no literals contributed; `REGEX_COMPLEXITY_CAPPED{context:'coverage'}` recorded; `enumerate()` absent.
 * T‑ENUM‑PP‑COMPILE‑01 — Uncompilable pattern under `u` flag ⇒ `REGEX_COMPILE_ERROR{context:'coverage'}`; `enumerate()` absent.
+* T‑ENUM‑PP‑REGEX‑EMPTYGROUP‑01 — `patternProperties` contains a pattern where an empty group `()` is immediately followed by a quantifier (for example, a suffix like `"()?"` or `"()*"`). The textual scanner **MUST** treat this as a quantified group: `REGEX_COMPLEXITY_CAPPED{context:'coverage'}` is emitted, the pattern contributes no literals to coverage, and `enumerate()` is absent.
+* T‑ENUM‑PP‑REGEX‑ESCAPED‑PAREN‑01 — `patternProperties` contains a pattern such as `"^foo\\(bar\\)*$"` where parentheses near a quantifier are **escaped**. The scanner **MUST NOT** treat these as group delimiters; no regex‑complexity cap is emitted solely because of the escaped parentheses, and coverage behavior matches the uncapped case.
+* T‑ENUM‑PP‑REGEX‑CHARCLASS‑PAREN‑01 — `patternProperties` contains a pattern where parentheses appear only inside a character class (e.g. `"^[()]*$"`). The scanner **MUST NOT** treat these as group delimiters, and no regex‑complexity cap is emitted solely due to the contents of the character class.
 * T‑ENUM‑PNAMES‑RAW‑01 — Finite intersection due only to raw `propertyNames.enum` (no §7 rewrite) ⇒ `enumerate()` absent.
 * T‑UEP‑TRACE‑01 (unit) — Schema with `unevaluatedProperties:false`, local `properties:{a:{}}` and `patternProperties:{ "^b":{} }`. Generation must introduce only `a` and any `b...` keys after proving evaluation via `properties` or a compilable pattern; record `EVALTRACE_PROP_SOURCE` with `via` containing `'properties'` or `'patternProperties'` respectively.
 * T‑UEP‑TRACE‑02 (integration) — `anyOf` with two branches; only branch‑1 validates the current candidate. Keys introduced under `unevaluatedProperties:false` may rely on applicators from branch‑1 only; MUST NOT rely on branch‑2 until it is known to validate. Confirm no key is emitted whose evaluation depends solely on branch‑2.
