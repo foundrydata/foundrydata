@@ -4,12 +4,14 @@ import { describe, expect, it } from 'vitest';
 import { DIAGNOSTIC_CODES } from '../../diag/codes.js';
 import {
   externalRefSchema,
+  dependentAllOfCoverageSchema,
   patternCapsSchema,
 } from '../__fixtures__/integration-schemas.js';
 import {
   runCorpusHarness,
   type CorpusSchemaConfig,
 } from '../corpus-harness.js';
+import { dedupeDiagnosticsForCorpus } from '../corpus-diagnostics.js';
 
 describe('corpus harness', () => {
   it('classifies success, UNSAT, and external-ref behaviors per schema', async () => {
@@ -135,6 +137,30 @@ describe('corpus harness', () => {
     expect(result.metrics?.repairPassesPerRow).toBeGreaterThanOrEqual(0);
   });
 
+  it('deduplicates repeated generator diagnostics at corpus level', async () => {
+    const report = await runCorpusHarness({
+      schemas: [
+        { id: 'dependent-coverage', schema: dependentAllOfCoverageSchema },
+      ],
+      mode: 'strict',
+      seed: 37,
+      instancesPerSchema: 3,
+      validateFormats: false,
+    });
+
+    const entry = report.results[0];
+    expect(entry).toBeDefined();
+    if (!entry) {
+      throw new Error('Expected dependent-coverage corpus result');
+    }
+
+    const targetEnumDiagnostics = entry.diagnostics.filter(
+      (diag) =>
+        diag.code === DIAGNOSTIC_CODES.TARGET_ENUM_ROUNDROBIN_PATTERNPROPS
+    );
+    expect(targetEnumDiagnostics.length).toBeLessThanOrEqual(1);
+  });
+
   it('is deterministic for fixed seed, mode, and corpus', async () => {
     const simpleSchema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
@@ -250,5 +276,22 @@ describe('corpus harness', () => {
     const codes = entry.diagnostics.map((diag) => diag.code);
     expect(codes).toContain(DIAGNOSTIC_CODES.VALIDATION_COMPILE_ERROR);
     expect(entry.metrics?.validationsPerRow ?? 0).toBe(0);
+  });
+
+  it('deduplicates diagnostics by code, phase, path, and detail key', () => {
+    const diagA = {
+      code: DIAGNOSTIC_CODES.TARGET_ENUM_ROUNDROBIN_PATTERNPROPS,
+      canonPath: '#/properties/obj',
+      details: { patternsHit: 1, distinctNames: 1 },
+    } as const;
+    const diagB = {
+      code: DIAGNOSTIC_CODES.TARGET_ENUM_ROUNDROBIN_PATTERNPROPS,
+      canonPath: '#/properties/obj',
+      details: { patternsHit: 3, distinctNames: 2 },
+    } as const;
+
+    const deduped = dedupeDiagnosticsForCorpus([diagA, diagB]);
+    expect(deduped).toHaveLength(1);
+    expect(deduped[0]).toEqual(diagA);
   });
 });

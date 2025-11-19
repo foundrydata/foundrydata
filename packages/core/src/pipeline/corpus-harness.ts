@@ -15,6 +15,7 @@ import {
   collectAllDiagnosticsFromPipeline,
   isUnsatOrFailFastCode,
 } from './diagnostic-collector.js';
+import { dedupeDiagnosticsForCorpus } from './corpus-diagnostics.js';
 
 export type CorpusMode = 'strict' | 'lax';
 
@@ -238,9 +239,11 @@ function buildSchemaResult(
   const instancesValid =
     isCompleted && !skippedValidation ? finalItems.length : 0;
 
-  const diagnostics = collectAllDiagnosticsFromPipeline(pipelineResult);
-  const unsatDiagnostics = diagnostics.filter((diag) => isUnsatCode(diag.code));
-  const failFastDiagnostics = diagnostics.filter(
+  const allDiagnostics = collectAllDiagnosticsFromPipeline(pipelineResult);
+  const unsatDiagnostics = allDiagnostics.filter((diag) =>
+    isUnsatCode(diag.code)
+  );
+  const failFastDiagnostics = allDiagnostics.filter(
     (diag) => isUnsatOrFailFastCode(diag.code) && !isUnsatCode(diag.code)
   );
 
@@ -255,7 +258,8 @@ function buildSchemaResult(
     }
   }
 
-  const caps = computeCaps(diagnostics);
+  const caps = computeCaps(allDiagnostics);
+  const diagnostics = dedupeDiagnosticsForCorpus(allDiagnostics);
   const metrics = extractMetrics(pipelineResult);
 
   return {
