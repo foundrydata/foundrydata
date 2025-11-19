@@ -936,6 +936,12 @@ Let `propertyNamesSynthetic_Ci` be the set of **synthetic** anchored‑safe patt
        in Lax: warn `AP_FALSE_UNSAFE_PATTERN` and proceed by conservative exclusion.
      • If presencePressure(O) does not hold ⇒ **MUST NOT** fail‑fast; use conservative exclusion.
 
+  **Coverage-only anchored-subset lifting (non-anchored patterns).** When building the name automaton for must-cover, implementations **MAY** derive a coverage-only anchored subset from a non-anchored regex `p` used in `patternProperties` or `propertyNames.pattern`, without changing AJV validation semantics. In particular:
+  * For “simple” patterns (e.g., unions of literals or pure character-class expressions without lookaround or backreferences), implementations **SHOULD** prefer a strict anchored form `p⊑ = ^(?:p)$/u` and treat it as a safe coverage source, subject to the same regex complexity caps as other anchored-safe patterns.
+  * For general non-anchored patterns that are syntactically safe (no lookaround, no backreferences) but not amenable to the strict form, implementations **MAY** use a substring-based anchored subset `p⊑ = ^.*(?:p).*$/u` for coverage-only proofs. This subset is used solely by the coverage index and name automata; the original pattern remains the only reference for AJV validation.
+  * Patterns that are already anchored, or contain lookaround/backreferences, or exceed regex/automaton caps **MUST NOT** be lifted; they remain in the existing “unknown coverage / unsafe under AP:false” category described above.
+  * Diagnostics for coverage approximations **SHOULD** record whether such a subset was used, for example via `AP_FALSE_INTERSECTION_APPROX{ reason:'nonAnchoredPattern', usedAnchoredSubset:true, anchoredKind:'strict'|'substring' }`. When lifting is not applied, `usedAnchoredSubset:false` **SHOULD** be recorded where practical.
+
   **Exceptions (normative):**
    E1) Patterns that fail to compile with `new RegExp(source,'u')` are **unknown gating** and **MUST NOT**
        cause `AP_FALSE_UNSAFE_PATTERN`. Compose **MUST** emit

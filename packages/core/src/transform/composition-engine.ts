@@ -67,6 +67,8 @@ interface CoveragePatternInfo {
   regexp: RegExp;
   literals?: string[];
   sourceKind: CoverageProvenance;
+  usedAnchoredSubset?: boolean;
+  anchoredKind?: 'strict' | 'substring';
 }
 
 interface CoverageGatingPattern {
@@ -1037,6 +1039,9 @@ class CompositionEngine {
           conj.hasPatternProperties ||
           conj.hasSyntheticPatterns
       );
+      const hasSubsetCoverageSource = conjuncts.some((conj) =>
+        conj.patterns.some((pattern) => pattern.usedAnchoredSubset)
+      );
       const hasOnlyPropertyNamesGating =
         !hasAnyCoverageSource &&
         conjuncts.some((conj) => conj.gatingEnum || conj.gatingPattern);
@@ -1046,10 +1051,11 @@ class CompositionEngine {
         nameAutomatonSummary.empty &&
         !nameAutomatonSummary.capsHit;
 
-      // Strong emptiness: anchored-safe coverage/gating automata have an empty
-      // product language under presence pressure. In this case, short-circuit
-      // with UNSAT_AP_FALSE_EMPTY_COVERAGE and do not emit approximation hints.
-      if (automatonEmpty && hasAnyCoverageSource) {
+      // Strong emptiness: anchored-safe coverage/gating automata (without
+      // coverage-only anchored-subset lifts) have an empty product language
+      // under presence pressure. In this case, short-circuit with
+      // UNSAT_AP_FALSE_EMPTY_COVERAGE and do not emit approximation hints.
+      if (automatonEmpty && hasAnyCoverageSource && !hasSubsetCoverageSource) {
         this.addFatal(
           canonPath,
           DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
@@ -1735,7 +1741,52 @@ class CompositionEngine {
           continue;
         }
         if (!analysis.anchoredSafe || !analysis.compiled) {
-          this.addApproximation(pointer, 'nonAnchoredPattern');
+          let lifted: AnchoredSubsetLift | undefined;
+          if (this.resolvedOptions.coverageAnchoredSubset) {
+            lifted = tryAnchoredSubsetLift(patternSource, analysis.policy);
+          }
+          if (lifted) {
+            let compiledLifted: RegExp | undefined;
+            try {
+              compiledLifted = new RegExp(lifted.source, 'u');
+            } catch {
+              this.addApproximation(pointer, 'nonAnchoredPattern', {
+                usedAnchoredSubset: false,
+              });
+              unsafePatternIssues.push({
+                pointer,
+                source: patternSource,
+                sourceKind,
+                reason: 'nonAnchoredPattern',
+              });
+              continue;
+            }
+            this.addApproximation(pointer, 'nonAnchoredPattern', {
+              usedAnchoredSubset: true,
+              anchoredKind: lifted.kind,
+            });
+            patterns.push({
+              pointer: patternPtr,
+              source: lifted.source,
+              regexp: compiledLifted,
+              literals:
+                lifted.kind === 'strict'
+                  ? analysis.literalAlternatives
+                  : undefined,
+              sourceKind,
+              usedAnchoredSubset: true,
+              anchoredKind: lifted.kind,
+            });
+            if (analysis.literalAlternatives && lifted.kind === 'strict') {
+              for (const literal of analysis.literalAlternatives) {
+                finiteCandidates.add(literal);
+              }
+            }
+            continue;
+          }
+          this.addApproximation(pointer, 'nonAnchoredPattern', {
+            usedAnchoredSubset: false,
+          });
           unsafePatternIssues.push({
             pointer,
             source: patternSource,
@@ -1795,7 +1846,35 @@ class CompositionEngine {
         } else if (analysis.complexityCapped) {
           this.addApproximation(pointer, 'regexComplexityCap');
         } else if (!analysis.anchoredSafe || !analysis.compiled) {
-          this.addApproximation(pointer, 'nonAnchoredPattern');
+          let lifted: AnchoredSubsetLift | undefined;
+          if (this.resolvedOptions.coverageAnchoredSubset) {
+            lifted = tryAnchoredSubsetLift(patternSource, analysis.policy);
+          }
+          if (lifted) {
+            try {
+              const compiledLifted = new RegExp(lifted.source, 'u');
+              this.addApproximation(pointer, 'nonAnchoredPattern', {
+                usedAnchoredSubset: true,
+                anchoredKind: lifted.kind,
+              });
+              gatingPattern = {
+                source: lifted.source,
+                regexp: compiledLifted,
+                literals:
+                  lifted.kind === 'strict'
+                    ? analysis.literalAlternatives
+                    : undefined,
+              };
+            } catch {
+              this.addApproximation(pointer, 'nonAnchoredPattern', {
+                usedAnchoredSubset: false,
+              });
+            }
+          } else {
+            this.addApproximation(pointer, 'nonAnchoredPattern', {
+              usedAnchoredSubset: false,
+            });
+          }
         } else {
           gatingPattern = {
             source: patternSource,
@@ -2168,7 +2247,8 @@ class CompositionEngine {
       | 'nonAnchoredPattern'
       | 'regexComplexityCap'
       | 'regexCompileError'
-      | 'presencePressure'
+      | 'presencePressure',
+    extraDetails?: Record<string, unknown>
   ): void {
     const key = JSON.stringify({ reason });
     let reasons = this.approxReasons.get(canonPath);
@@ -2179,8 +2259,11 @@ class CompositionEngine {
     if (reasons.has(key)) return;
     reasons.add(key);
     const details =
-      reason !== undefined
-        ? ({ reason } as Record<string, unknown>)
+      reason !== undefined || extraDetails
+        ? ({
+            ...(reason !== undefined ? { reason } : {}),
+            ...(extraDetails ?? {}),
+          } as Record<string, unknown>)
         : undefined;
     this.addWarn(
       canonPath,
@@ -2457,6 +2540,38 @@ interface PatternAnalysis {
   compiled?: RegExp;
   literalAlternatives?: string[];
   policy: RegexAnalysis;
+}
+
+type AnchoredSubsetKind = 'strict' | 'substring';
+
+interface AnchoredSubsetLift {
+  source: string;
+  kind: AnchoredSubsetKind;
+}
+
+function tryAnchoredSubsetLift(
+  patternSource: string,
+  policy: RegexAnalysis
+): AnchoredSubsetLift | undefined {
+  if (policy.anchored) return undefined;
+  if (policy.hasLookaround || policy.hasBackreference) return undefined;
+
+  const simpleUnion = /^[A-Za-z0-9._-]+(?:\|[A-Za-z0-9._-]+)+$/.test(
+    patternSource
+  );
+  const pureCharClass = /^\[[^\]\r\n]+\][+*?]{0,2}$/.test(patternSource);
+
+  if (simpleUnion || pureCharClass) {
+    return {
+      source: `^(?:${patternSource})$`,
+      kind: 'strict',
+    };
+  }
+
+  return {
+    source: `^.*(?:${patternSource}).*$`,
+    kind: 'substring',
+  };
 }
 
 function analyzeRegexPattern(source: string): PatternAnalysis {

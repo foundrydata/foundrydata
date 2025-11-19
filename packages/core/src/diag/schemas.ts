@@ -315,6 +315,8 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
       ]),
       requiredOut: stringArray,
       enumSize: { kind: 'number' },
+      usedAnchoredSubset: { kind: 'boolean' },
+      anchoredKind: enumSchema(['strict', 'substring']),
     },
   },
   [DIAGNOSTIC_CODES.CONTAINS_BAG_COMBINED]: {

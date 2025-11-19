@@ -264,6 +264,70 @@ describe('CompositionEngine coverage index', () => {
     expect(entry?.nameDfaSummary?.states ?? 0).toBeGreaterThan(0);
   });
 
+  it('lifts simple non-anchored patterns to strict anchored subsets for coverage under AP:false', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      patternProperties: {
+        'foo|bar': {},
+      },
+    } as const;
+
+    const result = compose(makeInput(schema));
+    const diag = result.diag;
+    expect(diag).toBeDefined();
+
+    const approx = diag?.warn?.find(
+      (entry) =>
+        entry.code === DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX &&
+        entry.canonPath === ''
+    );
+    expect(approx).toBeDefined();
+    const details = approx?.details as {
+      reason?: string;
+      usedAnchoredSubset?: boolean;
+      anchoredKind?: string;
+    };
+    expect(details?.reason).toBe('nonAnchoredPattern');
+    expect(details?.usedAnchoredSubset).toBe(true);
+    expect(details?.anchoredKind).toBe('strict');
+
+    const entry = result.coverageIndex.get('');
+    expect(entry).toBeDefined();
+    expect(entry?.has('foo')).toBe(true);
+    expect(entry?.has('bar')).toBe(true);
+  });
+
+  it('does not apply anchored-subset lift to patterns with lookaround constructs', () => {
+    const pattern = '^(?=x).+$';
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      patternProperties: {
+        [pattern]: {},
+      },
+    } as const;
+
+    const result = compose(makeInput(schema));
+    const diag = result.diag;
+    expect(diag).toBeDefined();
+
+    const approx = diag?.warn?.find(
+      (entry) =>
+        entry.code === DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX &&
+        entry.canonPath === ''
+    );
+    expect(approx).toBeDefined();
+    const details = approx?.details as {
+      reason?: string;
+      usedAnchoredSubset?: boolean;
+      anchoredKind?: string;
+    };
+    expect(details?.reason).toBe('nonAnchoredPattern');
+    expect(details?.usedAnchoredSubset).toBe(false);
+    expect(details?.anchoredKind).toBeUndefined();
+  });
+
   it('emits NAME_AUTOMATON_COMPLEXITY_CAPPED when BFS witness search is capped', () => {
     const schema = {
       type: 'object',
@@ -506,7 +570,7 @@ describe('CompositionEngine coverage index', () => {
       additionalProperties: false,
       required: ['x'],
       patternProperties: {
-        foo: {}, // missing anchors ⇒ unsafe pattern
+        '^(?=x).+$': {}, // anchored pattern with lookahead ⇒ unsafe
       },
     };
 
@@ -517,12 +581,12 @@ describe('CompositionEngine coverage index', () => {
     expect(fatal).toBeDefined();
     expect(fatal?.details).toEqual({
       sourceKind: 'patternProperties',
-      patternSource: 'foo',
+      patternSource: '^(?=x).+$',
     });
   });
 
   it('uses propertyNamesSynthetic sourceKind when synthetic patterns trigger the fail-fast', () => {
-    const patternSource = 'bar';
+    const patternSource = '^(?=x).+$';
     const schema = {
       type: 'object',
       additionalProperties: false,
@@ -552,8 +616,8 @@ describe('CompositionEngine coverage index', () => {
       additionalProperties: false,
       required: ['x'],
       patternProperties: {
-        foo: {},
-        bar: {},
+        '^(?=x).+$': {},
+        '^(?=y).+$': {},
       },
     };
     const ptrEntries: Array<[string, string]> = [
@@ -911,7 +975,7 @@ describe('CompositionEngine AP:false strict vs lax', () => {
     additionalProperties: false,
     required: ['id'],
     patternProperties: {
-      '.*': { type: 'string' },
+      '^(?=x).+$': { type: 'string' },
     },
   } as const;
 
@@ -928,7 +992,7 @@ describe('CompositionEngine AP:false strict vs lax', () => {
     expect(fatalEntry).toBeDefined();
     expect(fatalEntry?.details).toEqual({
       sourceKind: 'patternProperties',
-      patternSource: '.*',
+      patternSource: '^(?=x).+$',
     });
     const warnCodes = diag?.warn?.map((entry) => entry.code) ?? [];
     expect(warnCodes).toContain(DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX);
@@ -956,7 +1020,7 @@ describe('CompositionEngine AP:false strict vs lax', () => {
     expect(warnEntry).toBeDefined();
     expect(warnEntry?.details).toEqual({
       sourceKind: 'patternProperties',
-      patternSource: '.*',
+      patternSource: '^(?=x).+$',
     });
     const fatal = diag?.fatal ?? [];
     expect(

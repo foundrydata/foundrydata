@@ -213,6 +213,11 @@ export interface PlanOptions {
   disablePatternOverlapAnalysis?: boolean;
   /** Disable deep freeze in production (default: false) */
   disableDeepFreeze?: boolean;
+  /**
+   * Enable coverage-only anchored-subset lifting for non-anchored patterns
+   * when building name automata (default: true).
+   */
+  coverageAnchoredSubset?: boolean;
 
   /** Complexity caps configuration */
   complexity?: ComplexityOptions;
@@ -291,6 +296,7 @@ export interface ResolvedOptions {
   solverTimeoutMs: number;
   disablePatternOverlapAnalysis: boolean;
   disableDeepFreeze: boolean;
+  coverageAnchoredSubset: boolean;
 
   complexity: Required<ComplexityOptions>;
   failFast: Required<FailFastOptions>;
@@ -347,6 +353,7 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
   solverTimeoutMs: 25,
   disablePatternOverlapAnalysis: false,
   disableDeepFreeze: false,
+  coverageAnchoredSubset: true,
 
   complexity: {
     maxOneOfBranches: 200,
