@@ -2,7 +2,11 @@
 /* eslint-disable max-lines-per-function */
 /* eslint-disable max-lines */
 /* eslint-disable complexity */
-import { DIAGNOSTIC_CODES, type DiagnosticCode } from '../diag/codes.js';
+import {
+  DIAGNOSTIC_CODES,
+  type DiagnosticCode,
+  type SafeProofCertificate,
+} from '../diag/codes.js';
 import {
   createPlanOptionsSubKey,
   type CacheKeyContext,
@@ -51,6 +55,7 @@ export interface CoverageEntry {
   has: (name: string) => boolean;
   enumerate?: (k?: number) => string[];
   provenance?: CoverageProvenance[];
+  nameDfaSummary?: { states: number; finite: boolean; capsHit?: boolean };
 }
 
 export type CoverageIndex = Map<string, CoverageEntry>;
@@ -288,6 +293,7 @@ class CompositionEngine {
     finite: boolean;
     capsHit?: boolean;
   };
+  private readonly safeProofByPath = new Map<string, SafeProofCertificate>();
 
   constructor(input: ComposeInput, options?: ComposeOptions) {
     this.schema = input.schema;
@@ -744,12 +750,31 @@ class CompositionEngine {
 
     const hasName = this.createCoveragePredicate(conjuncts);
 
-    let safeIntersectionExists = false;
-    if (
-      nameAutomatonSummary &&
+    const automatonNonEmpty =
+      !!nameAutomatonSummary &&
       !nameAutomatonSummary.empty &&
-      !nameAutomatonSummary.capsHit
-    ) {
+      !nameAutomatonSummary.capsHit;
+
+    const entryNameDfaSummary = nameAutomatonSummary
+      ? {
+          states: nameAutomatonSummary.states,
+          finite: nameAutomatonSummary.finite,
+          ...(nameAutomatonSummary.capsHit ? { capsHit: true } : {}),
+        }
+      : undefined;
+
+    let safeProof: SafeProofCertificate | undefined;
+    if (automatonNonEmpty && presencePressure) {
+      safeProof = {
+        used: true,
+        finite: nameAutomatonSummary.finite,
+        states: nameAutomatonSummary.states,
+        ...(nameAutomatonSummary.capsHit ? { capsHit: true } : {}),
+      };
+    }
+
+    let safeIntersectionExists = false;
+    if (automatonNonEmpty) {
       safeIntersectionExists = true;
     } else {
       for (const candidate of candidateNames) {
@@ -891,10 +916,30 @@ class CompositionEngine {
       }
     }
 
+    if (safeProof) {
+      if (enumerationValues && enumerationValues.length > 0) {
+        safeProof.witnesses = enumerationValues.slice(0, ENUM_CAP);
+      } else {
+        const witnesses: string[] = [];
+        for (const candidate of candidateNames) {
+          if (hasName(candidate)) {
+            witnesses.push(candidate);
+            if (witnesses.length >= ENUM_CAP) break;
+          }
+        }
+        if (witnesses.length > 0) {
+          safeProof.witnesses = witnesses;
+        }
+      }
+    }
+
     const coverageEntry: CoverageEntry = {
       has: hasName,
       provenance: Array.from(provenance.values()).sort(),
     };
+    if (entryNameDfaSummary) {
+      coverageEntry.nameDfaSummary = entryNameDfaSummary;
+    }
     if (enumerationValues) {
       const snapshot = enumerationValues.slice();
       coverageEntry.enumerate = (k?: number) => {
@@ -906,6 +951,9 @@ class CompositionEngine {
       };
     }
     this.coverageIndex.set(canonPath, coverageEntry);
+    if (safeProof) {
+      this.safeProofByPath.set(canonPath, safeProof);
+    }
     this.recordPatternOverlapDiagnostics(canonPath, conjuncts);
 
     // Early-UNSAT: required keys rejected by propertyNames gating under AP:false.
@@ -1972,6 +2020,8 @@ class CompositionEngine {
       this.diag.nodes = nodes;
     }
 
+    this.attachSafeProofToDiagnostics();
+
     if (
       !Object.keys(this.diag).some((key) => {
         const value = (this.diag as Record<string, unknown>)[key];
@@ -2077,6 +2127,33 @@ class CompositionEngine {
   }): void {
     this.diag.unsatHints ??= [];
     this.diag.unsatHints.push(hint);
+  }
+
+  private attachSafeProofToDiagnostics(): void {
+    if (this.safeProofByPath.size === 0) return;
+    const groups: Array<'fatal' | 'unsatHints' | 'warn' | 'run'> = [
+      'fatal',
+      'unsatHints',
+      'warn',
+      'run',
+    ];
+    for (const [canonPath, safeProof] of this.safeProofByPath.entries()) {
+      for (const groupKey of groups) {
+        const group = (this.diag as Record<string, unknown>)[groupKey] as
+          | Array<{ canonPath: string; details?: unknown }>
+          | undefined;
+        if (!group || group.length === 0) continue;
+        const entry = group.find((e) => e.canonPath === canonPath);
+        if (!entry) continue;
+        const rawDetails = entry.details;
+        const existing =
+          rawDetails && typeof rawDetails === 'object'
+            ? (rawDetails as Record<string, unknown>)
+            : {};
+        entry.details = { ...existing, safeProof };
+        break;
+      }
+    }
   }
 
   private isPropertyNamesSynthetic(pointer: string): boolean {

@@ -78,6 +78,14 @@ export type KnownDiagnosticCode =
   (typeof DIAGNOSTIC_CODES)[keyof typeof DIAGNOSTIC_CODES];
 export type DiagnosticCode = KnownDiagnosticCode | (string & {});
 
+export interface SafeProofCertificate {
+  used: boolean;
+  finite: boolean;
+  states: number;
+  witnesses?: string[];
+  capsHit?: boolean;
+}
+
 export const DIAGNOSTIC_PHASES = {
   NORMALIZE: 'normalize',
   COMPOSE: 'compose',

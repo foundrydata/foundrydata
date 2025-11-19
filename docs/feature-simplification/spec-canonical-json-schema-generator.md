@@ -19,6 +19,7 @@
 * **Conjunct** — An operand of `allOf`.
 * **Must‑cover** — The set of property names considered generable when at least one conjunct imposes `additionalProperties:false`, computed from `properties` plus **anchored‑safe** `patternProperties`. When `PNAMES_REWRITE_APPLIED` is present, also include the **synthetic** anchored‑safe patterns introduced from `propertyNames` by §7. Otherwise, `propertyNames` never increases coverage (it only gates).
 * **Anchored‑safe pattern** — Regex whose JSON‑unescaped `source` starts with an unescaped `^` and ends with an unescaped `$`, contains **no** look‑around and **no** back‑references, **and passes the §8 regex complexity cap** (patterns capped are **not** anchored‑safe for coverage). Full rule in §8.
+* **Coverage certificate (planning)** — Non-normative payload attached to `planDiag.details.safeProof` when a safe-only cover is used: `{ used:boolean, finite:boolean, states:number, witnesses?:string[], capsHit?:boolean }`.
 * **Bag `contains`** — Models `contains`/`minContains`/`maxContains` as independent needs `{schema,min?,max?}` that **concatenate** across `allOf` (see §8).
 * **Presence pressure** — `effectiveMinProperties > 0` or `effectiveRequiredKeys ≠ ∅`, or a `dependentRequired` antecedent is **forced present** in the **effective view** (post‑`allOf` merge).
   See Glossary for `effectiveMinProperties` / `effectiveRequiredKeys`.
@@ -1897,6 +1898,22 @@ Use separate LRU spaces for the two AJV instances (planning vs source) to avoid 
 
 ---
 
+## 7) Must‑Cover (AP:false) — Safe proofs, anchoring, and caps
+**Normative.** When any `allOf` conjunct enforces `additionalProperties:false`, the planner MUST construct a Coverage Index for property names as the intersection of: literal keys from `properties`, and **anchored‑safe & non‑capped** `patternProperties`. `propertyNames` acts only as a guard; it MAY be rewritten additively under strict equivalence preconditions (flag‑gated), in which case synthetic provenance MUST be recorded.
+
+### 7.1 Safe‑proof fallback
+Before failing on non‑safe or capped patterns, the planner MUST attempt a **safe-only** cover:
+1) build the Coverage Index using only anchored‑safe & non‑capped inputs; 2) if non‑empty and presence pressure holds, proceed with this cover (no `AP_FALSE_UNSAFE_PATTERN` in Strict), attach a **coverage certificate** to diagnostics; 3) if empty and presence pressure holds, emit early‑UNSAT (`UNSAT_AP_FALSE_EMPTY_COVERAGE`/`UNSAT_REQUIRED_VS_PROPERTYNAMES`/`UNSAT_MINPROPERTIES_VS_COVERAGE`).
+If non‑emptiness would require a non‑safe or capped pattern, Strict MUST emit `AP_FALSE_UNSAFE_PATTERN` (fatal) after attempting the safe-only proof; Lax MUST warn and proceed conservatively with `AP_FALSE_INTERSECTION_APPROX`.
+
+### 7.2 Anchoring policy and regex caps
+Patterns used in coverage MUST be anchored‑safe. Patterns rejected for coverage remain guards at validation time. Implementations MUST distinguish coverage regex caps (`REGEX_COMPLEXITY_CAPPED{context:'coverage'}`) from generation caps (`COMPLEXITY_CAP_PATTERNS{...}`).
+
+### 7.3 Heuristics & caps
+Implementations MUST enforce `maxAutomatonStates`, `maxProductStates`, `maxKEnumeration`, and `bfsCandidatesCap`, and emit `NAME_AUTOMATON_COMPLEXITY_CAPPED` with a payload consistent with bench outputs.
+
+---
+
 <a id="s16-implementation-plan"></a>
 ## 16) Implementation Plan
 
@@ -2448,9 +2465,10 @@ anchoring and complexity scans and guarantees byte‑for‑byte reproducibility.
 * Caps payloads: trigger each of `COMPLEXITY_CAP_ONEOF / _ANYOF / _ENUM / _CONTAINS / _SCHEMA_SIZE` and validate that `details` conforms to `{limit, observed}`; separately trigger `COMPLEXITY_CAP_PATTERNS` and `REGEX_COMPLEXITY_CAPPED` to confirm their distinct payloads and phases.
 
 * **Negative config test (AJV flags):** force `unicodeRegExp:false` on either AJV instance ⇒ hard failure with `AJV_FLAGS_MISMATCH`.
-* **AP:false unsafe‑pattern tests:**
+* **AP:false unsafe‑pattern tests (with safe‑proof fallback):**
   - `AP:false` + non‑anchored pattern (e.g., `"^foo"`) in coverage ⇒ Strict: fail with `AP_FALSE_UNSAFE_PATTERN`;  
-    Lax: warn `AP_FALSE_UNSAFE_PATTERN`, continue conservatively with `AP_FALSE_INTERSECTION_APPROX`.
+    Lax: warn `AP_FALSE_UNSAFE_PATTERN`, continue conservatively with `AP_FALSE_INTERSECTION_APPROX`.  
+  - **Safe‑proof prevents fail‑fast**: when an anchored‑safe intersection is non‑empty under presence pressure, Strict MUST NOT emit `AP_FALSE_UNSAFE_PATTERN`; generation is restricted to the safe cover. A `planDiag.details.safeProof` certificate is attached.
   - `AP:false` + pattern exceeding regex complexity cap (length/nested quantifiers) ⇒ same expectations as above.
 
 <a id="s20-bench-ci"></a>

@@ -220,6 +220,50 @@ describe('CompositionEngine coverage index', () => {
     expect(summary?.finite).toBe(true);
   });
 
+  it('attaches safeProof coverage certificate when a safe cover exists under AP:false with presence pressure', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id'],
+      properties: {
+        id: { type: 'string' },
+      },
+      // Unsafe pattern (non-anchored) that should not prevent safe-cover planning
+      patternProperties: {
+        '.*': {},
+      },
+    } as const;
+
+    const result = compose(makeInput(schema));
+    const diag = result.diag;
+    expect(diag).toBeDefined();
+
+    const fatalCodes = diag?.fatal?.map((entry) => entry.code) ?? [];
+    expect(fatalCodes).not.toContain(DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN);
+
+    const approx = diag?.warn?.find(
+      (entry) =>
+        entry.code === DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX &&
+        entry.canonPath === ''
+    );
+    expect(approx).toBeDefined();
+    const details = approx?.details as {
+      reason?: string;
+      safeProof?: { used?: boolean; finite?: boolean; states?: number };
+    };
+    expect(details?.reason).toBe('nonAnchoredPattern');
+    expect(details?.safeProof).toBeDefined();
+    expect(details?.safeProof?.used).toBe(true);
+    expect(typeof details?.safeProof?.finite).toBe('boolean');
+    expect(details?.safeProof?.states ?? 0).toBeGreaterThan(0);
+
+    const entry = result.coverageIndex.get('');
+    expect(entry).toBeDefined();
+    expect(entry?.has('id')).toBe(true);
+    expect(entry?.nameDfaSummary).toBeDefined();
+    expect(entry?.nameDfaSummary?.states ?? 0).toBeGreaterThan(0);
+  });
+
   it('emits NAME_AUTOMATON_COMPLEXITY_CAPPED when BFS witness search is capped', () => {
     const schema = {
       type: 'object',
@@ -1268,10 +1312,16 @@ describe('CompositionEngine AP:false coverage early-unsat', () => {
         e.canonPath === ''
     );
     expect(found).toBeDefined();
-    expect(found?.details).toEqual({
-      minProperties: 3,
-      coverageSize: 2,
-    });
+    const details = found?.details as {
+      minProperties?: number;
+      coverageSize?: number;
+      safeProof?: { used?: boolean; finite?: boolean; states?: number };
+    };
+    expect(details?.minProperties).toBe(3);
+    expect(details?.coverageSize).toBe(2);
+    expect(details?.safeProof).toBeDefined();
+    expect(details?.safeProof?.used).toBe(true);
+    expect(typeof details?.safeProof?.finite).toBe('boolean');
   });
 });
 
