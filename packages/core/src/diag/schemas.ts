@@ -537,28 +537,6 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
       error: { kind: 'string' },
     },
   },
-  [DIAGNOSTIC_CODES.RESOLVER_ADD_SCHEMA_SKIPPED_INCOMPATIBLE_DIALECT]: {
-    kind: 'object',
-    required: {
-      uri: { kind: 'string' },
-      docDialect: { kind: 'string' },
-    },
-    optional: {
-      targetDialect: { kind: 'string' },
-    },
-  },
-  [DIAGNOSTIC_CODES.RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID]: {
-    kind: 'object',
-    required: {
-      ref: { kind: 'string' },
-    },
-    optional: {
-      id: { kind: 'string' },
-      existingRef: { kind: 'string' },
-      reason: { kind: 'string' },
-      error: { kind: 'string' },
-    },
-  },
   [DIAGNOSTIC_CODES.SCHEMA_INTERNAL_REF_MISSING]: {
     kind: 'object',
     required: {

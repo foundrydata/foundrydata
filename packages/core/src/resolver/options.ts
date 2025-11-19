@@ -7,11 +7,11 @@ import {
   prefetchAndBuildRegistry,
   type ResolverOptions as HttpResolverOptions,
 } from './http-resolver.js';
-import { DIAGNOSTIC_CODES } from '../diag/codes.js';
+import { DIAGNOSTIC_CODES, type DiagnosticCode } from '../diag/codes.js';
 import { schemaHasExternalRefs, summarizeExternalRefs } from '../util/modes.js';
 
 export interface ResolverDiagnosticNote {
-  code: string;
+  code: DiagnosticCode;
   canonPath: string;
   details?: unknown;
 }
