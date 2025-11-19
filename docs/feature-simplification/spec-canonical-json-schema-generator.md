@@ -1604,8 +1604,13 @@ validation (`EXTERNAL_REF_UNRESOLVED{ mode:'lax', skippedValidation:true }`). Se
 **Resolver observability (non‑fatal notes).** When the extension is enabled, implementations **SHOULD** record:
 `RESOLVER_STRATEGIES_APPLIED{ strategies, cacheDir }` once per run; `RESOLVER_CACHE_MISS_FETCHED{ ref, bytes, contentHash }`
 on successful prefetch; `RESOLVER_CACHE_HIT{ ref, contentHash }` when serving from cache; and
-`RESOLVER_OFFLINE_UNAVAILABLE{ ref, reason?, error? }` when neither cache nor network yields a document. `ref` identifies
-the external document; `reason`/`error` are optional hints (e.g., `"no-strategy"`, `"host-not-allowed"`, or `"fetch-error"` with an HTTP status).
+`RESOLVER_OFFLINE_UNAVAILABLE{ ref, reason?, error? }` when neither cache nor network yields a document. When registry
+hydration is active (§13), additional run‑level notes **SHOULD** be recorded with `canonPath:"#"`:
+`RESOLVER_ADD_SCHEMA_SKIPPED_INCOMPATIBLE_DIALECT{ uri, docDialect, targetDialect }` whenever a registry document is
+ignored for dialect mismatch, and `RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID{ ref, id?, existingRef?, reason?, error? }`
+whenever a registry document is skipped because its URI/`$id` collides with an existing schema. In all cases, `ref` or
+`uri` identifies the external document; `reason`/`error` are optional hints (e.g., `"no-strategy"`, `"host-not-allowed"`,
+or `"fetch-error"` with an HTTP status).
 
 <a id="s11-strict-vs-lax-summary"></a>
 ### Strict vs Lax (summary)
@@ -1699,8 +1704,9 @@ Two distinct AJV instances/configs:
    spuriously missing keys.
    **Hydration order (normative).** When a non‑empty §4 registry is available and `resolver.hydrateFinalAjv !== false`,
    the implementation **MUST** preload the required meta‑schemas for **each registry document’s dialect** and **then**
-   add documents via `addSchema` **before** `compile(original)`. Incompatible dialects **MUST** be ignored (non‑fatal note),
-   and duplicates **MUST** be skipped by normalized URI/`$id`. Core phases perform **no** network I/O.
+   add documents via `addSchema` **before** `compile(original)`. Incompatible dialects **MUST** be ignored and recorded as
+   `RESOLVER_ADD_SCHEMA_SKIPPED_INCOMPATIBLE_DIALECT` run‑level notes, and duplicates **MUST** be skipped by normalized
+   URI/`$id` and recorded as `RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID`. Core phases perform **no** network I/O.
 
 ## Extension R2 — Dialect & Meta‑schema auto‑hydration (normative)
 **Goal.** Eliminate compile failures caused solely by missing meta‑schemas and ensure the Source AJV’s class/flags match
@@ -2235,6 +2241,24 @@ Provide the following minimal JSON‑Schema‑like shapes for major codes. Only 
     "error":{"type":"string"}
   }}
 
+// RESOLVER_ADD_SCHEMA_SKIPPED_INCOMPATIBLE_DIALECT  (extension note; run-level)
+{ "type":"object", "required":["uri","docDialect","targetDialect"],
+  "properties":{
+    "uri":{"type":"string"},
+    "docDialect":{"type":"string"},
+    "targetDialect":{"type":"string"}
+  }}
+
+// RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID  (extension note; run-level)
+{ "type":"object", "required":["ref"],
+  "properties":{
+    "ref":{"type":"string"},
+    "id":{"type":"string"},
+    "existingRef":{"type":"string"},
+    "reason":{"type":"string"},
+    "error":{"type":"string"}
+  }}
+
 // AJV_FLAGS_MISMATCH
   { "type":"object", "required":["instance","diffs","ajvMajor"],
     "properties":{
@@ -2244,6 +2268,12 @@ Provide the following minimal JSON‑Schema‑like shapes for major codes. Only 
         "properties":{"flag":{"type":"string"},"expected":{},"actual":{}}}},
       "sourceFlags":{"type":"object"},
       "planningFlags":{"type":"object"}
+  }}
+
+// DRAFT06_PATTERN_TOLERATED  (validation-time note for tolerated legacy patterns)
+{ "type":"object", "required":["pattern"],
+  "properties":{
+    "pattern":{"type":"string"}
   }}
 
 // RAT_LCM_BITS_CAPPED
