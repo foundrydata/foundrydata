@@ -66,7 +66,7 @@ ul{padding-left:1.25rem}
   &quot;strategies&quot;: [
     &quot;local&quot;
   ],
-  &quot;cacheDir&quot;: &quot;/Users/fstepho/.foundrydata/cache&quot;
+  &quot;cacheDir&quot;: &quot;~/.foundrydata/cache&quot;
 }</pre></li></ul></div>
     </div>
   </section>
@@ -442,7 +442,7 @@ exports[`reporter snapshots > produces a stable JSON Report for profiles/simple.
             "canonPath": "#",
             "code": "RESOLVER_STRATEGIES_APPLIED",
             "details": {
-              "cacheDir": "/Users/fstepho/.foundrydata/cache",
+              "cacheDir": "~/.foundrydata/cache",
               "strategies": [
                 "local",
               ],
@@ -769,7 +769,7 @@ exports[`reporter snapshots > produces a stable Markdown report for profiles/sim
   - CONTAINS_BAG_COMBINED @ /properties/tags ({"bagSize":1,"sumMin":1,"maxItems":5})
 - unsatHints: none
 - run: 1
-  - RESOLVER_STRATEGIES_APPLIED @ # ({"strategies":["local"],"cacheDir":"/Users/fstepho/.foundrydata/cache"})
+  - RESOLVER_STRATEGIES_APPLIED @ # ({"strategies":["local"],"cacheDir":"~/.foundrydata/cache"})
 
 ## Coverage Index (snapshot)
 
