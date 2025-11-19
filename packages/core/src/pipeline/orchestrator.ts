@@ -18,7 +18,6 @@ import {
   extractAjvFlags,
   prepareSchemaForSourceAjv,
   isCanonicalMetaRef,
-  type JsonSchemaDialect,
   detectDialectFromSchema,
 } from '../util/ajv-source.js';
 import { checkAjvStartupParity } from '../util/ajv-gate.js';
@@ -64,6 +63,10 @@ import {
   type ResolverDiagnosticNote,
   type ResolverOptions as ResolverExtensionOptions,
 } from '../resolver/options.js';
+import {
+  hydrateSourceAjvFromRegistry,
+  type RegistryDoc,
+} from '../resolver/hydrateSourceAjvFromRegistry.js';
 
 const STAGE_SEQUENCE: PipelineStageName[] = [
   'normalize',
@@ -155,116 +158,6 @@ function collectSchemaIds(schema: unknown, acc: Set<string>): void {
   visit(schema);
 }
 
-// Hydrate an AJV instance with schemas from the resolver registry, tracking duplicate $id usage
-// across all hydrated schemas to avoid AJV duplicate-id conflicts. Any issues are recorded as
-// resolver run-level diagnostics rather than throwing.
-function hydrateAjvWithRegistry(
-  ajv: Ajv,
-  registry: ResolutionRegistry,
-  run: ResolverDiagnosticNote[] | undefined,
-  seenSchemaIds: Map<string, string>,
-  targetDialect?: JsonSchemaDialect
-): void {
-  const ajvWithGetSchema = ajv as unknown as {
-    getSchema?: (key: string) => unknown;
-  };
-  const collectIds = (node: unknown, acc: Set<string>): void => {
-    if (!node || typeof node !== 'object') return;
-    if (Array.isArray(node)) {
-      for (const it of node) collectIds(it, acc);
-      return;
-    }
-    const rec = node as Record<string, unknown>;
-    const raw = rec['$id'];
-    if (typeof raw === 'string') {
-      const t = raw.trim();
-      if (t) acc.add(t);
-    }
-    for (const v of Object.values(rec)) collectIds(v, acc);
-  };
-  const add = (s: unknown, key: string): void => {
-    (
-      ajv as unknown as { addSchema: (schema: unknown, key?: string) => void }
-    ).addSchema(s, key);
-  };
-  for (const entry of registry.entries()) {
-    try {
-      if (targetDialect) {
-        const docDialect = detectDialectFromSchema(entry.schema);
-        const hasExplicitSchema =
-          !!entry.schema &&
-          typeof entry.schema === 'object' &&
-          typeof (entry.schema as { $schema?: unknown }).$schema === 'string';
-        if (hasExplicitSchema && docDialect !== targetDialect) {
-          // Ignore documents whose explicitly-declared dialect is incompatible with the target AJV instance
-          continue;
-        }
-      }
-      let uriKey = entry.uri;
-      try {
-        uriKey = new URL(entry.uri).href;
-      } catch {
-        // Fall back to the raw registry URI if normalization via URL fails
-        uriKey = entry.uri;
-      }
-      // If AJV already has a schema registered under this URI key, skip to avoid duplicate-key conflicts.
-      if (typeof ajvWithGetSchema.getSchema === 'function') {
-        const existingByUri = ajvWithGetSchema.getSchema(uriKey);
-        if (typeof existingByUri === 'function') {
-          run?.push({
-            code: 'RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID',
-            canonPath: '#',
-            details: {
-              ref: uriKey,
-              reason: 'uri-already-registered',
-            },
-          });
-          continue;
-        }
-      }
-      const ids = new Set<string>();
-      collectIds(entry.schema, ids);
-      let conflict = false;
-      for (const id of ids) {
-        const existingFromRegistry = seenSchemaIds.get(id);
-        const existingFromAjv =
-          typeof ajvWithGetSchema.getSchema === 'function'
-            ? ajvWithGetSchema.getSchema(id)
-            : undefined;
-        if (
-          existingFromAjv ||
-          (existingFromRegistry && existingFromRegistry !== uriKey)
-        ) {
-          conflict = true;
-          run?.push({
-            code: 'RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID',
-            canonPath: '#',
-            details: {
-              id,
-              ref: uriKey,
-              existingRef: existingFromRegistry ?? 'ajv-existing',
-            },
-          });
-        }
-      }
-      if (conflict) continue;
-      add(entry.schema as object, uriKey);
-      for (const id of ids) {
-        if (!seenSchemaIds.has(id)) seenSchemaIds.set(id, uriKey);
-      }
-    } catch (e) {
-      run?.push({
-        code: 'RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID',
-        canonPath: '#',
-        details: {
-          ref: entry.uri,
-          error: e instanceof Error ? e.message : String(e),
-        },
-      });
-    }
-  }
-}
-
 function createInitialStages(): PipelineStages {
   return {
     normalize: { status: 'pending' },
@@ -321,6 +214,7 @@ export async function executePipeline(
   let resolverRegistry: ResolutionRegistry | undefined;
   let resolverRunDiags: ResolverDiagnosticNote[] | undefined = [];
   let registryFingerprint: string | undefined;
+  let registryDocs: RegistryDoc[] | undefined;
   // Track seen $id across AJV hydration to avoid duplicate-id conflicts
   const seenSchemaIds = new Map<string, string>();
   // Seed seenSchemaIds with any $id present in the root schema so that in-document definitions
@@ -357,6 +251,11 @@ export async function executePipeline(
     resolverRunDiags = resolverResult.notes;
     if (resolverResult.registry.size() > 0) {
       resolverRegistry = resolverResult.registry;
+      const docs: RegistryDoc[] = [];
+      for (const entry of resolverResult.registry.entries()) {
+        docs.push({ uri: entry.uri, schema: entry.schema });
+      }
+      registryDocs = docs;
     }
     if (
       resolverResult.registry.size() > 0 ||
@@ -386,7 +285,8 @@ export async function executePipeline(
         schemaForSourceAjv,
         resolverRegistry,
         resolverRunDiags,
-        seenSchemaIds
+        seenSchemaIds,
+        registryDocs
       ),
   };
 
@@ -483,11 +383,6 @@ export async function executePipeline(
     const discriminator = Boolean(options.validate?.discriminator);
     if (schemaHasExternalRefs(schema)) {
       const mode = options.mode ?? 'strict';
-      const hasResolverRegistry =
-        resolverRegistry !== undefined && resolverRegistry.size() > 0;
-      const shouldTreatResolvedExternalAsValid =
-        resolvedPlanOptions.resolver.hydrateFinalAjv === true &&
-        hasResolverRegistry;
       const sourceAjvFactory = (): Ajv => {
         const ajv = createSourceAjv(
           {
@@ -499,15 +394,13 @@ export async function executePipeline(
           },
           planOptions
         );
-        // Hydrate Source Ajv with resolver registry if available (skip duplicate $id)
-        if (resolverRegistry) {
-          hydrateAjvWithRegistry(
-            ajv,
-            resolverRegistry,
-            resolverRunDiags,
+        if (registryDocs && resolverRegistry) {
+          hydrateSourceAjvFromRegistry(ajv, registryDocs, {
+            ignoreIncompatible: true,
+            notes: resolverRunDiags,
             seenSchemaIds,
-            sourceDialect
-          );
+            targetDialect: sourceDialect,
+          });
         }
         return ajv;
       };
@@ -541,14 +434,31 @@ export async function executePipeline(
           throw error;
         }
       }
-      if (!externalRefState && !shouldTreatResolvedExternalAsValid) {
+      if (!externalRefState) {
         const externalSummary = summarizeExternalRefs(schema, {
           exclude: (ref) => isCanonicalMetaRef(ref, sourceDialect),
         });
-        if (externalSummary.extRefs.length > 0) {
+        let unresolvedRefs = externalSummary.extRefs;
+        if (
+          resolverRegistry &&
+          resolvedPlanOptions.resolver.hydrateFinalAjv === true &&
+          unresolvedRefs.length > 0
+        ) {
+          const unresolved: string[] = [];
+          for (const ref of unresolvedRefs) {
+            const idx = ref.indexOf('#');
+            const base = idx >= 0 ? ref.slice(0, idx) : ref;
+            if (!base) continue;
+            if (!resolverRegistry.get(base)) {
+              unresolved.push(ref);
+            }
+          }
+          unresolvedRefs = unresolved;
+        }
+        if (unresolvedRefs.length > 0) {
           const classification: ExternalRefClassification = {
-            extRefs: externalSummary.extRefs,
-            failingRefs: externalSummary.extRefs.slice(),
+            extRefs: unresolvedRefs,
+            failingRefs: unresolvedRefs.slice(),
             exemplar: externalSummary.exemplar,
             skipEligible: false,
             reason: 'no-compile-errors',
@@ -581,14 +491,13 @@ export async function executePipeline(
       planOptions
     );
     // Hydrate planning Ajv with resolver registry for in-planning compiles
-    if (resolverRegistry) {
-      hydrateAjvWithRegistry(
-        planningForCompose,
-        resolverRegistry,
-        resolverRunDiags,
+    if (registryDocs && resolverRegistry) {
+      hydrateSourceAjvFromRegistry(planningForCompose, registryDocs, {
+        ignoreIncompatible: true,
+        notes: resolverRunDiags,
         seenSchemaIds,
-        '2020-12'
-      );
+        targetDialect: '2020-12',
+      });
     }
     const ajvFlags = extractAjvFlags(planningForCompose) as unknown as Record<
       string,
@@ -694,7 +603,17 @@ export async function executePipeline(
     }
   } catch (error) {
     if (error instanceof ExternalRefValidationError) {
-      artifacts.validationDiagnostics = [error.diagnostic];
+      const combined: DiagnosticEnvelope[] = [error.diagnostic];
+      if (resolverRunDiags && resolverRunDiags.length > 0) {
+        for (const note of resolverRunDiags) {
+          combined.push({
+            code: note.code,
+            canonPath: note.canonPath,
+            details: note.details,
+          });
+        }
+      }
+      artifacts.validationDiagnostics = combined;
     }
     const stageError = toPipelineStageError('compose', error);
     stages.compose = {
@@ -1002,7 +921,8 @@ function createDefaultValidate(
   schemaForSourceAjvOverride?: unknown,
   resolverRegistry?: ResolutionRegistry,
   resolverRunDiags?: ResolverDiagnosticNote[],
-  seenSchemaIds?: Map<string, string>
+  seenSchemaIds?: Map<string, string>,
+  registryDocs?: RegistryDoc[]
 ): StageRunners['validate'] {
   return async (items, schema, options) => {
     const planOptions = pipelineOptions.generate?.planOptions;
@@ -1043,17 +963,17 @@ function createDefaultValidate(
         planOptions
       );
       if (
+        registryDocs &&
         resolverRegistry &&
         seenSchemaIds &&
         resolved.resolver.hydrateFinalAjv === true
       ) {
-        hydrateAjvWithRegistry(
-          ajv,
-          resolverRegistry,
-          resolverRunDiags,
+        hydrateSourceAjvFromRegistry(ajv, registryDocs, {
+          ignoreIncompatible: true,
+          notes: resolverRunDiags,
           seenSchemaIds,
-          dialect
-        );
+          targetDialect: dialect,
+        });
       }
       return ajv;
     };
