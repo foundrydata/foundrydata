@@ -1,6 +1,8 @@
 /* eslint-disable max-depth */
 /* eslint-disable max-lines-per-function */
 
+import os from 'node:os';
+import path from 'node:path';
 import { canonicalizeCacheDir } from './cache-store.js';
 import { ResolutionRegistry } from './registry.js';
 import {
@@ -53,6 +55,24 @@ export interface ResolveAllExternalRefsResult {
   cacheDir?: string;
 }
 
+function anonymizeCacheDirForDiagnostics(
+  cacheDir: string | undefined
+): string | null {
+  if (!cacheDir) return null;
+  const home = typeof os.homedir === 'function' ? os.homedir() : undefined;
+  if (!home) return cacheDir;
+
+  if (!cacheDir.startsWith(home)) {
+    return cacheDir;
+  }
+
+  const suffix = cacheDir.slice(home.length).replace(/^[\\/]/, '');
+  if (!suffix) return '~';
+
+  const normalizedSuffix = suffix.split(path.sep).join('/');
+  return `~/${normalizedSuffix}`;
+}
+
 /**
  * Optional pre-pipeline resolver (Extension R1).
  *
@@ -83,6 +103,7 @@ export async function resolveAllExternalRefs(
     options.cacheDir !== undefined
       ? canonicalizeCacheDir(options.cacheDir)
       : undefined;
+  const cacheDirForDiag = anonymizeCacheDirForDiagnostics(cacheDir);
 
   // Always emit a run-level strategies note, even when no external refs are
   // present or no network fetch is attempted.
@@ -91,7 +112,7 @@ export async function resolveAllExternalRefs(
     canonPath: '#',
     details: {
       strategies,
-      cacheDir: cacheDir ?? null,
+      cacheDir: cacheDirForDiag,
     },
   });
 
