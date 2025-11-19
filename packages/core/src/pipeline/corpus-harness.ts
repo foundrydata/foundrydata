@@ -4,7 +4,12 @@ import { resolve, relative, join } from 'node:path';
 import { executePipeline } from './orchestrator.js';
 import type { PipelineOptions, PipelineResult } from './types.js';
 import type { PlanOptions } from '../types/options.js';
-import { DIAGNOSTIC_CODES, type DiagnosticCode } from '../diag/codes.js';
+import {
+  DIAGNOSTIC_CODES,
+  getDiagnosticPhase,
+  type DiagnosticCode,
+  type DiagnosticPhase,
+} from '../diag/codes.js';
 import type { DiagnosticEnvelope } from '../diag/validate.js';
 import {
   collectAllDiagnosticsFromPipeline,
@@ -51,6 +56,17 @@ export interface CorpusSchemaResult {
   instancesValid: number;
   unsat: boolean;
   failFast: boolean;
+  /**
+   * Optional stage where the first fail-fast diagnostic became effective.
+   * When multiple fail-fast diagnostics are present, this reflects the
+   * furthest stage reached (e.g., `validate` for SCHEMA_INTERNAL_REF_MISSING).
+   */
+  failFastStage?: DiagnosticPhase;
+  /**
+   * Optional diagnostic code that caused the fail-fast classification.
+   * Mirrors the `code` field from the underlying DiagnosticEnvelope.
+   */
+  failFastCode?: DiagnosticCode;
   diagnostics: DiagnosticEnvelope[];
   metrics?: CorpusSchemaMetrics;
   caps?: CorpusSchemaCaps;
@@ -199,6 +215,7 @@ async function runSingleSchema(
   return buildSchemaResult(config, options, pipelineResult);
 }
 
+// eslint-disable-next-line max-lines-per-function, complexity
 function buildSchemaResult(
   config: CorpusSchemaConfig,
   options: CorpusRunOptions,
@@ -227,6 +244,17 @@ function buildSchemaResult(
     (diag) => isUnsatOrFailFastCode(diag.code) && !isUnsatCode(diag.code)
   );
 
+  let failFastStage: DiagnosticPhase | undefined;
+  let failFastCode: DiagnosticCode | undefined;
+  if (failFastDiagnostics.length > 0) {
+    const last = failFastDiagnostics[failFastDiagnostics.length - 1]!;
+    failFastCode = last.code;
+    const phase = getDiagnosticPhase(last.code);
+    if (phase) {
+      failFastStage = phase;
+    }
+  }
+
   const caps = computeCaps(diagnostics);
   const metrics = extractMetrics(pipelineResult);
 
@@ -238,6 +266,8 @@ function buildSchemaResult(
     instancesValid,
     unsat: unsatDiagnostics.length > 0,
     failFast: failFastDiagnostics.length > 0,
+    failFastStage,
+    failFastCode,
     diagnostics,
     metrics,
     caps,
