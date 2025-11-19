@@ -20,7 +20,7 @@ export const apFalseUnsafePatternSchema = {
   additionalProperties: false,
   required: ['id'],
   patternProperties: {
-    '.*': { type: 'string' },
+    '^(?=x).+$': { type: 'string' },
   },
 } as const;
 
