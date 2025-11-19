@@ -13,6 +13,12 @@ import {
   type PlanOptions,
   type ResolvedOptions,
 } from '../types/options.js';
+import {
+  detectDialect,
+  getCanonicalMetaUri,
+  getDialectMetaSynonyms,
+  type Dialect,
+} from '../dialect/detectDialect.js';
 
 export type JsonSchemaDialect =
   | 'draft-04'
@@ -24,26 +30,11 @@ export type JsonSchemaDialect =
 const requireForDraft = createRequire(import.meta.url);
 
 const CANONICAL_META_IDS: Record<JsonSchemaDialect, readonly string[]> = {
-  'draft-04': [
-    'http://json-schema.org/draft-04/schema',
-    'https://json-schema.org/draft-04/schema',
-  ],
-  'draft-06': [
-    'http://json-schema.org/draft-06/schema',
-    'https://json-schema.org/draft-06/schema',
-  ],
-  'draft-07': [
-    'http://json-schema.org/draft-07/schema',
-    'https://json-schema.org/draft-07/schema',
-  ],
-  '2019-09': [
-    'http://json-schema.org/draft/2019-09/schema',
-    'https://json-schema.org/draft/2019-09/schema',
-  ],
-  '2020-12': [
-    'http://json-schema.org/draft/2020-12/schema',
-    'https://json-schema.org/draft/2020-12/schema',
-  ],
+  'draft-04': getDialectMetaSynonyms('draft-04'),
+  'draft-06': getDialectMetaSynonyms('draft-06'),
+  'draft-07': getDialectMetaSynonyms('draft-07'),
+  '2019-09': getDialectMetaSynonyms('2019-09'),
+  '2020-12': getDialectMetaSynonyms('2020-12'),
 };
 
 const canonicalMetaCache = new Map<JsonSchemaDialect, Set<string>>();
@@ -206,9 +197,20 @@ function createAjvByDialect(
         const draft06Meta = requireForDraft(
           'ajv/dist/refs/json-schema-draft-06.json'
         );
-        // Register the meta-schema once; Ajv normalizes IDs so aliases with
-        // or without "#" resolve to the same schema.
-        ajv.addMetaSchema(draft06Meta);
+        const canonicalIds = CANONICAL_META_IDS['draft-06'] ?? [];
+        if (draft06Meta && typeof draft06Meta === 'object') {
+          for (const id of canonicalIds) {
+            if (!id) continue;
+            if (ajv.getSchema(id)) continue;
+            const alias = {
+              ...(draft06Meta as Record<string, unknown>),
+              $id: id,
+            };
+            ajv.addMetaSchema(alias);
+          }
+        } else {
+          ajv.addMetaSchema(draft06Meta);
+        }
       } catch (err) {
         // If the draft-06 meta-schema cannot be loaded, Ajv will report missing metas on compile.
         console.warn(
@@ -229,13 +231,20 @@ function createAjvByDialect(
       const ajv = new Ajv(flags);
       try {
         const canonicalIds = CANONICAL_META_IDS['draft-07'] ?? [];
-        const hasCanonicalMeta = canonicalIds.some((id) =>
-          id ? Boolean(ajv.getSchema(id)) : false
+        const draft07Meta = requireForDraft(
+          'ajv/dist/refs/json-schema-draft-07.json'
         );
-        if (!hasCanonicalMeta) {
-          const draft07Meta = requireForDraft(
-            'ajv/dist/refs/json-schema-draft-07.json'
-          );
+        if (draft07Meta && typeof draft07Meta === 'object') {
+          for (const id of canonicalIds) {
+            if (!id) continue;
+            if (ajv.getSchema(id)) continue;
+            const alias = {
+              ...(draft07Meta as Record<string, unknown>),
+              $id: id,
+            };
+            ajv.addMetaSchema(alias);
+          }
+        } else {
           ajv.addMetaSchema(draft07Meta);
         }
       } catch (err) {
@@ -251,29 +260,30 @@ function createAjvByDialect(
       const ajv = new Ajv2019(flags) as unknown as Ajv;
       try {
         const canonicalIds = CANONICAL_META_IDS['2019-09'] ?? [];
-        const httpsId = canonicalIds[1] ?? canonicalIds[0];
-        const existing =
-          (httpsId && ajv.getSchema(httpsId)?.schema) ?? undefined;
-        const meta2019 =
-          existing ??
-          requireForDraft('ajv/dist/refs/json-schema-2019-09/schema.json');
-        if (meta2019 && typeof meta2019 === 'object') {
+        const metaId = getCanonicalMetaUri('2019-09');
+        const internal = ajv as unknown as {
+          refs?: Record<string, unknown>;
+        };
+        if (metaId && canonicalIds.length > 0) {
+          if (!internal.refs) internal.refs = {};
           for (const id of canonicalIds) {
-            if (!id) continue;
-            if (ajv.getSchema(id)) continue;
-            const alias = {
-              ...(meta2019 as Record<string, unknown>),
-              $id: id,
-            };
-            ajv.addMetaSchema(alias);
+            if (!id || id === metaId) continue;
+            if (!internal.refs[id]) {
+              internal.refs[id] = metaId;
+            }
           }
         }
       } catch (err) {
-        // If the draft-2019-09 meta-schema cannot be loaded, Ajv will report missing metas on compile.
         console.warn(
           '[foundrydata] warning: failed to load draft-2019-09 meta-schema for Ajv:',
           err instanceof Error ? err.message : String(err)
         );
+      }
+      // Tolerate legacy "id" keywords as annotations under draft-2019-09 as well.
+      try {
+        ajv.removeKeyword('id');
+      } catch {
+        // Ignore if the keyword is not present or cannot be removed.
       }
       return ajv;
     }
@@ -281,21 +291,17 @@ function createAjvByDialect(
       const ajv = new Ajv2020(flags) as unknown as Ajv;
       try {
         const canonicalIds = CANONICAL_META_IDS['2020-12'] ?? [];
-        const httpsId = canonicalIds[1] ?? canonicalIds[0];
-        const existing =
-          (httpsId && ajv.getSchema(httpsId)?.schema) ?? undefined;
-        const meta2020 =
-          existing ??
-          requireForDraft('ajv/dist/refs/json-schema-2020-12/schema.json');
-        if (meta2020 && typeof meta2020 === 'object') {
+        const metaId = getCanonicalMetaUri('2020-12');
+        const internal = ajv as unknown as {
+          refs?: Record<string, unknown>;
+        };
+        if (metaId && canonicalIds.length > 0) {
+          if (!internal.refs) internal.refs = {};
           for (const id of canonicalIds) {
-            if (!id) continue;
-            if (ajv.getSchema(id)) continue;
-            const alias = {
-              ...(meta2020 as Record<string, unknown>),
-              $id: id,
-            };
-            ajv.addMetaSchema(alias);
+            if (!id || id === metaId) continue;
+            if (!internal.refs[id]) {
+              internal.refs[id] = metaId;
+            }
           }
         }
       } catch (err) {
@@ -303,6 +309,14 @@ function createAjvByDialect(
           '[foundrydata] warning: failed to load draft-2020-12 meta-schema for Ajv:',
           err instanceof Error ? err.message : String(err)
         );
+      }
+      // For draft-2020-12, treat legacy "id" as a no-op annotation if present.
+      try {
+        (
+          ajv as unknown as { removeKeyword?: (k: string) => void }
+        ).removeKeyword?.('id');
+      } catch {
+        // Ignore if removal is not supported.
       }
       return ajv as unknown as Ajv;
     }
@@ -456,34 +470,11 @@ function stripBundledCanonicalMetas(
 }
 
 export function detectDialectFromSchema(schema: unknown): JsonSchemaDialect {
-  if (schema && typeof schema === 'object') {
-    const declared = (schema as Record<string, unknown>)['$schema'];
-    if (typeof declared === 'string') {
-      const normalized = normalizeMetaIdentifier(declared);
-      const lowered = declared.trim().toLowerCase();
-      // 1) Exact match on canonical meta IDs (normalized)
-      for (const dial of Object.keys(
-        CANONICAL_META_IDS
-      ) as JsonSchemaDialect[]) {
-        const cache = getCanonicalMetaSet(dial);
-        if (cache.has(normalized)) {
-          return dial;
-        }
-      }
-      // 2) Historical fallback: generic .../schema or .../schema#
-      if (normalized.endsWith('/schema')) {
-        return 'draft-04';
-      }
-      // 3) Explicit draft markers
-      if (lowered.includes('2019-09') || lowered.includes('draft-2019')) {
-        return '2019-09';
-      }
-      if (lowered.includes('draft-07')) return 'draft-07';
-      if (lowered.includes('draft-06')) return 'draft-06';
-      if (lowered.includes('draft-04')) return 'draft-04';
-    }
+  const dialect = detectDialect(schema as unknown as Record<string, unknown>);
+  if (dialect === 'unknown') {
+    return '2020-12';
   }
-  return '2020-12';
+  return dialect as Exclude<Dialect, 'unknown'>;
 }
 
 export function prepareSchemaForSourceAjv(

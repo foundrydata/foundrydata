@@ -1622,7 +1622,10 @@ read‑only registry; core phases still perform no I/O.
 ## 12) Draft Handling
 
 <a id="s12-detection"></a>
-* **Detection** — `$schema` + AJV draft settings.
+* **Detection (normative).** Determine the schema dialect primarily from `$schema`. When `$schema` is absent,
+  apply feature‑based heuristics without I/O: `prefixItems` ⇒ 2020‑12; `$defs` ⇒ 2019‑09+; presence of `if/then/else` or
+  `const` without `$defs` ⇒ at least draft‑07; legacy `id` without `$id` and no `$defs` ⇒ draft‑06 (or draft‑04 when clear).
+  Implementations **MUST** treat this detection as a pure function of the input bytes (deterministic).
 <a id="s12-ajv-class-selection"></a>
 * **Ajv class selection (normative).** Compile the **original schema** with the Ajv class that matches its dialect:
   - draft‑06 / draft‑07 → `new Ajv()` **with the corresponding meta‑schemas added** if `$schema` requires them;
@@ -1682,10 +1685,23 @@ Two distinct AJV instances/configs:
    * `validateFormats:false` (**project default**; **AJV default is `true`**). Optional: `validateFormats:true` with `ajv-formats`.
    * `multipleOfPrecision:<integer>` — MUST be set to the same integer value as `PlanOptions.rational.decimalPrecision` whenever `rational.fallback` is `'decimal'` or `'float'`. This guarantees that the ε‑based acceptance rule for `multipleOf` in generation/repair matches Ajv’s validator (see §8).
    * **Ajv class:** `Ajv` / `Ajv2019` / `Ajv2020` / `ajv-draft-04` **as per §12** (match the schema dialect).
-   **Hydration from resolver registry (normative).** When a non‑empty §4 registry is available and
-   `resolver.hydrateFinalAjv !== false`, the implementation **MUST** add registry documents to this **Source AJV**
-   via `addSchema` **before** `compile(original)`. It **MUST** first add any required meta‑schemas for each document’s dialect,
-   and **MUST** ignore documents whose dialect is incompatible with the Source AJV class. No network I/O is performed.
+
+   **Meta‑schema preload (normative).** Before compiling the original schema, the **Source AJV** **MUST** have the
+   meta‑schema of the detected dialect loaded. For draft‑06 and draft‑07, implementations **MUST** register the official
+   meta‑schemas via `addMetaSchema(...)` and **SHOULD** register common URI synonyms (http/https, with/without `#`) to avoid
+   spuriously missing keys.
+   **Hydration order (normative).** When a non‑empty §4 registry is available and `resolver.hydrateFinalAjv !== false`,
+   the implementation **MUST** preload the required meta‑schemas for **each registry document’s dialect** and **then**
+   add documents via `addSchema` **before** `compile(original)`. Incompatible dialects **MUST** be ignored (non‑fatal note),
+   and duplicates **MUST** be skipped by normalized URI/`$id`. Core phases perform **no** network I/O.
+
+## Extension R2 — Dialect & Meta‑schema auto‑hydration (normative)
+**Goal.** Eliminate compile failures caused solely by missing meta‑schemas and ensure the Source AJV’s class/flags match
+the original schema’s dialect.
+**DoD.** (a) Dialect detection implemented as above; (b) Source AJV meta‑schema preloaded for the detected dialect;
+(c) Registry hydration preloads meta‑schemas per document and ignores incompatible dialects; (d) With external `$ref`
+disabled or resolved, final validation runs (`diag.metrics.validationsPerRow ≥ 1`) and no
+`VALIDATION_COMPILE_ERROR: no schema with key or ref "<dialect-uri>"` is produced.
 
 2. <a id="s13-planning-ajv"></a>**Planning/Generation**
 
@@ -2334,6 +2350,11 @@ anchoring and complexity scans and guarantees byte‑for‑byte reproducibility.
 * Repair actions (idempotence; error reduction; rational snapping).
   **Note (clarification).** The labels below are **test case IDs** (not diagnostic codes).
   * **Test ID: RAT_EPSILON_LOG_EXCLUSIVE_FLOAT** — Given schema `{ "type":"number","exclusiveMinimum":0 }`, when repairing input value `0`, verify a `exclusiveMinimum` repair action includes `details.epsilon:"1e-12"` (with default `decimalPrecision`).
+* **R2 integration.**
+  - **R2‑META‑2019‑OK.** A schema requiring 2019‑09 (e.g., docker compose spec) compiles and validates without a
+    missing‑meta‑schema error; final validation executes.
+  - **R2‑ASYNCAPI‑STRICT‑UNCHANGED.** AsyncAPI 3.0 in Strict mode still reports unresolved external `$ref` (no network),
+    but no meta‑schema related compile error occurs.
   * **Test ID: RAT_DELTA_LOG_EXCLUSIVE_INTEGER** — Given schema `{ "type":"integer","exclusiveMinimum":0 }`, when repairing input value `0`, verify a `exclusiveMinimum` repair action includes either `details.delta:1` (optional) or that `details.epsilon` is absent.
 
 * Pointer mapping (longest‑prefix reverse map).
