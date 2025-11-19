@@ -90,8 +90,9 @@ evaluated over the Unicode (UTF‑16) alphabet.
 * `CoverageIndex.enumerate(k)` **MUST** be exposed **only if** finiteness is proven. Enumeration **MUST** use **BFS** with **shortest‑length first**, then **UTF‑16 order**.
 * **Prohibition:** `enumerate()` **MUST NOT** be exposed when finiteness is due **solely** to a raw `propertyNames.enum` (no rewrite).
 
-#### 4.3.3 Early‑UNSAT Proofs
+#### 4.3.3 Safe‑proof fallback & Early‑UNSAT Proofs
 
+* **Safe‑proof fallback (Strict & Lax):** When presence pressure holds, the planner MUST first attempt a safe‑only cover (anchored‑safe & non‑capped inputs only). If non‑empty, proceed with this cover and attach a coverage certificate to diagnostics. If empty, emit early‑UNSAT.
 * If ( A = ∅ ) **and** there is presence pressure, the planner **MUST** emit `UNSAT_AP_FALSE_EMPTY_COVERAGE` with a proof summary.
 * If a `required` name is **rejected** by ( A ) → `UNSAT_REQUIRED_VS_PROPERTYNAMES`.
 * If ( A ) is **finite** and (|A| < minProperties) → `UNSAT_MINPROPERTIES_VS_COVERAGE`.
@@ -100,6 +101,10 @@ evaluated over the Unicode (UTF‑16) alphabet.
 
 * **Strict:** if non‑emptiness of coverage would **require** a **non‑safe or capped** pattern (including synthetic) **and** there is presence pressure, the planner **MUST** emit `AP_FALSE_UNSAFE_PATTERN` (fatal) **after** attempting a safe‑only proof.
 * **Lax:** same code as **warning** with conservative exclusion. Safe‑only proofs **MUST** be attempted first.
+
+#### 4.3.5 Coverage certificate (non‑normative payload)
+When the safe‑proof path is taken, implementations SHOULD attach to `planDiag.details.safeProof`:
+`{ used:boolean, finite:boolean, states:number, witnesses?:string[], capsHit?:boolean }`.
 
 ---
 
@@ -314,10 +319,9 @@ Strict: `AP_FALSE_UNSAFE_PATTERN` (fatal). Lax: warn + conservative exclusion.
 
 ## 10. Non‑Normative Implementation Notes
 
-* **Regex → NFA → DFA:** restricted grammar (character classes, groups, alternation, `?*+`, bounded quantifiers); subset construction with state caps; product automata for `allOf`.
+* **Regex → NFA → DFA:** restricted grammar (character classes, groups, alternation, `?*+`, bounded quantifiers); subset construction with explicit state caps; product automata for `allOf`. Non‑anchored, look‑around, or capped patterns act as guards only (not used to build coverage DFAs).
 * **Ordering:** transitions by increasing UTF‑16 code points; one BFS to drive both `has` (reachability) and `enumerate` (witnesses).
 * **Local SMT:** QF_LIA (integers) with rationals for `multipleOf`; strict timeout; clear fallback and `SOLVER_TIMEOUT` diagnostics.
 * **Observability:** `nameDfaSummary` reports state counts and finiteness; do **not** export the full graph.
 
 ---
-
