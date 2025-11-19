@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { readdir, readFile } from 'node:fs/promises';
 import { resolve, relative, join } from 'node:path';
 
@@ -68,6 +69,31 @@ export interface CorpusSchemaResult {
    * Mirrors the `code` field from the underlying DiagnosticEnvelope.
    */
   failFastCode?: DiagnosticCode;
+  /**
+   * Optional high-level classification of the failure cause, derived from
+   * the combination of diagnostic codes. Intended for human-facing reports
+   * (e.g., to distinguish schema bugs from AJV configuration issues) without
+   * altering the underlying diagnostic envelopes.
+   *
+   * Example values:
+   * - "schema-bug" (e.g., SCHEMA_INTERNAL_REF_MISSING without AJV errors)
+   * - "ajv-config" (e.g., AJV_FLAGS_MISMATCH / VALIDATION_COMPILE_ERROR)
+   */
+  failureCategory?: string;
+  /**
+   * Optional, more granular label for the failure cause.
+   *
+   * Example values:
+   * - "schema-internal-ref"
+   * - "ajv-flags-mismatch"
+   * - "ajv-compile-error"
+   */
+  failureKind?: string;
+  /**
+   * Optional human-readable hint summarizing the failure cause.
+   * This is derived information and has no impact on pipeline behaviour.
+   */
+  failureHint?: string;
   diagnostics: DiagnosticEnvelope[];
   metrics?: CorpusSchemaMetrics;
   caps?: CorpusSchemaCaps;
@@ -258,6 +284,49 @@ function buildSchemaResult(
     }
   }
 
+  // Derive a coarse-grained classification of the failure cause for
+  // human-facing corpus summaries. This does not change diagnostic
+  // semantics; it is purely an interpretation layer on top of the
+  // existing envelopes.
+  let failureCategory: string | undefined;
+  let failureKind: string | undefined;
+  let failureHint: string | undefined;
+  if (failFastDiagnostics.length > 0) {
+    const codes = new Set(allDiagnostics.map((d) => d.code));
+
+    if (
+      codes.has(DIAGNOSTIC_CODES.SCHEMA_INTERNAL_REF_MISSING) &&
+      !codes.has(DIAGNOSTIC_CODES.VALIDATION_COMPILE_ERROR) &&
+      !codes.has(DIAGNOSTIC_CODES.AJV_FLAGS_MISMATCH)
+    ) {
+      failureCategory = 'schema-bug';
+      failureKind = 'schema-internal-ref';
+      const internalRefDiag = allDiagnostics.find(
+        (d) => d.code === DIAGNOSTIC_CODES.SCHEMA_INTERNAL_REF_MISSING
+      );
+      const ref = (internalRefDiag?.details as { ref?: unknown } | undefined)
+        ?.ref;
+      failureHint =
+        typeof ref === 'string'
+          ? `Internal $ref path not found: ${ref}`
+          : 'Internal $ref path not found in schema; Ajv dialect/meta are OK.';
+    } else if (
+      codes.has(DIAGNOSTIC_CODES.AJV_FLAGS_MISMATCH) ||
+      codes.has(DIAGNOSTIC_CODES.VALIDATION_COMPILE_ERROR)
+    ) {
+      failureCategory = 'ajv-config';
+      if (codes.has(DIAGNOSTIC_CODES.AJV_FLAGS_MISMATCH)) {
+        failureKind = 'ajv-flags-mismatch';
+        failureHint =
+          'Ajv source/planning instances disagree on required flags or class; inspect AJV_FLAGS_MISMATCH diagnostics.';
+      } else {
+        failureKind = 'ajv-compile-error';
+        failureHint =
+          'Ajv failed to compile the original schema; inspect VALIDATION_COMPILE_ERROR diagnostics.';
+      }
+    }
+  }
+
   const caps = computeCaps(allDiagnostics);
   const diagnostics = dedupeDiagnosticsForCorpus(allDiagnostics);
   const metrics = extractMetrics(pipelineResult);
@@ -272,6 +341,9 @@ function buildSchemaResult(
     failFast: failFastDiagnostics.length > 0,
     failFastStage,
     failFastCode,
+    failureCategory,
+    failureKind,
+    failureHint,
     diagnostics,
     metrics,
     caps,
