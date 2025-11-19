@@ -147,6 +147,32 @@ export interface PatternWitnessOptions {
 }
 
 /**
+ * Name automaton / property-name enumeration configuration
+ *
+ * Controls bounded BFS search for object property names derived from
+ * patternProperties / propertyNames context.
+ */
+export interface NameEnumOptions {
+  /** Wall-clock budget in milliseconds for a single BFS run (default: 40). */
+  maxMillis?: number;
+  /** Global cap on expanded BFS nodes per run (default: 8000). */
+  maxStates?: number;
+  /** Maximum pending queue size during BFS (default: 16000). */
+  maxQueue?: number;
+  /** Maximum candidate length / depth in characters (default: 64). */
+  maxDepth?: number;
+  /** Maximum number of emitted names per BFS run (default: 32). */
+  maxResults?: number;
+  /**
+   * Optional beam width. When set, BFS may apply a beam-style
+   * prioritization over candidate prefixes based on a scoring
+   * heuristic, while still respecting the other budgets.
+   * Default: 128.
+   */
+  beamWidth?: number;
+}
+
+/**
  * Repair stage configuration
  */
 export interface RepairPlanOptions {
@@ -211,6 +237,9 @@ export interface PlanOptions {
   /** Pattern witness search configuration */
   patternWitness?: PatternWitnessOptions;
 
+  /** Name automaton / property-name enumeration configuration */
+  nameEnum?: NameEnumOptions;
+
   /** Repair-stage configuration */
   repair?: RepairPlanOptions;
 
@@ -268,6 +297,7 @@ export interface ResolvedOptions {
   patternPolicy: Required<PatternPolicyOptions>;
   conditionals: Required<ConditionalsOptions>;
   patternWitness: Required<PatternWitnessOptions>;
+  nameEnum: Required<NameEnumOptions>;
   repair: Required<RepairPlanOptions>;
   resolver: Required<NonNullable<PlanOptions['resolver']>>;
 }
@@ -341,11 +371,18 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
     minThenSatisfaction: 'required-only',
     exclusivityStringTweak: 'preferNul',
   },
-
   patternWitness: {
     alphabet: 'abcdefghijklmnopqrstuvwxyz0123456789_-',
     maxLength: 12,
     maxCandidates: 32768,
+  },
+  nameEnum: {
+    maxMillis: 40,
+    maxStates: 8000,
+    maxQueue: 16000,
+    maxDepth: 64,
+    maxResults: 32,
+    beamWidth: 128,
   },
   repair: {
     mustCoverGuard: true,
@@ -401,6 +438,10 @@ export function resolveOptions(
     patternWitness: {
       ...DEFAULT_OPTIONS.patternWitness,
       ...userOptions.patternWitness,
+    },
+    nameEnum: {
+      ...DEFAULT_OPTIONS.nameEnum,
+      ...userOptions.nameEnum,
     },
     repair: {
       ...DEFAULT_OPTIONS.repair,
@@ -539,6 +580,44 @@ function validateOptions(options: ResolvedOptions): void {
     typeof options.patternWitness.alphabet !== 'string'
   ) {
     throw new Error('patternWitness.alphabet must be a string when provided');
+  }
+
+  // Validate name enumeration options
+  if (
+    options.nameEnum.maxMillis !== undefined &&
+    options.nameEnum.maxMillis <= 0
+  ) {
+    throw new Error('nameEnum.maxMillis must be positive when specified');
+  }
+  if (
+    options.nameEnum.maxStates !== undefined &&
+    options.nameEnum.maxStates <= 0
+  ) {
+    throw new Error('nameEnum.maxStates must be positive when specified');
+  }
+  if (
+    options.nameEnum.maxQueue !== undefined &&
+    options.nameEnum.maxQueue <= 0
+  ) {
+    throw new Error('nameEnum.maxQueue must be positive when specified');
+  }
+  if (
+    options.nameEnum.maxDepth !== undefined &&
+    options.nameEnum.maxDepth <= 0
+  ) {
+    throw new Error('nameEnum.maxDepth must be positive when specified');
+  }
+  if (
+    options.nameEnum.maxResults !== undefined &&
+    options.nameEnum.maxResults <= 0
+  ) {
+    throw new Error('nameEnum.maxResults must be positive when specified');
+  }
+  if (
+    options.nameEnum.beamWidth !== undefined &&
+    options.nameEnum.beamWidth <= 0
+  ) {
+    throw new Error('nameEnum.beamWidth must be positive when specified');
   }
 
   const tweak = options.conditionals.exclusivityStringTweak;

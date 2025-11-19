@@ -36,6 +36,14 @@ export interface MetricsSnapshot {
   repairActionsPerRow?: number;
   evalTraceChecks?: number;
   evalTraceProved?: number;
+  // Name automaton / name enumeration metrics (R3)
+  nameBfsNodesExpanded?: number;
+  nameBfsQueuePeak?: number;
+  nameBeamWidthPeak?: number;
+  nameEnumResults?: number;
+  nameEnumElapsedMs?: number;
+  patternPropsHit?: number;
+  presencePressureResolved?: number;
 }
 
 type MetricsPhaseKey = (typeof METRIC_PHASES)[MetricPhase];
@@ -65,6 +73,13 @@ const DEFAULT_COUNTERS: MetricsSnapshot = {
   p95LatencyMs: 0,
   evalTraceChecks: 0,
   evalTraceProved: 0,
+  nameBfsNodesExpanded: 0,
+  nameBfsQueuePeak: 0,
+  nameBeamWidthPeak: 0,
+  nameEnumResults: 0,
+  nameEnumElapsedMs: 0,
+  patternPropsHit: 0,
+  presencePressureResolved: 0,
 };
 
 export interface MetricsCollectorOptions {
@@ -185,6 +200,58 @@ export class MetricsCollector {
     }
     this.snapshot.patternWitnessTried =
       (this.snapshot.patternWitnessTried ?? 0) + 1;
+  }
+
+  public recordNameAutomatonBfs(metrics: {
+    nodesExpanded?: number;
+    queuePeak?: number;
+    beamWidthUsed?: number;
+    resultsEmitted?: number;
+    elapsedMs?: number;
+  }): void {
+    if (!this.enabled) {
+      return;
+    }
+    if (metrics.nodesExpanded !== undefined) {
+      this.snapshot.nameBfsNodesExpanded =
+        (this.snapshot.nameBfsNodesExpanded ?? 0) + metrics.nodesExpanded;
+    }
+    if (metrics.queuePeak !== undefined) {
+      this.snapshot.nameBfsQueuePeak = Math.max(
+        this.snapshot.nameBfsQueuePeak ?? 0,
+        metrics.queuePeak
+      );
+    }
+    if (metrics.beamWidthUsed !== undefined) {
+      this.snapshot.nameBeamWidthPeak = Math.max(
+        this.snapshot.nameBeamWidthPeak ?? 0,
+        metrics.beamWidthUsed
+      );
+    }
+    if (metrics.resultsEmitted !== undefined) {
+      this.snapshot.nameEnumResults =
+        (this.snapshot.nameEnumResults ?? 0) + metrics.resultsEmitted;
+    }
+    if (metrics.elapsedMs !== undefined) {
+      this.snapshot.nameEnumElapsedMs =
+        (this.snapshot.nameEnumElapsedMs ?? 0) + metrics.elapsedMs;
+    }
+  }
+
+  public addPatternPropsHit(count: number): void {
+    if (!this.enabled) {
+      return;
+    }
+    this.snapshot.patternPropsHit =
+      (this.snapshot.patternPropsHit ?? 0) + count;
+  }
+
+  public markPresencePressureResolved(): void {
+    if (!this.enabled) {
+      return;
+    }
+    this.snapshot.presencePressureResolved =
+      (this.snapshot.presencePressureResolved ?? 0) + 1;
   }
 
   public setCompileMs(durationMs: number): void {

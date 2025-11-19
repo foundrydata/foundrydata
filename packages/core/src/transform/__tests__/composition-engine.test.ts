@@ -283,6 +283,7 @@ describe('CompositionEngine coverage index', () => {
     expect(warnCodes).toContain(
       DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED
     );
+    expect(warnCodes).toContain(DIAGNOSTIC_CODES.NAME_AUTOMATON_BFS_APPLIED);
     expect(result.diag?.caps).toContain(
       DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED
     );
@@ -308,6 +309,8 @@ describe('CompositionEngine coverage index', () => {
     const entry = result.coverageIndex.get('');
     expect(entry).toBeDefined();
     expect(entry?.has('xa')).toBe(true);
+    // Under R3, BFS metrics are recorded even when capped; enumerate
+    // remains unavailable when the budget is exhausted.
     expect(entry?.enumerate).toBeUndefined();
 
     const caps = result.diag?.caps ?? [];
@@ -316,6 +319,7 @@ describe('CompositionEngine coverage index', () => {
     expect(warnCodes).toContain(
       DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED
     );
+    expect(warnCodes).toContain(DIAGNOSTIC_CODES.NAME_AUTOMATON_BFS_APPLIED);
   });
 
   it('treats propertyNames synthetic patterns as coverage contributors', () => {

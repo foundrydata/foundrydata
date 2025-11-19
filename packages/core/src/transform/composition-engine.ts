@@ -19,6 +19,7 @@ import {
   type PlanOptions,
   type ResolvedOptions,
 } from '../types/options.js';
+import type { MetricsCollector } from '../util/metrics.js';
 import type { NormalizeResult, NormalizerNote } from './schema-normalizer.js';
 import { resolveDynamicRefBinding } from '../util/draft.js';
 import { extractExactLiteralAlternatives } from '../util/pattern-literals.js';
@@ -181,6 +182,11 @@ export interface ComposeOptions {
    * `planOptionsSubKey` component will be reused instead of recomputing.
    */
   cacheKeyContext?: CacheKeyContext;
+  /**
+   * Optional metrics collector for recording name automaton and
+   * coverage-related metrics during compose.
+   */
+  metrics?: MetricsCollector;
   planOptions?: Partial<PlanOptions>;
 }
 
@@ -288,6 +294,7 @@ class CompositionEngine {
   private readonly containsIndex = new Map<string, ContainsNeed[]>();
   private readonly coverageRegexWarnKeys = new Set<string>();
   private readonly localSmtEnabled: boolean;
+  private readonly metrics?: MetricsCollector;
   private nameDfaSummary?: {
     states: number;
     finite: boolean;
@@ -317,6 +324,7 @@ class CompositionEngine {
     this.resolvedOptions = resolved;
     this.planOptionsSnapshot = resolved as unknown as PlanOptions;
     this.localSmtEnabled = resolved.enableLocalSMT === true;
+    this.metrics = options?.metrics;
     // Initialize memo cache: external if provided, else bounded internal LRU per SPEC §14
     if (options?.memoCache) {
       this.memoCache = options.memoCache;
@@ -719,6 +727,21 @@ class CompositionEngine {
       return;
     }
 
+    // R3 metrics: track presence of patternProperties participating in
+    // name-space exploration for this object node.
+    if (this.metrics) {
+      const rawPatternProps =
+        schema.patternProperties && typeof schema.patternProperties === 'object'
+          ? (schema.patternProperties as Record<string, unknown>)
+          : undefined;
+      const patternCount = rawPatternProps
+        ? Object.keys(rawPatternProps).length
+        : 0;
+      if (patternCount > 0) {
+        this.metrics.addPatternPropsHit(patternCount);
+      }
+    }
+
     const conjuncts = this.collectCoverageConjuncts(schema, canonPath);
     if (conjuncts.length === 0) {
       // No conjunct enforced AP:false in the effective view; vacuous coverage.
@@ -1039,28 +1062,32 @@ class CompositionEngine {
       // Provable iff there are NO coverage sources (no named properties, no
       // anchored-safe patternProperties, no §7 synthetic patterns). In this
       // case, short-circuit as unsat and emit UNSAT_AP_FALSE_EMPTY_COVERAGE.
+      // Under R3, when coverage pressure comes only from gating patterns
+      // (propertyNames.*) without any must-cover sources, the absence of
+      // coverage is no longer treated as a fatal unsat – enumeration may
+      // still synthesize suitable names. We therefore keep only the
+      // approximation + hint in that case.
       if (!hasAnyCoverageSource) {
-        this.addFatal(
-          canonPath,
-          DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
-          buildUnsatDetails(schema)
-        );
-        // If raw propertyNames gating is present, surface approximation + hint
-        // for observability; the hint reason stays coverageUnknown per SPEC while
-        // the approximation details record presencePressure.
         const hasAnyGating = conjuncts.some(
           (conj) => conj.gatingEnum || conj.gatingPattern
         );
-        if (hasAnyGating) {
-          this.addApproximation(canonPath, 'presencePressure');
-          this.addUnsatHint({
-            code: DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
+        if (!hasAnyGating) {
+          this.addFatal(
             canonPath,
-            provable: false,
-            reason: 'coverageUnknown',
-            details: buildUnsatDetails(schema),
-          });
+            DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
+            buildUnsatDetails(schema)
+          );
+          return;
         }
+        // Gating-only: surface approximation + hint but avoid fatal UNSAT.
+        this.addApproximation(canonPath, 'presencePressure');
+        this.addUnsatHint({
+          code: DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
+          canonPath,
+          provable: false,
+          reason: 'coverageUnknown',
+          details: buildUnsatDetails(schema),
+        });
         return;
       }
 
@@ -1102,6 +1129,13 @@ class CompositionEngine {
       }
 
       this.addApproximation(canonPath, 'presencePressure');
+      return;
+    }
+
+    // R3 metrics: record when presence pressure was resolved without
+    // resorting to UNSAT_AP_FALSE_EMPTY_COVERAGE.
+    if (safeIntersectionExists && presencePressure) {
+      this.metrics?.markPresencePressureResolved();
     }
   }
 
@@ -1554,11 +1588,48 @@ class CompositionEngine {
         return undefined;
       }
 
-      const { maxLength, maxCandidates } = this.resolvedOptions.patternWitness;
+      const patternWitness = this.resolvedOptions.patternWitness;
+      const nameEnum = this.resolvedOptions.nameEnum;
+      const maxDepth =
+        nameEnum.maxDepth !== undefined
+          ? Math.max(1, Math.min(nameEnum.maxDepth, patternWitness.maxLength))
+          : patternWitness.maxLength;
+      const maxResults =
+        nameEnum.maxResults !== undefined && nameEnum.maxResults > 0
+          ? Math.min(nameEnum.maxResults, ENUM_CAP)
+          : ENUM_CAP;
+      // Candidate budget for coverage BFS is still derived from
+      // patternWitness.maxCandidates so existing knobs and diagnostics
+      // remain valid; nameEnum caps control additional R3 dimensions.
+      const maxCandidates = patternWitness.maxCandidates;
 
-      const bfsResult = bfsEnumerate(product.dfa, ENUM_CAP, {
-        maxLength,
+      const bfsResult = bfsEnumerate(product.dfa, maxResults, {
+        maxLength: maxDepth,
         maxCandidates,
+      });
+
+      // Record R3 metrics for corpus harness when metrics are available.
+      this.metrics?.recordNameAutomatonBfs({
+        nodesExpanded: bfsResult.nodesExpanded,
+        queuePeak: bfsResult.queuePeak,
+        beamWidthUsed: nameEnum.beamWidth,
+        resultsEmitted: bfsResult.words.length,
+        elapsedMs: bfsResult.elapsedMs,
+      });
+
+      this.addWarn(canonPath, DIAGNOSTIC_CODES.NAME_AUTOMATON_BFS_APPLIED, {
+        budget: {
+          maxMillis: nameEnum.maxMillis,
+          maxStates: nameEnum.maxStates,
+          maxQueue: nameEnum.maxQueue,
+          maxDepth,
+          maxResults,
+          beamWidth: nameEnum.beamWidth,
+        },
+        nodesExpanded: bfsResult.nodesExpanded,
+        queuePeak: bfsResult.queuePeak,
+        resultsEmitted: bfsResult.words.length,
+        elapsedMs: bfsResult.elapsedMs,
       });
 
       if (bfsResult.capped) {

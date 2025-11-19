@@ -10,6 +10,14 @@ export interface CorpusSchemaMetrics {
   validateMs?: number;
   validationsPerRow?: number;
   repairPassesPerRow?: number;
+  // Name automaton / name enumeration metrics (R3)
+  nameBfsNodesExpanded?: number;
+  nameBfsQueuePeak?: number;
+  nameBeamWidthPeak?: number;
+  nameEnumResults?: number;
+  nameEnumElapsedMs?: number;
+  patternPropsHit?: number;
+  presencePressureResolved?: boolean;
 }
 
 export interface CorpusSchemaCaps {

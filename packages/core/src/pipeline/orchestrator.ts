@@ -527,6 +527,8 @@ export async function executePipeline(
       selectorMemoKeyFn: registryFingerprint
         ? (_: string, __: number) => registryFingerprint as string
         : undefined,
+      // Propagate pipeline metrics collector into compose for R3 metrics.
+      metrics,
     };
     // Apply Lax planning-time stubs when configured and unresolved externals are likely
     const mode = options.mode ?? 'strict';

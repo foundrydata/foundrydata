@@ -169,6 +169,25 @@ When the safe‑proof path is taken, implementations SHOULD attach to `planDiag.
 * **Name automaton summary (optional):** `nameDfaSummary:{ states, finite, capsHit? }` for observability (no graph export).
 * **Metrics:** per‑phase durations, `validationsPerRow`, `repairPassesPerRow`, p50/p95 latency, memory peak, and **cap hits** (regex/automata/SMT).
 
+## Name automaton enumeration
+
+### Bounded BFS
+We traverse the character-state graph with a bounded breadth-first search. Budgets limit wall-clock time, expanded states, queue size, depth, and the number of emitted strings. A beam option prioritizes higher-scoring prefixes when the branching factor is large.
+
+### Targeted strategy
+Hints are computed from schema constraints:
+- **Anchoring**: anchored patterns (`^...$`) are treated as strict completions.
+- **Length**: `minLength`/`maxLength` set depth bounds.
+- **Character classes**: common whitelists (e.g., `[A-Za-z0-9._-]`) guide the next-character function.
+- **Negative lookaheads**: e.g., `(?!CloudFormation)` is enforced by penalizing and filtering offending prefixes.
+- **patternProperties** with `minProperties`: the enumerator round-robins patterns and synthesizes the required number of distinct names within budget.
+
+### Metrics & diagnostics
+The enumerator reports expansions, queue peaks, emitted results, and elapsed time. These flow into the corpus harness for before/after comparisons.
+
+### Interaction with coverage
+If presence pressure exists (e.g., `minProperties ≥ 1` and no concrete property set), the enumerator attempts to satisfy the minimum cardinality first. If other independent constraints still fail, diagnostics remain to surface the true blocker.
+
 ---
 
 ## 6. Non‑Functional Constraints

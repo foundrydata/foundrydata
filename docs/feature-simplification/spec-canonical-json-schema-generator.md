@@ -2915,6 +2915,40 @@ export function toOriginalByWalk(canonPath: string, mapCanonToOrig: Map<string,s
 * **[SemVer-2.0.0]** — *Semantic Versioning 2.0.0.*
   **Used for:** versioning of this specification and the software.
 
+## R3 — Automata scaling: bounded BFS & targeted enumeration
+
+### Motivation
+Real-world schemas expose extremely large key spaces for object property names (e.g., Docker Compose services, volumes, secrets, configs). A naive breadth-first exploration of the name automaton regularly hits internal complexity caps, leading to slow runs and empty coverage under presence pressure.
+
+### Design
+We introduce a bounded BFS enumerator with strict budgets (time, states, queue size, depth, and max results). On top of it, a targeted enumeration strategy derives hints from JSON Schema (`pattern`, `patternProperties`, `propertyNames`, `minProperties`, length bounds). The strategy prioritizes anchored patterns, respects negative lookaheads (e.g., disallowing certain prefixes), and round-robins across multiple `patternProperties` to diversify coverage.
+
+### Guarantees
+- Enumeration is strictly budgeted (no unbounded search).
+- If an object exposes only `patternProperties` and `minProperties ≥ 1`, the generator attempts to synthesize the minimum number of distinct names within budget.
+- Negative lookaheads are honored via post-filters and penalties in the candidate scorer.
+
+### Configuration (defaults)
+```yaml
+nameEnum:
+  maxMillis: 40
+  maxStates: 8000
+  maxQueue: 16000
+  maxDepth: 64
+  maxResults: 32
+  beamWidth: 128
+```
+
+### Diagnostics
+New diagnostics:
+- `NAME_AUTOMATON_BFS_APPLIED` (budgets, expansions, queue peak, results, elapsed)
+- `NAME_AUTOMATON_BEAM_APPLIED` (beam width, scores)
+- `TARGET_ENUM_NEGATIVE_LOOKAHEADS` (disallowed prefixes)
+- `TARGET_ENUM_ROUNDROBIN_PATTERNPROPS` (patterns hit, distinct names)
+
+### Non-goals
+This change does not address external `$ref` resolution or meta-schema hydration (covered by R1/R2).
+
 <a id="s24-informative"></a>
 ### 24.2 Informative References
 
