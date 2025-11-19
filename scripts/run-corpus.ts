@@ -192,7 +192,13 @@ async function main(): Promise<void> {
   for (const entry of report.results) {
     const caps = entry.caps ?? {};
     writeLine(
-      `- [${entry.id}] tried=${entry.instancesTried} valid=${entry.instancesValid} unsat=${entry.unsat ? 'yes' : 'no'} failFast=${entry.failFast ? 'yes' : 'no'} regexCapped=${caps.regexCapped ?? 0} nameAutomatonCapped=${caps.nameAutomatonCapped ?? 0} smtTimeouts=${caps.smtTimeouts ?? 0}`
+      `- [${entry.id}] tried=${entry.instancesTried} valid=${entry.instancesValid} unsat=${entry.unsat ? 'yes' : 'no'} failFast=${entry.failFast ? 'yes' : 'no'}${entry.failFast && entry.failFastStage ? ` (stage=${entry.failFastStage}` : ''}${
+        entry.failFast && entry.failFastCode
+          ? `${entry.failFastStage ? ' ' : ' ('}code=${entry.failFastCode})`
+          : entry.failFast && entry.failFastStage
+            ? ')'
+            : ''
+      } regexCapped=${caps.regexCapped ?? 0} nameAutomatonCapped=${caps.nameAutomatonCapped ?? 0} smtTimeouts=${caps.smtTimeouts ?? 0}`
     );
   }
 

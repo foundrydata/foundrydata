@@ -34,6 +34,16 @@ export interface CorpusSchemaResult {
   instancesValid: number;
   unsat: boolean;
   failFast: boolean;
+  /**
+   * Optional stage where the fail-fast condition became effective.
+   * When multiple fail-fast diagnostics are present, this reflects
+   * the furthest pipeline phase reached.
+   */
+  failFastStage?: 'normalize' | 'compose' | 'generate' | 'repair' | 'validate';
+  /**
+   * Optional diagnostic code responsible for the fail-fast classification.
+   */
+  failFastCode?: DiagnosticEnvelope['code'];
   diagnostics: DiagnosticEnvelope[];
   metrics?: CorpusSchemaMetrics;
   caps?: CorpusSchemaCaps;
