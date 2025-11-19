@@ -11,6 +11,8 @@
  *
  * This module walks such an automaton and produces the k shortest witness
  * words, ordered first by length and then by UTF-16 lexicographic order.
+ * R3 extends this with lightweight metrics so callers can feed corpus
+ * harness summaries without changing the core API shape.
  */
 
 interface AutomatonState {
@@ -44,6 +46,12 @@ export interface BfsResult {
   tried: number;
   /** True when the candidate budget was exhausted before completion. */
   capped: boolean;
+  /** Total number of BFS nodes (queue entries) expanded. */
+  nodesExpanded: number;
+  /** Maximum queue size observed during the search. */
+  queuePeak: number;
+  /** Approximate wall-clock duration of the search in milliseconds. */
+  elapsedMs: number;
 }
 
 function normalizeAutomaton(automaton: {
@@ -81,24 +89,44 @@ export function bfsEnumerate(
   const maxCandidates = config.maxCandidates;
 
   if (limit <= 0 || maxLength <= 0 || maxCandidates <= 0) {
-    return { words: [], tried: 0, capped: maxCandidates <= 0 };
+    return {
+      words: [],
+      tried: 0,
+      capped: maxCandidates <= 0,
+      nodesExpanded: 0,
+      queuePeak: 0,
+      elapsedMs: 0,
+    };
   }
 
   const core = normalizeAutomaton(automaton);
   const startState = core.states[core.start];
   if (!startState) {
-    return { words: [], tried: 0, capped: false };
+    return {
+      words: [],
+      tried: 0,
+      capped: false,
+      nodesExpanded: 0,
+      queuePeak: 0,
+      elapsedMs: 0,
+    };
   }
 
   const results: string[] = [];
   const queue: Array<{ stateId: number; word: string }> = [];
   let tried = 0;
   let capped = false;
+  let nodesExpanded = 0;
+  let queuePeak = 0;
+
+  const startTime = Date.now();
 
   queue.push({ stateId: core.start, word: '' });
+  queuePeak = 1;
 
   while (queue.length > 0) {
     const current = queue.shift()!;
+    nodesExpanded += 1;
     const state = core.states[current.stateId];
     if (!state) continue;
 
@@ -133,6 +161,9 @@ export function bfsEnumerate(
 
       queue.push({ stateId: targetId, word: nextWord });
       tried += 1;
+      if (queue.length > queuePeak) {
+        queuePeak = queue.length;
+      }
 
       if (tried >= maxCandidates) {
         capped = true;
@@ -142,5 +173,14 @@ export function bfsEnumerate(
     }
   }
 
-  return { words: results, tried, capped };
+  const elapsedMs = Date.now() - startTime;
+
+  return {
+    words: results,
+    tried,
+    capped,
+    nodesExpanded,
+    queuePeak,
+    elapsedMs,
+  };
 }

@@ -27,6 +27,14 @@ export interface CorpusSchemaMetrics {
   validateMs?: number;
   validationsPerRow?: number;
   repairPassesPerRow?: number;
+  // Name automaton / name enumeration metrics (R3)
+  nameBfsNodesExpanded?: number;
+  nameBfsQueuePeak?: number;
+  nameBeamWidthPeak?: number;
+  nameEnumResults?: number;
+  nameEnumElapsedMs?: number;
+  patternPropsHit?: number;
+  presencePressureResolved?: boolean;
 }
 
 export interface CorpusSchemaCaps {
@@ -251,6 +259,16 @@ function extractMetrics(
     validateMs: m.validateMs,
     validationsPerRow: m.validationsPerRow,
     repairPassesPerRow: m.repairPassesPerRow,
+    nameBfsNodesExpanded: m.nameBfsNodesExpanded,
+    nameBfsQueuePeak: m.nameBfsQueuePeak,
+    nameBeamWidthPeak: m.nameBeamWidthPeak,
+    nameEnumResults: m.nameEnumResults,
+    nameEnumElapsedMs: m.nameEnumElapsedMs,
+    patternPropsHit: m.patternPropsHit,
+    presencePressureResolved:
+      m.presencePressureResolved !== undefined
+        ? m.presencePressureResolved > 0
+        : undefined,
   };
 }
 

@@ -145,6 +145,36 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
       component: enumSchema(['nfa', 'dfa', 'product', 'bfs']),
     },
   },
+  [DIAGNOSTIC_CODES.NAME_AUTOMATON_BFS_APPLIED]: {
+    kind: 'object',
+    optional: {
+      budget: {
+        kind: 'object',
+        optional: {
+          maxMillis: { kind: 'number' },
+          maxStates: { kind: 'number' },
+          maxQueue: { kind: 'number' },
+          maxDepth: { kind: 'number' },
+          maxResults: { kind: 'number' },
+          beamWidth: { kind: 'number' },
+        },
+      },
+      nodesExpanded: { kind: 'number' },
+      queuePeak: { kind: 'number' },
+      resultsEmitted: { kind: 'number' },
+      elapsedMs: { kind: 'number' },
+    },
+  },
+  [DIAGNOSTIC_CODES.NAME_AUTOMATON_BEAM_APPLIED]: {
+    kind: 'object',
+    required: {
+      beamWidth: { kind: 'number' },
+    },
+    optional: {
+      meanScore: { kind: 'number' },
+      topScore: { kind: 'number' },
+    },
+  },
   [DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED]: {
     kind: 'object',
     required: {
@@ -500,6 +530,19 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
     optional: {
       reason: { kind: 'string' },
       errorName: { kind: 'string' },
+    },
+  },
+  [DIAGNOSTIC_CODES.TARGET_ENUM_NEGATIVE_LOOKAHEADS]: {
+    kind: 'object',
+    required: {
+      disallowPrefixes: stringArray,
+    },
+  },
+  [DIAGNOSTIC_CODES.TARGET_ENUM_ROUNDROBIN_PATTERNPROPS]: {
+    kind: 'object',
+    required: {
+      patternsHit: { kind: 'number' },
+      distinctNames: { kind: 'number' },
     },
   },
 };

@@ -541,11 +541,13 @@ class GeneratorEngine {
         patternProperties,
         canonPath
       );
+      const patternsHit = new Set<JsonPointer>();
+      const namesFromPatterns = new Set<string>();
       while (usedNames.size < minProperties && patternIterator.length > 0) {
         let satisfied = false;
         for (const iterator of patternIterator) {
           let evaluationProofForCandidate: EvaluationProof | undefined;
-          const candidate = iterator.next((value) => {
+          const candidate = iterator.enumerator.next((value) => {
             if (usedNames.has(value)) return false;
             if (this.isConditionallyBlocked(canonPath, value)) return false;
             const proof = eTraceGuard
@@ -559,6 +561,7 @@ class GeneratorEngine {
             return true;
           });
           if (!candidate) continue;
+          patternsHit.add(iterator.pointer);
           const resolved = this.resolveSchemaForKey(
             candidate,
             canonPath,
@@ -573,6 +576,7 @@ class GeneratorEngine {
           );
           result[candidate] = value;
           usedNames.add(candidate);
+          namesFromPatterns.add(candidate);
           this.recordEvaluationTrace(
             canonPath,
             candidate,
@@ -582,6 +586,17 @@ class GeneratorEngine {
           break;
         }
         if (!satisfied) break;
+      }
+      if (patternsHit.size > 0 && namesFromPatterns.size > 0) {
+        this.diagnostics.push({
+          code: DIAGNOSTIC_CODES.TARGET_ENUM_ROUNDROBIN_PATTERNPROPS,
+          phase: DIAGNOSTIC_PHASES.GENERATE,
+          canonPath,
+          details: {
+            patternsHit: patternsHit.size,
+            distinctNames: namesFromPatterns.size,
+          },
+        });
       }
     }
 
@@ -1222,32 +1237,50 @@ class GeneratorEngine {
   private createPatternIterators(
     patternProperties: Record<string, unknown>,
     canonPath: JsonPointer
-  ): PatternEnumerator[] {
+  ): Array<{
+    enumerator: PatternEnumerator;
+    pointer: JsonPointer;
+    pattern: string;
+  }> {
     const entries = Object.keys(patternProperties)
       .filter((pattern) => typeof pattern === 'string')
       .sort();
     const basePointer = appendPointer(canonPath, 'patternProperties');
-    const enumerators: PatternEnumerator[] = [];
+    const enumerators: Array<{
+      enumerator: PatternEnumerator;
+      pointer: JsonPointer;
+      pattern: string;
+    }> = [];
     for (const pattern of entries) {
       const schema = patternProperties[pattern];
       const pointer =
         getPointerFromIndex(this.pointerIndex, schema) ??
         appendPointer(basePointer, pattern);
       const analysis = analyzePatternForWitness(pattern);
+      const negativePrefixes = extractNegativeLookaheadPrefixes(pattern);
+      const anchored = analysis.anchoredStart && analysis.anchoredEnd;
       const anchoredSafe =
-        analysis.anchoredStart &&
-        analysis.anchoredEnd &&
-        !analysis.hasLookAround &&
-        !analysis.hasBackReference;
-      if (!anchoredSafe) {
+        anchored && !analysis.hasBackReference && !analysis.hasLookAround;
+      if (!anchored && !anchoredSafe) {
+        // Unanchored patterns are not suitable for name enumeration.
         continue;
       }
       if (analysis.complexityCapped) {
         this.recordPatternCap(pointer, 'regexComplexity', 0);
         continue;
       }
-      enumerators.push(
-        new PatternEnumerator(
+      if (negativePrefixes && negativePrefixes.length > 0) {
+        this.diagnostics.push({
+          code: DIAGNOSTIC_CODES.TARGET_ENUM_NEGATIVE_LOOKAHEADS,
+          phase: DIAGNOSTIC_PHASES.GENERATE,
+          canonPath: pointer,
+          details: {
+            disallowPrefixes: negativePrefixes,
+          },
+        });
+      }
+      enumerators.push({
+        enumerator: new PatternEnumerator(
           pattern,
           this.resolved.patternWitness,
           this.normalizedAlphabet,
@@ -1256,8 +1289,10 @@ class GeneratorEngine {
               this.recordPatternCap(pointer, reason, tried),
             recordTrial: () => this.recordPatternWitnessTrial(),
           }
-        )
-      );
+        ),
+        pointer,
+        pattern,
+      });
     }
     return enumerators;
   }
@@ -3330,6 +3365,27 @@ function scanRegexSourceForWitness(source: string): {
     hasBackReference,
     complexityCapped,
   };
+}
+
+function extractNegativeLookaheadPrefixes(
+  source: string
+): string[] | undefined {
+  // Heuristic extraction for leading negative lookaheads such as
+  // ^(?!CloudFormation)[A-Za-z0-9]{1,64}$ or (?!CloudFormation)^[A-Za-z0-9]+$.
+  const patterns: RegExp[] = [/^\^\(\?!(.*?)\)/u, /^\(\?!(.*?)\)\^/u];
+  for (const re of patterns) {
+    const match = source.match(re);
+    if (!match) continue;
+    const prefix = match[1] ?? '';
+    if (!prefix) continue;
+    // Ignore complex prefixes with obvious meta-characters to keep
+    // diagnostics conservative.
+    if (/[()[\]|?*+{}\\]/u.test(prefix)) {
+      continue;
+    }
+    return [prefix];
+  }
+  return undefined;
 }
 
 const NUMERIC_KEYWORDS = new Set([
