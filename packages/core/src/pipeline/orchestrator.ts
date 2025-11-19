@@ -310,11 +310,16 @@ export async function executePipeline(
     // Runtime self-check: diagnostics emitted during normalize must conform to phase rules
     const normalizeDiagnostics: DiagnosticEnvelope[] = (
       normalizeResult?.notes ?? []
-    ).map((n) => ({
-      code: n.code,
-      canonPath: n.canonPath,
-      details: n.details,
-    }));
+    ).map((n) =>
+      'phase' in n && typeof n.phase === 'string'
+        ? (n as DiagnosticEnvelope)
+        : {
+            code: n.code,
+            canonPath: n.canonPath,
+            phase: DIAGNOSTIC_PHASES.NORMALIZE,
+            details: n.details,
+          }
+    );
     if (normalizeDiagnostics.length > 0) {
       assertDiagnosticsForPhase(
         DIAGNOSTIC_PHASES.NORMALIZE,
@@ -596,7 +601,19 @@ export async function executePipeline(
     const composeDiagnostics: DiagnosticEnvelope[] = [
       ...(composeResult.diag?.fatal ?? []),
       ...(composeResult.diag?.warn ?? []),
-    ];
+    ].map((d) =>
+      'phase' in d && typeof d.phase === 'string'
+        ? (d as DiagnosticEnvelope)
+        : {
+            code: d.code,
+            canonPath: d.canonPath,
+            phase: DIAGNOSTIC_PHASES.COMPOSE,
+            details: (d as DiagnosticEnvelope).details,
+            metrics: (d as DiagnosticEnvelope).metrics,
+            budget: (d as DiagnosticEnvelope).budget,
+            scoreDetails: (d as DiagnosticEnvelope).scoreDetails,
+          }
+    );
     if (composeDiagnostics.length > 0) {
       assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.COMPOSE, composeDiagnostics);
       for (const env of composeDiagnostics) {
@@ -605,12 +622,20 @@ export async function executePipeline(
     }
   } catch (error) {
     if (error instanceof ExternalRefValidationError) {
-      const combined: DiagnosticEnvelope[] = [error.diagnostic];
+      const combined: DiagnosticEnvelope[] = [
+        error.diagnostic.phase
+          ? error.diagnostic
+          : {
+              ...error.diagnostic,
+              phase: DIAGNOSTIC_PHASES.VALIDATE,
+            },
+      ];
       if (resolverRunDiags && resolverRunDiags.length > 0) {
         for (const note of resolverRunDiags) {
           combined.push({
             code: note.code,
             canonPath: note.canonPath,
+            phase: DIAGNOSTIC_PHASES.COMPOSE,
             details: note.details,
           });
         }
@@ -655,7 +680,28 @@ export async function executePipeline(
 
     // Runtime self-check: generator diagnostics must be allowed only in generate phase
     const genDiags: DiagnosticEnvelope[] = (generated?.diagnostics ?? []).map(
-      (d) => ({ code: d.code, canonPath: d.canonPath, details: d.details })
+      (d) => {
+        const budget = d.budget
+          ? {
+              tried: d.budget.tried,
+              limit: d.budget.limit,
+              skipped: d.budget.skipped,
+              reason:
+                d.budget.reason === 'candidateBudget' ||
+                d.budget.reason === 'witnessDomainExhausted'
+                  ? 'complexityCap'
+                  : d.budget.reason,
+            }
+          : undefined;
+        return {
+          code: d.code,
+          canonPath: d.canonPath,
+          phase: DIAGNOSTIC_PHASES.GENERATE,
+          details: d.details,
+          budget,
+          scoreDetails: d.scoreDetails,
+        };
+      }
     );
     if (genDiags.length > 0) {
       assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.GENERATE, genDiags);
@@ -733,10 +779,22 @@ export async function executePipeline(
       Array.isArray(out.diagnostics) &&
       out.diagnostics.length > 0
     ) {
-      assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.REPAIR, out.diagnostics);
-      for (const env of out.diagnostics) {
+      const repairDiags: DiagnosticEnvelope[] = out.diagnostics.map(
+        (d: DiagnosticEnvelope) => ({
+          code: d.code,
+          canonPath: d.canonPath,
+          phase: DIAGNOSTIC_PHASES.REPAIR,
+          details: d.details,
+          metrics: d.metrics,
+          budget: d.budget,
+          scoreDetails: d.scoreDetails,
+        })
+      );
+      assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.REPAIR, repairDiags);
+      for (const env of repairDiags) {
         assertDiagnosticEnvelope(env);
       }
+      artifacts.repairDiagnostics = repairDiags;
     }
     if (isRepairObject(out) && out.actions) {
       artifacts.repairActions = out.actions;
@@ -793,7 +851,17 @@ export async function executePipeline(
       Array.isArray(validation.diagnostics) &&
       validation.diagnostics.length > 0
     ) {
-      const diagList = validation.diagnostics;
+      const diagList: DiagnosticEnvelope[] = validation.diagnostics.map(
+        (d: DiagnosticEnvelope) => ({
+          code: d.code,
+          canonPath: d.canonPath,
+          phase: DIAGNOSTIC_PHASES.VALIDATE,
+          details: d.details,
+          metrics: d.metrics,
+          budget: d.budget,
+          scoreDetails: d.scoreDetails,
+        })
+      );
       assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.VALIDATE, diagList);
       for (const env of diagList) {
         assertDiagnosticEnvelope(env);
@@ -819,6 +887,7 @@ export async function executePipeline(
       const diag: DiagnosticEnvelope = {
         code: DIAGNOSTIC_CODES.AJV_FLAGS_MISMATCH,
         canonPath: '',
+        phase: DIAGNOSTIC_PHASES.VALIDATE,
         details: error.details as unknown,
         metrics: {
           validationsPerRow: snapshotForDiag.validationsPerRow,
@@ -837,7 +906,10 @@ export async function executePipeline(
       artifacts.validationDiagnostics = [diag];
     }
     if (error instanceof ExternalRefValidationError) {
-      const diag = error.diagnostic;
+      const diag: DiagnosticEnvelope = {
+        ...error.diagnostic,
+        phase: DIAGNOSTIC_PHASES.VALIDATE,
+      };
       try {
         assertDiagnosticEnvelope(diag);
         assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.VALIDATE, [diag]);
@@ -957,6 +1029,7 @@ function createDefaultValidate(
                   invalidPatternDiagnostics.push({
                     code: 'DRAFT06_PATTERN_TOLERATED',
                     canonPath: '',
+                    phase: DIAGNOSTIC_PHASES.VALIDATE,
                     details: { pattern },
                   });
                 }
@@ -1051,6 +1124,7 @@ function createDefaultValidate(
         const diag: DiagnosticEnvelope = {
           code: DIAGNOSTIC_CODES.SCHEMA_INTERNAL_REF_MISSING,
           canonPath: '',
+          phase: DIAGNOSTIC_PHASES.VALIDATE,
           details: {
             ref: primaryRef,
             mode,
@@ -1075,6 +1149,7 @@ function createDefaultValidate(
       const diag: DiagnosticEnvelope = {
         code: DIAGNOSTIC_CODES.VALIDATION_COMPILE_ERROR,
         canonPath: '',
+        phase: DIAGNOSTIC_PHASES.VALIDATE,
         details,
       };
       throw new ExternalRefValidationError(diag);
@@ -1155,6 +1230,7 @@ function ajvErrorsToDiagnostics(
     diagnostics.push({
       code: DIAGNOSTIC_CODES.VALIDATION_KEYWORD_FAILED,
       canonPath: normalizeSchemaCanonPath(err.schemaPath),
+      phase: DIAGNOSTIC_PHASES.VALIDATE,
       details,
     });
   }

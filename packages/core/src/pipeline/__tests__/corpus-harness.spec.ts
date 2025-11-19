@@ -282,11 +282,13 @@ describe('corpus harness', () => {
     const diagA = {
       code: DIAGNOSTIC_CODES.TARGET_ENUM_ROUNDROBIN_PATTERNPROPS,
       canonPath: '#/properties/obj',
+      phase: 'generate',
       details: { patternsHit: 1, distinctNames: 1 },
     } as const;
     const diagB = {
       code: DIAGNOSTIC_CODES.TARGET_ENUM_ROUNDROBIN_PATTERNPROPS,
       canonPath: '#/properties/obj',
+      phase: 'generate',
       details: { patternsHit: 3, distinctNames: 2 },
     } as const;
 

@@ -14,8 +14,11 @@ import { DIAGNOSTIC_DETAIL_SCHEMAS, type MiniSchema } from './schemas.js';
 export interface DiagnosticEnvelope<Details = unknown> {
   code: DiagnosticCode;
   canonPath: string;
+  phase: DiagnosticPhase;
   details?: Details;
   metrics?: DiagnosticMetrics;
+  budget?: DiagnosticBudget;
+  scoreDetails?: DiagnosticScoreDetails;
 }
 
 export interface DiagnosticMetrics {
@@ -26,6 +29,19 @@ export interface DiagnosticMetrics {
   p50LatencyMs?: number;
   p95LatencyMs?: number;
   memoryPeakMB?: number;
+}
+
+export interface DiagnosticBudget {
+  skipped?: boolean;
+  tried?: number;
+  limit?: number;
+  reason?: 'skipTrialsFlag' | 'largeOneOf' | 'largeAnyOf' | 'complexityCap';
+}
+
+export interface DiagnosticScoreDetails {
+  [key: string]: number | undefined;
+  tiebreakRand?: number;
+  exclusivityRand?: number;
 }
 
 const FORBIDDEN_DETAIL_KEYS = new Set(['canonPath', 'canonPtr']);
@@ -194,6 +210,15 @@ export function assertDiagnosticEnvelope(envelope: DiagnosticEnvelope): void {
     throw new Error('Diagnostic envelope requires a string canonPath');
   }
 
+  if (!isString(envelope.phase)) {
+    throw new Error('Diagnostic envelope requires a string phase');
+  }
+
+  const phaseValues = new Set(Object.values(DIAGNOSTIC_PHASES));
+  if (!phaseValues.has(envelope.phase)) {
+    throw new Error('Diagnostic envelope phase must be a known phase');
+  }
+
   if (envelope.details !== undefined) {
     assertNoForbiddenKeys(envelope.details);
     if (isString(envelope.code) && isKnownDiagnosticCode(envelope.code)) {
@@ -208,6 +233,14 @@ export function assertDiagnosticEnvelope(envelope: DiagnosticEnvelope): void {
 
   if (envelope.metrics !== undefined) {
     assertDiagnosticMetrics(envelope.metrics);
+  }
+
+  if (envelope.budget !== undefined) {
+    assertDiagnosticBudget(envelope.budget);
+  }
+
+  if (envelope.scoreDetails !== undefined) {
+    assertDiagnosticScoreDetails(envelope.scoreDetails);
   }
 }
 
@@ -262,6 +295,68 @@ function assertDiagnosticMetrics(metrics: unknown): void {
     if (!isNumber(value)) {
       throw new Error(
         `Diagnostic metrics value for ${key} must be a finite number`
+      );
+    }
+  }
+}
+
+function assertDiagnosticBudget(budget: unknown): void {
+  if (!isPlainObject(budget)) {
+    throw new Error('Diagnostic budget must be an object');
+  }
+
+  if (
+    'skipped' in budget &&
+    budget.skipped !== undefined &&
+    !isBoolean(budget.skipped)
+  ) {
+    throw new Error('Diagnostic budget.skipped must be a boolean');
+  }
+
+  if (
+    'tried' in budget &&
+    budget.tried !== undefined &&
+    !isNumber(budget.tried)
+  ) {
+    throw new Error('Diagnostic budget.tried must be a finite number');
+  }
+
+  if (
+    'limit' in budget &&
+    budget.limit !== undefined &&
+    !isNumber(budget.limit)
+  ) {
+    throw new Error('Diagnostic budget.limit must be a finite number');
+  }
+
+  if ('reason' in budget && budget.reason !== undefined) {
+    const allowedReasons = new Set([
+      'skipTrialsFlag',
+      'largeOneOf',
+      'largeAnyOf',
+      'complexityCap',
+    ]);
+    if (
+      !isString(budget.reason) ||
+      !allowedReasons.has(budget.reason as string)
+    ) {
+      throw new Error('Diagnostic budget.reason must be a known budget reason');
+    }
+  }
+}
+
+function assertDiagnosticScoreDetails(details: unknown): void {
+  if (!isPlainObject(details)) {
+    throw new Error('Diagnostic scoreDetails must be an object');
+  }
+
+  for (const [key, value] of Object.entries(details)) {
+    if (!isString(key)) {
+      throw new Error('Diagnostic scoreDetails keys must be strings');
+    }
+    if (value !== undefined && !isNumber(value)) {
+      throw new Error(
+        `Diagnostic scoreDetails value for ${key} must be a finite number`
       );
     }
   }

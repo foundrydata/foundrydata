@@ -4,7 +4,7 @@
 /* eslint-disable max-lines-per-function */
 /* eslint-disable complexity */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { DIAGNOSTIC_CODES, type DiagnosticCode } from '../diag/codes.js';
+import { DIAGNOSTIC_CODES, DIAGNOSTIC_PHASES } from '../diag/codes.js';
 import type { CoverageIndex } from '../transform/composition-engine.js';
 import type { ComposeResult } from '../transform/composition-engine.js';
 import {
@@ -53,11 +53,7 @@ export interface RepairEpsilonDetails {
 export interface RenamePreflightResult {
   ok: boolean;
   candidate?: string;
-  diagnostics?: Array<{
-    code: DiagnosticCode;
-    canonPath: string;
-    details?: unknown;
-  }>;
+  diagnostics?: DiagnosticEnvelope[];
 }
 
 export interface RenamePreflightOptions {
@@ -121,6 +117,7 @@ export function runRenamePreflightCheck(ctx: RenamePreflightContext): {
         {
           code: DIAGNOSTIC_CODES.REPAIR_RENAME_PREFLIGHT_FAIL,
           canonPath: ctx.canonPath,
+          phase: DIAGNOSTIC_PHASES.REPAIR,
           details: {
             from: ctx.from,
             to: ctx.candidate,
@@ -146,6 +143,7 @@ export function runRenamePreflightCheck(ctx: RenamePreflightContext): {
         {
           code: DIAGNOSTIC_CODES.REPAIR_RENAME_PREFLIGHT_FAIL,
           canonPath: ctx.canonPath,
+          phase: DIAGNOSTIC_PHASES.REPAIR,
           details: {
             from: ctx.from,
             to: ctx.candidate,
@@ -199,7 +197,7 @@ export function chooseClosedEnumRenameCandidate(
     isEvaluated,
   } = options;
 
-  const diagnostics: RenamePreflightResult['diagnostics'] = [];
+  const diagnostics: DiagnosticEnvelope[] = [];
 
   // Never rename keys that are required or referenced by dependent* (antecedent/depender)
   if (
@@ -209,6 +207,7 @@ export function chooseClosedEnumRenameCandidate(
     diagnostics.push({
       code: DIAGNOSTIC_CODES.REPAIR_RENAME_PREFLIGHT_FAIL,
       canonPath,
+      phase: DIAGNOSTIC_PHASES.REPAIR,
       details: { from: offendingKey, to: offendingKey, reason: 'dependent' },
     });
     return { ok: false, diagnostics };
@@ -229,6 +228,7 @@ export function chooseClosedEnumRenameCandidate(
     diagnostics.push({
       code: DIAGNOSTIC_CODES.MUSTCOVER_INDEX_MISSING,
       canonPath,
+      phase: DIAGNOSTIC_PHASES.REPAIR,
       details: { guard: true },
     });
     return { ok: false, diagnostics };
@@ -258,6 +258,7 @@ export function chooseClosedEnumRenameCandidate(
       diagnostics.push({
         code: DIAGNOSTIC_CODES.REPAIR_EVAL_GUARD_FAIL,
         canonPath,
+        phase: DIAGNOSTIC_PHASES.REPAIR,
         details: { from: offendingKey, to: candidate, reason: 'notEvaluated' },
       });
       // Try next candidate
@@ -277,6 +278,7 @@ export function chooseClosedEnumRenameCandidate(
     diagnostics.push({
       code: DIAGNOSTIC_CODES.REPAIR_RENAME_PREFLIGHT_FAIL,
       canonPath,
+      phase: DIAGNOSTIC_PHASES.REPAIR,
       details: { from: offendingKey, to: lastAttempted, reason: 'branch' },
     });
   }
@@ -851,6 +853,7 @@ export function repairItemsAjvDriven(
           diagnostics.push({
             code: DIAGNOSTIC_CODES.REPAIR_PNAMES_PATTERN_ENUM,
             canonPath,
+            phase: DIAGNOSTIC_PHASES.REPAIR,
             details: {
               from: offending,
               to: res.candidate,
@@ -1675,6 +1678,7 @@ export function repairItemsAjvDriven(
             diagnostics.push({
               code: DIAGNOSTIC_CODES.REPAIR_PNAMES_PATTERN_ENUM,
               canonPath: registryEntry.canonPath,
+              phase: DIAGNOSTIC_PHASES.REPAIR,
               details: {
                 from: registryEntry.from,
                 reason: registryEntry.reason,
@@ -1713,6 +1717,7 @@ export function repairItemsAjvDriven(
       diagnostics.push({
         code: DIAGNOSTIC_CODES.UNSAT_BUDGET_EXHAUSTED,
         canonPath: '#',
+        phase: DIAGNOSTIC_PHASES.REPAIR,
         details: {
           cycles,
           lastErrorCount,

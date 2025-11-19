@@ -2,7 +2,6 @@
 /* eslint-disable max-lines-per-function */
 import {
   CoverageEntrySnapshot,
-  DiagnosticEnvelope,
   InstanceResult,
   Report,
 } from '../model/report.js';
@@ -18,7 +17,7 @@ function escapeHtml(value: unknown): string {
 
 function renderDiagnosticGroup(
   title: string,
-  diagnostics?: DiagnosticEnvelope[]
+  diagnostics?: { code: string; canonPath: string; details?: unknown }[]
 ): string {
   if (!diagnostics?.length) {
     return `<div class="diag-group"><h4>${title}</h4><p class="empty">No entries</p></div>`;
