@@ -115,6 +115,7 @@ function collectGeneratorDiagnostics(
   return diagnostics.map((diag) => ({
     code: diag.code,
     canonPath: diag.canonPath,
+    phase: diag.phase,
     details: diag.details,
   }));
 }

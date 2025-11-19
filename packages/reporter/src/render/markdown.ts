@@ -2,7 +2,6 @@
 /* eslint-disable max-lines-per-function */
 import {
   CoverageEntrySnapshot,
-  DiagnosticEnvelope,
   InstanceResult,
   Report,
 } from '../model/report.js';
@@ -17,7 +16,9 @@ function formatDetails(details?: unknown): string {
 
 function renderDiagnosticsList(
   title: string,
-  diagnostics: DiagnosticEnvelope[] | undefined
+  diagnostics:
+    | { code: string; canonPath: string; details?: unknown }[]
+    | undefined
 ): string[] {
   if (!diagnostics?.length) {
     return [`- ${title}: none`];

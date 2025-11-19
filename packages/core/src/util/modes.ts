@@ -4,7 +4,7 @@
 /* eslint-disable max-lines-per-function */
 import type Ajv from 'ajv';
 
-import { DIAGNOSTIC_CODES } from '../diag/codes.js';
+import { DIAGNOSTIC_CODES, DIAGNOSTIC_PHASES } from '../diag/codes.js';
 import type { DiagnosticEnvelope } from '../diag/validate.js';
 
 export type PipelineMode = 'strict' | 'lax';
@@ -149,6 +149,7 @@ export function createExternalRefDiagnostic(
   return {
     code: DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED,
     canonPath: '',
+    phase: DIAGNOSTIC_PHASES.VALIDATE,
     details,
     metrics,
   };

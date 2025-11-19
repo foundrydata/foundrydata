@@ -12,6 +12,7 @@ describe('assertDiagnosticEnvelope', () => {
       assertDiagnosticEnvelope({
         code: DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED,
         canonPath: '/properties/name',
+        phase: DIAGNOSTIC_PHASES.COMPOSE,
         details: {
           patternSource: '^foo$',
           context: 'coverage',
@@ -25,6 +26,7 @@ describe('assertDiagnosticEnvelope', () => {
       assertDiagnosticEnvelope({
         code: DIAGNOSTIC_CODES.UNSAT_REQUIRED_VS_PROPERTYNAMES,
         canonPath: '',
+        phase: DIAGNOSTIC_PHASES.COMPOSE,
         details: {
           required: ['a', 'b'],
           propertyNames: ['a'],
@@ -36,6 +38,7 @@ describe('assertDiagnosticEnvelope', () => {
       assertDiagnosticEnvelope({
         code: DIAGNOSTIC_CODES.UNSAT_MINPROPERTIES_VS_COVERAGE,
         canonPath: '',
+        phase: DIAGNOSTIC_PHASES.COMPOSE,
         details: {
           minProperties: 3,
           coverageSize: 2,
@@ -49,6 +52,7 @@ describe('assertDiagnosticEnvelope', () => {
       assertDiagnosticEnvelope({
         code: DIAGNOSTIC_CODES.VALIDATION_KEYWORD_FAILED,
         canonPath: '/minLength',
+        phase: DIAGNOSTIC_PHASES.VALIDATE,
         details: {
           keyword: 'minLength',
           message: 'must NOT be shorter than 5 characters',
@@ -65,6 +69,7 @@ describe('assertDiagnosticEnvelope', () => {
       assertDiagnosticEnvelope({
         code: DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED,
         canonPath: '/properties/name',
+        phase: DIAGNOSTIC_PHASES.COMPOSE,
         details: {
           nested: { canonPath: '/shadow' },
           patternSource: '^foo$',
@@ -77,6 +82,7 @@ describe('assertDiagnosticEnvelope', () => {
       assertDiagnosticEnvelope({
         code: DIAGNOSTIC_CODES.MUSTCOVER_INDEX_MISSING,
         canonPath: '/properties/title',
+        phase: DIAGNOSTIC_PHASES.COMPOSE,
         details: [{ canonPtr: '/legacy' }],
       })
     ).toThrow(/must not contain a canonPtr property/);
@@ -87,6 +93,7 @@ describe('assertDiagnosticEnvelope', () => {
       assertDiagnosticEnvelope({
         code: DIAGNOSTIC_CODES.COMPLEXITY_CAP_ONEOF,
         canonPath: '/oneOf/0',
+        phase: DIAGNOSTIC_PHASES.COMPOSE,
         // missing required observed field
         details: { limit: 10 },
       })
@@ -98,6 +105,7 @@ describe('assertDiagnosticEnvelope', () => {
       assertDiagnosticEnvelope({
         code: DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED,
         canonPath: '',
+        phase: DIAGNOSTIC_PHASES.VALIDATE,
         details: {
           ref: 'file.json#/defs/x',
           skippedValidation: true,
@@ -110,6 +118,7 @@ describe('assertDiagnosticEnvelope', () => {
       assertDiagnosticEnvelope({
         code: DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED,
         canonPath: '',
+        phase: DIAGNOSTIC_PHASES.VALIDATE,
         details: {
           ref: 'file.json#/defs/x',
           skippedValidation: true,
@@ -123,6 +132,7 @@ describe('assertDiagnosticEnvelope', () => {
       assertDiagnosticEnvelope({
         code: DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED,
         canonPath: '',
+        phase: DIAGNOSTIC_PHASES.VALIDATE,
         details: {
           ref: 'file.json#/defs/x',
           skippedValidation: true,
@@ -137,6 +147,7 @@ describe('assertDiagnosticEnvelope', () => {
       assertDiagnosticEnvelope({
         code: 'CUSTOM_NOTE',
         canonPath: '/custom',
+        phase: DIAGNOSTIC_PHASES.COMPOSE,
         details: { info: 'ok' },
       })
     ).not.toThrow();
@@ -147,6 +158,7 @@ describe('assertDiagnosticsForPhase', () => {
   const baseRegexEnvelope = {
     code: DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED,
     canonPath: '/properties/name',
+    phase: DIAGNOSTIC_PHASES.COMPOSE,
     details: {
       patternSource: '^foo$',
       context: 'coverage',
@@ -180,7 +192,10 @@ describe('assertDiagnosticsForPhase', () => {
 
     expect(() =>
       assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.NORMALIZE, [
-        baseRegexEnvelope,
+        {
+          ...baseRegexEnvelope,
+          phase: DIAGNOSTIC_PHASES.NORMALIZE,
+        },
       ])
     ).toThrow(/context="rewrite"/);
   });
@@ -191,6 +206,7 @@ describe('assertDiagnosticsForPhase', () => {
         {
           code: DIAGNOSTIC_CODES.COMPLEXITY_CAP_PATTERNS,
           canonPath: '/pattern',
+          phase: DIAGNOSTIC_PHASES.GENERATE,
           details: {
             reason: 'candidateBudget',
             tried: 5,
@@ -206,6 +222,7 @@ describe('assertDiagnosticsForPhase', () => {
         {
           code: DIAGNOSTIC_CODES.COMPLEXITY_CAP_PATTERNS,
           canonPath: '/pattern',
+          phase: DIAGNOSTIC_PHASES.GENERATE,
           details: {
             reason: 'witnessDomainExhausted',
             tried: 1,
