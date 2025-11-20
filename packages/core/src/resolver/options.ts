@@ -9,6 +9,7 @@ import {
   prefetchAndBuildRegistry,
   type ResolverOptions as HttpResolverOptions,
 } from './http-resolver.js';
+import { loadSnapshotFromFile } from './snapshot-loader.js';
 import { DIAGNOSTIC_CODES, type DiagnosticCode } from '../diag/codes.js';
 import { schemaHasExternalRefs, summarizeExternalRefs } from '../util/modes.js';
 
@@ -28,6 +29,7 @@ export interface ResolverOptions {
   cacheDir: string;
   hydrateFinalAjv: boolean;
   stubUnresolved?: 'emptySchema';
+  snapshotPath?: string;
   allowHosts?: Array<string | RegExp> | undefined;
   maxDocs: number;
   maxRefDepth: number;
@@ -85,17 +87,29 @@ function anonymizeCacheDirForDiagnostics(
  * Core phases (Normalize → Compose → Generate → Repair → Validate) remain
  * I/O-free; this function is intended to run strictly before Normalize.
  */
+// eslint-disable-next-line complexity
 export async function resolveAllExternalRefs(
   original: object,
   options: ResolverOptions
 ): Promise<ResolveAllExternalRefsResult> {
   const registry = new ResolutionRegistry();
   const notes: ResolverDiagnosticNote[] = [];
+  const snapshotPath =
+    typeof options.snapshotPath === 'string' && options.snapshotPath.trim()
+      ? options.snapshotPath.trim()
+      : undefined;
+  const snapshotPathResolved = snapshotPath
+    ? path.resolve(snapshotPath.replace(/^~(?=\/|$)/, os.homedir()))
+    : undefined;
 
   const strategies =
     options.strategies && options.strategies.length > 0
       ? options.strategies.slice()
       : (['local'] as Array<'local'>);
+  const strategiesForPrefetch =
+    snapshotPathResolved !== undefined
+      ? (['local'] as Array<'local'>)
+      : strategies;
 
   const hasExternal = schemaHasExternalRefs(original);
 
@@ -111,16 +125,58 @@ export async function resolveAllExternalRefs(
     code: DIAGNOSTIC_CODES.RESOLVER_STRATEGIES_APPLIED,
     canonPath: '#',
     details: {
-      strategies,
+      strategies: strategiesForPrefetch,
+      requested: strategies,
       cacheDir: cacheDirForDiag,
+      snapshotPath: snapshotPathResolved,
     },
   });
+
+  let declaredSnapshotFingerprint: string | undefined;
+  if (snapshotPathResolved) {
+    try {
+      const snapshot = await loadSnapshotFromFile(snapshotPathResolved);
+      declaredSnapshotFingerprint = snapshot.declaredFingerprint;
+      if (snapshot.entries.length > 0) {
+        for (const entry of snapshot.entries) {
+          registry.add(entry);
+        }
+        notes.push({
+          code: DIAGNOSTIC_CODES.RESOLVER_SNAPSHOT_APPLIED,
+          canonPath: '#',
+          details: {
+            path: snapshotPathResolved,
+            count: registry.size(),
+            fingerprint: registry.fingerprint(),
+          },
+        });
+      }
+      if (snapshot.diagnostics.length > 0) {
+        for (const diag of snapshot.diagnostics) {
+          notes.push({
+            code: diag.code as DiagnosticCode,
+            canonPath: diag.canonPath,
+            details: diag.details,
+          });
+        }
+      }
+    } catch (error) {
+      notes.push({
+        code: DIAGNOSTIC_CODES.RESOLVER_SNAPSHOT_LOAD_FAILED,
+        canonPath: '#',
+        details: {
+          path: snapshotPathResolved,
+          message: error instanceof Error ? error.message : String(error),
+        },
+      });
+    }
+  }
 
   if (hasExternal) {
     const { extRefs } = summarizeExternalRefs(original);
     if (extRefs.length > 0) {
       const httpOptions: HttpResolverOptions = {
-        strategies,
+        strategies: strategiesForPrefetch,
         cacheDir,
         // Bounds and behavior derived from resolved plan options
         maxDocs: options.maxDocs,
@@ -147,6 +203,20 @@ export async function resolveAllExternalRefs(
   }
 
   const registryFingerprint = registry.fingerprint();
+  if (
+    declaredSnapshotFingerprint &&
+    registryFingerprint !== declaredSnapshotFingerprint
+  ) {
+    notes.push({
+      code: DIAGNOSTIC_CODES.RESOLVER_SNAPSHOT_FINGERPRINT_MISMATCH,
+      canonPath: '#',
+      details: {
+        path: snapshotPathResolved,
+        declared: declaredSnapshotFingerprint,
+        actual: registryFingerprint,
+      },
+    });
+  }
 
   return {
     registry,

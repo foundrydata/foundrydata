@@ -1,9 +1,15 @@
 import { createHash } from 'node:crypto';
 
+export interface RegistryEntryMeta {
+  contentHash: string; // sha256 of canonical JSON
+  dialect?: string;
+}
+
 export interface RegistryEntry {
   uri: string;
   schema: unknown;
   contentHash: string; // sha256 of canonical JSON
+  meta?: RegistryEntryMeta;
 }
 
 /**
@@ -13,8 +19,19 @@ export interface RegistryEntry {
 export class ResolutionRegistry {
   private readonly map = new Map<string, RegistryEntry>();
 
-  add(entry: RegistryEntry): void {
-    this.map.set(entry.uri, entry);
+  add(entry: RegistryEntry): boolean {
+    if (this.map.has(entry.uri)) {
+      return false;
+    }
+    const normalized: RegistryEntry = {
+      ...entry,
+      meta: {
+        contentHash: entry.contentHash,
+        ...entry.meta,
+      },
+    };
+    this.map.set(entry.uri, normalized);
+    return true;
   }
 
   get(uri: string): RegistryEntry | undefined {
@@ -36,7 +53,8 @@ export class ResolutionRegistry {
     if (this.map.size === 0) return '0';
     const lines: string[] = [];
     for (const e of this.map.values()) {
-      lines.push(`${e.uri} ${e.contentHash}`);
+      const hash = e.meta?.contentHash ?? e.contentHash;
+      lines.push(`${e.uri} ${hash}`);
     }
     lines.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
     const input = lines.join('\n');

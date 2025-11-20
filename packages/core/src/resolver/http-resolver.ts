@@ -9,6 +9,7 @@ import {
   writeToCache,
 } from './cache-store.js';
 import { summarizeExternalRefs } from '../util/modes.js';
+import { detectDialect } from '../dialect/detectDialect.js';
 
 export interface ResolverOptions {
   strategies?: Array<'local' | 'remote' | 'schemastore'>;
@@ -171,10 +172,15 @@ export async function prefetchAndBuildRegistry(
       if (cacheDir) {
         const cached = await readFromCache(doc, { cacheDir });
         if (cached) {
+          const dialect = detectDialect(cached.schema);
           registry.add({
             uri: doc,
             schema: cached.schema,
             contentHash: cached.contentHash,
+            meta: {
+              contentHash: cached.contentHash,
+              dialect: dialect === 'unknown' ? undefined : dialect,
+            },
           });
           diags.push({
             code: 'RESOLVER_CACHE_HIT',
@@ -218,10 +224,15 @@ export async function prefetchAndBuildRegistry(
       const cached = cacheDir
         ? await writeToCache(doc, schema, { cacheDir })
         : { schema, contentHash: '' };
+      const dialect = detectDialect(cached.schema);
       registry.add({
         uri: doc,
         schema: cached.schema,
         contentHash: cached.contentHash,
+        meta: {
+          contentHash: cached.contentHash,
+          dialect: dialect === 'unknown' ? undefined : dialect,
+        },
       });
       diags.push({
         code: 'RESOLVER_CACHE_MISS_FETCHED',

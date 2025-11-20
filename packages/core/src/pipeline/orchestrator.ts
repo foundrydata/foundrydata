@@ -20,6 +20,7 @@ import {
   isCanonicalMetaRef,
   detectDialectFromSchema,
 } from '../util/ajv-source.js';
+import type { Dialect } from '../dialect/detectDialect.js';
 import { checkAjvStartupParity } from '../util/ajv-gate.js';
 import { MetricsCollector, type MetricPhase } from '../util/metrics.js';
 import { resolveOptions, type ResolvedOptions } from '../types/options.js';
@@ -237,6 +238,7 @@ export async function executePipeline(
           ? 'emptySchema'
           : undefined,
       allowHosts: resolverPlan.allowlist,
+      snapshotPath: resolverPlan.snapshotPath,
       maxDocs: resolverPlan.maxDocs,
       maxRefDepth: resolverPlan.maxRefDepth,
       maxBytesPerDoc: resolverPlan.maxBytesPerDoc,
@@ -253,7 +255,16 @@ export async function executePipeline(
       resolverRegistry = resolverResult.registry;
       const docs: RegistryDoc[] = [];
       for (const entry of resolverResult.registry.entries()) {
-        docs.push({ uri: entry.uri, schema: entry.schema });
+        const entryDialect =
+          typeof entry.meta?.dialect === 'string'
+            ? (entry.meta.dialect as unknown as Dialect)
+            : undefined;
+        docs.push({
+          uri: entry.uri,
+          schema: entry.schema,
+          contentHash: entry.meta?.contentHash ?? entry.contentHash,
+          dialect: entryDialect,
+        });
       }
       registryDocs = docs;
     }

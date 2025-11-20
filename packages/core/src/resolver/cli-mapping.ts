@@ -12,6 +12,10 @@ export interface ResolverCliOptions {
    */
   cacheDir?: string;
   /**
+   * Optional curated snapshot path (NDJSON); disables remote fetch when set.
+   */
+  snapshotPath?: string;
+  /**
    * Optional allow-list of hosts; empty ⇒ no additional restriction.
    */
   allowHosts?: string[];
@@ -58,6 +62,13 @@ export function mapResolverCliOptionsToPlanOptions(
 
   if (typeof cli.cacheDir === 'string' && cli.cacheDir.trim().length > 0) {
     resolver.cacheDir = cli.cacheDir;
+  }
+
+  if (
+    typeof cli.snapshotPath === 'string' &&
+    cli.snapshotPath.trim().length > 0
+  ) {
+    resolver.snapshotPath = cli.snapshotPath;
   }
 
   if (Array.isArray(cli.allowHosts) && cli.allowHosts.length > 0) {
