@@ -662,7 +662,7 @@ describe('Foundry pipeline integration scenarios', () => {
   });
 
   describe('PropertyNames coverage', () => {
-    it('preserves gating-only propertyNames.pattern without fail-fast', async () => {
+    it('fails fast for gating-only propertyNames.pattern under presence pressure', async () => {
       const result = await executePipeline(propertyNamesPatternSchema, {
         mode: 'strict',
         generate: { count: 1, seed: 19 },
@@ -672,18 +672,29 @@ describe('Foundry pipeline integration scenarios', () => {
       const composeOutput = result.stages.compose.output!;
       const fatalCodes =
         composeOutput.diag?.fatal?.map((entry) => entry.code) ?? [];
-      expect(fatalCodes).not.toContain(
-        DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN
+      expect(fatalCodes).toContain(
+        DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE
       );
+      const fatalDetails = composeOutput.diag?.fatal?.find(
+        (entry) => entry.code === DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE
+      )?.details;
+      expect(fatalDetails).toMatchObject({ minProperties: 1 });
 
-      const hints = composeOutput.diag?.unsatHints ?? [];
-      const coverageHint = hints.find(
+      const hasApFalseUnsafe = (composeOutput.diag?.fatal ?? []).some(
         (entry) =>
-          entry.code === DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE &&
+          entry.code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN &&
           entry.canonPath === ''
       );
-      expect(coverageHint).toBeDefined();
-      expect(coverageHint?.reason).toBe('coverageUnknown');
+      expect(hasApFalseUnsafe).toBe(false);
+
+      const hints = composeOutput.diag?.unsatHints ?? [];
+      expect(
+        hints.some(
+          (entry) =>
+            entry.code === DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE &&
+            entry.canonPath === ''
+        )
+      ).toBe(false);
 
       const coverage = composeOutput.coverageIndex.get('');
       expect(coverage).toBeDefined();
@@ -912,7 +923,7 @@ describe('Foundry pipeline integration scenarios', () => {
       expect(coverage?.enumerate?.()).toEqual(['a', 'b']);
     });
 
-    it('does not emit UNSAT_AP_FALSE_EMPTY_COVERAGE when only propertyNames gating yields empty coverage under presence pressure', async () => {
+    it('emits UNSAT_AP_FALSE_EMPTY_COVERAGE when only propertyNames gating yields empty coverage under presence pressure', async () => {
       const schema = {
         $schema: 'https://json-schema.org/draft/2020-12/schema',
         type: 'object',
@@ -932,15 +943,19 @@ describe('Foundry pipeline integration scenarios', () => {
       const composeOutput = result.stages.compose.output!;
       const fatalCodes =
         composeOutput.diag?.fatal?.map((entry) => entry.code) ?? [];
-      expect(fatalCodes).not.toContain(
+      expect(fatalCodes).toContain(
         DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE
       );
+      const fatalDetails = composeOutput.diag?.fatal?.find(
+        (entry) => entry.code === DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE
+      )?.details;
+      expect(fatalDetails).toMatchObject({ required: ['must'] });
       const unsatHints =
         composeOutput.diag?.unsatHints?.filter(
           (entry) =>
             entry.code === DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE
         ) ?? [];
-      expect(unsatHints.length).toBeGreaterThanOrEqual(1);
+      expect(unsatHints.length).toBe(0);
 
       const coverage = composeOutput.coverageIndex.get('');
       expect(coverage).toBeDefined();
