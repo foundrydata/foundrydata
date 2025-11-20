@@ -1,5 +1,5 @@
 /* eslint-disable complexity */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { DIAGNOSTIC_CODES } from '../../diag/codes.js';
 import {
@@ -11,6 +11,8 @@ import {
   runCorpusHarness,
   type CorpusSchemaConfig,
 } from '../corpus-harness.js';
+import type { PipelineResult } from '../types.js';
+import * as orchestrator from '../orchestrator.js';
 import { dedupeDiagnosticsForCorpus } from '../corpus-diagnostics.js';
 
 describe('corpus harness', () => {
@@ -276,6 +278,97 @@ describe('corpus harness', () => {
     const codes = entry.diagnostics.map((diag) => diag.code);
     expect(codes).toContain(DIAGNOSTIC_CODES.VALIDATION_COMPILE_ERROR);
     expect(entry.metrics?.validationsPerRow ?? 0).toBe(0);
+  });
+
+  it('treats AJV_FLAGS_MISMATCH as fail-fast and classifies it as an AJV config issue', async () => {
+    const pipelineResult = {
+      status: 'failed',
+      schema: { $schema: 'https://json-schema.org/draft/2020-12/schema' },
+      stages: {
+        normalize: { status: 'completed' },
+        compose: { status: 'completed' },
+        generate: { status: 'skipped' },
+        repair: { status: 'skipped' },
+        validate: { status: 'failed' },
+      },
+      metrics: {
+        normalizeMs: 0,
+        composeMs: 0,
+        generateMs: 0,
+        repairMs: 0,
+        validateMs: 0,
+        validationsPerRow: 0,
+        repairPassesPerRow: 0,
+        memoryPeakMB: 0,
+        p50LatencyMs: 0,
+        p95LatencyMs: 0,
+        nameBfsNodesExpanded: 0,
+        nameBfsQueuePeak: 0,
+        nameBeamWidthPeak: 0,
+        nameEnumResults: 0,
+        nameEnumElapsedMs: 0,
+        patternPropsHit: 0,
+        presencePressureResolved: 0,
+      },
+      timeline: [],
+      errors: [],
+      artifacts: {
+        generated: { items: [] },
+        validationDiagnostics: [
+          {
+            code: DIAGNOSTIC_CODES.AJV_FLAGS_MISMATCH,
+            canonPath: '#',
+            phase: 'validate',
+            details: {
+              instance: 'both',
+              ajvMajor: 8,
+              diffs: [
+                {
+                  flag: 'unicodeRegExp',
+                  expected: true,
+                  actual: false,
+                },
+              ],
+            },
+          },
+        ],
+        validation: { valid: false, diagnostics: [] },
+      },
+    } as unknown as PipelineResult;
+
+    const executeSpy = vi
+      .spyOn(orchestrator, 'executePipeline')
+      .mockResolvedValueOnce(pipelineResult);
+
+    const report = await runCorpusHarness({
+      schemas: [{ id: 'ajv-mismatch', schema: { type: 'string' } }],
+      mode: 'strict',
+      seed: 1,
+      instancesPerSchema: 1,
+      validateFormats: false,
+    });
+
+    executeSpy.mockRestore();
+
+    const entry = report.results[0];
+    expect(entry).toBeDefined();
+    if (!entry) {
+      throw new Error('Expected ajv-mismatch corpus result');
+    }
+
+    expect(entry.failFast).toBe(true);
+    expect(entry.failFastStage).toBe('validate');
+    expect(entry.failFastCode).toBe(DIAGNOSTIC_CODES.AJV_FLAGS_MISMATCH);
+    expect(entry.failureCategory).toBe('ajv-config');
+    expect(entry.failureKind).toBe('ajv-flags-mismatch');
+    expect(typeof entry.failureHint).toBe('string');
+    expect(entry.failureHint?.toLowerCase() ?? '').toContain('ajv');
+    expect(entry.instancesValid).toBe(0);
+    expect(
+      entry.diagnostics.some(
+        (d) => d.code === DIAGNOSTIC_CODES.AJV_FLAGS_MISMATCH
+      )
+    ).toBe(true);
   });
 
   it('deduplicates diagnostics by code, phase, path, and detail key', () => {
