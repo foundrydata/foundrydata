@@ -1,0 +1,94 @@
+{
+  "description": "OpenContainer Image Manifest Specification",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "description": "This field specifies the image manifest schema version as an integer",
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 2
+    },
+    "mediaType": {
+      "description": "the mediatype of the referenced object",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}$"
+    },
+    "artifactType": {
+      "description": "the artifact mediatype of the referenced object",
+      "$ref": "#/properties/mediaType"
+    },
+    "config": {
+      "description": "OpenContainer Content Descriptor Specification",
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "mediaType": {
+          "description": "the mediatype of the referenced object",
+          "$ref": "#/properties/mediaType"
+        },
+        "size": {
+          "description": "the size in bytes of the referenced object",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854776000
+        },
+        "digest": {
+          "description": "the cryptographic checksum digest of the object, in the pattern '<algorithm>:<encoded>'",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[+._-][a-z0-9]+)*:[a-zA-Z0-9=_-]+$"
+        },
+        "urls": {
+          "description": "a list of urls from which this object may be downloaded",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "data": {
+          "description": "an embedding of the targeted content (base64 encoded)",
+          "type": "string",
+          "media": {
+            "binaryEncoding": "base64"
+          }
+        },
+        "artifactType": {
+          "description": "the IANA media type of this artifact",
+          "$ref": "#/properties/mediaType"
+        },
+        "annotations": {
+          "$ref": "#/properties/annotations"
+        }
+      },
+      "required": [
+        "mediaType",
+        "size",
+        "digest"
+      ]
+    },
+    "subject": {
+      "$ref": "#/properties/config"
+    },
+    "layers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/properties/config"
+      }
+    },
+    "annotations": {
+      "type": "object",
+      "patternProperties": {
+        ".{1,}": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "config",
+    "layers"
+  ]
+}
