@@ -268,10 +268,27 @@ export function assertDiagnosticsForPhase(
         code === DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR)
     ) {
       const context = entry.details.context;
-      if (phase === DIAGNOSTIC_PHASES.COMPOSE && context !== 'coverage') {
-        throw new Error(
-          `${code} must set details.context="coverage" during compose phase`
-        );
+      if (phase === DIAGNOSTIC_PHASES.COMPOSE) {
+        const isCoverageContext = context === 'coverage';
+        // eslint-disable-next-line max-depth
+        if (
+          code === DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED &&
+          !isCoverageContext
+        ) {
+          throw new Error(
+            `${code} must set details.context="coverage" during compose phase`
+          );
+        }
+        // eslint-disable-next-line max-depth
+        if (
+          code === DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR &&
+          context !== 'coverage' &&
+          context !== 'preflight'
+        ) {
+          throw new Error(
+            `${code} must set details.context="coverage" or "preflight" during compose phase`
+          );
+        }
       }
 
       if (phase === DIAGNOSTIC_PHASES.NORMALIZE && context !== 'rewrite') {

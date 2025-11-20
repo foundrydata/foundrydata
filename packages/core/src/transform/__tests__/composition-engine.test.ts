@@ -1,4 +1,7 @@
 /* eslint-disable complexity */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import { describe, it, expect } from 'vitest';
 
 import { ENUM_CAP } from '../../constants';
@@ -9,6 +12,11 @@ import {
   type ComposeInput,
 } from '../composition-engine';
 import type { NormalizerNote } from '../schema-normalizer';
+import {
+  createSourceAjv,
+  detectDialectFromSchema,
+  prepareSchemaForSourceAjv,
+} from '../../util/ajv-source';
 
 function makeInput(
   schema: unknown,
@@ -32,6 +40,16 @@ function makeInput(
     revPtrMap,
     notes,
   };
+}
+
+const FHIR_SCHEMA_PATH = resolve(
+  process.cwd(),
+  'profiles/real-world/fhir.schema.json'
+);
+
+function loadFhirSchema(): unknown {
+  const raw = readFileSync(FHIR_SCHEMA_PATH, 'utf8');
+  return JSON.parse(raw) as unknown;
 }
 
 describe('computeSelectorMemoKey', () => {
@@ -1237,7 +1255,10 @@ describe('CompositionEngine coverage diagnostics', () => {
     const result = compose(makeInput(schema));
     const regexWarns =
       result.diag?.warn?.filter(
-        (entry) => entry.code === DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR
+        (entry) =>
+          entry.code === DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR &&
+          (entry.details as Record<string, unknown> | undefined)?.context ===
+            'coverage'
       ) ?? [];
     expect(regexWarns).toHaveLength(1);
     expect(regexWarns[0]?.canonPath).toBe('');
@@ -1299,6 +1320,112 @@ describe('CompositionEngine coverage diagnostics', () => {
     });
     expect(result.diag?.caps).toContain(DIAGNOSTIC_CODES.COMPLEXITY_CAP_ENUM);
     expect(result.coverageIndex.get('')?.enumerate).toBeUndefined();
+  });
+});
+
+describe('Regex preflight diagnostics', () => {
+  it('flags invalid pattern strings at the schema node with a hint', () => {
+    const schema = {
+      type: 'string',
+      pattern: '(',
+    } as const;
+
+    const result = compose(makeInput(schema));
+    const preflight =
+      result.diag?.warn?.filter(
+        (entry) =>
+          entry.code === DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR &&
+          (entry.details as Record<string, unknown> | undefined)?.context ===
+            'preflight'
+      ) ?? [];
+    expect(preflight).toHaveLength(1);
+    expect(preflight[0]?.canonPath).toBe('');
+    const details = preflight[0]?.details as
+      | Record<string, unknown>
+      | undefined;
+    expect(details?.patternSource).toBe('(');
+    expect(details?.hint).toMatchObject({
+      category: 'UNTERMINATED_GROUP',
+    });
+  });
+
+  it('reports patternProperties compile errors at the owning object', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      patternProperties: {
+        'a{': {},
+      },
+    } as const;
+
+    const result = compose(makeInput(schema));
+    const preflight =
+      result.diag?.warn?.filter(
+        (entry) =>
+          entry.code === DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR &&
+          (entry.details as Record<string, unknown> | undefined)?.context ===
+            'preflight'
+      ) ?? [];
+    const match = preflight.find(
+      (entry) =>
+        (entry.details as Record<string, unknown> | undefined)
+          ?.patternSource === 'a{'
+    );
+    expect(match).toBeDefined();
+    expect(match?.canonPath).toBe('');
+  });
+
+  it('records propertyNames.pattern compile errors at the owner path', () => {
+    const schema = {
+      type: 'object',
+      propertyNames: {
+        pattern: '[z-',
+      },
+    } as const;
+
+    const result = compose(makeInput(schema));
+    const preflight =
+      result.diag?.warn?.filter(
+        (entry) =>
+          entry.code === DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR &&
+          (entry.details as Record<string, unknown> | undefined)?.context ===
+            'preflight'
+      ) ?? [];
+    const match = preflight.find(
+      (entry) =>
+        (entry.details as Record<string, unknown> | undefined)
+          ?.patternSource === '[z-'
+    );
+    expect(match).toBeDefined();
+    expect(match?.canonPath).toBe('');
+  });
+
+  it('surfaces FHIR regex compile errors during Compose while Validate still fails', () => {
+    const schema = loadFhirSchema();
+    const targetPattern =
+      '^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,17})?([eE][+-]?[0-9]{1,9}})?$';
+
+    const composed = compose(makeInput(schema));
+    const preflight =
+      composed.diag?.warn?.filter(
+        (entry) =>
+          entry.code === DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR &&
+          (entry.details as Record<string, unknown> | undefined)?.context ===
+            'preflight'
+      ) ?? [];
+
+    expect(
+      preflight.some(
+        (entry) =>
+          (entry.details as Record<string, unknown> | undefined)
+            ?.patternSource === targetPattern
+      )
+    ).toBe(true);
+
+    const dialect = detectDialectFromSchema(schema);
+    const { schemaForAjv } = prepareSchemaForSourceAjv(schema, dialect);
+    const ajv = createSourceAjv({ dialect, validateFormats: false });
+    expect(() => ajv.compile(schemaForAjv as object)).toThrow();
   });
 });
 

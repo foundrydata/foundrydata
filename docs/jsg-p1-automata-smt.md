@@ -59,6 +59,10 @@ Given a JSON Schema, the pipeline **(a)** produces valid, deterministic instance
 * Patterns **MUST** be classified as **anchored‑safe** or **non‑safe/capped**.
 * Planning **MUST** emit `REGEX_COMPLEXITY_CAPPED` / `REGEX_COMPILE_ERROR` when applicable.
 * Non‑safe/capped patterns **MUST NOT** be used for proofs or enumeration; they remain **guards** in coverage.
+* **Regex preflight (global).** Compose MUST attempt to compile all `pattern`, `patternProperties` keys,
+  and `propertyNames.pattern` using `new RegExp(source,'u')`. Failures are non‑fatal
+  `REGEX_COMPILE_ERROR{ context:'preflight', patternSource }` emitted at the owning object’s canonPath.
+  This pass is diagnostic‑only and does not alter validation semantics (AJV remains the oracle).
 
 ---
 
@@ -159,6 +163,7 @@ When the safe‑proof path is taken, implementations SHOULD attach to `planDiag.
 
   * Name/coverage: `AP_FALSE_UNSAFE_PATTERN`, `UNSAT_AP_FALSE_EMPTY_COVERAGE`, `UNSAT_REQUIRED_VS_PROPERTYNAMES`, `UNSAT_MINPROPERTIES_VS_COVERAGE`, `NAME_AUTOMATON_COMPLEXITY_CAPPED`.
   * Regex: `REGEX_COMPLEXITY_CAPPED`, `REGEX_COMPILE_ERROR`.
+    * Contexts: `'rewrite' | 'coverage' | 'preflight'` for `REGEX_COMPILE_ERROR`.
   * Arrays/numbers: `UNSAT_CONTAINS_VS_MAXITEMS`, `SOLVER_TIMEOUT`.
   * External refs: `EXTERNAL_REF_UNRESOLVED{mode,skippedValidation?}`.
 * **CoverageIndex API:**
