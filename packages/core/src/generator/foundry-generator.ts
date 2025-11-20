@@ -28,7 +28,11 @@ import {
   type FormatRegistry,
 } from './format-registry.js';
 import { XorShift32 } from '../util/rng.js';
-import { createSourceAjv, type JsonSchemaDialect } from '../util/ajv-source.js';
+import {
+  createSourceAjv,
+  detectDialectFromSchema,
+  type JsonSchemaDialect,
+} from '../util/ajv-source.js';
 import { resolveDynamicRefBinding } from '../util/draft.js';
 import { synthesizePatternExample } from '../util/pattern-literals.js';
 import type Ajv from 'ajv';
@@ -207,6 +211,10 @@ class GeneratorEngine {
 
   run(): GeneratorStageOutput {
     const count = Math.max(1, Math.floor(this.options.count ?? 1));
+    // Pre-warm Source AJV when original schema is provided so dialect is resolved eagerly.
+    if (this.sourceSchema !== undefined) {
+      this.getOrCreateSourceAjv();
+    }
     const items: unknown[] = [];
     for (let index = 0; index < count; index += 1) {
       items.push(this.generateValue(this.rootSchema, '', index));
@@ -1015,21 +1023,9 @@ class GeneratorEngine {
 
   private getOrCreateSourceAjv(): Ajv {
     if (this.sourceAjvCache) return this.sourceAjvCache;
-    const dialect: JsonSchemaDialect = ((): JsonSchemaDialect => {
-      const s = this.sourceSchema as Record<string, unknown> | undefined;
-      const sch =
-        typeof s?.['$schema'] === 'string'
-          ? (s!['$schema'] as string).toLowerCase()
-          : '';
-      if (sch.includes('2020-12')) return '2020-12';
-      if (sch.includes('2019-09') || sch.includes('draft-2019'))
-        return '2019-09';
-      if (sch.includes('draft-07') || sch.includes('draft-06'))
-        return 'draft-07';
-      if (sch.includes('draft-04') || sch.endsWith('/schema#'))
-        return 'draft-04';
-      return '2020-12';
-    })();
+    const dialect: JsonSchemaDialect = detectDialectFromSchema(
+      this.sourceSchema
+    );
     this.sourceAjvCache = createSourceAjv(
       {
         dialect,
