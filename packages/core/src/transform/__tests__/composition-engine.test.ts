@@ -1268,7 +1268,7 @@ describe('CompositionEngine AP:false strict vs lax', () => {
     expect(coverageEntry?.enumerate?.()).toEqual([]);
   });
 
-  it('does not emit AP_FALSE_UNSAFE_PATTERN for raw propertyNames.pattern gating without rewrite', () => {
+  it('fails fast for propertyNames-only gating under presence pressure without emitting AP_FALSE_UNSAFE_PATTERN', () => {
     const schema = {
       type: 'object',
       additionalProperties: false,
@@ -1281,34 +1281,40 @@ describe('CompositionEngine AP:false strict vs lax', () => {
     const diag = result.diag;
     expect(diag).toBeDefined();
 
-    const hasApFalseFatal = (diag?.fatal ?? []).some(
+    const fatal = diag?.fatal?.find(
+      (e) =>
+        e.code === DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE &&
+        e.canonPath === ''
+    );
+    expect(fatal).toBeDefined();
+    expect(fatal?.details).toEqual({ required: ['id'] });
+
+    const hasApFalseUnsafe = (diag?.fatal ?? []).some(
       (e) =>
         e.code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN &&
         e.canonPath === ''
     );
-    const hasApFalseWarn = (diag?.warn ?? []).some(
+    const hasApFalseUnsafeWarn = (diag?.warn ?? []).some(
       (e) =>
         e.code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN &&
         e.canonPath === ''
     );
-    expect(hasApFalseFatal).toBe(false);
-    expect(hasApFalseWarn).toBe(false);
+    expect(hasApFalseUnsafe).toBe(false);
+    expect(hasApFalseUnsafeWarn).toBe(false);
 
     const hint = diag?.unsatHints?.find(
       (e) =>
         e.code === DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE &&
         e.canonPath === ''
     );
-    expect(hint).toBeDefined();
-    expect(hint?.reason).toBe('coverageUnknown');
+    expect(hint).toBeUndefined();
 
     const approx = (diag?.warn ?? []).find(
       (e) =>
         e.code === DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX &&
         e.canonPath === ''
     );
-    expect(approx).toBeDefined();
-    expect(approx?.details).toEqual({ reason: 'presencePressure' });
+    expect(approx).toBeUndefined();
   });
 });
 

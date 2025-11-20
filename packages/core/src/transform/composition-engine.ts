@@ -1231,32 +1231,12 @@ class CompositionEngine {
       // Provable iff there are NO coverage sources (no named properties, no
       // anchored-safe patternProperties, no §7 synthetic patterns). In this
       // case, short-circuit as unsat and emit UNSAT_AP_FALSE_EMPTY_COVERAGE.
-      // Under R3, when coverage pressure comes only from gating patterns
-      // (propertyNames.*) without any must-cover sources, the absence of
-      // coverage is no longer treated as a fatal unsat – enumeration may
-      // still synthesize suitable names. We therefore keep only the
-      // approximation + hint in that case.
       if (!hasAnyCoverageSource) {
-        const hasAnyGating = conjuncts.some(
-          (conj) => conj.gatingEnum || conj.gatingPattern
-        );
-        if (!hasAnyGating) {
-          this.addFatal(
-            canonPath,
-            DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
-            buildUnsatDetails(schema)
-          );
-          return;
-        }
-        // Gating-only: surface approximation + hint but avoid fatal UNSAT.
-        this.addApproximation(canonPath, 'presencePressure');
-        this.addUnsatHint({
-          code: DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
+        this.addFatal(
           canonPath,
-          provable: false,
-          reason: 'coverageUnknown',
-          details: buildUnsatDetails(schema),
-        });
+          DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
+          buildUnsatDetails(schema)
+        );
         return;
       }
 
