@@ -40,6 +40,8 @@ import type { ValidateFunction } from 'ajv';
 
 type JsonPointer = string;
 
+const INTERNAL_SOURCE_SCHEMA_KEY = '__foundry_source_schema__';
+
 type EvaluationFamily =
   | 'properties'
   | 'patternProperties'
@@ -160,6 +162,7 @@ class GeneratorEngine {
   private readonly baseSeed: number;
   private readonly ptrMap: ComposeResult['canonical']['ptrMap'];
   private readonly sourceSchema?: unknown;
+  private sourceSchemaKey?: string;
   private sourceAjvCache?: Ajv;
   private branchValidatorCache: Map<string, ValidateFunction> = new Map();
   private readonly conditionalBlocklist: Map<string, Set<string>> = new Map();
@@ -973,20 +976,33 @@ class GeneratorEngine {
     canonPtr: JsonPointer,
     data: unknown
   ): boolean {
-    try {
-      const originalPtr = this.ptrMap.get(canonPtr);
-      const sub = this.getOriginalSubschema(originalPtr);
-      if (!sub) return false;
-      const key = originalPtr ?? `#canon:${canonPtr}`;
-      let validate: ValidateFunction | undefined =
-        this.branchValidatorCache.get(key);
-      if (!validate) {
+    const originalPtr = this.ptrMap.get(canonPtr);
+    const sub = this.getOriginalSubschema(originalPtr);
+    if (!sub) return false;
+
+    const refInfo = this.buildSourceRef(originalPtr);
+    const cacheKey = refInfo?.cacheKey ?? originalPtr ?? `#canon:${canonPtr}`;
+    let validate: ValidateFunction | undefined =
+      this.branchValidatorCache.get(cacheKey);
+
+    if (!validate) {
+      try {
         const ajv = this.getOrCreateSourceAjv();
-        validate = ajv.compile(sub as object);
-        this.branchValidatorCache.set(key, validate);
+        if (refInfo) {
+          validate =
+            (ajv.getSchema(refInfo.ref) as ValidateFunction | undefined) ??
+            ajv.compile({ $ref: refInfo.ref });
+        } else {
+          validate = ajv.compile(sub as object);
+        }
+        this.branchValidatorCache.set(cacheKey, validate);
+      } catch {
+        return false;
       }
-      const v = validate!;
-      return !!v(data);
+    }
+
+    try {
+      return !!validate(data);
     } catch {
       return false;
     }
@@ -1040,6 +1056,50 @@ class GeneratorEngine {
       this.options.planOptions
     );
     return this.sourceAjvCache;
+  }
+
+  private registerSourceSchema(): string | undefined {
+    if (this.sourceSchemaKey) return this.sourceSchemaKey;
+    const root = this.sourceSchema ?? this.rootSchema;
+    if (!root || typeof root !== 'object') return undefined;
+    const ajv = this.getOrCreateSourceAjv();
+    const candidateId =
+      isRecord(root) && typeof root.$id === 'string' && root.$id.length > 0
+        ? root.$id
+        : INTERNAL_SOURCE_SCHEMA_KEY;
+    const baseId = candidateId.includes('#')
+      ? candidateId.slice(0, candidateId.indexOf('#'))
+      : candidateId;
+    const existing = ajv.getSchema(baseId);
+    if (!existing) {
+      try {
+        ajv.addSchema(root as object, baseId);
+      } catch {
+        // Best-effort; fall back to direct compilation when registration fails.
+      }
+    }
+    this.sourceSchemaKey = baseId;
+    return this.sourceSchemaKey;
+  }
+
+  private buildSourceRef(
+    originalPtr?: string
+  ): { ref: string; cacheKey: string } | undefined {
+    const rootId = this.registerSourceSchema();
+    if (!rootId) return undefined;
+    const suffix = this.normalizeOriginalPointer(originalPtr);
+    const ref = `${rootId}${suffix}`;
+    return { ref, cacheKey: ref };
+  }
+
+  private normalizeOriginalPointer(pointer?: string): string {
+    if (!pointer || pointer === '#') {
+      return '#';
+    }
+    if (pointer.startsWith('#')) {
+      return pointer;
+    }
+    return `#${pointer}`;
   }
 
   private resolveRefTarget(
