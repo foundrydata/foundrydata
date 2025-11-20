@@ -1,11 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { normalize } from '../../transform/schema-normalizer';
 import {
   compose,
   type ComposeOptions,
 } from '../../transform/composition-engine';
-import { generateFromCompose } from '../foundry-generator';
+import * as AjvSource from '../../util/ajv-source.js';
 
 function composeSchema(
   schema: unknown,
@@ -16,7 +16,12 @@ function composeSchema(
 }
 
 describe('Source AJV dialect selection', () => {
-  it('uses draft-07 when $schema is draft-07 (E-Trace anyOf)', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.resetModules();
+  });
+
+  it('uses draft-07 when $schema is draft-07 (E-Trace anyOf)', async () => {
     const schema = {
       $schema: 'http://json-schema.org/draft-07/schema#',
       type: 'object',
@@ -35,6 +40,7 @@ describe('Source AJV dialect selection', () => {
       minProperties: 2,
     } as const;
 
+    const { generateFromCompose } = await import('../foundry-generator');
     const eff = composeSchema(schema, { seed: 1 });
     const out = generateFromCompose(eff, {
       sourceSchema: schema,
@@ -57,5 +63,43 @@ describe('Source AJV dialect selection', () => {
     if (expectedKind === 'A') {
       expect(Object.keys(obj)).toContain('aa');
     }
+  });
+
+  it('uses draft-06 when $schema is draft-06', async () => {
+    const schema = {
+      $schema: 'http://json-schema.org/draft-06/schema#',
+      type: 'object',
+      required: ['kind'],
+      properties: { kind: { enum: ['A', 'B'] } },
+      oneOf: [
+        { properties: { kind: { const: 'A' } }, required: ['kind'] },
+        { properties: { kind: { const: 'B' } }, required: ['kind'] },
+      ],
+    } as const;
+
+    const createSpy = vi.fn(AjvSource.createSourceAjv);
+    vi.doMock('../../util/ajv-source.js', async () => {
+      const actual = await vi.importActual<typeof AjvSource>(
+        '../../util/ajv-source.js'
+      );
+      return {
+        ...actual,
+        createSourceAjv: createSpy,
+      };
+    });
+
+    const { generateFromCompose } = await import('../foundry-generator');
+    const eff = composeSchema(schema, { seed: 2 });
+    const out = generateFromCompose(eff, {
+      sourceSchema: schema,
+      planOptions: {
+        patternWitness: { alphabet: 'ab', maxLength: 2, maxCandidates: 32 },
+      },
+    });
+
+    expect(out.items).toHaveLength(1);
+    expect(createSpy).toHaveBeenCalled();
+    const dialects = createSpy.mock.calls.map(([opts]) => opts.dialect);
+    expect(dialects).toContain('draft-06');
   });
 });
