@@ -39,13 +39,13 @@
 
 ---
 
-## Boucle d'exécution (Run Loop)
+## Boucle d'exécution (Run Loop) si tâche disponible
 
 ```
-Step 0  Sanity: tâches disponibles ?
+Step 0  Sanity: tâches disponibles, et si on est dans un contexte de taskmaster (ca sera demandé dans le promptle cas échéant) ?
         → mcp__task-master-ai__next_task() ou Playbook "No Task".
 
-Step 1  Obtenir la tâche et marquer comme en cours :
+Step 1  Obtenir la tâche et marquer comme en cours si on est dans un contexte taskmaster :
         → mcp__task-master-ai__get_task(id)
         → mcp__task-master-ai__set_task_status(id, "in-progress")
 
@@ -61,7 +61,7 @@ Step 6  Valider diagnostics (schéma "diagnosticsEnvelope.schema.json").
 
 Step 7  Commit (template), trailer REFONLY valide.
 
-Step 8  Marquer la tâche comme terminée :
+Step 8  Marquer la tâche comme terminée si on est dans un contexte taskmaster 
         → mcp__task-master-ai__set_task_status(id, "done")
 ```
 
@@ -74,8 +74,6 @@ npm run test
 npm run typecheck
 npm run lint
 ```
-
-> Si pnpm est activé : utiliser les variantes `pnpm -w ...`.
 
 ### Exécution de Code TypeScript — Protocole `tsx`
 
