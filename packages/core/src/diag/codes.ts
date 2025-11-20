@@ -91,12 +91,15 @@ export type KnownDiagnosticCode =
   (typeof DIAGNOSTIC_CODES)[keyof typeof DIAGNOSTIC_CODES];
 export type DiagnosticCode = KnownDiagnosticCode | (string & {});
 
-export interface SafeProofCertificate {
+export interface CoverageCert {
   used: boolean;
   finite: boolean;
   states: number;
   witnesses?: string[];
   capsHit?: boolean;
+}
+
+export interface SafeProofCertificate extends CoverageCert {
   anchoredKinds?: Array<'strict' | 'substring'>;
   strictFamilies?: Array<'alternationOfLiterals' | 'simpleClassQuantified'>;
 }

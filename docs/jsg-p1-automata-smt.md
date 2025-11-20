@@ -96,14 +96,17 @@ evaluated over the Unicode (UTF‑16) alphabet.
 
 #### 4.3.3 Safe‑proof fallback & Early‑UNSAT Proofs
 
-* **Safe‑proof fallback (Strict & Lax):** When presence pressure holds, the planner MUST first attempt a safe‑only cover (anchored‑safe & non‑capped inputs only). If non‑empty, proceed with this cover and attach a coverage certificate to diagnostics. If empty, emit early‑UNSAT.
+* **Safe‑proof fallback (Strict & Lax):** When presence pressure holds, the planner MUST first attempt a safe‑only cover
+  (anchored‑safe & non‑capped inputs only). If non‑empty, proceed with this cover and attach a coverage certificate to diagnostics.
+  If empty, and the node is about to trigger `AP_FALSE_UNSAFE_PATTERN` under Strict, **the planner MUST attach**
+  a **`preSafeProof`** certificate to the **same** diagnostic payload before failing.
 * If ( A = ∅ ) **and** there is presence pressure, the planner **MUST** emit `UNSAT_AP_FALSE_EMPTY_COVERAGE` with a proof summary.
 * If a `required` name is **rejected** by ( A ) → `UNSAT_REQUIRED_VS_PROPERTYNAMES`.
 * If ( A ) is **finite** and (|A| < minProperties) → `UNSAT_MINPROPERTIES_VS_COVERAGE`.
 
 #### 4.3.4 Strict/Lax Interaction (under AP:false)
 
-* **Strict:** if non‑emptiness of coverage would **require** a **non‑safe or capped** pattern (including synthetic) **and** there is presence pressure, the planner **MUST** emit `AP_FALSE_UNSAFE_PATTERN` (fatal) **after** attempting a safe‑only proof.
+* **Strict:** if non‑emptiness of coverage would **require** a **non‑safe or capped** pattern (including synthetic) **and** there is presence pressure, the planner **MUST** emit `AP_FALSE_UNSAFE_PATTERN` (fatal) **after** attempting a safe‑only proof **and attaching `details.preSafeProof`**.
 * **Lax:** same code as **warning** with conservative exclusion. Safe‑only proofs **MUST** be attempted first.
 
 #### 4.3.5 Coverage certificate (non‑normative payload)

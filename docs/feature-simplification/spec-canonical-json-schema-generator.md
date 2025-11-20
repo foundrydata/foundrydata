@@ -19,7 +19,11 @@
 * **Conjunct** — An operand of `allOf`.
 * **Must‑cover** — The set of property names considered generable when at least one conjunct imposes `additionalProperties:false`, computed from `properties` plus **anchored‑safe** `patternProperties`. When `PNAMES_REWRITE_APPLIED` is present, also include the **synthetic** anchored‑safe patterns introduced from `propertyNames` by §7. Otherwise, `propertyNames` never increases coverage (it only gates).
 * **Anchored‑safe pattern** — Regex whose JSON‑unescaped `source` starts with an unescaped `^` and ends with an unescaped `$`, contains **no** look‑around and **no** back‑references, **and passes the §8 regex complexity cap** (patterns capped are **not** anchored‑safe for coverage). Full rule in §8.
-* **Coverage certificate (planning)** — Non-normative payload attached to `planDiag.details.safeProof` when a safe-only cover is used: `{ used:boolean, finite:boolean, states:number, witnesses?:string[], capsHit?:boolean }`.
+* **Coverage certificate (planning)** — Non-normative payload attached to either
+  `planDiag.details.safeProof` (when Safe is used) **or** `details.preSafeProof` (when failing fast):
+  `{ used:boolean, finite:boolean, states:number, witnesses?:string[], capsHit?:boolean }`.
+  Witnesses are produced by a bounded BFS (shortest-length, then UTF‑16) and are samples,
+  not an exposure of `enumerate()` unless finiteness is proven.
 * **Bag `contains`** — Models `contains`/`minContains`/`maxContains` as independent needs `{schema,min?,max?}` that **concatenate** across `allOf` (see §8).
 * **Presence pressure** — `effectiveMinProperties > 0` or `effectiveRequiredKeys ≠ ∅`, or a `dependentRequired` antecedent is **forced present** in the **effective view** (post‑`allOf` merge).
   See Glossary for `effectiveMinProperties` / `effectiveRequiredKeys`.
@@ -985,7 +989,7 @@ Let `propertyNamesSynthetic_Ci` be the set of **synthetic** anchored‑safe patt
     If a must‑cover proof for an object under `additionalProperties:false` depends on a pattern that is
     **not anchored‑safe** (per §8 definition) or whose analysis is **capped** by the regex complexity rule,
     the implementation **MUST** abort planning/generation for that node with diagnostic **`AP_FALSE_UNSAFE_PATTERN`** and the following **normative** payload:
-  **Payload (normative).** `details:{ sourceKind:'patternProperties'|'propertyNamesSynthetic', patternSource?:string }`. When a **single** culpable pattern triggers fail‑fast, `patternSource` is **REQUIRED** and **MUST** be the JSON‑unescaped regex source. When multiple patterns jointly cause the fail‑fast, it **MAY** be omitted.
+  **Payload (normative).** `details:{ sourceKind:'patternProperties'|'propertyNamesSynthetic', patternSource?:string, preSafeProof?:CoverageCert }`. When a **single** culpable pattern triggers fail‑fast, `patternSource` is **REQUIRED** and **MUST** be the JSON‑unescaped regex source. When multiple patterns jointly cause the fail‑fast, it **MAY** be omitted.
   When `patternSource` is present it **MUST** be the JSON‑unescaped regex source (same convention as §19 for regex payloads).
     The top‑level diagnostic **carries `canonPath`**; `canonPath` **MUST NOT** be duplicated inside `details`. Compose **MUST** record a fatal as
     `diag.fatal.push({ code:'AP_FALSE_UNSAFE_PATTERN', canonPath, details })`.
@@ -994,6 +998,16 @@ Let `propertyNamesSynthetic_Ci` be the set of **synthetic** anchored‑safe patt
 
     In **Lax** mode, emit **`AP_FALSE_UNSAFE_PATTERN`** as a **warning** by appending an entry to **`diag.warn`**
     (same payload as Strict), and proceed conservatively.
+
+    **Pre‑safe‑proof attachment (normative).** Before deciding `AP_FALSE_UNSAFE_PATTERN` at object **O**,
+    the planner **MUST** run `mustCoverSafeProof(O)` and attach the resulting **`preSafeProof`** certificate
+    to the same diagnostic payload under `details.preSafeProof`. This certificate is computed **exclusively**
+    from `properties` and **anchored‑safe & non‑capped** sources (including §7 synthetic only when
+    `PNAMES_REWRITE_APPLIED` is present) and has the shape:
+    `{ used:boolean, finite:boolean, states:number, witnesses?:string[], capsHit?:boolean }`.
+    If `preSafeProof.used === true`, **MUST NOT** emit `AP_FALSE_UNSAFE_PATTERN` (proceed with Safe);
+    if `preSafeProof.used === false` and presence pressure holds, fail‑fast (Strict) or warn (Lax).
+    *Witnesses* MAY be produced via bounded BFS even when `finite:false` (non‑normative samples).
 
     **Definition (normative) — conservative exclusion:** treat any candidate key as non‑generable unless
     membership in the must‑cover intersection is **provable** from named `properties` or anchored‑safe, non‑capped
