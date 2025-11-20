@@ -50,6 +50,7 @@ describe('AJV startup parity gate', () => {
       throw new Error('expected AjvFlagsMismatchError');
     } catch (e: any) {
       expect(e).toBeInstanceOf(AjvFlagsMismatchError);
+      expect(e.details.instance).toBe('planning');
       expect(
         e.details.diffs.some((d: any) => d.flag.includes('validateFormats'))
       ).toBe(true);
@@ -79,6 +80,7 @@ describe('AJV startup parity gate', () => {
       throw new Error('expected AjvFlagsMismatchError');
     } catch (e: any) {
       expect(e).toBeInstanceOf(AjvFlagsMismatchError);
+      expect(e.details.instance).toBe('planning');
       expect(e.details.diffs.some((d: any) => d.flag === 'unicodeRegExp')).toBe(
         true
       );
@@ -113,6 +115,7 @@ describe('AJV startup parity gate', () => {
       throw new Error('expected AjvFlagsMismatchError');
     } catch (e: any) {
       expect(e).toBeInstanceOf(AjvFlagsMismatchError);
+      expect(e.details.instance).toBe('source');
       expect(
         e.details.diffs.some(
           (d: any) =>
@@ -145,6 +148,7 @@ describe('AJV startup parity gate', () => {
       throw new Error('expected AjvFlagsMismatchError');
     } catch (e: any) {
       expect(e).toBeInstanceOf(AjvFlagsMismatchError);
+      expect(e.details.instance).toBe('planning');
       const diffFlags = e.details.diffs.map((d: any) => d.flag);
       expect(
         diffFlags.some((f: string) => f.startsWith('multipleOfPrecision'))
@@ -178,6 +182,7 @@ describe('AJV startup parity gate', () => {
       throw new Error('expected AjvFlagsMismatchError');
     } catch (e: any) {
       expect(e).toBeInstanceOf(AjvFlagsMismatchError);
+      expect(e.details.instance).toBe('planning');
       const hasFormatsDiff = e.details.diffs.some((d: any) =>
         String(d.flag).includes('formatsPlugin')
       );
@@ -204,6 +209,34 @@ describe('AJV startup parity gate', () => {
         sourceClass: 'Ajv2019',
       })
     ).not.toThrow();
+  });
+
+  it('reports both when validateFormats policy is violated by both instances', () => {
+    const source = createSourceAjv({
+      dialect: 'draft-07',
+      validateFormats: true,
+    });
+    const planning = createPlanningAjv({
+      validateFormats: true,
+      allowUnionTypes: true,
+    });
+
+    try {
+      checkAjvStartupParity(source, planning, {
+        planningCompilesCanonical2020: true,
+        validateFormats: false,
+        sourceClass: 'Ajv',
+      });
+      throw new Error('expected AjvFlagsMismatchError');
+    } catch (e: any) {
+      expect(e).toBeInstanceOf(AjvFlagsMismatchError);
+      expect(e.details.instance).toBe('both');
+      expect(
+        e.details.diffs.some((d: any) =>
+          String(d.flag).startsWith('validateFormatsPolicy')
+        )
+      ).toBe(true);
+    }
   });
 
   it('detects draft-04 for generic /schema# meta', () => {

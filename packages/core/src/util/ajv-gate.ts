@@ -66,39 +66,83 @@ export function checkAjvStartupParity(
 ): void {
   const diffs: AjvGateDiff[] = [];
 
+  let sourceFailed = false;
+  let planningFailed = false;
+  const recordDiff = (
+    diff: AjvGateDiff,
+    opts: { source?: boolean; planning?: boolean } = {}
+  ): void => {
+    diffs.push(diff);
+    if (opts.source === true) {
+      sourceFailed = true;
+    }
+    if (opts.planning === true) {
+      planningFailed = true;
+    }
+  };
+
   const sFlags = extractAjvFlags(sourceAjv);
   const pFlags = extractAjvFlags(planningAjv);
 
+  const expectedValidateFormats = Boolean(expect.validateFormats);
+  const sValidateFormats = Boolean(sFlags.validateFormats);
+  const pValidateFormats = Boolean(pFlags.validateFormats);
+
   // Both must enable unicodeRegExp
   if (sFlags.unicodeRegExp !== true) {
-    diffs.push({
-      flag: 'unicodeRegExp',
-      expected: true,
-      actual: sFlags.unicodeRegExp,
-    });
+    recordDiff(
+      {
+        flag: 'unicodeRegExp',
+        expected: true,
+        actual: sFlags.unicodeRegExp,
+      },
+      { source: true }
+    );
   }
   if (pFlags.unicodeRegExp !== true) {
-    diffs.push({
-      flag: 'unicodeRegExp',
-      expected: true,
-      actual: pFlags.unicodeRegExp,
-    });
+    recordDiff(
+      {
+        flag: 'unicodeRegExp',
+        expected: true,
+        actual: pFlags.unicodeRegExp,
+      },
+      { planning: true }
+    );
   }
 
   // validateFormats identical on both
-  if (Boolean(sFlags.validateFormats) !== Boolean(pFlags.validateFormats)) {
-    diffs.push({
-      flag: 'validateFormats',
-      expected: sFlags.validateFormats,
-      actual: pFlags.validateFormats,
-    });
+  if (sValidateFormats !== pValidateFormats) {
+    recordDiff(
+      {
+        flag: 'validateFormats',
+        expected: sFlags.validateFormats,
+        actual: pFlags.validateFormats,
+      },
+      {
+        source: sValidateFormats !== expectedValidateFormats,
+        planning: pValidateFormats !== expectedValidateFormats,
+      }
+    );
   }
-  if (Boolean(sFlags.validateFormats) !== Boolean(expect.validateFormats)) {
-    diffs.push({
-      flag: 'validateFormatsPolicy',
-      expected: expect.validateFormats,
-      actual: sFlags.validateFormats,
-    });
+  if (sValidateFormats !== expectedValidateFormats) {
+    recordDiff(
+      {
+        flag: 'validateFormatsPolicy',
+        expected: expect.validateFormats,
+        actual: sFlags.validateFormats,
+      },
+      { source: true }
+    );
+  }
+  if (pValidateFormats !== expectedValidateFormats) {
+    recordDiff(
+      {
+        flag: 'validateFormatsPolicy(planning)',
+        expected: expect.validateFormats,
+        actual: pFlags.validateFormats,
+      },
+      { planning: true }
+    );
   }
 
   // formats plugin parity (SPEC §13 startup-config-check)
@@ -109,107 +153,143 @@ export function checkAjvStartupParity(
     (sourceAjv as AjvWithMarkers).__fd_formatsPlugin === true;
   const pFormatsPlugin =
     (planningAjv as AjvWithMarkers).__fd_formatsPlugin === true;
-  if (Boolean(sFlags.validateFormats) || Boolean(pFlags.validateFormats)) {
+  if (sValidateFormats || pValidateFormats) {
     // Presence on each instance when it claims validateFormats:true
-    if (Boolean(sFlags.validateFormats) && !sFormatsPlugin) {
-      diffs.push({
-        flag: 'formatsPlugin(source)',
-        expected: true,
-        actual: sFormatsPlugin,
-      });
+    if (sValidateFormats && !sFormatsPlugin) {
+      recordDiff(
+        {
+          flag: 'formatsPlugin(source)',
+          expected: true,
+          actual: sFormatsPlugin,
+        },
+        { source: true }
+      );
     }
-    if (Boolean(pFlags.validateFormats) && !pFormatsPlugin) {
-      diffs.push({
-        flag: 'formatsPlugin(planning)',
-        expected: true,
-        actual: pFormatsPlugin,
-      });
+    if (pValidateFormats && !pFormatsPlugin) {
+      recordDiff(
+        {
+          flag: 'formatsPlugin(planning)',
+          expected: true,
+          actual: pFormatsPlugin,
+        },
+        { planning: true }
+      );
     }
     // Parity across instances when format validation is active on both
-    if (Boolean(sFlags.validateFormats) && Boolean(pFlags.validateFormats)) {
+    if (sValidateFormats && pValidateFormats) {
       if (sFormatsPlugin !== pFormatsPlugin) {
-        diffs.push({
-          flag: 'formatsPlugin(parity)',
-          expected: true,
-          actual: false,
-        });
+        recordDiff(
+          {
+            flag: 'formatsPlugin(parity)',
+            expected: true,
+            actual: false,
+          },
+          { source: !sFormatsPlugin, planning: !pFormatsPlugin }
+        );
       }
     }
   }
 
   // allowUnionTypes policy: enabled on planning when compiling union-typed views (we require true by default)
   if (expect.planningCompilesCanonical2020 && pFlags.allowUnionTypes !== true) {
-    diffs.push({
-      flag: 'allowUnionTypes(planning)',
-      expected: true,
-      actual: pFlags.allowUnionTypes,
-    });
+    recordDiff(
+      {
+        flag: 'allowUnionTypes(planning)',
+        expected: true,
+        actual: pFlags.allowUnionTypes,
+      },
+      { planning: true }
+    );
   }
 
   // strictTypes policy: tolerant source vs strict planning (§13)
   if (sFlags.strictTypes !== false) {
-    diffs.push({
-      flag: 'strictTypes(source)',
-      expected: false,
-      actual: sFlags.strictTypes,
-    });
+    recordDiff(
+      {
+        flag: 'strictTypes(source)',
+        expected: false,
+        actual: sFlags.strictTypes,
+      },
+      { source: true }
+    );
   }
   if (expect.planningCompilesCanonical2020 && pFlags.strictTypes !== true) {
-    diffs.push({
-      flag: 'strictTypes(planning)',
-      expected: true,
-      actual: pFlags.strictTypes,
-    });
+    recordDiff(
+      {
+        flag: 'strictTypes(planning)',
+        expected: true,
+        actual: pFlags.strictTypes,
+      },
+      { planning: true }
+    );
   }
 
   if (sFlags.strictSchema !== false) {
-    diffs.push({
-      flag: 'strictSchema(source)',
-      expected: false,
-      actual: sFlags.strictSchema,
-    });
+    recordDiff(
+      {
+        flag: 'strictSchema(source)',
+        expected: false,
+        actual: sFlags.strictSchema,
+      },
+      { source: true }
+    );
   }
   if (expect.planningCompilesCanonical2020 && pFlags.strictSchema !== true) {
-    diffs.push({
-      flag: 'strictSchema(planning)',
-      expected: true,
-      actual: pFlags.strictSchema,
-    });
+    recordDiff(
+      {
+        flag: 'strictSchema(planning)',
+        expected: true,
+        actual: pFlags.strictSchema,
+      },
+      { planning: true }
+    );
   }
 
   // discriminator parity
   if (expect.discriminator !== undefined) {
     if (Boolean(sFlags.discriminator) !== Boolean(expect.discriminator)) {
-      diffs.push({
-        flag: 'discriminator(source)',
-        expected: expect.discriminator,
-        actual: sFlags.discriminator,
-      });
+      recordDiff(
+        {
+          flag: 'discriminator(source)',
+          expected: expect.discriminator,
+          actual: sFlags.discriminator,
+        },
+        { source: true }
+      );
     }
     if (Boolean(pFlags.discriminator) !== Boolean(expect.discriminator)) {
-      diffs.push({
-        flag: 'discriminator(planning)',
-        expected: expect.discriminator,
-        actual: pFlags.discriminator,
-      });
+      recordDiff(
+        {
+          flag: 'discriminator(planning)',
+          expected: expect.discriminator,
+          actual: pFlags.discriminator,
+        },
+        { planning: true }
+      );
     }
   }
 
   // multipleOfPrecision alignment when provided
   if (expect.multipleOfPrecision !== undefined) {
     if (sFlags.multipleOfPrecision !== expect.multipleOfPrecision) {
-      diffs.push({
-        flag: 'multipleOfPrecision(source)',
-        expected: expect.multipleOfPrecision,
-        actual: sFlags.multipleOfPrecision,
-      });
+      recordDiff(
+        {
+          flag: 'multipleOfPrecision(source)',
+          expected: expect.multipleOfPrecision,
+          actual: sFlags.multipleOfPrecision,
+        },
+        { source: true }
+      );
     }
     if (pFlags.multipleOfPrecision !== expect.multipleOfPrecision) {
-      diffs.push({
-        flag: 'multipleOfPrecision(planning)',
-        expected: expect.multipleOfPrecision,
-        actual: pFlags.multipleOfPrecision,
-      });
+      recordDiff(
+        {
+          flag: 'multipleOfPrecision(planning)',
+          expected: expect.multipleOfPrecision,
+          actual: pFlags.multipleOfPrecision,
+        },
+        { planning: true }
+      );
     }
   }
 
@@ -217,23 +297,35 @@ export function checkAjvStartupParity(
   const sClass = (sourceAjv as AjvWithMarkers).__fd_ajvClass;
   const pClass = (planningAjv as AjvWithMarkers).__fd_ajvClass;
   if (sClass !== expect.sourceClass) {
-    diffs.push({
-      flag: 'dialectClass(source)',
-      expected: expect.sourceClass,
-      actual: sClass,
-    });
+    recordDiff(
+      {
+        flag: 'dialectClass(source)',
+        expected: expect.sourceClass,
+        actual: sClass,
+      },
+      { source: true }
+    );
   }
   if (expect.planningCompilesCanonical2020 && pClass !== 'Ajv2020') {
-    diffs.push({
-      flag: 'dialectClass(planning)',
-      expected: 'Ajv2020',
-      actual: pClass,
-    });
+    recordDiff(
+      {
+        flag: 'dialectClass(planning)',
+        expected: 'Ajv2020',
+        actual: pClass,
+      },
+      { planning: true }
+    );
   }
 
   if (diffs.length > 0) {
+    const instance: AjvGateFailureDetails['instance'] =
+      sourceFailed && !planningFailed
+        ? 'source'
+        : planningFailed && !sourceFailed
+          ? 'planning'
+          : 'both';
     const details: AjvGateFailureDetails = {
-      instance: 'both',
+      instance,
       diffs,
       ajvMajor: getAjvMajorVersion(),
       sourceFlags: normalizeFlagsForReport(sFlags),
