@@ -254,6 +254,11 @@ export interface PlanOptions {
     strategies?: Array<'local' | 'remote' | 'schemastore'>;
     /** Local on-disk cache directory. Default: "~/.foundrydata/cache" */
     cacheDir?: string;
+    /**
+     * Optional curated snapshot file containing pre-fetched registry entries.
+     * When provided, remote fetch is disabled and the snapshot is used instead.
+     */
+    snapshotPath?: string;
     /** Planning-time substitution for unresolved external refs in Lax. Default: 'none'. */
     stubUnresolved?: 'none' | 'emptySchema';
     /** Bounds (determinism & safety) */
@@ -397,6 +402,7 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
   resolver: {
     strategies: ['local'],
     cacheDir: pathForDefaultCacheDir(),
+    snapshotPath: undefined,
     stubUnresolved: 'none',
     maxDocs: 64,
     maxRefDepth: 16,
@@ -659,6 +665,9 @@ function validateOptions(options: ResolvedOptions): void {
   if (r.timeoutMs <= 0) throw new Error('resolver.timeoutMs must be positive');
   if (typeof r.hydrateFinalAjv !== 'boolean') {
     throw new Error('resolver.hydrateFinalAjv must be boolean');
+  }
+  if (r.snapshotPath !== undefined && typeof r.snapshotPath !== 'string') {
+    throw new Error('resolver.snapshotPath must be a string when provided');
   }
 }
 

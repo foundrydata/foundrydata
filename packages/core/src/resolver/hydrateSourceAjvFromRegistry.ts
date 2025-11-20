@@ -10,6 +10,8 @@ import type { ResolverDiagnosticNote } from './options.js';
 export interface RegistryDoc {
   uri: string;
   schema: unknown;
+  contentHash?: string;
+  dialect?: Dialect;
 }
 
 export interface HydrateSourceAjvOptions {
@@ -71,6 +73,7 @@ export function hydrateSourceAjvFromRegistry(
   const notes = options.notes;
   const seenSchemaIds = options.seenSchemaIds ?? new Map<string, string>();
   const targetDialect = options.targetDialect;
+  const seenUris = new Set<string>();
 
   const ajvWithApi = ajv as unknown as {
     getSchema?: (key: string) => unknown;
@@ -79,7 +82,11 @@ export function hydrateSourceAjvFromRegistry(
 
   for (const entry of registryDocs) {
     try {
-      const docDialect = detectDialect(entry.schema);
+      const entryDialect =
+        entry.dialect && entry.dialect !== 'unknown'
+          ? entry.dialect
+          : undefined;
+      const docDialect = entryDialect ?? detectDialect(entry.schema);
       if (!isDialectCompatible(docDialect, targetDialect)) {
         if (options.ignoreIncompatible && notes) {
           notes.push({
@@ -98,14 +105,27 @@ export function hydrateSourceAjvFromRegistry(
       const effectiveDialect: Dialect =
         docDialect === 'unknown' ? (targetDialect ?? '2020-12') : docDialect;
 
-      ensureMeta(ajv, effectiveDialect);
-
       let uriKey = entry.uri;
       try {
         uriKey = new URL(entry.uri).href;
       } catch {
         uriKey = entry.uri;
       }
+
+      if (seenUris.has(uriKey)) {
+        notes?.push({
+          code: 'RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID',
+          canonPath: '#',
+          details: {
+            ref: uriKey,
+            reason: 'uri-already-seen',
+            contentHash: entry.contentHash,
+          },
+        });
+        continue;
+      }
+
+      ensureMeta(ajv, effectiveDialect);
 
       if (typeof ajvWithApi.getSchema === 'function') {
         const existingByUri = ajvWithApi.getSchema(uriKey);
@@ -116,8 +136,10 @@ export function hydrateSourceAjvFromRegistry(
             details: {
               ref: uriKey,
               reason: 'uri-already-registered',
+              contentHash: entry.contentHash,
             },
           });
+          seenUris.add(uriKey);
           continue;
         }
       }
@@ -143,6 +165,7 @@ export function hydrateSourceAjvFromRegistry(
               id,
               ref: uriKey,
               existingRef: existingFromRegistry ?? 'ajv-existing',
+              contentHash: entry.contentHash,
             },
           });
         }
@@ -157,6 +180,7 @@ export function hydrateSourceAjvFromRegistry(
           seenSchemaIds.set(id, uriKey);
         }
       }
+      seenUris.add(uriKey);
     } catch (error) {
       notes?.push({
         code: 'RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID',
@@ -164,6 +188,7 @@ export function hydrateSourceAjvFromRegistry(
         details: {
           ref: entry.uri,
           error: error instanceof Error ? error.message : String(error),
+          contentHash: entry.contentHash,
         },
       });
     }

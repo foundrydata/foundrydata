@@ -1,10 +1,15 @@
 import { afterEach, describe, it, expect, vi } from 'vitest';
+import path from 'node:path';
+import os from 'node:os';
+import { writeFile, unlink } from 'node:fs/promises';
+
 import { ResolutionRegistry } from '../../src/resolver/registry.js';
 import {
   resolveAllExternalRefs,
   type ResolverOptions,
 } from '../../src/resolver/options.js';
 import * as HttpResolver from '../../src/resolver/http-resolver.js';
+import { stableHash } from '../../src/util/stable-hash.js';
 
 describe('resolveAllExternalRefs (Extension R1)', () => {
   afterEach(() => {
@@ -98,5 +103,54 @@ describe('resolveAllExternalRefs (Extension R1)', () => {
     const codes = result.notes.map((n) => n.code);
     expect(codes).toContain('RESOLVER_STRATEGIES_APPLIED');
     expect(codes).toContain('RESOLVER_CACHE_HIT');
+  });
+
+  it('loads a snapshot without performing network prefetch', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: { id: { type: 'integer' } },
+    } as const;
+
+    const entry = {
+      uri: 'https://example.com/curated.json',
+      body: {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'string',
+      },
+    };
+    const hashed = stableHash(entry.body);
+    const contentHash = hashed?.digest ?? 'hash-test';
+    const snapshotPath = path.join(
+      os.tmpdir(),
+      `resolver-snapshot-${Date.now()}.ndjson`
+    );
+    await writeFile(
+      snapshotPath,
+      `${JSON.stringify({
+        uri: entry.uri,
+        body: entry.body,
+        contentHash,
+      })}\n`,
+      'utf8'
+    );
+
+    const spy = vi.spyOn(HttpResolver, 'prefetchAndBuildRegistry');
+
+    try {
+      const result = await resolveAllExternalRefs(schema as object, {
+        ...baseOptions,
+        strategies: ['remote', 'schemastore'],
+        snapshotPath,
+      });
+
+      expect(spy).not.toHaveBeenCalled();
+      expect(result.registry.size()).toBe(1);
+      expect(result.registryFingerprint).toBe(result.registry.fingerprint());
+      const codes = result.notes.map((n) => n.code);
+      expect(codes).toContain('RESOLVER_SNAPSHOT_APPLIED');
+    } finally {
+      await unlink(snapshotPath);
+    }
   });
 });

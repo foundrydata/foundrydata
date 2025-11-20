@@ -10,7 +10,7 @@
 ## 0. Philosophy & Invariants (Normative)
 
 * **AJV is the oracle.** The final validation **MUST** run against the **original** schema (not the canonical view). AJV options **MUST** match (e.g., `unicodeRegExp:true` on both planning and final validation). A mismatch **MUST** be a hard error.
-* **No network I/O in the core.** Any resolver/cache for external `$ref` is an **optional pre‑phase (R1)** that populates an in‑memory, read‑only registry. The core **MUST NOT** perform network I/O.
+* **No network I/O in the core.** Any resolver/cache for external `$ref` is an **optional pre‑phase (R1)** that populates an in‑memory, read‑only registry. The core **MUST NOT** perform network I/O. **Harness default:** R1 is enabled by default (opt‑out) and the Source Ajv **MUST** be hydrated from the registry prior to final compile; outcomes are deterministic for a fixed **registryFingerprint**.  <!-- harness-default -->
 * **Determinism.** For a fixed tuple `(seed, PlanOptionsSubKey, AJV.major, flags[, registryFingerprint from R1])`, the generator **MUST** be deterministic: same branch choices, same instances, same coverage. No wall‑clock or locale dependence.
 * **Diagnostics.** Errors/warnings **MUST** use a stable envelope `{ code, canonPath, details }` with a single `canonPath` and structured `details`.
 

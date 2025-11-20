@@ -26,8 +26,9 @@ interface CliOptions {
   seed: number;
   count: number;
   outFile?: string;
-  resolve?: string;
-  cacheDir?: string;
+  resolve: string;
+  cacheDir: string;
+  snapshot?: string;
   allowHosts: string[];
   resolverHydrateFinalAjv?: boolean;
   resolverStubUnresolved?: 'emptySchema';
@@ -44,11 +45,13 @@ function parseArgs(argv: string[]): CliOptions {
   let seed = DEFAULT_SEED;
   let count = DEFAULT_INSTANCES_PER_SCHEMA;
   let outFile: string | undefined;
-  let resolveStrategies: string | undefined;
-  let cacheDir: string | undefined;
+  let resolveStrategies: string | undefined = 'local,remote,schemastore';
+  let cacheDir: string | undefined = '~/.foundrydata/cache';
+  let snapshot: string | undefined;
   const allowHosts: string[] = [];
-  let resolverHydrateFinalAjv: boolean | undefined;
+  let resolverHydrateFinalAjv: boolean | undefined = true;
   let resolverStubUnresolved: 'emptySchema' | undefined;
+  let disableResolve = false;
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -109,11 +112,18 @@ function parseArgs(argv: string[]): CliOptions {
       index += 1;
     } else if (arg.startsWith('--resolve=')) {
       resolveStrategies = arg.slice('--resolve='.length);
+    } else if (arg === '--no-resolve') {
+      disableResolve = true;
     } else if (arg === '--cache-dir' && argv[index + 1]) {
       cacheDir = argv[index + 1]!;
       index += 1;
     } else if (arg.startsWith('--cache-dir=')) {
       cacheDir = arg.slice('--cache-dir='.length);
+    } else if (arg === '--snapshot' && argv[index + 1]) {
+      snapshot = argv[index + 1]!;
+      index += 1;
+    } else if (arg.startsWith('--snapshot=')) {
+      snapshot = arg.slice('--snapshot='.length);
     } else if (arg === '--allow-host' && argv[index + 1]) {
       allowHosts.push(argv[index + 1]!);
       index += 1;
@@ -142,14 +152,17 @@ function parseArgs(argv: string[]): CliOptions {
     }
   }
 
+  const effectiveResolve = disableResolve ? 'local' : resolveStrategies;
+
   return {
     corpusDir,
     mode,
     seed,
     count,
     outFile,
-    resolve: resolveStrategies,
-    cacheDir,
+    resolve: effectiveResolve ?? 'local',
+    cacheDir: cacheDir ?? '~/.foundrydata/cache',
+    snapshot,
     allowHosts,
     resolverHydrateFinalAjv,
     resolverStubUnresolved,
@@ -167,6 +180,7 @@ async function main(): Promise<void> {
   const resolverCli: ResolverCliOptions = {
     resolve: cli.resolve,
     cacheDir: cli.cacheDir,
+    snapshotPath: cli.snapshot,
     allowHosts: cli.allowHosts,
     hydrateFinalAjv: cli.resolverHydrateFinalAjv,
     stubUnresolved: cli.mode === 'lax' ? cli.resolverStubUnresolved : undefined,

@@ -48,6 +48,9 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
   *Signal:* when not skipped, final validation passes; `diag.metrics.validationsPerRow ≥ 1`.
 * **No network I/O during core phases for external `$ref`** (Strict by default).
   When **Extension R1** is enabled, HTTP(S) fetch is permitted **only** in the pre‑pipeline resolver step; core phases remain I/O‑free.
+  **Harness default (normative addition):** the corpus harness enables **R1 by default (opt‑out)** with
+  `resolver.strategies:['local','remote','schemastore']`, a persistent `resolver.cacheDir`, and
+  `resolver.hydrateFinalAjv:true`. The core guarantees are unchanged.  <!-- harness-default -->
   *Signal:* `EXTERNAL_REF_UNRESOLVED` (Strict = error; Lax = warn).
 * **Deterministic outcomes for a given `(seed, PlanOptionsSubKey, AJV.major, AJV.flags)`** (see §14 for `PlanOptionsSubKey`).
   **When Extension R1 is enabled,** outcomes are deterministic for a fixed **resolver registry fingerprint** (§14) in addition
@@ -70,10 +73,15 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
 
 **External `$ref` resolver DoD (Extension R1).**
 • **Online (empty resolver cache):** With `resolver.strategies:['local','remote','schemastore']`, first‑run compilation of the **npm package** schema (`https://json.schemastore.org/package`) and **AsyncAPI 3.0** schema succeeds without `EXTERNAL_REF_UNRESOLVED`; notes show `RESOLVER_CACHE_MISS_FETCHED` followed by `RESOLVER_CACHE_HIT` on subsequent runs.  
+  • **Harness offline snapshot (new):** When a curated offline snapshot (registry bundle) is provided to the harness,
+    the final compilation of the same schemas **MUST** succeed **without** any network access; outcomes remain
+    deterministic for a fixed **registry fingerprint**.  <!-- snapshot-dod -->
 • **Offline / disallowed hosts:** With `resolver.stubUnresolved:'emptySchema'` in **Lax**, unresolved external `$ref` are stubbed for planning with warnings (`RESOLVER_OFFLINE_UNAVAILABLE`, `EXTERNAL_REF_STUBBED`), generation continues, and final validation follows §11 skip‑eligibility (set `diag.metrics.validationsPerRow = 0` when skipped).
 
 **R1 Quick Start (informative).**
-• To enable HTTP(S) resolution in the corpus harness, run: `tsx scripts/run-corpus.ts --corpus profiles/real-world --mode strict --resolve local,remote,schemastore --cache-dir ~/.foundrydata/cache`. The first run populates the cache (`RESOLVER_CACHE_MISS_FETCHED`), subsequent runs reuse it (`RESOLVER_CACHE_HIT`).  
+• The corpus harness enables R1 by default; to opt‑out use `--resolve=local` or `--no-resolve`.
+• To force offline behavior, pass `--snapshot <path>`; when present, no remote fetch occurs.
+• The first run populates the cache (`RESOLVER_CACHE_MISS_FETCHED`), subsequent runs reuse it (`RESOLVER_CACHE_HIT`).  
 • To exercise Lax + planning stubs offline, run: `tsx scripts/run-corpus.ts --corpus profiles/real-world --mode lax --resolve local --resolver-stub-unresolved=emptySchema`. For the main CLI, `--compat lax --fail-on-unresolved=false --resolve=local` maps to the same resolver configuration (Lax + planning‑time stubs).  
 • When `--resolve` includes `remote`, HTTP(S) fetch is allowed for any host unless `--allow-host` is present, in which case the allow‑list **restricts** remote hosts. The `schemastore` strategy always permits `json.schemastore.org` even without `--allow-host`.
 
@@ -181,9 +189,12 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
   Generate ──► Repair (budgeted, AJV‑driven) ──► Validate (AJV on original)
   ```
 
-**Optional pre‑phase (Extension R1; normative).** When enabled, a **Prefetch & Cache Fill** step runs **before**
+**Optional pre‑phase (Extension R1; normative).** When enabled (default in the harness), a **Prefetch & Cache Fill** step runs **before**
 `Normalize`, discovers external `http(s)` `$ref` targets, hydrates a local on‑disk cache (`resolver.cacheDir`), and
 builds an in‑memory **resolution registry** used **read‑only** by core phases. No network I/O occurs after this pre‑phase.
+**Resolver snapshot bundle (normative; harness).** The harness MAY load a curated offline registry snapshot
+(NDJSON of `{uri, body, contentHash, dialect?}`) and MUST use it read‑only to hydrate the Source Ajv prior to compile;
+when a snapshot is loaded, remote fetch MUST be disabled irrespective of `resolver.strategies`.  <!-- snapshot -->
 **Hydration for final validation (normative).** When the registry is non‑empty and
 `resolver.hydrateFinalAjv !== false`, the implementation **MUST**:
   1) Hydrate the **Source AJV** by adding each registry document via `addSchema(doc, uri)` **before** calling
