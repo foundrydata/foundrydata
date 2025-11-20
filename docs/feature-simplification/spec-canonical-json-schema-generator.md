@@ -187,6 +187,17 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
      │
      ▼
   Generate ──► Repair (budgeted, AJV‑driven) ──► Validate (AJV on original)
+
+**Regex preflight (global; normative).** Before any coverage analysis, Compose MUST perform a
+**global “regex preflight”** pass over the canonical schema and attempt to compile **all** occurrences of:
+`pattern` (string schemas), the **keys** of `patternProperties`, and `propertyNames.pattern`,
+using exactly **`new RegExp(source,'u')`**. Failures MUST be recorded as **non‑fatal** diagnostics
+`REGEX_COMPILE_ERROR` with `details:{ context:'preflight', patternSource }` at the **owning object’s**
+canonical path (for `patternProperties`, the object that contains the keyword; for `pattern`, the schema node
+that carries it; for `propertyNames.pattern`, the object that carries `propertyNames`). Implementations MUST
+deduplicate these diagnostics by `(canonPath, code, details.context, details.patternSource)`. This preflight
+is **purely diagnostic**; it does not alter planning or validation semantics (AJV remains the oracle).
+See §§8, 19 for payload constraints and deduplication.
   ```
 
 **Optional pre‑phase (Extension R1; normative).** When enabled (default in the harness), a **Prefetch & Cache Fill** step runs **before**
@@ -729,7 +740,7 @@ Implementations **MUST NOT** include generator‑only `COMPLEXITY_CAP_PATTERNS` 
   **Compile‑error rule (normative).** If `new RegExp(source, 'u')` throws, the implementation **MUST** treat the pattern as **unknown gating** and **MUST NOT** use it to expand coverage **or** to trigger `AP_FALSE_UNSAFE_PATTERN`. Emit **`REGEX_COMPILE_ERROR`** at the corresponding `canonPath` with `details:{ patternSource: source, context:"coverage" }`.  
   **Cross‑reference (normative).** All regex diagnostics payloads in this section (`REGEX_COMPILE_ERROR`, `REGEX_COMPLEXITY_CAPPED`, `AP_FALSE_UNSAFE_PATTERN`) **MUST** conform to §19.1: `patternSource` (when present) is the JSON‑unescaped source (Definition — JSON‑unescaped regex source) and `canonPath` MUST NOT be duplicated inside `details`.
   **Diagnostic locus (normative).** For coverage-time regex diagnostics (`REGEX_COMPILE_ERROR`, `REGEX_COMPLEXITY_CAPPED`) arising from `patternProperties` or from `propertyNames`, Compose **MUST** emit them at the **owning object’s canonPath** (the node that contains the keyword), not at the pattern literal. Do not duplicate `canonPath` in `details` (§19).
-  **Severity routing (normative).** `REGEX_COMPLEXITY_CAPPED{context:'coverage'}` and `REGEX_COMPILE_ERROR{context:'coverage'}` **MUST** be recorded as **non‑fatal** entries in `diag.warn`. They **MUST NOT** appear in `diag.fatal` unless another rule independently escalates the node (e.g., §8 fail‑fast under AP:false).
+  **Severity routing (normative).** `REGEX_COMPLEXITY_CAPPED{context:'coverage'}` and `REGEX_COMPILE_ERROR{context:'coverage'|'preflight'}` **MUST** be recorded as **non‑fatal** entries in `diag.warn`. They **MUST NOT** appear in `diag.fatal` unless another rule independently escalates the node (e.g., §8 fail‑fast under AP:false).
   **Deduplication (normative).** Compose **MUST** de‑duplicate coverage‑time regex diagnostics by the tuple
   `(canonPath, code, details.context, details.patternSource)` and export at most one entry per tuple in `diag.warn`.
   AJV remains the oracle at validation time; coverage analysis does not attempt to reinterpret such constructs. This rule also applies when evaluating §7 `propertyNames` rewrite preconditions: a compile error under `u` prevents the rewrite and **MUST** log **both** `REGEX_COMPILE_ERROR{patternSource: source, context:"rewrite"}` and `PNAMES_COMPLEX{reason:"REGEX_COMPILE_ERROR"}` (and any other applicable diagnostics). **When compile errors reduce provable coverage under presence pressure, implementations MUST also emit `AP_FALSE_INTERSECTION_APPROX` with `details.reason:"regexCompileError"`.** AJV remains the oracle at validation time. No other recovery is permitted. **Payload conformance:** regex diagnostics’ `details` **MUST** satisfy §19.1 (regex payloads) and use the JSON‑unescaped `patternSource`.
@@ -2012,6 +2023,7 @@ Name‑automaton budgets such as `maxAutomatonStates`, `maxProductStates`, `maxK
 * Conditionals ✓ (no rewrite by default; safe rewrite optional; **if‑aware‑lite** in generation)
 * Tuples + `additionalItems` ✓ (implicit max length)
 * `patternProperties`/`propertyNames` ✓ (strict equivalence rewrites only; guarded by `unevaluated*`)
+  * **Regex preflight (global)** ✓ (diagnostic‑only; `REGEX_COMPILE_ERROR{context:'preflight'}`)
 * `dependentSchemas`/`dependentRequired` ✓ (guarded; early‑unsat with `AP:false`)
 * **`contains`** ✓ (**bag semantics** across `allOf`; independent needs)
 * `multipleOf` ✓ (exact rational with caps and fallbacks)
@@ -2048,7 +2060,7 @@ Entries in `diag.warn` carry the same `code`/`details` schema as their fatal cou
 <a id="s19-phase-separation"></a>
 ### Phase separation
 
-Compose/coverage vs Generator: `REGEX_COMPLEXITY_CAPPED` **and `REGEX_COMPILE_ERROR`** are emitted during coverage analysis and §7 rewrites; `COMPLEXITY_CAP_PATTERNS` is emitted only by the Generator during pattern‑witness search. Do not mix the two; their payloads and phases are distinct.  
+Compose/coverage vs Generator: `REGEX_COMPLEXITY_CAPPED` and `REGEX_COMPILE_ERROR` may be emitted during **coverage** analysis, **preflight**, and §7 rewrites; `COMPLEXITY_CAP_PATTERNS` is emitted only by the Generator during pattern‑witness search. Do not mix the two; their payloads and phases are distinct.  
 **Normalizer‑only codes:** `PNAMES_COMPLEX` and `PNAMES_REWRITE_APPLIED` are produced by the Normalizer (§7) and **MUST NOT** be emitted by Compose/Generator.
 
 **Code ↔ phase table (normative, excerpt).**
@@ -2057,8 +2069,8 @@ Compose/coverage vs Generator: `REGEX_COMPLEXITY_CAPPED` **and `REGEX_COMPILE_ER
 | ----------------------------------- | ----------------------- |
 | PNAMES_COMPLEX                      | Normalize               |
 | PNAMES_REWRITE_APPLIED              | Normalize               |
-| REGEX_COMPLEXITY_CAPPED             | Normalize / Compose     |
-| REGEX_COMPILE_ERROR                 | Normalize / Compose     |
+| REGEX_COMPLEXITY_CAPPED             | Normalize / Compose (contexts: rewrite, coverage) |
+| REGEX_COMPILE_ERROR                 | Normalize / Compose (contexts: rewrite, coverage, preflight) |
 | AP_FALSE_UNSAFE_PATTERN             | Compose                 |
 | AP_FALSE_INTERSECTION_APPROX        | Compose                 |
 | COMPLEXITY_CAP_ONEOF                | Compose                 |
@@ -2149,10 +2161,10 @@ Provide the following minimal JSON‑Schema‑like shapes for major codes. Only 
   "context":{"enum":["coverage","rewrite"]}
 }}
 
-// REGEX_COMPILE_ERROR (coverage analysis / §7 rewrite only)
+// REGEX_COMPILE_ERROR (coverage analysis / preflight / §7 rewrite)
 { "type":"object", "required":["patternSource","context"], "properties":{
   "patternSource":{"type":"string"},
-  "context":{"enum":["coverage","rewrite"]}
+  "context":{"enum":["coverage","rewrite","preflight"]}
 }}
 
 // NAME_AUTOMATON_COMPLEXITY_CAPPED
@@ -2455,6 +2467,11 @@ Provide the following minimal JSON‑Schema‑like shapes for major codes. Only 
 MUST be the JSON‑unescaped regex source (see §8 “JSON‑unescaped regex source”). This aligns diagnostics with the textual
 anchoring and complexity scans and guarantees byte‑for‑byte reproducibility.
 
+**Optional hint payload (normative).** `REGEX_COMPILE_ERROR` MAY include a structured hint:
+`details.hint:{ category:string, human:string }`, where `category` is a stable short code
+(e.g., `UNTERMINATED_GROUP`, `MISPLACED_QUANTIFIER`, `INVALID_ESCAPE`) and `human` is a concise explanation.
+Hints are informative and MUST NOT change severity or routing.
+
 `IF_REWRITE_DOUBLE_NOT`, `IF_REWRITE_SKIPPED_UNEVALUATED`, `IF_REWRITE_DISABLED_ANNOTATION_RISK`,
 `ANNOTATION_IN_SCOPE_IF_REWRITE_SKIPPED`, `PNAMES_COMPLEX`, `DEPENDENCY_GUARDED`, `DYNAMIC_PRESENT`,
 `DEFS_TARGET_MISSING`, `EXCLMIN_IGNORED_NO_MIN`, `EXCLMAX_IGNORED_NO_MAX`, `OAS_NULLABLE_KEEP_ANNOT`,
@@ -2509,6 +2526,12 @@ anchoring and complexity scans and guarantees byte‑for‑byte reproducibility.
   - **R2‑ASYNCAPI‑STRICT‑UNCHANGED.** AsyncAPI 3.0 in Strict mode still reports unresolved external `$ref` (no network),
     but no meta‑schema related compile error occurs.
   * **Test ID: RAT_DELTA_LOG_EXCLUSIVE_INTEGER** — Given schema `{ "type":"integer","exclusiveMinimum":0 }`, when repairing input value `0`, verify a `exclusiveMinimum` repair action includes either `details.delta:1` (optional) or that `details.epsilon` is absent.
+
+* **Regex preflight (global).**
+  - **T‑REGEX‑PREFLIGHT‑PATTERN‑01** — invalid `pattern` ⇒ `REGEX_COMPILE_ERROR{context:'preflight'}` at the string schema node.
+  - **T‑REGEX‑PREFLIGHT‑PP‑01** — invalid `patternProperties` key ⇒ `REGEX_COMPILE_ERROR{context:'preflight'}` at the owning object.
+  - **T‑REGEX‑PREFLIGHT‑PNAMES‑01** — invalid `propertyNames.pattern` ⇒ diagnostic as above.
+  - **T‑REGEX‑PREFLIGHT‑FHIR‑INT‑01** — corpus FHIR surfaces the compile error in Compose (preflight) in addition to the existing Validate failure.
 
 * Pointer mapping (longest‑prefix reverse map).
 * **Pointer binding & locus (new).**

@@ -294,7 +294,7 @@ class CompositionEngine {
   private readonly mode: 'strict' | 'lax';
   private readonly branchDiagnostics = new Map<string, BranchDecisionRecord>();
   private readonly containsIndex = new Map<string, ContainsNeed[]>();
-  private readonly coverageRegexWarnKeys = new Set<string>();
+  private readonly regexWarnKeys = new Set<string>();
   private readonly localSmtEnabled: boolean;
   private readonly metrics?: MetricsCollector;
   private nameDfaSummary?: {
@@ -381,6 +381,7 @@ class CompositionEngine {
     }
 
     const schema = node as Record<string, unknown>;
+    this.runRegexPreflight(schema, canonPath);
     // SPEC §12 — Dynamic refs bounded in-document resolution (diagnostic only)
     // If a $dynamicRef is present at this node, attempt a bounded in-document
     // binding and record DYNAMIC_SCOPE_BOUNDED with {name, depth} when successful.
@@ -415,6 +416,67 @@ class CompositionEngine {
 
     this.visitComposition(schema, canonPath);
     this.visitObjectChildren(schema, canonPath);
+  }
+
+  private runRegexPreflight(
+    schema: Record<string, unknown>,
+    canonPath: string
+  ): void {
+    if (typeof schema.pattern === 'string') {
+      this.recordRegexPreflight(schema.pattern, canonPath);
+    }
+
+    if (
+      schema.patternProperties &&
+      typeof schema.patternProperties === 'object'
+    ) {
+      for (const patternSource of Object.keys(
+        schema.patternProperties as Record<string, unknown>
+      )) {
+        this.recordRegexPreflight(patternSource, canonPath);
+      }
+    }
+
+    if (
+      schema.propertyNames &&
+      typeof schema.propertyNames === 'object' &&
+      typeof (schema.propertyNames as Record<string, unknown>).pattern ===
+        'string'
+    ) {
+      const patternSource = (schema.propertyNames as Record<string, unknown>)
+        .pattern as string;
+      this.recordRegexPreflight(patternSource, canonPath);
+    }
+  }
+
+  private recordRegexPreflight(patternSource: string, canonPath: string): void {
+    try {
+      // SPEC §8: always compile with the unicode flag to mirror AJV behavior.
+      RegExp(patternSource, 'u');
+      return;
+    } catch (error) {
+      const err =
+        error instanceof Error ? error : new Error(String(error ?? 'Error'));
+      const hint = inferRegexHint(err.message);
+      const details: Record<string, unknown> = {
+        context: 'preflight',
+        patternSource,
+      };
+      if (err.name) {
+        details.errorName = err.name;
+      }
+      if (err.message) {
+        details.errorMessage = err.message;
+      }
+      if (hint) {
+        details.hint = hint;
+      }
+      this.addRegexWarn(
+        canonPath,
+        DIAGNOSTIC_CODES.REGEX_COMPILE_ERROR,
+        details
+      );
+    }
   }
 
   private visitComposition(
@@ -1724,7 +1786,7 @@ class CompositionEngine {
 
         const analysis = analyzeRegexPattern(patternSource);
         for (const diag of analysis.policy.diagnostics) {
-          this.addCoverageRegexWarn(pointer, diag.code, diag.details);
+          this.addRegexWarn(pointer, diag.code, diag.details);
         }
         if (analysis.compileError) {
           this.addApproximation(pointer, 'regexCompileError');
@@ -1839,7 +1901,7 @@ class CompositionEngine {
           .pattern as string;
         const analysis = analyzeRegexPattern(patternSource);
         for (const diag of analysis.policy.diagnostics) {
-          this.addCoverageRegexWarn(pointer, diag.code, diag.details);
+          this.addRegexWarn(pointer, diag.code, diag.details);
         }
         if (analysis.compileError) {
           this.addApproximation(pointer, 'regexCompileError');
@@ -2200,7 +2262,7 @@ class CompositionEngine {
     this.diag.warn.push({ code, canonPath, details });
   }
 
-  private addCoverageRegexWarn(
+  private addRegexWarn(
     canonPath: string,
     code: DiagnosticCode,
     details: Record<string, unknown>
@@ -2220,10 +2282,10 @@ class CompositionEngine {
       context,
       patternSource,
     });
-    if (this.coverageRegexWarnKeys.has(key)) {
+    if (this.regexWarnKeys.has(key)) {
       return;
     }
-    this.coverageRegexWarnKeys.add(key);
+    this.regexWarnKeys.add(key);
     this.addWarn(canonPath, code, details);
   }
 
@@ -2608,6 +2670,39 @@ function analyzeRegexPattern(source: string): PatternAnalysis {
   }
 
   return analysis;
+}
+
+type RegexHint = { category: string; human: string };
+
+function inferRegexHint(message: unknown): RegexHint | undefined {
+  if (typeof message !== 'string') return undefined;
+  const lower = message.toLowerCase();
+  if (
+    lower.includes('unterminated group') ||
+    lower.includes('unterminated character class')
+  ) {
+    return {
+      category: 'UNTERMINATED_GROUP',
+      human: 'Unterminated group (groupe non clos)',
+    };
+  }
+  if (
+    lower.includes('lone quantifier') ||
+    lower.includes('nothing to repeat') ||
+    lower.includes('unterminated quantifier')
+  ) {
+    return {
+      category: 'MISPLACED_QUANTIFIER',
+      human: 'Misplaced quantifier (quantificateur mal place)',
+    };
+  }
+  if (lower.includes('invalid escape')) {
+    return {
+      category: 'INVALID_ESCAPE',
+      human: "Invalid escape sequence (sequence d'echappement invalide)",
+    };
+  }
+  return undefined;
 }
 
 function extractStringArray(value: unknown): string[] | undefined {

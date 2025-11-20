@@ -402,7 +402,7 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
   resolver: {
     strategies: ['local'],
     cacheDir: pathForDefaultCacheDir(),
-    snapshotPath: undefined,
+    snapshotPath: '',
     stubUnresolved: 'none',
     maxDocs: 64,
     maxRefDepth: 16,

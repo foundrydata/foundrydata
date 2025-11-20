@@ -186,7 +186,7 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
     kind: 'object',
     required: {
       patternSource: { kind: 'string' },
-      context: enumSchema(['coverage', 'rewrite']),
+      context: enumSchema(['coverage', 'rewrite', 'preflight']),
     },
   },
   [DIAGNOSTIC_CODES.AJV_FLAGS_MISMATCH]: {
