@@ -1,24 +1,17 @@
-Task: 25   Title: Product scenarios, examples and DX friction log
-Anchors: [spec://§1#goal, spec://§2#scope, spec://§3-core-principles, spec://§4-pipeline, spec://§6-phases]
+Task: 26   Title: Preserve fail-fast stage from diagnostic envelopes
+Anchors: [spec://§19#diagnostics, spec://§19#envelope, spec://§19#phase-separation]
 
 Touched files:
 - PLAN.md
-- docs/use-cases/product-scenarios.md
-- examples/openapi/users-api.json
-- examples/schemas/payment.json
-- examples/schemas/llm-output.json
-- examples/api-mocks.ts
-- examples/contract-tests.ts
-- examples/llm-output.ts
-- packages/core/test/e2e/examples.integration.spec.ts
+- packages/core/src/pipeline/corpus-harness.ts
+- packages/core/src/pipeline/__tests__/corpus-harness.spec.ts
 
 Approach:
-I will capture 2–3 realistic FoundryData scenarios from a user’s perspective and formalize them in a new docs/use-cases/product-scenarios.md file, focusing on API mocks, contract-style integration tests, and LLM structured output validation. For each scenario I will describe the user context, their goal, and plain-language success criteria, then propose concrete CLI invocations using the existing foundrydata generate/openapi flags so they can run flows end-to-end without learning internal details. In parallel I will add small, self-contained Node examples under examples/, each loading a local schema or OpenAPI document from examples/schemas/, calling the public Generate and Validate facades from @foundrydata/core with fixed seeds, printing a compact summary plus a small sample of instances, and spot-checking AJV validity so the scripts behave like real user snippets rather than internal harnesses. To keep these examples from rotting, I will introduce a new e2e test file in packages/core/test/e2e that imports the example helpers, asserts they do not throw, produce at least one AJV-valid instance for their schema, and behave deterministically for a fixed seed when appropriate. Finally, I will extend the product-scenarios.md document with a friction/gaps section and a short “product fit” verdict per scenario, based only on the observed behavior of the public Node API and CLI, without touching pipeline internals.
+I will align the corpus harness with the diagnostics contract in §19 by deriving the fail-fast stage directly from each diagnostic envelope’s recorded `phase` instead of re-mapping codes through `getDiagnosticPhase`. The current lookup silently drops the stage for future fail-fast codes that have envelopes but are not yet whitelisted in the phase map; using the envelope keeps reporting faithful to the emitted diagnostics while still respecting the phase separation rules in §19. I will start by reviewing the existing fail-fast aggregation to confirm the unsat vs fail-fast split and ensure the change does not disturb the derived failureCategory/kind heuristics. Then I will replace the stage derivation with a phase-preserving path that trusts the envelope (the source of truth defined by §19) and only falls back to derived classification if ever needed for malformed inputs, keeping `failFastCode` untouched. After updating the harness, I will add a focused unit test that simulates a future fail-fast diagnostic code that is recognized by the fail-fast filter but absent from the phase map; the test will stub the fail-fast predicate to admit the synthetic code, feed a validation-stage envelope, and assert that `failFastStage` mirrors the envelope’s phase. This ensures we do not regress when new fail-fast codes land before the phase map is updated. I will also double-check that existing AJV/config classification tests still pass to prove behavior stays stable for known codes. Finally, I will run the standard build, test, and bench commands so the change is exercised across the pipeline and validated against the diagnostics schema expectations.
 
 Risks/Unknowns:
-- The example schemas and OpenAPI document must stay intentionally simple so they remain maintainable while still exercising realistic flows; overfitting them to edge cases would blur the boundary between examples and internal test harnesses.
-- Importing example scripts from core e2e tests requires careful relative paths so Vitest and TypeScript resolve them cleanly without leaking test-only helpers into the public API surface.
-- Some UX friction may stem from broader design choices (for example around compat vs mode flags) that are out of scope for this task; I should document these clearly in the friction log without attempting speculative refactors.
+- The synthetic fail-fast code in tests must avoid interfering with other diagnostics, so the stubbed predicate needs to fall back cleanly to the real implementation.
+- Existing reports already written to disk may still show the legacy stage computation; the fix only affects newly generated harness runs.
 
 Checks:
 - build: npm run build
