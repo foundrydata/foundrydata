@@ -5,6 +5,7 @@
 import {
   DIAGNOSTIC_CODES,
   type DiagnosticCode,
+  type CoverageCert,
   type SafeProofCertificate,
 } from '../diag/codes.js';
 import {
@@ -33,6 +34,7 @@ import { buildThompsonNfa } from './name-automata/nfa.js';
 import { buildDfaFromNfa, type Dfa } from './name-automata/dfa.js';
 import {
   buildProductDfa,
+  type ProductBuildResult,
   type ProductSummary,
 } from './name-automata/product.js';
 import { bfsEnumerate } from './name-automata/bfs.js';
@@ -222,6 +224,7 @@ export type ComposeInput = NormalizeResult;
 
 const NAME_AUTOMATON_MAX_STATES = 4096;
 const NAME_AUTOMATON_MAX_PRODUCT_STATES = 4096;
+const SAFE_PROOF_WITNESS_CAP = 16;
 
 export function compose(
   input: ComposeInput,
@@ -836,12 +839,18 @@ class CompositionEngine {
     // optional product DFA summary for the must-cover language. When automata
     // cannot be built (e.g., due to regex caps or complex shapes), fall back
     // to the existing predicate semantics for CoverageIndex.has.
-    const nameAutomatonSummary = this.buildNameAutomatonProductSummary(
-      conjuncts,
-      canonPath
-    );
+    const nameAutomaton = this.buildNameAutomatonProduct(conjuncts, canonPath);
+    const nameAutomatonSummary = nameAutomaton?.summary;
+    const nameAutomatonDfa = nameAutomaton?.dfa;
 
     const hasName = this.createCoveragePredicate(conjuncts);
+
+    const preSafeProof: CoverageCert = {
+      used: false,
+      finite: nameAutomatonSummary?.finite ?? false,
+      states: nameAutomatonSummary?.states ?? 0,
+      ...(nameAutomatonSummary?.capsHit ? { capsHit: true } : {}),
+    };
 
     const automatonNonEmpty =
       !!nameAutomatonSummary &&
@@ -856,20 +865,8 @@ class CompositionEngine {
         }
       : undefined;
 
-    let safeProof: SafeProofCertificate | undefined;
-    if (automatonNonEmpty && presencePressure) {
-      safeProof = {
-        used: true,
-        finite: nameAutomatonSummary.finite,
-        states: nameAutomatonSummary.states,
-        ...(nameAutomatonSummary.capsHit ? { capsHit: true } : {}),
-      };
-    }
-
-    let safeIntersectionExists = false;
-    if (automatonNonEmpty) {
-      safeIntersectionExists = true;
-    } else {
+    let safeIntersectionExists = automatonNonEmpty;
+    if (!safeIntersectionExists) {
       for (const candidate of candidateNames) {
         if (hasName(candidate)) {
           safeIntersectionExists = true;
@@ -877,6 +874,8 @@ class CompositionEngine {
         }
       }
     }
+
+    let safeProof: SafeProofCertificate | undefined;
 
     const anchoredKinds = new Set<LiftKind>();
     const strictFamilies = new Set<StrictFamily>();
@@ -1022,26 +1021,103 @@ class CompositionEngine {
       }
     }
 
-    if (safeProof) {
+    const witnessLimit = Math.min(
+      SAFE_PROOF_WITNESS_CAP,
+      this.resolvedOptions.nameEnum.maxResults ?? SAFE_PROOF_WITNESS_CAP,
+      ENUM_CAP
+    );
+    let safeWitnesses: string[] | undefined;
+    if (enumerationValues && enumerationValues.length > 0) {
+      safeWitnesses = enumerationValues.slice(0, witnessLimit);
+    } else {
+      const witnesses: string[] = [];
+      for (const candidate of candidateNames) {
+        if (hasName(candidate)) {
+          witnesses.push(candidate);
+          if (witnesses.length >= witnessLimit) break;
+        }
+      }
+      if (witnesses.length > 0) {
+        safeWitnesses = witnesses;
+      } else if (automatonNonEmpty && nameAutomatonDfa) {
+        const patternWitness = this.resolvedOptions.patternWitness;
+        const nameEnum = this.resolvedOptions.nameEnum;
+        const maxDepth = Math.max(
+          1,
+          Math.min(patternWitness.maxLength, nameEnum.maxDepth)
+        );
+        const bfsResult = bfsEnumerate(nameAutomatonDfa, witnessLimit, {
+          maxLength: maxDepth,
+          maxCandidates: patternWitness.maxCandidates,
+        });
+        this.metrics?.recordNameAutomatonBfs({
+          nodesExpanded: bfsResult.nodesExpanded,
+          queuePeak: bfsResult.queuePeak,
+          beamWidthUsed: nameEnum.beamWidth,
+          resultsEmitted: bfsResult.words.length,
+          elapsedMs: bfsResult.elapsedMs,
+        });
+        this.addWarn(canonPath, DIAGNOSTIC_CODES.NAME_AUTOMATON_BFS_APPLIED, {
+          budget: {
+            maxMillis: nameEnum.maxMillis,
+            maxStates: nameEnum.maxStates,
+            maxQueue: nameEnum.maxQueue,
+            maxDepth,
+            maxResults: witnessLimit,
+            beamWidth: nameEnum.beamWidth,
+          },
+          nodesExpanded: bfsResult.nodesExpanded,
+          queuePeak: bfsResult.queuePeak,
+          resultsEmitted: bfsResult.words.length,
+          elapsedMs: bfsResult.elapsedMs,
+        });
+        if (bfsResult.capped) {
+          preSafeProof.capsHit = true;
+          this.recordCap(DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED);
+          this.addWarn(
+            canonPath,
+            DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED,
+            {
+              maxKEnumeration: ENUM_CAP,
+              bfsCandidatesCap: patternWitness.maxCandidates,
+              triedCandidates: bfsResult.tried,
+              tried: bfsResult.tried,
+              component: 'bfs',
+            }
+          );
+        }
+        if (bfsResult.words.length > 0) {
+          safeWitnesses = bfsResult.words.slice(0, witnessLimit);
+        }
+      }
+    }
+
+    if (
+      enumerationIsComplete &&
+      enumerationValues !== undefined &&
+      preSafeProof.finite === false
+    ) {
+      preSafeProof.finite = true;
+    }
+
+    if (safeWitnesses && safeWitnesses.length > 0) {
+      preSafeProof.used = true;
+      preSafeProof.witnesses = safeWitnesses;
+    } else if (automatonNonEmpty) {
+      preSafeProof.used = true;
+    } else {
+      preSafeProof.used = preSafeProof.used || safeIntersectionExists;
+    }
+
+    safeIntersectionExists = safeIntersectionExists || preSafeProof.used;
+
+    if (presencePressure && preSafeProof.used) {
+      safeProof = { ...preSafeProof };
       if (anchoredKinds.size > 0) {
         safeProof.anchoredKinds = Array.from(anchoredKinds).sort();
       }
       if (strictFamilies.size > 0) {
         safeProof.strictFamilies = Array.from(strictFamilies).sort();
-      }
-      if (enumerationValues && enumerationValues.length > 0) {
-        safeProof.witnesses = enumerationValues.slice(0, ENUM_CAP);
-      } else {
-        const witnesses: string[] = [];
-        for (const candidate of candidateNames) {
-          if (hasName(candidate)) {
-            witnesses.push(candidate);
-            if (witnesses.length >= ENUM_CAP) break;
-          }
-        }
-        if (witnesses.length > 0) {
-          safeProof.witnesses = witnesses;
-        }
       }
     }
 
@@ -1201,7 +1277,10 @@ class CompositionEngine {
       // propertyNames.pattern (no rewrite) is gating-only and MUST NOT trigger
       // AP_FALSE_UNSAFE_PATTERN.
       if (unsafeIssues.length > 0 && !hasOnlyPropertyNamesGating) {
-        const detail = this.buildApFalseUnsafeDetail(unsafeIssues);
+        const detail = this.buildApFalseUnsafeDetail(
+          unsafeIssues,
+          preSafeProof
+        );
         const unsafePolicy =
           this.resolvedOptions.patternPolicy.unsafeUnderApFalse;
         const shouldFailFast =
@@ -1405,10 +1484,10 @@ class CompositionEngine {
     return results;
   }
 
-  private buildNameAutomatonProductSummary(
+  private buildNameAutomatonProduct(
     conjuncts: CoverageConjunctInfo[],
     canonPath: string
-  ): ProductSummary | undefined {
+  ): ProductBuildResult | undefined {
     const components: Dfa[] = [];
     let coverageComponentCount = 0;
 
@@ -1541,7 +1620,7 @@ class CompositionEngine {
     }
 
     this.updateNameDfaSummary(canonPath, productResult.summary);
-    return productResult.summary;
+    return productResult;
   }
 
   private updateNameDfaSummary(
@@ -2415,7 +2494,8 @@ class CompositionEngine {
   }
 
   private buildApFalseUnsafeDetail(
-    issues: PatternIssue[]
+    issues: PatternIssue[],
+    preSafeProof?: CoverageCert
   ): Record<string, unknown> {
     if (issues.length === 0) {
       return { sourceKind: 'patternProperties' };
@@ -2437,6 +2517,9 @@ class CompositionEngine {
     };
     if (distinctIssues.length === 1 && primary) {
       detail.patternSource = primary.source;
+    }
+    if (preSafeProof) {
+      detail.preSafeProof = preSafeProof;
     }
     return detail;
   }

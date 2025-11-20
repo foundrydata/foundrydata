@@ -28,6 +28,19 @@ const stringArray: MiniSchema = {
   items: { kind: 'string' },
 };
 
+const coverageCert: MiniSchema = {
+  kind: 'object',
+  required: {
+    used: { kind: 'boolean' },
+    finite: { kind: 'boolean' },
+    states: { kind: 'number' },
+  },
+  optional: {
+    witnesses: stringArray,
+    capsHit: { kind: 'boolean' },
+  },
+};
+
 const numberOrNull: MiniSchema = {
   kind: 'union',
   variants: [{ kind: 'number' }, { kind: 'null' }],
@@ -43,6 +56,7 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
     },
     optional: {
       patternSource: { kind: 'string' },
+      preSafeProof: coverageCert,
     },
   },
   [DIAGNOSTIC_CODES.UNSAT_REQUIRED_AP_FALSE]: {

@@ -587,9 +587,10 @@ describe('CompositionEngine coverage index', () => {
       (entry) => entry.code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN
     );
     expect(fatal).toBeDefined();
-    expect(fatal?.details).toEqual({
+    expect(fatal?.details).toMatchObject({
       sourceKind: 'patternProperties',
       patternSource: '^(?=x).+$',
+      preSafeProof: { used: false, finite: false, states: 0 },
     });
   });
 
@@ -612,9 +613,10 @@ describe('CompositionEngine coverage index', () => {
       (entry) => entry.code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN
     );
     expect(fatal).toBeDefined();
-    expect(fatal?.details).toEqual({
+    expect(fatal?.details).toMatchObject({
       sourceKind: 'propertyNamesSynthetic',
       patternSource,
+      preSafeProof: { used: false, finite: false, states: 0 },
     });
   });
 
@@ -637,8 +639,9 @@ describe('CompositionEngine coverage index', () => {
       (entry) => entry.code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN
     );
     expect(fatal).toBeDefined();
-    expect(fatal?.details).toEqual({
+    expect(fatal?.details).toMatchObject({
       sourceKind: 'patternProperties',
+      preSafeProof: { used: false, finite: false, states: 0 },
     });
   });
 });
@@ -986,6 +989,17 @@ describe('CompositionEngine AP:false strict vs lax', () => {
       '^(?=x).+$': { type: 'string' },
     },
   } as const;
+  const safeCoverSchema = {
+    type: 'object',
+    additionalProperties: false,
+    minProperties: 1,
+    properties: {
+      a: {},
+    },
+    patternProperties: {
+      '^(?=x).+$': {},
+    },
+  } as const;
 
   it('emits fatal AP_FALSE_UNSAFE_PATTERN in strict mode when only unsafe coverage exists', () => {
     const result = compose(makeInput(unsafePatternSchema));
@@ -998,9 +1012,10 @@ describe('CompositionEngine AP:false strict vs lax', () => {
         entry.canonPath === ''
     );
     expect(fatalEntry).toBeDefined();
-    expect(fatalEntry?.details).toEqual({
+    expect(fatalEntry?.details).toMatchObject({
       sourceKind: 'patternProperties',
       patternSource: '^(?=x).+$',
+      preSafeProof: { used: false, finite: false, states: 0 },
     });
     const warnCodes = diag?.warn?.map((entry) => entry.code) ?? [];
     expect(warnCodes).toContain(DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX);
@@ -1026,9 +1041,10 @@ describe('CompositionEngine AP:false strict vs lax', () => {
         entry.canonPath === ''
     );
     expect(warnEntry).toBeDefined();
-    expect(warnEntry?.details).toEqual({
+    expect(warnEntry?.details).toMatchObject({
       sourceKind: 'patternProperties',
       patternSource: '^(?=x).+$',
+      preSafeProof: { used: false, finite: false, states: 0 },
     });
     const fatal = diag?.fatal ?? [];
     expect(
@@ -1045,6 +1061,65 @@ describe('CompositionEngine AP:false strict vs lax', () => {
     const coverageEntry = result.coverageIndex.get('');
     expect(coverageEntry).toBeDefined();
     expect(coverageEntry?.enumerate?.()).toEqual([]);
+  });
+
+  it('keeps safe cover in strict mode when unsafe pattern coexists with named property', () => {
+    const result = compose(makeInput(safeCoverSchema));
+    const diag = result.diag;
+    expect(diag).toBeDefined();
+
+    const fatalCodes = diag?.fatal?.map((entry) => entry.code) ?? [];
+    expect(fatalCodes).not.toContain(DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN);
+    const warnCodes = diag?.warn?.map((entry) => entry.code) ?? [];
+    expect(warnCodes).not.toContain(DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN);
+
+    const approx = diag?.warn?.find(
+      (entry) =>
+        entry.code === DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX &&
+        entry.canonPath === ''
+    );
+    expect(approx).toBeDefined();
+    const approxDetails = approx?.details as {
+      reason?: string;
+      safeProof?: { used?: boolean; witnesses?: string[]; states?: number };
+    };
+    expect(approxDetails?.reason).toBe('nonAnchoredPattern');
+    expect(approxDetails?.safeProof?.used).toBe(true);
+    expect(approxDetails?.safeProof?.witnesses).toEqual(
+      expect.arrayContaining(['a'])
+    );
+
+    const entry = result.coverageIndex.get('');
+    expect(entry?.has('a')).toBe(true);
+    expect(entry?.has('b')).toBe(false);
+  });
+
+  it('attaches safeProof with witnesses in lax mode when safe cover exists', () => {
+    const result = compose(makeInput(safeCoverSchema), { mode: 'lax' });
+    const diag = result.diag;
+    expect(diag).toBeDefined();
+
+    const warnCodes = diag?.warn?.map((entry) => entry.code) ?? [];
+    expect(warnCodes).toContain(DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX);
+    expect(warnCodes).not.toContain(DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN);
+
+    const approx = diag?.warn?.find(
+      (entry) =>
+        entry.code === DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX &&
+        entry.canonPath === ''
+    );
+    expect(approx).toBeDefined();
+    const approxDetails = approx?.details as {
+      safeProof?: { used?: boolean; witnesses?: string[]; states?: number };
+    };
+    expect(approxDetails?.safeProof?.used).toBe(true);
+    expect(approxDetails?.safeProof?.witnesses).toEqual(
+      expect.arrayContaining(['a'])
+    );
+
+    const entry = result.coverageIndex.get('');
+    expect(entry?.has('a')).toBe(true);
+    expect(entry?.has('b')).toBe(false);
   });
 
   it('honors patternPolicy.unsafeUnderApFalse="warn" in strict mode by downgrading to warning', () => {
@@ -1065,6 +1140,14 @@ describe('CompositionEngine AP:false strict vs lax', () => {
         DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX,
       ])
     );
+    const warnEntry = (diag?.warn ?? []).find(
+      (entry) =>
+        entry.code === DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN &&
+        entry.canonPath === ''
+    );
+    expect(warnEntry?.details).toMatchObject({
+      preSafeProof: { used: false, finite: false, states: 0 },
+    });
 
     const coverageEntry = result.coverageIndex.get('');
     expect(coverageEntry).toBeDefined();
