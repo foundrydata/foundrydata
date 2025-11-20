@@ -99,4 +99,43 @@ describe('hydrateSourceAjvFromRegistry', () => {
       )
     ).toBe(true);
   });
+
+  it('skips duplicate URIs with a non-fatal note', () => {
+    const docs: RegistryDoc[] = [
+      {
+        uri: 'https://example.com/shared.json',
+        schema: {
+          $schema: 'https://json-schema.org/draft/2020-12/schema',
+          $id: 'https://example.com/shared.json',
+          type: 'string',
+        },
+      },
+      {
+        uri: 'https://example.com/shared.json',
+        schema: {
+          $schema: 'https://json-schema.org/draft/2020-12/schema',
+          $id: 'https://example.com/other.json',
+          type: 'number',
+        },
+      },
+    ];
+    const notes: ResolverDiagnosticNote[] = [];
+    const ajv = new MockAjv();
+
+    hydrateSourceAjvFromRegistry(ajv as unknown as Ajv, docs, {
+      ignoreIncompatible: true,
+      notes,
+      seenSchemaIds: new Map(),
+      targetDialect: '2020-12',
+    });
+
+    expect(ajv.addedSchemas).toEqual(['https://example.com/shared.json']);
+    const duplicateByUri = notes.find(
+      (n) =>
+        n.code === 'RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID' &&
+        (n.details as { reason?: string } | undefined)?.reason ===
+          'uri-already-seen'
+    );
+    expect(duplicateByUri).toBeDefined();
+  });
 });

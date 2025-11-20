@@ -238,13 +238,33 @@ class SchemaNormalizer {
     return undefined;
   }
 
-  private hasCanonicalPointerWithin(
+  private scopePointerSegments(canonPath: string): string[] {
+    if (!canonPath || canonPath === '#') return [];
+    const withoutHash = canonPath.startsWith('#')
+      ? canonPath.slice(1)
+      : canonPath;
+    if (!withoutHash) return [];
+    return withoutHash
+      .split('/')
+      .filter((segment) => segment.length > 0)
+      .map(unescapeJsonPointerSegment);
+  }
+
+  private targetExistsWithinScope(
     scopeRootCanonPath: string,
     fragment: string
   ): boolean {
-    if (!fragment.startsWith('#')) return false;
-    const joined = `${scopeRootCanonPath}${fragment.slice(1)}`;
-    return this.hasCanonicalPointer(joined);
+    if (!fragment.startsWith('#/')) return false;
+    const scopedSegments = this.scopePointerSegments(scopeRootCanonPath);
+    const targetSegments = fragment
+      .slice(1)
+      .split('/')
+      .slice(1)
+      .map(unescapeJsonPointerSegment);
+    return (
+      resolvePointer(this.root, scopedSegments.concat(targetSegments)) !==
+      undefined
+    );
   }
 
   private applyDraftUnification(node: CanonNode, pointer: string): void {
@@ -288,7 +308,7 @@ class SchemaNormalizer {
         ) {
           const rewritten = refValue.replace(/^#\/definitions\//, '#/$defs/');
           const scopeRoot = this.nearestAbsIdAncestorCanonPath(pointer) ?? '#';
-          if (this.hasCanonicalPointerWithin(scopeRoot, rewritten)) {
+          if (this.targetExistsWithinScope(scopeRoot, rewritten)) {
             refEntry.node = {
               kind: 'value',
               origin: refEntry.node.origin,
@@ -1534,17 +1554,6 @@ class SchemaNormalizer {
 
   private isLocalDefinitionsRef(value: string): boolean {
     return value.startsWith('#/definitions/');
-  }
-
-  private hasCanonicalPointer(ptr: string): boolean {
-    if (!ptr.startsWith('#')) return false;
-    if (ptr === '#') return true;
-    const segments = ptr
-      .slice(1)
-      .split('/')
-      .slice(1)
-      .map(unescapeJsonPointerSegment);
-    return resolvePointer(this.root, segments) !== undefined;
   }
 
   private gatherGuardFlags(node: CanonObjectNode): {

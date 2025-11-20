@@ -1259,6 +1259,7 @@ class CompositionEngine {
       if (unsafeIssues.length > 0 && !hasOnlyPropertyNamesGating) {
         const detail = this.buildApFalseUnsafeDetail(
           unsafeIssues,
+          presencePressure,
           preSafeProof
         );
         const unsafePolicy =
@@ -2475,10 +2476,11 @@ class CompositionEngine {
 
   private buildApFalseUnsafeDetail(
     issues: PatternIssue[],
+    presencePressure: boolean,
     preSafeProof?: CoverageCert
   ): Record<string, unknown> {
     if (issues.length === 0) {
-      return { sourceKind: 'patternProperties' };
+      return { sourceKind: 'patternProperties', presencePressure };
     }
 
     const distinctIssues = dedupePatternIssues(issues);
@@ -2498,8 +2500,10 @@ class CompositionEngine {
     if (distinctIssues.length === 1 && primary) {
       detail.patternSource = primary.source;
     }
+    detail.presencePressure = presencePressure;
     if (preSafeProof) {
       detail.preSafeProof = preSafeProof;
+      detail.safeProof = preSafeProof;
     }
     return detail;
   }

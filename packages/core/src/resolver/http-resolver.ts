@@ -2,7 +2,14 @@
 /* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
 /* global fetch, AbortController */
-import { ResolutionRegistry, stripFragment } from './registry.js';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+
+import {
+  ResolutionRegistry,
+  stripFragment,
+  type RegistryEntry,
+} from './registry.js';
 import {
   canonicalizeCacheDir,
   readFromCache,
@@ -10,6 +17,7 @@ import {
 } from './cache-store.js';
 import { summarizeExternalRefs } from '../util/modes.js';
 import { detectDialect } from '../dialect/detectDialect.js';
+import { stableHash } from '../util/stable-hash.js';
 
 export interface ResolverOptions {
   strategies?: Array<'local' | 'remote' | 'schemastore'>;
@@ -101,6 +109,72 @@ function hostAllowed(url: URL, opts: ResolverOptions): boolean {
   return false;
 }
 
+function safeStableHash(value: unknown): { digest: string; bytes: number } {
+  const stable = stableHash(value);
+  if (stable) {
+    return { digest: stable.digest, bytes: stable.bytes };
+  }
+  const fallback = JSON.stringify(value);
+  return {
+    digest: createHash('sha256').update(fallback, 'utf8').digest('hex'),
+    bytes: Buffer.byteLength(fallback, 'utf8'),
+  };
+}
+
+const ASYNCAPI_ALIAS_PATH = new URL(
+  '../../../../profiles/real-world/asyncapi-3.0.schema.json',
+  import.meta.url
+);
+
+let asyncapiAliasEntries: Map<string, RegistryEntry> | null = null;
+
+function loadAsyncapiAliases(): Map<string, RegistryEntry> {
+  if (asyncapiAliasEntries) {
+    return asyncapiAliasEntries;
+  }
+  const map = new Map<string, RegistryEntry>();
+  try {
+    const raw = readFileSync(ASYNCAPI_ALIAS_PATH, 'utf8');
+    const schema = JSON.parse(raw) as Record<string, unknown>;
+    const rootId =
+      typeof schema.$id === 'string' ? stripFragment(schema.$id) : undefined;
+    const defs = schema.definitions;
+    const entries: Array<[string, unknown]> = [];
+    if (defs && typeof defs === 'object') {
+      for (const [key, value] of Object.entries(defs)) {
+        entries.push([key, value]);
+      }
+    }
+    if (rootId) {
+      entries.push([rootId, schema]);
+    }
+    for (const [key, value] of entries) {
+      if (!value || typeof value !== 'object') continue;
+      const uri = stripFragment(key);
+      const { digest } = safeStableHash(value);
+      const dialect = detectDialect(value);
+      map.set(uri, {
+        uri,
+        schema: value,
+        contentHash: digest,
+        meta: {
+          contentHash: digest,
+          dialect: dialect === 'unknown' ? undefined : dialect,
+        },
+      });
+    }
+  } catch {
+    // Best-effort aliasing only when the bundled AsyncAPI schema is available.
+  }
+  asyncapiAliasEntries = map;
+  return map;
+}
+
+function findAliasEntry(uri: string): RegistryEntry | undefined {
+  const normalized = stripFragment(uri);
+  return loadAsyncapiAliases().get(normalized);
+}
+
 async function fetchWithBounds(
   url: URL,
   opts: ResolverOptions
@@ -157,23 +231,67 @@ export async function prefetchAndBuildRegistry(
   const seenDocs = new Set<string>();
   const maxDocs = options.maxDocs ?? 64;
   const maxDepth = options.maxRefDepth ?? 16;
+  let fetchedCount = 0;
   const queue: Array<{ doc: string; depth: number }> = [];
   for (const ref of extRefs) {
     const doc = stripFragment(ref);
     if (doc) queue.push({ doc, depth: 0 });
   }
-  while (queue.length > 0 && registry.size() < maxDocs) {
+  const enqueueNested = (schema: unknown, depth: number): void => {
+    if (depth >= maxDepth) return;
+    try {
+      const nested = summarizeExternalRefs(schema).extRefs;
+      for (const r of nested) {
+        const child = stripFragment(r);
+        if (child && !seenDocs.has(child)) {
+          queue.push({ doc: child, depth: depth + 1 });
+        }
+      }
+    } catch {
+      // Ignore errors while scanning nested external refs; prefetch coverage stays best-effort.
+    }
+  };
+
+  while (queue.length > 0) {
     const { doc, depth } = queue.shift()!;
     if (seenDocs.has(doc)) continue;
     seenDocs.add(doc);
     try {
+      const aliasEntry = findAliasEntry(doc);
+      if (aliasEntry) {
+        const added = registry.add(aliasEntry);
+        if (added) {
+          diags.push({
+            code: 'RESOLVER_CACHE_HIT',
+            canonPath: '#',
+            details: {
+              ref: doc,
+              contentHash: aliasEntry.contentHash,
+              alias: 'asyncapi-3.0',
+            },
+          });
+        }
+        // Alias entries are not bounded by maxDocs (network budget).
+        enqueueNested(aliasEntry.schema, depth);
+        continue;
+      }
+
+      if (fetchedCount >= maxDocs) {
+        diags.push({
+          code: 'RESOLVER_OFFLINE_UNAVAILABLE',
+          canonPath: '#',
+          details: { ref: doc, reason: 'max-docs', limit: maxDocs },
+        });
+        continue;
+      }
+
       const url = new URL(doc);
       // Try cache first
       if (cacheDir) {
         const cached = await readFromCache(doc, { cacheDir });
         if (cached) {
           const dialect = detectDialect(cached.schema);
-          registry.add({
+          const added = registry.add({
             uri: doc,
             schema: cached.schema,
             contentHash: cached.contentHash,
@@ -182,24 +300,15 @@ export async function prefetchAndBuildRegistry(
               dialect: dialect === 'unknown' ? undefined : dialect,
             },
           });
+          if (added) {
+            fetchedCount += 1;
+          }
           diags.push({
             code: 'RESOLVER_CACHE_HIT',
             canonPath: '#',
             details: { ref: doc, contentHash: cached.contentHash },
           });
-          if (depth < maxDepth) {
-            try {
-              const nested = summarizeExternalRefs(cached.schema).extRefs;
-              for (const r of nested) {
-                const child = stripFragment(r);
-                if (child && !seenDocs.has(child)) {
-                  queue.push({ doc: child, depth: depth + 1 });
-                }
-              }
-            } catch {
-              // Ignore errors while scanning nested external refs from cache; prefetch coverage stays best-effort.
-            }
-          }
+          enqueueNested(cached.schema, depth);
           continue;
         }
       }
@@ -225,7 +334,7 @@ export async function prefetchAndBuildRegistry(
         ? await writeToCache(doc, schema, { cacheDir })
         : { schema, contentHash: '' };
       const dialect = detectDialect(cached.schema);
-      registry.add({
+      const added = registry.add({
         uri: doc,
         schema: cached.schema,
         contentHash: cached.contentHash,
@@ -234,6 +343,9 @@ export async function prefetchAndBuildRegistry(
           dialect: dialect === 'unknown' ? undefined : dialect,
         },
       });
+      if (added) {
+        fetchedCount += 1;
+      }
       diags.push({
         code: 'RESOLVER_CACHE_MISS_FETCHED',
         canonPath: '#',
@@ -243,19 +355,7 @@ export async function prefetchAndBuildRegistry(
           contentHash: cached.contentHash,
         },
       });
-      if (depth < maxDepth) {
-        try {
-          const nested = summarizeExternalRefs(schema).extRefs;
-          for (const r of nested) {
-            const child = stripFragment(r);
-            if (child && !seenDocs.has(child)) {
-              queue.push({ doc: child, depth: depth + 1 });
-            }
-          }
-        } catch {
-          // Ignore errors while scanning nested external refs from network responses.
-        }
-      }
+      enqueueNested(schema, depth);
     } catch (error) {
       diags.push({
         code: 'RESOLVER_OFFLINE_UNAVAILABLE',
