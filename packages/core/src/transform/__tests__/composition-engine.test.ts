@@ -1003,6 +1003,8 @@ describe('CompositionEngine branch selection', () => {
     const runs = seeds.map((seed) =>
       compose(makeInput(loadFhirSchema()), { seed })
     );
+    expect(runs.length).toBeGreaterThan(0);
+    const firstRun = runs[0]!;
     const targetPaths = [
       '/oneOf',
       '/definitions/ResourceList/oneOf',
@@ -1010,7 +1012,7 @@ describe('CompositionEngine branch selection', () => {
     ];
 
     for (const canonPath of targetPaths) {
-      const baseline = runs[0].diag?.branchDecisions?.find(
+      const baseline = firstRun.diag?.branchDecisions?.find(
         (entry) => entry.canonPath === canonPath
       );
       if (!baseline) {
@@ -1040,7 +1042,7 @@ describe('CompositionEngine branch selection', () => {
       }
     }
 
-    const warning = runs[0].diag?.warn?.find(
+    const warning = firstRun.diag?.warn?.find(
       (entry) =>
         entry.code === DIAGNOSTIC_CODES.TRIALS_SKIPPED_LARGE_ONEOF &&
         (entry.canonPath === '/oneOf' ||
@@ -1127,6 +1129,7 @@ describe('CompositionEngine AP:false strict vs lax', () => {
     );
     expect(fatalEntry).toBeDefined();
     expect(fatalEntry?.details).toMatchObject({
+      presencePressure: true,
       sourceKind: 'patternProperties',
       patternSource: '^(?=x).+$',
       preSafeProof: { used: false, finite: false, states: 0 },
@@ -1156,6 +1159,7 @@ describe('CompositionEngine AP:false strict vs lax', () => {
     );
     expect(warnEntry).toBeDefined();
     expect(warnEntry?.details).toMatchObject({
+      presencePressure: true,
       sourceKind: 'patternProperties',
       patternSource: '^(?=x).+$',
       preSafeProof: { used: false, finite: false, states: 0 },
@@ -1175,6 +1179,38 @@ describe('CompositionEngine AP:false strict vs lax', () => {
     const coverageEntry = result.coverageIndex.get('');
     expect(coverageEntry).toBeDefined();
     expect(coverageEntry?.enumerate?.()).toEqual([]);
+  });
+
+  it('avoids AP_FALSE_UNSAFE_PATTERN when presence pressure is absent', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      patternProperties: {
+        '^(?=x).+$': {},
+      },
+    } as const;
+
+    const result = compose(makeInput(schema));
+    const diag = result.diag;
+    expect(diag).toBeDefined();
+
+    const fatalCodes = diag?.fatal?.map((entry) => entry.code) ?? [];
+    expect(fatalCodes).not.toContain(DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN);
+    const warnCodes = diag?.warn?.map((entry) => entry.code) ?? [];
+    expect(warnCodes).not.toContain(DIAGNOSTIC_CODES.AP_FALSE_UNSAFE_PATTERN);
+
+    const approx = diag?.warn?.find(
+      (entry) =>
+        entry.code === DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX &&
+        entry.canonPath === ''
+    );
+    expect(approx).toBeDefined();
+    const approxDetails = approx?.details as {
+      reason?: string;
+      presencePressure?: boolean;
+    };
+    expect(approxDetails?.reason).toBe('nonAnchoredPattern');
+    expect(approxDetails?.presencePressure).toBeUndefined();
   });
 
   it('keeps safe cover in strict mode when unsafe pattern coexists with named property', () => {

@@ -67,4 +67,61 @@ describe('§7 Normalizer pointer binding', () => {
       ])
     );
   });
+
+  describe('scoped definitions rewrite', () => {
+    it('rewrites #/definitions within the nearest absolute $id scope only', () => {
+      const schema = {
+        $id: 'https://root.test/schema.json',
+        definitions: {
+          root: { type: 'string' },
+        },
+        properties: {
+          nested: {
+            $id: 'https://root.test/nested.json',
+            definitions: {
+              inner: { type: 'number' },
+            },
+            $ref: '#/definitions/inner',
+          },
+        },
+      };
+
+      const result = normalizeSchema(schema);
+      const normalized = result.schema as Record<string, unknown>;
+      const nested = (normalized.properties as Record<string, unknown>).nested;
+
+      expect((nested as Record<string, unknown>).$ref).toBe('#/$defs/inner');
+      const noteCodes = result.notes.map((n) => n.code);
+      expect(noteCodes).not.toContain('DEFS_TARGET_MISSING');
+    });
+
+    it('emits DEFS_TARGET_MISSING instead of crossing $id boundaries', () => {
+      const schema = {
+        $id: 'https://root.test/schema.json',
+        definitions: {
+          root: { type: 'string' },
+        },
+        properties: {
+          nested: {
+            $id: 'https://root.test/nested.json',
+            $ref: '#/definitions/root',
+          },
+        },
+      };
+
+      const result = normalizeSchema(schema);
+      const nested = (result.schema as Record<string, unknown>).properties as
+        | Record<string, unknown>
+        | undefined;
+      const nestedRef = nested?.nested as Record<string, unknown>;
+
+      expect(nestedRef?.$ref).toBe('#/definitions/root');
+      const missingNote = result.notes.find(
+        (n) =>
+          n.code === 'DEFS_TARGET_MISSING' &&
+          n.canonPath === '/properties/nested/$ref'
+      );
+      expect(missingNote).toBeDefined();
+    });
+  });
 });

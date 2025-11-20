@@ -55,8 +55,10 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
       sourceKind: enumSchema(['patternProperties', 'propertyNamesSynthetic']),
     },
     optional: {
+      presencePressure: { kind: 'boolean' },
       patternSource: { kind: 'string' },
       preSafeProof: coverageCert,
+      safeProof: coverageCert,
     },
   },
   [DIAGNOSTIC_CODES.UNSAT_REQUIRED_AP_FALSE]: {
