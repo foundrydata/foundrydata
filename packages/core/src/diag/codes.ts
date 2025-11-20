@@ -97,6 +97,8 @@ export interface SafeProofCertificate {
   states: number;
   witnesses?: string[];
   capsHit?: boolean;
+  anchoredKinds?: Array<'strict' | 'substring'>;
+  strictFamilies?: Array<'alternationOfLiterals' | 'simpleClassQuantified'>;
 }
 
 export const DIAGNOSTIC_PHASES = {

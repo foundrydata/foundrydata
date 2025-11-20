@@ -23,6 +23,11 @@ import type { MetricsCollector } from '../util/metrics.js';
 import type { NormalizeResult, NormalizerNote } from './schema-normalizer.js';
 import { resolveDynamicRefBinding } from '../util/draft.js';
 import { extractExactLiteralAlternatives } from '../util/pattern-literals.js';
+import {
+  decideAnchoredSubsetLifting,
+  type LiftKind,
+  type StrictFamily,
+} from '../regex/anchoredSubset.js';
 import { analyzeRegex, type RegexAnalysis } from './name-automata/regex.js';
 import { buildThompsonNfa } from './name-automata/nfa.js';
 import { buildDfaFromNfa, type Dfa } from './name-automata/dfa.js';
@@ -68,7 +73,8 @@ interface CoveragePatternInfo {
   literals?: string[];
   sourceKind: CoverageProvenance;
   usedAnchoredSubset?: boolean;
-  anchoredKind?: 'strict' | 'substring';
+  anchoredKind?: LiftKind;
+  strictFamily?: StrictFamily;
 }
 
 interface CoverageGatingPattern {
@@ -872,6 +878,19 @@ class CompositionEngine {
       }
     }
 
+    const anchoredKinds = new Set<LiftKind>();
+    const strictFamilies = new Set<StrictFamily>();
+    for (const conj of conjuncts) {
+      for (const pattern of conj.patterns) {
+        if (pattern.usedAnchoredSubset && pattern.anchoredKind) {
+          anchoredKinds.add(pattern.anchoredKind);
+        }
+        if (pattern.strictFamily) {
+          strictFamilies.add(pattern.strictFamily);
+        }
+      }
+    }
+
     const hasNonLiteralPattern = conjuncts.some((conj) =>
       conj.patterns.some((pattern) => !pattern.literals)
     );
@@ -1004,6 +1023,12 @@ class CompositionEngine {
     }
 
     if (safeProof) {
+      if (anchoredKinds.size > 0) {
+        safeProof.anchoredKinds = Array.from(anchoredKinds).sort();
+      }
+      if (strictFamilies.size > 0) {
+        safeProof.strictFamilies = Array.from(strictFamilies).sort();
+      }
       if (enumerationValues && enumerationValues.length > 0) {
         safeProof.witnesses = enumerationValues.slice(0, ENUM_CAP);
       } else {
@@ -1802,49 +1827,50 @@ class CompositionEngine {
           });
           continue;
         }
+
+        const liftDecision =
+          this.resolvedOptions.coverageAnchoredSubset &&
+          (!analysis.anchoredSafe || !analysis.compiled)
+            ? decideAnchoredSubsetLifting(patternSource)
+            : undefined;
+
         if (!analysis.anchoredSafe || !analysis.compiled) {
-          let lifted: AnchoredSubsetLift | undefined;
-          if (this.resolvedOptions.coverageAnchoredSubset) {
-            lifted = tryAnchoredSubsetLift(patternSource, analysis.policy);
-          }
-          if (lifted) {
+          if (liftDecision?.canLift === true) {
             let compiledLifted: RegExp | undefined;
             try {
-              compiledLifted = new RegExp(lifted.source, 'u');
+              compiledLifted = new RegExp(liftDecision.liftedSource, 'u');
             } catch {
-              this.addApproximation(pointer, 'nonAnchoredPattern', {
-                usedAnchoredSubset: false,
-              });
-              unsafePatternIssues.push({
-                pointer,
-                source: patternSource,
+              compiledLifted = undefined;
+            }
+            if (compiledLifted) {
+              const literals =
+                liftDecision.liftKind === 'strict'
+                  ? extractExactLiteralAlternatives(liftDecision.liftedSource)
+                  : undefined;
+              patterns.push({
+                pointer: patternPtr,
+                source: liftDecision.liftedSource,
+                regexp: compiledLifted,
+                literals,
                 sourceKind,
-                reason: 'nonAnchoredPattern',
+                usedAnchoredSubset: true,
+                anchoredKind: liftDecision.liftKind,
+                strictFamily:
+                  liftDecision.liftKind === 'strict'
+                    ? liftDecision.family
+                    : undefined,
               });
+              if (literals) {
+                literals.forEach((literal) => finiteCandidates.add(literal));
+              }
+              if (liftDecision.liftKind === 'substring') {
+                this.addApproximation(pointer, 'nonAnchoredPattern', {
+                  usedAnchoredSubset: true,
+                  anchoredKind: 'substring',
+                });
+              }
               continue;
             }
-            this.addApproximation(pointer, 'nonAnchoredPattern', {
-              usedAnchoredSubset: true,
-              anchoredKind: lifted.kind,
-            });
-            patterns.push({
-              pointer: patternPtr,
-              source: lifted.source,
-              regexp: compiledLifted,
-              literals:
-                lifted.kind === 'strict'
-                  ? analysis.literalAlternatives
-                  : undefined,
-              sourceKind,
-              usedAnchoredSubset: true,
-              anchoredKind: lifted.kind,
-            });
-            if (analysis.literalAlternatives && lifted.kind === 'strict') {
-              for (const literal of analysis.literalAlternatives) {
-                finiteCandidates.add(literal);
-              }
-            }
-            continue;
           }
           this.addApproximation(pointer, 'nonAnchoredPattern', {
             usedAnchoredSubset: false,
@@ -1907,42 +1933,53 @@ class CompositionEngine {
           this.addApproximation(pointer, 'regexCompileError');
         } else if (analysis.complexityCapped) {
           this.addApproximation(pointer, 'regexComplexityCap');
-        } else if (!analysis.anchoredSafe || !analysis.compiled) {
-          let lifted: AnchoredSubsetLift | undefined;
-          if (this.resolvedOptions.coverageAnchoredSubset) {
-            lifted = tryAnchoredSubsetLift(patternSource, analysis.policy);
-          }
-          if (lifted) {
-            try {
-              const compiledLifted = new RegExp(lifted.source, 'u');
-              this.addApproximation(pointer, 'nonAnchoredPattern', {
-                usedAnchoredSubset: true,
-                anchoredKind: lifted.kind,
-              });
-              gatingPattern = {
-                source: lifted.source,
-                regexp: compiledLifted,
-                literals:
-                  lifted.kind === 'strict'
-                    ? analysis.literalAlternatives
-                    : undefined,
-              };
-            } catch {
+        } else {
+          const liftDecision =
+            this.resolvedOptions.coverageAnchoredSubset &&
+            (!analysis.anchoredSafe || !analysis.compiled)
+              ? decideAnchoredSubsetLifting(patternSource)
+              : undefined;
+
+          if (!analysis.anchoredSafe || !analysis.compiled) {
+            let liftedApplied = false;
+            if (liftDecision?.canLift === true) {
+              try {
+                const compiledLifted = new RegExp(
+                  liftDecision.liftedSource,
+                  'u'
+                );
+                const literals =
+                  liftDecision.liftKind === 'strict'
+                    ? extractExactLiteralAlternatives(liftDecision.liftedSource)
+                    : undefined;
+                gatingPattern = {
+                  source: liftDecision.liftedSource,
+                  regexp: compiledLifted,
+                  literals,
+                };
+                liftedApplied = true;
+                if (liftDecision.liftKind === 'substring') {
+                  this.addApproximation(pointer, 'nonAnchoredPattern', {
+                    usedAnchoredSubset: true,
+                    anchoredKind: 'substring',
+                  });
+                }
+              } catch {
+                // fall through to approximation below
+              }
+            }
+            if (!liftedApplied) {
               this.addApproximation(pointer, 'nonAnchoredPattern', {
                 usedAnchoredSubset: false,
               });
             }
           } else {
-            this.addApproximation(pointer, 'nonAnchoredPattern', {
-              usedAnchoredSubset: false,
-            });
+            gatingPattern = {
+              source: patternSource,
+              regexp: analysis.compiled,
+              literals: analysis.literalAlternatives,
+            };
           }
-        } else {
-          gatingPattern = {
-            source: patternSource,
-            regexp: analysis.compiled,
-            literals: analysis.literalAlternatives,
-          };
         }
       }
     }
@@ -2602,38 +2639,6 @@ interface PatternAnalysis {
   compiled?: RegExp;
   literalAlternatives?: string[];
   policy: RegexAnalysis;
-}
-
-type AnchoredSubsetKind = 'strict' | 'substring';
-
-interface AnchoredSubsetLift {
-  source: string;
-  kind: AnchoredSubsetKind;
-}
-
-function tryAnchoredSubsetLift(
-  patternSource: string,
-  policy: RegexAnalysis
-): AnchoredSubsetLift | undefined {
-  if (policy.anchored) return undefined;
-  if (policy.hasLookaround || policy.hasBackreference) return undefined;
-
-  const simpleUnion = /^[A-Za-z0-9._-]+(?:\|[A-Za-z0-9._-]+)+$/.test(
-    patternSource
-  );
-  const pureCharClass = /^\[[^\]\r\n]+\][+*?]{0,2}$/.test(patternSource);
-
-  if (simpleUnion || pureCharClass) {
-    return {
-      source: `^(?:${patternSource})$`,
-      kind: 'strict',
-    };
-  }
-
-  return {
-    source: `^.*(?:${patternSource}).*$`,
-    kind: 'substring',
-  };
 }
 
 function analyzeRegexPattern(source: string): PatternAnalysis {
