@@ -910,6 +910,69 @@ describe('CompositionEngine branch selection', () => {
     expect(warn?.details).toEqual({ reason: 'skipTrialsFlag' });
   });
 
+  it('applies secondary discriminants to stabilize score-only ordering', () => {
+    const schema = {
+      anyOf: [
+        {
+          type: 'object',
+          properties: {
+            kind: { const: 'A' },
+            color: { enum: ['red', 'blue', 'green'] },
+          },
+          required: ['kind'],
+          minProperties: 1,
+        },
+        {
+          type: 'object',
+          properties: {
+            kind: { const: 'B' },
+            status: { const: 'only' },
+            tinyEnum: { enum: ['u', 'v'] },
+            ticket: { type: 'string' },
+          },
+          required: ['kind', 'ticket'],
+          minProperties: 1,
+        },
+        {
+          type: 'object',
+          properties: {
+            kind: { const: 'C' },
+            mode: { enum: ['alpha'] },
+          },
+          required: ['kind'],
+        },
+      ],
+    };
+
+    const result = compose(makeInput(schema), {
+      seed: 11,
+      trials: {
+        skipTrials: true,
+        perBranch: 2,
+        maxBranchesToTry: 8,
+      },
+    });
+
+    const branch = result.diag?.branchDecisions?.find(
+      (entry) => entry.canonPath === '/anyOf'
+    );
+    expect(branch?.budget).toMatchObject({
+      skipped: true,
+      reason: 'skipTrialsFlag',
+    });
+    expect(branch?.scoreDetails.orderedIndices).toEqual([1, 2, 0]);
+    expect(branch?.scoreDetails.topScoreIndices).toEqual([1]);
+    expect(typeof branch?.scoreDetails.tiebreakRand).toBe('number');
+    expect(branch?.scoreDetails.scoresByIndex).toMatchObject({
+      0: 1245,
+      1: 1475,
+      2: 1260,
+    });
+    expect((branch?.scoreDetails.scoresByIndex?.['1'] ?? 0) | 0).toBe(
+      branch?.scoreDetails.scoresByIndex?.['1']
+    );
+  });
+
   it('captures branch score distribution when penalties apply', () => {
     const schema = {
       anyOf: [
@@ -933,6 +996,57 @@ describe('CompositionEngine branch selection', () => {
     expect(scores).toBeDefined();
     expect(scores?.['2']).toBe(5);
     expect(branch?.scoreDetails.orderedIndices).toEqual([0, 1, 2]);
+  });
+
+  it('keeps FHIR score-only ordering stable across seeds when trials are skipped', () => {
+    const seeds = [1, 42, 4242];
+    const runs = seeds.map((seed) =>
+      compose(makeInput(loadFhirSchema()), { seed })
+    );
+    const targetPaths = [
+      '/oneOf',
+      '/definitions/ResourceList/oneOf',
+      '/$defs/ResourceList/oneOf',
+    ];
+
+    for (const canonPath of targetPaths) {
+      const baseline = runs[0].diag?.branchDecisions?.find(
+        (entry) => entry.canonPath === canonPath
+      );
+      if (!baseline) {
+        continue;
+      }
+      expect(baseline?.budget).toMatchObject({
+        skipped: true,
+        reason: 'largeOneOf',
+      });
+      expect(typeof baseline?.scoreDetails.tiebreakRand).toBe('number');
+
+      for (const run of runs.slice(1)) {
+        const decision = run.diag?.branchDecisions?.find(
+          (entry) => entry.canonPath === canonPath
+        );
+        expect(decision?.scoreDetails.orderedIndices).toEqual(
+          baseline.scoreDetails.orderedIndices
+        );
+        expect(decision?.scoreDetails.topScoreIndices).toEqual(
+          baseline.scoreDetails.topScoreIndices
+        );
+        expect(decision?.budget).toMatchObject({
+          skipped: true,
+          reason: 'largeOneOf',
+        });
+        expect(typeof decision?.scoreDetails.tiebreakRand).toBe('number');
+      }
+    }
+
+    const warning = runs[0].diag?.warn?.find(
+      (entry) =>
+        entry.code === DIAGNOSTIC_CODES.TRIALS_SKIPPED_LARGE_ONEOF &&
+        (entry.canonPath === '/oneOf' ||
+          entry.canonPath === '/definitions/ResourceList/oneOf')
+    );
+    expect(warning).toBeDefined();
   });
 
   it('enumerates literal candidates for anchored single-character classes', () => {

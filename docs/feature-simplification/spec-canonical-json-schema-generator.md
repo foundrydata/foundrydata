@@ -1193,6 +1193,13 @@ assumption.
   * +50: anchored, disjoint `patternProperties` (e.g., `^foo$` vs `^bar$`).
   * +10: disjoint `type`.
   * −5: estimated overlaps, **deterministically** defined as present for a branch **iff** any of the following holds in the canonical view of that branch at this canonPath: (i) it contains at least one `patternProperties` entry whose JSON‑unescaped source is **not** anchored‑safe per §8; or (ii) it declares `type` as an array with **cardinality ≥ 3**; or (iii) it is an object schema with `additionalProperties:true` and **no** `properties`. Apply the −5 at most once per branch when any condition holds. No RNG or sampling is permitted.
+  **Secondary discriminants (normative, small weights; applied always):**
+  * +120 × min(|uniqueRequired|, 4): number of `required` keys unique to this branch at this canonPath (computed against siblings).
+  * +80 × min(countConstProps, 5): number of additional properties with `const` (beyond the primary tag case).
+  * For each property with small `enum` (beyond primary tag):
+    – |enum| ≤ 2 ⇒ +60; 3..5 ⇒ +30; otherwise 0. Cap: 5 properties.
+  * Cardinality minima (presence pressure signals): minProperties≥1 ⇒ +15; minItems≥1 ⇒ +10; minContains≥1 ⇒ +10; minLength≥1 ⇒ +5.
+  These additions remain **deterministic**, use **two’s‑complement int32**, and do **not** alter the trials policy. Tie‑break RNG and `diag.scoreDetails.tiebreakRand` requirements are unchanged.
   * **Top‑score ties (normative):** let `Smax` be the maximum score and `T` be the ascending‑sorted array of indices `i` where `score[i] = Smax`.
     * If `T.length = 1`, pick `T[0]`.
     * If `T.length > 1`, pick deterministically from `T` using the §15 RNG with state `s0 = (seed >>> 0) ^ fnv1a32(canonPath)`: choose index `T[Math.floor((next()/4294967296) * T.length)]`, and **record the exact float** as `diag.scoreDetails.tiebreakRand` at this canonPath.

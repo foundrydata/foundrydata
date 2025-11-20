@@ -2534,34 +2534,74 @@ interface BranchStats {
   hasUnsafePatternProperties: boolean;
   hasWideTypeUnion: boolean;
   additionalPropsTrueAndNoProps: boolean;
+  constProps: Set<string>;
+  enumPropSizes: Map<string, number>;
+  cardinality: CardinalitySignals;
 }
+
+type CardinalitySignals = {
+  minProperties: boolean;
+  minItems: boolean;
+  minContains: boolean;
+  minLength: boolean;
+};
 
 function analyzeBranch(branch: unknown, index: number): BranchStats {
   const propertyValues = new Map<string, Set<string>>();
-  const required = new Set<string>();
+  let required = new Set<string>();
   const types = new Set<string>();
   const anchoredPatternLiterals = new Set<string>();
   let hasUnsafePatternProperties = false;
   let hasWideTypeUnion = false;
   let additionalPropsTrueAndNoProps = false;
+  let cardinality: CardinalitySignals = {
+    minProperties: false,
+    minItems: false,
+    minContains: false,
+    minLength: false,
+  };
+  const constProps = new Set<string>();
+  const enumPropSizes = new Map<string, number>();
 
   if (branch && typeof branch === 'object') {
     const record = branch as Record<string, unknown>;
+    cardinality = readMinCardinality(record);
+    required = collectRequiredTopLevel(record);
+    const constEnumPerProp = collectConstEnumPerProp(record);
+    for (const [key, literalInfo] of constEnumPerProp.entries()) {
+      const literals = new Set<string>();
+      const hasConst = Object.prototype.hasOwnProperty.call(
+        literalInfo,
+        'const'
+      );
+      if (hasConst) {
+        const serialized = JSON.stringify(literalInfo.const);
+        if (serialized !== undefined) {
+          literals.add(serialized);
+        }
+      }
+      if (literalInfo.enum) {
+        for (const entry of literalInfo.enum) {
+          const serialized = JSON.stringify(entry);
+          if (serialized !== undefined) {
+            literals.add(serialized);
+          }
+        }
+      }
+      if (literals.size > 0) {
+        propertyValues.set(key, literals);
+      }
+      if (hasConst) {
+        constProps.add(key);
+      } else if (literalInfo.enum) {
+        enumPropSizes.set(key, literalInfo.enum.length);
+      }
+    }
+
     const props =
       record.properties && typeof record.properties === 'object'
         ? (record.properties as Record<string, unknown>)
         : undefined;
-    if (props) {
-      for (const [key, value] of Object.entries(props)) {
-        const literals = extractLiteralValues(value);
-        if (!literals) continue;
-        propertyValues.set(key, literals);
-      }
-    }
-    const req = Array.isArray(record.required)
-      ? (record.required as string[])
-      : [];
-    req.forEach((name) => required.add(name));
 
     if (typeof record.type === 'string') {
       types.add(record.type);
@@ -2614,11 +2654,17 @@ function analyzeBranch(branch: unknown, index: number): BranchStats {
     hasUnsafePatternProperties,
     hasWideTypeUnion,
     additionalPropsTrueAndNoProps,
+    constProps,
+    enumPropSizes,
+    cardinality,
   };
 }
 
 function scoreBranch(branch: BranchStats, all: BranchStats[]): number {
   let score = 0;
+
+  const tagKeys = new Set<string>();
+  const requiredConstEnumKeys = new Set<string>();
 
   for (const [key, values] of branch.propertyValues.entries()) {
     const peers = all.filter((stats) => stats.propertyValues.has(key));
@@ -2631,9 +2677,11 @@ function scoreBranch(branch: BranchStats, all: BranchStats[]): number {
       )
     ) {
       score = (score + 1000) | 0;
+      tagKeys.add(key);
     }
     if (branch.required.has(key)) {
       score = (score + 200) | 0;
+      requiredConstEnumKeys.add(key);
     }
   }
 
@@ -2678,6 +2726,74 @@ function scoreBranch(branch: BranchStats, all: BranchStats[]): number {
     score = (score - 5) | 0;
   }
 
+  if (branch.required.size > 0) {
+    const otherRequired = new Set<string>();
+    for (const stats of all) {
+      if (stats.index === branch.index) continue;
+      for (const value of stats.required) {
+        otherRequired.add(value);
+      }
+    }
+    let uniqueRequiredCount = 0;
+    for (const value of branch.required) {
+      if (!otherRequired.has(value)) {
+        uniqueRequiredCount += 1;
+      }
+    }
+    const cappedUnique = Math.min(uniqueRequiredCount, 4);
+    if (cappedUnique > 0) {
+      score = (score + 120 * cappedUnique) | 0;
+    }
+  }
+
+  if (branch.constProps.size > 0) {
+    const constBonusCount = Array.from(branch.constProps)
+      .sort((a, b) => a.localeCompare(b))
+      .filter((key) => !tagKeys.has(key))
+      .slice(0, 5).length;
+    if (constBonusCount > 0) {
+      score = (score + 80 * constBonusCount) | 0;
+    }
+  }
+
+  if (branch.enumPropSizes.size > 0) {
+    const orderedEnums = Array.from(branch.enumPropSizes.entries()).sort(
+      ([a], [b]) => a.localeCompare(b)
+    );
+    let enumBonus = 0;
+    let counted = 0;
+    for (const [key, size] of orderedEnums) {
+      if (counted >= 5) break;
+      if (tagKeys.has(key) || requiredConstEnumKeys.has(key)) continue;
+      let delta = 0;
+      if (size <= 2) {
+        delta = 60;
+      } else if (size <= 5) {
+        delta = 30;
+      }
+      if (delta > 0) {
+        enumBonus += delta;
+        counted += 1;
+      }
+    }
+    if (enumBonus > 0) {
+      score = (score + enumBonus) | 0;
+    }
+  }
+
+  if (branch.cardinality.minProperties) {
+    score = (score + 15) | 0;
+  }
+  if (branch.cardinality.minItems) {
+    score = (score + 10) | 0;
+  }
+  if (branch.cardinality.minContains) {
+    score = (score + 10) | 0;
+  }
+  if (branch.cardinality.minLength) {
+    score = (score + 5) | 0;
+  }
+
   return score | 0;
 }
 
@@ -2688,19 +2804,61 @@ function areSetsDisjoint(a: Set<string>, b: Set<string>): boolean {
   return true;
 }
 
-function extractLiteralValues(value: unknown): Set<string> | undefined {
-  if (!value || typeof value !== 'object') return undefined;
-  const schema = value as Record<string, unknown>;
-  const literals = new Set<string>();
-  if ('const' in schema) {
-    literals.add(JSON.stringify(schema.const));
-  }
-  if (Array.isArray(schema.enum)) {
-    for (const entry of schema.enum) {
-      literals.add(JSON.stringify(entry));
+function collectRequiredTopLevel(schema: Record<string, unknown>): Set<string> {
+  const result = new Set<string>();
+  const required = schema.required;
+  if (Array.isArray(required)) {
+    for (const entry of required) {
+      if (typeof entry === 'string') {
+        result.add(entry);
+      }
     }
   }
-  return literals.size > 0 ? literals : undefined;
+  return result;
+}
+
+function collectConstEnumPerProp(
+  schema: Record<string, unknown>
+): Map<string, { const?: unknown; enum?: unknown[] }> {
+  const props =
+    schema.properties && typeof schema.properties === 'object'
+      ? (schema.properties as Record<string, unknown>)
+      : undefined;
+  const result = new Map<string, { const?: unknown; enum?: unknown[] }>();
+  if (!props) return result;
+
+  for (const [key, value] of Object.entries(props)) {
+    if (!value || typeof value !== 'object') continue;
+    const propSchema = value as Record<string, unknown>;
+    const entry: { const?: unknown; enum?: unknown[] } = {};
+    let hasEntry = false;
+    if (Object.prototype.hasOwnProperty.call(propSchema, 'const')) {
+      entry.const = propSchema.const;
+      hasEntry = true;
+    }
+    if (Array.isArray(propSchema.enum)) {
+      entry.enum = (propSchema.enum as unknown[]).slice();
+      hasEntry = true;
+    }
+    if (hasEntry) {
+      result.set(key, entry);
+    }
+  }
+
+  return result;
+}
+
+function readMinCardinality(
+  schema: Record<string, unknown>
+): CardinalitySignals {
+  const minProperties =
+    typeof schema.minProperties === 'number' && schema.minProperties >= 1;
+  const minItems = typeof schema.minItems === 'number' && schema.minItems >= 1;
+  const minContains =
+    typeof schema.minContains === 'number' && schema.minContains >= 1;
+  const minLength =
+    typeof schema.minLength === 'number' && schema.minLength >= 1;
+  return { minProperties, minItems, minContains, minLength };
 }
 
 type PatternIssueReason =
