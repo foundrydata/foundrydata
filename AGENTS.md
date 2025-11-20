@@ -18,6 +18,15 @@
 9. **Bench gates** : `p95 ≤ 120ms`, `mem ≤ 512MB`.
 10. **Escalade** : SPEC ambiguë/contradictoire → bloquer, produire `SPEC-QUESTION.md`.
 
+### Mémoire opérationnelle (pièges agent à éviter)
+
+- **Inline `tsx --eval`** : écrire un objet JS valide (clé `$schema` directe), quotes simples extérieures, wrapper `(async () => { ... })()`. Proscrire les fragments JSON ou les clés échappées inutilement.
+- **Diagnostics regex** : ajout d’un `context` ⇒ mettre à jour simultanément `diag/schemas.ts` et `diag/validate.ts` pour que les contrôles de phase acceptent le nouveau contexte.
+- **Defaults stricts** : ne pas laisser `undefined` sur des champs `string` requis dans les options résolues (ex. `resolver.snapshotPath` doit être une chaîne, même vide) avant `tsc --build`.
+- **Tests lourds** : sur des schémas volumineux (AsyncAPI/FHIR), si un test e2e dépasse 5s, le relancer ciblé (`vitest run <file> -t "<case>"`) au lieu de rerunner tout le pack.
+- **Diagnostics run-level** : tout ajout de champs (ex. `details.requested` pour `RESOLVER_STRATEGIES_APPLIED`) oblige à rafraîchir les snapshots reporter (JSON/MD/HTML) pour rester stable.
+- **Mocks fetch** : dans les tests, utiliser `globalThis.fetch` et typer les stubs (`as typeof globalThis.fetch`) pour éviter `no-undef` et restaurer l’état en teardown.
+
 ---
 
 ## Règles d’or
