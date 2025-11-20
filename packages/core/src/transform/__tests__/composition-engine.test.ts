@@ -282,38 +282,28 @@ describe('CompositionEngine coverage index', () => {
     expect(entry?.nameDfaSummary?.states ?? 0).toBeGreaterThan(0);
   });
 
-  it('lifts simple non-anchored patterns to strict anchored subsets for coverage under AP:false', () => {
+  it('lifts simple non-anchored patterns to strict anchored subsets without approximations under AP:false', () => {
     const schema = {
       type: 'object',
       additionalProperties: false,
+      minProperties: 1,
       patternProperties: {
         'foo|bar': {},
       },
     } as const;
 
     const result = compose(makeInput(schema));
-    const diag = result.diag;
-    expect(diag).toBeDefined();
-
-    const approx = diag?.warn?.find(
-      (entry) =>
-        entry.code === DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX &&
-        entry.canonPath === ''
+    const warnCodes = result.diag?.warn?.map((entry) => entry.code) ?? [];
+    expect(warnCodes).not.toContain(
+      DIAGNOSTIC_CODES.AP_FALSE_INTERSECTION_APPROX
     );
-    expect(approx).toBeDefined();
-    const details = approx?.details as {
-      reason?: string;
-      usedAnchoredSubset?: boolean;
-      anchoredKind?: string;
-    };
-    expect(details?.reason).toBe('nonAnchoredPattern');
-    expect(details?.usedAnchoredSubset).toBe(true);
-    expect(details?.anchoredKind).toBe('strict');
 
     const entry = result.coverageIndex.get('');
     expect(entry).toBeDefined();
     expect(entry?.has('foo')).toBe(true);
     expect(entry?.has('bar')).toBe(true);
+    const enumeration = entry?.enumerate?.();
+    expect(enumeration).toEqual(['bar', 'foo']);
   });
 
   it('does not apply anchored-subset lift to patterns with lookaround constructs', () => {

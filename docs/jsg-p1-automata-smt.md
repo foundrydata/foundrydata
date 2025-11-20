@@ -343,7 +343,7 @@ Strict: `AP_FALSE_UNSAFE_PATTERN` (fatal). Lax: warn + conservative exclusion.
 
 ## 10. Non‑Normative Implementation Notes
 
-* **Regex → NFA → DFA:** restricted grammar (character classes, groups, alternation, `?*+`, bounded quantifiers); subset construction with explicit state caps; product automata for `allOf`. Non‑anchored, look‑around, or capped patterns act as guards only (not used to build coverage DFAs).
+* **Regex → NFA → DFA:** restricted grammar (character classes, groups, alternation, `?*+`, bounded quantifiers); subset construction with explicit state caps; product automata for `allOf`. For non‑anchored patterns, coverage‑only lifting **SHOULD** attempt **strict** lifting first (exact‑literal alternatives or simple class with short bounds) and fall back to substring‑equivalent anchoring only when strict does not apply. Strictly lifted patterns are treated as anchored‑safe recognizers in the per‑conjunct DFAs and thus can turn previously approximate intersections into **provable** safe coverage, enabling finite `enumerate()` when literals are involved. Look‑around, back‑references, or capped patterns remain guards only (not used to build coverage DFAs).
 * **Ordering:** transitions by increasing UTF‑16 code points; one BFS to drive both `has` (reachability) and `enumerate` (witnesses).
 * **Local SMT:** QF_LIA (integers) with rationals for `multipleOf`; strict timeout; clear fallback and `SOLVER_TIMEOUT` diagnostics.
 * **Observability:** `nameDfaSummary` reports state counts and finiteness; do **not** export the full graph.
