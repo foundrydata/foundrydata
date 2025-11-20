@@ -278,10 +278,7 @@ function buildSchemaResult(
   if (failFastDiagnostics.length > 0) {
     const last = failFastDiagnostics[failFastDiagnostics.length - 1]!;
     failFastCode = last.code;
-    const phase = getDiagnosticPhase(last.code);
-    if (phase) {
-      failFastStage = phase;
-    }
+    failFastStage = last.phase ?? getDiagnosticPhase(last.code);
   }
 
   // Derive a coarse-grained classification of the failure cause for

@@ -13,6 +13,7 @@ import {
 } from '../corpus-harness.js';
 import type { PipelineResult } from '../types.js';
 import * as orchestrator from '../orchestrator.js';
+import * as diagnosticCollector from '../diagnostic-collector.js';
 import { dedupeDiagnosticsForCorpus } from '../corpus-diagnostics.js';
 
 describe('corpus harness', () => {
@@ -369,6 +370,91 @@ describe('corpus harness', () => {
         (d) => d.code === DIAGNOSTIC_CODES.AJV_FLAGS_MISMATCH
       )
     ).toBe(true);
+  });
+
+  it('keeps the fail-fast stage from the envelope when the code is unmapped in the phase table', async () => {
+    const futureFailFastCode = 'FUTURE_FAIL_FAST' as const;
+    const realIsUnsatOrFailFast = diagnosticCollector.isUnsatOrFailFastCode;
+    const isUnsatSpy = vi
+      .spyOn(diagnosticCollector, 'isUnsatOrFailFastCode')
+      .mockImplementation((code) =>
+        code === futureFailFastCode ? true : realIsUnsatOrFailFast(code)
+      );
+
+    const pipelineResult = {
+      status: 'failed',
+      schema: { $schema: 'https://json-schema.org/draft/2020-12/schema' },
+      stages: {
+        normalize: { status: 'completed' },
+        compose: { status: 'completed' },
+        generate: { status: 'skipped' },
+        repair: { status: 'skipped' },
+        validate: { status: 'failed' },
+      },
+      metrics: {
+        normalizeMs: 0,
+        composeMs: 0,
+        generateMs: 0,
+        repairMs: 0,
+        validateMs: 0,
+        validationsPerRow: 0,
+        repairPassesPerRow: 0,
+        memoryPeakMB: 0,
+        p50LatencyMs: 0,
+        p95LatencyMs: 0,
+        nameBfsNodesExpanded: 0,
+        nameBfsQueuePeak: 0,
+        nameBeamWidthPeak: 0,
+        nameEnumResults: 0,
+        nameEnumElapsedMs: 0,
+        patternPropsHit: 0,
+        presencePressureResolved: 0,
+      },
+      timeline: [],
+      errors: [],
+      artifacts: {
+        generated: { items: [] },
+        validationDiagnostics: [
+          {
+            code: futureFailFastCode,
+            canonPath: '#',
+            phase: 'validate',
+            details: { reason: 'synthetic' },
+          },
+        ],
+        validation: { valid: false, diagnostics: [] },
+      },
+    } as unknown as PipelineResult;
+
+    const executeSpy = vi
+      .spyOn(orchestrator, 'executePipeline')
+      .mockResolvedValueOnce(pipelineResult);
+
+    try {
+      const report = await runCorpusHarness({
+        schemas: [{ id: 'future-failfast', schema: { type: 'string' } }],
+        mode: 'strict',
+        seed: 1,
+        instancesPerSchema: 1,
+        validateFormats: false,
+      });
+
+      const entry = report.results[0];
+      expect(entry).toBeDefined();
+      if (!entry) {
+        throw new Error('Expected future-failfast corpus result');
+      }
+
+      expect(entry.failFast).toBe(true);
+      expect(entry.failFastCode).toBe(futureFailFastCode);
+      expect(entry.failFastStage).toBe('validate');
+      expect(entry.failureCategory).toBeUndefined();
+      expect(entry.failureKind).toBeUndefined();
+      expect(entry.instancesValid).toBe(0);
+    } finally {
+      executeSpy.mockRestore();
+      isUnsatSpy.mockRestore();
+    }
   });
 
   it('deduplicates diagnostics by code, phase, path, and detail key', () => {
