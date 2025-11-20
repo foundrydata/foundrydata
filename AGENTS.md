@@ -539,8 +539,6 @@ Checks:
 
 **Politique d'accès** : **ne jamais** lire `.taskmaster/*.json` directement ; **toujours** utiliser les slash commands ou la CLI.
 
-**Tag actif** : `feature-simplification` — Toutes les tâches 1..24 sont gérées sous ce tag (vérifié via `npx task-master list`).
-
 ### Slash Commands Disponibles (Recommandé)
 
 Les 44 slash commands Task Master sont disponibles avec la syntaxe `/tm:category:command` :
