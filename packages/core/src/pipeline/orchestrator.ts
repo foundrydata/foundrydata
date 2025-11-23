@@ -19,6 +19,7 @@ import {
   prepareSchemaForSourceAjv,
   isCanonicalMetaRef,
   detectDialectFromSchema,
+  type JsonSchemaDialect,
 } from '../util/ajv-source.js';
 import type { Dialect } from '../dialect/detectDialect.js';
 import { checkAjvStartupParity } from '../util/ajv-gate.js';
@@ -282,8 +283,7 @@ export async function executePipeline(
         sourceClass,
         multipleOfPrecision: args.expectedMoP,
         registryFingerprint,
-        requireRegistryFingerprint:
-          resolverRegistry !== undefined && resolverRegistry.size() > 0,
+        requireRegistryFingerprint: registryFingerprint !== undefined,
       });
       ajvParityChecked = true;
     } catch (error) {
@@ -320,6 +320,7 @@ export async function executePipeline(
       resolverOptions
     );
     resolverRunDiags = resolverResult.notes;
+    registryFingerprint = resolverResult.registryFingerprint;
     if (resolverResult.registry.size() > 0) {
       resolverRegistry = resolverResult.registry;
       const docs: RegistryDoc[] = [];
@@ -337,14 +338,11 @@ export async function executePipeline(
       }
       registryDocs = docs;
     }
-    if (
-      resolverResult.registry.size() > 0 ||
-      resolverPlan.stubUnresolved === 'emptySchema'
-    ) {
-      registryFingerprint = resolverResult.registryFingerprint;
-    }
   } catch {
     // Pre-phase failures should not crash core pipeline; they will be reflected by run-level notes.
+  }
+  if (registryFingerprint === undefined) {
+    registryFingerprint = '0';
   }
   const externalRefStrictPolicy =
     resolvedPlanOptions.failFast.externalRefStrict;
@@ -353,7 +351,14 @@ export async function executePipeline(
     normalize: overrides.normalize ?? normalize,
     compose: overrides.compose ?? compose,
     generate:
-      overrides.generate ?? createDefaultGenerate(metrics, schema, options),
+      overrides.generate ??
+      createDefaultGenerate(metrics, schema, options, {
+        registryDocs,
+        resolverHydrateFinalAjv: resolvedPlanOptions.resolver.hydrateFinalAjv,
+        resolverNotes: resolverRunDiags,
+        resolverSeenSchemaIds: seenSchemaIds,
+        sourceDialect,
+      }),
     repair: overrides.repair ?? createDefaultRepair(options, metrics),
     validate:
       overrides.validate ??
@@ -1039,7 +1044,14 @@ export async function executePipeline(
 function createDefaultGenerate(
   metrics: MetricsCollector,
   sourceSchema: unknown,
-  pipelineOptions: PipelineOptions
+  pipelineOptions: PipelineOptions,
+  opts?: {
+    registryDocs?: RegistryDoc[];
+    resolverHydrateFinalAjv?: boolean;
+    resolverNotes?: ResolverDiagnosticNote[];
+    resolverSeenSchemaIds?: Map<string, string>;
+    sourceDialect?: JsonSchemaDialect;
+  }
 ): StageRunners['generate'] {
   return (effective, options) => {
     const generatorOptions: FoundryGeneratorOptions = {
@@ -1051,6 +1063,11 @@ function createDefaultGenerate(
       sourceSchema,
       validateFormats: pipelineOptions.validate?.validateFormats,
       discriminator: pipelineOptions.validate?.discriminator,
+      registryDocs: opts?.registryDocs,
+      resolverHydrateFinalAjv: opts?.resolverHydrateFinalAjv,
+      resolverNotes: opts?.resolverNotes,
+      resolverSeenSchemaIds: opts?.resolverSeenSchemaIds,
+      sourceDialect: opts?.sourceDialect,
     };
     return generateFromCompose(effective, generatorOptions);
   };
