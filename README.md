@@ -284,7 +284,7 @@ These guarantees hold for the full pipeline (CLI and high-level Node API):
   The engine tracks latency and memory and degrades gracefully under complexity caps. SLOs are documented rather than hard guarantees.
 
 * **External `$ref` behavior is explicit**
-  By default, runs are offline-friendly. External `$ref` resolution and skip paths in Lax mode are opt-in and visible via diagnostics.
+  By default, runs are offline-friendly. Strict stops when unresolved externals remain after resolver hydration; Lax applies the ExternalRefSkipEligibility heuristic and emits `EXTERNAL_REF_UNRESOLVED` with `skippedValidation:true` when validation would fail solely on unresolved externals.
 
 ---
 
@@ -318,7 +318,7 @@ Normalize → Compose → Generate → Repair → Validate
 
 * **Validate**
   Final AJV validation **against the original schema** when executed.
-  In Lax mode, when failures are due only to unresolved external `$ref`, this stage may record `skippedValidation:true` plus diagnostics instead of running AJV over generated items.
+  In Lax mode, when failures are due only to unresolved external `$ref`, this stage applies the skip heuristic and records `skippedValidation:true` plus diagnostics instead of running AJV; Strict never skips.
 
 ---
 
@@ -484,7 +484,7 @@ if (result.status === 'completed') {
 
 * At the pipeline level (`executePipeline` and the `Validate` facade), formats are **annotative** by default: `validateFormats:false`.
 * You can enable assertive format validation via `ajv-formats` by setting `validate.validateFormats: true` (or `Validate(..., { validateFormats: true })`).
-* The high-level `Generate` facade (and the CLI, which delegates to it) passes `validateFormats:true` to the pipeline by default, so CLI/`Generate` runs perform assertive format validation unless you explicitly opt out.
+* The high-level `Generate` facade (and the CLI, which delegates to it) currently forces `validateFormats:true`; there is no CLI flag to disable this, so use `executePipeline`/`Validate` (or `Generate` in code with `validateFormats:false`) for the annotate-only default.
 
 ---
 
@@ -527,7 +527,7 @@ Metrics are printed to **stderr** when `--print-metrics` is enabled.
 
 | Situation                               | **Strict** (default)     | **Lax**                                                                                                                                      |
 | --------------------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| External `$ref`                         | `error` (configurable)   | `warn` then attempt generation **without deref**; validate against original schema when possible, or mark validation as skipped on externals |
+| External `$ref`                         | Hard stop (diag `EXTERNAL_REF_UNRESOLVED`) when unresolved after resolver hydration; policy flag only changes severity | `warn` then attempt; may stub for planning when configured and will skip final validation with `EXTERNAL_REF_UNRESOLVED{ skippedValidation:true }` when ExternalRefSkipEligibility passes |
 | `$dynamicRef/*` present                 | note only                | note only                                                                                                                                    |
 | Complexity caps                         | degrade with diagnostics | same                                                                                                                                         |
 | Conditional strategy when not rewriting | **if-aware-lite**        | same                                                                                                                                         |
