@@ -347,6 +347,7 @@ export async function executePipeline(
   const externalRefStrictPolicy =
     resolvedPlanOptions.failFast.externalRefStrict;
   let externalRefState: ExternalRefState | undefined;
+  let canonicalSchema: unknown = schema;
   const runners: StageRunners = {
     normalize: overrides.normalize ?? normalize,
     compose: overrides.compose ?? compose,
@@ -391,6 +392,7 @@ export async function executePipeline(
       status: 'completed',
       output: normalizeResult,
     };
+    canonicalSchema = normalizeResult?.schema ?? schema;
     artifacts.canonical = normalizeResult;
 
     // Runtime self-check: diagnostics emitted during normalize must conform to phase rules
@@ -620,10 +622,19 @@ export async function executePipeline(
     ) {
       try {
         // Determine if unresolved external refs remain after pre-phase
-        const { probe, extRefs } = buildExternalRefProbeSchema(schema);
-        if (Array.isArray(extRefs) && extRefs.length > 0) {
+        const { probe, extRefs } = buildExternalRefProbeSchema(canonicalSchema);
+        const unresolved = Array.isArray(extRefs)
+          ? extRefs.filter((ref) => {
+              const hashIdx = ref.indexOf('#');
+              const base = hashIdx >= 0 ? ref.slice(0, hashIdx) : ref;
+              if (!base) return true;
+              if (!resolverRegistry) return true;
+              return resolverRegistry.get(base) === undefined;
+            })
+          : [];
+        if (unresolved.length > 0) {
           composeInput = { ...composeInput, schema: probe };
-          stubbedRefs = extRefs;
+          stubbedRefs = unresolved;
         }
       } catch {
         // ignore
