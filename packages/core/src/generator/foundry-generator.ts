@@ -38,6 +38,11 @@ import {
 } from '../util/ajv-source.js';
 import { resolveDynamicRefBinding } from '../util/draft.js';
 import { synthesizePatternExample } from '../util/pattern-literals.js';
+import {
+  hydrateSourceAjvFromRegistry,
+  type RegistryDoc,
+} from '../resolver/hydrateSourceAjvFromRegistry.js';
+import type { ResolverDiagnosticNote } from '../resolver/options.js';
 import type Ajv from 'ajv';
 import type { ValidateFunction } from 'ajv';
 
@@ -123,6 +128,12 @@ export interface FoundryGeneratorOptions {
   /** Mirror planning AJV flags to maintain parity per SPEC §§12–13 */
   validateFormats?: boolean;
   discriminator?: boolean;
+  /** Resolver registry documents for Source AJV hydration (Extension R1) */
+  registryDocs?: RegistryDoc[];
+  resolverHydrateFinalAjv?: boolean;
+  resolverNotes?: ResolverDiagnosticNote[];
+  resolverSeenSchemaIds?: Map<string, string>;
+  sourceDialect?: JsonSchemaDialect;
   /**
    * When true, prefer using schema-level examples (example/examples)
    * for the root instance when available, falling back to generation
@@ -1048,7 +1059,7 @@ class GeneratorEngine {
     const dialect: JsonSchemaDialect = detectDialectFromSchema(
       this.sourceSchema
     );
-    this.sourceAjvCache = createSourceAjv(
+    const ajv = createSourceAjv(
       {
         dialect,
         validateFormats: Boolean(this.options.validateFormats),
@@ -1061,6 +1072,20 @@ class GeneratorEngine {
       },
       this.options.planOptions
     );
+    if (
+      Array.isArray(this.options.registryDocs) &&
+      this.options.registryDocs.length > 0 &&
+      this.options.resolverHydrateFinalAjv !== false
+    ) {
+      hydrateSourceAjvFromRegistry(ajv, this.options.registryDocs, {
+        ignoreIncompatible: true,
+        notes: this.options.resolverNotes,
+        seenSchemaIds:
+          this.options.resolverSeenSchemaIds ?? new Map<string, string>(),
+        targetDialect: this.options.sourceDialect ?? dialect,
+      });
+    }
+    this.sourceAjvCache = ajv;
     return this.sourceAjvCache;
   }
 
