@@ -38,9 +38,10 @@ Given a JSON Schema, the pipeline **(a)** produces valid, deterministic instance
 
 * **Canonical view (2020‑12):** non‑destructive normalization (e.g., `definitions→$defs`, tuple `items→prefixItems`, `enum` of size 1 → `const` **in the view only**). All guards **MUST** apply when `unevaluated*` is in scope; simplifications **MUST** be skipped and noted.
 * **Anchored‑safe pattern:** JSON‑source **unescaped** regex with `^…$`, **no** look‑around or back‑references; subject to a **complexity cap** (pattern length + quantified groups).
-* **Presence pressure:** schema requires at least one property/element (e.g., `required|minProperties|minContains|…`).
+* **Presence pressure:** at object level, `effectiveMinProperties > 0` or `effectiveRequiredKeys ≠ ∅`, or a `dependentRequired` antecedent is forced present in the effective view; at array level, `minContains > 0` or equivalent cardinality constraints.
 * **Name DFA:** a (capped) deterministic finite automaton representing a language of **property names** that are generable/allowed.
-* **CoverageIndex:** pure API with `has(name)` and `enumerate()` (only when finiteness is provable), plus **provenance** of coverage.
+* **CoverageIndex:** pure API with `has(name)` and an optional `enumerate()` (exposed only when finiteness is provable and not prohibited by §4.3.2), plus **provenance** of coverage.
+* **AP:false:** shorthand for `additionalProperties:false` on an object schema (canonical view), aligned with the canonical spec terminology.
 
 ---
 
@@ -58,7 +59,10 @@ Given a JSON Schema, the pipeline **(a)** produces valid, deterministic instance
 
 * Patterns **MUST** be classified as **anchored‑safe** or **non‑safe/capped**.
 * Planning **MUST** emit `REGEX_COMPLEXITY_CAPPED` / `REGEX_COMPILE_ERROR` when applicable.
-* Non‑safe/capped patterns **MUST NOT** be used for proofs or enumeration; they remain **guards** in coverage.
+* Non‑safe/capped patterns **MUST NOT** be used when constructing coverage DFAs or for any proofs
+  (emptiness, finiteness, UNSAT). They **MAY** still be consulted heuristically when synthesizing
+  example names, but any such use **MUST NOT** be treated as a proof obligation or relied on for
+  UNSAT/coverage decisions.
 * **Regex preflight (global).** Compose MUST attempt to compile all `pattern`, `patternProperties` keys,
   and `propertyNames.pattern` using `new RegExp(source,'u')`. Failures are non‑fatal
   `REGEX_COMPILE_ERROR{ context:'preflight', patternSource }` emitted at the owning object’s canonPath.
@@ -68,7 +72,7 @@ Given a JSON Schema, the pipeline **(a)** produces valid, deterministic instance
 
 ### 4.3 Must‑Cover under `additionalProperties:false` — **Name Automata (Exact)**
 
-#### 4.3.1 Construction (per conjunct under `allOf` with AP:false)
+#### 4.3.1 Construction (per conjunct under `allOf` with **AP:false**)
 
 For each conjunct `Ci` that enforces AP:false, the planner **MUST** construct a **DFA(Ci)**:
 
@@ -91,8 +95,11 @@ evaluated over the Unicode (UTF‑16) alphabet.
 
 * `CoverageIndex.has(name)` **MUST** be **pure and deterministic**, testing membership against the **product DFA**.
 * **Finiteness** **MUST** be decided by checking the **absence of cycles** (reachable and co‑reachable) on paths to accepting states.
-* `CoverageIndex.enumerate(k)` **MUST** be exposed **only if** finiteness is proven. Enumeration **MUST** use **BFS** with **shortest‑length first**, then **UTF‑16 order**.
-* **Prohibition:** `enumerate()` **MUST NOT** be exposed when finiteness is due **solely** to a raw `propertyNames.enum` (no rewrite).
+* `CoverageIndex.enumerate(k)` **MUST** be exposed **only if** finiteness is proven **and** the node is not in a
+  prohibited configuration (e.g., raw `propertyNames.enum` only). When exposed, enumeration **MUST** use **BFS** with
+  **shortest‑length first**, then **UTF‑16 order**.
+* **Prohibition:** `enumerate()` **MUST NOT** be exposed when finiteness is due **solely** to a raw `propertyNames.enum`
+  (no rewrite), even though finiteness is trivially decidable in that case.
 
 #### 4.3.3 Safe‑proof fallback & Early‑UNSAT Proofs
 
@@ -133,7 +140,10 @@ When the safe‑proof path is taken, implementations SHOULD attach to `planDiag.
 
 * **Arrays, `contains` (bag semantics):**
 
-  * Prove `UNSAT_CONTAINS_VS_MAXITEMS` when (\sum_i min_i > maxItems).
+  * Prove `CONTAINS_UNSAT_BY_SUM` when:
+    - Σ min_i > (effectiveMaxItems ?? +∞), and
+    - the needs are pairwise disjoint under the disjointness rules
+      (incompatible `const` / `enum` / `type`, cf. main spec).
   * Detect **disjointness** when safe (e.g., incompatible `type/enum/const`), and mark overlap as unknown when not provable.
   * With `uniqueItems:true`, choice ordering **MUST** be deterministic.
 * **Numbers:** honor `minimum/maximum/exclusive*` and **rational** `multipleOf` consistent with AJV; emit early UNSAT on contradictory bounds.
@@ -167,34 +177,49 @@ When the safe‑proof path is taken, implementations SHOULD attach to `planDiag.
   * Name/coverage: `AP_FALSE_UNSAFE_PATTERN`, `UNSAT_AP_FALSE_EMPTY_COVERAGE`, `UNSAT_REQUIRED_VS_PROPERTYNAMES`, `UNSAT_MINPROPERTIES_VS_COVERAGE`, `NAME_AUTOMATON_COMPLEXITY_CAPPED`.
   * Regex: `REGEX_COMPLEXITY_CAPPED`, `REGEX_COMPILE_ERROR`.
     * Contexts: `'rewrite' | 'coverage' | 'preflight'` for `REGEX_COMPILE_ERROR`.
-  * Arrays/numbers: `UNSAT_CONTAINS_VS_MAXITEMS`, `SOLVER_TIMEOUT`.
+  * Arrays/numbers: `CONTAINS_UNSAT_BY_SUM`, `SOLVER_TIMEOUT`.
   * External refs: `EXTERNAL_REF_UNRESOLVED{mode,skippedValidation?}`.
+  * Payload (arrays): `CONTAINS_UNSAT_BY_SUM` uses `{ sumMin:number, maxItems?:number, disjointness:'provable'|'overlapUnknown' }`.
 * **CoverageIndex API:**
-
   * `has(name): boolean` (**pure**);
-  * `enumerate?(k): string[]` (only when finiteness is proven) with `provenance`.
+  * `enumerate?(k): string[]` (only when finiteness is proven and not prohibited by §4.3.2) with `provenance`.
   * `enumerate()` **MUST NOT** be exposed when finiteness derives solely from a **raw** `propertyNames.enum`.
 * **Name automaton summary (optional):** `nameDfaSummary:{ states, finite, capsHit? }` for observability (no graph export).
 * **Metrics:** per‑phase durations, `validationsPerRow`, `repairPassesPerRow`, p50/p95 latency, memory peak, and **cap hits** (regex/automata/SMT).
 
-## Name automaton enumeration
+### 5.1 Name automaton enumeration (Non‑Normative)
 
-### Bounded BFS
-We traverse the character-state graph with a bounded breadth-first search. Budgets limit wall-clock time, expanded states, queue size, depth, and the number of emitted strings. A beam option prioritizes higher-scoring prefixes when the branching factor is large.
+This section is non‑normative. It outlines one possible strategy for implementing `CoverageIndex.enumerate` and witness
+synthesis. Any implementation MUST still satisfy §4.3.2 when `enumerate()` is exposed (BFS, shortest‑length first,
+then UTF‑16 order).
 
-### Targeted strategy
+#### Bounded BFS
+We traverse the product name DFA's character‑state graph with a bounded breadth‑first search. Budgets limit
+wall-clock time, expanded states, queue size, depth, and the number of emitted strings.
+
+#### Targeted strategy
 Hints are computed from schema constraints:
-- **Anchoring**: anchored patterns (`^...$`) are treated as strict completions.
+- **Anchoring**: anchored‑safe patterns (§4.2) are treated as strict completions in the DFA; non‑safe anchored patterns remain guards.
 - **Length**: `minLength`/`maxLength` set depth bounds.
 - **Character classes**: common whitelists (e.g., `[A-Za-z0-9._-]`) guide the next-character function.
-- **Negative lookaheads**: e.g., `(?!CloudFormation)` is enforced by penalizing and filtering offending prefixes.
-- **patternProperties** with `minProperties`: the enumerator round-robins patterns and synthesizes the required number of distinct names within budget.
+- **Non‑safe patterns (heuristic only)**: implementations MAY consult patterns that are not anchored‑safe
+  (e.g., that contain look‑arounds) when synthesizing candidate names, but any such hints **MUST** be treated
+  as non‑proof heuristics. Names derived from them **MUST** still be accepted by the product DFA before being
+  exposed through `CoverageIndex.enumerate`.
+- **Negative lookaheads**: e.g., `(?!CloudFormation)` is used only as a negative filter on candidate prefixes.
+  Patterns with look‑around remain non‑safe per §4.2 and **MUST NOT** contribute positive coverage or decide
+  whether `enumerate()` is exposed; they only gate candidates.
+- **patternProperties** with `minProperties`: the enumerator round-robins patterns and synthesizes the required
+  number of distinct names within budget, subject to the DFA and the BFS ordering required by §4.3.2.
 
-### Metrics & diagnostics
-The enumerator reports expansions, queue peaks, emitted results, and elapsed time. These flow into the corpus harness for before/after comparisons.
+#### Metrics & diagnostics
+The enumerator reports expansions, queue peaks, emitted results, and elapsed time. These flow into the corpus
+harness for before/after comparisons.
 
-### Interaction with coverage
-If presence pressure exists (e.g., `minProperties ≥ 1` and no concrete property set), the enumerator attempts to satisfy the minimum cardinality first. If other independent constraints still fail, diagnostics remain to surface the true blocker.
+#### Interaction with coverage
+If presence pressure exists (e.g., `minProperties ≥ 1` and no concrete property set), the enumerator attempts
+to satisfy the minimum cardinality first while respecting the product DFA and BFS ordering. If other independent
+constraints still fail, diagnostics remain to surface the true blocker.
 
 ---
 
@@ -323,7 +348,7 @@ Strict: `AP_FALSE_UNSAFE_PATTERN` (fatal). Lax: warn + conservative exclusion.
 }
 ```
 
-→ `UNSAT_CONTAINS_VS_MAXITEMS`.
+→ `CONTAINS_UNSAT_BY_SUM`.
 
 6. **External `$ref` handling:**
 

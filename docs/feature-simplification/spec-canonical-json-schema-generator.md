@@ -12,13 +12,14 @@
 ## Terminology (preamble — quick ref)
 
 * **AP** — Shorthand for `additionalProperties`.
-* **AP\:false** — Shorthand for `additionalProperties:false`.
+* **AP\:false** — Shorthand for any object subschema whose **canonical view** has `additionalProperties:false` in effect.
 * **Original schema** — Source of truth for AJV validation. Generation never replaces it.
 * **Canonical (2020‑12) view** — Internal 2020‑12‑like shape produced by *Normalize*; non‑destructive.
 * **Effective view** — Planning view produced by *Compose*; applies must‑cover under `additionalProperties:false` and “bag `contains`”.
 * **Conjunct** — An operand of `allOf`.
 * **Must‑cover** — The set of property names considered generable when at least one conjunct imposes `additionalProperties:false`, computed from `properties` plus **anchored‑safe** `patternProperties`. When `PNAMES_REWRITE_APPLIED` is present, also include the **synthetic** anchored‑safe patterns introduced from `propertyNames` by §7. Otherwise, `propertyNames` never increases coverage (it only gates).
 * **Anchored‑safe pattern** — Regex whose JSON‑unescaped `source` starts with an unescaped `^` and ends with an unescaped `$`, contains **no** look‑around and **no** back‑references, **and passes the §8 regex complexity cap** (patterns capped are **not** anchored‑safe for coverage). Full rule in §8.
+* **CoverageIndex** — Pure API keyed by `canonPath` exposing `has(name)` and, when finiteness is provable **and not prohibited by §8**, an optional `enumerate()`; export includes coarse **provenance**.
 * **Coverage certificate (planning)** — Non-normative payload attached to either
   `planDiag.details.safeProof` (when Safe is used) **or** `details.preSafeProof` (when failing fast):
   `{ used:boolean, finite:boolean, states:number, witnesses?:string[], capsHit?:boolean }`.
@@ -203,6 +204,12 @@ deduplicate these diagnostics by `(canonPath, code, details.context, details.pat
 is **purely diagnostic**; it does not alter planning or validation semantics (AJV remains the oracle).
 See §§8, 19 for payload constraints and deduplication.
   ```
+
+**Regex policy (normative).** Only **anchored‑safe** patterns participate in coverage DFAs and related proofs
+  (emptiness, finiteness, UNSAT). Patterns that are non‑safe or complexity‑capped **MUST NOT** be used for coverage
+  proofs or enumeration; they remain guards. Implementations **MAY** consult such patterns heuristically when
+  synthesizing example property names, but any names derived from heuristics **MUST** still be accepted by the
+  product DFA before exposure and **MUST NOT** be treated as proof obligations or relied on for UNSAT/coverage decisions.
 
 **Optional pre‑phase (Extension R1; normative).** When enabled (default in the harness), a **Prefetch & Cache Fill** step runs **before**
 `Normalize`, discovers external `http(s)` `$ref` targets, hydrates a local on‑disk cache (`resolver.cacheDir`), and
@@ -710,9 +717,9 @@ Implementations **MUST NOT** include generator‑only `COMPLEXITY_CAP_PATTERNS` 
  <a id="s8-coverage-index-export"></a>
  ### Coverage Index export (normative)
  
- `Compose` **MUST** produce a coverage index **entry for every object node** and return the map as `coverageIndex` in the API result.
- Implementations **MUST NOT** elide entries based on mode or guard configuration. The map MAY be empty **only when the schema contains no object nodes**; consumers
- **MAY** ignore it when not needed. Implementations MUST NOT elide `enumerate()` due to budgets, and its presence MUST NOT depend on any PlanOptions value. Its presence depends only on whether the global must‑cover intersection is provably finite under this section. When finite, `enumerate()` MUST be provided **except** when the constant `ENUM_CAP` (defined below) applies. In that case `enumerate()` MUST be absent and `COMPLEXITY_CAP_ENUM{ limit, observed }` MUST be emitted. Otherwise it MUST be absent. This preserves determinism and the Purity requirement below.
+`Compose` **MUST** produce a coverage index **entry for every object node** and return the map as `coverageIndex` in the API result.
+Implementations **MUST NOT** elide entries based on mode or guard configuration. The map MAY be empty **only when the schema contains no object nodes**; consumers
+**MAY** ignore it when not needed. Implementations MUST NOT elide `enumerate()` due to budgets, and its presence MUST NOT depend on any PlanOptions value. Its presence depends only on whether the global must‑cover intersection is provably finite under this section **and not in a prohibited configuration** (e.g., raw `propertyNames.enum` only, or exceeding `ENUM_CAP`). When finite and permitted, `enumerate()` MUST be provided **except** when the constant `ENUM_CAP` (defined below) applies. In that case `enumerate()` MUST be absent and `COMPLEXITY_CAP_ENUM{ limit, observed }` MUST be emitted. Otherwise it MUST be absent. This preserves determinism and the Purity requirement below.
 
 
  ```ts
@@ -754,7 +761,7 @@ Implementations **MUST NOT** include generator‑only `COMPLEXITY_CAP_PATTERNS` 
 * **Definition (normative) — JSON‑unescaped regex source.** The ECMAScript string obtained by parsing the JSON
   string literal of `pattern` (RFC8259), i.e., the exact `source` passed to `new RegExp(source,'u')`. All textual
   anchored‑safe tests and complexity scans in this specification operate on this decoded string.
-* `enumerate()` **MUST** be provided **iff** the **global must‑cover intersection** is a **provably finite** set built exclusively from any combination of:
+* `enumerate()` **MUST** be provided **iff** the **global must‑cover intersection** is a **provably finite** set built exclusively from any combination of, and the object is **not in a prohibited configuration** (e.g., finiteness derived solely from a raw `propertyNames.enum`):
   (a) named `properties`, and/or (b) **synthetic** exact‑literal‑alternatives (Glossary) introduced by the §7 rewrite (`PNAMES_REWRITE_APPLIED`), and/or (c) **user‑authored** `patternProperties` entries whose JSON‑unescaped `source` is an **exact‑literal‑alternatives** regex `^(?:L1|...|Lk)$` that is **anchored‑safe & not complexity‑capped** per §8.
   If **any** other pattern remains at this object (including anchored‑safe but non‑finite patterns such as `^a+$`), or if per‑conjunct coverage cannot be finitely intersected, `enumerate` **MUST NOT** be provided.
   **Clarification (normative):** mixed sources are allowed on a per‑conjunct basis; the result is the **finite intersection** across AP:false conjuncts.
@@ -793,6 +800,22 @@ Implementations **MUST NOT** include generator‑only `COMPLEXITY_CAP_PATTERNS` 
         filter A_i by that pattern; otherwise leave A_i unchanged (unknown gating).
   2) G := ⋂ A_i over all such Ci.
   3) If `|G| > ENUM_CAP`, do **not** export `enumerate()` and **emit** `COMPLEXITY_CAP_ENUM{ limit: ENUM_CAP, observed: |G| }`. Otherwise return `sortUTF16Asc(dedup(G))`.
+
+#### Appendix A (informative) — Name automaton enumeration
+
+This appendix sketches one possible strategy for implementing `CoverageIndex.enumerate` and for synthesizing example
+property names. Any implementation that satisfies the normative export rules above is acceptable.
+
+* **Bounded BFS.** Traverse the **product name DFA** with a bounded breadth‑first search; budgets cap wall‑clock time,
+  expanded states, queue size, depth, and emitted strings. Preserve shortest‑length, then UTF‑16 ordering.
+* **Heuristics (non‑proof).** Hints may come from anchored‑safe patterns (strict completions), length bounds, and
+  common character classes. Non‑safe or complexity‑capped patterns may guide candidate synthesis heuristically, but any
+  such candidates **MUST** still be accepted by the product DFA before emission and **MUST NOT** be treated as proof
+  obligations or used for UNSAT/coverage decisions. When `patternProperties` participate in `minProperties`, round‑robin
+  patterns to satisfy required distinct names within the BFS ordering required above.
+* **Metrics.** Track expansions, queue peaks, emitted results, and elapsed time for observability.
+* **Coverage interaction.** Under presence pressure, attempt to satisfy minimum cardinality while respecting the product
+  DFA and BFS ordering. Independent constraints that remain unsatisfied continue to surface via diagnostics.
 
   **Further constraints (normative).**
   • Regex guards: Only **anchored‑safe & non‑capped** exact‑literal alternations may contribute literals; patterns that fail to compile or are capped contribute **no** literals and **MUST** log coverage‑time diagnostics per §8.
