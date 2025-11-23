@@ -228,7 +228,6 @@ For EACH implementation task (1..24):
   * packages/core/src/transform/composition-engine.ts
   * packages/core/src/generator/foundry-generator.ts
   * packages/core/src/repair/repair-engine.ts
-  * packages/core/src/parser/json-schema-parser.ts
   * packages/core/src/util/{ptr-map.ts,rational.ts,rng.ts,metrics.ts,stable-hash.ts}
   * packages/core/src/diag/{codes.ts,schemas.ts,validate.ts}
   * packages/core/src/index.ts
