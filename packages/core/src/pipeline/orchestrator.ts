@@ -297,7 +297,8 @@ export async function executePipeline(
         resolverRegistry,
         resolverRunDiags,
         seenSchemaIds,
-        registryDocs
+        registryDocs,
+        registryFingerprint
       ),
   };
 
@@ -992,7 +993,8 @@ function createDefaultValidate(
   resolverRegistry?: ResolutionRegistry,
   resolverRunDiags?: ResolverDiagnosticNote[],
   seenSchemaIds?: Map<string, string>,
-  registryDocs?: RegistryDoc[]
+  registryDocs?: RegistryDoc[],
+  registryFingerprint?: string
 ): StageRunners['validate'] {
   return async (items, schema, options) => {
     const planOptions = pipelineOptions.generate?.planOptions;
@@ -1065,6 +1067,9 @@ function createDefaultValidate(
       discriminator,
       sourceClass,
       multipleOfPrecision: expectedMoP,
+      registryFingerprint,
+      requireRegistryFingerprint:
+        resolverRegistry !== undefined && resolverRegistry.size() > 0,
     });
 
     const flags = {

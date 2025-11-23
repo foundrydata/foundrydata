@@ -919,6 +919,9 @@ class GeneratorEngine {
       const depPointer =
         getPointerFromIndex(this.pointerIndex, depSchema) ??
         appendPointer(pointer, `dependentSchemas/${key}`);
+      if (!this.validateAgainstOriginalAt(depPointer, currentObject)) {
+        continue;
+      }
       extras.push({
         schema: depSchema,
         pointer: depPointer,

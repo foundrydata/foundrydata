@@ -239,6 +239,57 @@ describe('AJV startup parity gate', () => {
     }
   });
 
+  it('fails closed when unknown semantic options are present', () => {
+    const source = createSourceAjv({
+      dialect: 'draft-07',
+      validateFormats: false,
+    }) as any;
+    // Simulate a new semantic flag surfaced by Ajv
+    source.opts.newSemanticFlag = true;
+    const planning = createPlanningAjv({
+      validateFormats: false,
+      allowUnionTypes: true,
+    });
+
+    expect(() =>
+      checkAjvStartupParity(source, planning, {
+        planningCompilesCanonical2020: true,
+        validateFormats: false,
+        sourceClass: 'Ajv',
+      })
+    ).toThrowError(AjvFlagsMismatchError);
+  });
+
+  it('requires a registry fingerprint when a resolver registry is present', () => {
+    const source = createSourceAjv({
+      dialect: 'draft-07',
+      validateFormats: false,
+    });
+    const planning = createPlanningAjv({
+      validateFormats: false,
+      allowUnionTypes: true,
+    });
+
+    try {
+      checkAjvStartupParity(source, planning, {
+        planningCompilesCanonical2020: true,
+        validateFormats: false,
+        sourceClass: 'Ajv',
+        requireRegistryFingerprint: true,
+        registryFingerprint: undefined,
+      });
+      throw new Error('expected AjvFlagsMismatchError');
+    } catch (e: any) {
+      expect(e).toBeInstanceOf(AjvFlagsMismatchError);
+      expect(
+        e.details.diffs.some(
+          (d: any) => String(d.flag) === 'registryFingerprint'
+        )
+      ).toBe(true);
+      expect(e.details.registryFingerprint).toBeNull();
+    }
+  });
+
   it('detects draft-04 for generic /schema# meta', () => {
     expect(
       detectDialectFromSchema({

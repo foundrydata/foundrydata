@@ -20,6 +20,7 @@ export interface AjvGateFailureDetails {
   ajvMajor: number;
   sourceFlags?: Record<string, unknown>;
   planningFlags?: Record<string, unknown>;
+  registryFingerprint?: string | null;
 }
 
 export class AjvFlagsMismatchError extends Error {
@@ -42,6 +43,10 @@ export interface StartupGateExpectations {
   multipleOfPrecision?: number;
   // Expected Source Ajv class label
   sourceClass: 'Ajv' | 'Ajv2019' | 'Ajv2020' | 'ajv-draft-04';
+  // Optional resolver fingerprint (when a registry is present)
+  registryFingerprint?: string;
+  // Require a fingerprint to be present/compared (when registry is non-empty)
+  requireRegistryFingerprint?: boolean;
 }
 
 type AjvWithMarkers = Ajv & {
@@ -83,6 +88,32 @@ export function checkAjvStartupParity(
 
   const sFlags = extractAjvFlags(sourceAjv);
   const pFlags = extractAjvFlags(planningAjv);
+  if (
+    Array.isArray(sFlags.unknownOptions) &&
+    sFlags.unknownOptions.length > 0
+  ) {
+    recordDiff(
+      {
+        flag: 'unknownOptions(source)',
+        expected: [],
+        actual: sFlags.unknownOptions,
+      },
+      { source: true }
+    );
+  }
+  if (
+    Array.isArray(pFlags.unknownOptions) &&
+    pFlags.unknownOptions.length > 0
+  ) {
+    recordDiff(
+      {
+        flag: 'unknownOptions(planning)',
+        expected: [],
+        actual: pFlags.unknownOptions,
+      },
+      { planning: true }
+    );
+  }
 
   const expectedValidateFormats = Boolean(expect.validateFormats);
   const sValidateFormats = Boolean(sFlags.validateFormats);
@@ -317,6 +348,21 @@ export function checkAjvStartupParity(
     );
   }
 
+  // Resolver fingerprint observability/fail-closed
+  if (
+    expect.requireRegistryFingerprint === true &&
+    !expect.registryFingerprint
+  ) {
+    recordDiff(
+      {
+        flag: 'registryFingerprint',
+        expected: 'present',
+        actual: expect.registryFingerprint ?? null,
+      },
+      { source: true, planning: true }
+    );
+  }
+
   if (diffs.length > 0) {
     const instance: AjvGateFailureDetails['instance'] =
       sourceFailed && !planningFailed
@@ -330,6 +376,7 @@ export function checkAjvStartupParity(
       ajvMajor: getAjvMajorVersion(),
       sourceFlags: normalizeFlagsForReport(sFlags),
       planningFlags: normalizeFlagsForReport(pFlags),
+      registryFingerprint: expect.registryFingerprint ?? null,
     };
     throw new AjvFlagsMismatchError('AJV_FLAGS_MISMATCH', details);
   }
