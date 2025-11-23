@@ -66,6 +66,7 @@ describe('computeSelectorMemoKey', () => {
         ajvClass: 'Ajv2020',
         ajvFlags: { removeAdditional: 'all', strict: false },
       },
+      schemaHash: 'deadbeef',
     });
 
     const parsed = JSON.parse(key);
@@ -76,6 +77,7 @@ describe('computeSelectorMemoKey', () => {
       ajvClass: 'Ajv2020',
       userKey: 'custom-key',
     });
+    expect(parsed.schemaHash).toBe('deadbeef');
     expect(parsed.ajvFlags).toEqual({
       removeAdditional: 'all',
       strict: false,
@@ -96,6 +98,7 @@ describe('computeSelectorMemoKey', () => {
       ajvMajor: 0,
       ajvClass: 'unknown',
       userKey: '',
+      schemaHash: '',
     });
     expect(parsed.ajvFlags).toEqual({});
     expect(parsed.planOptionsSubKey).toContain('"trials.perBranch":2');
@@ -1786,6 +1789,7 @@ describe('computeSelectorMemoKey', () => {
         ajvClass: 'PlanningAjv',
         ajvFlags: { unicodeRegExp: true, validateFormats: false },
       },
+      schemaHash: 'feedface',
     });
 
     const parsed = JSON.parse(key);
@@ -1794,6 +1798,7 @@ describe('computeSelectorMemoKey', () => {
     expect(parsed.ajvMajor).toBe(8);
     expect(parsed.ajvClass).toBe('PlanningAjv');
     expect(parsed.userKey).toBe('user-salt');
+    expect(parsed.schemaHash).toBe('feedface');
     const subKey = JSON.parse(parsed.planOptionsSubKey);
     expect(subKey['trials.perBranch']).toBe(3);
     expect(subKey['trials.skipTrials']).toBe(false);

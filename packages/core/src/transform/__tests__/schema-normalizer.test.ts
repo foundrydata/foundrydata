@@ -353,10 +353,7 @@ describe('SchemaNormalizer – propertyNames rewrite', () => {
 
     const result = normalize(schema);
 
-    expect(result.schema).toEqual({
-      unevaluatedProperties: false,
-      propertyNames: { const: 'a' },
-    });
+    expect(result.schema).toEqual(schema);
     const note = findNote(result, DIAGNOSTIC_CODES.PNAMES_COMPLEX);
     expect(note).toBeDefined();
     expect(note?.canonPath).toBe('');
