@@ -2707,7 +2707,6 @@ Hints are informative and MUST NOT change severity or routing.
 * `packages/core/src/generator/foundry-generator.ts` (wire‑in)
 * `packages/core/src/repair/repair-engine.ts`
   - emits repair actions with `canonPath` and `origPath` (via `ptrMap`).
-* `packages/core/src/parser/json-schema-parser.ts` (lean checks)
 * `packages/core/src/util/ptr-map.ts` (ptr map + reverse map by path walk)
 * `packages/core/src/util/rational.ts` (exact rational helpers with caps/fallback + BigInt‑safe JSON)
 * `packages/core/src/util/rng.ts` (seeded RNG; no global state)
