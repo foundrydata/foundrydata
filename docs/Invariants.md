@@ -6,7 +6,7 @@ This note captures the cross-phase guarantees implemented inside `packages/core`
 
 - The orchestrator (`packages/core/src/pipeline/orchestrator.ts`) always executes `Normalize → Compose → Generate → Repair → Validate`; when any stage fails, later stages are marked skipped. Final validation uses the original schema and Source AJV; in Lax mode, unresolved external `$ref` can return a skipped validate result instead of hard failure, per the SPEC modes contract.
 - Planning and Source AJV instances are built together (`util/ajv-planning.ts`, `util/ajv-source.ts`) and checked by `checkAjvStartupParity` before Compose/Generate run. Parity covers `unicodeRegExp`, `validateFormats` plus formats-plugin presence, discriminator flags, `multipleOfPrecision`, `allowUnionTypes`, and the expected `strictSchema`/`strictTypes` roles, as well as resolver registry fingerprints; the same Source AJV settings are reused for final validation.
-- Plan options are resolved at pipeline entry (`resolveOptions`) and threaded through downstream factories; stages treat the resolved settings as immutable for the run to keep outcomes deterministic.
+- Plan options are resolved where they are needed: the orchestrator resolves them up front for resolver/AJV/parity inputs, while Compose/Generate/Repair resolve their own snapshots from `planOptions` for each run. Each stage treats its resolved snapshot as read-only during that run to keep outcomes deterministic.
 
 ## Normalizer invariants
 
@@ -19,15 +19,15 @@ This note captures the cross-phase guarantees implemented inside `packages/core`
 
 - Coverage entries always honor “enum/const beats type”: literals discovered via `const`/`enum` are emitted through `CoverageEntry.enumerate`, and broad type-only information never replaces them (`composition-engine.ts#getLiteralSet`).
 - `additionalProperties: false` schemas build must-cover sets that include canonical names, anchored-safe `patternProperties`, and §7 synthetic patterns. When presence pressure is active but coverage is provably empty, Compose emits `UNSAT_AP_FALSE_EMPTY_COVERAGE` and stops early; unsafe reliance on non-anchored patterns surfaces as `AP_FALSE_UNSAFE_PATTERN`.
-- The `contains` pipeline runs with bag semantics. Each `contains` clause is normalized into a need (`makeContainsNeed`), tracked per canonical pointer, trimmed for subsumption and capped count, and Compose always emits `CONTAINS_BAG_COMBINED` describing the (possibly trimmed) bag. The generator enforces the trimmed bag without adding new diagnostics beyond Compose’s unsat/hint signals, keeping independent requirements independent.
+- The `contains` pipeline runs with bag semantics. Each `contains` clause is normalized into a need (`makeContainsNeed`), tracked per canonical pointer, trimmed for subsumption and capped count, and Compose always emits `CONTAINS_BAG_COMBINED` describing the (possibly trimmed) bag. The generator enforces the trimmed bag and surfaces `CONTAINS_UNSAT_BY_SUM` when the bag’s minima cannot fit within effective `maxItems`, keeping independent requirements observable.
 - Pattern overlap analysis emits diagnostics only when two anchored patterns can compete for the same key, ensuring that downstream bag semantics and repairs keep the same evaluation graph.
 
 ## Generation invariants
 
 - All randomness flows through `XorShift32` seeded by `normalizeSeed(seed) ^ fnv1a32(canonPath)`. Score-only selection records `scoreDetails.tiebreakRand` even when a branch set has a single element; exclusivity tweaks record `scoreDetails.exclusivityRand` instead of overwriting the tie-break draw.
 - `if-aware-lite` honors discriminants and minimum satisfaction levels exactly as resolved plan options dictate. When insufficient information exists, the generator records `IF_AWARE_HINT_SKIPPED_INSUFFICIENT_INFO`.
-- Bag semantics from Compose are enforced item-by-item: each `contains` need contributes independent sampling goals, and failures escalate to `CONTAINS_UNSAT_BY_SUM` or `CONTAINS_BAG_COMBINED` with the original bag size attached.
-- Structural hashing (`util/struct-hash.ts`) enforces `uniqueItems`, ensures tweak targets only mutate values once, and supports repair decisions across the pipeline.
+- Bag semantics from Compose are enforced item-by-item: each `contains` need contributes independent sampling goals, and failures in generation escalate to `CONTAINS_UNSAT_BY_SUM` when minima/maxima cannot be satisfied; `CONTAINS_BAG_COMBINED` remains the Compose-time signal describing the trimmed bag size.
+- Structural hashing (`util/struct-hash.ts`) supplies stable digests for enforcing `uniqueItems` and for repair-side comparisons; it is not used to gate or limit the number of tweak attempts.
 
 ## Repair + Validate invariants
 
