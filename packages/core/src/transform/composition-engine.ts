@@ -13,6 +13,7 @@ import {
   type CacheKeyContext,
 } from '../util/cache.js';
 import { canonicalizeForHash } from '../util/canonical-json.js';
+import { stableHash } from '../util/stable-hash.js';
 import { ENUM_CAP } from '../constants.js';
 import { XorShift32 } from '../util/rng.js';
 import {
@@ -218,6 +219,7 @@ export interface SelectorMemoKeyInput {
     ajvClass: string;
     ajvFlags: Record<string, unknown>;
   };
+  schemaHash?: string;
 }
 
 export type ComposeInput = NormalizeResult;
@@ -245,6 +247,7 @@ export function computeSelectorMemoKey(input: SelectorMemoKeyInput): string {
       ajvClass: 'unknown',
       ajvFlags: {},
     },
+    schemaHash,
   } = input;
   const subKey = createPlanOptionsSubKey(planOptions);
   const sortedFlags = sortObjectKeys(ajvMetadata.ajvFlags);
@@ -257,6 +260,7 @@ export function computeSelectorMemoKey(input: SelectorMemoKeyInput): string {
       ajvFlags: sortedFlags,
       planOptionsSubKey: subKey,
       userKey: userKey ?? '',
+      schemaHash: schemaHash ?? '',
     })
   );
 }
@@ -318,6 +322,7 @@ class CompositionEngine {
     finite: boolean;
     capsHit?: boolean;
   };
+  private readonly schemaHash: string;
   private readonly safeProofByPath = new Map<string, SafeProofCertificate>();
 
   constructor(input: ComposeInput, options?: ComposeOptions) {
@@ -343,6 +348,8 @@ class CompositionEngine {
     this.planOptionsSnapshot = resolved as unknown as PlanOptions;
     this.localSmtEnabled = resolved.enableLocalSMT === true;
     this.metrics = options?.metrics;
+    const hash = stableHash(this.schema);
+    this.schemaHash = hash?.digest ?? '';
     // Initialize memo cache: external if provided, else bounded internal LRU per SPEC §14
     if (options?.memoCache) {
       this.memoCache = options.memoCache;
@@ -2176,12 +2183,14 @@ class CompositionEngine {
       planOptions: this.resolvedOptions,
       userKey,
       ajvMetadata: this.options.memoizer,
+      schemaHash: this.schemaHash,
     });
     const cached = this.memoCache?.get(memoKey);
     if (cached && cached.kind === kind) {
       // Reuse cached decision and record diagnostics + metrics deterministically
       this.branchDiagnostics.set(canonPath, cached);
       this.memoKeyLog.set(canonPath, memoKey);
+      this.replayCachedBranchDiagnostics(kind, branches, canonPath, cached);
       return;
     }
     if (branches.length === 0) return;
@@ -2313,6 +2322,58 @@ class CompositionEngine {
     this.branchDiagnostics.set(canonPath, record);
     this.memoCache?.set(memoKey, record);
     this.memoKeyLog.set(canonPath, memoKey);
+  }
+
+  private replayCachedBranchDiagnostics(
+    kind: 'anyOf' | 'oneOf',
+    branches: unknown[],
+    canonPath: string,
+    record: BranchDecisionRecord
+  ): void {
+    const branchCount = branches.length;
+    const complexity = this.resolvedOptions.complexity;
+    const rawCapLimit =
+      kind === 'oneOf'
+        ? complexity.maxOneOfBranches
+        : complexity.maxAnyOfBranches;
+    const complexityCapApplied =
+      rawCapLimit !== undefined && branchCount > rawCapLimit;
+
+    if (complexityCapApplied) {
+      const capCode =
+        kind === 'oneOf'
+          ? DIAGNOSTIC_CODES.COMPLEXITY_CAP_ONEOF
+          : DIAGNOSTIC_CODES.COMPLEXITY_CAP_ANYOF;
+      this.recordCap(capCode);
+      this.addWarn(canonPath, capCode, {
+        limit: rawCapLimit,
+        observed: branchCount,
+      });
+    }
+
+    const reason = record.budget.reason;
+    if (!reason) return;
+
+    let code: DiagnosticCode | undefined;
+    switch (reason) {
+      case 'skipTrialsFlag':
+        code = DIAGNOSTIC_CODES.TRIALS_SKIPPED_SCORE_ONLY;
+        break;
+      case 'largeOneOf':
+        code = DIAGNOSTIC_CODES.TRIALS_SKIPPED_LARGE_ONEOF;
+        break;
+      case 'largeAnyOf':
+        code = DIAGNOSTIC_CODES.TRIALS_SKIPPED_LARGE_ANYOF;
+        break;
+      case 'complexityCap':
+        code = DIAGNOSTIC_CODES.TRIALS_SKIPPED_COMPLEXITY_CAP;
+        break;
+      default:
+        break;
+    }
+    if (code) {
+      this.addWarn(canonPath, code, { reason });
+    }
   }
 
   private finalizeDiagnostics(): ComposeDiagnostics | undefined {

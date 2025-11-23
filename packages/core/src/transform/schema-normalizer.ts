@@ -407,13 +407,15 @@ class SchemaNormalizer {
       return collapseNode;
     }
 
-    // Promote enum with single value to const (canonical view only)
+    // Promote enum with single value to const (canonical view only), but skip
+    // when unevaluated* is in scope (spec guard forbids simplifications).
     const enumIndex = processedEntries.findIndex(
       (entry) => entry.key === 'enum' && entry.node.kind === 'array'
     );
     if (
       enumIndex !== -1 &&
-      !processedEntries.some((entry) => entry.key === 'const')
+      !processedEntries.some((entry) => entry.key === 'const') &&
+      !this.isGuardActive(mergedCtx)
     ) {
       const enumSlot = processedEntries[enumIndex];
       if (!enumSlot) {
