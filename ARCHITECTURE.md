@@ -45,6 +45,7 @@ A preparatory step (not part of the normative pipeline): draft detection, basic 
 
 * **Domain‑aware `allOf` merge** (types, bounds, rationals).
 * **Objects / `additionalProperties:false` (must‑cover):** intersect per‑conjunct recognizers of allowed keys; conservative approximations for complex patterns.
+* **Coverage index export:** always materialize `coverageIndex` with one entry per object node; `has(name)` reflects the global must‑cover intersection (properties, anchored‑safe patternProperties, §7 synthetic names only when rewrite applied). `enumerate()` appears only for provably finite intersections (respecting ENUM_CAP and provenance) and is omitted when finiteness stems solely from raw `propertyNames.enum`.
 * **Arrays / tuples:** enforce **implicit max length** when `items:false`; propagate through `allOf`.
 * **`contains` (bag semantics):** model as independent needs; **concatenate** across `allOf`; perform **unsat checks** (e.g., `sum(min_i) > maxItems`, `min > maxItems`, obvious disjointness).
 * **Branch selection (`anyOf`/`oneOf`):** deterministic scoring (discriminants first), Top‑K trials, score‑only path under caps. Post‑gen check for `oneOf` exclusivity.
@@ -73,7 +74,7 @@ A preparatory step (not part of the normative pipeline): draft detection, basic 
 **Purpose:** AJV‑driven corrections using a `(keyword → action)` registry; idempotent; budgeted.
 
 * Typical actions: clamp bounds, rational snap for `multipleOf`, add required props, de‑dupe via structural hashing for `uniqueItems`, remove extras for `additionalProperties:false`, etc.
-* **Stagnation guard:** stop after `complexity.bailOnUnsatAfter` gen→repair→validate cycles when errors do not reduce.
+* **Stagnation guard:** cap gen→repair→validate cycles with `PlanOptions.complexity.bailOnUnsatAfter` (default 12) and emit `UNSAT_BUDGET_EXHAUSTED` when errors stop decreasing.
 
 **Module:** `packages/core/src/repair/repair-engine.ts`.
 
@@ -86,7 +87,7 @@ A preparatory step (not part of the normative pipeline): draft detection, basic 
 * **Two AJV configurations** (separate caches):
 
   1. **Original‑schema** validator (formats **annotative** by default: `validateFormats:false`).
-  2. **Planning/generation** validator (analysis‑friendly flags, `strictTypes:true`).
+  2. **Planning/generation** validator (analysis‑friendly flags, `strictSchema:true`, `strictTypes:true`, `allowUnionTypes:true` when compiling canonical views).
      When validation runs, always validate output against the **original** schema. In Lax mode, when failures are classified as due only to unresolved external `$ref`, this stage may instead record `skippedValidation:true` with diagnostics (no AJV run on items).
 * **Guarantee scope:** 100 % compliance only for **full pipeline** runs.
 * Pointer mapping for precise errors; phase metrics collection.
@@ -121,14 +122,14 @@ Core pipeline stages perform no network I/O for external `$ref` in either mode. 
 
 1. **Source/original validation**
 
-   * `validateFormats:false` (default; assertive via `ajv-formats` opt‑in), `allowUnionTypes:true`, `unicodeRegExp:true`.
+   * `validateFormats:false` (default; assertive via `ajv-formats` opt‑in), `allowUnionTypes:true`, `unicodeRegExp:true`, `strictSchema:false`, `strictTypes:false`.
 2. **Planning/generation**
 
-   * `strictSchema:true`, `strictTypes:true`, `allErrors:false`; formats aligned with policy.
+   * `strictSchema:true`, `strictTypes:true`, `allowUnionTypes:true` (canonical view), `allErrors:false`; formats aligned with policy.
 
 The Source instance is intentionally more tolerant (`strictSchema:false`, `strictTypes:false`), while the planning instance is strict. A startup gate enforces parity for `unicodeRegExp`, `validateFormats`, `multipleOfPrecision` (when relevant) and the presence of format validators across both instances; violations produce an `AJV_FLAGS_MISMATCH` error.
 
-**Cache keys include** AJV **major version** and critical flags (`validateFormats`, `allowUnionTypes`, `strictTypes`). **Separate LRU spaces** are recommended for the two instances.
+**Cache keys include** AJV **major version**, class/dialect, critical flags (`validateFormats`, `allowUnionTypes`, `strictTypes`, `strictSchema`, `unicodeRegExp`, `coerceTypes`, `multipleOfPrecision`, `discriminator`) and the **PlanOptionsSubKey**. **Separate LRU spaces** are recommended for the two instances.
 
 ---
 
