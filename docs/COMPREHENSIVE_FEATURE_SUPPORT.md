@@ -1,8 +1,6 @@
 # FoundryData Comprehensive Feature Support
 
-> **Status**: Updated to align with [Feature Support Simplification Plan](feature-simplification/spec-canonical-json-schema-generator.md)
-> 
-> **Previous limitations have been lifted** - this document now covers the full feature matrix.
+> **Status**: Aligned with [Feature Support Simplification Plan](feature-simplification/spec-canonical-json-schema-generator.md) — see Controlled Limitations / Known Limits for the remaining guarded areas.
 
 ## JSON Schema Features - Comprehensive Support
 
@@ -18,10 +16,10 @@
 - **Conservative generation** - Pre-evaluate conditions on partial instances, minimal backtracking
 
 ### ✅ Advanced Object Features
-- **`properties` / `patternProperties`** - Full pattern property support with overlap analysis
+- **`properties` / `patternProperties`** - Anchored-safe pattern coverage with overlap analysis; non-anchored patterns stay gating-only under `AP:false`
 - **`additionalProperties`** - Must-cover intersection algorithm for `false` across `allOf`
 - **`unevaluatedProperties`** - Conservative effective view, preserved for AJV validation
-- **`propertyNames`** - Pattern-based key validation with anchored pattern rewrites
+- **`propertyNames`** - Pattern-based key validation; strict-equivalence rewrites only when all §7 preconditions hold (no `unevaluated*` in scope, permissive/empty `additionalProperties`, anchored-safe & non-capped patterns) and are signaled via `PNAMES_REWRITE_APPLIED`; otherwise gating-only for must-cover
 - **`dependencies` / `dependentRequired` / `dependentSchemas`** - Full dependency support with guards
 
 ### ✅ Advanced Array Features  
@@ -36,14 +34,14 @@
 - **Performance protection** - Configurable caps prevent arithmetic explosion
 
 ### ✅ Schema Organization & References
-- **`$ref`** - In-document references with cycle detection, preserve anchors/dynamic anchors
+- **`$ref`** - In-document references with cycle detection; core blocks remote deref unless the resolver extension is enabled
 - **`$recursiveRef` / `$recursiveAnchor`** - Pass-through for AJV (Draft 2019-09)
-- **`$dynamicRef` / `$dynamicAnchor`** - Pass-through for AJV (Draft 2020-12)  
+- **`$dynamicRef` / `$dynamicAnchor`** - Bounded in-document scope resolution (conservative) with AJV pass-through for validation  
 - **`definitions` / `$defs`** - Legacy and modern support with normalization
 - **`$id`** - Schema identifiers with cache integration
 
 ### ✅ String Formats & Patterns
-- **Standard formats**: `uuid`, `email`, `date`, `date-time` with optional validation
+- **Standard formats**: `email`, `uri`, `uuid`, `date-time` with optional validation
 - **Regex patterns**: Basic to moderate complexity with Unicode support and ReDoS protection
 - **Format behavior**: Draft-aware (Assertive vs Annotative) with policy compliance
 
@@ -51,17 +49,22 @@
 
 These features have **configurable behavior** rather than hard blocks:
 
-- **External `$ref`** - Error by default, configurable to warn + attempt generation
+- **External `$ref`** - Core: error on remote; optional resolver extension enables cached/allowlisted HTTP(S) with warn/error policy
 - **Complex regex patterns** - Heuristic generation with safety limits, configurable ReDoS protection
 - **Deep schema nesting** - Configurable complexity caps trigger graceful degradation  
 - **Large compositions** - Complexity caps (200+ oneOf branches, 500+ anyOf branches, 10K+ enum values)
 
 ### ❌ Not Supported (By Design)
 
-- **Network I/O for external references** - Security/offline requirement
+- **Remote `$ref` without the resolver extension** - Security/offline core requirement
 - **Draft-04 exclusive features** - Use `npx swagger2openapi` for migration  
 - **`$data` references** - Not part of JSON Schema specification
 - **`contentSchema`** - Out of scope for test data generation
+
+### Known Limits (per spec)
+- Non-anchored `patternProperties`/`propertyNames` remain gating-only for `AP:false` must-cover unless a strict rewrite is applied.
+- `$dynamicRef/$dynamicAnchor` handled conservatively with bounded in-document binding; validation relies on AJV.
+- External deref beyond the resolver extension stays disabled by default.
 
 ## 5-Stage Pipeline Architecture
 
@@ -83,9 +86,9 @@ These features have **configurable behavior** rather than hard blocks:
 - **Performance metrics** track validations/row, repair passes/row
 
 ### SLO/SLI Targets (documented guidance)
-- **Simple/Medium schemas**: `~1000 rows` in p50 ≈ 200–400ms, `validationsPerRow ≤ 3`
+- **Bench gate (CI)**: `p95LatencyMs ≤ 120ms`, `memoryPeakMB ≤ 512MB` per profile
 - **Pathological schemas**: Degradation paths engaged with clear diagnostics
-- **Memory**: <100MB for 10K records with complexity protection
+- **Memory & validations**: Track `validationsPerRow`, `repairPassesPerRow`, and surface caps when triggered
 
 ## Configuration & Tuning
 
@@ -95,7 +98,7 @@ Full specification: [Feature Support Simplification Plan](feature-simplification
 ```typescript
 type PlanOptions = {
   rewriteConditionals?: 'never' | 'safe';
-  conditionals?: { strategy?: 'rewrite' | 'if-aware-lite' | 'repair-only' };
+  conditionals?: { strategy?: 'if-aware-lite' | 'repair-only' };
   complexity?: { bailOnUnsatAfter?: number; /* ... */ };
   rational?: { maxRatBits?: number; fallback?: 'decimal' | 'float' };
   // ... plus trials, guards, cache, metrics, encoding
@@ -131,7 +134,7 @@ Default mapping between `rewriteConditionals` and `conditionals.strategy`:
 ### Multi-Level Testing Strategy
 - **Unit**: Per-stage testing (normalizer, composer, generator, repair, validator)
 - **Integration**: End-to-end pipeline validation against original schemas
-- **Property-based**: Metamorphic testing with fast-check (deterministic, seed 424242)
+- **Property-based**: Metamorphic testing with fast-check (deterministic seeds exercised in CI, e.g., 202_602/202_603)
 - **Benchmark**: SLO/SLI tracking with automated regression detection
 
 ### Quality Guarantees
