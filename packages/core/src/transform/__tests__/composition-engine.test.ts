@@ -356,7 +356,7 @@ describe('CompositionEngine coverage index', () => {
       DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED
     );
     expect(warnCodes).toContain(DIAGNOSTIC_CODES.NAME_AUTOMATON_BFS_APPLIED);
-    expect(result.diag?.caps).toContain(
+    expect(result.diag?.caps ?? []).not.toContain(
       DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED
     );
   });
@@ -385,13 +385,14 @@ describe('CompositionEngine coverage index', () => {
     // remains unavailable when the budget is exhausted.
     expect(entry?.enumerate).toBeUndefined();
 
-    const caps = result.diag?.caps ?? [];
-    expect(caps).toContain(DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED);
     const warnCodes = (result.diag?.warn ?? []).map((w) => w.code);
     expect(warnCodes).toContain(
       DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED
     );
     expect(warnCodes).toContain(DIAGNOSTIC_CODES.NAME_AUTOMATON_BFS_APPLIED);
+    expect(result.diag?.caps ?? []).not.toContain(
+      DIAGNOSTIC_CODES.NAME_AUTOMATON_COMPLEXITY_CAPPED
+    );
   });
 
   it('treats propertyNames synthetic patterns as coverage contributors', () => {

@@ -6,6 +6,7 @@
 import { DIAGNOSTIC_CODES } from '../diag/codes.js';
 import type { DiagnosticCode } from '../diag/codes.js';
 import { analyzeRegex } from './name-automata/regex.js';
+import { extractExactLiteralAlternatives } from '../util/pattern-literals.js';
 
 type CanonNode = CanonObjectNode | CanonArrayNode | CanonValueNode;
 
@@ -1223,13 +1224,52 @@ class SchemaNormalizer {
         return rebuildObject();
       }
 
+      let patternPropertiesSafe = true;
       if (patternPropertiesNodeIndex !== -1) {
         const patternSlot = entrySlots[patternPropertiesNodeIndex]!;
         const patternNode = patternSlot?.node;
-        if (!isObjectNode(patternNode) || patternNode.entries.length > 0) {
-          this.recordPnamesComplex(objectPointer, 'PATTERN_PROPERTIES_PRESENT');
-          return rebuildObject();
+        if (!isObjectNode(patternNode)) {
+          patternPropertiesSafe = false;
+        } else {
+          for (const patternEntry of patternNode.entries) {
+            const patternSource = patternEntry.key;
+            const policy = analyzeRegex(patternSource, { context: 'rewrite' });
+            if (policy.compileError) {
+              this.recordPnamesComplex(objectPointer, 'REGEX_COMPILE_ERROR');
+              for (const diag of policy.diagnostics) {
+                this.addNote(objectPointer, diag.code, diag.details);
+              }
+              patternPropertiesSafe = false;
+              break;
+            }
+            if (policy.capped) {
+              this.recordPnamesComplex(
+                objectPointer,
+                'REGEX_COMPLEXITY_CAPPED'
+              );
+              for (const diag of policy.diagnostics) {
+                if (diag.code === DIAGNOSTIC_CODES.REGEX_COMPLEXITY_CAPPED) {
+                  this.addNote(objectPointer, diag.code, diag.details);
+                }
+              }
+              patternPropertiesSafe = false;
+              break;
+            }
+            if (!policy.isAnchoredSafe) {
+              patternPropertiesSafe = false;
+              break;
+            }
+            const literals = extractExactLiteralAlternatives(patternSource);
+            if (!literals || literals.some((lit) => !enumSet.has(lit))) {
+              patternPropertiesSafe = false;
+              break;
+            }
+          }
         }
+      }
+      if (!patternPropertiesSafe) {
+        this.recordPnamesComplex(objectPointer, 'PATTERN_PROPERTIES_PRESENT');
+        return rebuildObject();
       }
 
       if (
