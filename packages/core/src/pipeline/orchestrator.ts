@@ -969,13 +969,12 @@ function createDefaultRepair(
 > {
   return async (items, _args, _options) => {
     const { schema, effective } = _args;
-    const attempts = Math.max(1, Math.min(3, _options?.attempts ?? 1));
     const planOptions = pipelineOptions.generate?.planOptions;
     try {
       return repairItemsAjvDriven(
         items,
         { schema, effective, planOptions },
-        { attempts, metrics }
+        { attempts: _options?.attempts, metrics }
       );
     } catch {
       // Conservative: on any unexpected error, fall back to pass-through

@@ -21,6 +21,7 @@ import {
   isRegexComplexityCapped,
   synthesizePatternExample,
 } from '../util/pattern-literals.js';
+import { resolveOptions } from '../types/options.js';
 import type { MetricsCollector } from '../util/metrics.js';
 
 export interface AjvErr {
@@ -653,7 +654,17 @@ export function repairItemsAjvDriven(
   options?: { attempts?: number; metrics?: MetricsCollector }
 ): RepairItemsResult {
   const { schema, effective } = args;
-  const attempts = Math.max(1, Math.min(5, options?.attempts ?? 1));
+  const resolvedOptions = resolveOptions(args.planOptions);
+  const bailLimit = Math.max(
+    1,
+    Math.trunc(resolvedOptions.complexity.bailOnUnsatAfter)
+  );
+  const attemptsOverride =
+    options?.attempts !== undefined && Number.isFinite(options.attempts)
+      ? Math.max(1, Math.trunc(options.attempts))
+      : undefined;
+  const baseAttempts = Math.max(1, Math.min(5, attemptsOverride ?? 1));
+  const maxCycles = Math.min(bailLimit, baseAttempts);
   const metrics = options?.metrics;
   const dialect = detectDialect(schema);
   const sourceAjv = createRepairOnlyValidatorAjv({ dialect }, args.planOptions);
@@ -662,8 +673,8 @@ export function repairItemsAjvDriven(
   const ajvValidator = validateFn as AjvValidateFn;
   const ajvFlags = extractAjvFlags(sourceAjv);
   const decimalPrecision = ajvFlags.multipleOfPrecision ?? 12;
-  const repairPlanOptions = args.planOptions?.repair;
-  const mustCoverGuardEnabled = repairPlanOptions?.mustCoverGuard !== false;
+  const repairPlanOptions = resolvedOptions.repair;
+  const mustCoverGuardEnabled = repairPlanOptions.mustCoverGuard !== false;
 
   const repaired: unknown[] = [];
   const diagnostics: DiagnosticEnvelope[] = [];
@@ -897,7 +908,7 @@ export function repairItemsAjvDriven(
       return { attempted: true, renamed: false };
     };
 
-    for (let iter = 0; iter < attempts; iter += 1) {
+    for (let iter = 0; iter < maxCycles; iter += 1) {
       const errors = (validateFn as any).errors as AjvErr[] | undefined;
       if (!errors || errors.length === 0) break;
       let changed = false;
@@ -1713,7 +1724,7 @@ export function repairItemsAjvDriven(
       metrics.addRepairPasses(cycles);
     }
 
-    if (!pass && lastErrorCount > 0 && cycles >= attempts) {
+    if (!pass && lastErrorCount > 0 && cycles >= maxCycles) {
       diagnostics.push({
         code: DIAGNOSTIC_CODES.UNSAT_BUDGET_EXHAUSTED,
         canonPath: '#',
