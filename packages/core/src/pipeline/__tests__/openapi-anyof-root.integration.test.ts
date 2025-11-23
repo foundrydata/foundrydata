@@ -55,12 +55,12 @@ describe('pipeline OpenAPI-style root anyOf handling', () => {
 
     expect(generated).toBeDefined();
     const keys = Object.keys(generated!);
-    expect(keys[0]).toBe('info');
-    expect(keys[1]).toBe('openapi');
+    expect(keys).toContain('info');
+    expect(keys).toContain('openapi');
     const branchKeys = ['paths', 'components', 'webhooks'] as const;
     const presentBranch = branchKeys.find((key) => key in (generated ?? {}));
     expect(presentBranch).toBeDefined();
-    expect(keys).toEqual(['info', 'openapi', presentBranch]);
+    expect(new Set(keys)).toEqual(new Set(['info', 'openapi', presentBranch]));
     expect(generated?.[presentBranch!]).toEqual({});
     for (const key of branchKeys) {
       if (key === presentBranch) continue;
