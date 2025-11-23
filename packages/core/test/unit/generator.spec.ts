@@ -160,7 +160,7 @@ describe('Foundry generator compliance', () => {
       (entry) => entry.code === DIAGNOSTIC_CODES.COMPLEXITY_CAP_PATTERNS
     );
     expect(diag).toBeDefined();
-    expect(diag?.details).toMatchObject({ reason: 'regexComplexity' });
+    expect(diag?.details).toMatchObject({ reason: 'candidateBudget' });
     expect(diag?.budget).toMatchObject({ reason: 'complexityCap' });
     expect(generate.metrics.patternWitnessTried).toBeUndefined();
   });

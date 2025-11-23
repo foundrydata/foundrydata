@@ -1396,7 +1396,7 @@ class GeneratorEngine {
         continue;
       }
       if (analysis.complexityCapped) {
-        this.recordPatternCap(pointer, 'regexComplexity', 0);
+        this.recordPatternCap(pointer, 'candidateBudget', 0);
         continue;
       }
       if (negativePrefixes && negativePrefixes.length > 0) {
