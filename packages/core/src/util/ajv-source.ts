@@ -358,12 +358,57 @@ export type ExtractedAjvFlags = {
   allErrors?: boolean;
   multipleOfPrecision?: number;
   discriminator?: boolean;
+  unknownOptions?: string[];
 };
 
 export function extractAjvFlags(ajv: Ajv): ExtractedAjvFlags {
   // Ajv exposes options on .opts
   type AjvInternal = Ajv & { opts?: Record<string, unknown> };
   const opts = ((ajv as AjvInternal).opts ?? {}) as Record<string, unknown>;
+  const knownKeys = new Set<string>([
+    'validateFormats',
+    'allowUnionTypes',
+    'unicodeRegExp',
+    'coerceTypes',
+    'strictTypes',
+    'strictSchema',
+    'removeAdditional',
+    'useDefaults',
+    'allErrors',
+    'multipleOfPrecision',
+    'discriminator',
+    // Ajv defaults and meta-behaviors we allow but do not parity-check individually
+    'meta',
+    'messages',
+    'inlineRefs',
+    'loopRequired',
+    'loopEnum',
+    'schemaId',
+    'addUsedSchema',
+    'validateSchema',
+    'strictRequired',
+    'strictTuples',
+    'strictNumbers',
+    'uriResolver',
+    'int32range',
+    'code',
+    'formats',
+    'unknownFormats',
+    'serDes',
+    'logger',
+    'loadSchema',
+    'ownProperties',
+    'passContext',
+    'defaultMeta',
+    'validateFormatsPolicy',
+    'keywords',
+    'schemas',
+    'sourceCode',
+    'dynamicRef',
+    'next',
+    'unevaluated',
+  ]);
+  const unknownOptions = Object.keys(opts).filter((key) => !knownKeys.has(key));
   return {
     validateFormats: opts.validateFormats as boolean | undefined,
     allowUnionTypes: opts.allowUnionTypes as boolean | undefined,
@@ -380,6 +425,9 @@ export function extractAjvFlags(ajv: Ajv): ExtractedAjvFlags {
     allErrors: opts.allErrors as boolean | undefined,
     multipleOfPrecision: opts.multipleOfPrecision as number | undefined,
     discriminator: opts.discriminator as boolean | undefined,
+    unknownOptions: unknownOptions.length
+      ? unknownOptions.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+      : undefined,
   };
 }
 

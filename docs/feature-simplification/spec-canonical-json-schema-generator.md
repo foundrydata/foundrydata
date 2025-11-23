@@ -478,9 +478,10 @@ Clarification: The build‑time constant `ENUM_CAP` also applies to finite sets 
      1) **Global guard:** No `unevaluated*` applies at or above the object (unchanged).
    2) **Closed‑enum form:** Every key in `properties` **and in `required`** is a member of the enum **and** there are no `patternProperties` **or** each existing `patternProperties` pattern is anchored‑safe and provably a subset of the enum via **exact‑literal‑alternatives** (see Glossary): the pattern source, after JSON unescape, is exactly `^(?:L1|...|Lk)$` with each `Li` a literal alternative (metacharacters escaped) and `{L1,...,Lk} ⊆ enum`. If this cannot be proven, **do not rewrite** and emit `PNAMES_COMPLEX` (detail: `REQUIRED_KEYS_NOT_COVERED` when applicable).
        **Additional type precondition (normative):** Every member of `propertyNames.enum` **MUST** be a JSON string. If any non‑string member is present, the rewrite **MUST NOT** occur and the normalizer **MUST** emit `PNAMES_COMPLEX` with `details.reason:"NON_STRING_ENUM_MEMBER"`.
-    3) **Anchored‑pattern form:** `P` is anchored‑safe per §8 and not capped by the regex complexity rule; every key in `properties` **and in `required`** matches `P`, and there are **no** `patternProperties`. Otherwise, **do not rewrite** and emit `PNAMES_COMPLEX`; when the failure is due to complexity capping also emit `REGEX_COMPLEXITY_CAPPED`.
+   3) **Anchored‑pattern form:** `P` is anchored‑safe per §8 and not capped by the regex complexity rule; every key in `properties` **and in `required`** matches `P`, and there are **no** `patternProperties`. Otherwise, **do not rewrite** and emit `PNAMES_COMPLEX`; when the failure is due to complexity capping also emit `REGEX_COMPLEXITY_CAPPED`.
    4) **AdditionalProperties safety:** `additionalProperties` at this object is absent, `true`, or `{}`. If `additionalProperties` is present and is **neither `true` nor `{}`** — i.e., it is `false` or a **non‑empty schema object** — **do not rewrite** and emit `PNAMES_COMPLEX` with detail `'ADDITIONAL_PROPERTIES_SCHEMA'`.
        **Rationale (normative clarification):** the empty schema `{}` is permitted because it does not constrain values; any other schema would semantically narrow value constraints and break equivalence.
+       **Local vs effective AP:false (normative).** Preconditions (2)–(4) are evaluated against the **local** `additionalProperties` value of this conjunct only. Do **not** skip the rewrite merely because another `allOf` conjunct or ancestor already enforces `additionalProperties:false`; Compose will account for the **effective** AP:false when computing must‑cover. Conversely, when the local `additionalProperties` here is `false` or a non‑empty schema, the rewrite is forbidden regardless of other conjuncts.
     5) When the above hold, the rewrite is **additive in the canonical view** (the original `propertyNames` remains alongside the added constraints); otherwise preserve the original `propertyNames` only.
     6) **Logging (normative):** On successful rewrite the normalizer **MUST** record a note `PNAMES_REWRITE_APPLIED` at this object’s canonical path with `details:{ kind:'enum'|'pattern', source?:string }`. Implementations **MAY** include the JSON‑unescaped regex `source` in `details.source` for the pattern case. This signal gates coverage usage in §8.
 
@@ -1336,7 +1337,7 @@ Implementations SHOULD populate `details` with small, code‑specific objects:
     • `patternProperties` (JavaScript RegExp match, compiled with the `u` flag only);
     • `additionalProperties` when it is not `false` (i.e., `true` or a schema object);
     • an applicator reachable at the same instance location via a subschema that is applied (e.g., `allOf` conjunct, the selected `oneOf` branch, the union of all passing `anyOf` branches for the final instance, the active `then` or `else` branch of `if`, or a `$ref`/`$dynamicRef` target within the same document).
-    `dependentSchemas` does not evaluate by itself; only applicators inside its **active** subschema contribute evaluation. If an active subschema has no such applicators, keys introduced solely to satisfy it **MUST NOT** be considered evaluated for `unevaluatedProperties:false`.
+    `dependentSchemas` does not evaluate by itself; only applicators inside its **active** subschema contribute evaluation. An active `dependentSchemas` subschema requires **both**: (i) the antecedent key is present in the current candidate, and (ii) that subschema **validates the current candidate** under the Source Ajv. If an active subschema has no such applicators, keys introduced solely to satisfy it **MUST NOT** be considered evaluated for `unevaluatedProperties:false`.
 
     **Evaluation Trace (E‑Trace) — predicate and evidence (normative).** To enforce provable evaluation during generation and repair, implementations **MUST** maintain, for each object instance location `O` with `unevaluatedProperties:false`, an evaluation predicate:
 
@@ -1365,6 +1366,7 @@ Implementations SHOULD populate `details` with small, code‑specific objects:
 
     4) Predicate vs. cache.
        `isEvaluated` **MAY** be implemented using an internal cache (“E‑Trace”) mapping each `O` to a set of proven names and their evidence for the **current candidate instance**. This cache is **ephemeral**, seed‑independent, and **MUST NOT** influence Compose results or cache keys (§14). Recompute or invalidate deterministically as the candidate changes during Repair.
+       **Cache lifetime (normative).** E‑Trace caches are scoped to a single object instance location and a single candidate. Implementations **MUST** clear or refresh the cache at the start of every Generate run and at the start of each Repair pass, and **MUST** invalidate it on any structural change at `O` (add/rename/delete key, branch reselection). Caches **MUST NOT** be shared across objects or rows, and “unknown” status after invalidation **MUST** be treated as `false` for emission unless recomputed.
 
     5) Replay after mutations (normative).
        Whenever a Generate/Repair action may change the set of `anyOf` branches known to validate at the same instance location `O`, the implementation **MUST** invalidate and recompute the evaluation proof for `O`. Any evaluation proof that depends exclusively on an `anyOf` branch that is no longer known to validate **MUST NOT** be used to introduce or rename properties at `O`. Before any introduction or rename at `O`, `isEvaluated(O, name)` **MUST** be recomputed against the current candidate state.
@@ -1588,7 +1590,7 @@ Run the evaluation guard before finalizing the action for the object (and before
 
 * Fail early only on non‑normalizable constructs or explicit policy cases.
 * `$ref` external: `failFast.externalRefStrict` (default `error`, may be set to `warn` for observability only) controls diagnostic flavor, **not** control flow. On failure, **emit** `EXTERNAL_REF_UNRESOLVED`.
-  **Normative stop (alignment with §1).** When, **after any hydration from the §4 registry**, the **Source Ajv** fails to compile the **original schema** due **solely** to unresolved external `$ref` (per §11/§12 classification; no I/O), the run **MUST NOT** proceed to **Compose/Generate/Repair** for that schema **regardless of `failFast.externalRefStrict` value**. Treat this as a hard error: emit `EXTERNAL_REF_UNRESOLVED` and abort planning/generation at this root; `failFast.externalRefStrict` may only downgrade the diagnostic classification (e.g., warning vs fatal) and annotate `details.policy`, never the decision to stop.
+  **Normative stop (alignment with §1).** When, **after any hydration from the §4 registry**, the **Source Ajv** fails to compile the **original schema** due **solely** to unresolved external `$ref` (per §11/§12 classification; no I/O), the run **MUST NOT** proceed to **Compose/Generate/Repair** for that schema **regardless of `failFast.externalRefStrict` value**. Treat this as a hard error: emit `EXTERNAL_REF_UNRESOLVED` and abort planning/generation at this root; `failFast.externalRefStrict` may only downgrade the diagnostic classification (e.g., warning vs fatal) and annotate `details.policy`, never the decision to stop. The phrase “fails solely due to unresolved external `$ref`” is defined **exclusively** by **ExternalRefSkipEligibility** (below); Strict never skips validation even when that test would be eligible.
   **External `$ref` (normative):** Resolve the `$ref` value against the current resolution base (from `$id`).
   <a id="s11-external-ref-classification"></a>
   If the resolved URI is **fragment‑only** (`#...`), it is **internal**; otherwise it is **external** (includes absolute
@@ -1634,7 +1636,8 @@ Input: original schema S; Source Ajv class/dialect matched per §12. This is a *
         emit `EXTERNAL_REF_UNRESOLVED{ mode:'lax', skippedValidation:true, ref: smallest(ExtRefs), failingRefs?: ExtRefsArray }`,
         and **MUST** set `diag.metrics.validationsPerRow = 0` for affected rows.
       `smallest` is the UTF‑16 lexicographically smallest string in ExtRefs; omit `ref` if none can be determined.
-   d) Otherwise ⇒ **MUST NOT** skip; propagate the compilation failure.
+  d) Otherwise ⇒ **MUST NOT** skip; propagate the compilation failure.
+**Normative definition (Lax skip).** The skip path for final validation in Lax is permitted **iff** the **ExternalRefSkipEligibility** test above succeeds. This test is the sole definition of “compile fails solely due to unresolved external `$ref`” in Lax; when the test does not pass, the pipeline **MUST** treat the compilation failure as fatal for validation.
 **Normative scope of I/O.** Core phases perform **no** network or filesystem I/O in any mode.  
 **Extension R1 (opt‑in).** An optional **pre‑pipeline** step MAY fetch external documents over HTTP(S) and populate a
 local cache/registry. If, after this pre‑phase, an external `$ref` remains unresolved and `externalRefStrict:'error'`
@@ -1798,6 +1801,8 @@ Extend `details.diffs[]` to allow class/dialect mismatches, using entries like `
 Implementations **SHOULD** populate `sourceFlags` and `planningFlags` with the effective flag sets at fault time.
 The check is part of the acceptance gate in §1 and does not alter cache key semantics (§14).
 
+**Forward‑compatibility (normative).** When Ajv introduces new flags or options that affect validation semantics, implementations **MUST** either (a) extend the startup config check **and** the cache‑key flag set to include them (recording `diffs` entries on mismatch) or (b) fail closed with `AJV_FLAGS_MISMATCH` that cites the unknown flag. Silent omission of unknown, resolver‑affecting, or dialect‑affecting flags is forbidden. When a resolver registry is present, the startup check **MUST** surface the `registryFingerprint` used for determinism (see §14) and **MUST** derive it from deterministic, normalized bytes (e.g., UTF‑8 of the canonicalized document). If the fingerprint cannot be produced or compared, the gate **MUST** fail instead of proceeding with an untracked registry state.
+
 <a id="s13-cache-key-flags"></a>
 Cache keys MUST include AJV **major version**, the **Ajv class/dialect** used to compile the artifact, and the exact set of flags used by the AJV instance for the phase that produced the artifact: (`validateFormats`, `allowUnionTypes`, `strictTypes`, `strictSchema`, `unicodeRegExp`, `coerceTypes`, `multipleOfPrecision`, `discriminator`) and the **PlanOptionsSubKey** (defined below).
 Cache key requirements mirror §14: include AJV **major version**, the **Ajv class/dialect**, the full flag set listed here, and **PlanOptionsSubKey**.
@@ -1950,12 +1955,14 @@ Omitted/undefined fields are not serialized.
 ```
 
 <a id="s15-slo-sli"></a>
-### SLO/SLI (CI gates; normative for release)
+### SLO/SLI (reference CI gates; normative for release harness)
 
 **Budgets & Fallback (normative)**
 
-* **p95 gates (CI):** `p95LatencyMs ≤ 120 ms` and `memoryPeakMB ≤ 512 MB` per profile.
-  CI **MUST** fail when exceeded (see §1 Bench SLI gate). `compileMs ≤ 1000 ms` remains a tracked SLI (non‑blocking).
+**Scope (normative).** These gates apply to the **reference bench harness/CI** shipped in this repository. Other implementations **SHOULD** treat the same budgets as guidance and **MUST** still report the metrics, but exceeding them on different hardware/VMs is **not** a conformance failure; instead, it should be surfaced to users/operators as a performance deviation.
+
+* **p95 gates (reference CI):** `p95LatencyMs ≤ 120 ms` and `memoryPeakMB ≤ 512 MB` per profile.
+  The reference CI harness **MUST** fail when exceeded (see §1 Bench SLI gate). `compileMs ≤ 1000 ms` remains a tracked SLI (non‑blocking) and **SHOULD** be reported by other implementations even when budgets are advisory.
 * **Fallback order when a budget is exceeded:**
   1) reduce optional repairs; 2) cap `trials.perBranch`/`maxBranchesToTry` (score‑only if needed);
   3) relax non‑normative heuristics (e.g., skip pattern‑overlap analysis).
