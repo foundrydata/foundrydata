@@ -16,7 +16,7 @@
 - **Conservative generation** - Pre-evaluate conditions on partial instances, minimal backtracking
 
 ### ✅ Advanced Object Features
-- **`properties` / `patternProperties`** - Anchored-safe pattern coverage with overlap analysis; non-anchored patterns stay gating-only under `AP:false`
+- **`properties` / `patternProperties`** - Anchored-safe pattern coverage with overlap analysis; under `AP:false`, unsafe/non-anchored or complexity-capped patterns trigger Strict fail-fast (Lax warns) when presence pressure holds, otherwise they remain gating-only
 - **`additionalProperties`** - Must-cover intersection algorithm for `false` across `allOf`
 - **`unevaluatedProperties`** - Conservative effective view, preserved for AJV validation
 - **`propertyNames`** - Pattern-based key validation; strict-equivalence rewrites only when all §7 preconditions hold (no `unevaluated*` in scope, permissive/empty `additionalProperties`, anchored-safe & non-capped patterns) and are signaled via `PNAMES_REWRITE_APPLIED`; otherwise gating-only for must-cover
@@ -34,7 +34,7 @@
 - **Performance protection** - Configurable caps prevent arithmetic explosion
 
 ### ✅ Schema Organization & References
-- **`$ref`** - In-document references with cycle detection; core blocks remote deref unless the resolver extension is enabled
+- **`$ref`** - In-document references with cycle detection; core blocks remote deref unless the pre-pipeline resolver extension is enabled (Compose/Validate stay offline); Lax can skip final validation with a diagnostic when remote refs remain unresolved
 - **`$recursiveRef` / `$recursiveAnchor`** - Pass-through for AJV (Draft 2019-09)
 - **`$dynamicRef` / `$dynamicAnchor`** - Bounded in-document scope resolution (conservative) with AJV pass-through for validation  
 - **`definitions` / `$defs`** - Legacy and modern support with normalization
@@ -49,7 +49,7 @@
 
 These features have **configurable behavior** rather than hard blocks:
 
-- **External `$ref`** - Core: error on remote; optional resolver extension enables cached/allowlisted HTTP(S) with warn/error policy
+- **External `$ref`** - Core: error on remote; optional pre-pipeline resolver extension enables cached/allowlisted HTTP(S) with warn/error policy; Compose/Validate remain offline and Lax may skip final validation with a diagnostic when refs stay unresolved
 - **Complex regex patterns** - Heuristic generation with safety limits, configurable ReDoS protection
 - **Deep schema nesting** - Configurable complexity caps trigger graceful degradation  
 - **Large compositions** - Complexity caps (200+ oneOf branches, 500+ anyOf branches, 10K+ enum values)
@@ -62,7 +62,7 @@ These features have **configurable behavior** rather than hard blocks:
 - **`contentSchema`** - Out of scope for test data generation
 
 ### Known Limits (per spec)
-- Non-anchored `patternProperties`/`propertyNames` remain gating-only for `AP:false` must-cover unless a strict rewrite is applied.
+- Under `AP:false`, unsafe or complexity-capped patterns used for must-cover trigger Strict fail-fast and Lax warnings when presence pressure holds; raw `propertyNames.pattern` remains gating-only unless rewritten.
 - `$dynamicRef/$dynamicAnchor` handled conservatively with bounded in-document binding; validation relies on AJV.
 - External deref beyond the resolver extension stays disabled by default.
 
