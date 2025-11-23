@@ -1324,7 +1324,8 @@ Implementations SHOULD populate `details` with small, code‑specific objects:
   for `email`, `uri`, `uuid`, and `date-time`. Validation **MUST** rely on `ajv-formats`
   (or an equivalent plugin with compatible semantics). The gate in §13 enforces parity of
   `validateFormats` across AJV instances; when `validateFormats:true` is configured **without**
-  the corresponding format validators, the run **MUST** fail the startup config check (`AJV_FLAGS_MISMATCH`).
+  the corresponding format validators, the run **MUST** fail the startup config check (`AJV_FLAGS_MISMATCH`).  
+  **Strict Data Compliance profile (optional, normative).** Deployments that claim conformance to the optional “Strict Data Compliance” profile **MUST** run with `validateFormats:true` on both Ajv instances, enable format validators for at least `email`, `uri`, `uuid`, and `date-time` (for example via `ajv-formats`), and synthesize format‑valid values for these keywords as described above. Other deployments **MAY** continue to use the default annotate‑only behavior.
 
 * **Objects** —
 
@@ -1367,6 +1368,7 @@ Implementations SHOULD populate `details` with small, code‑specific objects:
     4) Predicate vs. cache.
        `isEvaluated` **MAY** be implemented using an internal cache (“E‑Trace”) mapping each `O` to a set of proven names and their evidence for the **current candidate instance**. This cache is **ephemeral**, seed‑independent, and **MUST NOT** influence Compose results or cache keys (§14). Recompute or invalidate deterministically as the candidate changes during Repair.
        **Cache lifetime (normative).** E‑Trace caches are scoped to a single object instance location and a single candidate. Implementations **MUST** clear or refresh the cache at the start of every Generate run and at the start of each Repair pass, and **MUST** invalidate it on any structural change at `O` (add/rename/delete key, branch reselection). Caches **MUST NOT** be shared across objects or rows, and “unknown” status after invalidation **MUST** be treated as `false` for emission unless recomputed.
+       **SLI conformance (normative).** Implementations that claim the §15 performance SLI **MUST** implement `isEvaluated` with an E‑Trace cache (or an equivalent per‑candidate memoization strategy with the same observable behavior as described above) so that evaluation proofs are reused within a Generate run or Repair pass. A purely stateless implementation that recomputes proofs from scratch on every call **MAY** be used only in non‑SLI profiles and **MUST NOT** be advertised as satisfying the §15 gate.
 
     5) Replay after mutations (normative).
        Whenever a Generate/Repair action may change the set of `anyOf` branches known to validate at the same instance location `O`, the implementation **MUST** invalidate and recompute the evaluation proof for `O`. Any evaluation proof that depends exclusively on an `anyOf` branch that is no longer known to validate **MUST NOT** be used to introduce or rename properties at `O`. Before any introduction or rename at `O`, `isEvaluated(O, name)` **MUST** be recomputed against the current candidate state.
@@ -1416,7 +1418,7 @@ Implementations SHOULD populate `details` with small, code‑specific objects:
        **Generator-local classification (normative).** The generator **MUST independently apply** the §8 anchored‑safe test **and** the §8 regex‑complexity cap to each candidate pattern; it **MUST NOT** rely solely on Compose-phase diagnostics. **Skip** any pattern that fails these generator-local checks or would be flagged by `REGEX_COMPLEXITY_CAPPED`.
     2) **Bounded, deterministic witness search (normative).**
        The witness search domain is governed by `PlanOptions.patternWitness` (see §23). **Defaults**:
-       Σ = the literal string "abcdefghijklmnopqrstuvwxyz0123456789_-", `maxLength = 12`, `maxCandidates = 32768`.
+       Σ = the literal string "abcdefghijklmnopqrstuvwxyz0123456789_-", `maxLength = 12`, `maxCandidates = 32768`. These defaults are intentionally compact and tuned to keep worst‑case witness search within the §15 SLI budget for typical schemas. For workloads that require more realistic, longer object keys (for example hash‑like identifiers), implementations **SHOULD** expose configuration profiles that increase `maxLength` and/or adjust Σ while still honoring the `maxCandidates` cap and the bench gates in §1/§15.
        **Length metric.** `maxLength` bounds the number of **Unicode code points** per candidate (not UTF‑16 code units).
        **Alphabet normalization (normative):** Interpret Σ as a sequence of **Unicode code points** (ECMA‑262 scalar values). **Drop any unpaired surrogate code units (U+D800–U+DFFF)**, then **deduplicate by code point** (set semantics). If the resulting Σ is **empty** (including after dropping unpaired surrogates), treat the pattern as **capped** immediately and **MUST** emit `COMPLEXITY_CAP_PATTERNS` with `details:{reason:'witnessDomainExhausted', alphabet:'', maxLength, tried:0}`.
        **Enumeration order (normative):** let **Σ_sorted** be Σ after normalization, sorted by **UTF‑16 code‑unit ascending**. Enumerate candidates **by increasing length** (0..`maxLength`), and within each length in **UTF‑16 lexicographic** order **induced by Σ_sorted**. The **input order of Σ MUST NOT** affect candidate ordering. Test candidates against the single target pattern `P` only, using **JavaScript RegExp with the `u` flag** (`new RegExp(P,'u')`). **No RNG** is used.
@@ -1619,7 +1621,7 @@ Run the evaluation guard before finalizing the action for the object (and before
   **Additional guard (normative).** The skip path above **MUST** be taken **only when** all of the following hold:
   (i) `ExtRefs.size > 0`; (ii) the failing Source Ajv compilation’s error list is non‑empty and **every** error has
   `keyword === '$ref'`, and its failing reference value is an element of `ExtRefs`; and (iii) the probe compilation
-  succeeds. If **any** error does not satisfy (ii), implementations **MUST NOT** skip validation.
+  succeeds. If **any** error does not satisfy (ii), implementations **MUST NOT** skip validation. Implementations **MUST** obtain this error list by wrapping the underlying Source Ajv `compile(...)` call: catch the validator’s exception, extract its `errors` array (or equivalent structured representation), and normalize it for this algorithm. Allowing the compile exception to escape and abort the pipeline is non‑conformant.
 * `$dynamic*` noted.
 
 **Algorithm (normative) — ExternalRefSkipEligibility**
@@ -1978,7 +1980,7 @@ Omitted/undefined fields are not serialized.
 When any `allOf` conjunct enforces `additionalProperties:false`, the planner constructs a Coverage Index for property names as the intersection of: literal keys from `properties`, and **anchored‑safe & non‑capped** `patternProperties`. `propertyNames` acts only as a guard; it may be rewritten additively under strict equivalence preconditions (flag‑gated), in which case synthetic provenance is recorded, as described in §§7–8.
 
 #### Safe‑proof fallback
-Before failing on non‑safe or capped patterns, the planner first attempts a **safe-only** cover: (1) build the Coverage Index using only anchored‑safe & non‑capped inputs; (2) if non‑empty and presence pressure holds, proceed with this cover (no `AP_FALSE_UNSAFE_PATTERN` in Strict) and attach a coverage certificate to diagnostics; (3) if empty and presence pressure holds, emit early‑UNSAT hints such as `UNSAT_AP_FALSE_EMPTY_COVERAGE`, `UNSAT_REQUIRED_VS_PROPERTYNAMES`, or `UNSAT_MINPROPERTIES_VS_COVERAGE` per §8. If non‑emptiness would require a non‑safe or capped pattern, Strict emits `AP_FALSE_UNSAFE_PATTERN` after attempting the safe-only proof; Lax warns and proceeds conservatively with `AP_FALSE_INTERSECTION_APPROX`, as already defined in §8.
+Before failing on non‑safe or capped patterns, the planner first attempts a **safe-only** cover: (1) build the Coverage Index using only anchored‑safe & non‑capped inputs; (2) if non‑empty and presence pressure holds, proceed with this cover (no `AP_FALSE_UNSAFE_PATTERN` in Strict) and attach a coverage certificate to diagnostics; (3) if empty and presence pressure holds, emit early‑UNSAT hints such as `UNSAT_AP_FALSE_EMPTY_COVERAGE`, `UNSAT_REQUIRED_VS_PROPERTYNAMES`, or `UNSAT_MINPROPERTIES_VS_COVERAGE` per §8. If non‑emptiness would require a non‑safe or capped pattern, Strict emits `AP_FALSE_UNSAFE_PATTERN` after attempting the safe-only proof; Lax warns and proceeds conservatively with `AP_FALSE_INTERSECTION_APPROX`, as already defined in §8. This behavior is intentional: when safe coverage cannot be established without relying on non‑safe or capped constructs, the specification prefers a controlled **fail‑late** under the final Ajv validation over more aggressive static reasoning in Compose.
 
 #### Anchoring policy and regex caps
 Patterns used in coverage are considered only when anchored‑safe per §8. Patterns rejected for coverage remain guards at validation time. Implementations distinguish coverage regex caps (`REGEX_COMPLEXITY_CAPPED{context:'coverage'}`) from generation caps (`COMPLEXITY_CAP_PATTERNS{...}`) and route them to the appropriate phases and severities as specified in §§8 and 19.
@@ -2566,6 +2568,14 @@ Hints are informative and MUST NOT change severity or routing.
   - **T‑REGEX‑PREFLIGHT‑PNAMES‑01** — invalid `propertyNames.pattern` ⇒ diagnostic as above.
   - **T‑REGEX‑PREFLIGHT‑FHIR‑INT‑01** — corpus FHIR surfaces the compile error in Compose (preflight) in addition to the existing Validate failure.
 
+* **Anchored‑safe classifier (golden tests; normative).**
+  - **T‑ANCHORSAFE‑SIMPLE‑01** — pattern `"^(foo|bar)$"` is classified as anchored‑safe per §8 and may participate in must‑cover coverage; no `REGEX_COMPLEXITY_CAPPED{context:'coverage'}` is emitted.
+  - **T‑ANCHORSAFE‑LOOKAROUND‑01** — pattern `"^(?=foo)bar$"` is not anchored‑safe and **MUST NOT** be used for must‑cover coverage; it may still act as a gate at validation time.
+  - **T‑ANCHORSAFE‑BACKREF‑01** — pattern `"^(a|b)\\1$"` is not anchored‑safe and **MUST NOT** be used to prove coverage.
+  - **T‑ANCHORSAFE‑CAPPED‑01** — a pattern whose JSON‑unescaped source triggers the §8 regex complexity cap (for example via a quantified group) is treated as non‑anchored for must‑cover; `REGEX_COMPLEXITY_CAPPED{context:'coverage'}` is emitted and coverage does not increase.
+  - **T‑ANCHORSAFE‑ESCAPED‑PAREN‑01** — pattern `"^foo\\(bar\\)$"` remains anchored‑safe; escaped parentheses alone do not trigger the complexity cap and behave like literals for coverage.
+  Implementations claiming conformance to this specification **MUST** pass this anchored‑safe classifier suite in addition to the regex preflight tests above.
+
 * Pointer mapping (longest‑prefix reverse map).
 * **Pointer binding & locus (new).**
   - **T‑PTR‑ALLOF‑RENORM‑01** — `allOf:[true, S, true]` ⇒ canon `allOf:[S]`; vérifier `ptrMap["#/…/allOf/0"] === "#/…/allOf/1"` et qu’aucune note n’est attachée à un index, seulement au chemin opérateur.
@@ -2824,7 +2834,7 @@ export interface PlanOptions {
   // Pattern witness (generator)
   patternWitness?: {
     alphabet?: string;      // default: "abcdefghijklmnopqrstuvwxyz0123456789_-"
-    maxLength?: number;     // default: 12  (bounds the number of Unicode code points per candidate)
+    maxLength?: number;     // default: 12  (compact profile; bounds Unicode code points per candidate — override for longer keys, see §23)
     maxCandidates?: number; // default: 32768
   };
 

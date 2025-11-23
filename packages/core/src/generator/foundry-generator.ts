@@ -186,6 +186,12 @@ class GeneratorEngine {
   private readonly stringTweakOrder: ReadonlyArray<'\u0000' | 'a'>;
   private readonly multipleOfEpsilon: number;
   private readonly preferExamples: boolean;
+  // E-Trace cache: per-candidate object instance → per-name proof (or null for negative).
+  // Ephemeral per GeneratorEngine; keys are not retained strongly (WeakMap).
+  private eTraceCache: WeakMap<
+    Record<string, unknown>,
+    Map<string, EvaluationProof | null>
+  > = new WeakMap();
 
   constructor(effective: ComposeResult, options: FoundryGeneratorOptions) {
     this.options = options;
@@ -505,6 +511,9 @@ class GeneratorEngine {
       result[name] = value;
       usedNames.add(name);
       this.recordEvaluationTrace(canonPath, name, evaluationProof);
+      if (eTraceGuard) {
+        this.invalidateEvaluationCacheForObject(result);
+      }
     }
 
     this.applyDependentRequired(
@@ -558,6 +567,9 @@ class GeneratorEngine {
         result[name] = value;
         usedNames.add(name);
         this.recordEvaluationTrace(canonPath, name, evaluationProof);
+        if (eTraceGuard) {
+          this.invalidateEvaluationCacheForObject(result);
+        }
       }
     }
 
@@ -607,6 +619,9 @@ class GeneratorEngine {
             candidate,
             evaluationProofForCandidate
           );
+          if (eTraceGuard) {
+            this.invalidateEvaluationCacheForObject(result);
+          }
           satisfied = true;
           break;
         }
@@ -684,6 +699,9 @@ class GeneratorEngine {
           result[candidate] = value;
           usedNames.add(candidate);
           this.recordEvaluationTrace(canonPath, candidate, evaluationProof);
+          if (eTraceGuard) {
+            this.invalidateEvaluationCacheForObject(result);
+          }
         }
       }
     }
@@ -709,6 +727,19 @@ class GeneratorEngine {
     currentObject: Record<string, unknown>,
     name: string
   ): EvaluationProof | undefined {
+    // E-Trace cache: reuse proofs per (object instance, name) for the current candidate.
+    const cacheForObject =
+      this.eTraceCache.get(currentObject) ??
+      (() => {
+        const fresh = new Map<string, EvaluationProof | null>();
+        this.eTraceCache.set(currentObject, fresh);
+        return fresh;
+      })();
+    if (cacheForObject.has(name)) {
+      const cached = cacheForObject.get(name) ?? undefined;
+      return cached;
+    }
+
     const processed = new Set<string>();
     const queue: EvaluationNode[] = this.expandObjectApplicators(
       { schema: objectSchema, pointer: canonPath, via: [] },
@@ -742,7 +773,9 @@ class GeneratorEngine {
         queue.push(extra);
       }
     }
-    return fallbackProof;
+    const result = fallbackProof;
+    cacheForObject.set(name, result ?? null);
+    return result;
   }
 
   private isNameWithinCoverage(
@@ -962,6 +995,13 @@ class GeneratorEngine {
         via: proof.via,
       },
     });
+  }
+
+  private invalidateEvaluationCacheForObject(
+    currentObject: Record<string, unknown>
+  ): void {
+    // Clear any memoized E-Trace proofs for this candidate object.
+    this.eTraceCache.delete(currentObject);
   }
 
   private getChosenBranchIndex(canonPath: JsonPointer): number | undefined {
@@ -1255,6 +1295,9 @@ class GeneratorEngine {
         target[dep] = value;
         used.add(dep);
         this.recordEvaluationTrace(canonPath, dep, evaluationProof);
+        if (eTraceGuard) {
+          this.invalidateEvaluationCacheForObject(target);
+        }
       }
     }
   }
@@ -1934,6 +1977,9 @@ class GeneratorEngine {
       target[name] = value;
       used.add(name);
       this.recordEvaluationTrace(canonPath, name, evaluationProof);
+      if (eTraceGuard) {
+        this.invalidateEvaluationCacheForObject(target);
+      }
     }
   }
 
