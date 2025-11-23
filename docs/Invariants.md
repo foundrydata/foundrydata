@@ -4,9 +4,9 @@ This note captures the cross-phase guarantees implemented inside `packages/core`
 
 ## Pipeline contract
 
-- The orchestrator (`packages/core/src/pipeline/orchestrator.ts`) always executes `Normalize → Compose → Generate → Repair → Validate` and never skips validation of the source schema. Every artifact validated at the end of the run uses the original schema and the source AJV instance, so no canonicalized view can diverge from the contract that clients author.
-- Planning and source AJV instances are created side-by-side (`util/ajv-planning.ts`, `util/ajv-source.ts`) and gated by `checkAjvStartupParity`. Unicode regex support, `validateFormats`, discriminator flags, and `multipleOfPrecision` values must match before generation begins.
-- Plan options are resolved exactly once per run (`resolveOptions`) and stored inside the generator/repair engines. This keeps configuration deterministic and avoids per-item mutations.
+- The orchestrator (`packages/core/src/pipeline/orchestrator.ts`) always executes `Normalize → Compose → Generate → Repair → Validate`; when any stage fails, later stages are marked skipped. Final validation uses the original schema and Source AJV; in Lax mode, unresolved external `$ref` can return a skipped validate result instead of hard failure, per the SPEC modes contract.
+- Planning and Source AJV instances are built together (`util/ajv-planning.ts`, `util/ajv-source.ts`) and checked by `checkAjvStartupParity` before Compose/Generate run. Unicode regex support, `validateFormats`, discriminator flags, `multipleOfPrecision`, and resolver registry fingerprints must align; the same Source AJV settings are reused for final validation.
+- Plan options are resolved at pipeline entry (`resolveOptions`) and threaded through downstream factories; stages treat the resolved settings as immutable for the run to keep outcomes deterministic.
 
 ## Normalizer invariants
 
@@ -31,8 +31,8 @@ This note captures the cross-phase guarantees implemented inside `packages/core`
 
 ## Repair + Validate invariants
 
-- The repair engine is AJV-driven: each attempted fix replays validation against the planning AJV before accepting the mutation, and diagnostics like `REPAIR_PNAMES_PATTERN_ENUM` capture any renames or deletions that were required to preserve must-cover guarantees.
-- Repair budgets (`budget.tried`, `budget.limit`, `budget.reason`) are always recorded when a guard prevents convergence, and `UNSAT_BUDGET_EXHAUSTED` is emitted before items are surfaced to Validate.
+- The repair engine is AJV-driven: each attempted fix replays validation against a Source AJV compiled with `allErrors:true`, and diagnostics like `REPAIR_PNAMES_PATTERN_ENUM` capture renames or deletions required to preserve must-cover guarantees.
+- `UNSAT_BUDGET_EXHAUSTED` surfaces when repair/validate cycles stagnate; per-action budgets are recorded on diagnostics that SPEC marks budgeted, but the stagnation guard itself reports its cycle/error counts in `details`.
 - Validation reuses the source AJV instance with the same flags checked at startup. External references remain blocked—`EXTERNAL_REF_UNRESOLVED` is emitted with policy, mode, optional `failingRefs`, and `skippedValidation` evidence when configured to warn or ignore.
 
 ## Observability & determinism

@@ -120,6 +120,10 @@ interface StageRunners {
 
 type AjvKeywordError = ErrorObject<string, Record<string, unknown>, unknown>;
 
+type AjvMarker = {
+  __fd_ajvClass?: 'Ajv' | 'Ajv2019' | 'Ajv2020' | 'ajv-draft-04';
+};
+
 class ExternalRefValidationError extends Error {
   public readonly diagnostic: DiagnosticEnvelope;
 
@@ -216,6 +220,7 @@ export async function executePipeline(
   let resolverRunDiags: ResolverDiagnosticNote[] | undefined = [];
   let registryFingerprint: string | undefined;
   let registryDocs: RegistryDoc[] | undefined;
+  let pendingAjvMismatch: AjvFlagsMismatchError | undefined;
   // Track seen $id across AJV hydration to avoid duplicate-id conflicts
   const seenSchemaIds = new Map<string, string>();
   // Seed seenSchemaIds with any $id present in the root schema so that in-document definitions
@@ -227,6 +232,70 @@ export async function executePipeline(
       seenSchemaIds.set(id, 'root-schema');
     }
   }
+  let ajvParityChecked = false;
+
+  const runAjvStartupParityGate = (args: {
+    validateFormats: boolean;
+    discriminator: boolean;
+    expectedMoP?: number;
+    mode: PipelineOptions['mode'];
+  }): void => {
+    if (ajvParityChecked || pendingAjvMismatch) return;
+    const sourceAjv = createSourceAjv(
+      {
+        dialect: sourceDialect,
+        validateFormats: args.validateFormats,
+        discriminator: args.discriminator,
+        multipleOfPrecision: args.expectedMoP,
+        tolerateInvalidPatterns: args.mode === 'lax',
+      },
+      planOptions
+    );
+    if (
+      registryDocs &&
+      resolverRegistry &&
+      resolvedPlanOptions.resolver.hydrateFinalAjv === true
+    ) {
+      hydrateSourceAjvFromRegistry(sourceAjv, registryDocs, {
+        ignoreIncompatible: true,
+        notes: resolverRunDiags,
+        seenSchemaIds: new Map(seenSchemaIds),
+        targetDialect: sourceDialect,
+      });
+    }
+    const planningAjv = createPlanningAjv(
+      {
+        validateFormats: args.validateFormats,
+        discriminator: args.discriminator,
+        multipleOfPrecision: args.expectedMoP,
+      },
+      planOptions
+    );
+    const sourceClass =
+      (sourceAjv as unknown as AjvMarker).__fd_ajvClass ?? 'Ajv';
+
+    try {
+      checkAjvStartupParity(sourceAjv, planningAjv, {
+        planningCompilesCanonical2020: true,
+        validateFormats: args.validateFormats,
+        discriminator: args.discriminator,
+        sourceClass,
+        multipleOfPrecision: args.expectedMoP,
+        registryFingerprint,
+        requireRegistryFingerprint:
+          resolverRegistry !== undefined && resolverRegistry.size() > 0,
+      });
+      ajvParityChecked = true;
+    } catch (error) {
+      if (error instanceof AjvFlagsMismatchError) {
+        pendingAjvMismatch = error;
+        ajvParityChecked = true;
+        return;
+      }
+      throw error;
+    }
+  };
+
   try {
     const resolverPlan = resolvedPlanOptions.resolver;
     const resolverOptions: ResolverExtensionOptions = {
@@ -298,7 +367,7 @@ export async function executePipeline(
         resolverRunDiags,
         seenSchemaIds,
         registryDocs,
-        registryFingerprint
+        () => pendingAjvMismatch
       ),
   };
 
@@ -398,8 +467,14 @@ export async function executePipeline(
       : undefined;
     const validateFormats = Boolean(options.validate?.validateFormats);
     const discriminator = Boolean(options.validate?.discriminator);
+    const mode = options.mode ?? 'strict';
+    runAjvStartupParityGate({
+      validateFormats,
+      discriminator,
+      expectedMoP,
+      mode,
+    });
     if (schemaHasExternalRefs(schema)) {
-      const mode = options.mode ?? 'strict';
       const sourceAjvFactory = (): Ajv => {
         const ajv = createSourceAjv(
           {
@@ -533,7 +608,6 @@ export async function executePipeline(
       metrics,
     };
     // Apply Lax planning-time stubs when configured and unresolved externals are likely
-    const mode = options.mode ?? 'strict';
     let stubbedRefs: string[] | undefined;
     if (
       mode === 'lax' &&
@@ -618,6 +692,31 @@ export async function executePipeline(
       }
     }
   } catch (error) {
+    if (error instanceof AjvFlagsMismatchError) {
+      const snapshotForDiag = metrics.snapshotMetrics({
+        verbosity: options.snapshotVerbosity,
+      });
+      const diag: DiagnosticEnvelope = {
+        code: DIAGNOSTIC_CODES.AJV_FLAGS_MISMATCH,
+        canonPath: '',
+        phase: DIAGNOSTIC_PHASES.VALIDATE,
+        details: error.details as unknown,
+        metrics: {
+          validationsPerRow: snapshotForDiag.validationsPerRow,
+          repairPassesPerRow: snapshotForDiag.repairPassesPerRow,
+          p50LatencyMs: snapshotForDiag.p50LatencyMs,
+          p95LatencyMs: snapshotForDiag.p95LatencyMs,
+          memoryPeakMB: snapshotForDiag.memoryPeakMB,
+        },
+      };
+      try {
+        assertDiagnosticEnvelope(diag);
+        assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.VALIDATE, [diag]);
+      } catch {
+        // continue to stage error even if assertion throws
+      }
+      artifacts.validationDiagnostics = [diag];
+    }
     if (error instanceof ExternalRefValidationError) {
       const combined: DiagnosticEnvelope[] = [
         error.diagnostic.phase
@@ -993,7 +1092,7 @@ function createDefaultValidate(
   resolverRunDiags?: ResolverDiagnosticNote[],
   seenSchemaIds?: Map<string, string>,
   registryDocs?: RegistryDoc[],
-  registryFingerprint?: string
+  getPendingAjvMismatch?: () => AjvFlagsMismatchError | undefined
 ): StageRunners['validate'] {
   return async (items, schema, options) => {
     const planOptions = pipelineOptions.generate?.planOptions;
@@ -1009,6 +1108,13 @@ function createDefaultValidate(
     const discriminator = Boolean(options?.discriminator);
     const dialect = detectDialectFromSchema(schema);
     const mode = pipelineOptions.mode ?? 'strict';
+
+    if (getPendingAjvMismatch) {
+      const mismatch = getPendingAjvMismatch();
+      if (mismatch) {
+        throw mismatch;
+      }
+    }
 
     const invalidPatternDiagnostics: DiagnosticEnvelope[] = [];
 
@@ -1054,23 +1160,6 @@ function createDefaultValidate(
       { validateFormats, discriminator, multipleOfPrecision: expectedMoP },
       planOptions
     );
-    type AjvMarker = {
-      __fd_ajvClass?: 'Ajv' | 'Ajv2019' | 'Ajv2020' | 'ajv-draft-04';
-    };
-    const sourceClass =
-      (sourceAjv as unknown as AjvMarker).__fd_ajvClass ?? 'Ajv';
-
-    checkAjvStartupParity(sourceAjv, planningAjv, {
-      planningCompilesCanonical2020: true,
-      validateFormats,
-      discriminator,
-      sourceClass,
-      multipleOfPrecision: expectedMoP,
-      registryFingerprint,
-      requireRegistryFingerprint:
-        resolverRegistry !== undefined && resolverRegistry.size() > 0,
-    });
-
     const flags = {
       source: extractAjvFlags(sourceAjv) as unknown as Record<string, unknown>,
       planning: extractAjvFlags(planningAjv) as unknown as Record<
