@@ -64,7 +64,7 @@ describe('PlanOptions', () => {
 
     it('should merge user options with defaults', () => {
       const userOptions: Partial<PlanOptions> = {
-        rewriteConditionals: 'aggressive',
+        rewriteConditionals: 'safe',
         debugFreeze: true,
         rational: {
           maxRatBits: 256,
@@ -89,7 +89,7 @@ describe('PlanOptions', () => {
       const resolved = resolveOptions(userOptions);
 
       // User overrides should be preserved
-      expect(resolved.rewriteConditionals).toBe('aggressive');
+      expect(resolved.rewriteConditionals).toBe('safe');
       expect(resolved.debugFreeze).toBe(true);
       expect(resolved.rational.maxRatBits).toBe(256);
       expect(resolved.rational.fallback).toBe('float');
@@ -113,11 +113,7 @@ describe('PlanOptions', () => {
       ).toBe('if-aware-lite');
       expect(
         resolveOptions({ rewriteConditionals: 'safe' }).conditionals.strategy
-      ).toBe('rewrite');
-      expect(
-        resolveOptions({ rewriteConditionals: 'aggressive' }).conditionals
-          .strategy
-      ).toBe('rewrite');
+      ).toBe('if-aware-lite');
     });
   });
 
@@ -210,7 +206,7 @@ describe('PlanOptions', () => {
 
     it('should accept valid options', () => {
       const validOptions: Partial<PlanOptions> = {
-        rewriteConditionals: 'aggressive',
+        rewriteConditionals: 'safe',
         rational: { maxRatBits: 256, qCap: 1000 },
         trials: { perBranch: 5, maxBranchesToTry: 20 },
         guards: { maxGeneratedNotNesting: 5 },

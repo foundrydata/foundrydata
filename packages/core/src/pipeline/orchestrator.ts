@@ -429,26 +429,18 @@ export async function executePipeline(
           error,
           createSourceAjv: sourceAjvFactory,
         });
-        if (classification.skipEligible) {
-          const skipValidation =
-            mode === 'lax' ||
-            (mode === 'strict' && externalRefStrictPolicy !== 'error');
-          const diag = createExternalRefDiagnostic(mode, classification, {
-            skipValidation,
-            policy: mode === 'strict' ? externalRefStrictPolicy : undefined,
-          });
-          if (mode === 'strict') {
-            if (externalRefStrictPolicy === 'error') {
-              artifacts.validationDiagnostics = [diag];
-              throw new ExternalRefValidationError(diag);
-            }
-            externalRefState = { diag, classification };
-          } else {
-            externalRefState = { diag, classification };
-          }
-        } else {
+        if (!classification.skipEligible) {
           throw error;
         }
+        const diag = createExternalRefDiagnostic(mode, classification, {
+          skipValidation: mode === 'lax',
+          policy: mode === 'strict' ? externalRefStrictPolicy : undefined,
+        });
+        if (mode === 'strict') {
+          artifacts.validationDiagnostics = [diag];
+          throw new ExternalRefValidationError(diag);
+        }
+        externalRefState = { diag, classification };
       }
       if (!externalRefState) {
         const externalSummary = summarizeExternalRefs(schema, {
@@ -479,22 +471,15 @@ export async function executePipeline(
             skipEligible: false,
             reason: 'no-compile-errors',
           };
-          const skipValidation =
-            mode === 'lax' ||
-            (mode === 'strict' && externalRefStrictPolicy !== 'error');
           const diag = createExternalRefDiagnostic(mode, classification, {
-            skipValidation,
+            skipValidation: mode === 'lax',
             policy: mode === 'strict' ? externalRefStrictPolicy : undefined,
           });
           if (mode === 'strict') {
-            if (externalRefStrictPolicy === 'error') {
-              artifacts.validationDiagnostics = [diag];
-              throw new ExternalRefValidationError(diag);
-            }
-            externalRefState = { diag, classification };
-          } else {
-            externalRefState = { diag, classification };
+            artifacts.validationDiagnostics = [diag];
+            throw new ExternalRefValidationError(diag);
           }
+          externalRefState = { diag, classification };
         }
       }
     }

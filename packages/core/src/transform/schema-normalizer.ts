@@ -72,14 +72,14 @@ export interface NormalizeResult {
 }
 
 export interface NormalizeOptions {
-  rewriteConditionals?: 'never' | 'safe' | 'aggressive';
+  rewriteConditionals?: 'never' | 'safe';
   guards?: {
     maxGeneratedNotNesting?: number;
   };
 }
 
 interface ResolvedNormalizeOptions {
-  rewriteConditionals: 'never' | 'safe' | 'aggressive';
+  rewriteConditionals: 'never' | 'safe';
   guards: {
     maxGeneratedNotNesting: number;
   };

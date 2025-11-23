@@ -72,7 +72,7 @@ program
   .option('--mode <mode>', 'Execution mode: strict|lax')
   .option(
     '--rewrite-conditionals <mode>',
-    'Conditional rewriting: never|safe|aggressive',
+    'Conditional rewriting: never|safe',
     'never'
   )
   .option('--debug-freeze', 'Enable debug freeze for development')
@@ -92,7 +92,7 @@ program
   )
   .option(
     '--external-ref-strict <mode>',
-    'External $ref handling: error|warn|ignore',
+    'External $ref handling: error|warn',
     'error'
   )
   .option(
@@ -256,7 +256,7 @@ program
   .option('--mode <mode>', 'Execution mode: strict|lax')
   .option(
     '--rewrite-conditionals <mode>',
-    'Conditional rewriting: never|safe|aggressive',
+    'Conditional rewriting: never|safe',
     'never'
   )
   .option('--debug-freeze', 'Enable debug freeze for development')
@@ -276,7 +276,7 @@ program
   )
   .option(
     '--external-ref-strict <mode>',
-    'External $ref handling: error|warn|ignore',
+    'External $ref handling: error|warn',
     'error'
   )
   .option(

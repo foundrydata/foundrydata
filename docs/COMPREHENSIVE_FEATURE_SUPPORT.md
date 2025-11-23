@@ -94,7 +94,7 @@ Full specification: [Feature Support Simplification Plan](feature-simplification
 
 ```typescript
 type PlanOptions = {
-  rewriteConditionals?: 'never' | 'safe' | 'aggressive';
+  rewriteConditionals?: 'never' | 'safe';
   conditionals?: { strategy?: 'rewrite' | 'if-aware-lite' | 'repair-only' };
   complexity?: { bailOnUnsatAfter?: number; /* ... */ };
   rational?: { maxRatBits?: number; fallback?: 'decimal' | 'float' };
@@ -104,7 +104,7 @@ type PlanOptions = {
 
 Default mapping between `rewriteConditionals` and `conditionals.strategy`:
 - `rewriteConditionals: 'never'` ⇒ `conditionals.strategy: 'if-aware-lite'`
-- `rewriteConditionals: 'safe' | 'aggressive'` ⇒ `conditionals.strategy: 'rewrite'`
+- `rewriteConditionals: 'safe'` ⇒ `conditionals.strategy: 'if-aware-lite'`
 - An explicit `conditionals.strategy` overrides this mapping.
 
 ### Configuration Strategies

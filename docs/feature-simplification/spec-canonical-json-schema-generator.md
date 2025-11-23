@@ -157,16 +157,7 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
 
 <a id="s3-apfalse-unsafe-pattern-policy"></a>
 * **AP:false unsafe‑pattern policy (Strict).**
-  When any conjunct enforces `additionalProperties:false` and the must‑cover proof would rely on a pattern that is
-  **not anchored‑safe** or is **capped by regex complexity**, implementations **MUST** fail‑fast before generation with
-  **`AP_FALSE_UNSAFE_PATTERN`**, **but only when presence pressure holds** (i.e., `effectiveMinProperties > 0` or `effectiveRequiredKeys ≠ ∅`, or some `dependentRequired` antecedent is forced present). In the absence of presence pressure, **MUST NOT** fail‑fast; proceed with conservative exclusion per §8.
-
-  In Lax mode, emit a warning and continue conservatively (§8).
-  **Exception (normative):** a raw `propertyNames.pattern` (i.e., without the §7 additive rewrite signaled by
-  `PNAMES_REWRITE_APPLIED`) **never** triggers this fail‑fast; treat it as **unknown gating** only (see §8).
-  **Safe‑proof preference (normative).** Before emitting `AP_FALSE_UNSAFE_PATTERN`, implementations **MUST** attempt the §8
-  safe proof: compute `Safe` by ignoring all non‑anchored and regex‑complexity‑capped patterns (including §7 synthetic ones).
-  If `Safe` is **non‑empty**, **MUST NOT** fail‑fast and **MUST** restrict generation to `Safe`. See §8 for details.
+  Under `additionalProperties:false`, fail‑fast with **`AP_FALSE_UNSAFE_PATTERN`** **iff** (a) **presence pressure holds** (effective `minProperties`/`required`/`dependentRequired`), (b) the §8 **safe‑only proof** (ignoring non‑anchored and complexity‑capped patterns, including §7 synthetic ones) yields **`Safe = ∅`**, and (c) must‑cover would require a non‑anchored or capped pattern. When `Safe ≠ ∅`, **restrict to `Safe` and do not fail‑fast**. In Lax, emit a warning and continue conservatively (§8). A raw `propertyNames.pattern` (no `PNAMES_REWRITE_APPLIED`) never triggers fail‑fast; it is gating‑only. **Policy hook:** in Strict, `patternPolicy.unsafeUnderApFalse:'warn'` downgrades the fail‑fast to a warning; `'error'` remains fatal.
 
 > **Note.** The precise definition of **anchored‑safe** regex and the rules for when `propertyNames` can contribute to coverage are normative in §8.
 
@@ -268,29 +259,13 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
 
 Clarification: The build‑time constant `ENUM_CAP` also applies to finite sets derived from exact‑literal `patternProperties` (see §8), in addition to `enum` and §7 synthetic literals.
 
-**Clarification (normative).** The former runtime knob `complexity.maxEnumCardinality` is removed from PlanOptions; the Coverage Index export uses the build‑time constant `ENUM_CAP` instead (see §8). `Compose` MUST ignore any PlanOptions value attempting to set that bound.
+**Clarification (normative).** The former runtime knob `complexity.maxEnumCardinality` is removed from PlanOptions; the Coverage Index export uses the build‑time constant `ENUM_CAP` instead (see §8). `Compose` MUST ignore any PlanOptions value attempting to set that bound. Conditionals rewrites are controlled **only** by `rewriteConditionals:'never'|'safe'` (Normalize); no compatibility aliases are supported.
 
 <a id="s5-precedence"></a>
 **Precedence & compatibility.** Mode (Strict/Lax) defines the baseline; specific `failFast` overrides refine it (see §11).
 
 **CLI mapping (informative).** `--resolve=local[,remote][,schemastore]` and `--cache-dir <path>` populate
 `resolver.strategies` and `resolver.cacheDir`. Repeated `--allow-host <hostname>` flags extend the resolver host allow‑list (`resolver.allowlist`). `--resolver-hydrate-final-ajv=(true|false)` maps to `resolver.hydrateFinalAjv`. In **Lax**, `--resolver-stub-unresolved=emptySchema` (or the legacy alias `--fail-on-unresolved=false`) enables planning‑time stubs for unresolved external `$ref` by setting `resolver.stubUnresolved:'emptySchema'` (warnings + optional skip per §11).
-**Note on “aggressive”.** The legacy `rewriteConditionals:'aggressive'` is treated as the same as `'safe'` and is kept for compatibility; the default remains `'never'` (see §7/§23).
-**Clarification (normative).** `PlanOptions.conditionals.strategy:'rewrite'` is a **deprecated alias** of `'if‑aware‑lite'`
-and **MUST NOT** enable the §7 normalizer rewrite. Only `NormalizeOptions.rewriteConditionals` controls rewrites.
-Cache‑key canonicalization for this alias is defined in §14.
-**Further clarification (normative).** `PlanOptions.rewriteConditionals` is **deprecated**. When present, it is a
-**pass‑through to Normalize** and **MUST** be ignored by Compose/Generate/Repair. It is **excluded** from
-`PlanOptionsSubKey` (§14) and **MUST NOT** affect caching/memoization or outcomes outside Normalize.
-
-**Do not confuse (normative).**
-`PlanOptions.conditionals.strategy:'rewrite'` is a **deprecated alias** of `'if-aware-lite'`.
-It **MUST NOT** trigger any `if/then/else` rewrite in the Normalizer. Only
-`NormalizeOptions.rewriteConditionals` controls rewrites (§7).
-Examples:
- • Correct: `NormalizeOptions.rewriteConditionals:'safe'` (and `PlanOptions.conditionals.strategy` may remain `'if-aware-lite'`).
- • Incorrect: setting `PlanOptions.conditionals.strategy:'rewrite'` without enabling `NormalizeOptions.rewriteConditionals`.
-
 ---
 
 <a id="s6-high-level-architecture"></a>
@@ -478,10 +453,9 @@ Examples:
        "then": { "required": ["a1"] },
        "else": { "required": ["a2"] }
      }
-     ```
+   ```
      Even with `rewriteConditionals: "safe"`, the conditional **is not** rewritten; a note `IF_REWRITE_SKIPPED_UNEVALUATED` is recorded.
    * Partial forms: keep `if`‑only and `then`/`else`‑only as‑is.
-   * **`aggressive` rewrite:** **alias of** **`safe`** (identical behavior and guards; no additional rewrites; no extra diagnostics).
    * Cap nested `not` by `guards.maxGeneratedNotNesting` (note `NOT_DEPTH_CAPPED`). **Default: 2** (aligns with §23).
    * **Origin & locus (normative).** When the safe rewrite applies, `anyOf` and the `not{not:S}` guard **MUST** carry `originPtr = "#/…/if"`, while the payloads carry `originPtr = "#/…/then"` / `"#/…/else"` respectively. When the rewrite is skipped, `IF_REWRITE_SKIPPED_UNEVALUATED` **MUST** be recorded at the `if` node’s canonical path (operator path, not an index), per §7 “Pointer binding & note locus”.
 
@@ -719,7 +693,7 @@ Implementations **MUST NOT** include generator‑only `COMPLEXITY_CAP_PATTERNS` 
  
 `Compose` **MUST** produce a coverage index **entry for every object node** and return the map as `coverageIndex` in the API result.
 Implementations **MUST NOT** elide entries based on mode or guard configuration. The map MAY be empty **only when the schema contains no object nodes**; consumers
-**MAY** ignore it when not needed. Implementations MUST NOT elide `enumerate()` due to budgets, and its presence MUST NOT depend on any PlanOptions value. Its presence depends only on whether the global must‑cover intersection is provably finite under this section **and not in a prohibited configuration** (e.g., raw `propertyNames.enum` only, or exceeding `ENUM_CAP`). When finite and permitted, `enumerate()` MUST be provided **except** when the constant `ENUM_CAP` (defined below) applies. In that case `enumerate()` MUST be absent and `COMPLEXITY_CAP_ENUM{ limit, observed }` MUST be emitted. Otherwise it MUST be absent. This preserves determinism and the Purity requirement below.
+**MAY** ignore it when not needed. Implementations MUST NOT elide `enumerate()` arbitrarily: it may be omitted only when `ENUM_CAP` applies or when **name‑enumeration budgets from PlanOptions** (`nameEnum` / `patternWitness`) deterministically cap witness search. Its presence otherwise depends on whether the global must‑cover intersection is provably finite under this section **and not in a prohibited configuration** (e.g., raw `propertyNames.enum` only, or exceeding `ENUM_CAP`). When finite and permitted, `enumerate()` MUST be provided **except** when the constant `ENUM_CAP` (defined below) applies. In that case `enumerate()` MUST be absent and `COMPLEXITY_CAP_ENUM{ limit, observed }` MUST be emitted. Otherwise it MUST be absent. This preserves determinism and the Purity requirement below.
 
 
  ```ts
@@ -737,7 +711,7 @@ Implementations **MUST NOT** elide entries based on mode or guard configuration.
  type CoverageIndex = Map<canonPath, CoverageEntry>;
  ```
  
-* **Purity (normative).** Both `has(name)` and `enumerate()` are pure: no AJV calls, no I/O, no dependence on seed, wall‑clock, environment, locale, budgets, or any PlanOptions values. They depend only on the canonical schema subtree at `canonPath`, `(AJV.major, AJV.flags)`, and the implementation constant `ENUM_CAP` defined below. When present, repeated calls to `enumerate()` for the same `(canonPath, AJV.major, AJV.flags, ENUM_CAP)` MUST return byte‑for‑byte identical arrays.
+* **Purity (normative).** Both `has(name)` and `enumerate()` are pure: no AJV calls, no I/O, no dependence on seed, wall‑clock, or environment. They may depend on the canonical schema subtree at `canonPath`, `(AJV.major, AJV.flags)`, the implementation constant `ENUM_CAP`, and deterministic **PlanOptions fields that affect name enumeration** (`nameEnum.*`, `patternWitness.*`, as captured in `PlanOptionsSubKey`). When present, repeated calls to `enumerate()` for the same `(canonPath, AJV.major, AJV.flags, ENUM_CAP, PlanOptionsSubKey)` MUST return byte‑for‑byte identical arrays.
 * **Vacuous case (normative).** When no conjunct at the object has `additionalProperties:false`, the `CoverageIndex` **still includes** an entry for this object: `has(name)` **MUST** return `true` for any string input; `enumerate` **MUST** be `undefined`; and `provenance` **MUST** be empty.
 * **Global intersection (normative):** `has(name)` decides membership in the **global must‑cover intersection** at this object — i.e., the intersection across **all** `allOf` conjuncts that set `additionalProperties:false`, after applying only the **safe** `propertyNames` gating of §8 (enum, or anchored‑safe & not complexity‑capped). Concretely, return `true` **iff** `name` is admitted by **each** such conjunct via its named `properties` or an **anchored‑safe** `patternProperties` entry, including **synthetic** entries from the §7 `propertyNames` rewrite **only when** `PNAMES_REWRITE_APPLIED` was recorded. Raw `propertyNames.pattern` **never** contributes coverage.
 * **Contributors to the intersection (normative clarification).** Only conjuncts that enforce `additionalProperties:false` at the object location **contribute** recognizers to the global must‑cover intersection. Conjuncts without `additionalProperties:false` do **not** participate in the coverage intersection (their `additionalProperties` schemas remain relevant to AJV validation but are irrelevant to must‑cover planning).
@@ -1275,6 +1249,7 @@ assumption.
   }
   ```
   Note (normative): `scoreDetails.exclusivityRand` remains **undefined** in Compose and is populated later by Generate/Repair during `oneOf` exclusivity resolution. **Do not** synthesize or overwrite `tiebreakRand`.
+* **Extension hooks.** `ComposeOptions.selector`/`BranchSelector` are **non‑normative** extensions; conformance for this spec requires the normative scoring above. Implementations may expose such hooks but doing so moves behavior outside the normative guarantees (determinism, diagnostics comparability).
 
 <a id="s8-oneof-exclusivity"></a>
 * **`oneOf` exclusivity**:
@@ -1394,7 +1369,9 @@ Implementations SHOULD populate `details` with small, code‑specific objects:
     5) Replay after mutations (normative).
        Whenever a Generate/Repair action may change the set of `anyOf` branches known to validate at the same instance location `O`, the implementation **MUST** invalidate and recompute the evaluation proof for `O`. Any evaluation proof that depends exclusively on an `anyOf` branch that is no longer known to validate **MUST NOT** be used to introduce or rename properties at `O`. Before any introduction or rename at `O`, `isEvaluated(O, name)` **MUST** be recomputed against the current candidate state.
 
-    **Emission rule (normative).** At any object location `O` where `unevaluatedProperties:false` applies, the generator **MUST** check `isEvaluated(O, name) === true` **before** introducing `name`. If the check fails, the generator **MUST NOT** introduce that key.
+**Emission rule (normative).** At any object location `O` where `unevaluatedProperties:false` applies, the generator **MUST** check `isEvaluated(O, name) === true` **before** introducing `name`. If the check fails, the generator **MUST NOT** introduce that key.
+**Unknown = false (Strict).** When evaluation status is unknown (e.g., compilation failed for a candidate branch or a pattern), treat `isEvaluated` as **false** and do not emit the key. In Lax, implementations MAY adopt the same behavior (recommended) or a stricter variant; they MUST NOT treat unknown as true.
+**Compile errors in E‑Trace (compatible).** If compiling a branch/subschema for evaluation proof fails, implementations MAY ignore that branch for `isEvaluated` and proceed without emitting evidence; they MUST NOT treat such branches as evaluated.
 
     **Interplay with `additionalProperties:false` (normative).** When `additionalProperties:false` is effective at `O` (per §8), E‑Trace **does not expand coverage**. Emission **MUST** satisfy **both**: (1) membership in the **must‑cover intersection** computed by Compose (e.g., `coverageIndex.has(name) === true`), and (2) `isEvaluated(O, name) === true`. If either condition fails, the key **MUST NOT** be emitted.
 
@@ -1610,8 +1587,8 @@ Run the evaluation guard before finalizing the action for the object (and before
 ### Strict (default)
 
 * Fail early only on non‑normalizable constructs or explicit policy cases.
-* `$ref` external: behavior controlled by `failFast.externalRefStrict` (default `error`). On failure, **emit** `EXTERNAL_REF_UNRESOLVED`.
-  **Normative stop (alignment with §1).** When, **after any hydration from the §4 registry**, the **Source Ajv** fails to compile the **original schema** due **solely** to unresolved external `$ref` (per §11/§12 classification; no I/O), the run **MUST NOT** proceed to **Compose/Generate/Repair** for that schema. Treat this as a hard error: emit `EXTERNAL_REF_UNRESOLVED` and abort planning/generation at this root.
+* `$ref` external: `failFast.externalRefStrict` (default `error`, may be set to `warn` for observability only) controls diagnostic flavor, **not** control flow. On failure, **emit** `EXTERNAL_REF_UNRESOLVED`.
+  **Normative stop (alignment with §1).** When, **after any hydration from the §4 registry**, the **Source Ajv** fails to compile the **original schema** due **solely** to unresolved external `$ref` (per §11/§12 classification; no I/O), the run **MUST NOT** proceed to **Compose/Generate/Repair** for that schema **regardless of `failFast.externalRefStrict` value**. Treat this as a hard error: emit `EXTERNAL_REF_UNRESOLVED` and abort planning/generation at this root; `failFast.externalRefStrict` may only downgrade the diagnostic classification (e.g., warning vs fatal) and annotate `details.policy`, never the decision to stop.
   **External `$ref` (normative):** Resolve the `$ref` value against the current resolution base (from `$id`).
   <a id="s11-external-ref-classification"></a>
   If the resolved URI is **fragment‑only** (`#...`), it is **internal**; otherwise it is **external** (includes absolute
@@ -1644,7 +1621,7 @@ Run the evaluation guard before finalizing the action for the object (and before
 * `$dynamic*` noted.
 
 **Algorithm (normative) — ExternalRefSkipEligibility**
-Input: original schema S; Source Ajv class/dialect matched per §12.
+Input: original schema S; Source Ajv class/dialect matched per §12. This is a **best‑effort heuristic**; when failing reference values are not exposed by the validator, or any error is non‑`$ref`, **MUST NOT** skip.
 1) Determine ExtRefs := all `$ref` values classified as **external** by §11/§12.
 2) If a non‑empty resolver registry is present **and** `resolver.hydrateFinalAjv !== false`, **first hydrate** the Source Ajv
    with the registry (see §4) and **then** attempt `compile(S)`. If it succeeds ⇒ do **not** skip; run final validation normally.
@@ -1679,7 +1656,7 @@ hydration is active (§13), additional run‑level notes **SHOULD** be recorded 
 ignored for dialect mismatch, and `RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID{ ref, id?, existingRef?, reason?, error? }`
 whenever a registry document is skipped because its URI/`$id` collides with an existing schema. In all cases, `ref` or
 `uri` identifies the external document; `reason`/`error` are optional hints (e.g., `"no-strategy"`, `"host-not-allowed"`,
-or `"fetch-error"` with an HTTP status).
+or `"fetch-error"` with an HTTP status). **Privacy/Security (guidance).** Diagnostics and cache metadata **SHOULD** redact query/userinfo portions of URIs when sensitive; host allow‑lists **SHOULD** be enforced after redirects when applicable. Implementations MAY expose an option to disable URI logging entirely, and cache directories SHOULD be created with user‑only permissions.
 
 <a id="s11-strict-vs-lax-summary"></a>
 ### Strict vs Lax (summary)
@@ -1703,10 +1680,14 @@ read‑only registry; core phases still perform no I/O.
 ## 12) Draft Handling
 
 <a id="s12-detection"></a>
-* **Detection (normative).** Determine the schema dialect primarily from `$schema`. When `$schema` is absent,
-  apply feature‑based heuristics without I/O: `prefixItems` ⇒ 2020‑12; `$defs` ⇒ 2019‑09+; presence of `if/then/else` or
-  `const` without `$defs` ⇒ at least draft‑07; legacy `id` without `$id` and no `$defs` ⇒ draft‑06 (or draft‑04 when clear).
-  Implementations **MUST** treat this detection as a pure function of the input bytes (deterministic).
+* **Detection (normative).** Determine the schema dialect primarily from `$schema`. When `$schema` is absent, apply the following **ordered** heuristic (pure function of input bytes, no I/O):
+  1) If a normalized `$schema` URI maps to a known dialect ⇒ use it.
+  2) Else if `prefixItems` is present ⇒ **2020‑12**.
+  3) Else if `$defs` is present ⇒ **2019‑09**.
+  4) Else if `if/then/else` or `const` is present with no `$defs` ⇒ **draft‑07**.
+  5) Else if legacy `id` is present with no `$id` and no `$defs` ⇒ **draft‑06** (or **draft‑04** when the `id` clearly names draft‑04).
+  6) Otherwise ⇒ **default to 2020‑12**.  
+  Conflicting signals (e.g., both `prefixItems` and `$defs`) resolve by this order. Implementations **MUST** be deterministic for fixed input bytes.
 <a id="s12-ajv-class-selection"></a>
 * **Ajv class selection (normative).** Compile the **original schema** with the Ajv class that matches its dialect:
   - draft‑06 / draft‑07 → `new Ajv()` **with the corresponding meta‑schemas added** if `$schema` requires them;
@@ -1714,6 +1695,7 @@ read‑only registry; core phases still perform no I/O.
   - draft‑2020‑12 → `new Ajv2020()`;
   - draft‑04 → `new (require("ajv-draft-04"))()`.
   **Warning:** draft‑2020‑12 is not backwards compatible. You **MUST NOT** use draft‑2020‑12 and previous drafts in the **same** Ajv instance.
+  **Meta‑schema failures (normative).** If loading a required meta‑schema fails, implementations **MAY** surface a warning but **MUST** leave subsequent `compile` outcomes to the validator (i.e., a missing meta may later produce a compile error). They MUST NOT silently substitute a different meta‑schema; unknown/custom metas remain validator‑defined behavior.
 * **Planning/Generation Ajv (normative).** When the canonical view targets draft‑2020‑12 semantics (e.g., `prefixItems` / the new `items`), any compilation performed during planning/generation **MUST** use `Ajv2020`. This does not affect the final validation, which always runs against the **original** schema.
 <a id="s12-canonical-2020-view"></a>
 * **Internal canon** — 2020‑12‑like shape; **always** validate against the original schema.
@@ -1874,7 +1856,7 @@ caches described above and is organized by **normalized absolute URI** and host:
   `resolver.timeoutMs` (**8000**), `resolver.followRedirects` (**3**). Exceeding a bound marks the reference as unavailable for this run; no core I/O occurs.
 * **Path canonicalization (normative).** `resolver.cacheDir` **MUST** support POSIX‑style `~` expansion to the current user’s home directory and be resolved to an **absolute** normalized path **before** any cache I/O. Implementations **MUST** create intermediate directories deterministically when missing. The canonicalized path is the one exported in `RESOLVER_STRATEGIES_APPLIED`.
 **Determinism note (normative).** Dynamic‑ref bounded binding in §12 depends on `guards.maxDynamicScopeHops`; including it in `PlanOptionsSubKey` guarantees cache/memo safety when this bound changes.
-**Final memoization key (normative clarification).** When `ComposeOptions.selectorMemoKeyFn` is provided, implementations **MUST NOT** use the function’s return value as the complete key. Let `userKey := selectorMemoKeyFn(canonPath, seed, opts)`. The final memo key **MUST** be derived from the tuple `(canonPath, seed, AJV.major, AJV.flags, PlanOptionsSubKey, userKey)`. Implementations **MUST** append/merge the AJV fields and `PlanOptionsSubKey` even if `userKey` repeats them. For the AJV flags component, use a stable JSON encoding with lexicographically sorted keys.
+**Final memoization key (normative clarification).** `selectorMemoKeyFn` **MUST** be pure and deterministic for a fixed `(canonPath, seed, PlanOptionsSubKey)` and **MUST NOT** perform I/O. If it throws, implementations **MAY** surface a configuration error; they **MUST NOT** silently discard the failure. When provided, implementations **MUST NOT** use the function’s return value as the complete key. Let `userKey := selectorMemoKeyFn(canonPath, seed, opts)`. The final memo key **MUST** be derived from the tuple `(canonPath, seed, AJV.major, AJV.flags, PlanOptionsSubKey, userKey)`. Implementations **MUST** append/merge the AJV fields and `PlanOptionsSubKey` even if `userKey` repeats them. For the AJV flags component, use a stable JSON encoding with lexicographically sorted keys.
 
 <a id="s14-planoptionssubkey"></a>
 **PlanOptionsSubKey (normative)** — JSON string of the following fields only, with keys sorted lexicographically:
@@ -1910,13 +1892,9 @@ caches described above and is organized by **normalized absolute URI** and host:
 'trials.skipTrialsIfBranchesGt'
 (affects AP:false rename policy, branch trials, and name‑automaton budgets; included to key these behavioral differences; no effect on numeric math or tolerances beyond `rational.*`).
 Omitted/undefined fields are not serialized.
-**Normative clarification.** `ENUM_CAP` (the Coverage Index enumeration bound; see §8) is not a PlanOption and MUST NOT be serialized into `PlanOptionsSubKey` or any cache/memo keys. When the resolver extension is enabled, compose/plan cache keys MUST additionally include `resolver.registryFingerprint` (see §14).
-**Canonicalization (normative).** When computing `PlanOptionsSubKey`, any
-`conditionals.strategy:'rewrite'` **MUST** be normalized to `'if-aware-lite'`.
-This normalization **MUST NOT** trigger any Normalizer rewrite; only
-`NormalizeOptions.rewriteConditionals` does (§7).
-**Note (clarification):** Cache artifacts and memoized branch picks **MUST** embed `PlanOptionsSubKey` in their keys.
-Use separate LRU spaces for the two AJV instances (planning vs source) to avoid key collisions.
+**Normative clarification.** `ENUM_CAP` (the Coverage Index enumeration bound; see §8) is not a PlanOption and MUST NOT be serialized into `PlanOptionsSubKey` or any cache/memo keys. When the resolver extension is enabled, compose/plan cache keys MUST additionally include `resolver.registryFingerprint` (see §14). Cache artifacts and memoized branch picks **MUST** embed `PlanOptionsSubKey` in their keys. Use separate LRU spaces for the two AJV instances (planning vs source) to avoid key collisions.
+
+**Determinism scope.** Determinism guarantees apply for a fixed tuple `(seed, PlanOptionsSubKey, AJV.major, AJV.flags, registryFingerprint)`; differing AJV patch/minor or Node versions may produce different outputs. Implementations **MAY** include additional version markers (e.g., full Ajv version, schema hash) in memo/cache keys for stronger stability but are not required to do so.
 (Clarification: separate LRU spaces for the two AJV instances are recommended.)
 
 ---
@@ -2143,6 +2121,7 @@ Compose/coverage vs Generator: `REGEX_COMPLEXITY_CAPPED` and `REGEX_COMPILE_ERRO
 **Clarification (normative) — `DEFS_TARGET_MISSING` emission scope.** This note **MUST** be emitted only when the target of a `#/definitions/...` rewrite is absent **within the same `$id` document scope** as the `$ref` (§7.2). Absence at the global root alone is not sufficient grounds for emission.
 
 Provide the following minimal JSON‑Schema‑like shapes for major codes. Only the `details` object is shown in each case.
+These shapes define **minimum required fields**; unless stated otherwise, additional fields **MAY** be present for forward‑compatibility.
 
 ```json
 // AP_FALSE_UNSAFE_PATTERN (Compose fail‑fast)
@@ -2749,8 +2728,7 @@ Hints are informative and MUST NOT change severity or routing.
 // Plan options 
 export interface PlanOptions {
   // Normalization
-  /** DEPRECATED: pass-through to Normalize only; excluded from PlanOptionsSubKey; Compose/Generate/Repair MUST ignore. */
-  rewriteConditionals?: 'never' | 'safe' | 'aggressive'; // default: 'never'
+  rewriteConditionals?: 'never' | 'safe'; // default: 'never'; controls Normalizer only
   debugFreeze?: boolean;
 
   // Arithmetic
@@ -2804,7 +2782,7 @@ export interface PlanOptions {
     bailOnUnsatAfter?: number; // gen→repair→validate cycles
   };
   failFast?: {
-    externalRefStrict?: 'error'|'warn'|'ignore';
+    externalRefStrict?: 'error'|'warn';
     dynamicRefStrict?: 'warn'|'note';
   };
 
@@ -2885,7 +2863,7 @@ export interface ResolverOptions {
 ```ts
 // Normalizer
 export interface NormalizeOptions {
-  rewriteConditionals?: 'never' | 'safe' | 'aggressive';
+  rewriteConditionals?: 'never' | 'safe';
   debugFreeze?: boolean;
   /** Defaults: guards.maxGeneratedNotNesting = 2 (aligns with PlanOptions). */
   guards?: { maxGeneratedNotNesting?: number }; // default: 2
