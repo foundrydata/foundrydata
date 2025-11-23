@@ -8,13 +8,13 @@ export type OutputFormat = 'json' | 'ndjson';
  * CLI options interface matching Commander.js option structure
  */
 export interface CliOptions {
-  rewriteConditionals?: 'never' | 'safe' | 'aggressive';
+  rewriteConditionals?: 'never' | 'safe';
   debugFreeze?: boolean;
   skipTrials?: boolean;
   trialsPerBranch?: number;
   maxBranchesToTry?: number;
   skipTrialsIfBranchesGt?: number;
-  externalRefStrict?: 'error' | 'warn' | 'ignore';
+  externalRefStrict?: 'error' | 'warn';
   dynamicRefStrict?: 'warn' | 'note';
   encodingBigintJson?: 'string' | 'number' | 'error';
   metrics?: boolean;

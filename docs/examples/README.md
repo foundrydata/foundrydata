@@ -141,7 +141,7 @@ All items printed on stdout have been validated by AJV against the selected resp
 References:
 
 - In‑document `$ref` is supported.
-- External `$ref` is not dereferenced by core stages; you control policy with `--external-ref-strict` (`error`/`warn`/`ignore`). Validation is still against the original schema; diagnostics such as `EXTERNAL_REF_UNRESOLVED` explain what happened.
+- External `$ref` is not dereferenced by core stages; you control policy with `--external-ref-strict` (`error`/`warn`). Validation is still against the original schema; diagnostics such as `EXTERNAL_REF_UNRESOLVED` explain what happened.
 
 ---
 

@@ -38,17 +38,17 @@ function defaultContext(overrides: Partial<CacheKeyContext> = {}): {
   };
   const ajv = createStubAjv(baseFlags);
   const context = {
-    ...createCacheKeyContext({ ajv }),
+    ...createCacheKeyContext({ ajv, schemaHash: 'test-hash' }),
     ...overrides,
   };
   return { context, ajv };
 }
 
 describe('createPlanOptionsSubKey', () => {
-  it('serializes specified fields with sorted keys and normalized strategy', () => {
+  it('serializes specified fields with sorted keys and allowed strategy', () => {
     const options: Partial<PlanOptions> = {
       conditionals: {
-        strategy: 'rewrite',
+        strategy: 'repair-only',
         minThenSatisfaction: 'required-only',
       },
       guards: { maxDynamicScopeHops: 5 },
@@ -59,7 +59,7 @@ describe('createPlanOptionsSubKey', () => {
     const subKey = createPlanOptionsSubKey(options);
     const parsed = JSON.parse(subKey) as Record<string, unknown>;
 
-    expect(parsed['conditionals.strategy']).toBe('if-aware-lite');
+    expect(parsed['conditionals.strategy']).toBe('repair-only');
     expect(parsed['guards.maxDynamicScopeHops']).toBe(5);
     expect(parsed['rational.decimalPrecision']).toBe(9);
     expect(parsed['rational.maxRatBits']).toBe(256);
@@ -109,18 +109,20 @@ describe('createCacheKeyContext', () => {
     const ajv = createStubAjv(flags);
     const planOptions: Partial<PlanOptions> = {
       guards: { maxDynamicScopeHops: 4 },
-      conditionals: { strategy: 'rewrite' },
+      conditionals: { strategy: 'repair-only' },
     };
 
     const context = createCacheKeyContext({
       ajv,
       planOptions,
+      schemaHash: 'canon:deadbeef',
       userSalt: 'compose-phase',
     });
 
     expect(context.ajvMajor).toBe(8);
     expect(context.ajvClass).toBe('Ajv2020');
     expect(context.userSalt).toBe('compose-phase');
+    expect(context.schemaHash).toBe('canon:deadbeef');
     expect(context.ajvFlags).toEqual({
       allowUnionTypes: false,
       coerceTypes: 'array',
@@ -135,7 +137,7 @@ describe('createCacheKeyContext', () => {
       '"guards.maxDynamicScopeHops":4'
     );
     expect(context.planOptionsSubKey).toContain(
-      '"conditionals.strategy":"if-aware-lite"'
+      '"conditionals.strategy":"repair-only"'
     );
   });
 });
@@ -147,6 +149,7 @@ describe('buildBranchMemoKey', () => {
       ajv,
       planOptions: { guards: { maxDynamicScopeHops: 3 } },
       userSalt: 'compose',
+      schemaHash: 'schema-hash-123',
     });
 
     const key = buildBranchMemoKey({
@@ -162,6 +165,7 @@ describe('buildBranchMemoKey', () => {
     expect(parsed.ajvMajor).toBe(baseContext.ajvMajor);
     expect(parsed.ajvClass).toBe(baseContext.ajvClass);
     expect(parsed.planOptionsSubKey).toBe(baseContext.planOptionsSubKey);
+    expect(parsed.schemaHash).toBe('schema-hash-123');
     expect(parsed.userSalt).toBe('compose');
     expect(parsed.userKey).toEqual({ sample: true });
     expect(parsed.ajvFlags).toEqual(baseContext.ajvFlags);
@@ -270,6 +274,7 @@ describe('SchemaCache', () => {
       }),
       planOptions: resolved,
       userSalt: 'A',
+      schemaHash: 'schema-a',
     });
     const ctxB = createCacheKeyContext({
       ajv: createStubAjv({
@@ -284,6 +289,7 @@ describe('SchemaCache', () => {
       }),
       planOptions: resolved,
       userSalt: 'B',
+      schemaHash: 'schema-b',
     });
 
     cache.set(schema, ctxA, 'value-A');

@@ -94,7 +94,7 @@ export interface ComplexityOptions {
  */
 export interface FailFastOptions {
   /** How to handle external $ref resolution (default: 'error') */
-  externalRefStrict?: 'error' | 'warn' | 'ignore';
+  externalRefStrict?: 'error' | 'warn';
   /** How to handle dynamic $ref resolution (default: 'note') */
   dynamicRefStrict?: 'warn' | 'note';
 }
@@ -115,7 +115,7 @@ export interface PatternPolicyOptions {
  */
 export interface ConditionalsOptions {
   /** Strategy for conditional processing (default: tied to rewriteConditionals) */
-  strategy?: 'rewrite' | 'if-aware-lite' | 'repair-only';
+  strategy?: 'if-aware-lite' | 'repair-only';
   /** Minimum satisfaction strategy for then clauses (default: 'required-only') */
   minThenSatisfaction?:
     | 'discriminants-only'
@@ -188,7 +188,7 @@ export interface RepairPlanOptions {
  */
 export interface PlanOptions {
   /** Normalization behavior for conditional schemas (default: 'never') */
-  rewriteConditionals?: 'never' | 'safe' | 'aggressive';
+  rewriteConditionals?: 'never' | 'safe';
   /** Deep freeze schemas in debug mode to catch mutations (default: false) */
   debugFreeze?: boolean;
 
@@ -286,7 +286,7 @@ export interface PlanOptions {
  * by the pipeline, with all optional values resolved to defaults.
  */
 export interface ResolvedOptions {
-  rewriteConditionals: 'never' | 'safe' | 'aggressive';
+  rewriteConditionals: 'never' | 'safe';
   debugFreeze: boolean;
 
   // All rational fields required except qCap remains optional
@@ -492,9 +492,7 @@ function deriveConditionalsStrategy(
     case 'never':
       return 'if-aware-lite';
     case 'safe':
-      return 'rewrite';
-    case 'aggressive':
-      return 'rewrite';
+      return 'if-aware-lite';
     default:
       return 'if-aware-lite';
   }
@@ -519,6 +517,12 @@ function validateOptions(options: ResolvedOptions): void {
     options.rational.decimalPrecision > 100
   ) {
     throw new Error('rational.decimalPrecision must be between 1 and 100');
+  }
+  if (
+    options.rewriteConditionals !== 'never' &&
+    options.rewriteConditionals !== 'safe'
+  ) {
+    throw new Error("rewriteConditionals must be 'never' or 'safe'");
   }
   if (options.rational.qCap !== undefined && options.rational.qCap <= 0) {
     throw new Error('rational.qCap must be positive when specified');
@@ -639,12 +643,22 @@ function validateOptions(options: ResolvedOptions): void {
       "conditionals.exclusivityStringTweak must be 'preferNul' or 'preferAscii'"
     );
   }
+  const strategy = options.conditionals.strategy;
+  if (strategy !== 'if-aware-lite' && strategy !== 'repair-only') {
+    throw new Error(
+      "conditionals.strategy must be 'if-aware-lite' or 'repair-only'"
+    );
+  }
 
   const unsafePolicy = options.patternPolicy.unsafeUnderApFalse;
   if (unsafePolicy !== 'error' && unsafePolicy !== 'warn') {
     throw new Error(
       "patternPolicy.unsafeUnderApFalse must be 'error' or 'warn'"
     );
+  }
+  const externalPolicy = options.failFast.externalRefStrict;
+  if (externalPolicy !== 'error' && externalPolicy !== 'warn') {
+    throw new Error("failFast.externalRefStrict must be 'error' or 'warn'");
   }
 
   if (typeof options.repair.mustCoverGuard !== 'boolean') {

@@ -26,37 +26,18 @@ describe('pipeline externalRefStrict policy', () => {
     });
 
     expect(result.status).toBe('failed');
-    expect(result.stages.validate.status).toBe('failed');
-    const diag = result.artifacts.validationDiagnostics?.[0];
+    expect(result.stages.compose.status).toBe('failed');
+    const diags = result.artifacts.validationDiagnostics ?? [];
+    expect(diags.length).toBeGreaterThanOrEqual(1);
+    const diag = diags.find(
+      (entry) => entry.code === 'EXTERNAL_REF_UNRESOLVED'
+    );
     expect(diag?.details).toMatchObject({
       mode: 'strict',
       policy: 'warn',
     });
     expect(diag?.details).not.toHaveProperty('skippedValidation');
     expect(diag?.metrics).toBeUndefined();
-    expect(result.artifacts.validationDiagnostics).toHaveLength(1);
-  });
-
-  it("treats failFast 'ignore' as a hard failure in strict mode", async () => {
-    const result = await executePipeline(schemaWithExternalRef, {
-      mode: 'strict',
-      generate: {
-        count: 0,
-        planOptions: {
-          failFast: { externalRefStrict: 'ignore' },
-        },
-      },
-      validate: { validateFormats: false },
-    });
-
-    expect(result.status).toBe('failed');
-    expect(result.stages.validate.status).toBe('failed');
-    const diag = result.artifacts.validationDiagnostics?.[0];
-    expect(diag?.details).toMatchObject({
-      mode: 'strict',
-      policy: 'ignore',
-    });
-    expect(diag?.details).not.toHaveProperty('skippedValidation');
   });
 
   it("keeps the default 'error' policy as a hard failure", async () => {

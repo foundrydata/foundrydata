@@ -98,12 +98,9 @@ function pickNested(source: unknown, path: PlanOptionsSubKeyField): unknown {
 }
 
 function normalizePlanOptionsValue(
-  path: PlanOptionsSubKeyField,
+  _path: PlanOptionsSubKeyField,
   value: unknown
 ): unknown {
-  if (path === 'conditionals.strategy' && value === 'rewrite') {
-    return 'if-aware-lite';
-  }
   return value;
 }
 
@@ -181,6 +178,7 @@ export interface CacheKeyContext {
   ajvFlags: Record<string, unknown>;
   ajvFlagsJson: string;
   planOptionsSubKey: string;
+  schemaHash: string;
   userSalt?: string;
 }
 
@@ -188,6 +186,7 @@ export interface CacheKeyContextParams {
   ajv: Ajv;
   planOptions?: Partial<PlanOptions> | ResolvedOptions;
   planOptionsSubKey?: string;
+  schemaHash: string;
   userSalt?: string;
 }
 
@@ -195,8 +194,12 @@ export function createCacheKeyContext({
   ajv,
   planOptions,
   planOptionsSubKey,
+  schemaHash,
   userSalt,
 }: CacheKeyContextParams): CacheKeyContext {
+  if (typeof schemaHash !== 'string' || schemaHash.length === 0) {
+    throw new Error('schemaHash must be a non-empty string');
+  }
   const subKey =
     planOptionsSubKey ?? createPlanOptionsSubKey(planOptions ?? undefined);
   const metadataAjv = ajv as AjvWithMetadata;
@@ -207,6 +210,7 @@ export function createCacheKeyContext({
     ajvFlags: flags.record,
     ajvFlagsJson: flags.json,
     planOptionsSubKey: subKey,
+    schemaHash,
     userSalt,
   };
 }
@@ -217,6 +221,7 @@ function serializeCacheContext(context: CacheKeyContext): string {
     ajvClass: context.ajvClass,
     ajvFlags: context.ajvFlagsJson,
     planOptionsSubKey: context.planOptionsSubKey,
+    schemaHash: context.schemaHash,
   };
   if (context.userSalt !== undefined) {
     payload.userSalt = context.userSalt;
@@ -243,6 +248,12 @@ export function buildBranchMemoKey({
   if (!Number.isFinite(seed)) {
     throw new TypeError('seed must be a finite number');
   }
+  if (
+    typeof context.schemaHash !== 'string' ||
+    context.schemaHash.length === 0
+  ) {
+    throw new TypeError('context.schemaHash must be a non-empty string');
+  }
   const payload: Record<string, unknown> = {
     canonPath,
     seed,
@@ -250,6 +261,7 @@ export function buildBranchMemoKey({
     ajvClass: context.ajvClass,
     ajvFlags: context.ajvFlags,
     planOptionsSubKey: context.planOptionsSubKey,
+    schemaHash: context.schemaHash,
   };
   if (context.userSalt !== undefined) {
     payload.userSalt = context.userSalt;
