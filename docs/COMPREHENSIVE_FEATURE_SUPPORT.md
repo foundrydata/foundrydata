@@ -19,7 +19,7 @@
 - **`properties` / `patternProperties`** - Anchored-safe pattern coverage with overlap analysis; under `AP:false`, unsafe/non-anchored or complexity-capped patterns trigger Strict fail-fast (Lax warns) when presence pressure holds, otherwise they remain gating-only
 - **`additionalProperties`** - Must-cover intersection algorithm for `false` across `allOf`
 - **`unevaluatedProperties`** - Conservative effective view, preserved for AJV validation
-- **`propertyNames`** - Pattern-based key validation; strict-equivalence rewrites only when all §7 preconditions hold (no `unevaluated*` in scope, permissive/empty `additionalProperties`, anchored-safe & non-capped patterns) and are signaled via `PNAMES_REWRITE_APPLIED`; otherwise gating-only for must-cover
+- **`propertyNames`** - Pattern-based key validation; when §7 preconditions hold (no `unevaluated*` in scope, permissive/empty `additionalProperties`, anchored-safe & non-capped patterns) the normalizer emits `PNAMES_REWRITE_APPLIED` and injects synthetic anchored-safe `patternProperties` plus canonical `additionalProperties:false` for coverage/must-cover only (original schema unchanged); otherwise gating-only for must-cover
 - **`dependencies` / `dependentRequired` / `dependentSchemas`** - Full dependency support with guards
 
 ### ✅ Advanced Array Features  
@@ -42,7 +42,7 @@
 
 ### ✅ String Formats & Patterns
 - **Standard formats**: `email`, `uri`, `uuid`, `date-time` with optional validation
-- **Regex patterns**: Basic to moderate complexity with Unicode support and ReDoS protection
+- **Regex patterns**: Basic to moderate complexity with Unicode support and ReDoS protection; compose performs a global `RegExp('u')` preflight and emits non-fatal `REGEX_COMPILE_ERROR{context:'preflight'}` diagnostics for un-compilable patterns
 - **Format behavior**: Draft-aware (Assertive vs Annotative) with policy compliance
 
 ### ⚠️ Controlled Limitations
@@ -138,7 +138,7 @@ Default mapping between `rewriteConditionals` and `conditionals.strategy`:
 - **Benchmark**: SLO/SLI tracking with automated regression detection
 
 ### Quality Guarantees
-- **100% Schema Compliance**: Every generated row validated by AJV
+- **AJV-backed Validation**: Generated rows are validated against the original schema; Strict always validates, and Lax may skip only when unresolved external `$ref` meet ExternalRefSkipEligibility (surfaced as `EXTERNAL_REF_UNRESOLVED{skippedValidation:true}`)
 - **Deterministic Generation**: Same seed ⇒ identical output  
 - **Performance Protection**: Graceful degradation, never crashes on complex schemas
 - **Correctness over Features**: Add complexity only when guarantees hold
