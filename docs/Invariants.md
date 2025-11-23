@@ -5,7 +5,7 @@ This note captures the cross-phase guarantees implemented inside `packages/core`
 ## Pipeline contract
 
 - The orchestrator (`packages/core/src/pipeline/orchestrator.ts`) always executes `Normalize → Compose → Generate → Repair → Validate`; when any stage fails, later stages are marked skipped. Final validation uses the original schema and Source AJV; in Lax mode, unresolved external `$ref` can return a skipped validate result instead of hard failure, per the SPEC modes contract.
-- Planning and Source AJV instances are built together (`util/ajv-planning.ts`, `util/ajv-source.ts`) and checked by `checkAjvStartupParity` before Compose/Generate run. Unicode regex support, `validateFormats`, discriminator flags, `multipleOfPrecision`, and resolver registry fingerprints must align; the same Source AJV settings are reused for final validation.
+- Planning and Source AJV instances are built together (`util/ajv-planning.ts`, `util/ajv-source.ts`) and checked by `checkAjvStartupParity` before Compose/Generate run. Parity covers `unicodeRegExp`, `validateFormats` plus formats-plugin presence, discriminator flags, `multipleOfPrecision`, `allowUnionTypes`, and the expected `strictSchema`/`strictTypes` roles, as well as resolver registry fingerprints; the same Source AJV settings are reused for final validation.
 - Plan options are resolved at pipeline entry (`resolveOptions`) and threaded through downstream factories; stages treat the resolved settings as immutable for the run to keep outcomes deterministic.
 
 ## Normalizer invariants
@@ -19,7 +19,7 @@ This note captures the cross-phase guarantees implemented inside `packages/core`
 
 - Coverage entries always honor “enum/const beats type”: literals discovered via `const`/`enum` are emitted through `CoverageEntry.enumerate`, and broad type-only information never replaces them (`composition-engine.ts#getLiteralSet`).
 - `additionalProperties: false` schemas build must-cover sets that include canonical names, anchored-safe `patternProperties`, and §7 synthetic patterns. When presence pressure is active but coverage is provably empty, Compose emits `UNSAT_AP_FALSE_EMPTY_COVERAGE` and stops early; unsafe reliance on non-anchored patterns surfaces as `AP_FALSE_UNSAFE_PATTERN`.
-- The `contains` pipeline runs with bag semantics. Each `contains` clause is normalized into a need (`makeContainsNeed`), tracked per canonical pointer, trimmed for subsumption, and later enforced by the generator so independent requirements stay independent.
+- The `contains` pipeline runs with bag semantics. Each `contains` clause is normalized into a need (`makeContainsNeed`), tracked per canonical pointer, trimmed for subsumption and capped count, and Compose always emits `CONTAINS_BAG_COMBINED` describing the (possibly trimmed) bag. The generator enforces the trimmed bag without adding new diagnostics beyond Compose’s unsat/hint signals, keeping independent requirements independent.
 - Pattern overlap analysis emits diagnostics only when two anchored patterns can compete for the same key, ensuring that downstream bag semantics and repairs keep the same evaluation graph.
 
 ## Generation invariants
@@ -38,5 +38,5 @@ This note captures the cross-phase guarantees implemented inside `packages/core`
 ## Observability & determinism
 
 - Every diagnostic is validated against `packages/core/src/diag/schemas.ts` before leaving a stage. Forbidden keys (`canonPath`, `canonPtr`) cannot leak into `details`, ensuring a consistent envelope shape for docs/error.md.
-- Seed, pattern witness attempts, and metrics (`validationsPerRow`, `repairPassesPerRow`, `p95LatencyMs`, `memoryPeakMB`) are carried through the pipeline so benchmark gates (`benchGate.schema.json`) cover real executions.
+- Seed, pattern witness attempts, and metrics (`validationsPerRow`, `repairPassesPerRow`, `p95LatencyMs`, `memoryPeakMB`) are carried through the pipeline; `p95LatencyMs` and `memoryPeakMB` are populated by the bench harness, while regular pipeline snapshots expose the fields but leave them at zero.
 - Decision logs (e.g., property source traces via `EVALTRACE_PROP_SOURCE`) are only recorded when metrics collection is enabled, keeping normal runs lightweight while leaving a precise breadcrumb trail during audits.
