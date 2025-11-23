@@ -74,7 +74,7 @@ A preparatory step (not part of the normative pipeline): draft detection, basic 
 **Purpose:** AJV‑driven corrections using a `(keyword → action)` registry; idempotent; budgeted.
 
 * Typical actions: clamp bounds, rational snap for `multipleOf`, add required props, de‑dupe via structural hashing for `uniqueItems`, remove extras for `additionalProperties:false`, etc.
-* **Stagnation guard:** cap gen→repair→validate cycles with `PlanOptions.complexity.bailOnUnsatAfter` (default 12) and emit `UNSAT_BUDGET_EXHAUSTED` when errors stop decreasing.
+* **Stagnation guard:** cap gen→repair→validate cycles at `min(PlanOptions.complexity.bailOnUnsatAfter, repair.attempts)` (defaults to a single cycle unless callers raise `repair.attempts`), and emit `UNSAT_BUDGET_EXHAUSTED` when errors stop decreasing.
 
 **Module:** `packages/core/src/repair/repair-engine.ts`.
 
@@ -135,7 +135,7 @@ The Source instance is intentionally more tolerant (`strictSchema:false`, `stric
 
 ## Cache Strategy
 
-Hierarchical: `WeakMap` (object identity) → `$id` (when trusted) → size‑gated `stableHash(schema)` when under `hashIfBytesLt`. LRU bounded by `cache.lruSize`; include AJV version + flags in keys.
+Compose memoizes branch selection decisions with keys `(canonPath, seed, AJV major/class/flags, PlanOptionsSubKey[, userKey])`, bounded by `cache.lruSize`. Schema cache helpers (`WeakMap` → `$id` → size‑gated `stableHash(schema)` with the same AJV/PlanOptions key material) live in `packages/core/src/util/cache.ts` per the cache strategy, but they are not yet wired into the pipeline; beyond branch memoization, caching currently relies on AJV’s own compilation caches.
 
 ---
 
