@@ -41,3 +41,14 @@ export class XorShift32 {
     return (this.next() >>> 0) / 0x100000000;
   }
 }
+
+/**
+ * Normalize potentially undefined or non-finite seeds into a deterministic
+ * uint32 value shared across Compose/Generate stages.
+ */
+export function normalizeSeed(seed?: number): number {
+  if (!Number.isFinite(seed)) {
+    return 123456789;
+  }
+  return Math.floor(seed as number) >>> 0;
+}

@@ -15,7 +15,7 @@ import {
 import { canonicalizeForHash } from '../util/canonical-json.js';
 import { stableHash } from '../util/stable-hash.js';
 import { ENUM_CAP } from '../constants.js';
-import { XorShift32 } from '../util/rng.js';
+import { XorShift32, normalizeSeed } from '../util/rng.js';
 import {
   resolveOptions,
   type PlanOptions,
@@ -331,7 +331,7 @@ class CompositionEngine {
     this.revPtrMap = input.revPtrMap;
     this.notes = input.notes;
     this.options = options ?? {};
-    this.seed = (options?.seed ?? 1) >>> 0;
+    this.seed = normalizeSeed(options?.seed);
     this.mode = options?.mode ?? 'strict';
 
     const resolved = resolveOptions({

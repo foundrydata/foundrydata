@@ -13,7 +13,10 @@ import type {
   CoverageEntry,
   NodeDiagnostics,
 } from '../transform/composition-engine.js';
-import type { ContainsNeed } from '../transform/arrays/contains-bag.js';
+import {
+  computeEffectiveMaxItems,
+  type ContainsNeed,
+} from '../transform/arrays/contains-bag.js';
 import type { NormalizerNote } from '../transform/schema-normalizer.js';
 import type { MetricsCollector } from '../util/metrics.js';
 import {
@@ -27,7 +30,7 @@ import {
   createFormatRegistry,
   type FormatRegistry,
 } from './format-registry.js';
-import { XorShift32 } from '../util/rng.js';
+import { XorShift32, normalizeSeed } from '../util/rng.js';
 import {
   createSourceAjv,
   detectDialectFromSchema,
@@ -1421,9 +1424,29 @@ class GeneratorEngine {
         ? Math.max(0, Math.floor(schema.minItems))
         : 0;
     const containsNeeds = this.containsBag.get(canonPath) ?? [];
+    const aggregateMin = containsNeeds.reduce(
+      (total, need) => total + Math.max(1, Math.floor(need?.min ?? 1)),
+      0
+    );
+    const effectiveMaxItems = computeEffectiveMaxItems(schema);
+    const hardCap =
+      effectiveMaxItems !== undefined
+        ? Math.max(0, Math.floor(effectiveMaxItems))
+        : undefined;
+    if (hardCap !== undefined && aggregateMin + result.length > hardCap) {
+      this.diagnostics.push({
+        code: DIAGNOSTIC_CODES.CONTAINS_UNSAT_BY_SUM,
+        phase: DIAGNOSTIC_PHASES.GENERATE,
+        canonPath,
+        details: {
+          sumMin: aggregateMin,
+          maxItems: hardCap,
+          disjointness: 'provable',
+        },
+      });
+    }
     const itemsSchema = schema.items;
-    const hardCap = itemsSchema === false ? prefixItems.length : undefined;
-    const shouldPreSatisfyContains = schema.uniqueItems !== true;
+    const shouldPreSatisfyContains = true;
     const containsContributions = shouldPreSatisfyContains
       ? this.satisfyContainsNeeds(
           containsNeeds,
@@ -1434,14 +1457,21 @@ class GeneratorEngine {
         )
       : computeContainsBaseline(containsNeeds, result.length, hardCap);
 
-    const baseline = Math.max(
+    const uncappedBaseline = Math.max(
       minItems,
       prefixItems.length,
       containsContributions
     );
+    const baseline =
+      hardCap !== undefined
+        ? Math.min(uncappedBaseline, hardCap)
+        : uncappedBaseline;
 
-    if (hardCap === undefined && schema.uniqueItems !== true) {
-      while (result.length < baseline) {
+    if (schema.uniqueItems !== true) {
+      while (
+        result.length < baseline &&
+        (hardCap === undefined || result.length < hardCap)
+      ) {
         const childCanon = appendPointer(canonPath, 'items');
         const value = this.generateValue(itemsSchema, childCanon, itemIndex);
         result.push(value);
@@ -1465,20 +1495,21 @@ class GeneratorEngine {
         hardCap !== undefined
           ? Math.min(Math.max(result.length, baseline), hardCap)
           : Math.max(result.length, baseline);
-      if (hardCap === undefined) {
-        let attempts = 0;
-        while (result.length < desiredLength) {
-          const candidate = this.produceUniqueFillerCandidate(
-            itemsSchema,
-            attempts
-          );
-          attempts += 1;
-          if (candidate === undefined) break;
-          if (!isUniqueAppend(result, candidate)) {
-            continue;
-          }
-          result.push(candidate);
+      let attempts = 0;
+      while (
+        result.length < desiredLength &&
+        (hardCap === undefined || result.length < hardCap)
+      ) {
+        const candidate = this.produceUniqueFillerCandidate(
+          itemsSchema,
+          attempts
+        );
+        attempts += 1;
+        if (candidate === undefined) break;
+        if (!isUniqueAppend(result, candidate)) {
+          continue;
         }
+        result.push(candidate);
       }
     }
 
@@ -1501,11 +1532,20 @@ class GeneratorEngine {
       const need = needs[index];
       if (!need) continue;
       const min = Math.max(1, Math.floor(need.min ?? 1));
+      const maxAllowed =
+        need.max !== undefined && Number.isFinite(need.max)
+          ? Math.max(0, Math.floor(need.max))
+          : undefined;
       const childCanon =
         getPointerFromIndex(this.pointerIndex, need.schema) ??
         appendPointer(baseContains, String(index));
       let satisfied = 0;
-      for (let c = 0; c < min; c += 1) {
+      const targetMin =
+        maxAllowed !== undefined && maxAllowed < min ? maxAllowed : min;
+      for (let c = 0; c < targetMin; c += 1) {
+        if (maxAllowed !== undefined && satisfied >= maxAllowed) {
+          break;
+        }
         if (maxLength !== undefined && result.length >= maxLength) {
           break;
         }
@@ -1515,6 +1555,23 @@ class GeneratorEngine {
       }
       if (satisfied > 0) {
         maxContribution = Math.max(maxContribution, result.length);
+      }
+      if (satisfied < targetMin) {
+        this.diagnostics.push({
+          code: DIAGNOSTIC_CODES.CONTAINS_UNSAT_BY_SUM,
+          phase: DIAGNOSTIC_PHASES.GENERATE,
+          canonPath,
+          details: {
+            sumMin: min,
+            maxItems:
+              maxAllowed !== undefined
+                ? maxAllowed
+                : maxLength !== undefined
+                  ? maxLength
+                  : null,
+            disjointness: 'provable',
+          },
+        });
       }
     }
     return maxContribution;
@@ -3205,13 +3262,6 @@ function normalizeAlphabet(input: string): string[] {
   return Array.from(codePoints)
     .sort((a, b) => a - b)
     .map((codePoint) => String.fromCodePoint(codePoint));
-}
-
-function normalizeSeed(seed?: number): number {
-  if (!Number.isFinite(seed)) {
-    return 123456789;
-  }
-  return Math.floor(seed as number) >>> 0;
 }
 
 function alignToMultiple(value: number, multiple: number): number {
