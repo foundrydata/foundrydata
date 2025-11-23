@@ -290,6 +290,13 @@ class CompositionEngine {
   private readonly ptrMap: Map<string, string>;
   private readonly revPtrMap: Map<string, string[]>;
   private readonly notes: NormalizerNote[];
+  private static readonly ALLOWED_CAP_CODES = new Set<string>([
+    DIAGNOSTIC_CODES.COMPLEXITY_CAP_ONEOF,
+    DIAGNOSTIC_CODES.COMPLEXITY_CAP_ANYOF,
+    DIAGNOSTIC_CODES.COMPLEXITY_CAP_ENUM,
+    DIAGNOSTIC_CODES.COMPLEXITY_CAP_CONTAINS,
+    DIAGNOSTIC_CODES.COMPLEXITY_CAP_SCHEMA_SIZE,
+  ]);
   private readonly options: ComposeOptions;
   private readonly coverageIndex: CoverageIndex = new Map();
   private readonly diag: ComposeDiagnostics = {};
@@ -2396,7 +2403,9 @@ class CompositionEngine {
   }
 
   private recordCap(code: DiagnosticCode): void {
-    this.caps.add(code);
+    if (CompositionEngine.ALLOWED_CAP_CODES.has(code)) {
+      this.caps.add(code);
+    }
   }
 
   private addApproximation(
@@ -2950,13 +2959,20 @@ function extractStringArray(value: unknown): string[] | undefined {
 function hasPresencePressure(schema: Record<string, unknown>): boolean {
   const minProps =
     typeof schema.minProperties === 'number' && schema.minProperties > 0;
-  const required =
-    Array.isArray(schema.required) && (schema.required as unknown[]).length > 0;
-  const dependentRequired =
-    schema.dependentRequired &&
-    typeof schema.dependentRequired === 'object' &&
-    Object.keys(schema.dependentRequired as Record<string, unknown>).length > 0;
-  return Boolean(minProps || required || dependentRequired);
+  const requiredKeys = Array.isArray(schema.required)
+    ? (schema.required as unknown[]).filter(
+        (v): v is string => typeof v === 'string'
+      )
+    : [];
+  const required = requiredKeys.length > 0;
+  const dependentRequired = schema.dependentRequired;
+  const forcedDependents =
+    dependentRequired && typeof dependentRequired === 'object'
+      ? Object.keys(dependentRequired as Record<string, unknown>).some((key) =>
+          requiredKeys.includes(key)
+        )
+      : false;
+  return Boolean(minProps || required || forcedDependents);
 }
 
 function buildUnsatDetails(schema: Record<string, unknown>): {
