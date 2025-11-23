@@ -4,23 +4,23 @@ This document lists deliberate constraints that keep the pipeline deterministic,
 
 ## Schema ingestion & referencing
 
-- **External `$ref` (core)**: Only in‑document references are compiled by core phases. Any external URI produces `EXTERNAL_REF_UNRESOLVED` (see `packages/core/src/util/modes.ts`). Callers may downgrade the policy from `error` to `warn`/`ignore`, but validation is skipped only when Lax + skip‑eligibility allow it; generation never performs remote I/O.
+- **External `$ref` (core)**: Only in‑document references are compiled by core phases. Any external URI produces `EXTERNAL_REF_UNRESOLVED` (see `packages/core/src/util/modes.ts`). Policy is `error` or `warn`; Strict always hard‑stops on unresolved externals, and Lax may skip final validation only when ExternalRefSkipEligibility passes. Core phases never perform remote I/O; the optional resolver pre‑phase is the only place that may fetch/cache.
 - **`$dynamicRef` / `$recursiveRef`**: These keywords are passed through to AJV. Resolution depth is capped by `guards.maxDynamicScopeHops` (default `2`), preventing runaway scope expansion.
-- **`not` nesting**: Normalization refuses to generate plans when `not` depth exceeds `guards.maxGeneratedNotNesting` (default `2`). Excessive nesting surfaces `NOT_DEPTH_CAPPED` warnings instead of compiling pathological schemas.
+- **`not` nesting**: Conditional rewrites are skipped when `guards.maxGeneratedNotNesting` (default `2`) is too low; the normalizer emits `NOT_DEPTH_CAPPED` and leaves the original `if/then/else` intact instead of aborting planning.
 
 ## Composition & coverage
 
 - **`AP:false` coverage**: Must-cover proofs rely on explicit properties, anchored-safe `patternProperties`, or `propertyNames` rewrites that emitted `PNAMES_REWRITE_APPLIED`. Raw `propertyNames.enum` values never expand coverage without the rewrite note, and unsafe reliance on non-anchored patterns becomes `AP_FALSE_UNSAFE_PATTERN`.
 - **Presence pressure**: When `minProperties`, `required`, or `dependentRequired` demand coverage but no safe sources exist, Compose halts with `UNSAT_AP_FALSE_EMPTY_COVERAGE`. Under presence pressure, approximations are recorded so downstream tooling knows coverage became conservative.
 - **`contains` needs**: The bag is trimmed to `complexity.maxContainsNeeds` (default `16`). When more independent needs exist, low-priority entries are dropped and `CONTAINS_BAG_COMBINED` is emitted to document the approximation.
-- **Pattern overlap analysis**: At most `complexity.maxPatternProps` (default `64`) patterns participate in overlap detection. Beyond the cap the analysis short-circuits, and no additional observability is emitted.
+- **Pattern overlap analysis**: The `complexity.maxPatternProps` option defaults to `64`, but the current overlap analysis does not apply this cap; all patterns are considered.
 
 ## Generation
 
 - **Deterministic RNG**: The generator uses `XorShift32` seeded via `normalizeSeed`. Callers who omit a seed receive the default `123456789`, so identical schemas plus defaults always yield identical data.
-- **Pattern witness search**: Witness synthesis follows `patternWitness` defaults (`alphabet = a-z0-9_-`, `maxLength = 12`, `maxCandidates = 32768`). Exhausting the budget produces `COMPLEXITY_CAP_PATTERNS` with `reason = 'witnessDomainExhausted'` or `candidateBudget`.
-- **Branch trials**: `trials.perBranch` defaults to `2`, `maxBranchesToTry` to `12`, and `skipTrialsIfBranchesGt` to `50`. When caps fire the generator moves to score-only selection and records the `TRIALS_SKIPPED_*` diagnostic with the exact reason.
-- **Numeric precision**: Rational arithmetic honors `rational.maxRatBits = 128` and `maxLcmBits = 128`. Overflow triggers `RAT_LCM_BITS_CAPPED` or `RAT_DEN_CAPPED`, and the engine falls back to `decimal` precision (12 digits) unless the caller opts into `float`.
+- **Pattern witness search**: Witness synthesis follows `patternWitness` defaults (`alphabet = a-z0-9_-`, `maxLength = 12`, `maxCandidates = 32768`). Exhausting the budget produces `COMPLEXITY_CAP_PATTERNS` with `reason = 'witnessDomainExhausted'`, `candidateBudget`, or `regexComplexity`.
+- **Branch trials (Compose)**: `trials.perBranch` defaults to `2`, `maxBranchesToTry` to `12`, and `skipTrialsIfBranchesGt` to `50`. Compose applies these caps, switches to score-only selection when triggered, and records `TRIALS_SKIPPED_*` with the specific reason; the generator consumes the chosen branch.
+- **Numeric precision**: The pipeline uses `rational.maxRatBits = 128` and `maxLcmBits = 128` defaults alongside `decimalPrecision = 12` for the ε-based `multipleOf` tolerance; the current implementation does not emit `RAT_*` diagnostics, even when caps would apply.
 
 ## Repair & validation
 
