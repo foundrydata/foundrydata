@@ -65,11 +65,9 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
   *Signal:* `COMPLEXITY_CAP_*` diagnostics and populated `diag.budget`.
 
 <a id="s1-bench-sli-gate"></a>
-* **Bench SLI gate (CI; normative).**
-  The CI **MUST** run the benchmark protocol of §15 and **fail** the run when either:
-  `diag.metrics.p95LatencyMs > 120` (ms) on any of the three profiles
-  **or** `diag.metrics.memoryPeakMB > 512` on any profile.
-  *Signal:* `p95LatencyMs` and `memoryPeakMB` are present in `diag.metrics` for CI runs.
+* **Bench SLI gate (reference CI; normative for this repository).**
+  The **CI harness shipped with this repository** **MUST** run the benchmark protocol of §15 and treat its gates as hard failures for this codebase.
+  **Scope (normative).** These gates apply only to the **reference implementation and CI configuration in this repository**. Other implementations **MAY** adopt different thresholds on other hardware/VMs without affecting functional conformance, but SHOULD still report `diag.metrics.p95LatencyMs` and `diag.metrics.memoryPeakMB` per §15. See §15/§16 for the exact numeric budgets used by the reference harness.
 
 <a id="s1-config-gate"></a>
 * **Config gate (normative).**
@@ -157,7 +155,7 @@ Extend JSON Schema feature coverage **without** scattering per‑feature branche
 
 <a id="s3-apfalse-unsafe-pattern-policy"></a>
 * **AP:false unsafe‑pattern policy (Strict).**
-  Under `additionalProperties:false`, fail‑fast with **`AP_FALSE_UNSAFE_PATTERN`** **iff** (a) **presence pressure holds** (effective `minProperties`/`required`/`dependentRequired`), (b) the §8 **safe‑only proof** (ignoring non‑anchored and complexity‑capped patterns, including §7 synthetic ones) yields **`Safe = ∅`**, and (c) must‑cover would require a non‑anchored or capped pattern. When `Safe ≠ ∅`, **restrict to `Safe` and do not fail‑fast**. In Lax, emit a warning and continue conservatively (§8). A raw `propertyNames.pattern` (no `PNAMES_REWRITE_APPLIED`) never triggers fail‑fast; it is gating‑only. **Policy hook:** in Strict, `patternPolicy.unsafeUnderApFalse:'warn'` downgrades the fail‑fast to a warning; `'error'` remains fatal.
+  Under `additionalProperties:false`, detect unsafe‑pattern conditions and attach **`AP_FALSE_UNSAFE_PATTERN`** **iff** (a) **presence pressure holds** (effective `minProperties`/`required`/`dependentRequired`), (b) the §8 **safe‑only proof** (ignoring non‑anchored and complexity‑capped patterns, including §7 synthetic ones) yields **`Safe = ∅`**, and (c) must‑cover would require a non‑anchored or capped pattern. When `Safe ≠ ∅`, **restrict to `Safe` and do not fail‑fast**. In Lax, emit a warning and continue conservatively (§8). A raw `propertyNames.pattern` (no `PNAMES_REWRITE_APPLIED`) never triggers fail‑fast; it is gating‑only. **Policy hook (normative):** in Strict, `patternPolicy.unsafeUnderApFalse:'error'` (the default) routes these conditions as **fatal** `AP_FALSE_UNSAFE_PATTERN` entries in `diag.fatal` (fail‑fast at the object); when explicitly set to `'warn'`, the same detection remains in force but **routes the diagnostic to `diag.warn` instead of `diag.fatal`**, and generation proceeds under conservative exclusion at that object. This hook **MUST NOT** relax the preconditions or alter the must‑cover or safe‑proof rules of §8; it only changes severity routing under Strict.
 
 > **Note.** The precise definition of **anchored‑safe** regex and the rules for when `propertyNames` can contribute to coverage are normative in §8.
 
@@ -252,7 +250,7 @@ This table summarizes the “big knobs” and their intent (details and edge‑c
 | Caching              | `cache.*`                                            | Cache compiles/plans (not instances); keys include AJV major + flags + options subkey | §14     |
 | External `$ref` resolver (Extension R1) | `resolver.strategies:['local'|'remote'|'schemastore']` (default `['local']`), `resolver.cacheDir:"~/.foundrydata/cache"` | Opt‑in HTTP(S) prefetch + local cache; core phases consult a read‑only registry only. `local` = intra‑document only; `remote` = allow HTTP(S) prefetch; `schemastore` = constrain hosts to `json.schemastore.org` (and aliases). | §4, §11, §14, §23 |
 | Unresolved external `$ref` (Lax stub) | `resolver.stubUnresolved:'none'|'emptySchema'` (default `'none'`) | When `'emptySchema'` and **Lax** mode, treat unresolved external `$ref` as `{}` **for planning only** and emit warnings; the original schema is unchanged; final validation follows §11 skip‑eligibility. | §11, §19, §23 |
-| Patterns under AP:false | `patternPolicy.unsafeUnderApFalse:'error'`        | **Subject to §8**: Strict fail‑fast **only** under **presence pressure** and only when the **Safe** set is empty; otherwise restrict to Safe. Raw `propertyNames.pattern` never triggers fail‑fast. Lax: warn + conservative exclusion. | §8      |
+| Patterns under AP:false | `patternPolicy.unsafeUnderApFalse:'error'`        | **Subject to §8**: Strict attaches `AP_FALSE_UNSAFE_PATTERN` **only** under **presence pressure** and only when the **Safe** set is empty; otherwise restrict to Safe. With `'error'` (default) this is a fatal fail‑fast; with `'warn'` it is a non‑fatal warning with conservative exclusion. Raw `propertyNames.pattern` never triggers fail‑fast. Lax: warn + conservative exclusion. | §8      |
 | Validator config gate    | *(normative, no option)*                    | Enforce AJV flags per §13; fail with `AJV_FLAGS_MISMATCH` on deviation      | §13 |
 | Patterns (witness)         | `patternWitness.{alphabet,maxLength,maxCandidates}` | Bounded and deterministic search domain for pattern witness generation            | §9, §23 |
 | Repair (must‑cover guard)  | `repair.mustCoverGuard` (default: true)             | Deterministic policy for renaming under AP:false; see §10 and cache key in §14    | §10, §14, §23 |
@@ -630,15 +628,17 @@ When a container is structurally replaced, the replacement node receives an `ori
   containsBag?: Array<{ schema:any; min?:number; max?:number }>,
   diag?: {
     /**
-     * Fatal diagnostics recorded during Compose (e.g., AP_FALSE_UNSAFE_PATTERN fail-fast at an object/array node).
+    * Fatal diagnostics recorded during Compose (e.g., AP_FALSE_UNSAFE_PATTERN fail-fast at an object/array node when `patternPolicy.unsafeUnderApFalse:'error'` in Strict).
      * Presence of any entry indicates the affected canonPath MUST NOT be generated.
      */
     fatal?: Array<{ code: string; canonPath: string; details?: unknown }>,
     /**
-     * Non-fatal diagnostics recorded during Compose (e.g., AP_FALSE_UNSAFE_PATTERN in Lax mode).
+     * Non-fatal diagnostics recorded during Compose (e.g., AP_FALSE_UNSAFE_PATTERN in Lax mode, or in Strict when
+     * patternPolicy.unsafeUnderApFalse:'warn' is configured).
      * Entries here MUST NOT prevent generation at the corresponding canonPath.
-     * Normative routing: in Strict, AP_FALSE_UNSAFE_PATTERN MUST appear in `fatal`;
-     * in Lax, AP_FALSE_UNSAFE_PATTERN MUST appear in `warn` (never in `fatal`).
+     * Normative routing: in Strict, when patternPolicy.unsafeUnderApFalse:'error', AP_FALSE_UNSAFE_PATTERN MUST appear
+     * in `fatal`. In Strict when patternPolicy.unsafeUnderApFalse:'warn', AP_FALSE_UNSAFE_PATTERN MUST appear in `warn`
+     * and MUST NOT appear in `fatal`. In Lax, AP_FALSE_UNSAFE_PATTERN MUST appear in `warn` (never in `fatal`).
      */
     warn?: Array<{ code: string; canonPath: string; details?: unknown }>,
     /**
@@ -749,11 +749,12 @@ Implementations **MUST NOT** elide entries based on mode or guard configuration.
   **Definition (normative) — `ENUM_CAP`.** A process‑ or build‑time integer constant used to bound the materialized export of `enumerate()`. `ENUM_CAP` is **not** a PlanOption and is **not** modifiable at request time. Implementations MAY provide a build‑time or process‑wide configuration mechanism; `Compose` MUST ignore any attempt to control this bound via PlanOptions.
   **Cardinality cap (normative).** When the derived finite universe size (post‑intersection) **exceeds `ENUM_CAP`**, Compose MUST NOT provide `enumerate()` and MUST emit `COMPLEXITY_CAP_ENUM` with `details:{ limit: `ENUM_CAP`, observed: |G| }`.
   **Cross‑reference (normative):** This rule is an explicit exception to the earlier `enumerate()` obligation in this subsection.
-  **Enumeration vs `propertyNames.enum` (normative clarification).** Even when the global must‑cover intersection becomes
-  finite **solely** because a raw `propertyNames.enum` is present (i.e., without a §7 rewrite at the same object),
-  `enumerate()` **MUST NOT** be provided. A raw `propertyNames.enum` remains a **gate** and **does not** contribute generative
-  coverage; only **synthetic** exact‑literal alternatives produced by the §7 rewrite (signaled by `PNAMES_REWRITE_APPLIED`)
-  may participate in a finite, enumerable intersection.
+  **Enumeration vs `propertyNames.enum` (normative clarification).** A raw `propertyNames.enum` remains a **gate** and **does not**
+  contribute generative coverage; it MAY restrict the names admitted by other sources but never adds new ones. When, at an object,
+  no AP:false conjunct contributes any of the sources (a)–(c) above (named `properties`, synthetic literals from §7, or user‑authored
+  exact‑literal `patternProperties`), `enumerate()` **MUST NOT** be provided, even if a raw `propertyNames.enum` is present.
+  Only **synthetic** exact‑literal alternatives produced by the §7 rewrite (signaled by `PNAMES_REWRITE_APPLIED`) and exact‑literal
+  `patternProperties` may participate in a finite, enumerable intersection.
   **Provenance (normative).** When `enumerate()` is provided, `provenance` **MUST** be present and list the
   source families that contributed to the enumerated set. It **MUST** include `'propertyNamesSynthetic'`
   whenever §7 injected synthetic patterns were used (`PNAMES_REWRITE_APPLIED`) and **MUST** include `'patternProperties'` when user‑authored exact‑literal alternations contributed. `provenance` remains coarse and
@@ -774,7 +775,26 @@ Implementations **MUST NOT** elide entries based on mode or guard configuration.
      If Ci.propertyNames is pattern **and** anchored‑safe & non‑capped:
         filter A_i by that pattern; otherwise leave A_i unchanged (unknown gating).
   2) G := ⋂ A_i over all such Ci.
-  3) If `|G| > ENUM_CAP`, do **not** export `enumerate()` and **emit** `COMPLEXITY_CAP_ENUM{ limit: ENUM_CAP, observed: |G| }`. Otherwise return `sortUTF16Asc(dedup(G))`.
+	  3) If `|G| > ENUM_CAP`, do **not** export `enumerate()` and **emit** `COMPLEXITY_CAP_ENUM{ limit: ENUM_CAP, observed: |G| }`. Otherwise return `sortUTF16Asc(dedup(G))`.
+
+  <a id="s8-apfalse-summary"></a>
+  ### AP:false, propertyNames & patterns — summary algorithm (normative)
+
+  This subsection summarizes, in one place, the interaction between AP:false, `propertyNames`, `patternProperties`, the §7 rewrite, and fail‑fast at an object location **O**.
+
+  1. **Identify participating conjuncts.** Let `Ci` range over all `allOf` conjuncts whose effective view at `O` enforces `additionalProperties:false` — either explicitly in the original schema or additively via the §7 `propertyNames` rewrite (signaled by `PNAMES_REWRITE_APPLIED` at `O`). When **no** such conjunct exists at `O`, this object is in the vacuous case: `CoverageIndex.has(name)` MUST return `true` for all names, `enumerate` MUST be `undefined`, and `provenance` MUST be empty (see §8 “Vacuous case”).
+  2. **Per‑conjunct coverage recognizer.** For each such `Ci`, Compose builds a **safe coverage recognizer** `coversCi(name)` as follows (this corresponds to `safeRecognizers(Ci)` used by `mustCoverSafeProof(O)` below):
+     - Start from named keys in `Ci.properties`.
+     - Add names matched by **anchored‑safe & non‑capped** `Ci.patternProperties`, including only those synthetic entries created by the §7 rewrite when and only when `PNAMES_REWRITE_APPLIED` was recorded at `O` (provenance `'propertyNamesSynthetic'`).
+     - If `Ci.propertyNames` is an **enum of strings**, intersect `coversCi` with that finite set.
+     - If `Ci.propertyNames` **uses `pattern`**, it participates **only as a gate** and **only** when the pattern is anchored‑safe & non‑capped; in that case it may further filter `coversCi` but **never** add keys. For non‑anchored or complexity‑capped patterns, `propertyNames.pattern` is treated as **unknown gating** (no intersection) and **MUST NOT** contribute to coverage or fail‑fast; Compose records approximations via `AP_FALSE_INTERSECTION_APPROX` and, when the cap is the cause, `REGEX_COMPLEXITY_CAPPED{context:'coverage'}`.
+     - In all cases, **raw `propertyNames` (without §7 rewrite)** never increases coverage; only §7 synthetic patterns (tagged `'propertyNamesSynthetic'`) may.
+  3. **Global must‑cover intersection.** The **Safe** recognizer at `O` is the intersection
+     `Safe(name) := ⋂_{Ci with AP:false} coversCi(name)`. CoverageIndex.has **MUST** implement this intersection using only sources from step (2) and the safe gating rules above. Conjuncts without `additionalProperties:false` do not contribute.
+  4. **Fail‑fast vs conservative exclusion.**
+     - When `Safe` is **non‑empty** under presence pressure, Compose **MUST NOT** emit `AP_FALSE_UNSAFE_PATTERN`; the generator **MUST** restrict to `Safe` (safe‑proof preference).
+     - When `Safe` is empty and presence pressure holds, but non‑emptiness would require a non‑anchored or regex‑capped pattern from `patternProperties` or `'propertyNamesSynthetic'`, Compose **MUST** treat this as an unsafe‑pattern condition and emit `AP_FALSE_UNSAFE_PATTERN` with payload and severity routing as specified in §8 (“Fail‑fast rule”) and §3 (policy hook). Raw `propertyNames.pattern` (no rewrite) **never** causes this escalation.
+     - When presence pressure does **not** hold, implementations **MUST NOT** treat such patterns as fail‑fast; they **MUST** proceed with conservative exclusion, relying on AJV at validation time and recording `AP_FALSE_INTERSECTION_APPROX` where coverage is unknown.
 
 #### Appendix A (informative) — Name automaton enumeration
 
@@ -984,18 +1004,19 @@ Let `propertyNamesSynthetic_Ci` be the set of **synthetic** anchored‑safe patt
     **Example (informative).**
     Let `effectiveRequiredKeys = {"k"}` after the `allOf` merge, with `dependentRequired: { k: ["d1"] }` and `additionalProperties:false`. If the provable must‑cover intersection cannot include `d1`, Strict mode may short‑circuit via `UNSAT_DEPENDENT_REQUIRED_AP_FALSE`. Conversely, if the presence of `k` depends only on a selected `oneOf` branch or on an active `then` branch of a conditional, do not treat `k` as “forced present” for early‑unsat; leave the decision to AJV at validation time.
 
-    If a must‑cover proof for an object under `additionalProperties:false` depends on a pattern that is
-    **not anchored‑safe** (per §8 definition) or whose analysis is **capped** by the regex complexity rule,
-    the implementation **MUST** abort planning/generation for that node with diagnostic **`AP_FALSE_UNSAFE_PATTERN`** and the following **normative** payload:
+	    If a must‑cover proof for an object under `additionalProperties:false` depends on a pattern that is
+	    **not anchored‑safe** (per §8 definition) or whose analysis is **capped** by the regex complexity rule,
+	    the implementation **MUST** treat this as an unsafe‑pattern condition and attach diagnostic **`AP_FALSE_UNSAFE_PATTERN`** with the following **normative** payload:
   **Payload (normative).** `details:{ sourceKind:'patternProperties'|'propertyNamesSynthetic', patternSource?:string, preSafeProof?:CoverageCert }`. When a **single** culpable pattern triggers fail‑fast, `patternSource` is **REQUIRED** and **MUST** be the JSON‑unescaped regex source. When multiple patterns jointly cause the fail‑fast, it **MAY** be omitted.
-  When `patternSource` is present it **MUST** be the JSON‑unescaped regex source (same convention as §19 for regex payloads).
-    The top‑level diagnostic **carries `canonPath`**; `canonPath` **MUST NOT** be duplicated inside `details`. Compose **MUST** record a fatal as
-    `diag.fatal.push({ code:'AP_FALSE_UNSAFE_PATTERN', canonPath, details })`.
-    The Generator **MUST NOT** attempt key synthesis at this node, and the diagnostic **MUST** bubble to the
-    top‑level run result.
-
-    In **Lax** mode, emit **`AP_FALSE_UNSAFE_PATTERN`** as a **warning** by appending an entry to **`diag.warn`**
-    (same payload as Strict), and proceed conservatively.
+	    When `patternSource` is present it **MUST** be the JSON‑unescaped regex source (same convention as §19 for regex payloads).
+	    The top‑level diagnostic **carries `canonPath`**; `canonPath` **MUST NOT** be duplicated inside `details`. When **Strict**
+	    mode is active and `patternPolicy.unsafeUnderApFalse:'error'`, Compose **MUST** record this condition as a **fatal** entry
+	    `diag.fatal.push({ code:'AP_FALSE_UNSAFE_PATTERN', canonPath, details })`, and the Generator **MUST NOT** attempt key
+	    synthesis at this node; the diagnostic **MUST** bubble to the top‑level run result. When Strict mode is active and
+	    `patternPolicy.unsafeUnderApFalse:'warn'`, Compose **MUST** instead record the same payload as a **warning** entry
+	    `diag.warn.push({ code:'AP_FALSE_UNSAFE_PATTERN', canonPath, details })`, and generation **MUST** proceed under the
+	    conservative‑exclusion policy below. In **Lax** mode, emit **`AP_FALSE_UNSAFE_PATTERN`** as a **warning** by appending
+	    an entry to **`diag.warn`** (same payload as Strict), and proceed conservatively.
 
     **Pre‑safe‑proof attachment (normative).** Before deciding `AP_FALSE_UNSAFE_PATTERN` at object **O**,
     the planner **MUST** run `mustCoverSafeProof(O)` and attach the resulting **`preSafeProof`** certificate
@@ -1023,7 +1044,7 @@ Let `propertyNamesSynthetic_Ci` be the set of **synthetic** anchored‑safe patt
     **Clarification:** Raw `propertyNames.pattern` participates **only** as a gate for intersection (when anchored‑safe) and **never** as a coverage source.
     Consequently it **cannot** cause `AP_FALSE_UNSAFE_PATTERN` by itself.
 
-    **Safe‑proof preference before fail‑fast (normative).**
+	    **Safe‑proof preference before fail‑fast (normative).**
   Before emitting `AP_FALSE_UNSAFE_PATTERN`, an implementation **MUST** attempt to build a **safe coverage proof** that ignores
     all non‑anchored and complexity‑capped patterns (including any **synthetic** entries from §7). Let:
 
@@ -1034,9 +1055,12 @@ Let `propertyNamesSynthetic_Ci` be the set of **synthetic** anchored‑safe patt
       recorded for the same object, **limited to those that are anchored‑safe & not complexity‑capped** per this section.
       *Exact‑literal* form is **not required** for safety; it matters only for `enumerate()` (§8 “Coverage Index export”).
 
-    Let `Safe = ⋂_{Ci with AP:false} safeRecognizers(Ci)`.
-    If `Safe` is **non‑empty**, the planner **MUST NOT** emit `AP_FALSE_UNSAFE_PATTERN` and **MUST** restrict generation to `Safe`.
-    If and only if `Safe` is empty **and presence pressure holds**, the planner **MUST** apply the fail‑fast policy in Strict (or warn in Lax). If presence pressure **does not** hold, **MUST NOT** fail‑fast and **MUST** proceed with conservative exclusion.
+	    Let `Safe = ⋂_{Ci with AP:false} safeRecognizers(Ci)`.
+	    If `Safe` is **non‑empty**, the planner **MUST NOT** emit `AP_FALSE_UNSAFE_PATTERN` and **MUST** restrict generation to `Safe`.
+	    If and only if `Safe` is empty **and presence pressure holds**, the planner **MUST** apply the unsafe‑pattern policy:
+	    in Strict, emit `AP_FALSE_UNSAFE_PATTERN` with severity determined by `patternPolicy.unsafeUnderApFalse` (fatal when
+	    `'error'`, warning when `'warn'`); in Lax, emit `AP_FALSE_UNSAFE_PATTERN` as a warning. If presence pressure **does not**
+	    hold, **MUST NOT** treat this as fail‑fast and **MUST** proceed with conservative exclusion.
     *Implementation note (informative):* this rule prevents spurious fail‑fast when a proof exists using named properties alone.
 
 * **Objects — other**
@@ -1525,9 +1549,9 @@ Run the evaluation guard before finalizing the action for the object (and before
     **No safe candidate (normative).** If no candidate name `n ∈ E` simultaneously (a) is not present in the object and (b) satisfies `ctx.isNameInMustCover(canonPath, n) === true`, the implementation **MUST NOT** rename and **MUST** either safely delete the offending key (respecting `required`/`dependent*`) or leave it for AJV to report. It **MUST** log `details:{ from:string, reason:'deletedNoSafeName', mustCover:true }`.
 * **Binding (normative).** `ctx.isNameInMustCover`, when provided, **MUST** be identically the predicate obtained from Compose’s CoverageIndex: `name ↦ coverageIndex.get(canonPath)?.has(name) === true`. Implementations **MUST NOT** substitute other recognizers here.
 * **API absence (normative).** If `additionalProperties:false` applies, `PlanOptions.repair.mustCoverGuard !== false`, **and** `ctx.isNameInMustCover` is **absent**, `Repair` **MUST NOT** rename under `AP:false`; it **MUST** handle offending keys via safe deletion (respecting `required`/`dependent*`) or leave AJV to fail. When the guard is disabled (`repair.mustCoverGuard === false`), behavior matches the pre‑guard policy (no must‑cover query). See §23 for interfaces (`RepairCtx`, `PlanOptions`).
-  <a id="s10-mustcover-index-missing"></a>
-  **Observability (normative).** In the same situation, the implementation **MUST** emit the diagnostic `MUSTCOVER_INDEX_MISSING` at the object’s `canonPath` with `details:{ guard:true }`. This does not alter behavior; it documents that the guard was active but the CoverageIndex was unavailable.
-  * **Pattern or no available name.** When `propertyNames` uses `pattern` (any form) **or** no such `n` exists, **do not rename**; delete the offending key if safe, otherwise leave it for AJV.
+	  <a id="s10-mustcover-index-missing"></a>
+	  **Observability (normative).** In the same situation, the implementation **MUST** emit the diagnostic `MUSTCOVER_INDEX_MISSING` at the object’s `canonPath` with `details:{ guard:true }`. This does not alter behavior; it documents that the guard was active but the CoverageIndex was unavailable.
+	  * **Pattern or no available name (fallback).** When `propertyNames` uses `pattern` **that does not meet the pseudo‑enum preconditions below** (i.e., not an anchored‑safe, non‑capped exact‑literal‑alternatives form) **or** when all enum/pseudo‑enum candidates `n` have been exhausted or rejected by guards/pre‑flight, **do not rename**; delete the offending key if safe, otherwise leave it for AJV.
   * **Logging (normative).** Each rename/delete **MUST** record: `details:{ from:string, to?:string, reason:'enumRename'|'deletedNoSafeName'|'deletedMustCoverRejected', mustCover?:boolean }`. After a rename, immediately re‑run per‑property repairs for the new key in the same pass (budget permitting), **then** re‑apply §9’s object property order (required keys first, then optional keys; both in UTF‑16 lexicographic order).
 
   **Pattern pseudo‑enum rename (normative).** When `propertyNames` uses `pattern` and the JSON‑unescaped source `P` is (a) anchored‑safe and not complexity‑capped per §8, and (b) of exact‑literal‑alternatives form `^(?:L1|...|Lk)$` (Glossary), then for each offending key `k`:
@@ -1592,7 +1616,7 @@ Run the evaluation guard before finalizing the action for the object (and before
 
 * Fail early only on non‑normalizable constructs or explicit policy cases.
 * `$ref` external: `failFast.externalRefStrict` (default `error`, may be set to `warn` for observability only) controls diagnostic flavor, **not** control flow. On failure, **emit** `EXTERNAL_REF_UNRESOLVED`.
-  **Normative stop (alignment with §1).** When, **after any hydration from the §4 registry**, the **Source Ajv** fails to compile the **original schema** due **solely** to unresolved external `$ref` (per §11/§12 classification; no I/O), the run **MUST NOT** proceed to **Compose/Generate/Repair** for that schema **regardless of `failFast.externalRefStrict` value**. Treat this as a hard error: emit `EXTERNAL_REF_UNRESOLVED` and abort planning/generation at this root; `failFast.externalRefStrict` may only downgrade the diagnostic classification (e.g., warning vs fatal) and annotate `details.policy`, never the decision to stop. The phrase “fails solely due to unresolved external `$ref`” is defined **exclusively** by **ExternalRefSkipEligibility** (below); Strict never skips validation even when that test would be eligible.
+  **Normative stop (alignment with §1; Strict mode).** In **Strict** mode, when, **after any hydration from the §4 registry**, the **Source Ajv** fails to compile the **original schema** due **solely** to unresolved external `$ref` (per §11/§12 classification; no I/O), the run **MUST NOT** proceed to **Compose/Generate/Repair** for that schema **regardless of `failFast.externalRefStrict` value**. Treat this as a hard error: emit `EXTERNAL_REF_UNRESOLVED` and abort planning/generation at this root; `failFast.externalRefStrict` may only downgrade the diagnostic classification (e.g., warning vs fatal) and annotate `details.policy`, never the decision to stop. Strict mode **MUST NOT** use any skip heuristic (including ExternalRefSkipEligibility) to ignore such compile failures; they always remain hard stops.
   **External `$ref` (normative):** Resolve the `$ref` value against the current resolution base (from `$id`).
   <a id="s11-external-ref-classification"></a>
   If the resolved URI is **fragment‑only** (`#...`), it is **internal**; otherwise it is **external** (includes absolute
@@ -1639,7 +1663,7 @@ Input: original schema S; Source Ajv class/dialect matched per §12. This is a *
         and **MUST** set `diag.metrics.validationsPerRow = 0` for affected rows.
       `smallest` is the UTF‑16 lexicographically smallest string in ExtRefs; omit `ref` if none can be determined.
   d) Otherwise ⇒ **MUST NOT** skip; propagate the compilation failure.
-**Normative definition (Lax skip).** The skip path for final validation in Lax is permitted **iff** the **ExternalRefSkipEligibility** test above succeeds. This test is the sole definition of “compile fails solely due to unresolved external `$ref`” in Lax; when the test does not pass, the pipeline **MUST** treat the compilation failure as fatal for validation.
+**Normative definition (Lax skip).** The skip path for the **final AJV validation** step in Lax is permitted **only when** the **ExternalRefSkipEligibility** test above succeeds. Implementations **MAY** still choose not to skip even when the test passes (e.g., for stricter observability), but **MUST NOT** skip when the test does not pass; in that case the compilation failure **MUST** be treated as fatal for validation. ExternalRefSkipEligibility thus provides the **reference implementation’s** operational criterion for the phrase “compile fails solely due to unresolved external `$ref`” when deciding Lax‑mode validation skips; alternative implementations MAY adopt **stricter** criteria (fewer skips), but not weaker ones.
 **Normative scope of I/O.** Core phases perform **no** network or filesystem I/O in any mode.  
 **Extension R1 (opt‑in).** An optional **pre‑pipeline** step MAY fetch external documents over HTTP(S) and populate a
 local cache/registry. If, after this pre‑phase, an external `$ref` remains unresolved and `externalRefStrict:'error'`
@@ -1986,7 +2010,7 @@ Before failing on non‑safe or capped patterns, the planner first attempts a **
 Patterns used in coverage are considered only when anchored‑safe per §8. Patterns rejected for coverage remain guards at validation time. Implementations distinguish coverage regex caps (`REGEX_COMPLEXITY_CAPPED{context:'coverage'}`) from generation caps (`COMPLEXITY_CAP_PATTERNS{...}`) and route them to the appropriate phases and severities as specified in §§8 and 19.
 
 #### Heuristics & caps
-Name‑automaton budgets such as `maxAutomatonStates`, `maxProductStates`, `maxKEnumeration`, and `bfsCandidatesCap` follow the automata‑scaling rules and diagnostics described in §8, §15, §19, and R3, including the use of `NAME_AUTOMATON_COMPLEXITY_CAPPED` when caps are hit.
+Name‑automaton budgets such as `maxAutomatonStates`, `maxProductStates`, `maxKEnumeration`, and `bfsCandidatesCap` follow the automata‑scaling rules and diagnostics described in §8, §15, §19, and R3, including the use of `NAME_AUTOMATON_COMPLEXITY_CAPPED` when caps are hit. **Normative mapping:** these budgets are derived from `PlanOptions.nameEnum.*` and `ENUM_CAP` as specified in §23 and §8; when any such bound is reached during name‑automaton enumeration, implementations **MUST** emit the appropriate `NAME_AUTOMATON_*` diagnostic with payload fields reflecting the active limits and observed counts, and **MUST** fall back conservatively (no additional names are treated as provably covered).
 
 ---
 
@@ -2009,11 +2033,12 @@ Name‑automaton budgets such as `maxAutomatonStates`, `maxProductStates`, `maxK
 * On simple/medium profiles: `validationsPerRow ≤ 3`, `repairPassesPerRow ≤ 1` (p50).
 * If‑aware‑lite reduces validations/row vs repair‑only on at least three conditional suites.
 * Caps trigger degradations (no crashes); diagnostics emitted.
-* **Bench CI:** p95 latency ≤ 120 ms and memory peak ≤ 512 MB on {simple, medium, pathological}
-  with seeds `{1,42,4242}` (5 warmups + 20 runs). Failure ⇒ run failure.
+* **Bench CI (reference harness):** In the CI harness shipped with this repository, p95 latency ≤ 120 ms and memory peak ≤ 512 MB on {simple, medium, pathological}
+  with seeds `{1,42,4242}` (5 warmups + 20 runs). Breaches of these thresholds **MUST** cause the reference CI run to fail (see §1 “Bench SLI gate”).
+  Implementations outside this repository **MAY** collect the same metrics and adopt different gates; such differences affect performance SLIs, not functional conformance to this specification.
 * `AP:false × allOf` must‑cover enforced :
   - **Safe‑proof preference (Strict & Lax).** If the **Safe** set computed per §8 (ignoring non‑anchored and complexity‑capped patterns, including synthetic ones) is **non‑empty**, **do not** emit `AP_FALSE_UNSAFE_PATTERN`; restrict generation to **Safe**.
-  - **Strict (otherwise).** When **Safe is empty _and presence pressure holds_**, and must‑cover would require a non‑anchored or regex‑complexity‑capped pattern (including §7 synthetic), **fail‑fast** with `AP_FALSE_UNSAFE_PATTERN`.
+  - **Strict (otherwise).** When **Safe is empty _and presence pressure holds_**, and must‑cover would require a non‑anchored or regex‑complexity‑capped pattern (including §7 synthetic), **MUST** emit `AP_FALSE_UNSAFE_PATTERN` and route it according to `patternPolicy.unsafeUnderApFalse`: as a **fatal** fail‑fast when `'error'` (default), or as a **warning** (non‑fatal) when `'warn'`, in both cases preserving conservative exclusion at that object.
   - **Lax.** Warn `AP_FALSE_UNSAFE_PATTERN` and `AP_FALSE_INTERSECTION_APPROX`; proceed conservatively and do not generate keys outside the must‑cover set. **Raw `propertyNames.pattern` never triggers fail‑fast and remains gating‑only** (see §8).
 * `contains` bag unsat rules enforced with `CONTAINS_UNSAT_BY_SUM` when applicable; generation re‑satisfies needs after `uniqueItems` de‑dup.
 * External `$ref` produce `EXTERNAL_REF_UNRESOLVED` (strict=error, lax=warn).
@@ -2645,10 +2670,13 @@ Hints are informative and MUST NOT change severity or routing.
 
 * Conditionals (with/without `unevaluated*`), nested; verify **no semantic drift** when not rewriting.
 * Composition suites validated by AJV (original schema).
-* Objects: `patternProperties` / `propertyNames` / `dependentSchemas` / `additionalProperties:false` across `allOf`.
-  - Non-anchored patterns / patterns capped by complexity under `AP:false`:
-    • **Strict:** hard failure with `AP_FALSE_UNSAFE_PATTERN`.
-    • **Lax:** warn `AP_FALSE_UNSAFE_PATTERN` + `AP_FALSE_INTERSECTION_APPROX`, and no key generated outside must-cover.
+	* Objects: `patternProperties` / `propertyNames` / `dependentSchemas` / `additionalProperties:false` across `allOf`.
+	  - Non-anchored patterns / patterns capped by complexity under `AP:false`:
+	    • **Strict (default policy).** With `patternPolicy.unsafeUnderApFalse:'error'`, hard failure with `AP_FALSE_UNSAFE_PATTERN`
+	      (fatal) and no key generated at that object.
+	    • **Strict (warn policy).** With `patternPolicy.unsafeUnderApFalse:'warn'`, emit `AP_FALSE_UNSAFE_PATTERN` as a warning
+	      and proceed under conservative exclusion (no keys outside must‑cover), without treating it as a fatal stop at that object.
+	    • **Lax:** warn `AP_FALSE_UNSAFE_PATTERN` + `AP_FALSE_INTERSECTION_APPROX`, and no key generated outside must-cover.
   - **Safe‑proof fallback prevents fail‑fast**: AP:false + {unsafe pattern} + {properties covering at least one key} ⇒ Strict:
     no `AP_FALSE_UNSAFE_PATTERN`; generation restricted to the safe intersection; AJV passes.
   - **`enumerate()` absent when finiteness comes only from raw `propertyNames.enum`**: AP:false + no safe patterns +
@@ -2671,8 +2699,8 @@ Hints are informative and MUST NOT change severity or routing.
 
 * **Negative config test (AJV flags):** force `unicodeRegExp:false` on either AJV instance ⇒ hard failure with `AJV_FLAGS_MISMATCH`.
 * **AP:false unsafe‑pattern tests (with safe‑proof fallback):**
-  - `AP:false` + non‑anchored pattern (e.g., `"^foo"`) in coverage ⇒ Strict: fail with `AP_FALSE_UNSAFE_PATTERN`;  
-    Lax: warn `AP_FALSE_UNSAFE_PATTERN`, continue conservatively with `AP_FALSE_INTERSECTION_APPROX`.  
+	  - `AP:false` + non‑anchored pattern (e.g., `"^foo"`) in coverage ⇒ Strict with `patternPolicy.unsafeUnderApFalse:'error'`: fail with `AP_FALSE_UNSAFE_PATTERN` (fatal); Strict with `'warn'`: emit `AP_FALSE_UNSAFE_PATTERN` as warning;  
+	    Lax: warn `AP_FALSE_UNSAFE_PATTERN`, continue conservatively with `AP_FALSE_INTERSECTION_APPROX`.  
   - **Safe‑proof prevents fail‑fast**: when an anchored‑safe intersection is non‑empty under presence pressure, Strict MUST NOT emit `AP_FALSE_UNSAFE_PATTERN`; generation is restricted to the safe cover. A `planDiag.details.safeProof` certificate is attached.
   - `AP:false` + pattern exceeding regex complexity cap (length/nested quantifiers) ⇒ same expectations as above.
 
@@ -2737,7 +2765,9 @@ Hints are informative and MUST NOT change severity or routing.
 ---
 
 <a id="s23-appendix"></a>
-## 23) Appendix — Minimal Interfaces (illustrative)
+## 23) Appendix — Plan & API Interfaces
+
+This appendix fixes the **normative shape and defaults** of the configuration and API surface exposed by the reference implementation. The TypeScript fragments below are **illustrative syntax**, but the field names, value domains, and default behaviors described here **MUST** be preserved by conforming implementations. JSON‑Schema views of these options may be derived mechanically from this appendix.
 
 <a id="s23-plan-options"></a>
 ```ts
