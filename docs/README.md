@@ -15,11 +15,11 @@ This page lists the authoritative documentation. Each document is source-control
 
 - Diagnostic catalog (`code`, `budget`, `scoreDetails`) — `docs/error.md`
 - Bench & performance gates — `docs/Known-Limits.md#performance-gates`
-- Diagnostics envelope schema — `docs/feature-simplification/spec-canonical-json-schema-generator.md` §19 (referenced by `packages/core/src/diag/schemas.ts`)
+- Diagnostics envelope schema — `docs/feature-simplification/spec-canonical-json-schema-generator.md` §19 (validated in `packages/core/src/diag/validate.ts`)
 
 ## Resolver Extension (R1) — Quick Guide
 
-The optional HTTP(S) resolver is an opt‑in pre‑pipeline step that fetches external `$ref` targets and hydrates a local cache and in‑memory registry. Core phases (`Normalize → Compose → Generate → Repair → Validate`) remain I/O‑free and always validate against the original schema.
+The optional HTTP(S) resolver is an opt‑in pre‑pipeline step that fetches external `$ref` targets and hydrates a local cache and in‑memory registry. Core phases (`Normalize → Compose → Generate → Repair → Validate`) remain I/O‑free; in Lax, when unresolved externals are stubbed or otherwise deemed skip‑eligible, final validation may be skipped with diagnostics recording `validationsPerRow = 0`, otherwise validation runs against the original schema.
 
 - Enable strategies via CLI:
   - Development (tsx):
@@ -32,7 +32,7 @@ The optional HTTP(S) resolver is an opt‑in pre‑pipeline step that fetches ex
   - Planning proceeds with `{}` stubs; final validation applies skip eligibility and sets `validationsPerRow = 0` when skipped.
 - Observability:
   - Run‑level notes are emitted under `compose(...).diag.run[]` with `canonPath:"#"`:
-    - `RESOLVER_STRATEGIES_APPLIED`, `RESOLVER_CACHE_HIT`, `RESOLVER_CACHE_MISS_FETCHED`, `RESOLVER_OFFLINE_UNAVAILABLE`.
+    - `RESOLVER_STRATEGIES_APPLIED`, `RESOLVER_CACHE_HIT`, `RESOLVER_CACHE_MISS_FETCHED`, `RESOLVER_OFFLINE_UNAVAILABLE`, snapshot events, and add‑schema skips (e.g., `RESOLVER_ADD_SCHEMA_SKIPPED_INCOMPATIBLE_DIALECT`, `RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID`).
   - Planning‑time stubs emit `EXTERNAL_REF_STUBBED` warnings (per‑path).
 - Determinism:
   - Compose/memo cache keys incorporate a `resolver.registryFingerprint` so outcomes are stable for a fixed registry.
