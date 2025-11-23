@@ -12,8 +12,8 @@ This note captures the cross-phase guarantees implemented inside `packages/core`
 
 - Canonical schemas keep a pointer map back to the user schema; diagnostics always reference a stable `canonPath` so later stages can attach additional evidence (`schema-normalizer.ts`).
 - Conditional rewrites follow the safe-double-negation guardrails. When annotations would be lost, the normalizer emits `IF_REWRITE_DISABLED_ANNOTATION_RISK` and leaves the input untouched, ensuring observability instead of silent rewrites.
-- Dependency rewrites never invent new coverage sources. Whenever `dependentRequired` is inferred, the normalizer records `DEPENDENCY_GUARDED` to show which keys triggered the guard.
-- `propertyNames` rewrites require anchored patterns or literal enums. Successful rewrites add `PNAMES_REWRITE_APPLIED`, while unbounded or lossy attempts flag `PNAMES_COMPLEX`, ensuring later stages know whether must-cover constraints are anchored.
+- Dependency guards follow the SPEC unevaluated* rule: guards are inserted only when no `unevaluated*` applies; if an `unevaluated*` keyword blocks the insertion, the normalizer emits `DEPENDENCY_GUARDED{reason:'UNEVALUATED_IN_SCOPE'}` and keeps the original mapping (`schema-normalizer.ts`).
+- `propertyNames` rewrites run only when unevaluated* is absent at or above the object and the local `additionalProperties` is either missing/`true`/`{}`; anchored-safe patterns or string enums succeed and add `PNAMES_REWRITE_APPLIED`, while blocked cases (including unevaluated* or non-string enums) record `PNAMES_COMPLEX` without altering the original schema (planning-only additions; AJV still sees the original).
 
 ## Compose invariants
 
