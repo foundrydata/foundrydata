@@ -25,7 +25,7 @@ You maintain a front-end application that consumes an HTTP API documented in Ope
 ```bash
 # Generate example responses for GET /users
 foundrydata openapi \
-  --spec docs/examples/users-api.json \
+  --spec examples/users-api.json \
   --operation-id getUsers \
   --n 5 \
   --seed 42 \
@@ -38,7 +38,7 @@ foundrydata openapi \
 npx tsx scripts/examples/api-mocks.ts
 ```
 
-This script loads `docs/examples/users-api.json`, selects the `getUsers` 200 JSON response, calls `Generate` with a fixed seed, validates a sample of responses with `Validate`, and prints both a short summary and a handful of example payloads.
+This script loads `examples/users-api.json`, selects the `getUsers` 200 JSON response, calls `Generate` with a fixed seed, validates a sample of responses with `Validate`, and prints both a short summary and a handful of example payloads.
 
 **Friction / gaps**
 
@@ -79,7 +79,7 @@ You own a service or event producer that exposes a JSON Schema for requests or e
 ```bash
 # Contract-style fixtures for a payment schema
 foundrydata generate \
-  --schema docs/examples/payment.json \
+  --schema examples/payment.json \
   --n 10 \
   --seed 123 \
   --out ndjson
@@ -91,7 +91,7 @@ foundrydata generate \
 npx tsx scripts/examples/contract-tests.ts
 ```
 
-This script loads `docs/examples/payment.json`, runs `Generate` with a fixed seed to produce a small list of payments, validates them with `Validate`, and prints a summary that can be asserted from an integration test (e.g. “10 items, all AJV-valid, deterministic for seed 123”).
+This script loads `examples/payment.json`, runs `Generate` with a fixed seed to produce a small list of payments, validates them with `Validate`, and prints a summary that can be asserted from an integration test (e.g. “10 items, all AJV-valid, deterministic for seed 123”).
 
 **Friction / gaps**
 
@@ -132,7 +132,7 @@ You build features on top of LLMs that return structured JSON (for example, sear
 ```bash
 # Fixtures for an LLM summarization result schema
 foundrydata generate \
-  --schema docs/examples/llm-output.json \
+  --schema examples/llm-output.json \
   --n 5 \
   --seed 99 \
   --out ndjson
@@ -144,7 +144,7 @@ foundrydata generate \
 npx tsx scripts/examples/llm-output.ts
 ```
 
-This script loads `docs/examples/llm-output.json`, calls `Generate` with a fixed seed to produce a few structured outputs, validates them via `Validate`, and prints both a small sample and a summary that could be asserted from unit tests or used to eyeball how “realistic” the generated shapes feel.
+This script loads `examples/llm-output.json`, calls `Generate` with a fixed seed to produce a few structured outputs, validates them via `Validate`, and prints both a small sample and a summary that could be asserted from unit tests or used to eyeball how “realistic” the generated shapes feel.
 
 **Friction / gaps**
 

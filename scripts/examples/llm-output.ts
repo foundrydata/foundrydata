@@ -23,7 +23,7 @@ export interface LlmOutputExampleResult {
 }
 
 export async function runLlmOutputExample(): Promise<LlmOutputExampleResult> {
-  const schema = await loadJson('../../docs/examples/llm-output.json');
+  const schema = await loadJson('../../examples/llm-output.json');
 
   const count = 5;
   const seed = 99;

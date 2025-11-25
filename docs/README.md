@@ -54,9 +54,9 @@ See `docs/Known-Limits.md#resolver-r1-scope--limits` for limits and security pos
 
 ## Examples
 
-- Examples index: `docs/examples/README.md`
-- Draft schemas: `docs/examples/draft-07.json`, `docs/examples/draft-2019-09.json`, `docs/examples/draft-2020-12.json`
-- Sample domains: `docs/examples/saas-user-schema.json`, `docs/examples/ecommerce-schema.json`, `docs/examples/api-transaction-schema.json`, `docs/examples/team-with-users-schema.json`
+- Examples index: `examples/README.md`
+- Draft schemas: `examples/draft-07.json`, `examples/draft-2019-09.json`, `examples/draft-2020-12.json`
+- Sample domains: `examples/saas-user-schema.json`, `examples/ecommerce-schema.json`, `examples/api-transaction-schema.json`, `examples/team-with-users-schema.json`
 
 ## Operational non-goals
 

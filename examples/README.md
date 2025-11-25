@@ -27,19 +27,19 @@ These schemas are intentionally small and focused on one or two mechanics each.
 
 ```bash
 # Generate 100 products
-foundrydata generate --schema docs/examples/ecommerce-schema.json --n 100
+foundrydata generate --schema examples/ecommerce-schema.json --n 100
 
 # Deterministic — same seed => same data
-foundrydata generate --schema docs/examples/saas-user-schema.json --n 50 --seed 42
+foundrydata generate --schema examples/saas-user-schema.json --n 50 --seed 42
 
 # Arrays of objects example
-foundrydata generate --schema docs/examples/team-with-users-schema.json --n 10
+foundrydata generate --schema examples/team-with-users-schema.json --n 10
 
 # Print metrics (timings, validations/row, etc.) to stderr
-foundrydata generate --schema docs/examples/api-transaction-schema.json --n 200 --print-metrics
+foundrydata generate --schema examples/api-transaction-schema.json --n 200 --print-metrics
 
 # Write output to a file (stdout -> redirect)
-foundrydata generate --schema docs/examples/quick-test-schema.json --n 5 > out.json
+foundrydata generate --schema examples/quick-test-schema.json --n 5 > out.json
 ```
 
 Streams: generated data goes to `stdout`; metrics/errors go to `stderr`. This makes piping in CI straightforward.
@@ -50,9 +50,9 @@ Streams: generated data goes to `stdout`; metrics/errors go to `stderr`. This ma
 
 The following schemas are used in higher‑level product examples:
 
-- `docs/examples/users-api.json` — with `foundrydata openapi` for API mocks / MSW‑style fixtures.
-- `docs/examples/payment.json` — for contract‑testing flows (request/event payloads).
-- `docs/examples/llm-output.json` — for LLM structured output testing.
+- `examples/users-api.json` — with `foundrydata openapi` for API mocks / MSW‑style fixtures.
+- `examples/payment.json` — for contract‑testing flows (request/event payloads).
+- `examples/llm-output.json` — for LLM structured output testing.
 
 See `docs/use-cases/product-scenarios.md` and the scripts under `scripts/examples/`:
 
@@ -71,14 +71,14 @@ Each script calls the public `Generate` / `Validate` APIs with fixed seeds and v
 ```bash
 # Development/testing with tsx (before building)
 npx tsx packages/cli/src/index.ts generate \
-  --schema docs/examples/ecommerce-schema.json \
+  --schema examples/ecommerce-schema.json \
   --n 10 \
   --print-metrics \
   --debug-passes
 
 # After build
 foundrydata generate \
-  --schema docs/examples/ecommerce-schema.json \
+  --schema examples/ecommerce-schema.json \
   --n 10 \
   --print-metrics \
   --debug-passes
@@ -92,16 +92,16 @@ What you’ll see:
 
 ```bash
 # Increase repair attempts for complex schemas
-foundrydata generate --schema docs/examples/api-transaction-schema.json --n 100 --repair-attempts 3
+foundrydata generate --schema examples/api-transaction-schema.json --n 100 --repair-attempts 3
 
 # Control conditional rewriting
-foundrydata generate --schema docs/examples/saas-user-schema.json --n 50 --rewrite-conditionals safe
+foundrydata generate --schema examples/saas-user-schema.json --n 50 --rewrite-conditionals safe
 
 # Skip branch trials for faster generation (score-only selection)
-foundrydata generate --schema docs/examples/api-transaction-schema.json --n 100 --skip-trials
+foundrydata generate --schema examples/api-transaction-schema.json --n 100 --skip-trials
 
 # Fine-tune branch exploration
-foundrydata generate --schema docs/examples/api-transaction-schema.json --n 100 \
+foundrydata generate --schema examples/api-transaction-schema.json --n 100 \
   --trials-per-branch 3 \
   --max-branches-to-try 15 \
   --skip-trials-if-branches-gt 60
@@ -116,7 +116,7 @@ When you have an OpenAPI 3.1 document, you can generate fixtures directly from a
 ```bash
 # By operationId (users-api.json in this directory)
 foundrydata openapi \
-  --spec docs/examples/users-api.json \
+  --spec examples/users-api.json \
   --operation-id getUsers \
   --n 5 \
   --out ndjson \
