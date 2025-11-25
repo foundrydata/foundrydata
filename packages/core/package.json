@@ -1,6 +1,6 @@
 {
   "name": "@foundrydata/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Core AJV-first engine for deterministic, contract-true test data from JSON Schema and OpenAPI 3.1",
   "main": "dist/index.js",
@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "@faker-js/faker": "^10.0.0",
-    "@foundrydata/shared": "^0.1.0",
+    "@foundrydata/shared": "^0.1.1",
     "ajv": "^8.17.1",
     "ajv-draft-04": "^1.0.0",
     "ajv-formats": "^3.0.1",
