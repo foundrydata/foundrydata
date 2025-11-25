@@ -66,6 +66,7 @@ Implementation Status
 - [Who is it for?](#who-is-it-for)
 - [Installation](#installation)
 - [Quick start](#quick-start)
+- [Quick evaluation on your project](#quick-evaluation-on-your-project)
 - [CI integration examples](#ci-integration-examples)
 - [Core invariants](#core-invariants)
 - [Pre-flight & 5-stage pipeline](#pre-flight--5-stage-pipeline)
@@ -318,6 +319,20 @@ Notes:
 
 * Generated **data goes to stdout** (for piping into tests or files).
 * **Metrics and errors go to stderr** (for CI logs).
+
+---
+
+## Quick evaluation on your project
+
+If you want to know **in under an hour** whether FoundryData brings value to your existing JSON Schema / OpenAPI-based codebase, follow the short protocol in [EVALUATION.md](./EVALUATION.md).
+
+It walks you through:
+- running FoundryData on a **real JSON Schema / OpenAPI schema** from your project,
+- inspecting the generated data to see whether your schemas are too permissive (lots of `{}`) or expressive enough,
+- tightening the schema slightly and comparing before/after with the **same seed**,
+- optionally wiring a minimal “generated fixtures” step into an existing test to see what new cases appear.
+
+This is a good starting point to share with teammates who just want to quickly evaluate the value without committing to a full integration or changing their existing test architecture.
 
 ---
 
