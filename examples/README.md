@@ -27,19 +27,19 @@ These schemas are intentionally small and focused on one or two mechanics each.
 
 ```bash
 # Generate 100 products
-foundrydata generate --schema examples/ecommerce-schema.json --n 100
+npx foundrydata generate --schema examples/ecommerce-schema.json --n 100
 
 # Deterministic — same seed => same data
-foundrydata generate --schema examples/saas-user-schema.json --n 50 --seed 42
+npx foundrydata generate --schema examples/saas-user-schema.json --n 50 --seed 42
 
 # Arrays of objects example
-foundrydata generate --schema examples/team-with-users-schema.json --n 10
+npx foundrydata generate --schema examples/team-with-users-schema.json --n 10
 
 # Print metrics (timings, validations/row, etc.) to stderr
-foundrydata generate --schema examples/api-transaction-schema.json --n 200 --print-metrics
+npx foundrydata generate --schema examples/api-transaction-schema.json --n 200 --print-metrics
 
 # Write output to a file (stdout -> redirect)
-foundrydata generate --schema examples/quick-test-schema.json --n 5 > out.json
+npx foundrydata generate --schema examples/quick-test-schema.json --n 5 > out.json
 ```
 
 Streams: generated data goes to `stdout`; metrics/errors go to `stderr`. This makes piping in CI straightforward.
@@ -77,7 +77,7 @@ npx tsx packages/cli/src/index.ts generate \
   --debug-passes
 
 # After build
-foundrydata generate \
+npx foundrydata generate \
   --schema examples/ecommerce-schema.json \
   --n 10 \
   --print-metrics \
