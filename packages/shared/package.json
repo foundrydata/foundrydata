@@ -2,7 +2,7 @@
   "name": "@foundrydata/shared",
   "version": "0.1.0",
   "type": "module",
-  "description": "Shared utilities and types for foundrydata packages",
+  "description": "Shared utilities and types for FoundryData core, CLI, and reporter packages",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "license": "MIT",
@@ -12,11 +12,19 @@
     "url": "https://github.com/foundrydata/foundrydata",
     "directory": "packages/shared"
   },
+  "bugs": {
+    "url": "https://github.com/foundrydata/foundrydata/issues",
+    "email": "hello@foundrydata.dev"
+  },
+  "homepage": "https://foundrydata.dev",
   "keywords": [
     "shared",
     "types",
     "utilities",
-    "foundrydata"
+    "foundrydata",
+    "json-schema",
+    "openapi",
+    "ajv"
   ],
   "scripts": {
     "build": "tsc --build",
@@ -24,7 +32,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@types/node": "^24.3.0",
+    "@types/node": "^20.0.0",
     "typescript": "^5.9.2"
   },
   "files": [

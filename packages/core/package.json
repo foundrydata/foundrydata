@@ -2,7 +2,7 @@
   "name": "@foundrydata/core",
   "version": "0.1.0",
   "type": "module",
-  "description": "Core generator for test data from JSON Schema (Draft-07, 2019-09, 2020-12)",
+  "description": "Core AJV-first engine for deterministic, contract-true test data from JSON Schema and OpenAPI 3.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "license": "MIT",
@@ -12,16 +12,28 @@
     "url": "https://github.com/foundrydata/foundrydata",
     "directory": "packages/core"
   },
+  "bugs": {
+    "url": "https://github.com/foundrydata/foundrydata/issues",
+    "email": "hello@foundrydata.dev"
+  },
+  "homepage": "https://foundrydata.dev",
   "keywords": [
     "test-data",
     "json-schema",
     "json-schema-draft-07",
     "json-schema-2019-09",
     "json-schema-2020-12",
-    "mock",
+    "openapi",
+    "openapi-3.1",
+    "ajv",
     "generator",
-    "faker",
-    "validation"
+    "fixtures",
+    "mock-data",
+    "validation",
+    "schema-validation",
+    "deterministic",
+    "metrics",
+    "ci"
   ],
   "scripts": {
     "build": "tsc --build",
@@ -37,7 +49,7 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
-    "@types/node": "^24.3.0",
+    "@types/node": "^20.0.0",
     "@types/uuid": "^10.0.0",
     "fast-check": "^3.23.2",
     "typescript": "^5.9.2",

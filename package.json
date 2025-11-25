@@ -1,7 +1,7 @@
 {
   "name": "foundrydata-monorepo",
   "version": "0.1.0",
-  "description": "Open-source test data generator with 100% JSON Schema compliance",
+  "description": "AJV-first, contract-true test data engine for JSON Schema and OpenAPI 3.1",
   "type": "module",
   "private": true,
   "workspaces": [
@@ -42,19 +42,28 @@
   "keywords": [
     "test-data",
     "json-schema",
+    "openapi",
+    "openapi-3.1",
+    "ajv",
     "data-generator",
+    "deterministic",
+    "fixtures",
     "mock-data",
     "cli",
     "testing",
     "schema-validation",
+    "diagnostics",
+    "metrics",
+    "ci",
     "open-source"
   ],
   "author": "fstepho",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/foundrydata/foundrydata/issues"
+    "url": "https://github.com/foundrydata/foundrydata/issues",
+    "email": "hello@foundrydata.dev"
   },
-  "homepage": "https://github.com/foundrydata/foundrydata#readme",
+  "homepage": "https://foundrydata.dev",
   "engines": {
     "node": ">=20.0.0"
   },
