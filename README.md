@@ -279,13 +279,27 @@ npx foundrydata generate --schema user.json --n 10
 # Or install globally
 npm install -g foundrydata
 foundrydata generate --schema user.json --n 10
-````
+```
+
+In the rest of this README, `foundrydata` assumes the CLI is available
+(for example installed globally or as a devDependency and resolved via `node_modules/.bin`).
+If you prefer not to install it, you can replace `foundrydata` with `npx foundrydata`
+in the examples.
 
 ### Node.js library
 
 ```bash
 npm install @foundrydata/core
 ```
+
+This package is ESM-only (`"type": "module"`) and targets **Node.js 20+**.
+
+```ts
+// ESM / TypeScript
+import { Generate, Validate } from '@foundrydata/core';
+```
+
+TypeScript type declarations are bundled (`"types": "dist/index.d.ts"`), so no separate `@types` package is required.
 
 ---
 
@@ -295,13 +309,13 @@ Generate schema-true test data from a JSON Schema:
 
 ```bash
 # Basic generation — validate schema then generate 100 rows
-npx foundrydata generate --schema ./examples/user.schema.json --n 100
+foundrydata generate --schema ./examples/user.schema.json --n 100
 
 # Deterministic output — same seed ⇒ same data
-npx foundrydata generate --schema ./examples/user.schema.json --n 1000 --seed 42
+foundrydata generate --schema ./examples/user.schema.json --n 1000 --seed 42
 
 # Print metrics (timings, validations/row, etc.) to stderr
-npx foundrydata generate --schema ./examples/user.schema.json --n 1000 --print-metrics
+foundrydata generate --schema ./examples/user.schema.json --n 1000 --print-metrics
 ```
 
 Work with OpenAPI 3.1 responses:
@@ -456,27 +470,22 @@ Normalize → Compose → Generate → Repair → Validate
 ## Feature support (summary)
 
 * **Composition & logic**
-  `allOf` / `anyOf` / `oneOf` / `not`; deterministic branch selection; early-unsat checks; graceful degradation under caps.
+  `allOf` / `anyOf` / `oneOf` / `not`; deterministic branch selection; early unsatisfiability checks; graceful degradation under configured complexity caps.
 
 * **Conditionals**
-  Default **no rewrite**; optional **safe** rewrite under strict guards; generator uses **if-aware-lite** hints.
+  Default: no conditional rewrite; optional safe rewrite under strict guards; generator uses if-aware-lite hints.
 
 * **Objects**
-  Must-cover intersection when `additionalProperties:false` across `allOf`;
-  `patternProperties` overlap analysis; `propertyNames`; `dependent*`;
-  `unevaluated*` preserved for validation.
+  Must-cover intersections for `additionalProperties:false` across `allOf`; `patternProperties` overlap analysis; `propertyNames` and `dependent*` handling; `unevaluated*` preserved for validation.
 
 * **Arrays**
-  Tuples (`prefixItems`), implicit max length with `items:false`;
-  `contains` uses **bag semantics** across `allOf`;
-  `uniqueItems` with structural hashing.
+  Tuples (`prefixItems`); implicit max length with `items:false`; `contains` uses bag semantics across `allOf`; `uniqueItems` enforced via structural hashing.
 
 * **Numbers**
-  Exact **rational** `multipleOf` with bit/LCM caps and controlled fallbacks (`decimal` / `float`).
+  Exact rational `multipleOf` with bit/LCM complexity caps and controlled fallbacks (`decimal` / `float`).
 
 * **Refs**
-  In-document `$ref` supported.
-  External `$ref`: default **error**, policy configurable; remote/registry resolution is opt-in via resolver options; `$dynamicRef/*` preserved.
+  In-document `$ref`; external `$ref` with policy-driven handling and opt-in remote/registry resolution; `$dynamicRef` / `$dynamicAnchor` largely passed through to AJV (partial support).
 
 ---
 
@@ -525,15 +534,19 @@ Install the library:
 npm install @foundrydata/core
 ```
 
-> The guarantees below apply to the **full pipeline**.
-> Using individual stages is supported, but final schema compliance is only guaranteed if you execute **Validate** at the end.
+> The guarantees below apply when you run the **full pipeline** (for example via `Generate` or `executePipeline`).
+> You can call individual stages directly, but final schema compliance is only guaranteed once the **Validate** stage has run.
+
+Examples below assume Node.js 20+ with ES modules enabled.
 
 ### High-level facades
 
 * `Normalize(schema, options?)` — run the normalizer and return `{ canonSchema, ptrMap, notes }` without mutating the original schema.
 * `Compose(schema, { mode, seed?, planOptions? })` — run normalization + composition and return `{ coverageIndex, planDiag, nameDfaSummary? }`.
-* `Generate(k, seed, schema, options?)` — run the full 5-stage pipeline and return an async iterable of instances with an attached `result: Promise<PipelineResult>`.
-* `Validate(instance, originalSchema, options?)` — validate a single instance against the original schema using the same AJV posture as the pipeline and return `{ valid, ajvErrors? }`.
+* `Generate(k, seed, schema, options?)` — run the full 5-stage pipeline (Normalize → Compose → Generate → Repair → Validate) and return an async iterable of validated instances with an attached `result: Promise<PipelineResult>` for diagnostics and metrics.
+* `Validate(instance, originalSchema, options?)` — validate a single instance against the original schema using the same AJV posture as the pipeline (annotative formats by default) and return `{ valid, ajvErrors? }`.
+
+`Generate` runs the pipeline once and exposes two surfaces: the async iterable (for `for await` consumption) and a `result` promise for full pipeline diagnostics/metrics.
 
 ### High-level: `Generate` + `Validate`
 
@@ -548,11 +561,17 @@ const schema = {
 
 // Deterministic generation: same seed => same data
 const stream = Generate(100, 42, schema, {
-  mode: 'strict',
+  mode: 'strict', // or 'lax'
   preferExamples: false,
   validateFormats: true,
 });
 
+// Option 1 — consume as an async iterable of repaired + AJV-validated items
+for await (const item of stream) {
+  // use item in your tests
+}
+
+// Option 2 — inspect the full pipeline result (diagnostics, metrics, artifacts)
 const result = await stream.result;
 if (result.status !== 'completed') {
   throw result.errors[0] ?? new Error('Generation pipeline failed');
@@ -615,13 +634,13 @@ if (result.status === 'completed') {
 
 * At the pipeline level (`executePipeline` and the `Validate` facade), formats are **annotative** by default: `validateFormats:false`.
 * You can enable assertive format validation via `ajv-formats` by setting `validate.validateFormats: true` (or `Validate(..., { validateFormats: true })`).
-* The high-level `Generate` facade (and the CLI, which delegates to it) currently forces `validateFormats:true`; there is no CLI flag to disable this, so use `executePipeline`/`Validate` (or `Generate` in code with `validateFormats:false`) for the annotate-only default.
+* The high-level `Generate` facade defaults to `validateFormats:true`; the CLI always passes `validateFormats:true` and there is no CLI flag to disable this. To get the annotate-only default (`validateFormats:false`), call `executePipeline`/`Validate` with `validateFormats:false` or use `Generate(..., { validateFormats:false })` in your own code.
 
 ---
 
 ## Metrics & SLO/SLI
 
-FoundryData tracks metrics for the pipeline; useful when running in CI at scale:
+FoundryData exposes a metrics snapshot for every pipeline run (CLI, Node API, bench). Metrics are collected by the core pipeline and returned as `result.metrics`.
 
 ```ts
 {
@@ -630,25 +649,47 @@ FoundryData tracks metrics for the pipeline; useful when running in CI at scale:
   generateMs: number;
   repairMs: number;
   validateMs: number;
-  validationsPerRow: number;    // AJV validations / row
-  repairPassesPerRow: number;   // repair loops / row
-  branchTrialsTried: number;
-  memoryPeakMB?: number;        // optional (bench harness)
-  p50LatencyMs?: number;        // optional (CI)
-  p95LatencyMs?: number;        // optional (CI)
+  compileMs?: number;
+
+  // Logical cost (accumulated over the run)
+  validationsPerRow: number;    // total AJV validations (≈ number of rows)
+  repairPassesPerRow: number;   // total repair iterations across rows
+  repairActionsPerRow?: number;
+  branchTrialsTried?: number;
+  patternWitnessTried?: number;
+
+  // Observability (mostly populated by bench/CI harnesses)
+  memoryPeakMB: number;         // 0 in normal runs, set by bench scripts
+  p50LatencyMs: number;         // ditto
+  p95LatencyMs: number;         // ditto
+  branchCoverageOneOf?: Record<string, { visited: number[]; total: number }>;
+  enumUsage?: Record<string, Record<string, number>>;
 }
 ```
 
-Heuristics:
+In practice:
 
-* **Quality indicators** (simple/medium schemas):
-  `validationsPerRow ≤ 3`, `repairPassesPerRow ≤ 1`.
-* **SLO targets** (documented, not hard guarantees):
-  ~1000 rows (simple/medium) p50 ≈ 200–400 ms.
-* **Memory**
-  Usage is tracked; you can hook alerts in CI if desired.
+- **CLI**  
+  `foundrydata generate ... --print-metrics` writes the exact `result.metrics` JSON from the pipeline to `stderr`.
+- **Node.js API**  
+  With `Generate(k, seed, schema, { metricsEnabled: true })`, the attached `PipelineResult` (`stream.result`) contains the same snapshot in `result.metrics`.
+- **Normal runs vs bench**  
+  For regular CLI / API runs, `memoryPeakMB`, `p50LatencyMs`, and `p95LatencyMs` typically remain `0` (no external sampling). The dedicated bench scripts (`npm run bench`, `npm run bench:real-world`) create their own `MetricsCollector`, sample memory and latency, and populate these fields before aggregating them.
 
-Benchmarks are enforced via repo-level scripts (`npm run bench`, `npm run bench:real-world`), which write `bench/bench-gate*.json` and compare p95 latency and peak memory against budgets.
+Heuristics and SLO/SLI:
+
+- **Per-row cost (simple/medium schemas)**  
+  For `n` generated rows, a typical target is:
+  - `validationsPerRow / n ≤ 3` (a few AJV passes per fixture),
+  - `repairPassesPerRow / n ≤ 1` (few repair cycles needed).  
+  Complex or pathological schemas can exceed these ratios without automatically being considered failures, but they signal higher cost.
+- **Latency SLO (indicative, not a hard guarantee)**  
+  For **~1000 rows** on simple/medium schemas, a typical end-to-end **p50 ≈ 200–400 ms** is observed on a standard CI machine (Node 20, the provided bench profiles). Individual runs may be faster or slower depending on hardware, load, and AJV options.
+- **Bench “gate” SLOs (enforced in this repo)**  
+  Repo-level bench harnesses (`npm run bench`, `npm run bench:real-world`) run fixed profiles, compute `p50LatencyMs`, `p95LatencyMs`, and `memoryPeakMB` per profile, then write summaries to `bench/bench-gate*.json`. Those gates enforce reference budgets on the aggregate across profiles:
+  - `p95LatencyMs ≤ 120 ms`
+  - `memoryPeakMB ≤ 512 MB`  
+  These budgets apply to per-profile end-to-end latencies for the fixed bench profiles (tens of rows per run) and act as CI regression guards; they live in a different regime than the ~1000-row p50 example above. If these bounds are exceeded, the bench job fails; the exact numeric budgets are specific to this reference harness and can be tuned for other environments if needed.
 
 Metrics are printed to **stderr** when `--print-metrics` is enabled.
 
