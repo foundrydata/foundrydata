@@ -1,11 +1,48 @@
-# FoundryData — AJV-first Test Data Engine for CI
+# FoundryData
 
-> Deterministic, schema-true test data for JSON Schema & OpenAPI.
-> **Designed for CI:** reproducible fixtures, AJV-validated, with explicit metrics and limits.
+> Contract-true, deterministic test data for JSON Schema & OpenAPI.
+
+FoundryData is an AJV-first test data engine. It generates JSON/NDJSON fixtures directly from your JSON Schema or OpenAPI 3.1 contracts, validates every item with AJV in strict mode, and makes the output fully reproducible with a seed. The goal is not to “fake” realistic data, but to execute your schemas as they are written and feed your CI pipelines with data that is exactly as strict — or as permissive — as your contracts.
+
+### Why FoundryData?
+
+- **Contract-true**  
+  Every generated item is validated by AJV in strict mode before it leaves the pipeline. If FoundryData produces it, your API (using the same AJV config) would accept it.
+
+- **Deterministic by design**  
+  `same schema + same seed ⇒ same data`. CI failures are reproducible locally by re-running the same command with the same seed.
+
+- **Built for CI, not for pretty demos**  
+  JSON/NDJSON on stdout, metrics on stderr, and a composable 5-stage pipeline make it easy to plug into Jest/Vitest, GitHub Actions, or any other CI system.
 
 ---
 
-**Implementation Status**
+### Try it in 60 seconds
+
+```bash
+npx foundrydata generate \
+  --schema ./examples/user.schema.json \
+  --n 5 \
+  --seed 42
+```
+
+This will:
+
+1. Compile `user.schema.json` with AJV in strict mode.
+2. Generate 5 non-empty JSON objects that are valid for this schema.
+3. Produce the exact same 5 objects every time you run with `--seed 42`.
+
+You can also try the full CLI+AJV flow via:
+
+```bash
+./examples/01-basic-json-schema/demo.sh
+```
+
+This script uses the same schema, shows the first 3 generated user objects, and validates all items with AJV from this repo.
+
+* * *
+
+Implementation Status
 
 - ✅ **Implemented**
   - CLI (`foundrydata`)
@@ -21,6 +58,7 @@
 ## Table of contents
 
 - [What is FoundryData?](#what-is-foundrydata)
+- [Why do I get `{}`?](#why-do-i-get-)
 - [Why use it in CI?](#why-use-it-in-ci)
 - [Problems it solves](#problems-it-solves)
 - [Key CI use cases](#key-ci-use-cases)
@@ -57,8 +95,84 @@ You can use it as:
 - a **CLI** (`foundrydata`) to generate JSON / NDJSON in your test scripts and CI jobs,
 - a **Node.js library** (`@foundrydata/core`) to plug directly into your test runner or tooling.
 
----
+* * *
+## Why do I get `{}`?
 
+If FoundryData returns `{}` (or very minimal data), it is not hiding anything. It is showing you that, according to JSON Schema, an empty object is a valid instance of your schema.
+
+FoundryData intentionally generates the minimal AJV-valid instance for a schema. On many real-world schemas, that minimal instance is `{}` because:
+
+- No properties are marked as `required`.
+- There are no `minItems`, `minLength`, `minimum`, etc.
+- `additionalProperties` is allowed (or not restricted).
+
+In other words: if you get `{}`, your schema is very permissive. That can be fine for validation in production, but it is usually not expressive enough for generating interesting test data.
+
+### Example: permissive vs expressive schema
+
+#### Before: the permissive schema
+
+```json
+{
+  "$id": "https://example.com/user.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "A user object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "age": {
+      "type": "integer"
+    }
+  }
+}
+```
+
+With this schema, all properties are optional, there are no minimums, and `{}` is a perfectly valid instance. FoundryData will therefore generate the minimal valid instance:
+
+```bash
+npx foundrydata generate \
+  --schema ./user.schema.json \
+  --n 1 \
+  --seed 42
+# → {}
+```
+
+#### After: making the schema test-friendly
+
+```json
+{
+  "$id": "https://example.com/user.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "A user object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "minLength": 3
+    },
+    "age": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": ["id", "email"]
+}
+```
+
+With these constraints, the minimal valid instance is no longer `{}`. Running FoundryData with the same command will now produce a non-empty object (exact values depend on the generator), and it will always be valid according to this schema.
+
+* * *
 ## Why use it in CI?
 
 Most teams already have JSON Schemas or OpenAPI specs, but still:
@@ -153,6 +267,8 @@ Primarily:
 
 Requires **Node.js 20+** and an environment that supports ES modules.
 
+If you clone this repository and want to run the `examples/01-basic-json-schema/demo.sh` script, run `npm install` once at the root so the bundled AJV dependencies are available.
+
 ### CLI
 
 ```bash
@@ -178,13 +294,13 @@ Generate schema-true test data from a JSON Schema:
 
 ```bash
 # Basic generation — validate schema then generate 100 rows
-foundrydata generate --schema user.schema.json --n 100
+npx foundrydata generate --schema ./examples/user.schema.json --n 100
 
 # Deterministic output — same seed ⇒ same data
-foundrydata generate --schema user.schema.json --n 1000 --seed 42
+npx foundrydata generate --schema ./examples/user.schema.json --n 1000 --seed 42
 
 # Print metrics (timings, validations/row, etc.) to stderr
-foundrydata generate --schema user.schema.json --n 1000 --print-metrics
+npx foundrydata generate --schema ./examples/user.schema.json --n 1000 --print-metrics
 ```
 
 Work with OpenAPI 3.1 responses:
