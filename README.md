@@ -419,7 +419,7 @@ These guarantees hold for the full pipeline (CLI and high-level Node API):
   When validation is executed, it is performed **against the original schema** (not internal transforms).
 
 * **Deterministic by design**
-  Same schema + same seed ⇒ same data.
+  Same schema + same seed ⇒ same data, given the same options and resolver configuration.
   Generation attempts are bounded; there is no global RNG.
 
 * **Pipeline with explicit responsibilities**
@@ -727,6 +727,11 @@ Monorepo structure:
 ---
 
 ## Testing (high level)
+
+All tests are run with **Vitest**:
+
+- Monorepo entrypoint: `npm run test` (uses `vitest.config.ts`)
+- Matchers / test utilities: `npm run test:matchers` (uses `test/vitest.config.ts`)
 
 * **Unit per stage**
 

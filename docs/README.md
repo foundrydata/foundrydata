@@ -47,10 +47,10 @@ See `docs/Known-Limits.md#resolver-r1-scope--limits` for limits and security pos
 
 ## Testing
 
-- Testing architecture overview: `docs/tests/FoundryData Testing Architecture - Initial State Inventory.md`
-- JSON Schema format reference: `docs/tests/reference_json_schema_format_v_2.md`
-- Test runner config: `vitest.config.ts`
-- Test entry readme: `test/README.md`
+- Testing architecture overview: root `README.md#testing-high-level`
+- JSON Schema format reference: `docs/spec-canonical-json-schema-generator.md`
+- Test runner config: `vitest.config.ts`, `test/vitest.config.ts`
+- Test entry commands: see `README.md#development`
 
 ## Examples
 
