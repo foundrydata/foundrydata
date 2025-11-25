@@ -4,3 +4,10 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 - Pending changes
+
+
+## [0.1.0] - 2025-11-25
+- Core: first public AJV-first engine for JSON Schema and OpenAPI 3.1 with a 5-stage Normalize → Compose → Generate → Repair → Validate pipeline.
+- CLI: foundrydata generate/openapi commands with deterministic seeds, JSON/NDJSON output and CI-friendly metrics.
+- Diagnostics: structured diagnostic envelopes with documented codes, complexity guardrails and resolver notes.
+- Bench: initial performance profiles and guardrails (p95 latency and memory caps) on a curated real-world schema corpus.
