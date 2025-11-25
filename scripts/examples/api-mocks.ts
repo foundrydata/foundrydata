@@ -29,9 +29,10 @@ export interface ApiMocksExampleResult {
 }
 
 export async function runApiMocksExample(): Promise<ApiMocksExampleResult> {
-  const document = (await loadJson(
-    '../../docs/examples/users-api.json'
-  )) as Record<string, unknown>;
+  const document = (await loadJson('../../examples/users-api.json')) as Record<
+    string,
+    unknown
+  >;
 
   const driverOptions: OpenApiDriverOptions = {
     operationId: 'getUsers',

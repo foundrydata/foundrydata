@@ -8,7 +8,7 @@
 Implement SchemaParser class in packages/core/src/parser/schema-parser.ts. Parse JSON Schema into internal SchemaNode tree structure. Support basic types, arrays, nested objects (depth ≤ 2), enums, and constraints. Handle string formats. Return Result<SchemaNode, ParseError> for all operations.
 
 # Test Strategy:
-Test with all example schemas in docs/examples/. Verify parsing of supported features and proper error handling for unsupported features like nested objects.
+Test with all example schemas in examples/. Verify parsing of supported features and proper error handling for unsupported features like nested objects.
 
 # Subtasks:
 ## 1. Create SchemaParser interface [done]

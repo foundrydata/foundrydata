@@ -33,5 +33,5 @@ Create PipelineMetrics interface tracking per-stage durations, AJV cache hit rat
 ### Dependencies: 7.3
 ### Description: Build comprehensive integration tests validating end-to-end pipeline functionality across all components
 ### Details:
-Create integration tests in packages/core/src/generator/__tests__/foundry-generator.integration.test.ts testing all example schemas from docs/examples/. Implement property-based tests asserting determinism: same seed produces identical outputs, prefix stability for batch generation. Add performance benchmarks meeting targets. Test compliance invariant: 100% valid outputs or explicit unsupported-feature errors. Include error propagation tests and edge cases like empty schemas, invalid inputs, and resource constraints.
+Create integration tests in packages/core/src/generator/__tests__/foundry-generator.integration.test.ts testing all example schemas from examples/. Implement property-based tests asserting determinism: same seed produces identical outputs, prefix stability for batch generation. Add performance benchmarks meeting targets. Test compliance invariant: 100% valid outputs or explicit unsupported-feature errors. Include error propagation tests and edge cases like empty schemas, invalid inputs, and resource constraints.
 

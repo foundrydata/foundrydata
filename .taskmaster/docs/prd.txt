@@ -23,7 +23,7 @@ FoundryData is a schema-first test data generator that guarantees 100% JSON Sche
 - `MVP/foundrydata-api-spec-mvp.txt` - Future API specification
 
 ### Implementation References
-- `docs/examples/*.json` - Example schemas for testing
+- `examples/*.json` - Example schemas for testing
 - `README.md` - Public-facing documentation template
 
 ## Business Requirements
