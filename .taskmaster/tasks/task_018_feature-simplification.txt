@@ -8,7 +8,7 @@
 [Context] §20 integration; §8/§11 behaviors.
 - spec://§20#integration
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§20","anchors":["spec://§20#integration"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§20","anchors":["spec://§20#integration"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Validate Strict vs Lax external $ref handling; exclusivity tweaks logged; AP:false fail-fast vs Safe proof.
 - Test complete Pipeline Orchestrator (task 11) implementation including Normalize → Compose → Generate → Repair → Validate stages

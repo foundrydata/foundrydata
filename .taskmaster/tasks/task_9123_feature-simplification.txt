@@ -5,7 +5,7 @@
 # Priority: low
 # Description: Reference-only: section §23.
 # Details:
-REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§23","anchors":["spec://§23#plan-options","spec://§23#compose-interfaces","spec://§23#repair-interfaces"],"notes":"no-embed; fetch-on-demand"}
+REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§23","anchors":["spec://§23#plan-options","spec://§23#compose-interfaces","spec://§23#repair-interfaces"],"notes":"no-embed; fetch-on-demand"}
 
 # Test Strategy:
 None.

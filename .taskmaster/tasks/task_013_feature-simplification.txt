@@ -8,7 +8,7 @@
 [Context] §12 Ajv class selection; bounded in-document dynamic scope.
 - spec://§12#ajv-class-selection
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§12","anchors":["spec://§12#ajv-class-selection"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§12","anchors":["spec://§12#ajv-class-selection"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Match Ajv class to dialect; optional bounded dynamic binding (depth ≤ guards.maxDynamicScopeHops), planning-only substitution to fragment $ref.
 - Leverage existing dialect detection system in packages/core/src/util/ajv-source.ts with JsonSchemaDialect type and createAjvByDialect function

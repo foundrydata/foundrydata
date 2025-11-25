@@ -5,7 +5,7 @@
 # Priority: low
 # Description: Reference-only: section §0.
 # Details:
-REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§0","anchors":["spec://§0#status","spec://§0#audience"],"notes":"no-embed; fetch-on-demand"}
+REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§0","anchors":["spec://§0#status","spec://§0#audience"],"notes":"no-embed; fetch-on-demand"}
 
 # Test Strategy:
 None.

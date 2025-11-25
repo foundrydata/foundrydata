@@ -278,7 +278,7 @@ Règles : (a) le JSON externe (si présent) doit parser ; (b) **après** suppres
 **Mapping d'anchor**
 
 ```
-spec://§<n>#<slug> → docs/feature-simplification/spec-canonical-json-schema-generator.md#s<n>-<slug>
+spec://§<n>#<slug> → docs/spec-canonical-json-schema-generator.md#s<n>-<slug>
 ```
 
 **Procédure de lecture SPEC (spec-canonical-json-schema-generator.md = 2676 lignes)**
@@ -307,7 +307,7 @@ const limit = end - start;  // = 329 lignes pour §7 complet
 
 ```bash
 Read({
-  file_path: 'docs/feature-simplification/spec-canonical-json-schema-generator.md',
+  file_path: 'docs/spec-canonical-json-schema-generator.md',
   offset: start,
   limit: limit
 })

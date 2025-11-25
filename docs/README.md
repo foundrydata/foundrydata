@@ -4,7 +4,7 @@ This page lists the authoritative documentation. Each document is source-control
 
 ## Specification & Guarantees
 
-- Feature Support Simplification Plan (canonical spec) — `docs/feature-simplification/spec-canonical-json-schema-generator.md`
+- Feature Support Simplification Plan (canonical spec) — `docs/spec-canonical-json-schema-generator.md`
 - Cross-phase invariants — `docs/Invariants.md`
 - Known limits and guardrails — `docs/Known-Limits.md`
 - Feature matrix (✓ / ~ / ⚠️) — `docs/Features.md`
@@ -15,7 +15,7 @@ This page lists the authoritative documentation. Each document is source-control
 
 - Diagnostic catalog (`code`, `budget`, `scoreDetails`) — `docs/error.md`
 - Bench & performance gates — `docs/Known-Limits.md#performance-gates`
-- Diagnostics envelope schema — `docs/feature-simplification/spec-canonical-json-schema-generator.md` §19 (validated in `packages/core/src/diag/validate.ts`)
+- Diagnostics envelope schema — `docs/spec-canonical-json-schema-generator.md` §19 (validated in `packages/core/src/diag/validate.ts`)
 
 ## Resolver Extension (R1) — Quick Guide
 

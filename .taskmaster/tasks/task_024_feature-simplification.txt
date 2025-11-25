@@ -8,7 +8,7 @@
 [Context] §24 references (SemVer); §17 docs.
 - spec://§24#normative
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§24","anchors":["spec://§24#normative"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§24","anchors":["spec://§24#normative"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Changelog and release scripts; version tags; license headers.
 [Deliverables]

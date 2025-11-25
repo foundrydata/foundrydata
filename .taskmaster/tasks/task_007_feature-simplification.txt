@@ -9,7 +9,7 @@
 - spec://§7#pass-order, spec://§7#conditionals-rewrite, spec://§7#object-keywords-pnames-rewrite, spec://§7#note-codes
 - spec://§8#regex-complexity-cap
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§7","anchors":["spec://§7#pass-order","spec://§7#conditionals-rewrite","spec://§7#object-keywords-pnames-rewrite","spec://§7#note-codes"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§7","anchors":["spec://§7#pass-order","spec://§7#conditionals-rewrite","spec://§7#object-keywords-pnames-rewrite","spec://§7#note-codes"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Unevaluated* guard blocks simplifications and conditional rewrites where specified.
 - PropertyNames rewrite: **P0 implements enum-only**; anchored-pattern form is deferred to **P2 (#23)**.

@@ -5,7 +5,7 @@
 # Priority: low
 # Description: Reference-only: section §5.
 # Details:
-REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§5","anchors":["spec://§5#options-table","spec://§5#pattern-witness","spec://§5#precedence"],"notes":"no-embed; fetch-on-demand"}
+REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§5","anchors":["spec://§5#options-table","spec://§5#pattern-witness","spec://§5#precedence"],"notes":"no-embed; fetch-on-demand"}
 
 # Test Strategy:
 None.

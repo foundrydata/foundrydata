@@ -5,7 +5,7 @@
 # Priority: low
 # Description: Reference-only: section §11.
 # Details:
-REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§11","anchors":["spec://§11#external-ref-probe"],"notes":"no-embed; fetch-on-demand"}
+REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§11","anchors":["spec://§11#external-ref-probe"],"notes":"no-embed; fetch-on-demand"}
 
 # Test Strategy:
 None.

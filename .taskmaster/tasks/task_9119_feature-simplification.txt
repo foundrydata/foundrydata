@@ -5,7 +5,7 @@
 # Priority: low
 # Description: Reference-only: section §19.
 # Details:
-REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§19","anchors":["spec://§19#envelope","spec://§19#payloads","spec://§19#phase-separation"],"notes":"no-embed; fetch-on-demand"}
+REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§19","anchors":["spec://§19#envelope","spec://§19#payloads","spec://§19#phase-separation"],"notes":"no-embed; fetch-on-demand"}
 
 # Test Strategy:
 None.
