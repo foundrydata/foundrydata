@@ -8,7 +8,7 @@
 [Context] §1 acceptance gates; §15 bench protocol.
 - spec://§1#bench-sli-gate, spec://§15#bench-protocol
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§1","anchors":["spec://§1#bench-sli-gate"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§1","anchors":["spec://§1#bench-sli-gate"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Jobs: lint → unit → integration → bench; fail on SLO breaches.
 - Requires completed unit test suite (task 17) and integration test suite (task 18) to execute

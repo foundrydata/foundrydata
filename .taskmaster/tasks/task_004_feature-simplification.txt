@@ -9,8 +9,8 @@
 - spec://§10#structural-hashing
 - spec://§14#stable-hash
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§10","anchors":["spec://§10#structural-hashing"],"notes":"no-embed; fetch-on-demand"}
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§14","anchors":["spec://§14#stable-hash"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§10","anchors":["spec://§10#structural-hashing"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§14","anchors":["spec://§14#stable-hash"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - SHA-256 over canonical JSON (sorted keys, arrays in order, -0→0, BigInt stringified); confirm collisions with deepEqual.
 [Deliverables]

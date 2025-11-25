@@ -8,7 +8,7 @@
 [Context] §19 payloads & phase separation; §8 caps separation; verbosity toggle (also in task #6).
 - spec://§19#payloads, spec://§19#phase-separation
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§19","anchors":["spec://§19#payloads","spec://§19#phase-separation"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§19","anchors":["spec://§19#payloads","spec://§19#phase-separation"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Validate representative payloads; ensure REGEX_COMPLEXITY_CAPPED appears only from Normalize/Compose; COMPLEXITY_CAP_PATTERNS only from Generator.
 - Expose verbosity switch integrated with metrics (building on task 6 base implementation).

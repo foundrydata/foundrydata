@@ -5,7 +5,7 @@
 # Priority: low
 # Description: Reference-only: section §7.
 # Details:
-REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§7","anchors":["spec://§7#object-keywords-pnames-rewrite","spec://§7#conditionals-rewrite","spec://§7#pass-order","spec://§7#note-codes"],"notes":"no-embed; fetch-on-demand"}
+REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§7","anchors":["spec://§7#object-keywords-pnames-rewrite","spec://§7#conditionals-rewrite","spec://§7#pass-order","spec://§7#note-codes"],"notes":"no-embed; fetch-on-demand"}
 
 # Test Strategy:
 None.

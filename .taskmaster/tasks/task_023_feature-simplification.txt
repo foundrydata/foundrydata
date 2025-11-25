@@ -8,7 +8,7 @@
 [Context] §16 Phase P2; §7 propertyNames pattern-form; §8 pattern approximations.
 - spec://§16#phase-p2, spec://§7#object-keywords-pnames-rewrite
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§16","anchors":["spec://§16#phase-p2"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§16","anchors":["spec://§16#phase-p2"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Implement anchored-safe pattern-form rewrite with all guards; keep phase separation diagnostics.
 [Deliverables]

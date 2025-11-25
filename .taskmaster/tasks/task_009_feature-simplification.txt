@@ -8,7 +8,7 @@
 [Context] §9 generator, if-aware-lite, pattern-witness-selection; arrays contains; §8 oneOf exclusivity (later step logs exclusivityRand in Repair phase). Requires dependency on task 8 (Composition Engine) to access effective view and CoverageIndex from the Composition Engine for generating data that honors schema constraints.
 - spec://§9#if-aware-lite, spec://§9#pattern-witness-selection, spec://§9#arrays-contains
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§9","anchors":["spec://§9#if-aware-lite","spec://§9#pattern-witness-selection","spec://§9#arrays-contains"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§9","anchors":["spec://§9#if-aware-lite","spec://§9#pattern-witness-selection","spec://§9#arrays-contains"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Pattern witness bounded search; emit COMPLEXITY_CAP_PATTERNS when capped; Unicode code point length.
 - Minimal-width objects with must-cover + unevaluated guards.

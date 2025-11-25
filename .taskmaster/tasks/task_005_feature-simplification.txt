@@ -9,7 +9,7 @@
 - spec://§7#contract
 - spec://§22#packages-core
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§7","anchors":["spec://§7#contract"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§7","anchors":["spec://§7#contract"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Provide mapCanonToOrig and reverse, plus toOriginalByWalk (longest-prefix walk).
 [Deliverables]

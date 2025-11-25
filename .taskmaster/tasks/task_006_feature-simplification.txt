@@ -9,8 +9,8 @@
 - spec://§19#envelope, spec://§19#payloads
 - spec://§15#metrics, spec://§1#acceptance
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§19","anchors":["spec://§19#envelope","spec://§19#payloads"],"notes":"no-embed; fetch-on-demand"}
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§15","anchors":["spec://§15#metrics"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§19","anchors":["spec://§19#envelope","spec://§19#payloads"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§15","anchors":["spec://§15#metrics"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Envelope must never duplicate canonPath inside details.
 - Implement metrics fields (normalizeMs..p95LatencyMs) and counters; support verbosity toggle (CI verbose vs runtime normal) without changing shapes.

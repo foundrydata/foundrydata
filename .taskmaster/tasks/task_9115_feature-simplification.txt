@@ -5,7 +5,7 @@
 # Priority: low
 # Description: Reference-only: section §15.
 # Details:
-REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§15","anchors":["spec://§15#rng","spec://§15#metrics","spec://§15#slo-sli"],"notes":"no-embed; fetch-on-demand"}
+REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§15","anchors":["spec://§15#rng","spec://§15#metrics","spec://§15#slo-sli"],"notes":"no-embed; fetch-on-demand"}
 
 # Test Strategy:
 None.

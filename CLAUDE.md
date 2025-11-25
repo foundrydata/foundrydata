@@ -324,11 +324,11 @@ Read(.taskmaster/tasks/tasks.json)
 
 **Anchor Mapping**:
 ```
-spec://§<n>#<slug> → docs/feature-simplification/spec-canonical-json-schema-generator.md#s<n>-<slug>
+spec://§<n>#<slug> → docs/spec-canonical-json-schema-generator.md#s<n>-<slug>
 ```
 
 **Example**:
-- `spec://§8#branch-selection-algorithm` maps to `docs/feature-simplification/spec-canonical-json-schema-generator.md#s8-branch-selection-algorithm`
+- `spec://§8#branch-selection-algorithm` maps to `docs/spec-canonical-json-schema-generator.md#s8-branch-selection-algorithm`
 
 **Working Context**:
 - **Keep working context small**: Load only anchors required by the current task

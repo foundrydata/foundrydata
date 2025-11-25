@@ -5,7 +5,7 @@
 # Priority: low
 # Description: Reference-only: section §8.
 # Details:
-REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§8","anchors":["spec://§8#coverage-index-export","spec://§8#coverage-index-enumerate","spec://§8#branch-selection","spec://§8#oneof-exclusivity","spec://§8#anchored-safe-definition","spec://§8#regex-complexity-cap","spec://§8#apfalse-must-cover"],"notes":"no-embed; fetch-on-demand"}
+REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§8","anchors":["spec://§8#coverage-index-export","spec://§8#coverage-index-enumerate","spec://§8#branch-selection","spec://§8#oneof-exclusivity","spec://§8#anchored-safe-definition","spec://§8#regex-complexity-cap","spec://§8#apfalse-must-cover"],"notes":"no-embed; fetch-on-demand"}
 
 # Test Strategy:
 None.

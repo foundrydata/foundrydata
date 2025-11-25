@@ -5,7 +5,7 @@
 # Priority: low
 # Description: Reference-only: section §16.
 # Details:
-REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§16","anchors":["spec://§16#phase-p0","spec://§16#acceptance-p0","spec://§16#phase-p1","spec://§16#phase-p2"],"notes":"no-embed; fetch-on-demand"}
+REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§16","anchors":["spec://§16#phase-p0","spec://§16#acceptance-p0","spec://§16#phase-p1","spec://§16#phase-p2"],"notes":"no-embed; fetch-on-demand"}
 
 # Test Strategy:
 None.

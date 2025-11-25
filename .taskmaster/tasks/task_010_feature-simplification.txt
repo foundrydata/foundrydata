@@ -9,7 +9,7 @@
 - spec://§10#mapping, spec://§10#epsilon-logging, spec://§10#propertynames-rename-guard, spec://§10#mustcover-index-missing
 - spec://§9#objects-minimal-width (guard interplay) [contextual]
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§10","anchors":["spec://§10#mapping","spec://§10#epsilon-logging","spec://§10#propertynames-rename-guard","spec://§10#mustcover-index-missing"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§10","anchors":["spec://§10#mapping","spec://§10#epsilon-logging","spec://§10#propertynames-rename-guard","spec://§10#mustcover-index-missing"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Log epsilon exactly as "1e-<decimalPrecision>" for non-integer nudges; optional delta for integers.
 - Under AP:false + guard true, require ctx.isNameInMustCover(canonPath,n) before rename; else emit MUSTCOVER_INDEX_MISSING{guard:true}.

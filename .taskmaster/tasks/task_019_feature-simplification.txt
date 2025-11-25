@@ -8,7 +8,7 @@
 [Context] §17 documentation additions; §18 matrix.
 - spec://§17#invariants-doc, spec://§17#known-limits, spec://§17#features-matrix
 [Retrieval]
-- REFONLY::{"source":"FILE","uri":"docs/feature-simplification/spec-canonical-json-schema-generator.md","section":"§17","anchors":["spec://§17#invariants-doc","spec://§17#known-limits","spec://§17#features-matrix"],"notes":"no-embed; fetch-on-demand"}
+- REFONLY::{"source":"FILE","uri":"docs/spec-canonical-json-schema-generator.md","section":"§17","anchors":["spec://§17#invariants-doc","spec://§17#known-limits","spec://§17#features-matrix"],"notes":"no-embed; fetch-on-demand"}
 [Key requirements]
 - Document cross-phase invariants; limits for patterns and external refs; feature table.
 [Deliverables]
