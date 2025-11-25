@@ -2,7 +2,7 @@
   "name": "json-schema-reporter",
   "version": "0.1.0",
   "type": "module",
-  "description": "JSON Schema reporting layer with CLI + Markdown/HTML renderers",
+  "description": "Reporting layer and CLI for FoundryData: run the Normalize → Compose → Generate → Repair → Validate pipeline and render JSON, Markdown, or HTML reports",
   "main": "dist/cli.js",
   "bin": {
     "json-schema-reporter": "dist/cli.js"
@@ -14,10 +14,10 @@
   },
   "dependencies": {
     "@foundrydata/core": "^0.1.0",
-    "commander": "^11.0.0"
+    "commander": "^14.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
+    "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },
   "license": "MIT",
@@ -27,6 +27,22 @@
     "url": "https://github.com/foundrydata/foundrydata",
     "directory": "packages/reporter"
   },
+  "bugs": {
+    "url": "https://github.com/foundrydata/foundrydata/issues",
+    "email": "hello@foundrydata.dev"
+  },
+  "homepage": "https://foundrydata.dev",
+  "keywords": [
+    "json-schema",
+    "reports",
+    "cli",
+    "markdown",
+    "html",
+    "diagnostics",
+    "metrics",
+    "benchmarks",
+    "foundrydata"
+  ],
   "engines": {
     "node": ">=20.0.0"
   }

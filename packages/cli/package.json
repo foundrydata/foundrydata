@@ -2,7 +2,7 @@
   "name": "foundrydata",
   "version": "0.1.0",
   "type": "module",
-  "description": "CLI tool to generate test data from JSON Schema",
+  "description": "CLI to generate deterministic, contract-true test data from JSON Schema and OpenAPI 3.1",
   "bin": {
     "foundrydata": "./dist/index.js"
   },
@@ -13,13 +13,26 @@
     "url": "https://github.com/foundrydata/foundrydata",
     "directory": "packages/cli"
   },
+  "bugs": {
+    "url": "https://github.com/foundrydata/foundrydata/issues",
+    "email": "hello@foundrydata.dev"
+  },
+  "homepage": "https://foundrydata.dev",
   "keywords": [
     "cli",
     "test-data",
     "json-schema",
+    "openapi",
+    "openapi-3.1",
+    "ajv",
     "generator",
+    "fixtures",
     "mock-data",
-    "testing"
+    "testing",
+    "schema-validation",
+    "deterministic",
+    "metrics",
+    "ci"
   ],
   "scripts": {
     "build": "tsc --build",
@@ -31,7 +44,7 @@
     "commander": "^14.0.0"
   },
   "devDependencies": {
-    "@types/node": "^24.3.0",
+    "@types/node": "^20.0.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },
