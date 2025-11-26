@@ -217,7 +217,10 @@ Règles : (a) le JSON externe (si présent) doit parser ; (b) **après** suppres
   "properties": {
     "code": { "type": "string", "minLength": 1 },
     "canonPath": { "type": "string", "minLength": 1 },
-    "phase": { "type": "string", "enum": ["Normalize", "Compose", "Generate", "Repair", "Validate"] },
+    "phase": {
+      "type": "string",
+      "enum": ["normalize", "compose", "generate", "repair", "validate"]
+    },
     "details": { "type": "object" },
     "budget": {
       "type": "object",
@@ -225,7 +228,10 @@ Règles : (a) le JSON externe (si présent) doit parser ; (b) **après** suppres
         "skipped": { "type": "boolean" },
         "tried": { "type": "integer", "minimum": 0 },
         "limit": { "type": "integer", "minimum": 0 },
-        "reason": { "type": "string", "enum": ["skipTrialsFlag", "largeOneOf", "largeAnyOf", "complexityCap"] }
+        "reason": {
+          "type": "string",
+          "enum": ["skipTrialsFlag", "largeOneOf", "largeAnyOf", "complexityCap"]
+        }
       },
       "additionalProperties": false
     },

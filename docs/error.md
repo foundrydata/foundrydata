@@ -30,7 +30,8 @@ FoundryData surfaces every approximation, guardrail, and failure through a struc
 - `budget` captures guardrails used during Compose/Generate/Repair. Reasons are restricted to `skipTrialsFlag`, `largeOneOf`, `largeAnyOf`, or `complexityCap`. Values like `candidateBudget` / `witnessDomainExhausted` belong to `COMPLEXITY_CAP_PATTERNS.details.reason`, not to `budget.reason`.
 - `scoreDetails.tiebreakRand` records the exact RNG float whenever score-only selection or a tie-break occurs—even when `|branches| = 1`. `scoreDetails.exclusivityRand` logs the RNG draw used for `oneOf` exclusivity tweaks.
 - `metrics` mirrors runtime counters (validations per row, repair passes per row, p95 latency, memory, etc.) so CI and docs can spot regressions quickly.
-- Every envelope is validated locally by `assertDiagnosticEnvelope` and `assertDiagnosticsForPhase` (`packages/core/src/diag/validate.ts`), following the payload constraints in the SPEC.
+- Every envelope is validated locally by `assertDiagnosticEnvelope` and `assertDiagnosticsForPhase` (`packages/core/src/diag/validate.ts`), following the payload constraints in the SPEC (see `spec://§19-envelope` and `spec://§19-payloads`).
+- The SPEC’s minimum envelope shape is `{ code, canonPath, details? }`; FoundryData extends this with `phase`, `budget`, `scoreDetails`, and `metrics` as a stricter internal contract that remains compatible with `spec://§19-envelope`.
 
 ## Normalize (phase=`normalize`)
 
@@ -38,7 +39,9 @@ FoundryData surfaces every approximation, guardrail, and failure through a struc
 | --- | --- |
 | `PNAMES_REWRITE_APPLIED` | `propertyNames` was rewritten into anchored coverage (details include `kind` and optional `source`). |
 | `PNAMES_COMPLEX` | Rewrite was skipped because the pattern was unsafe or missing required literals. |
-| `ALLOF/ANYOF/ONEOF_SIMPLIFICATION_SKIPPED_UNEVALUATED` | Normalizer refused to collapse the composition because `unevaluated*` keywords were still in scope. |
+| `ALLOF_SIMPLIFICATION_SKIPPED_UNEVALUATED` | Normalizer refused to collapse the `allOf` composition because `unevaluated*` keywords were still in scope. |
+| `ANYOF_SIMPLIFICATION_SKIPPED_UNEVALUATED` | Normalizer refused to collapse the `anyOf` composition because `unevaluated*` keywords were still in scope. |
+| `ONEOF_SIMPLIFICATION_SKIPPED_UNEVALUATED` | Normalizer refused to collapse the `oneOf` composition because `unevaluated*` keywords were still in scope. |
 | `IF_REWRITE_DOUBLE_NOT` | Safe double-negation rewrite applied to a conditional branch. |
 | `IF_REWRITE_SKIPPED_UNEVALUATED` | Conditional rewrite skipped because `unevaluated*` interaction made it unsafe. |
 | `IF_REWRITE_DISABLED_ANNOTATION_RISK` | Rewrite disabled to avoid dropping metadata/annotations. |
@@ -46,7 +49,8 @@ FoundryData surfaces every approximation, guardrail, and failure through a struc
 | `DEPENDENCY_GUARDED` | Added synthetic guards for `dependentRequired`/`dependentSchemas`. |
 | `DYNAMIC_PRESENT` | `$dynamicRef`/`$dynamicAnchor` detected; the engine will treat them conservatively later on. |
 | `DEFS_TARGET_MISSING` | `$ref` points at a `$defs` entry that does not exist. |
-| `EXCLMIN_IGNORED_NO_MIN` / `EXCLMAX_IGNORED_NO_MAX` | Exclusive bounds were ignored because their inclusive counterpart is missing. |
+| `EXCLMIN_IGNORED_NO_MIN` | `exclusiveMinimum` was ignored because its corresponding `minimum` bound is missing. |
+| `EXCLMAX_IGNORED_NO_MAX` | `exclusiveMaximum` was ignored because its corresponding `maximum` bound is missing. |
 | `NOT_DEPTH_CAPPED` | `not` nesting exceeded `guards.maxGeneratedNotNesting`. |
 | `REGEX_COMPLEXITY_CAPPED` | Regex pattern exceeded the internal complexity heuristic during rewrite (details.context = `rewrite`). |
 | `REGEX_COMPILE_ERROR` | Regex failed to compile under Unicode mode during rewrite (details.context = `rewrite`). |
@@ -57,8 +61,11 @@ FoundryData surfaces every approximation, guardrail, and failure through a struc
 | --- | --- |
 | `NAME_AUTOMATON_COMPLEXITY_CAPPED` | Name automaton construction hit state/product/bfs caps; details record observed values. |
 | `NAME_AUTOMATON_BFS_APPLIED` | BFS search bounded an automaton with configured budget. |
-| `NAME_AUTOMATON_BEAM_APPLIED` | Beam search constrained automaton search; details show beam width and scores when available. |
-| `COMPLEXITY_CAP_ONEOF` / `ANYOF` / `ENUM` / `CONTAINS` / `SCHEMA_SIZE` | Guardrail fired because the schema exceeded configured limits (details include `limit` and `observed`). |
+| `COMPLEXITY_CAP_ONEOF` | Compose-time guardrail on `oneOf` branches; schema shape or fan-out exceeded configured limits (details include `limit` and `observed`). |
+| `COMPLEXITY_CAP_ANYOF` | Compose-time guardrail on `anyOf` branches; schema shape or fan-out exceeded configured limits (details include `limit` and `observed`). |
+| `COMPLEXITY_CAP_ENUM` | Compose-time guardrail on very large enums (details include `limit` and `observed`). |
+| `COMPLEXITY_CAP_CONTAINS` | Compose-time guardrail on `contains` bags (details include `limit` and `observed`). |
+| `COMPLEXITY_CAP_SCHEMA_SIZE` | Compose-time guardrail on overall schema size (details include `limit` and `observed`). |
 | `AP_FALSE_UNSAFE_PATTERN` | Must-cover would rely on non-anchored or capped patterns; strict mode escalates to fatal. |
 | `AP_FALSE_INTERSECTION_APPROX` | Coverage proof fell back to approximations (details describe whether patterns, regex errors, or presence pressure caused it). |
 | `UNSAT_AP_FALSE_EMPTY_COVERAGE` | Presence pressure plus no safe coverage sources ⇒ schema is unsatisfiable under `AP:false`. |
@@ -79,6 +86,7 @@ FoundryData surfaces every approximation, guardrail, and failure through a struc
 
 | Code | Meaning |
 | --- | --- |
+| `NAME_AUTOMATON_BEAM_APPLIED` | Beam search constrained automaton search; details show beam width and scores when available. |
 | `COMPLEXITY_CAP_PATTERNS` | Pattern witness synthesis exhausted candidates (details capture reason, alphabet, tried count). |
 | `EXCLUSIVITY_TWEAK_STRING` | Generator tweaked a string literal (either `\u0000` or `a`) to enforce oneOf exclusivity. |
 | `IF_AWARE_HINT_APPLIED` | `if-aware-lite` hint executed with the configured satisfaction target. |
@@ -98,7 +106,7 @@ FoundryData surfaces every approximation, guardrail, and failure through a struc
 | `REPAIR_PNAMES_PATTERN_ENUM` | Repair renamed or removed a property participating in must-cover constraints (details capture from/to, reason, and must-cover posture). |
 | `REPAIR_EVAL_GUARD_FAIL` | Evaluation guard prevented a mutation because the target pointer was not evaluated in the canonical schema. |
 | `MUSTCOVER_INDEX_MISSING` | Repair needed to honor AP:false but the coverage index lacked a safe entry (often due to user schema gating only via raw patterns). |
-| `UNSAT_BUDGET_EXHAUSTED` | Repair/Validate cycles exceeded `complexity.bailOnUnsatAfter`. Budget fields show attempts, limits, and the reason for exhaustion. |
+| `UNSAT_BUDGET_EXHAUSTED` | Repair/Validate cycles exceeded `complexity.bailOnUnsatAfter` while errors remained; `details` records the number of cycles and the last error count, while per-action budgets (`budget.tried/limit/reason`) live on the capped diagnostics that led up to this guardrail. |
 | `RAT_FALLBACK_DECIMAL` / `RAT_FALLBACK_FLOAT` | Repair fell back to decimal/float tolerance for numeric fixes (same payload as generation). |
 
 ## Validate (phase=`validate`)
