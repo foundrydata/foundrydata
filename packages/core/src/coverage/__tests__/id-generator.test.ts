@@ -4,7 +4,10 @@ import type {
   CoverageStatus,
   CoveragePolarity,
 } from '@foundrydata/shared';
-import { computeCoverageTargetId } from '../id-generator';
+import {
+  computeCoverageTargetId,
+  createCoverageTargetIdContext,
+} from '../id-generator';
 
 interface TestCoverageTarget {
   id: string;
@@ -20,8 +23,10 @@ interface TestCoverageTarget {
 }
 
 const BASE_CONTEXT = {
-  engineMajorVersion: 0,
-  reportFormatMajorVersion: 1,
+  ...createCoverageTargetIdContext({
+    engineVersion: '0.0.0',
+    reportFormatMajorVersion: 1,
+  }),
 } as const;
 
 function makeTarget(
@@ -101,20 +106,36 @@ describe('computeCoverageTargetId', () => {
   it('encodes engine and report major versions in the ID', () => {
     const target = makeTarget();
 
-    const idEngine0Report1 = computeCoverageTargetId(target, {
-      engineMajorVersion: 0,
-      reportFormatMajorVersion: 1,
-    });
-    const idEngine1Report1 = computeCoverageTargetId(target, {
-      engineMajorVersion: 1,
-      reportFormatMajorVersion: 1,
-    });
-    const idEngine0Report2 = computeCoverageTargetId(target, {
-      engineMajorVersion: 0,
-      reportFormatMajorVersion: 2,
-    });
+    const idEngine0Report1 = computeCoverageTargetId(
+      target,
+      createCoverageTargetIdContext({
+        engineVersion: '0.1.0',
+        reportFormatMajorVersion: 1,
+      })
+    );
+    const idEngine1Report1 = computeCoverageTargetId(
+      target,
+      createCoverageTargetIdContext({
+        engineVersion: '1.0.0',
+        reportFormatMajorVersion: 1,
+      })
+    );
+    const idEngine0Report2 = computeCoverageTargetId(
+      target,
+      createCoverageTargetIdContext({
+        engineVersion: '0.1.0',
+        reportFormatMajorVersion: 2,
+      })
+    );
 
     expect(idEngine0Report1).not.toBe(idEngine1Report1);
     expect(idEngine0Report1).not.toBe(idEngine0Report2);
+  });
+
+  it('parses engine major version from semver', () => {
+    const context = createCoverageTargetIdContext({
+      engineVersion: '2.3.4',
+    });
+    expect(context.engineMajorVersion).toBe(2);
   });
 });
