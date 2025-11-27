@@ -30,7 +30,7 @@ ul{padding-left:1.25rem}
 <body>
   <header class="hero">
     <h1>JSON Schema Report – profiles/simple.json</h1>
-    <p>Tool json-schema-reporter 0.1.0 · Engine 0.1.0</p>
+    <p>Tool json-schema-reporter 0.1.0 · Engine 0.1.1</p>
     <p>Timestamp &lt;timestamp&gt; · Seed 123456789</p>
     <p>3 instances · 3 unchanged · 0 repaired · 0 invalid</p>
   </header>
@@ -505,7 +505,7 @@ exports[`reporter snapshots > produces a stable JSON Report for profiles/simple.
     },
   ],
   "meta": {
-    "engineVersion": "0.1.0",
+    "engineVersion": "0.1.1",
     "seed": 123456789,
     "timestamp": "<timestamp>",
     "toolName": "json-schema-reporter",
@@ -736,7 +736,7 @@ exports[`reporter snapshots > produces a stable Markdown report for profiles/sim
 "# JSON Schema Report – profiles/simple.json
 
 - Tool: json-schema-reporter 0.1.0
-- Engine: 0.1.0
+- Engine: 0.1.1
 - Timestamp: <timestamp>
 - Seed: 123456789
 - Instances: 3
