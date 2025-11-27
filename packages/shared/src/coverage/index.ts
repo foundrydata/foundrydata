@@ -5,6 +5,8 @@ export type CoverageDimension =
   | 'boundaries'
   | 'operations';
 
+export type CoverageMode = 'off' | 'measure' | 'guided';
+
 export const COVERAGE_DIMENSIONS: readonly CoverageDimension[] = [
   'structure',
   'branches',
