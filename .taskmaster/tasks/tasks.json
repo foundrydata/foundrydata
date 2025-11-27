@@ -83,10 +83,11 @@
             "id": 9301002,
             "title": "Implement graph construction for schema, property and branch nodes",
             "description": "Build CoverageGraph nodes and edges for schemas, properties and oneOf/anyOf/conditional branches using canonical pointers.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/coverage/coverage-analyzer.ts",
-            "parentId": "9301"
+            "parentId": "9301",
+            "updatedAt": "2025-11-27T23:13:14.654Z"
           },
           {
             "id": 9301003,
@@ -116,7 +117,7 @@
             "parentId": "9301"
           }
         ],
-        "updatedAt": "2025-11-27T23:03:38.786Z"
+        "updatedAt": "2025-11-27T23:13:14.654Z"
       },
       {
         "id": "9302",
@@ -746,7 +747,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-27T23:03:38.787Z",
+      "lastModified": "2025-11-27T23:13:14.654Z",
       "taskCount": 13,
       "completedCount": 1,
       "tags": [
