@@ -12,6 +12,30 @@ export interface CoverageTargetIdContext {
   reportFormatMajorVersion: number;
 }
 
+export const DEFAULT_COVERAGE_REPORT_FORMAT_MAJOR = 1;
+
+export function parseEngineMajorVersion(engineVersion: string): number {
+  const [majorRaw] = engineVersion.split('.');
+  const major = Number(majorRaw);
+  if (!Number.isInteger(major) || major < 0) {
+    throw new Error(
+      `Invalid engine version "${engineVersion}". Expected MAJOR.MINOR.PATCH.`
+    );
+  }
+  return major;
+}
+
+export function createCoverageTargetIdContext(params: {
+  engineVersion: string;
+  reportFormatMajorVersion?: number;
+}): CoverageTargetIdContext {
+  return {
+    engineMajorVersion: parseEngineMajorVersion(params.engineVersion),
+    reportFormatMajorVersion:
+      params.reportFormatMajorVersion ?? DEFAULT_COVERAGE_REPORT_FORMAT_MAJOR,
+  };
+}
+
 function buildCanonicalIdPayload(
   target: CoverageTarget,
   context: CoverageTargetIdContext
