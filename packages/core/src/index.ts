@@ -17,6 +17,7 @@
 export * from './api.js';
 
 export * from './types/index.js';
+export * from './coverage/index.js';
 
 // Normalizer (Task 7)
 export {

@@ -1,0 +1,66 @@
+import type {
+  CoverageDimension,
+  CoverageStatus,
+  CoveragePolarity,
+  CoverageTargetKind,
+  CoverageTarget,
+  CoverageTargetReport,
+} from '@foundrydata/shared';
+
+export type {
+  CoverageDimension,
+  CoverageStatus,
+  CoveragePolarity,
+  CoverageTargetKind,
+  CoverageTarget,
+  CoverageTargetReport,
+};
+
+export type CoverageGraphNodeKind =
+  | 'schema'
+  | 'property'
+  | 'branch'
+  | 'constraint'
+  | 'enum'
+  | 'operation';
+
+export interface CoverageGraphNode {
+  /**
+   * Stable identifier for the graph node, scoped to the canonical
+   * view of the schema and OpenAPI mapping. This is separate from
+   * CoverageTarget.id, which is scoped to coverage dimensions.
+   */
+  id: string;
+  kind: CoverageGraphNodeKind;
+  /**
+   * Canonical JSON Pointer for schema-linked nodes.
+   */
+  canonPath: string;
+  /**
+   * Optional operation key for API-linked nodes.
+   */
+  operationKey?: string;
+  /**
+   * Free-form diagnostics metadata, for example counts of
+   * attached targets or UNSAT hints.
+   */
+  meta?: Record<string, unknown>;
+}
+
+export type CoverageGraphEdgeKind =
+  | 'structural'
+  | 'logical'
+  | 'reference'
+  | 'operation';
+
+export interface CoverageGraphEdge {
+  from: string;
+  to: string;
+  kind: CoverageGraphEdgeKind;
+  meta?: Record<string, unknown>;
+}
+
+export interface CoverageGraph {
+  nodes: CoverageGraphNode[];
+  edges: CoverageGraphEdge[];
+}
