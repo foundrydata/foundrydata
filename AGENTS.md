@@ -444,6 +444,21 @@ function readCoverageSection(n: number) {
 }
 ```
 
+Cas sans `<a id>` (fallback pratique) :
+
+```bash
+# 1) trouver le début de la section 3
+rg "^##\s*3\." docs/spec-coverage-aware-v1.x.md -n
+
+# 2) trouver le début de la section suivante (4)
+rg "^##\s*4\." docs/spec-coverage-aware-v1.x.md -n
+
+# 3) lire uniquement ce bloc (remplacer START3/START4 par les lignes)
+sed -n 'START3,START4-1p' docs/spec-coverage-aware-v1.x.md
+```
+
+L’anchor correspondante reste `cov://§3#<slug>` où `<slug>` est dérivé du titre après `## 3.` (minuscule, espaces → `-`, ponctuation retirée), par exemple `cov://§3#coverage-model`.
+
 ### Quotas REFONLY (inchangés, mais cumulés spec+cov)
 
 * Max **5 anchors** (`spec://` + `cov://` confondus) par itération.
