@@ -30,6 +30,7 @@
    a) `npx task-master show 9300`  
    b) `npx task-master show 9300.1`  
    c) `npx task-master set-status --id=9300.1 --status=in-progress`
+   **Anti-biais de scope :** avant de proposer ou de commencer un travail qui touche une autre phase ou un autre artefact du pipeline (par ex. brancher un nouvel accumulateur dans `executePipeline`), vérifier explicitement via `npx task-master show <id>` si une sous-tâche dédiée existe déjà (ex. “Integrate coverage accumulators into pipeline orchestrator”). Si c’est le cas, considérer ce travail comme **hors périmètre** de la sous-tâche courante : ne pas l’implémenter ni le décrire comme “prochaine étape” dans la même itération. Se limiter au scope décrit par le titre/description de la sous-tâche en cours.
 4. Sélectionner 1–5 anchors SPEC pertinents pour cette sous-tâche (`spec://...`, `cov://...`, REFONLY, quotas respectés).
 5. Rédiger `PLAN.md` (200–400 mots) centré sur la sous-tâche en cours, avec `taskId`, `anchors`, `touchedFiles`, approche, risques et checks standard.
 6. Implémenter les changements pour cette sous-tâche dans les fichiers listés, en respectant les invariants coverage-aware et AP:false.
