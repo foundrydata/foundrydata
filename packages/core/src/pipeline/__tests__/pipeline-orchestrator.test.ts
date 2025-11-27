@@ -241,6 +241,16 @@ describe('executePipeline', () => {
     expect(nodeKindsByPath.get('#')).toBe('schema');
     expect(nodeKindsByPath.get('#/properties/id')).toBe('property');
 
-    expect(result.artifacts.coverageTargets).toEqual([]);
+    const targets = result.artifacts.coverageTargets;
+    expect(targets).toBeDefined();
+    expect(Array.isArray(targets)).toBe(true);
+    const structureTargets = targets!.filter(
+      (t) => t.dimension === 'structure'
+    );
+    expect(
+      structureTargets.some(
+        (t) => t.kind === 'SCHEMA_NODE' && t.canonPath === '#'
+      )
+    ).toBe(true);
   });
 });

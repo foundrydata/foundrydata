@@ -19,7 +19,29 @@ describe('analyzeCoverage', () => {
       planDiag: undefined,
     });
 
-    expect(result.targets).toEqual([]);
+    const structureTargets = result.targets.filter(
+      (t) => t.dimension === 'structure'
+    );
+    const schemaNodeTargets = structureTargets.filter(
+      (t) => t.kind === 'SCHEMA_NODE'
+    );
+    const propertyTargets = structureTargets.filter(
+      (t) => t.kind === 'PROPERTY_PRESENT'
+    );
+
+    expect(schemaNodeTargets.some((t) => t.canonPath === '#')).toBe(true);
+    expect(
+      schemaNodeTargets.some((t) => t.canonPath === '#/properties/id')
+    ).toBe(true);
+    expect(
+      schemaNodeTargets.some((t) => t.canonPath === '#/properties/title')
+    ).toBe(true);
+    expect(propertyTargets.some((t) => t.canonPath === '#/properties/id')).toBe(
+      true
+    );
+    expect(
+      propertyTargets.some((t) => t.canonPath === '#/properties/title')
+    ).toBe(true);
 
     const nodeKindsByPath = new Map(
       result.graph.nodes.map((n) => [n.canonPath, n.kind])
@@ -47,6 +69,7 @@ describe('analyzeCoverage', () => {
       ptrMap: new Map<string, string>([['', '#']]),
       coverageIndex: new Map(),
       planDiag: undefined,
+      dimensionsEnabled: ['branches', 'enum'],
     });
 
     const branchNodes = result.graph.nodes.filter((n) => n.kind === 'branch');
@@ -58,5 +81,18 @@ describe('analyzeCoverage', () => {
     expect(branchPaths).toContain('#/if');
     expect(branchPaths).toContain('#/then');
     expect(branchPaths).toContain('#/else');
+
+    const branchTargets = result.targets.filter(
+      (t) => t.dimension === 'branches'
+    );
+    const kinds = new Set(branchTargets.map((t) => t.kind));
+    expect(kinds.has('ONEOF_BRANCH')).toBe(true);
+    expect(kinds.has('ANYOF_BRANCH')).toBe(true);
+    expect(kinds.has('CONDITIONAL_PATH')).toBe(true);
+
+    const structureTargets = result.targets.filter(
+      (t) => t.dimension === 'structure'
+    );
+    expect(structureTargets.length).toBe(0);
   });
 });

@@ -1,11 +1,18 @@
+/* eslint-disable max-lines */
+/* eslint-disable max-depth */
 /* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
-import type { CoverageTarget } from '@foundrydata/shared';
+import type { CoverageDimension, CoverageTarget } from '@foundrydata/shared';
 import type { CoverageGraph, CoverageGraphNodeKind } from './index.js';
 import type {
   CoverageIndex,
   ComposeDiagnostics,
 } from '../transform/composition-engine.js';
+import {
+  computeCoverageTargetId,
+  createCoverageTargetIdContext,
+  type CoverageTargetIdContext,
+} from './id-generator.js';
 
 export interface CoverageAnalyzerInput {
   /**
@@ -24,6 +31,11 @@ export interface CoverageAnalyzerInput {
    * Planning diagnostics (fatal, warn, UNSAT hints, run-level) from Compose.
    */
   planDiag?: ComposeDiagnostics;
+  /**
+   * Enabled coverage dimensions for this run. When omitted, defaults to
+   * ['structure','branches','enum'] for V1.
+   */
+  dimensionsEnabled?: CoverageDimension[];
 }
 
 export interface CoverageAnalyzerResult {
@@ -35,6 +47,9 @@ interface CoverageGraphBuildState {
   nodes: CoverageGraph['nodes'];
   edges: CoverageGraph['edges'];
   nodeIndexById: Map<string, number>;
+  targets: CoverageTarget[];
+  enabledDimensions: Set<CoverageDimension>;
+  idContext: CoverageTargetIdContext;
 }
 
 interface NodeClassification {
@@ -117,14 +132,11 @@ function addStructuralEdge(
   toId: string
 ): void {
   if (fromId === toId) return;
-  const key = `${fromId}→${toId}:structural`;
-  if (!state.nodeIndexById.has(key)) {
-    state.edges.push({
-      from: fromId,
-      to: toId,
-      kind: 'structural',
-    });
-  }
+  state.edges.push({
+    from: fromId,
+    to: toId,
+    kind: 'structural',
+  });
 }
 
 function visitSchemaNode(
@@ -143,13 +155,49 @@ function visitSchemaNode(
 
   const schema = node as Record<string, unknown>;
 
+  // Structural dimension: SCHEMA_NODE for every canonical schema node.
+  if (state.enabledDimensions.has('structure')) {
+    const canonPath = canonPtr === '' ? '#' : `#${canonPtr}`;
+    const targetBase: CoverageTarget = {
+      id: '',
+      dimension: 'structure',
+      kind: 'SCHEMA_NODE',
+      canonPath,
+    };
+    const id = computeCoverageTargetId(targetBase, state.idContext);
+    state.targets.push({ ...targetBase, id });
+  }
+
   // Properties
   const properties = schema.properties;
   if (properties && typeof properties === 'object') {
     const propsRecord = properties as Record<string, unknown>;
     const basePtr = appendPointer(canonPtr, 'properties');
+    const requiredRaw = Array.isArray(schema.required)
+      ? (schema.required as unknown[]).filter(
+          (v): v is string => typeof v === 'string'
+        )
+      : [];
+    const required = new Set<string>(requiredRaw);
     for (const [propName, propSchema] of Object.entries(propsRecord)) {
       const childPtr = appendPointer(basePtr, propName);
+      if (state.enabledDimensions.has('structure')) {
+        const propCanonPath = `#${childPtr}`;
+        if (!required.has(propName)) {
+          const propertyTargetBase: CoverageTarget = {
+            id: '',
+            dimension: 'structure',
+            kind: 'PROPERTY_PRESENT',
+            canonPath: propCanonPath,
+            params: { propertyName: propName },
+          };
+          const tId = computeCoverageTargetId(
+            propertyTargetBase,
+            state.idContext
+          );
+          state.targets.push({ ...propertyTargetBase, id: tId });
+        }
+      }
       visitSchemaNode(propSchema, childPtr, canonPtr, state);
     }
   }
@@ -162,6 +210,18 @@ function visitSchemaNode(
     const anyOfPtr = appendPointer(canonPtr, 'anyOf');
     anyOf.forEach((branch, index) => {
       const branchPtr = appendPointer(anyOfPtr, String(index));
+      if (state.enabledDimensions.has('branches')) {
+        const branchCanonPath = `#${branchPtr}`;
+        const branchTargetBase: CoverageTarget = {
+          id: '',
+          dimension: 'branches',
+          kind: 'ANYOF_BRANCH',
+          canonPath: branchCanonPath,
+          params: { index },
+        };
+        const tId = computeCoverageTargetId(branchTargetBase, state.idContext);
+        state.targets.push({ ...branchTargetBase, id: tId });
+      }
       visitSchemaNode(branch, branchPtr, canonPtr, state);
     });
   }
@@ -173,12 +233,49 @@ function visitSchemaNode(
     const oneOfPtr = appendPointer(canonPtr, 'oneOf');
     oneOf.forEach((branch, index) => {
       const branchPtr = appendPointer(oneOfPtr, String(index));
+      if (state.enabledDimensions.has('branches')) {
+        const branchCanonPath = `#${branchPtr}`;
+        const branchTargetBase: CoverageTarget = {
+          id: '',
+          dimension: 'branches',
+          kind: 'ONEOF_BRANCH',
+          canonPath: branchCanonPath,
+          params: { index },
+        };
+        const tId = computeCoverageTargetId(branchTargetBase, state.idContext);
+        state.targets.push({ ...branchTargetBase, id: tId });
+      }
       visitSchemaNode(branch, branchPtr, canonPtr, state);
     });
   }
 
   // Conditional branches
   if (schema.if && typeof schema.if === 'object') {
+    if (state.enabledDimensions.has('branches')) {
+      const baseCanonPath = canonPtr === '' ? '#' : `#${canonPtr}`;
+      if (schema.then && typeof schema.then === 'object') {
+        const thenTargetBase: CoverageTarget = {
+          id: '',
+          dimension: 'branches',
+          kind: 'CONDITIONAL_PATH',
+          canonPath: baseCanonPath,
+          params: { pathKind: 'if+then' },
+        };
+        const tId = computeCoverageTargetId(thenTargetBase, state.idContext);
+        state.targets.push({ ...thenTargetBase, id: tId });
+      }
+      if (schema.else && typeof schema.else === 'object') {
+        const elseTargetBase: CoverageTarget = {
+          id: '',
+          dimension: 'branches',
+          kind: 'CONDITIONAL_PATH',
+          canonPath: baseCanonPath,
+          params: { pathKind: 'if+else' },
+        };
+        const tId = computeCoverageTargetId(elseTargetBase, state.idContext);
+        state.targets.push({ ...elseTargetBase, id: tId });
+      }
+    }
     visitSchemaNode(schema.if, appendPointer(canonPtr, 'if'), canonPtr, state);
   }
   if (schema.then && typeof schema.then === 'object') {
@@ -270,15 +367,44 @@ function visitSchemaNode(
       state
     );
   }
+
+  // Enum targets (dimension: 'enum')
+  if (state.enabledDimensions.has('enum') && Array.isArray(schema.enum)) {
+    const values = schema.enum as unknown[];
+    const canonPath = canonPtr === '' ? '#' : `#${canonPtr}`;
+    values.forEach((value, enumIndex) => {
+      const enumTargetBase: CoverageTarget = {
+        id: '',
+        dimension: 'enum',
+        kind: 'ENUM_VALUE_HIT',
+        canonPath,
+        params: { enumIndex, value },
+      };
+      const tId = computeCoverageTargetId(enumTargetBase, state.idContext);
+      state.targets.push({ ...enumTargetBase, id: tId });
+    });
+  }
 }
 
 export function analyzeCoverage(
   input: CoverageAnalyzerInput
 ): CoverageAnalyzerResult {
+  const enabledDimensions: CoverageDimension[] = input.dimensionsEnabled ?? [
+    'structure',
+    'branches',
+    'enum',
+  ];
+  const idContext = createCoverageTargetIdContext({
+    engineVersion: '0.0.0',
+  });
+
   const state: CoverageGraphBuildState = {
     nodes: [],
     edges: [],
     nodeIndexById: new Map(),
+    targets: [],
+    enabledDimensions: new Set(enabledDimensions),
+    idContext,
   };
 
   // Root schema node at the canonical root.
@@ -286,6 +412,6 @@ export function analyzeCoverage(
 
   return {
     graph: { nodes: state.nodes, edges: state.edges },
-    targets: [],
+    targets: state.targets,
   };
 }
