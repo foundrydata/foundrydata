@@ -190,4 +190,48 @@ describe('executePipeline', () => {
     ]);
     expect(seen).toEqual(['generate', 'repair', 'validate']);
   });
+
+  it('does not produce coverage artifacts when coverageMode is off', async () => {
+    const schema = { type: 'string' };
+
+    const result = await executePipeline(schema, {
+      coverage: { mode: 'off' },
+    });
+
+    expect(result.status).toBe('completed');
+    expect(result.artifacts.coverageGraph).toBeUndefined();
+    expect(result.artifacts.coverageTargets).toBeUndefined();
+  });
+
+  it('wires coverage analyzer inputs under measure mode', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        id: { type: 'integer', minimum: 0 },
+      },
+      required: ['id'],
+    };
+
+    const result = await executePipeline(schema, {
+      generate: { count: 1 },
+      validate: { validateFormats: false },
+      coverage: { mode: 'measure' },
+    });
+
+    expect(result.status).toBe('completed');
+    expect(result.timeline).toEqual([
+      'normalize',
+      'compose',
+      'generate',
+      'repair',
+      'validate',
+    ]);
+    expect(result.artifacts.coverageGraph).toEqual({
+      nodes: [],
+      edges: [],
+    });
+    expect(result.artifacts.coverageTargets).toEqual([]);
+  });
 });

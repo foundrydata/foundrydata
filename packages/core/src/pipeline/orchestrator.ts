@@ -69,6 +69,10 @@ import {
   hydrateSourceAjvFromRegistry,
   type RegistryDoc,
 } from '../resolver/hydrateSourceAjvFromRegistry.js';
+import {
+  analyzeCoverage,
+  type CoverageAnalyzerInput,
+} from '../coverage/analyzer.js';
 
 const STAGE_SEQUENCE: PipelineStageName[] = [
   'normalize',
@@ -200,6 +204,13 @@ function markRemainingStagesAsSkipped(
       stage.status = 'skipped';
     }
   }
+}
+
+function shouldRunCoverageAnalyzer(
+  coverageOptions: PipelineOptions['coverage']
+): boolean {
+  const mode = coverageOptions?.mode ?? 'off';
+  return mode === 'measure' || mode === 'guided';
 }
 
 export async function executePipeline(
@@ -682,6 +693,18 @@ export async function executePipeline(
         status: 'completed',
         output: composeResult,
       };
+
+      if (shouldRunCoverageAnalyzer(options.coverage)) {
+        const coverageInput: CoverageAnalyzerInput = {
+          canonSchema: canonicalSchema,
+          ptrMap: normalizeResult?.ptrMap ?? new Map<string, string>(),
+          coverageIndex: composeResult.coverageIndex,
+          planDiag: composeResult.diag,
+        };
+        const coverageResult = analyzeCoverage(coverageInput);
+        artifacts.coverageGraph = coverageResult.graph;
+        artifacts.coverageTargets = coverageResult.targets;
+      }
     }
 
     // Runtime self-check: diagnostics emitted during compose must conform to phase rules

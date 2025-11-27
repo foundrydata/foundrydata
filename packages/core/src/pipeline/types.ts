@@ -16,6 +16,12 @@ import type {
 } from '../util/metrics.js';
 import type { PlanOptions } from '../types/options.js';
 import type { DiagnosticEnvelope } from '../diag/validate.js';
+import type {
+  CoverageDimension,
+  CoverageMode,
+  CoverageTarget,
+} from '@foundrydata/shared';
+import type { CoverageGraph } from '../coverage/index.js';
 
 export type PipelineStageName =
   | 'normalize'
@@ -93,6 +99,8 @@ export interface PipelineArtifacts {
     instancePath?: string;
     details?: Record<string, unknown>;
   }>;
+  coverageGraph?: CoverageGraph;
+  coverageTargets?: CoverageTarget[];
 }
 
 export interface PipelineStageOverrides {
@@ -147,6 +155,11 @@ export interface PipelineOptions {
   collector?: MetricsCollector;
   snapshotVerbosity?: MetricsVerbosity;
   mode?: 'strict' | 'lax';
+  coverage?: {
+    mode?: CoverageMode;
+    dimensionsEnabled?: CoverageDimension[];
+    excludeUnreachable?: boolean;
+  };
   generate?: {
     count?: number;
     seed?: number;
