@@ -161,6 +161,18 @@ Step 7  Commit (template), trailer REFONLY valide.
 Step 8  Marquer la sous-tâche comme terminée :
         → /tm:set-status:to-done <id>.<subid> ou /complete-task <id>.<subid>
         (la tâche parente 93xx ne passe à `done` que lorsque toutes ses sous-tâches sont terminées)
+
+---
+
+## Auto-review SPEC après chaque sous-tâche
+
+Après implémentation + tests d’une sous-tâche (avant le commit), l’agent effectue une courte revue ciblée “SPEC-check” :
+
+* Re-lire la liste des anchors de la sous-tâche (PLAN.md: `Anchors: [...]`) et vérifier que chaque changement de code a un lien clair avec au moins un anchor (spec://... ou cov://...), sans extrapoler hors SPEC.
+* Vérifier que les invariants coverage-aware et AP:false sont bien respectés pour les fichiers touchés (gating strict coverage=off, `dimensionsEnabled` comme projection uniquement, SCHEMA_REUSED_COVERED uniquement diagnostique, invariants CoverageIndex sous AP:false, etc.).
+* Confirmer qu’aucun comportement ajouté ne contredit la SPEC (par exemple instrumentation active alors que coverage=off, IDs de coverage dépendant de `dimensionsEnabled`, diagnostics émis dans une phase interdite).
+* En cas de doute réel ou d’ambiguïté non triviale : geler la sous-tâche, produire un `SPEC-QUESTION.md` avec 1–2 anchors représentatifs, puis reprendre la mise en œuvre après clarification.
+* Optionnel mais recommandé : noter en une phrase dans `PLAN.md` (ou dans `agent-log.jsonl`) l’issue de la revue, par exemple `SPEC-check: conforme aux anchors listés, aucun écart identifié.`
 ```
 
 **Commandes standard (npm workspaces)**
