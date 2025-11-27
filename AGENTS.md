@@ -10,9 +10,26 @@
 
 ## Mode d’emploi (cheat-sheet agent)
 
+**Pré-hook obligatoire (TOUJOURS avant toute implémentation sur 9300..9312)**
+
+1. Identifier la sous-tâche visée (ex. via `npx task-master next` → `9301.9301001`).
+2. Lancer, depuis la racine du repo :  
+   `./scripts/tm-start-coverage-subtask.sh 9301.9301001`  
+   Ce script exécute, dans l’ordre:  
+   - `npx task-master show 9301` (tâche parente)  
+   - `npx task-master show 9301.9301001` (sous-tâche)  
+   - `npx task-master set-status --id=9301.9301001 --status=in-progress`
+3. Ne jamais appeler `npx task-master set-status --status=in-progress` directement pour une sous-tâche 9300..9312 sans être passé par ce script ou par la séquence manuelle `show parent` → `show subtask`.
+
+**Boucle principale**
+
 1. Vérifier que le tag actif est `coverage-aware-v1` et qu’une **tâche parente** 9300..9312 est disponible (`/tm:next` ou `npx task-master next`).
-2. Afficher la tâche parente (`/tm:show <id>` ou `npx task-master show <id>`) et lire sa description globale + la liste de ses sous-tâches (ne pas tenter de “tout faire” en une seule passe).
-3. Choisir une sous-tâche active (ex. `9300.1`) en respectant l’ordre / les dépendances, puis la marquer `in-progress` (`npx task-master set-status --id=9300.1 --status=in-progress` ou équivalent slash command).
+2. Afficher la tâche parente (`/tm:show <id>` ou `npx task-master show <id>`) et lire sa description globale + la liste de ses sous-tâches (ne pas tenter de “tout faire” en une seule passe).  
+   (Si vous utilisez le script `tm-start-coverage-subtask.sh`, cette étape est incluse pour la sous-tâche choisie.)
+3. Choisir une sous-tâche active (ex. `9300.1`) en respectant l’ordre / les dépendances, puis la marquer `in-progress` via le script `./scripts/tm-start-coverage-subtask.sh 9300.1` ou, à défaut, en exécutant manuellement dans cet ordre :  
+   a) `npx task-master show 9300`  
+   b) `npx task-master show 9300.1`  
+   c) `npx task-master set-status --id=9300.1 --status=in-progress`
 4. Sélectionner 1–5 anchors SPEC pertinents pour cette sous-tâche (`spec://...`, `cov://...`, REFONLY, quotas respectés).
 5. Rédiger `PLAN.md` (200–400 mots) centré sur la sous-tâche en cours, avec `taskId`, `anchors`, `touchedFiles`, approche, risques et checks standard.
 6. Implémenter les changements pour cette sous-tâche dans les fichiers listés, en respectant les invariants coverage-aware et AP:false.
