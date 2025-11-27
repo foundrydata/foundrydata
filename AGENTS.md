@@ -10,16 +10,16 @@
 
 ## Mode d’emploi (cheat-sheet agent)
 
-1. Vérifier que le tag actif est `coverage-aware-v1` et qu’une tâche 9300..9312 est disponible (`/tm:next` ou `npx task-master next`).
-2. Récupérer la tâche (`/tm:show <id>` ou `npx task-master show <id>`) puis la marquer `in-progress`.
-3. Sélectionner 1–5 anchors SPEC pertinents (`spec://...`, `cov://...`, REFONLY, quotas respectés).
-4. Rédiger `PLAN.md` (200–400 mots) avec `taskId`, `anchors`, `touchedFiles`, approche, risques et checks standard.
-5. Implémenter les changements dans les fichiers listés, en respectant les invariants coverage-aware et AP:false.
-6. Ajouter/mettre à jour les tests pour viser **cov ≥80 % sur chaque fichier touché** (ou isoler la logique dans un nouveau module bien couvert).
-7. Lancer au minimum `npm run build`, `npm run test`, `npm run bench` (et `npm run typecheck` si pertinent) depuis la racine.
-8. Vérifier que les diagnostics respectent `diagnosticsEnvelope.schema.json` (diag-schema) et que les bench gates passent.
-9. Créer un commit avec le template fourni, incluant un trailer `REFONLY::{"anchors":[...],"summary":"..."}` valide.
-10. Marquer la tâche comme `done` (`/tm:set-status:to-done <id>` ou `npx task-master set-status --id=<id> --status=done`) et consigner l’opération dans `agent-log.jsonl`.
+1. Vérifier que le tag actif est `coverage-aware-v1` et qu’une **tâche parente** 9300..9312 est disponible (`/tm:next` ou `npx task-master next`).
+2. Afficher la tâche parente (`/tm:show <id>` ou `npx task-master show <id>`) et lire sa description globale + la liste de ses sous-tâches (ne pas tenter de “tout faire” en une seule passe).
+3. Choisir une sous-tâche active (ex. `9300.1`) en respectant l’ordre / les dépendances, puis la marquer `in-progress` (`npx task-master set-status --id=9300.1 --status=in-progress` ou équivalent slash command).
+4. Sélectionner 1–5 anchors SPEC pertinents pour cette sous-tâche (`spec://...`, `cov://...`, REFONLY, quotas respectés).
+5. Rédiger `PLAN.md` (200–400 mots) centré sur la sous-tâche en cours, avec `taskId`, `anchors`, `touchedFiles`, approche, risques et checks standard.
+6. Implémenter les changements pour cette sous-tâche dans les fichiers listés, en respectant les invariants coverage-aware et AP:false.
+7. Ajouter/mettre à jour les tests pour viser **cov ≥80 % sur chaque fichier touché** (ou isoler la logique dans un nouveau module bien couvert).
+8. Lancer au minimum `npm run build`, `npm run test`, `npm run bench` (et `npm run typecheck` si pertinent) depuis la racine.
+9. Vérifier que les diagnostics respectent `diagnosticsEnvelope.schema.json` (diag-schema) et que les bench gates passent.
+10. Créer un commit avec le template fourni (scope = sous-tâche), incluant un trailer `REFONLY::{"anchors":[...],"summary":"..."}` valide, marquer la sous-tâche comme `done` puis consigner l’opération dans `agent-log.jsonl`. La tâche parente ne peut être terminée que lorsque toutes ses sous-tâches sont `done`.
 
 ---
 
@@ -119,9 +119,12 @@ Step 0  Sanity:
         - tâches Taskmaster disponibles ?
         - tag coverage-aware-v1 actif ?
 
-Step 1  Obtenir la tâche et marquer comme en cours (contexte Taskmaster) :
+Step 1  Obtenir la tâche parente (contexte global) :
         → /tm:show:show-task <id> ou /tm:next:next-task
-        → /tm:set-status:to-in-progress <id>
+        (lire description + sous-tâches, mais ne pas implémenter tout le parent d’un bloc)
+
+Step 1bis Choisir une sous-tâche active et la marquer comme en cours :
+        → /tm:set-status:to-in-progress <id>.<subid>
 
 Step 2  REFONLY:
         - identifier ≤5 anchors pertinents (spec://... et/ou cov://...)
@@ -138,8 +141,9 @@ Step 6  Valider diagnostics (schéma "diagnosticsEnvelope.schema.json").
 
 Step 7  Commit (template), trailer REFONLY valide.
 
-Step 8  Marquer la tâche comme terminée :
-        → /tm:set-status:to-done <id> ou /complete-task <id>
+Step 8  Marquer la sous-tâche comme terminée :
+        → /tm:set-status:to-done <id>.<subid> ou /complete-task <id>.<subid>
+        (la tâche parente 93xx ne passe à `done` que lorsque toutes ses sous-tâches sont terminées)
 ```
 
 **Commandes standard (npm workspaces)**
