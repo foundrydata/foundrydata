@@ -8,6 +8,21 @@
 
 ---
 
+## Mode d’emploi (cheat-sheet agent)
+
+1. Vérifier que le tag actif est `coverage-aware-v1` et qu’une tâche 9300..9312 est disponible (`/tm:next` ou `npx task-master next`).
+2. Récupérer la tâche (`/tm:show <id>` ou `npx task-master show <id>`) puis la marquer `in-progress`.
+3. Sélectionner 1–5 anchors SPEC pertinents (`spec://...`, `cov://...`, REFONLY, quotas respectés).
+4. Rédiger `PLAN.md` (200–400 mots) avec `taskId`, `anchors`, `touchedFiles`, approche, risques et checks standard.
+5. Implémenter les changements dans les fichiers listés, en respectant les invariants coverage-aware et AP:false.
+6. Ajouter/mettre à jour les tests pour viser **cov ≥80 % sur chaque fichier touché** (ou isoler la logique dans un nouveau module bien couvert).
+7. Lancer au minimum `npm run build`, `npm run test`, `npm run bench` (et `npm run typecheck` si pertinent) depuis la racine.
+8. Vérifier que les diagnostics respectent `diagnosticsEnvelope.schema.json` (diag-schema) et que les bench gates passent.
+9. Créer un commit avec le template fourni, incluant un trailer `REFONLY::{"anchors":[...],"summary":"..."}` valide.
+10. Marquer la tâche comme `done` (`/tm:set-status:to-done <id>` ou `npx task-master set-status --id=<id> --status=done`) et consigner l’opération dans `agent-log.jsonl`.
+
+---
+
 ## TL;DR opératoire
 
 1. **Sources de vérité** :
@@ -503,6 +518,16 @@ Impact: ...
 Proposition: ...
 ```
 
+Exemple concret (coverage-aware) :
+
+```md
+# SPEC Question
+Anchor(s): ["spec://§8#branch-selection-algorithm", "cov://§3#coverage-model"]
+Symptôme: Sur un schéma avec `anyOf` profond, la SPEC coverage-aware semble exiger à la fois une materialisation de toutes les branches dans `targets[]` et un budget de composition qui coupe à K=8. Le runbook coverage-aware ne précise pas si les branches non matérialisées doivent être considérées comme `unreachable` ou simplement absentes de l’univers de cibles.
+Impact: Ambiguïté sur l’univers de targets et sur le calcul de `coverage.overall` / `coverage.byOperation` lorsqu’un profil CLI `quick` est utilisé sur des specs complexes; risque de divergence entre deux implémentations conformes.
+Proposition: Clarifier si, sous caps de Compose, les branches non visitées appartiennent encore à l’univers mais restent `status:'active', hit:false` (avec impact sur les métriques), ou si elles doivent être exclues de l’univers de cibles pour ce run (avec un diagnostic dédié).
+```
+
 ---
 
 ## Templates
@@ -577,6 +602,9 @@ Checks:
 CLI équivalente :
 
 ```bash
+# VS Code / Codex : pas d’accès programmatique direct à Taskmaster.
+# Toujours passer par la CLI ci-dessous (ou les slash commands),
+# jamais par une lecture directe des fichiers JSON internes.
 npx task-master list
 npx task-master show <id>
 npx task-master next
@@ -591,6 +619,21 @@ npx task-master set-status --id=<id> --status=done
 ## Outils MCP non disponibles
 
 Les outils MCP Task Master (`mcp__task-master-ai__*`) restent indisponibles; utiliser les slash commands ou la CLI.
+
+---
+
+## Tolérance coverage (fichiers peu couverts)
+
+* La cible reste celle du DoD : **cov ≥80 % par fichier touché** après la tâche. Cette section précise la stratégie quand un fichier de départ est loin de cette cible (legacy très peu couvert).
+* Avant de modifier un gros fichier peu couvert, l’agent doit vérifier s’il peut :
+  * soit **isoler la logique nouvelle dans un nouveau module/fichier** (par exemple `packages/core/src/.../my-helper.ts`) et le couvrir à ≥80 % via un test dédié (`.../__tests__/my-helper.spec.ts`) ;
+  * soit **scoper la modification** pour l’ancrer dans une zone déjà correctement testée (fichier ou sous-module avec coverage raisonnable), plutôt que d’étendre la surface non couverte.
+* Si la tâche impose de modifier substantiellement un fichier legacy très peu couvert, l’agent doit :
+  * prioriser des tests ciblés sur les chemins réellement impactés (branches principales + erreurs associées) jusqu’à rapprocher la couverture de 80 % sur ce fichier ;
+  * éviter de multiplier les refactors opportunistes sur ce fichier dans la même tâche ; si une remontée de couverture plus large est nécessaire, la proposer comme tâche séparée dans `PLAN.md` plutôt que d’exploser le scope courant.
+* Dans tous les cas :
+  * ne jamais faire **baisser** la couverture effective d’un fichier (aucune ligne précédemment couverte ne doit devenir non couverte) ;
+  * documenter dans `PLAN.md` (`Risks/Unknowns`) les fichiers legacy très peu couverts qui sont touchés, ainsi que la stratégie choisie (nouveau module + tests, tests ciblés, ou tâche de coverage dédiée proposée).
 
 ---
 
