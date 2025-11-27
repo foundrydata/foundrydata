@@ -3,11 +3,11 @@
 # Status: pending
 # Dependencies: None
 # Priority: high
-# Description: Comprehensive analysis of jsg-p1-automata-smt.md document to extract normative requirements and create structured implementation roadmap by pipeline phases.
+# Description: Comprehensive analysis of spec-jsg-p1-automata-smt.md document to extract normative requirements and create structured implementation roadmap by pipeline phases.
 # Details:
 [Context]
 
-**Must read**: docs/jsg-p1-automata-smt.md — Complete document analysis (324 lines)
+**Must read**: docs/spec-jsg-p1-automata-smt.md — Complete document analysis (324 lines)
 
 **Objective**: Extract all normative requirements (MUST, MUST NOT, SHALL, MAY) from the JSG-P1 specification and structure them by the 5-stage pipeline: Normalize → Compose → Generate → Repair → Validate.
 
