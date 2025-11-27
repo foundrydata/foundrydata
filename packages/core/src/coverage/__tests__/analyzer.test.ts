@@ -3,6 +3,32 @@ import { describe, it, expect } from 'vitest';
 import { analyzeCoverage } from '../analyzer.js';
 
 describe('analyzeCoverage', () => {
+  it('is deterministic for fixed schema and diagnostics', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        id: { type: 'integer', minimum: 0 },
+      },
+      enum: ['a', 'b', 'c'],
+    };
+
+    const input = {
+      canonSchema: schema,
+      ptrMap: new Map<string, string>([['', '#']]),
+      coverageIndex: new Map(),
+      planDiag: {
+        fatal: [],
+        unsatHints: [],
+      },
+    } as const;
+
+    const result1 = analyzeCoverage(input);
+    const result2 = analyzeCoverage(input);
+
+    expect(result1.graph).toEqual(result2.graph);
+    expect(result1.targets).toEqual(result2.targets);
+  });
+
   it('builds schema and property nodes with structural edges', () => {
     const schema = {
       type: 'object',
@@ -126,5 +152,82 @@ describe('analyzeCoverage', () => {
     for (const target of unreachableTargets) {
       expect(target.canonPath.startsWith('#/properties/id')).toBe(true);
     }
+  });
+
+  it('respects dimensionsEnabled when materializing targets', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        id: { type: 'integer' },
+      },
+      enum: ['x', 'y', 'z'],
+    };
+
+    const baseInput = {
+      canonSchema: schema,
+      ptrMap: new Map<string, string>([['', '#']]),
+      coverageIndex: new Map(),
+      planDiag: undefined,
+    } as const;
+
+    const allDims = analyzeCoverage({
+      ...baseInput,
+      dimensionsEnabled: ['structure', 'branches', 'enum'],
+    });
+    const enumOnly = analyzeCoverage({
+      ...baseInput,
+      dimensionsEnabled: ['enum'],
+    });
+
+    const allEnumTargets = allDims.targets.filter(
+      (t) => t.dimension === 'enum'
+    );
+    const enumOnlyTargets = enumOnly.targets.filter(
+      (t) => t.dimension === 'enum'
+    );
+
+    expect(allEnumTargets.length).toBe(3);
+    expect(enumOnlyTargets.length).toBe(3);
+
+    expect(allEnumTargets).toEqual(enumOnlyTargets);
+
+    const structureTargets = enumOnly.targets.filter(
+      (t) => t.dimension === 'structure'
+    );
+    const branchTargets = enumOnly.targets.filter(
+      (t) => t.dimension === 'branches'
+    );
+    expect(structureTargets.length).toBe(0);
+    expect(branchTargets.length).toBe(0);
+  });
+
+  it('is deterministic for enum targets on larger enums', () => {
+    const enumValues = Array.from({ length: 32 }, (_, i) => `v${i}`);
+    const schema = {
+      type: 'string',
+      enum: enumValues,
+    };
+
+    const input = {
+      canonSchema: schema,
+      ptrMap: new Map<string, string>([['', '#']]),
+      coverageIndex: new Map(),
+      planDiag: undefined,
+      dimensionsEnabled: ['enum'],
+    } as const;
+
+    const result1 = analyzeCoverage(input);
+    const result2 = analyzeCoverage(input);
+
+    const enumTargets1 = result1.targets.filter(
+      (t) => t.dimension === 'enum' && t.kind === 'ENUM_VALUE_HIT'
+    );
+    const enumTargets2 = result2.targets.filter(
+      (t) => t.dimension === 'enum' && t.kind === 'ENUM_VALUE_HIT'
+    );
+
+    expect(enumTargets1.length).toBe(enumValues.length);
+    expect(enumTargets2.length).toBe(enumValues.length);
+    expect(enumTargets1).toEqual(enumTargets2);
   });
 });
