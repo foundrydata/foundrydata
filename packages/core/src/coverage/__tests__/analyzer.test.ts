@@ -95,4 +95,36 @@ describe('analyzeCoverage', () => {
     );
     expect(structureTargets.length).toBe(0);
   });
+
+  it('marks targets under UNSAT canonPath as unreachable', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        id: { type: 'integer', minimum: 1, maximum: 0 }, // empty numeric domain
+      },
+    };
+
+    const result = analyzeCoverage({
+      canonSchema: schema,
+      ptrMap: new Map<string, string>([['', '#']]),
+      coverageIndex: new Map(),
+      planDiag: {
+        fatal: [
+          {
+            code: 'UNSAT_NUMERIC_BOUNDS',
+            canonPath: '#/properties/id',
+            details: {},
+          },
+        ],
+      },
+    });
+
+    const unreachableTargets = result.targets.filter(
+      (t) => t.status === 'unreachable'
+    );
+    expect(unreachableTargets.length).toBeGreaterThan(0);
+    for (const target of unreachableTargets) {
+      expect(target.canonPath.startsWith('#/properties/id')).toBe(true);
+    }
+  });
 });
