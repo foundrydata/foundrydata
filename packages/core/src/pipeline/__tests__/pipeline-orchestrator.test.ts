@@ -228,10 +228,19 @@ describe('executePipeline', () => {
       'repair',
       'validate',
     ]);
-    expect(result.artifacts.coverageGraph).toEqual({
-      nodes: [],
-      edges: [],
-    });
+
+    const graph = result.artifacts.coverageGraph;
+    expect(graph).toBeDefined();
+    expect(Array.isArray(graph?.nodes)).toBe(true);
+    expect(Array.isArray(graph?.edges)).toBe(true);
+    expect(graph?.nodes.length).toBeGreaterThan(0);
+
+    const nodeKindsByPath = new Map(
+      graph!.nodes.map((n) => [n.canonPath, n.kind])
+    );
+    expect(nodeKindsByPath.get('#')).toBe('schema');
+    expect(nodeKindsByPath.get('#/properties/id')).toBe('property');
+
     expect(result.artifacts.coverageTargets).toEqual([]);
   });
 });
