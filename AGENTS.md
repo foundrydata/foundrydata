@@ -1,71 +1,133 @@
-# AGENT Runbook — Operating Mode (GPT-5 Codex)
+# AGENT Runbook — Operating Mode (GPT-5 Codex, coverage-aware-v1)
 
-**Purpose.** Discipline d’exécution et garde-fous pour implémenter **FoundryData** depuis la **SPEC**.
-**Audience.** Agent GPT-5 Codex (VS Code) opérant sur les tâches 1..24.
-**Status.** Actif — à appliquer systématiquement.
+**Purpose.** Discipline d’exécution et garde-fous pour implémenter **FoundryData – couche coverage-aware V1** à partir des **SPEC** (générateur canonique + spec coverage-aware).
+
+**Audience.** Agent GPT-5 Codex (VS Code) opérant sur les tâches **9300..9312** (tag `coverage-aware-v1`).
+
+**Status.** Actif — à appliquer systématiquement pour ce tag.
 
 ---
 
 ## TL;DR opératoire
 
-1. **Source de vérité** : SPEC > AGENTS.md > notes Tasks.
-3. **REFONLY** : référencer la SPEC par **anchors** uniquement (pas de copie de prose).
-4. **Boucle** : `get_task` → `set_status(in-progress)` → anchors (max 5) → **PLAN.md** → **PATCH+TESTS** (≥80% sur fichiers touchés) → **build/test/bench** → **diag-schema** → **commit** (template) → `set_status(done)`.
-5. **Diagnostics** : enveloppe `{code, canonPath, details}`, phase correcte, champs obligatoires (`tiebreakRand`, `exclusivityRand`, `budget`).
-6. **AP:false** : pas d’expansion via `propertyNames.enum` sans `PNAMES_REWRITE_APPLIED`; fail-fast uniquement sous **presence pressure**.
-7. **AJV** : deux instances, flags **identiques** (cf. SPEC §§12–13).
-8. **Quotas contexte** : ≤5 anchors/itération, ≤2 sections SPEC complètes (via Grep bornes + Read calculé).
-9. **Bench gates** : `p95 ≤ 120ms`, `mem ≤ 512MB`.
-10. **Escalade** : SPEC ambiguë/contradictoire → bloquer, produire `SPEC-QUESTION.md`.
+1. **Sources de vérité** :
+   **SPEC canoniques + SPEC coverage-aware** > AGENTS.md > notes Tasks.
+2. **RefOnly** : référencer les SPEC uniquement via des **anchors** (`spec://...`, `cov://...`), aucune prose copiée.
+3. **Boucle** :
+   `get_task` → `set_status(in-progress)` → anchors (≤5, spec+cov cumulés) → **PLAN.md** → **PATCH+TESTS** (cov ≥80% sur fichiers touchés) → **build/test/bench** → **diag-schema** → **commit** (template) → `set_status(done)`.
+4. **Coverage gating** :
+   `coverage=off` ⇒ pas de CoverageAnalyzer, pas de CoverageGraph, pas d’instrumentation.
+5. **Dimensions** :
+   `dimensionsEnabled` = **projection** sur l’univers de cibles, pas un input dans les IDs. Toggles sur `excludeUnreachable` ne touchent pas aux IDs ni aux statuts.
+6. **AP:false** :
+   Sous AP:false, **CoverageIndex** est la seule source pour `PROPERTY_PRESENT` sur noms non déclarés. Aucune automaton parallèle.
+7. **SCHEMA_REUSED_COVERED** :
+   Cible **diagnostique** uniquement : jamais dans `coverage.overall`, `coverage.byDimension`, `coverage.byOperation`, ni dans `minCoverage`.
+8. **Séparation des phases** : Normalize → Compose → CoverageAnalyzer → CoveragePlanner → Generate → Repair → Validate → CoverageEvaluator.
+9. **Déterminisme** : RNG seedée, pas d’état global caché, même `(canonical schema, OpenAPI spec, coverage options incl. dimensionsEnabled/excludeUnreachable, seed, ajvMajor, registryFingerprint)` ⇒ même CoverageGraph, targets, TestUnits, instances et rapport (hors timestamps).
+10. **Diagnostics** : enveloppe `{code, canonPath, phase, details}`, phase correcte, champs obligatoires (`tiebreakRand`, `exclusivityRand`, `budget`).
+11. **CLI profiles** :
+    `quick` (petit budget, structure+branches), `balanced` (branches+enum) et `thorough` (toutes dimensions dispo, peu ou pas de caps) **doivent** être cohérents avec la SPEC.
+12. **Escalade** : SPEC ambiguë/contradictoire → bloquer, produire `SPEC-QUESTION.md`.
 
-### Mémoire opérationnelle (pièges agent à éviter)
+---
 
-- **Inline `tsx --eval`** : écrire un objet JS valide (clé `$schema` directe), quotes simples extérieures, wrapper `(async () => { ... })()`. Proscrire les fragments JSON ou les clés échappées inutilement.
-- **Diagnostics regex** : ajout d’un `context` ⇒ mettre à jour simultanément `diag/schemas.ts` et `diag/validate.ts` pour que les contrôles de phase acceptent le nouveau contexte.
-- **Defaults stricts** : ne pas laisser `undefined` sur des champs `string` requis dans les options résolues (ex. `resolver.snapshotPath` doit être une chaîne, même vide) avant `tsc --build`.
-- **Tests lourds** : sur des schémas volumineux (AsyncAPI/FHIR), si un test e2e dépasse 5s, le relancer ciblé (`vitest run <file> -t "<case>"`) au lieu de rerunner tout le pack.
-- **Diagnostics run-level** : tout ajout de champs (ex. `details.requested` pour `RESOLVER_STRATEGIES_APPLIED`) oblige à rafraîchir les snapshots reporter (JSON/MD/HTML) pour rester stable.
-- **Mocks fetch** : dans les tests, utiliser `globalThis.fetch` et typer les stubs (`as typeof globalThis.fetch`) pour éviter `no-undef` et restaurer l’état en teardown.
+## Mémoire opérationnelle (pièges à éviter)
+
+* **Inline `tsx --eval`** : écrire un objet JS valide (clé `$schema` directe), quotes simples extérieures, wrapper `(async () => { ... })()`. Proscrire les fragments JSON ou les clés échappées inutilement.
+* **Diagnostics regex** : ajout d’un `context` ⇒ mettre à jour simultanément `diag/schemas.ts` et `diag/validate.ts` pour que les contrôles de phase acceptent le nouveau contexte.
+* **Defaults stricts** : ne pas laisser `undefined` sur des champs `string` requis dans les options résolues (ex. `resolver.snapshotPath` doit être une chaîne, même vide) avant `tsc --build`.
+* **Tests lourds** : sur des schémas volumineux (AsyncAPI/FHIR), si un test e2e dépasse 5s, le relancer ciblé (`vitest run <file> -t "<case>"`) plutôt que relancer tout le pack.
+* **Diagnostics run-level** : tout ajout de champs (ex. `details.requested` pour `RESOLVER_STRATEGIES_APPLIED`) impose de rafraîchir les snapshots reporter (JSON/MD/HTML).
+* **Mocks fetch** : dans les tests, utiliser `globalThis.fetch` et typer les stubs (`as typeof globalThis.fetch`) pour éviter `no-undef` et restaurer l’état en teardown.
+
+---
+
+## Invariants coverage-aware (suppléments)
+
+À respecter en plus des invariants du pipeline canonique.
+
+* **Gating strict**
+
+  * `coverage=off` ⇒ **pas** de `CoverageAnalyzer`, pas de `CoverageGraph`, pas d’accumulateur de coverage, instrumentation désactivée.
+  * `coverage=measure|guided` ⇒ Analyzer + instrumentation activés.
+
+* **Univers de targets vs dimensionsEnabled**
+
+  * L’univers de cibles est défini par le schéma canonique + OpenAPI + version Foundry/rapport.
+  * En modes standard, `dimensionsEnabled` décide quelles dimensions sont matérialisées dans `targets[]` et utilisées dans les métriques. Un mode debug/introspection pourra matérialiser plus de dimensions, mais les métriques resteront toujours filtrées par `dimensionsEnabled`.
+  * Ne jamais faire dépendre `CoverageTarget.id` ou l’ordre des cibles de `dimensionsEnabled` ou `excludeUnreachable`.
+
+* **Unreachable / excludeUnreachable**
+
+  * `status:'unreachable'` découle des diagnostics existants (`planDiag`, `CoverageIndex` vide, UNSAT connus), jamais d’heuristiques agressives.
+  * En cas de doute sur la satisfiabilité, laisser la cible `status:'active'` avec `hit:false` plutôt que la marquer `unreachable`.
+  * `excludeUnreachable` agit uniquement sur les dénominateurs dans l’Evaluator, **pas** sur les IDs ni sur les statuts.
+
+* **AP:false & CoverageIndex**
+
+  * Sous `additionalProperties:false`, toute cible `PROPERTY_PRESENT` sur nom non déclaré doit être adossée à `CoverageIndex.has` / `CoverageIndex.enumerate`.
+  * Pas d’automate parallèle basé sur `propertyNames`/`patternProperties`. Si la couverture est incertaine, la cible reste uncovered plutôt que “devinée”.
+
+* **SCHEMA_REUSED_COVERED (diagnostic)**
+
+  * Cible présente dans `targets[]` et diagnostics **uniquement pour l’insight**.
+  * Ne contribue **jamais** à `coverage.overall` ni à `coverage.byDimension`/`byOperation` ni à `minCoverage`.
+
+* **Profils CLI**
+
+  * `quick` : petite `maxInstances` (~50–100), `dimensionsEnabled=['structure','branches']`, caps agressifs.
+  * `balanced` : `['structure','branches','enum']`, budget moyen (~200–500), caps modérés.
+  * `thorough` : toutes dimensions V1 (incl. boundaries quand dispo), `maxInstances` élevé (≥1000), caps désactivées sauf garde-fous globaux.
 
 ---
 
 ## Règles d’or
 
-1. **SPEC seule fait foi.** Pas d’élargissement de périmètre.
-2. **REFONLY par anchors.** Pas de prose SPEC recopiée.
-3. **Séparation des phases** (Normalize → Compose → Generate → Repair → Validate).
-4. **Déterminisme** : RNG seedé, pas d’état global, journaux de décision.
+1. **SPEC seules font foi.** Pas d’élargissement de périmètre au-delà des deux documents de SPEC (canonique + coverage-aware).
+2. **REFONLY par anchors.** Pas de prose SPEC recopiée; référencer par `spec://...` ou `cov://...`.
+3. **Séparation des phases** (Normalize → Compose → CoverageAnalyzer → CoveragePlanner → Generate → Repair → Validate → CoverageEvaluator).
+4. **Determinism** : RNG seedée, pas d’état global, journaux de décision.
 5. **Vérifiabilité** : diagnostics conformes §19.1, schémas de sortie ci-dessous.
+6. **Pas de réseau** dans Analyzer/Planner/Generator/Repair/Validate/CoverageEvaluator.
+7. **Parité AJV** : flags alignés entre AJV de génération/planning et AJV de validation (voir section AJV plus bas).
+8. **AP:false** : respecter strictement les invariants CoverageIndex (pas d’expansion sauvage).
+9. **Coverage=measure** : flux d’instances **identique** à coverage=off pour un tuple fixé `(canonical schema, OpenAPI spec, options, seed, ajvMajor, registryFingerprint)`.
+10. **Coverage=guided** : améliore la couverture par hints mais ne viole jamais la validité AJV ni le déterminisme.
 
 ---
 
-## Boucle d'exécution (Run Loop) si tâche disponible
+## Boucle d'exécution (Run Loop) pour le tag coverage-aware-v1
 
-```
-Step 0  Sanity: tâches disponibles, et si on est dans un contexte de taskmaster (ca sera demandé dans le promptle cas échéant) ?
-        → mcp__task-master-ai__next_task() ou Playbook "No Task".
+```text
+Step 0  Sanity:
+        - tâches Taskmaster disponibles ?
+        - tag coverage-aware-v1 actif ?
 
-Step 1  Obtenir la tâche et marquer comme en cours si on est dans un contexte taskmaster :
-        → mcp__task-master-ai__get_task(id)
-        → mcp__task-master-ai__set_task_status(id, "in-progress")
+Step 1  Obtenir la tâche et marquer comme en cours (contexte Taskmaster) :
+        → /tm:show:show-task <id> ou /tm:next:next-task
+        → /tm:set-status:to-in-progress <id>
 
-Step 2  REFONLY: identifier sections requises (≤2 sections/itération). Grep bornes + Read calculé pour chaque section.
+Step 2  REFONLY:
+        - identifier ≤5 anchors pertinents (spec://... et/ou cov://...)
+        - ≤2 sections SPEC complètes (tous docs confondus) par itération
+        - utiliser Grep bornes + Read calculé
 
-Step 3  Produire PLAN.md (200–400 mots) + liste fichiers touchés (contrat ci-dessous).
+Step 3  Produire PLAN.md (200–400 mots) + liste fichiers touchés.
 
 Step 4  Générer PATCH + TESTS (cov ≥80% sur fichiers touchés).
 
-Step 5  Exécuter build/test/bench (cmd exactes plus bas).
+Step 5  Exécuter build/test/bench (cmd standard).
 
 Step 6  Valider diagnostics (schéma "diagnosticsEnvelope.schema.json").
 
 Step 7  Commit (template), trailer REFONLY valide.
 
-Step 8  Marquer la tâche comme terminée si on est dans un contexte taskmaster 
-        → mcp__task-master-ai__set_task_status(id, "done")
+Step 8  Marquer la tâche comme terminée :
+        → /tm:set-status:to-done <id> ou /complete-task <id>
 ```
 
-**Commandes standard (npm workspaces du repo)**
+**Commandes standard (npm workspaces)**
 
 ```bash
 npm i
@@ -75,15 +137,17 @@ npm run typecheck
 npm run lint
 ```
 
-### Exécution de Code TypeScript — Protocole `tsx`
+---
 
-**CRITICAL**: Ne **jamais** utiliser `bash -lc 'node - <<EOF'` pour du code TypeScript. Node.js ne peut pas importer des fichiers `.ts` non compilés.
+## Exécution de Code TypeScript — Protocole `tsx`
 
-**❌ INCORRECT (échoue avec ERR_MODULE_NOT_FOUND)**
+**CRITICAL**: Ne pas utiliser `bash -lc 'node - <<EOF'` pour du code TypeScript non compilé.
+
+**❌ INCORRECT**
 
 ```bash
 bash -lc 'node - <<EOF
-import { executePipeline } from './packages/core/src/pipeline/orchestrator.js';
+import { executePipeline } from "./packages/core/src/pipeline/orchestrator.js";
 const res = await executePipeline(schema, options);
 console.log(res);
 EOF
@@ -108,33 +172,22 @@ npx tsx --eval "(async () => {
 })()"
 ```
 
-**Pourquoi `tsx` ?**
-
-* Gère automatiquement les imports TypeScript `.ts` → `.js`
-* Pas besoin de compilation préalable
-* Support ESM natif avec `import`
-* Déterministe et reproductible
-
-**Alternatives (si compilation déjà faite)**
+**Alternative si compilation déjà faite**
 
 ```bash
-# 1. Compiler d'abord
 npm run build
 
-# 2. Utiliser les fichiers compilés dans dist/
 node -e "
 import { executePipeline } from './packages/core/dist/pipeline/orchestrator.js';
 // ...
 "
 ```
 
-**Note pour Codex AI** : Codex tente parfois `bash -lc 'node - <<EOF'` pour des tests rapides. Toujours intercepter et remplacer par `npx tsx -e "..."` pour éviter ERR_MODULE_NOT_FOUND.
-
 ---
 
 ## Contrats de sortie (schémas et formats)
 
-> Les objets ci-dessous **doivent** être produits et validés localement.
+> Les objets ci-dessous doivent être produits et validés localement.
 
 ### 1) `refonlyRecord.schema.json`
 
@@ -147,7 +200,7 @@ import { executePipeline } from './packages/core/dist/pipeline/orchestrator.js';
     "anchors": {
       "type": "array",
       "minItems": 1,
-      "items": { "type": "string", "pattern": "^spec://§[0-9]+#[a-z0-9\\-]+$" },
+      "items": { "type": "string", "pattern": "^(spec|cov)://§[0-9]+#[a-z0-9\\-]+$" },
       "maxItems": 12
     },
     "summary": { "type": "string", "minLength": 1, "maxLength": 240 }
@@ -156,14 +209,18 @@ import { executePipeline } from './packages/core/dist/pipeline/orchestrator.js';
 }
 ```
 
-**Encapsulation REFONLY (dans tasks 9100..9124 et trailer de commit)**
+**Encapsulation REFONLY (tâches 9300..9312 et trailer de commit)**
+
 Chaîne stockée :
 
-```
+```text
 REFONLY::{"anchors":[...],"summary":"..."}
 ```
 
-Règles : (a) le JSON externe (si présent) doit parser ; (b) **après** suppression du préfixe `REFONLY::`, le JSON interne **doit** parser et satisfaire le schéma.
+Règles :
+
+* le JSON externe (si présent) doit parser ;
+* après suppression du préfixe `REFONLY::`, le JSON interne doit parser et satisfaire le schéma.
 
 ---
 
@@ -181,7 +238,7 @@ Règles : (a) le JSON externe (si présent) doit parser ; (b) **après** suppres
       "type": "array",
       "minItems": 1,
       "maxItems": 5,
-      "items": { "type": "string", "pattern": "^spec://§[0-9]+#[a-z0-9\\-]+$" }
+      "items": { "type": "string", "pattern": "^(spec|cov)://§[0-9]+#[a-z0-9\\-]+$" }
     },
     "touchedFiles": {
       "type": "array",
@@ -279,156 +336,106 @@ Règles : (a) le JSON externe (si présent) doit parser ; (b) **après** suppres
 
 ---
 
-## Politique REFONLY — Anchors uniquement
+## Politique REFONLY — Anchors SPEC & coverage
 
-**Mapping d'anchor**
+### Mapping d'anchor
 
-```
+```text
 spec://§<n>#<slug> → docs/spec-canonical-json-schema-generator.md#s<n>-<slug>
+cov://§<n>#<slug>  → docs/spec-coverage-aware-v1.x.md#s<n>-<slug>
 ```
 
-**Procédure de lecture SPEC (spec-canonical-json-schema-generator.md = 2676 lignes)**
+*(remplacer `.x` par la version en cours dans le repo)*
 
-Le fichier SPEC est trop volumineux pour lecture sans précision. **Toujours** utiliser ce protocole :
+### Procédure de lecture SPEC (canonique)
+1. **Grep Section Bounds**
 
-### Protocole Obligatoire : Grep Bornes + Read Calculé
+   ```bash
+   # Pour lire §N, grep début et fin
+   Grep({ pattern: '^<a id="s7-', '-n': true, head_limit: 1 })  # → ligne 321
+   Grep({ pattern: '^<a id="s8-', '-n': true, head_limit: 1 })  # → ligne 650
+   ```
 
-**Étape 1 : Grep Section Bounds (parallèle)**
+2. **Calcul automatique**
 
-```bash
-# Pour lire §N, grep début et fin
-Grep({ pattern: '^<a id="s7-', '-n': true, head_limit: 1 })  # → ligne 321
-Grep({ pattern: '^<a id="s8-', '-n': true, head_limit: 1 })  # → ligne 650
-```
+   ```ts
+   const start = 321;
+   const end = 650;
+   const limit = end - start;
+   ```
 
-**Étape 2 : Calcul Automatique**
+3. **Read exact**
 
-```typescript
-const start = 321;   // Premier anchor §7
-const end = 650;     // Premier anchor §8 (borne supérieure)
-const limit = end - start;  // = 329 lignes pour §7 complet
-```
+   ```bash
+   Read({
+     file_path: 'docs/spec-canonical-json-schema-generator.md',
+     offset: start,
+     limit: limit
+   })
+   ```
 
-**Étape 3 : Read Exact**
+### Procédure de lecture SPEC coverage-aware
 
-```bash
-Read({
-  file_path: 'docs/spec-canonical-json-schema-generator.md',
-  offset: start,
-  limit: limit
-})
-# Lit EXACTEMENT §7, 100% efficacité, 0% gaspillage
-```
+Pour `cov://...` :
 
-### Justification Technique
+* même principe, mais sur le fichier `docs/spec-coverage-aware-v1.x.md` ;
+* utiliser les mêmes anchors HTML (`<a id="sN-...">`) s’ils sont présents, sinon s’appuyer sur les titres `## N.` ;
+* garder la même discipline : ≤2 sections complètes par itération.
 
-**Fichier = 2676 lignes**, sections typiques = 200-500 lignes :
+Pseudo-code :
 
-| Méthode | Tokens Chargés | Efficacité | Problème |
-|---------|----------------|------------|----------|
-| `Read(offset)` sans limit | ~2000 lignes | ❌ 15-20% | Charge §7+§8+§9+§10... = 82% waste |
-| `Read(offset, limit: 100)` | ~100 lignes | ❌ 30% | Tronque §7 à 30%, manque 70% du contenu |
-| **Grep bornes + Read** | ~329 lignes | ✅ 100% | Exactement §7, rien d'autre |
-
-### Pattern Universel (pour toute section §N)
-
-```typescript
-// Fonction générique
-function readSpecSection(n: number) {
-  // 1. Grep bornes (parallèle = 1 message, 2 tool calls)
+```ts
+function readCoverageSection(n: number) {
   const startLine = grep(`^<a id="s${n}-`, extract_first_line);
-  const endLine = grep(`^<a id="s${n+1}-`, extract_first_line) || 2676; // EOF si dernière section
-
-  // 2. Read calculé
+  const endLine = grep(`^<a id="s${n+1}-`, extract_first_line) || EOF;
   return Read({
+    file_path: 'docs/spec-coverage-aware-v1.x.md',
     offset: startLine,
     limit: endLine - startLine
   });
 }
-
-// Usage
-readSpecSection(7);   // Lit exactement §7 (lignes 321-650)
-readSpecSection(19);  // Lit exactement §19 jusqu'à EOF
 ```
 
-### Quotas REFONLY (inchangés)
+### Quotas REFONLY (inchangés, mais cumulés spec+cov)
 
-* Max **5 anchors** par itération
-* Max **2 sections complètes** par itération (si sections longues >300 lignes)
-* Si >5 anchors requis → produire **Context Expansion Request**
+* Max **5 anchors** (`spec://` + `cov://` confondus) par itération.
+* Max **2 sections complètes** (canonique + coverage) par itération.
+* Si >5 anchors requis → produire une **Context Expansion Request**.
 
-**Context Expansion Request**
+Exemple :
 
 ```json
 {
   "type": "context-expansion",
   "reason": "anchors>5 ou sections>2",
-  "proposedAnchors": ["spec://§8#branch-selection-algorithm", "..."]
+  "proposedAnchors": [
+    "spec://§8#branch-selection-algorithm",
+    "cov://§3#coverage-model",
+    "cov://§4#architecture-components"
+  ]
 }
 ```
-
-### Exemples Concrets
-
-**✅ CORRECT : §7 Normalizer**
-
-```bash
-# Grep bornes
-Grep({ pattern: '^<a id="s7-', '-n': true })  # → 321
-Grep({ pattern: '^<a id="s8-', '-n': true })  # → 650
-
-# Read exact
-Read({ offset: 321, limit: 329 })
-# Résultat : 329 lignes, 100% §7
-```
-
-**❌ INCORRECT : Read sans calcul**
-
-```bash
-# Mauvais
-Read({ offset: 321 })  # Lit 2000 lignes = §7+§8+§9+§10... (82% waste)
-
-# Mauvais
-Read({ offset: 321, limit: 100 })  # Tronque §7 à ligne 420, manque 250 lignes (70% manquant)
-```
-
-### Alternative : Grep -A (sections courtes <200 lignes uniquement)
-
-```bash
-# Pour petites sections seulement
-Grep({ pattern: '<a id="s13-formats"></a>', '-A': 180, '-n': true })
-# Trade-off: 1 tool call, mais risque si estimation fausse
-```
-
-**Règle** : Préférer toujours **Grep bornes + Read calculé** (robuste, précis, 100% efficient).
-
----
-
-## Quotas & limites
-
-* Anchors par itération : **≤5**
-* Sections SPEC complètes par itération : **≤2** (si sections >300 lignes)
-* Longueur PLAN.md : **200–600 mots**
-* Trailer REFONLY `summary` : **≤240 caractères**
-
-**Note** : "Fenêtre par anchor" n'est plus applicable car on lit des **sections complètes** via Grep bornes + Read calculé. Une section §N contient plusieurs anchors et doit être lue intégralement.
 
 ---
 
 ## Diagnostics — Garde-fous additionnels
 
-* **Score-only** : `scoreDetails.tiebreakRand` **toujours** enregistré, même si `|T|=1`.
+* **Score-only** : `scoreDetails.tiebreakRand` renseigné systématiquement, même si `|T|=1`.
 * **oneOf exclusivity / step-4** : si RNG utilisée, enregistrer `scoreDetails.exclusivityRand`.
-* **Budget score-only** : renseigner `{skipped,tried,limit,reason}` avec `K_effective = min(maxBranchesToTry, branches.length)` **après** caps de Compose.
+* **Budget score-only** : `budget = {skipped,tried,limit,reason}` renseigné avec `K_effective` **après** caps de Compose.
 
 ---
 
-## AP:false — Rappels opératoires + cas
+## AP:false — Rappels (compatibles coverage-aware)
 
-* **Jamais** d’expansion de couverture depuis `propertyNames.enum` **sans** `PNAMES_REWRITE_APPLIED`.
-* **Fail-fast `AP_FALSE_UNSAFE_PATTERN`** uniquement sous **presence pressure** (`effectiveMinProperties > 0` **ou** `effectiveRequiredKeys ≠ ∅` **ou** `dependentRequired` effectif).
-* **`propertyNames.pattern` brut** ne déclenche **pas** `AP_FALSE_UNSAFE_PATTERN` (gating-only), sauf si réécrit explicitement (P2).
+* Ne jamais étendre la couverture AP:false depuis `propertyNames.enum` **sans** `PNAMES_REWRITE_APPLIED`.
+* Fail-fast `AP_FALSE_UNSAFE_PATTERN` uniquement sous **presence pressure** (`effectiveMinProperties > 0` ou `required` non vide ou `dependentRequired` effectif).
+* Sous coverage-aware :
 
-**Cas minimal positif**
+  * Analyzer/Instrumentation **consomment** CoverageIndex, ne le redéfinissent pas.
+  * Si CoverageIndex est vide, considérer les cibles correspondantes comme `unreachable` ou non matérialisées, pas comme couvertes.
+
+Cas minimal positif :
 
 ```json
 {
@@ -439,9 +446,7 @@ Grep({ pattern: '<a id="s13-formats"></a>', '-A': 180, '-n': true })
 }
 ```
 
-→ Couverture = `{a,b}` (ancrée-safe) ; OK.
-
-**Cas négatif (pas de rewrite)**
+Cas négatif (pas de rewrite) :
 
 ```json
 {
@@ -450,41 +455,49 @@ Grep({ pattern: '<a id="s13-formats"></a>', '-A': 180, '-n': true })
 }
 ```
 
-→ Couverture **n’augmente pas** ; `x` reste gating-only.
+→ pas d’augmentation de couverture.
 
 ---
 
-## AJV — Parité d’instances (résumé opératoire)
+## AJV — Parité d’instances (résumé)
 
-Deux instances : **Source** (schéma original) et **Planning/Generation** (vue canonique).
-Contraintes minimales (alignées SPEC §§12–13) :
+Deux instances AJV : **source** (schéma original) et **planning/génération** (vue canonique). Contraintes :
 
-* `unicodeRegExp:true` **sur les deux**.
-* Dialecte compatible (draft-04/07/2019-09/2020-12) sans mélange dans la même instance.
-* `validateFormats`: **identique** sur les deux (false/false ou true/true avec `ajv-formats`).
-* `multipleOfPrecision` = `PlanOptions.rational.decimalPrecision` **sur les deux** quand `rational.fallback ∈ {"decimal","float"}`.
-* `discriminator` : si activé, **sur les deux**.
+* `unicodeRegExp:true` sur les deux.
+* Dialecte JSON Schema cohérent des deux côtés.
+* `validateFormats`: même valeur sur les deux (`false/false` ou `true/true`).
+* `multipleOfPrecision` aligné sur `PlanOptions.rational.decimalPrecision`.
+* `discriminator`: activé ou désactivé de façon identique.
 
-Écart ⇒ `AJV_FLAGS_MISMATCH`.
+Écart ⇒ diagnostic `AJV_FLAGS_MISMATCH`.
 
 ---
 
-## Playbooks
+## Playbooks (tag coverage-aware-v1)
 
-### A) **No Task Available**
+### A) No Task Available (aucune tâche 9300..9312 disponible)
 
-1. **Diagnostics conformance audit** (tâche 16) sur code existant → produire liste des diagnostics hors phase.
-2. **Bench harness durcissement** (tâche 15) → rapport `benchGate.json` conforme au schéma.
-3. **Couverture tests** (tâche 17) → rapport des fichiers <80% (sur fichiers déjà touchés).
-4. **Docs** (tâche 19) → compléter matrices et sections manquantes.
+1. **Renforcer les tests d’acceptance coverage**
 
-### B) **SPEC ambiguë/contradictoire**
+   * Étendre les fixtures simples (oneOf, enums, AP:false, OpenAPI) en suivant la SPEC coverage-aware.
+   * Cible : améliorer la lisibilité des rapports coverage-report/v1.
 
-* Geler la tâche. Créer `SPEC-QUESTION.md` :
+2. **Bench & overhead coverage**
+
+   * Utiliser les profils CLI `quick` / `balanced` / `thorough` sur des specs représentatives.
+   * Vérifier respect des gates `benchGate.schema.json`.
+
+3. **Docs**
+
+   * Compléter les sections docs `spec-coverage-aware-v1.x` (exemples, limites connues, FAQ coverage).
+
+### B) SPEC ambiguë/contradictoire
+
+Geler la tâche, produire `SPEC-QUESTION.md` :
 
 ```md
 # SPEC Question
-Anchor(s): [spec://§...]
+Anchor(s): ["spec://§...", "cov://§..."]
 Symptôme: ...
 Impact: ...
 Proposition: ...
@@ -492,30 +505,30 @@ Proposition: ...
 
 ---
 
-## Templates prêts à l’emploi
+## Templates
 
 ### Commit message
 
-```
+```text
 feat(core): task <ID> — <titre court>
 
 - <3–4 points factuels de changement>
 - tests: <pkg>/<file>.spec.ts (cov >=80% touched)
 
-REFONLY::{"anchors":["spec://§8#branch-selection-algorithm"],"summary":"<résumé 1 ligne>"}
+REFONLY::{"anchors":["cov://§3#coverage-model","spec://§8#branch-selection-algorithm"],"summary":"<résumé 1 ligne>"}
 ```
 
 ### PLAN.md (200–400 mots)
 
-```
+```text
 Task: <id>   Title: <title>
-Anchors: [spec://§<n>#<slug>, ...]  (≤5)
+Anchors: [spec://§<n>#<slug>, cov://§<m>#<slug>, ...]  (≤5)
 Touched files:
 - packages/<pkg>/src/...
 - packages/<pkg>/test/...
 
 Approach:
-<description concise de l’implémentation alignée SPEC, décisions clés, invariants, points d’intégration>
+<description concise de l’implémentation alignée SPEC (canonique + coverage), décisions clés, invariants, points d’intégration>
 
 Risks/Unknowns:
 <liste brève>
@@ -523,6 +536,7 @@ Risks/Unknowns:
 Checks:
 - build: npm run build
 - test: npm run test
+- bench: npm run bench
 - diag-schema: true
 ```
 
@@ -531,7 +545,8 @@ Checks:
 ```json
 {
   "code": "COMPLEXITY_CAP_ONEOF",
-  "phase": "Compose",
+  "canonPath": "#/oneOf",
+  "phase": "compose",
   "details": { "limit": 32, "reason": "largeOneOf" },
   "budget": { "skipped": true, "tried": 0, "limit": 32, "reason": "largeOneOf" },
   "scoreDetails": { "tiebreakRand": 0.4123 }
@@ -542,118 +557,69 @@ Checks:
 
 ## Déterminisme (côté agent)
 
-* Aucune sélection stochastique d’anchors ; lister dans l’ordre demandé par la SPEC/tâche.
-* Enregistrer les décisions dans `agent-log.jsonl` (JSON lines : opération, horodatage, taskId, anchors, fichiers modifiés, seeds RNG lors de `oneOf` step-4).
-* Pas de mutation de global state ; pas de réécriture d’IDs arbitraire.
+* Aucune sélection stochastique d’anchors ; lister dans l’ordre utile pour la tâche.
+* Enregistrer les décisions dans `agent-log.jsonl` (opération, horodatage, taskId, anchors, fichiers modifiés, seeds RNG lors de choix).
+* Pas de mutation de global state ; pas de réécriture arbitraire d’IDs.
 
 ---
 
 ## Intégration Task Master — Slash Commands & CLI
 
-**Politique d'accès** : **ne jamais** lire `.taskmaster/*.json` directement ; **toujours** utiliser les slash commands ou la CLI.
+*(inchangé, mais contextualisé pour les tâches 9300..9312)*
 
-### Slash Commands Disponibles (Recommandé)
+* `/tm:list:list-tasks`
+* `/tm:show:show-task <id>`
+* `/tm:next:next-task`
+* `/tm:set-status:to-in-progress <id>`
+* `/tm:set-status:to-done <id>`
+* `/complete-task <id>`
 
-Les 44 slash commands Task Master sont disponibles avec la syntaxe `/tm:category:command` :
-
-```bash
-# Commandes principales
-/tm:list:list-tasks                          # Lister les tâches
-/tm:show:show-task <id>                      # Voir une tâche
-/tm:next:next-task                           # Prochaine tâche recommandée
-/tm:set-status:to-in-progress <id>           # Marquer en cours
-/tm:set-status:to-done <id>                  # Marquer done
-/complete-task <id>                          # Compléter avec validation
-
-# Analyse & expansion
-/tm:analyze-complexity:analyze-complexity    # Analyse de complexité
-/tm:expand:expand-task <id>                  # Décomposer une tâche
-/tm:complexity-report:complexity-report      # Voir le rapport
-
-# Dépendances
-/tm:validate-dependencies:validate-dependencies  # Valider les dépendances
-/tm:add-dependency:add-dependency            # Ajouter une dépendance
-/tm:remove-dependency:remove-dependency      # Retirer une dépendance
-```
-
-**Référence complète** : [.claude/TASK_MASTER_QUICK_REF.md](./.claude/TASK_MASTER_QUICK_REF.md)
-
-### CLI Task Master (Alternative)
-
-Toutes les commandes sont également disponibles via CLI :
+CLI équivalente :
 
 ```bash
-# Lister les tâches
 npx task-master list
-
-# Voir une tâche
 npx task-master show <id>
-
-# Prochaine tâche
 npx task-master next
-
-# Changer le statut
-npx task-master set-status --id=<id> --status=done
 npx task-master set-status --id=<id> --status=in-progress
-
-# Valider les dépendances
-npx task-master validate-dependencies
+npx task-master set-status --id=<id> --status=done
 ```
 
-### Workflow Typique
-
-```bash
-# 1. Trouver la prochaine tâche
-/tm:next:next-task
-# ou: npx task-master next
-
-# 2. Marquer comme en cours
-/tm:set-status:to-in-progress <id>
-# ou: npx task-master set-status --id=<id> --status=in-progress
-
-# 3. [Implémenter la tâche...]
-
-# 4. Marquer comme terminée avec validation complète
-/complete-task <id>
-# ou: npx task-master set-status --id=<id> --status=done
-```
-
-### ⚠️ Outils MCP Non Disponibles
-
-Les 36 outils MCP Task Master (`mcp__task-master-ai__*`) sont **rejetés par VSCode** en raison d'une incompatibilité avec JSON Schema Draft 2020-12 `$dynamicRef`.
-
-**Workaround** : Utiliser les slash commands ou la CLI directe (voir ci-dessus).
+**Politique** : ne jamais lire `.taskmaster/*.json` directement; passer par les commandes.
 
 ---
 
-## Définition de Fini (DoD)
+## Outils MCP non disponibles
 
-* Fichiers livrés par sous-tâches.
+Les outils MCP Task Master (`mcp__task-master-ai__*`) restent indisponibles; utiliser les slash commands ou la CLI.
+
+---
+
+## Définition de Fini (DoD) — coverage-aware-v1
+
+* Fichiers livrés selon le plan Taskmaster 9300..9312.
 * Tests verts, **cov ≥80%** sur fichiers touchés.
-* Diagnostics conformes **§19.1**.
-* Validation finale AJV sur **schéma original**.
+* Diagnostics conformes au schéma `diagnosticsEnvelope.schema.json`.
+* Validation finale AJV sur le **schéma original**.
 * REFONLY correct (schéma + trailer).
-* Bench gates respectés (profils requis).
-* Pas de texte SPEC copié.
+* Bench gates respectés.
+* Rapport coverage-report/v1 stable, deterministe, et cohérent avec `dimensionsEnabled` / `excludeUnreachable`.
+* Pas de texte SPEC copié; uniquement des anchors.
 
 ---
 
-## Erreurs courantes à éviter (résumé)
+## Erreurs courantes à éviter (rappel)
 
 * Émettre `REGEX_COMPLEXITY_CAPPED` hors Normalize/Compose.
 * Émettre `COMPLEXITY_CAP_PATTERNS` hors Generate.
 * Oublier `tiebreakRand` quand `|T|=1`.
-* Étendre la couverture AP:false via `propertyNames.enum` sans flag.
+* Étendre AP:false via `propertyNames.enum` sans flag.
 * Diverger les flags AJV entre instances.
-* Lire/parsing direct des fichiers Task Master.
+* Utiliser `dimensionsEnabled` comme input dans la génération des IDs de coverage.
 
 ---
 
 ## Maintenance
 
-* **When in doubt, SPEC d’abord.**
+* En cas de doute, commencer par les SPEC (canonique + coverage-aware).
 * En cas de conflit SPEC vs AGENTS.md, **SPEC gagne**.
-* Mettre à jour ce runbook **sans** altérer ses contrats (schémas/quotas/templates) sans justification explicite.
-
-**Last Updated**: 2025-10-13
-**Version**: 1.1.0 (GPT-5 Codex profile)
+* Toute mise à jour de ce runbook ne doit pas casser les contrats (schémas/quotas/templates) sans justification explicite.

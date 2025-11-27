@@ -166,6 +166,17 @@ type CoverageTargetReport = CoverageTarget & {
   * coverage report **format major**.
 
   Enabling or disabling coverage dimensions only changes **which subset of targets is materialized** in a given run; it MUST NOT change the `id` of any target that exists when its dimension is enabled, nor renumber existing targets in other dimensions. In other words, `dimensionsEnabled` is a projection/filter over a stable target universe, not an input into ID generation.
+* In V1, `id` generation MUST NOT depend on:
+
+  * runtime coverage results (`hit` flags, coverage bitmaps),
+  * `status` (`active` / `unreachable` / `deprecated`),
+  * `weight` or `polarity`,
+  * `meta`,
+  * `dimensionsEnabled`,
+  * `excludeUnreachable`,
+  * planner decisions (caps, hints, TestUnit boundaries).
+
+  Implementations MAY use `(dimension, kind, canonPath, operationKey?, params?)` and other canonical, static information as inputs to `id` generation, but MUST treat coverage configuration and runtime outcomes as orthogonal.
 * Cross‑major changes **may** change IDs and/or target sets; such changes **must** bump the coverage report `version` and be documented.
 
 **Status semantics**
@@ -178,7 +189,10 @@ type CoverageTargetReport = CoverageTarget & {
   * V1 may mark targets as `unreachable` based on heuristics; it is not required to detect all impossible targets.
   * In V1, `unreachable` SHOULD primarily be derived from existing UNSAT and guardrail diagnostics produced by Normalize / Compose / `CoverageIndex` and recorded in `planDiag` (for example `UNSAT_*`, `CONTAINS_UNSAT_BY_SUM`, `UNSAT_NUMERIC_BOUNDS`, `UNSAT_AP_FALSE_EMPTY_COVERAGE`). CoverageAnalyzer MUST NOT introduce a separate global proof engine beyond these existing analyses; any additional heuristics MUST be conservative (never misclassify a reachable target as `unreachable`) and SHOULD be documented.
 * `status: 'deprecated'`
-  Reserved for future use (targets that are structurally present but intentionally ignored, e.g. due to schema evolution).
+  Targets that are structurally present but intentionally ignored for metrics. In V1 this includes, in particular,
+  diagnostic-only targets that MUST remain visible in reports but MUST NOT contribute to coverage metrics or threshold
+  enforcement (e.g. `SCHEMA_REUSED_COVERED` in the inter-schema / API coverage dimension). Future versions MAY refine
+  this usage, but the invariant that `status:'deprecated'` excludes a target from all coverage denominators MUST hold.
 
 Interaction with metrics is defined in §3.5.
 
@@ -191,11 +205,21 @@ Interaction with metrics is defined in §3.5.
 
 ### 3.3 Dimensions (V1)
 
-V1 defines the following coverage dimensions; some are active in M0/M1, others are planned for M2+.
+V1 defines the following coverage dimensions; some are active in M0/M1, others are planned for M2+. Each dimension has a
+stable string key used in `CoverageTarget.dimension`, `run.dimensionsEnabled` and `metrics.byDimension`:
 
-1. **Structural coverage**
+```ts
+type CoverageDimension =
+  | 'structure'
+  | 'branches'
+  | 'enum'
+  | 'boundaries'
+  | 'operations';
+```
 
-   * Questions:
+1. **Structural coverage** (`dimension: 'structure'`)
+
+  * Questions:
 
      * “Was this schema / subschema instantiated at least once?”
      * “Was this optional property ever present?”
@@ -205,11 +229,11 @@ V1 defines the following coverage dimensions; some are active in M0/M1, others a
      * `PROPERTY_PRESENT` – optional property present ≥ 1 time.
    * For V1:
 
-     * `SCHEMA_NODE` is defined over canonical schema nodes in the composed view. At runtime, a `SCHEMA_NODE` is hit when at least one instance that **successfully passed Validate** has been produced through generation/repair paths that include that canonical node, and the generator / Repair instrumentation emits a coverage event attached to that node. Implementations MUST derive `SCHEMA_NODE` hits from the canonical view and Compose artifacts (e.g. `ptrMap`, `planDiag`) and from instrumentation in `Generate` / `Repair`; they MUST NOT require tracing AJV’s internal evaluation paths, and MUST NOT re‑interpret JSON Schema semantics by reparsing the raw schema.
-     * Implementations MAY buffer per‑instance coverage events and only mark targets as hit once the corresponding instance has passed `Validate`.
+   * `SCHEMA_NODE` is defined over canonical schema nodes in the composed view. At runtime, a `SCHEMA_NODE` is hit when at least one instance that **successfully passed Validate** has been produced through generation/repair paths that include that canonical node, and the generator / Repair instrumentation emits a coverage event attached to that node. Implementations MUST derive `SCHEMA_NODE` hits from the canonical view and Compose artifacts (e.g. `ptrMap`, `planDiag`) and from instrumentation in `Generate` / `Repair`; they MUST NOT require tracing AJV’s internal evaluation paths, and MUST NOT re‑interpret JSON Schema semantics by reparsing the raw schema.
+     * Implementations MAY buffer per‑instance coverage events and only mark targets as hit once the corresponding instance has passed `Validate`. When Repair modifies an instance before `Validate`, all `SCHEMA_NODE` and related target hits MUST be derived from the instance as it emerges from Repair and successfully passes `Validate`, not from earlier, pre‑repair snapshots; coverage is always defined with respect to the final, AJV‑accepted instance.
      * `PROPERTY_PRESENT` applies to declared properties (`properties` / `required`) and, for AP:false objects, to property names that are provably generable according to the existing `CoverageIndex`. In V1, `PROPERTY_PRESENT` for undeclared names under AP:false MUST use `CoverageIndex.has` / `CoverageIndex.enumerate` as its sole source of truth; the coverage layer MUST NOT introduce additional approximations that diverge from `CoverageIndex` semantics and MUST NOT attempt a separate automaton for `patternProperties` beyond that.
 
-2. **Branches & simple conditionals**
+2. **Branches & simple conditionals** (`dimension: 'branches'`)
 
    * Questions:
 
@@ -221,7 +245,7 @@ V1 defines the following coverage dimensions; some are active in M0/M1, others a
      * `CONDITIONAL_PATH` – e.g. `if+then`, `if+else`, activated vs non‑activated `dependentSchemas`.
    * V1 focuses on simple conditionals that are already handled safely in Compose / Generate. V1 does **not** define branch‑level coverage for `allOf`; schemas combined via `allOf` are covered indirectly through `SCHEMA_NODE`, constraints, and properties defined on the canonical nodes involved.
 
-3. **Enum / small discrete values**
+3. **Enum / small discrete values** (`dimension: 'enum'`)
 
    * Questions:
 
@@ -231,9 +255,9 @@ V1 defines the following coverage dimensions; some are active in M0/M1, others a
      * `ENUM_VALUE_HIT` – per value in an `enum`.
    * Large enums:
 
-     * For very large enumerations, implementations **may** subsample and record this in `meta` and in coverage diagnostics.
+     * For very large enumerations, implementations **may** deterministically subsample and record this in `meta` and in coverage diagnostics (for example via `meta.enumSubsampled:true` and/or a record of skipped indices). Subsampling MUST be deterministic for a fixed canonical view and options; repeated runs with the same `(canonical schema, options)` MUST select the same subset of enum values for CoverageTargets.
 
-4. **Boundaries (M2)**
+4. **Boundaries (M2)** (`dimension: 'boundaries'`)
 
    * Targets defined but not required in M0/M1:
 
@@ -250,7 +274,7 @@ V1 defines the following coverage dimensions; some are active in M0/M1, others a
        * When Compose can prove that an inclusive bound itself is not in the admissible domain (for example because of `multipleOf` or other numeric constraints), implementations MUST NOT keep a corresponding `NUMERIC_MIN_HIT` / `NUMERIC_MAX_HIT` target as `status:'active'` for that unreachable value. They MUST either avoid materializing such a target altogether, or materialize it with `status:'unreachable'`.
        * When the domain is non‑empty but the exact inclusive bound is not generable and a boundary representative is used instead, coverage for that boundary is defined with respect to that representative value as chosen by the numeric planning / generation rules. The coverage layer MUST NOT require a different representative than the one already used by numeric planning.
 
-5. **Inter‑schema / API coverage (M2)**
+5. **Inter‑schema / API coverage (M2)** (`dimension: 'operations'`)
 
    * Questions:
 
@@ -388,9 +412,18 @@ At minimum, the coverage system must compute:
   Ratio over all targets that are:
 
   * attached directly to an operation (`OP_*`), **and**
-  * schema‑level targets reachable via that operation (e.g. `ONEOF_BRANCH`, `ENUM_VALUE_HIT` on the request/response schema).
-    The exact mapping from schema targets to operations must be deterministic; the simplest rule is: *if the schema node is reachable from the operation’s request or response schema in the canonical view, it contributes to that operation’s coverage.*
-    A single `CoverageTarget` may therefore contribute to multiple `coverage.byOperation[operationKey]` entries; `coverage.byOperation` is a projection over operations, not a disjoint partition, and the sum (or any aggregation) of per‑operation coverage ratios is **not** expected to match `coverage.overall`. Consumers MUST NOT attempt to reconstruct `coverage.overall` by summing or averaging `coverage.byOperation` metrics.
+  * schema‑level targets reachable via that operation (e.g. `ONEOF_BRANCH`, `ENUM_VALUE_HIT` on the request/response schema), and
+  * whose `dimension` is present in `run.dimensionsEnabled`.
+
+  Operation-level targets (`OP_REQUEST_COVERED`, `OP_RESPONSE_COVERED`) are considered part of the `'operations'`
+  dimension. When `'operations'` is not enabled, these targets MUST NOT be materialized for the run and MUST NOT
+  contribute to `coverage.byOperation`; per-operation ratios are then computed only over schema-level targets from the
+  enabled dimensions that are reachable from the operation.
+
+    A single `CoverageTarget` may therefore contribute to multiple `coverage.byOperation[operationKey]` entries;
+    `coverage.byOperation` is a projection over operations, not a disjoint partition, and the sum (or any aggregation)
+    of per‑operation coverage ratios is **not** expected to match `coverage.overall`. Consumers MUST NOT attempt to
+    reconstruct `coverage.overall` by summing or averaging `coverage.byOperation` metrics.
 
 * `coverage.details`
   Explicit listing of uncovered targets ordered by priority (dimension, `weight`, type, path).
@@ -417,6 +450,7 @@ Only these dimensions:
 
 * are included in `activeTargetsTotal`,
 * appear in `coverage.byDimension`,
+* contribute to `coverage.byOperation` (including operation-level targets when `'operations'` is present),
 * are considered when enforcing `minCoverage` in V1.
 
 In V1, dimensions that are **not** listed in `dimensionsEnabled` MUST NOT produce `CoverageTarget` entries and MUST NOT appear in `targets[]`. This keeps reports focused on the active dimensions used for metrics and CI enforcement; a future version MAY introduce an optional “full introspection” mode that materializes all dimensions while still filtering metrics by `dimensionsEnabled`.
@@ -431,7 +465,11 @@ Because some targets may be logically impossible to satisfy:
 * The coverage report must:
 
   * expose counts per status (e.g. `targetsByStatus`),
-  * include enough information (`unreachableTargets`) to inspect these cases.
+  * include enough information to inspect unreachable cases.
+
+  In `coverage-report/v1`, unreachable targets are represented as entries in `targets` and `uncoveredTargets` whose
+  `status` is `'unreachable'`. There is no dedicated `unreachableTargets` top-level field; tooling obtains an
+  unreachable view by filtering on the `status` field.
 * A configuration flag (e.g. `coverage.excludeUnreachable`) controls whether `unreachable` targets are:
 
   * **excluded** from the denominator (default in CI), or
@@ -699,7 +737,7 @@ Requirements:
 
   > If a generated value already satisfies both AJV validity and a boundary coverage target (e.g. `NUMERIC_MIN_HIT`), Repair **must not** move it away from the boundary unless this is necessary to satisfy another schema constraint.
 
-This requirement is about not undoing coverage “for free”. When a hint cannot be satisfied, the reason should be observable (unsatisfied hint + diagnostics).
+This requirement is about not undoing coverage “for free”. When a hint cannot be satisfied, the reason should be observable (unsatisfied hint + diagnostics). More generally, coverage for all targets, including `SCHEMA_NODE`, is defined with respect to the instance as it emerges from Repair and successfully passes Validate, not to intermediate pre‑repair states (see also §3.3.1).
 
 ---
 
@@ -716,16 +754,18 @@ Three modes are expected:
 
 2. `coverage=measure`
 
-   * Same generation pipeline and data as `coverage=off`.
-   * Coverage targets are computed and marked passively.
-   * A coverage report is produced at the end of the run.
+  * Same generation pipeline and data as `coverage=off`.
+  * Coverage targets are computed and marked passively.
+  * A coverage report is produced at the end of the run.
    * For a fixed `(schema, options, seed)`, the sequence of generated instances in `coverage=measure` mode MUST be byte‑for‑byte identical to `coverage=off`. Any divergence between `coverage=off` and `coverage=measure` on the emitted instances is considered a violation of this specification.
+   * The coverage layer MUST NOT introduce any new source of randomness into the pipeline. In particular, `coverage=measure` MUST NOT change the pattern or order of RNG calls used by the existing generator (for example by adding ad‑hoc random probes or alternative generation branches); all randomness remains governed by the existing generator and its seeded, deterministic RNG. Coverage MAY consume randomness only through the same seeded RNG interfaces that the generator already uses, and only in ways that are proven not to perturb existing RNG sequences.
 
 3. `coverage=guided`
 
    * Planner produces TestUnits and hints within the provided budget.
    * Generator applies hints, subject to validity and constraints.
    * Coverage is optimized but still deterministic.
+   * As in `coverage=measure`, the coverage layer MUST NOT introduce any additional RNG source or perturb the generator’s RNG call pattern. All randomness used to derive TestUnit seeds and hint decisions MUST be drawn from the same seeded RNG model already used by the generator (or from pure functions of `(masterSeed, canonPath, target id, TestUnit id, …)`), in a way that remains deterministic for a fixed `(canonical schema, OpenAPI spec, coverage options, seed, AJV.major, registryFingerprint)`.
 
 ### 6.2 Budget & profiles
 
@@ -881,6 +921,10 @@ type CoverageReport = {
   };
 };
 
+In this schema, unreachable targets are those with `status === 'unreachable'` in `targets` (and therefore possibly
+present in `uncoveredTargets` when `hit:false`). Consumers that need a dedicated unreachable view MUST derive it by
+filtering these arrays rather than expecting a separate `unreachableTargets` field.
+
 `reportMode` has the following semantics:
 
 * In `full` mode, implementations MUST materialize the complete `targets[]` set for all enabled dimensions, and `uncoveredTargets[]` MUST contain all uncovered targets (possibly sorted for presentation, but not truncated in the JSON report).
@@ -954,6 +998,12 @@ Guarantees:
 * The report is **deterministic** for fixed inputs and options.
 * `version` is the primary compatibility identifier for downstream tooling.
 * `targets[].id` and the full `targets[]` array are stable within a FoundryData **major** and a coverage report format **major**.
+
+`run.seed` and `run.masterSeed` are related as follows in V1:
+
+* `masterSeed` is the **user‑visible seed** that identifies the overall run and is typically passed on the CLI or via the Node API (e.g. `--seed 42`).
+* `seed` is the **effective seed** used by the planner/generator for this run; in V1 they are equal (`seed === masterSeed`) and are duplicated only for forward‑compatibility with future scenarios where a single logical run may encompass multiple effective seeds or planner profiles.
+* Both fields are part of the determinism contract: for a fixed `(canonical schema, OpenAPI spec, coverage options, seed, ajvMajor, registryFingerprint)`, CoverageGraph, TestUnits, generated instances and coverage reports MUST remain stable across runs.
 
 ### 7.2 CLI summary
 
