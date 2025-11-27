@@ -52,6 +52,60 @@ interface CoverageGraphBuildState {
   idContext: CoverageTargetIdContext;
 }
 
+function buildUnsatPathSet(planDiag?: ComposeDiagnostics): Set<string> {
+  const unsatPaths = new Set<string>();
+  if (!planDiag) return unsatPaths;
+
+  const strongUnsatCodes = new Set<string>([
+    'UNSAT_AP_FALSE_EMPTY_COVERAGE',
+    'UNSAT_NUMERIC_BOUNDS',
+    'UNSAT_REQUIRED_AP_FALSE',
+    'UNSAT_REQUIRED_VS_PROPERTYNAMES',
+    'UNSAT_DEPENDENT_REQUIRED_AP_FALSE',
+    'UNSAT_MINPROPERTIES_VS_COVERAGE',
+    'UNSAT_MINPROPS_PNAMES',
+  ]);
+
+  const addIfStrong = (code: string, canonPath: string): void => {
+    if (!canonPath) return;
+    if (strongUnsatCodes.has(code)) {
+      unsatPaths.add(canonPath);
+    }
+  };
+
+  for (const entry of planDiag.fatal ?? []) {
+    addIfStrong(entry.code, entry.canonPath);
+  }
+
+  for (const hint of planDiag.unsatHints ?? []) {
+    if (hint.provable === true) {
+      addIfStrong(hint.code, hint.canonPath);
+    }
+  }
+
+  return unsatPaths;
+}
+
+function isUnderUnsatPath(
+  targetCanonPath: string,
+  unsatPaths: Set<string>
+): boolean {
+  if (unsatPaths.size === 0) return false;
+  for (const unsatPath of unsatPaths) {
+    if (!unsatPath) continue;
+    if (targetCanonPath === unsatPath) return true;
+    if (
+      targetCanonPath.startsWith(unsatPath) &&
+      (targetCanonPath.length === unsatPath.length ||
+        targetCanonPath.charAt(unsatPath.length) === '/' ||
+        (unsatPath.endsWith('/') && targetCanonPath.startsWith(unsatPath)))
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 interface NodeClassification {
   kind: CoverageGraphNodeKind;
   meta?: Record<string, unknown>;
@@ -409,6 +463,22 @@ export function analyzeCoverage(
 
   // Root schema node at the canonical root.
   visitSchemaNode(input.canonSchema, '', undefined, state);
+
+  const unsatPaths = buildUnsatPathSet(input.planDiag);
+  if (unsatPaths.size > 0) {
+    const updatedTargets: CoverageTarget[] = state.targets.map((t) => {
+      const canonPath = t.canonPath || '';
+      if (isUnderUnsatPath(canonPath, unsatPaths)) {
+        return {
+          ...t,
+          status:
+            t.kind === 'SCHEMA_REUSED_COVERED' ? 'deprecated' : 'unreachable',
+        } as CoverageTarget;
+      }
+      return t;
+    });
+    state.targets = updatedTargets;
+  }
 
   return {
     graph: { nodes: state.nodes, edges: state.edges },

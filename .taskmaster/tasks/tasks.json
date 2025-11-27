@@ -93,20 +93,21 @@
             "id": 9301003,
             "title": "Generate CoverageTargets for structure, branches and enum dimensions",
             "description": "Materialize SCHEMA_NODE, PROPERTY_PRESENT, ONEOF_BRANCH, ANYOF_BRANCH, CONDITIONAL_PATH and ENUM_VALUE_HIT targets for enabled dimensions, with IDs independent of dimensionsEnabled.",
-            "status": "in-progress",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/coverage/coverage-analyzer.ts",
             "parentId": "9301",
-            "updatedAt": "2025-11-27T23:17:10.794Z"
+            "updatedAt": "2025-11-27T23:24:56.021Z"
           },
           {
             "id": 9301004,
             "title": "Derive unreachable targets from existing diagnostics",
             "description": "Integrate UNSAT_* and AP:false diagnostics and CoverageIndex signals to mark a conservative subset of targets as status:'unreachable'.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 2,
             "file": "packages/core/src/coverage/coverage-analyzer-unreachable.ts",
-            "parentId": "9301"
+            "parentId": "9301",
+            "updatedAt": "2025-11-27T23:30:00.195Z"
           },
           {
             "id": 9301005,
@@ -118,7 +119,7 @@
             "parentId": "9301"
           }
         ],
-        "updatedAt": "2025-11-27T23:17:10.794Z"
+        "updatedAt": "2025-11-27T23:30:00.195Z"
       },
       {
         "id": "9302",
@@ -748,7 +749,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-27T23:17:10.795Z",
+      "lastModified": "2025-11-27T23:30:00.196Z",
       "taskCount": 13,
       "completedCount": 1,
       "tags": [
