@@ -700,6 +700,7 @@ export async function executePipeline(
           ptrMap: normalizeResult?.ptrMap ?? new Map<string, string>(),
           coverageIndex: composeResult.coverageIndex,
           planDiag: composeResult.diag,
+          dimensionsEnabled: options.coverage?.dimensionsEnabled,
         };
         const coverageResult = analyzeCoverage(coverageInput);
         artifacts.coverageGraph = coverageResult.graph;
