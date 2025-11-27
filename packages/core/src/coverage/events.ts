@@ -1,0 +1,298 @@
+/* eslint-disable complexity */
+import type {
+  CoverageDimension,
+  CoverageTargetKind,
+  CoverageTarget,
+  CoverageTargetReport,
+} from '@foundrydata/shared';
+
+export interface SchemaNodeHitEvent {
+  dimension: 'structure';
+  kind: 'SCHEMA_NODE';
+  /**
+   * Canonical JSON Pointer for the schema node (e.g. '#', '#/properties/id').
+   */
+  canonPath: string;
+  /**
+   * Optional operation key for API-linked schema nodes.
+   */
+  operationKey?: string;
+}
+
+export interface PropertyPresentHitEvent {
+  dimension: 'structure';
+  kind: 'PROPERTY_PRESENT';
+  canonPath: string;
+  operationKey?: string;
+  params: {
+    propertyName: string;
+  };
+}
+
+export interface OneOfBranchHitEvent {
+  dimension: 'branches';
+  kind: 'ONEOF_BRANCH';
+  canonPath: string;
+  operationKey?: string;
+  params: {
+    index: number;
+  };
+}
+
+export interface AnyOfBranchHitEvent {
+  dimension: 'branches';
+  kind: 'ANYOF_BRANCH';
+  canonPath: string;
+  operationKey?: string;
+  params: {
+    index: number;
+  };
+}
+
+export interface ConditionalPathHitEvent {
+  dimension: 'branches';
+  kind: 'CONDITIONAL_PATH';
+  canonPath: string;
+  operationKey?: string;
+  params: {
+    pathKind: string;
+  };
+}
+
+export interface EnumValueHitEvent {
+  dimension: 'enum';
+  kind: 'ENUM_VALUE_HIT';
+  canonPath: string;
+  operationKey?: string;
+  params: {
+    enumIndex: number;
+    value?: unknown;
+  };
+}
+
+export type CoverageEvent =
+  | SchemaNodeHitEvent
+  | PropertyPresentHitEvent
+  | OneOfBranchHitEvent
+  | AnyOfBranchHitEvent
+  | ConditionalPathHitEvent
+  | EnumValueHitEvent;
+
+export interface CoverageAccumulator {
+  /**
+   * Record a coverage event for a single emitted instance.
+   * Events are projected onto CoverageTargets based on their
+   * (dimension, kind, canonPath, operationKey, params) identity.
+   */
+  record(event: CoverageEvent): void;
+
+  /**
+   * Mark a CoverageTarget as hit directly by ID. This is useful
+   * for integration points that already know the target identity
+   * (for example, future planner hints).
+   */
+  markTargetHit(targetId: string): void;
+
+  /**
+   * Check whether a target with the given ID has been hit.
+   */
+  isHit(targetId: string): boolean;
+
+  /**
+   * Return the current set of hit CoverageTarget IDs.
+   */
+  getHitTargetIds(): ReadonlySet<string>;
+
+  /**
+   * Project hit information onto a list of CoverageTargets,
+   * producing CoverageTargetReport entries.
+   *
+   * This function is pure with respect to the provided list:
+   * it never mutates the input targets.
+   */
+  toReport(targets: CoverageTarget[]): CoverageTargetReport[];
+}
+
+interface TargetIdentity {
+  dimension: CoverageDimension;
+  kind: CoverageTargetKind;
+  canonPath: string;
+  operationKey?: string;
+  paramsKey?: string;
+}
+
+function buildParamsKeyFromTarget(
+  kind: CoverageTargetKind,
+  params: Record<string, unknown> | undefined
+): string | undefined {
+  if (!params) return undefined;
+
+  if (kind === 'PROPERTY_PRESENT') {
+    const name = params.propertyName;
+    return typeof name === 'string' ? `propertyName:${name}` : undefined;
+  }
+
+  if (kind === 'ONEOF_BRANCH' || kind === 'ANYOF_BRANCH') {
+    const index = params.index;
+    return typeof index === 'number' && Number.isFinite(index)
+      ? `index:${index}`
+      : undefined;
+  }
+
+  if (kind === 'CONDITIONAL_PATH') {
+    const pathKind = params.pathKind;
+    return typeof pathKind === 'string' ? `pathKind:${pathKind}` : undefined;
+  }
+
+  if (kind === 'ENUM_VALUE_HIT') {
+    const enumIndex = params.enumIndex;
+    return typeof enumIndex === 'number' && Number.isFinite(enumIndex)
+      ? `enumIndex:${enumIndex}`
+      : undefined;
+  }
+
+  return undefined;
+}
+
+function buildIdentityKey(identity: TargetIdentity): string {
+  const op = identity.operationKey ?? '';
+  const paramsKey = identity.paramsKey ?? '';
+  return [
+    identity.dimension,
+    identity.kind,
+    identity.canonPath,
+    op,
+    paramsKey,
+  ].join('|');
+}
+
+function buildTargetIdentity(
+  target: CoverageTarget
+): TargetIdentity | undefined {
+  const canonPath = target.canonPath;
+  if (!canonPath) return undefined;
+
+  const kind = target.kind;
+
+  // Only structural, branches and enum targets participate in the
+  // M0 event model for this sub-task.
+  if (
+    kind !== 'SCHEMA_NODE' &&
+    kind !== 'PROPERTY_PRESENT' &&
+    kind !== 'ONEOF_BRANCH' &&
+    kind !== 'ANYOF_BRANCH' &&
+    kind !== 'CONDITIONAL_PATH' &&
+    kind !== 'ENUM_VALUE_HIT'
+  ) {
+    return undefined;
+  }
+
+  const params =
+    target.params && typeof target.params === 'object'
+      ? (target.params as Record<string, unknown>)
+      : undefined;
+
+  const paramsKey = buildParamsKeyFromTarget(kind, params);
+
+  return {
+    dimension: target.dimension,
+    kind,
+    canonPath,
+    operationKey: target.operationKey,
+    paramsKey,
+  };
+}
+
+function buildParamsKeyFromEvent(event: CoverageEvent): string | undefined {
+  if (event.kind === 'PROPERTY_PRESENT') {
+    const name = event.params?.propertyName;
+    return typeof name === 'string' ? `propertyName:${name}` : undefined;
+  }
+
+  if (event.kind === 'ONEOF_BRANCH' || event.kind === 'ANYOF_BRANCH') {
+    const index = event.params?.index;
+    return typeof index === 'number' && Number.isFinite(index)
+      ? `index:${index}`
+      : undefined;
+  }
+
+  if (event.kind === 'CONDITIONAL_PATH') {
+    const pathKind = event.params?.pathKind;
+    return typeof pathKind === 'string' ? `pathKind:${pathKind}` : undefined;
+  }
+
+  if (event.kind === 'ENUM_VALUE_HIT') {
+    const enumIndex = event.params?.enumIndex;
+    return typeof enumIndex === 'number' && Number.isFinite(enumIndex)
+      ? `enumIndex:${enumIndex}`
+      : undefined;
+  }
+
+  return undefined;
+}
+
+function buildEventIdentityKey(event: CoverageEvent): string | undefined {
+  const canonPath = event.canonPath;
+  if (!canonPath) return undefined;
+
+  const paramsKey = buildParamsKeyFromEvent(event);
+
+  const identity: TargetIdentity = {
+    dimension: event.dimension,
+    kind: event.kind as CoverageTargetKind,
+    canonPath,
+    operationKey: event.operationKey,
+    paramsKey,
+  };
+
+  return buildIdentityKey(identity);
+}
+
+export function createCoverageAccumulator(
+  targets: CoverageTarget[]
+): CoverageAccumulator {
+  const targetIdByKey = new Map<string, string>();
+
+  for (const target of targets) {
+    const identity = buildTargetIdentity(target);
+    if (!identity) continue;
+    const key = buildIdentityKey(identity);
+    if (!targetIdByKey.has(key)) {
+      targetIdByKey.set(key, target.id);
+    }
+  }
+
+  const hitTargetIds = new Set<string>();
+
+  const record = (event: CoverageEvent): void => {
+    const key = buildEventIdentityKey(event);
+    if (!key) return;
+    const targetId = targetIdByKey.get(key);
+    if (targetId !== undefined) {
+      hitTargetIds.add(targetId);
+    }
+  };
+
+  const markTargetHit = (targetId: string): void => {
+    if (!targetId) return;
+    hitTargetIds.add(targetId);
+  };
+
+  const isHit = (targetId: string): boolean => hitTargetIds.has(targetId);
+
+  const getHitTargetIds = (): ReadonlySet<string> => hitTargetIds;
+
+  const toReport = (allTargets: CoverageTarget[]): CoverageTargetReport[] =>
+    allTargets.map((target) => ({
+      ...target,
+      hit: hitTargetIds.has(target.id),
+    }));
+
+  return {
+    record,
+    markTargetHit,
+    isHit,
+    getHitTargetIds,
+    toReport,
+  };
+}

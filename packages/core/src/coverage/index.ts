@@ -16,6 +16,18 @@ export type {
   CoverageTargetReport,
 };
 
+export {
+  createCoverageAccumulator,
+  type CoverageAccumulator,
+  type CoverageEvent,
+  type SchemaNodeHitEvent,
+  type PropertyPresentHitEvent,
+  type OneOfBranchHitEvent,
+  type AnyOfBranchHitEvent,
+  type ConditionalPathHitEvent,
+  type EnumValueHitEvent,
+} from './events.js';
+
 export type CoverageGraphNodeKind =
   | 'schema'
   | 'property'

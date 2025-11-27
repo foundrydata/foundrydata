@@ -132,7 +132,7 @@
           "9300",
           "9301"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 4,
         "details": "[Context]\nImplement M0 coverage measurement for the existing pipeline, per coverage-aware spec §2.1 (Phase M0) and §4.3 (Generator instrumentation). coverage=measure must compute coverage from final instances (after Repair + Validate) for SCHEMA_NODE, PROPERTY_PRESENT, ONEOF_BRANCH, ANYOF_BRANCH, CONDITIONAL_PATH and ENUM_VALUE_HIT targets, while leaving generator behavior identical to coverage=off for a given (schema, seed, options).\n\n[Key requirements]\n- Extend Generate and Repair to emit coverage events for schema nodes, optional property presence, oneOf/anyOf/conditional branches and enum values, using canonical pointers from the CoverageGraph.\n- Under AP:false, property presence coverage for undeclared property names MUST be derived solely from CoverageIndex.has / CoverageIndex.enumerate; instrumentation must not infer additional property names from patternProperties or propertyNames beyond what CoverageIndex exposes.\n- Ensure events are only committed as hits once instances have passed Validate; invalid instances must not mark targets as hit.\n- For coverage=measure, guarantee that the sequence of emitted instances is byte-for-byte identical to coverage=off for the same inputs; instrumentation must be purely observational and must not affect generation decisions.\n- Implement a first coverage accumulator that can support temporary post-pass computation for M0, while anticipating streaming updates required in M1.\n- Add toggles so coverage instrumentation is fully disabled when coverage=off, keeping overhead negligible and ensuring that in that mode neither CoverageAnalyzer nor coverage accumulators are invoked.\n\n[Deliverables]\n- Coverage event models and accumulator implementation under packages/core/src/coverage/coverage-events.ts.\n- Instrumentation hooks in generator and repair code paths to record branches, property presence and enum usage.\n- Configuration plumbing from CLI and Node API to select coverage=off or coverage=measure and to pass dimensionsEnabled down to instrumentation.\n\n[Definition of Done]\n- With coverage=measure and coverage=off, the generated data streams are identical for the same schemas and seeds, confirmed by golden tests.\n- Coverage accumulators correctly mark hits only after Validate, and targets remain unhit when instances are invalid or filtered out.\n- Property presence and branch hits (including ANYOF_BRANCH and CONDITIONAL_PATH) are derived from canonical view and CoverageGraph, not raw schema re-parsing, and AP:false property coverage matches CoverageIndex semantics for undeclared names.\n- Overhead of coverage=measure is measured and documented via existing metrics, and instrumentation cost is included in per-phase timings.\n- New instrumentation paths are guarded by feature flags so coverage=off behavior and performance remain within existing SLOs.",
         "testStrategy": "Golden snapshot tests comparing coverage=off vs coverage=measure output for the same schema and seed; unit tests for coverage event aggregation and per-target hit semantics (including ANYOF_BRANCH and CONDITIONAL_PATH); integration tests that run the full pipeline and assert that coverage metrics match expected hits on small schemas with oneOf, anyOf, conditional branches, optional properties and enums; tests for AP:false fixtures where CoverageIndex is empty and PROPERTY_PRESENT for undeclared names never appears, and where non-empty CoverageIndex ensures PROPERTY_PRESENT only for names it exposes; benchmark runs to confirm overhead stays within acceptable bounds.",
@@ -141,10 +141,11 @@
             "id": 9302001,
             "title": "Define coverage event model and accumulator",
             "description": "Create event types for schema, property, branch and enum hits and an accumulator that maps them to CoverageTargets.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/coverage/coverage-events.ts",
-            "parentId": "9302"
+            "parentId": "9302",
+            "updatedAt": "2025-11-27T23:43:50.250Z"
           },
           {
             "id": 9302002,
@@ -182,7 +183,8 @@
             "file": "packages/core/test/e2e/coverage-measurement.spec.ts",
             "parentId": "9302"
           }
-        ]
+        ],
+        "updatedAt": "2025-11-27T23:43:50.250Z"
       },
       {
         "id": "9303",
@@ -750,7 +752,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-27T23:34:31.948Z",
+      "lastModified": "2025-11-27T23:43:50.251Z",
       "taskCount": 13,
       "completedCount": 2,
       "tags": [
