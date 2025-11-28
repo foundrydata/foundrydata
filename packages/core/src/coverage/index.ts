@@ -77,6 +77,7 @@ export {
   DEFAULT_PLANNER_DIMENSION_ORDER,
   resolveCoveragePlannerConfig,
   isCoverageHint,
+  planTestUnits,
 } from './coverage-planner.js';
 
 export type CoverageGraphNodeKind =

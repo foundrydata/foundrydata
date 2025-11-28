@@ -54,3 +54,5 @@ This document maps the parent task 9305 bullets from Implementation Details, Del
 Status:
 
 - 9305.9305001: covered
+- 9305.9305001: covered
+- 9305.9305002: covered

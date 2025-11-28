@@ -4,8 +4,11 @@ import {
   DEFAULT_PLANNER_DIMENSION_ORDER,
   DEFAULT_PLANNER_DIMENSIONS_ENABLED,
   isCoverageHint,
+  planTestUnits,
   resolveCoveragePlannerConfig,
   type CoverageHint,
+  type CoveragePlannerConfig,
+  type CoveragePlannerInput,
   type ResolvePlannerConfigOptions,
 } from '../index.js';
 
@@ -114,5 +117,122 @@ describe('isCoverageHint', () => {
         params: { valueIndex: '0' },
       })
     ).toBe(false);
+  });
+});
+
+describe('planTestUnits', () => {
+  const makeConfig = (maxInstances: number): CoveragePlannerConfig => {
+    const config = resolveCoveragePlannerConfig({ maxInstances });
+    return config;
+  };
+
+  const makeInput = (
+    targets: Parameters<typeof planTestUnits>[0]['targets'],
+    config: CoveragePlannerConfig
+  ): CoveragePlannerInput => ({
+    graph: { nodes: [], edges: [] },
+    targets,
+    config,
+  });
+
+  it('returns empty array when no active targets', () => {
+    const config = makeConfig(5);
+    const input = makeInput(
+      [
+        {
+          id: 't1',
+          dimension: 'structure',
+          kind: 'SCHEMA_NODE',
+          canonPath: '#',
+          status: 'unreachable',
+        },
+      ],
+      config
+    );
+
+    const units = planTestUnits(input);
+
+    expect(units).toEqual([]);
+  });
+
+  it('plans at most maxInstances units and respects ordering', () => {
+    const targets = [
+      {
+        id: 't1',
+        dimension: 'structure',
+        kind: 'SCHEMA_NODE',
+        canonPath: '#/a',
+      },
+      {
+        id: 't2',
+        dimension: 'branches',
+        kind: 'ONEOF_BRANCH',
+        canonPath: '#/oneOf/0',
+      },
+      {
+        id: 't3',
+        dimension: 'enum',
+        kind: 'ENUM_VALUE_HIT',
+        canonPath: '#',
+      },
+    ] as const;
+
+    const config = resolveCoveragePlannerConfig({
+      maxInstances: 2,
+      dimensionsEnabled: ['structure', 'branches', 'enum'],
+      dimensionPriority: ['branches', 'enum', 'structure'],
+    });
+
+    const units = planTestUnits(makeInput([...targets], config));
+
+    const firstUnit = units[0];
+    const secondUnit = units[1];
+    if (!firstUnit || !secondUnit) {
+      throw new Error('expected at least two planned units');
+    }
+    if (!firstUnit.scope || !secondUnit.scope) {
+      throw new Error('expected scopes on planned units');
+    }
+    const firstPaths = firstUnit.scope.schemaPaths!;
+    const secondPaths = secondUnit.scope.schemaPaths!;
+    expect(firstPaths).toEqual(['#/oneOf/0']);
+    expect(secondPaths).toEqual(['#']);
+    for (const unit of units) {
+      expect(unit.count).toBe(1);
+      expect(unit.hints).toEqual([]);
+      expect(typeof unit.seed).toBe('number');
+    }
+  });
+
+  it('groups units deterministically by operationKey when present', () => {
+    const targets: CoveragePlannerInput['targets'] = [
+      {
+        id: 'op1-branches',
+        dimension: 'branches',
+        kind: 'ONEOF_BRANCH',
+        canonPath: '#/oneOf/0',
+        operationKey: 'GET /users',
+      },
+      {
+        id: 'global-branches',
+        dimension: 'branches',
+        kind: 'ONEOF_BRANCH',
+        canonPath: '#/oneOf/1',
+      },
+    ];
+
+    const config = makeConfig(2);
+    const units = planTestUnits(makeInput(targets, config));
+
+    const firstUnit = units[0];
+    const secondUnit = units[1];
+    if (!firstUnit || !secondUnit) {
+      throw new Error('expected at least two planned units');
+    }
+    if (!firstUnit.scope) {
+      throw new Error('expected scope on first planned unit');
+    }
+    const operationKey = firstUnit.scope.operationKey!;
+    expect(operationKey).toBe('GET /users');
   });
 });
