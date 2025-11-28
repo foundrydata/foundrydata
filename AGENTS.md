@@ -37,14 +37,19 @@
 7. Ajouter/mettre à jour les tests pour viser **cov ≥80 % sur chaque fichier touché** (ou isoler la logique dans un nouveau module bien couvert).
 8. Lancer au minimum `npm run build`, `npm run test`, `npm run bench` (et `npm run typecheck` si pertinent) depuis la racine.
 9. Vérifier que les diagnostics respectent `diagnosticsEnvelope.schema.json` (diag-schema) et que les bench gates passent.
-10. Créer un commit avec le template fourni (scope = sous-tâche), incluant un trailer `REFONLY::{"anchors":[...],"summary":"..."}` valide, marquer la sous-tâche comme `done` puis consigner l’opération dans `agent-log.jsonl`. La tâche parente ne peut être terminée que lorsque toutes ses sous-tâches sont `done`.
+10. Créer un commit avec le template fourni (scope = sous-tâche), incluant un trailer `REFONLY::{"anchors":[...],"summary":"..."}` valide, marquer la sous-tâche comme `done` puis consigner l’opération dans `agent-log.jsonl`. La tâche parente ne peut être terminée que lorsque toutes ses sous-tâches sont `done`.  
+   *Remarque : si l’environnement d’exécution ne permet pas à l’agent de créer un commit (ex. restrictions Codex CLI), l’agent doit laisser explicitement ces actions au·à la humain·e dans sa réponse finale.*
 
 **Traçabilité tâche parente 93xx ↔ sous-tâches**
 
 - Pour chaque tâche parente 93xx, considérer la section Taskmaster `Implementation Details` (incluant `[Context]`, `[Key requirements]`, `[Deliverables]`, `[Definition of Done]`) ainsi que la section `Test Strategy` comme le **contrat global** de la tâche.
-- Lors du premier travail sur une tâche parente 93xx, établir une table de traçabilité (par exemple dans `PLAN.md` du parent ou un fichier dédié sous `.taskmaster/docs/`) listant les bullets clés de ces sections et les sous-tâches 93xx.y censées les couvrir. Aucun bullet critique ne doit rester sans sous-tâche associée ; si c’est le cas, créer une sous-tâche ou ouvrir une `SPEC-QUESTION`.
-- Chaque sous-tâche 93xx.y dérive un **sous-contrat** : dans son `PLAN.md`, elle référence explicitement les bullets du parent qu’elle couvre (par identifiant ou résumé court) dans une rubrique du type `Parent bullets couverts: [...]`. Le reste des bullets du parent est traité comme **hors scope** de cette sous-tâche.
-- À la clôture d’une sous-tâche, marquer les bullets correspondants comme “couverts” dans la table du parent. Avant de marquer le parent 93xx en `done`, vérifier que tous les bullets du contrat global sont mappés à ≥1 sous-tâche et marqués couverts.
+- Lors du premier travail sur une tâche parente 93xx, créer (ou mettre à jour) un fichier dédié `.taskmaster/docs/93xx-traceability.md` (ex. `9303-traceability.md`) listant :  
+  • les bullets clés de ces sections avec des identifiants stables (`[KR1]`, `[DOD2]`, `[TS5]`, etc.) ;  
+  • un tableau “Mapping 93xx.y → parent bullets” indiquant pour chaque sous-tâche les IDs de bullets couverts et, optionnellement, un statut (`pending`, `in-progress`, `covered`).  
+  Aucun bullet critique ne doit rester sans sous-tâche associée ; si c’est le cas, créer une sous-tâche ou ouvrir une `SPEC-QUESTION`.
+- Chaque sous-tâche 93xx.y dérive un **sous-contrat** : dans le `PLAN.md` de la sous-tâche (fichier unique à la racine, toujours dédié à la sous-tâche coverage-aware en cours), ajouter une ligne simple du type `Parent bullets couverts: [KR1, DOD2, TS5]` en fin de bloc `Risks/Unknowns:`. Les identifiants utilisés doivent correspondre à ceux du fichier `93xx-traceability.md`. Le reste des bullets du parent est traité comme **hors scope** de cette sous-tâche.
+- À la clôture d’une sous-tâche, mettre à jour le fichier `93xx-traceability.md` pour marquer les bullets correspondants comme “covered”. Avant de marquer le parent 93xx en `done`, vérifier que tous les bullets du contrat global sont mappés à ≥1 sous-tâche et marqués `covered`.  
+  *Remarque : ne pas créer de `PLAN-93xx.md` spécifique au parent ; `PLAN.md` reste focalisé sur la sous-tâche active et la traçabilité détaillée vit dans `93xx-traceability.md`. Le format de `PLAN.md` doit rester conforme au template fourni dans ce runbook ; la ligne `Parent bullets couverts: [...]` est explicitement autorisée.*
 
 ---
 
