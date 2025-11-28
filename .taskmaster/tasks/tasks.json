@@ -314,9 +314,20 @@
             "file": "packages/cli/test/coverage-cli.spec.ts",
             "parentId": "9304",
             "updatedAt": "2025-11-28T21:18:32.651Z"
+          },
+          {
+            "id": 9304005,
+            "title": "Write coverage-report JSON file to disk",
+            "description": "Persist coverage-report/v1 JSON to the path specified by --coverage-report for coverage=measure|guided runs.",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9304,
+            "updatedAt": "2025-11-28T21:28:04.610Z",
+            "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-11-28T21:18:32.651Z"
+        "updatedAt": "2025-11-28T21:28:04.610Z"
       },
       {
         "id": "9305",
@@ -767,7 +778,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-28T21:18:32.652Z",
+      "lastModified": "2025-11-28T21:28:04.612Z",
       "taskCount": 13,
       "completedCount": 5,
       "tags": [

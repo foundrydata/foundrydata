@@ -1,4 +1,5 @@
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
@@ -274,6 +275,56 @@ describe('CLI generate command', () => {
     const stderr = stderrChunks.join('');
     expect(stderr).toMatch(/coverage by dimension:/i);
     expect(stderr).toMatch(/coverage overall:/i);
+  });
+
+  it('writes coverage-report/v1 JSON to the path provided via --coverage-report', async () => {
+    const { dir, schemaPath } = await createSchemaFixture();
+    const reportPath = path.join(dir, 'coverage.json');
+
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      await program.parseAsync(
+        [
+          'generate',
+          '--schema',
+          schemaPath,
+          '--n',
+          '3',
+          '--out',
+          'ndjson',
+          '--coverage',
+          'measure',
+          '--coverage-dimensions',
+          'structure,branches',
+          '--coverage-report',
+          reportPath,
+        ],
+        { from: 'user' }
+      );
+
+      const contents = await fs.promises.readFile(reportPath, 'utf8');
+      const json = JSON.parse(contents);
+      expect(json.version).toBe('coverage-report/v1');
+      expect(json.engine?.coverageMode).toBe('measure');
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   it('exits with non-zero code when schema file is missing', async () => {

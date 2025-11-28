@@ -260,6 +260,26 @@ program
           pipelineResult.artifacts.coverageReport
         );
         process.stderr.write(`[foundrydata] coverage: ${summary}\n`);
+
+        if (coverage.reportPath) {
+          // eslint-disable-next-line max-depth
+          try {
+            const outputPath = path.isAbsolute(coverage.reportPath)
+              ? coverage.reportPath
+              : path.resolve(process.cwd(), coverage.reportPath);
+            fs.writeFileSync(
+              outputPath,
+              JSON.stringify(pipelineResult.artifacts.coverageReport, null, 2),
+              'utf8'
+            );
+          } catch (error) {
+            const message =
+              error instanceof Error ? error.message : String(error);
+            process.stderr.write(
+              `[foundrydata] warning: failed to write coverage report to ${coverage.reportPath}: ${message}\n`
+            );
+          }
+        }
       }
     } catch (err: unknown) {
       await handleCliError(err);
@@ -507,6 +527,26 @@ program
           pipelineResult.artifacts.coverageReport
         );
         process.stderr.write(`[foundrydata] coverage: ${summary}\n`);
+
+        if (coverage.reportPath) {
+          // eslint-disable-next-line max-depth
+          try {
+            const outputPath = path.isAbsolute(coverage.reportPath)
+              ? coverage.reportPath
+              : path.resolve(process.cwd(), coverage.reportPath);
+            fs.writeFileSync(
+              outputPath,
+              JSON.stringify(pipelineResult.artifacts.coverageReport, null, 2),
+              'utf8'
+            );
+          } catch (error) {
+            const message =
+              error instanceof Error ? error.message : String(error);
+            process.stderr.write(
+              `[foundrydata] warning: failed to write coverage report to ${coverage.reportPath}: ${message}\n`
+            );
+          }
+        }
       }
     } catch (err: unknown) {
       await handleCliError(err);
