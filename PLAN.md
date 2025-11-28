@@ -1,23 +1,21 @@
-Task: 9311   Title: Add fixtures and tests for coverage diff behavior (subtask 9311.9311004)
-Anchors: [cov://§7#json-coverage-report, cov://§7#multi-run-diff-m2, cov://§3#coverage-model]
+Task: 9307   Title: Implement per-instance coverage state and bitmap representation (subtask 9307.9307001)
+Anchors: [cov://§4#architecture-components, cov://§4#generator-instrumentation, cov://§8#technical-constraints-invariants]
 Touched files:
-- packages/core/src/coverage/diff.ts
-- packages/core/src/coverage/__tests__/coverage-diff.spec.ts
-- packages/reporter/src/coverage/coverage-diff.ts
-- packages/reporter/src/coverage/__tests__/coverage-diff.spec.ts
-- packages/cli/src/commands/coverage-diff.ts
-- packages/cli/src/index.test.ts
-- .taskmaster/docs/9311-traceability.md
+- packages/core/src/coverage/events.ts
+- packages/core/src/coverage/__tests__/events.test.ts
+- packages/core/src/coverage/index.ts
+- .taskmaster/docs/9307-traceability.md
+- PLAN.md
 
 Approach:
-Pour la sous-tâche 9311.9311004, je vais consolider la couverture de tests autour de la logique de diff coverage en ajoutant des fixtures et des scénarios explicites pour les trois couches concernées : le module de diff du moteur dans @foundrydata/core, la façade reporter et la commande CLI `foundrydata coverage diff`. En partant de la définition du rapport coverage-report/v1 et de la section Multi-run diff (M2) (cov://§7#json-coverage-report, cov://§7#multi-run-diff-m2, cov://§3#coverage-model), je vais créer des fixtures CoverageReport synthétiques en TypeScript (et, si utile, quelques JSON statiques) qui couvrent les cas suivants : cibles added/removed/statusChanged, régressions et améliorations de metrics.overall et metrics.byOperation, cibles newlyUncovered (added uncovered et hit:true→hit:false) et univers de dimensions/d’opérations modifié entre A et B.
+Pour la sous-tâche 9307.9307001, je vais introduire dans le module coverage de @foundrydata/core une représentation explicite de l’état de couverture par instance, ainsi qu’un bitmap global de cibles atteintes, en réutilisant l’indexage existant entre CoverageEvents et CoverageTargets. L’objectif est de séparer clairement la collecte d’événements pour une instance donnée de la consolidation globale, afin de pouvoir abandonner ou valider une instance sans perturber les hits déjà engagés, tout en restant strictement en O(#instances + #targets) comme décrit dans cov://§4#architecture-components, cov://§4#generator-instrumentation et cov://§8#technical-constraints-invariants.
 
-Au niveau core, j’ajouterai un fichier de tests dédié `packages/core/src/coverage/__tests__/coverage-diff.spec.ts` qui exerce diffCoverageTargets et diffCoverageReports directement sur ces fixtures, en vérifiant les catégories de cibles, les deltas calculés et la séparation régressions/améliorations, y compris un scénario où des dimensions supplémentaires ne modifient pas les deltas sur l’univers commun. Côté reporter, je garderai des tests centrés sur l’API façade (import depuis `coverage-diff.ts`) pour garantir la stabilité des types et la compatibilité avec les usages existants. Enfin, côté CLI, j’enrichirai les tests du module `packages/cli/src/index.test.ts` couvrant la commande coverage diff en s’appuyant sur des rapports sérialisés sur disque : cas sans régression, cas avec régression (exitCode non nul) et cas d’incompatibilité basique (par exemple version de rapport divergente), en veillant à garder la logique d’erreur alignée avec ErrorPresenter sans ajouter de contournement.
+Concrètement, je vais factoriser la logique d’identification de cibles dans `events.ts` pour exposer un petit index (clé d’identité → targetId) partagé entre l’accumulateur existant et les nouveaux états par instance. Je définirai un type d’état par instance qui accumule des hits dans un ensemble dédié, plus un accumulateur “streaming” qui agrège ces états via une opération de commit explicite et expose toujours l’API actuelle (markTargetHit, isHit, toReport) pour ne pas casser les usages en place. Les tests `events.test.ts` seront étendus pour couvrir à la fois les scénarios existants (mapping structure/branches/enum, cibles diagnostiques ignorées) et des scénarios de streaming simples : plusieurs instances dont certaines sont rejetées, vérification que seuls les commits acceptés impactent le bitmap global, déterminisme des résultats pour une même séquence d’événements.
 
 Risks/Unknowns:
-Les principaux risques concernent la multiplication de fixtures redondantes ou trop fragiles par rapport aux évolutions du format coverage-report/v1. Pour limiter cela, je privilégierai des rapports synthétiques construits en TypeScript à partir des types partagés plutôt que de gros JSON “réalistes”, et je me focaliserai sur les invariants du diff (classification, deltas, newlyUncovered) plutôt que sur chaque champ du rapport. Il faudra aussi veiller à ne pas empiéter sur le scope de futures sous-tâches dédiées à la validation fine des compatibilités (engine major, operationsScope) : pour cette itération, je me concentrerai sur la couverture comportementale des scénarios définis par la SPEC Multi-run diff et je traiterai les erreurs de compatibilité uniquement à travers les garde-fous déjà présents (vérification de version dans la commande CLI).
+Le principal risque est de complexifier inutilement l’API de coverage ou de préjuger d’intégrations futures dans le pipeline (sous-tâche 9307.9307002). Pour limiter cela, je garderai `createCoverageAccumulator` disponible et je structurerai les nouveaux types de manière additive, sans modifier la signature publique des fonctions utilisées par le pipeline. Un autre point d’attention est la consommation mémoire : l’état par instance doit rester léger et ne pas dupliquer la liste complète des cibles à chaque fois. Je privilégierai donc des ensembles d’identifiants dérivés de l’index partagé plutôt que des structures riches. Enfin, il faudra s’assurer que les nouvelles structures respectent les invariants de déterminisme (pas de RNG, pas d’état global caché) et restent bien désactivées lorsque coverage=off, ce qui sera vérifié indirectement en n’ajoutant aucune intégration dans orchestrator à ce stade.
 
-Parent bullets couverts: [DEL3, DOD1, DOD4, TS1, TS2, TS4]
+Parent bullets couverts: [KR1, KR2, KR3, DEL1, DEL2, DEL3, DOD1, DOD2, TS1, TS2, TS3, TS4]
 
 Checks:
 - build: npm run build

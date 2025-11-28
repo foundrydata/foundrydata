@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
 
 import type { CoverageTarget } from '@foundrydata/shared';
-import { createCoverageAccumulator, type CoverageEvent } from '../events.js';
+import {
+  createCoverageAccumulator,
+  createStreamingCoverageAccumulator,
+  type CoverageEvent,
+} from '../events.js';
 
 function makeTargets(): CoverageTarget[] {
   return [
@@ -178,5 +182,118 @@ describe('createCoverageAccumulator', () => {
     acc.markTargetHit('t-schema-id');
     expect(acc.isHit('t-schema-id')).toBe(true);
     expect(acc.getHitTargetIds().has('t-schema-id')).toBe(true);
+  });
+});
+
+describe('createStreamingCoverageAccumulator', () => {
+  it('records events directly into the global bitmap', () => {
+    const targets = makeTargets();
+    const acc = createStreamingCoverageAccumulator(targets);
+
+    const events: CoverageEvent[] = [
+      {
+        dimension: 'structure',
+        kind: 'SCHEMA_NODE',
+        canonPath: '#',
+      },
+      {
+        dimension: 'branches',
+        kind: 'ANYOF_BRANCH',
+        canonPath: '#/anyOf/0',
+        params: { index: 0 },
+      },
+    ];
+
+    for (const event of events) {
+      acc.record(event);
+    }
+
+    expect(acc.isHit('t-schema-root')).toBe(true);
+    expect(acc.isHit('t-anyof-0')).toBe(true);
+    expect(acc.isHit('t-schema-id')).toBe(false);
+  });
+
+  it('keeps per-instance state separate until commit', () => {
+    const targets = makeTargets();
+    const acc = createStreamingCoverageAccumulator(targets);
+
+    const instanceA = acc.createInstanceState();
+    const instanceB = acc.createInstanceState();
+
+    const rootEvent: CoverageEvent = {
+      dimension: 'structure',
+      kind: 'SCHEMA_NODE',
+      canonPath: '#',
+    };
+    const propEvent: CoverageEvent = {
+      dimension: 'structure',
+      kind: 'PROPERTY_PRESENT',
+      canonPath: '#/properties/id',
+      params: { propertyName: 'id' },
+    };
+
+    instanceA.record(rootEvent);
+    instanceB.record(rootEvent);
+    instanceB.record(propEvent);
+
+    expect(acc.getHitTargetIds().size).toBe(0);
+
+    acc.commitInstance(instanceA);
+    expect(acc.isHit('t-schema-root')).toBe(true);
+    expect(acc.isHit('t-prop-id')).toBe(false);
+
+    acc.commitInstance(instanceB);
+    expect(acc.isHit('t-schema-root')).toBe(true);
+    expect(acc.isHit('t-prop-id')).toBe(true);
+  });
+
+  it('reset allows reusing per-instance state without leaking hits', () => {
+    const targets = makeTargets();
+    const acc = createStreamingCoverageAccumulator(targets);
+
+    const instance = acc.createInstanceState();
+
+    const event: CoverageEvent = {
+      dimension: 'branches',
+      kind: 'ONEOF_BRANCH',
+      canonPath: '#/oneOf/1',
+      params: { index: 1 },
+    };
+
+    instance.record(event);
+    expect(instance.getHitTargetIds().has('t-oneof-1')).toBe(true);
+
+    acc.commitInstance(instance);
+    expect(acc.isHit('t-oneof-1')).toBe(true);
+
+    expect(instance.getHitTargetIds().size).toBe(0);
+
+    instance.record(event);
+    expect(instance.getHitTargetIds().has('t-oneof-1')).toBe(true);
+    instance.reset();
+    expect(instance.getHitTargetIds().size).toBe(0);
+
+    expect(acc.isHit('t-oneof-1')).toBe(true);
+  });
+
+  it('does not index diagnostic-only targets in per-instance or global state', () => {
+    const targets = makeTargets();
+    const acc = createStreamingCoverageAccumulator(targets);
+    const instance = acc.createInstanceState();
+
+    const unmatchedDiagnosticEvent: CoverageEvent = {
+      dimension: 'structure',
+      // @ts-expect-error - this event kind is not part of the streaming model
+      kind: 'SCHEMA_REUSED_COVERED',
+      canonPath: '#/components/schemas/User',
+    };
+
+    instance.record(unmatchedDiagnosticEvent as any);
+
+    acc.record(unmatchedDiagnosticEvent as any);
+
+    expect(instance.getHitTargetIds().size).toBe(0);
+    expect(acc.getHitTargetIds().size).toBe(0);
+    expect(acc.isHit('t-diagnostic')).toBe(false);
   });
 });

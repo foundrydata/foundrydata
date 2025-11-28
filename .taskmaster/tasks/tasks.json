@@ -466,7 +466,7 @@
           "9302",
           "9303"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 4,
         "details": "[Context]\nMove from any temporary post-pass coverage computation to the streaming model required for steady-state V1, per §4.3 (Generator instrumentation) and §8 (Technical constraints & invariants). Coverage must be updated as instances pass through Generate and Repair, with hits committed only after Validate, and total overhead must remain O(#instances + #targets).\n\n[Key requirements]\n- Replace any full post-pass re-parse of generated output with in-memory, streaming coverage instrumentation across Generate, Repair and Validate.\n- Maintain per-instance coverage state that accumulates events, then commit hits to global target bitmaps once Validate accepts the instance.\n- Ensure coverage=guided mode uses the same streaming infrastructure as coverage=measure, with additional hints but no extra parse.\n- Integrate coverage instrumentation metrics into existing per-phase metrics (e.g. generateMs, repairMs, validateMs) to make overhead measurable.\n- Preserve determinism: coverage bitmaps and reports must be identical across runs for fixed inputs and options.\n\n[Deliverables]\n- Streaming coverage accumulator implementation in packages/core/src/coverage/coverage-state.ts.\n- Orchestrator wiring to attach per-instance coverage state and commit hits after validation.\n- Updated metrics plumbing to capture coverage-related overhead.\n\n[Commands]\n- npm run build\n- npm run test -- --runInBand\n- npm run bench\n\n[Definition of Done]\n- No phase performs a second JSON parse of the emitted output solely for coverage; coverage computation is fully streaming.\n- Coverage metrics and reports remain unchanged relative to the M0 implementation on existing tests and fixtures.\n- Overhead is measured via bench scripts and remains within acceptable SLOs given the additional instrumentation.\n- Determinism tests confirm that repeated runs produce identical coverage bitmaps and reports.",
         "testStrategy": "Unit tests for streaming coverage state that simulate per-instance event flows and validate final hit sets; integration tests that run the full pipeline and compare coverage reports before and after the streaming refactor; benchmark runs to assess performance overhead and confirm O(#instances + #targets) behavior; determinism tests that run multiple times and compare coverage reports bit-for-bit.",
@@ -475,10 +475,11 @@
             "id": 9307001,
             "title": "Implement per-instance coverage state and bitmap representation",
             "description": "Create structures to capture per-instance events and global bitmaps for CoverageTargets in a streaming fashion.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 3,
             "file": "packages/core/src/coverage/coverage-state.ts",
-            "parentId": "9307"
+            "parentId": "9307",
+            "updatedAt": "2025-11-28T22:48:08.680Z"
           },
           {
             "id": 9307002,
@@ -507,7 +508,8 @@
             "file": "packages/reporter/test/bench.runner.test.ts",
             "parentId": "9307"
           }
-        ]
+        ],
+        "updatedAt": "2025-11-28T22:48:08.680Z"
       },
       {
         "id": "9308",
@@ -984,7 +986,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-28T22:39:39.669Z",
+      "lastModified": "2025-11-28T22:48:08.681Z",
       "taskCount": 18,
       "completedCount": 6,
       "tags": [
