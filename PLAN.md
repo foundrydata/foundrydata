@@ -1,23 +1,23 @@
-Task: 9304   Title: Add coverage flags to generate and openapi commands (subtask 9304.9304001)
-Anchors: [cov://§6#execution-modes-ux, cov://§6#budget-profiles, cov://§7#cli-summary]
+Task: 9304   Title: Map CLI coverage options to core pipeline configuration (subtask 9304.9304002)
+Anchors: [cov://§3#coverage-model, cov://§4#architecture-components, cov://§6#execution-modes-ux, cov://§6#budget-profiles, cov://§7#json-coverage-report]
 Touched files:
+- packages/cli/src/config/coverage-options.ts
 - packages/cli/src/index.ts
 - packages/cli/src/flags.ts
 - packages/cli/src/index.test.ts
 
 Approach:
-Pour cette sous-tâche 9304.9304001, je vais étendre le CLI `foundrydata` pour accepter explicitement les options de couverture décrites par les anchors cov://§6#execution-modes-ux et cov://§6#budget-profiles, en ajoutant les flags `--coverage`, `--coverage-dimensions`, `--coverage-min`, `--coverage-report`, `--coverage-profile` et `--coverage-exclude-unreachable` aux commandes `generate` et `openapi`. Côté implémentation, cela consiste à enrichir la définition des options dans `packages/cli/src/index.ts`, à mettre à jour l’interface `CliOptions` dans `packages/cli/src/flags.ts` pour typer ces nouveaux champs, et à s’assurer que la phase de parsing (`parsePlanOptions`) reçoit bien les valeurs brutes sans encore décider de la façon dont elles seront transmises à l’orchestrateur coverage-aware (qui sera traitée par la sous-tâche 9304.9304002). Je veillerai à respecter les invariants de déterminisme (pas de nouvelle source d’aléa) et à ne pas activer d’analyseur de couverture tant que la configuration interne n’est pas branchée, afin que `coverage=off` reste strictement équivalent au comportement actuel.
+Pour cette sous-tâche 9304.9304002, je vais introduire un module dédié `packages/cli/src/config/coverage-options.ts` chargé de transformer les flags CLI de couverture (`--coverage`, `--coverage-dimensions`, `--coverage-min`, `--coverage-report`, `--coverage-profile`, `--coverage-exclude-unreachable`) en configuration structurée pour le pipeline (`PipelineOptions.coverage` et options associées), en respectant les invariants du coverage model (cov://§3#coverage-model, cov://§4#architecture-components, cov://§6#execution-modes-ux). Ce module exposera une fonction de type `resolveCliCoverageOptions` qui prendra les options Commander (ou une vue typée `CliOptions`) et calculera : le `CoverageMode` effectif (`off|measure|guided`), la liste `dimensionsEnabled` (en filtrant ou rejetant les dimensions inconnues de façon déterministe), le booléen `excludeUnreachable` et la valeur `minCoverage` (seuil appliqué uniquement à `metrics.overall`, cov://§7#json-coverage-report), ainsi qu’un mapping clair entre `--n`/`--count` et `maxInstances` pour le mode guided au niveau de la couverture.
 
-Je compléterai les tests existants de `packages/cli/src/index.test.ts` par des cas ciblés qui vérifient que les nouvelles options sont acceptées par Commander (présence dans `--help`, absence d’erreur sur un appel basique avec `--coverage=off` et `--coverage-report`), sans encore valider la production d’un rapport coverage-report/v1. Cela permettra de garder une bonne couverture de `index.ts` et de `flags.ts` tout en laissant la logique de mapping détaillée (minCoverage, dimensionsEnabled, profils) au scope de 9304.9304002 et 9304.9304003. Les points d’intégration avec le reste du pipeline resteront strictement en lecture/forwarding de flags pour cette itération.
+Dans `packages/cli/src/index.ts`, j’adapterai les appels à `Generate` (pour `generate` et `openapi`) pour injecter ces options coverage dans `executePipeline` via l’API core (en conservant l’invariant `coverage=off` ⇒ pas de CoverageAnalyzer ni d’instrumentation grâce à `shouldRunCoverageAnalyzer`). Je veillerai à ce que les combinaisons `coverage=off` + `--coverage-min` / `--coverage-report` soient gérées conformément à la description de la sous-tâche : les options minCoverage/coverage-report seront ignorées dans ce mode avec un message clair sur stderr, sans modifier les instances générées ni la sémantique de sortie. Enfin, je m’assurerai que les dimensions inconnues passées à `--coverage-dimensions` sont soit rejetées avec une erreur explicite (exit code non nul), soit filtrées avec un message déterministe, de manière à ne jamais perturber le calcul des métriques ou des seuils par rapport à `dimensionsEnabled`.
 
 Risks/Unknowns:
-Les principaux risques sont de définir des types ou des noms d’options qui ne s’aligneraient pas parfaitement avec la future configuration coverage (par exemple si les profils ou les dimensions évoluent dans la SPEC) et de créer une confusion UX si `--coverage=off` interagit mal avec d’autres flags existants. Il faudra aussi s’assurer que l’ajout de ces options n’introduit pas de rupture dans les usages existants (scripts CI basés sur `foundrydata generate` sans couverture) et garder à l’esprit que la validation fine de `minCoverage` et des profils sera couverte par les sous-tâches suivantes.
+Les principaux risques sont de mal synchroniser la configuration coverage CLI avec la configuration déjà en place dans le pipeline (options `PipelineOptions.coverage`, `CoverageHookOptions`, thresholds) et de violer les invariants de gating (par exemple en activant l’Analyzer alors que `coverage=off` ou en faisant dépendre `dimensionsEnabled` des caps de Compose). Il faudra également éviter d’altérer la stabilité du flux d’instances entre `coverage=off` et `coverage=measure` (cov://§6#execution-modes-ux) en vérifiant que la façon de passer les options coverage n’introduit ni nouvelle source d’aléa ni changement d’ordre dans les appels RNG. Enfin, la stratégie choisie pour les dimensions inconnues (erreur vs drop avec note) doit rester simple, déterministe et documentée dans les messages CLI pour éviter toute ambiguïté côté opérateur.
 
-Parent bullets couverts: [KR1, DEL1, DOD1, TS1]
+Parent bullets couverts: [KR2, KR4, KR5, DOD1, DOD2, DOD3, TS1, TS2, TS4]
 
 Checks:
 - build: npm run build
 - test: npm run test
 - bench: npm run bench
 - diag-schema: true
-

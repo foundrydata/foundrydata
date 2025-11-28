@@ -11,7 +11,7 @@ import {
   type CoverageIndex,
 } from './transform/composition-engine.js';
 import { executePipeline } from './pipeline/orchestrator.js';
-import type { PipelineResult } from './pipeline/types.js';
+import type { PipelineOptions, PipelineResult } from './pipeline/types.js';
 import type { CoverageReport } from '@foundrydata/shared';
 import type { PlanOptions } from './types/options.js';
 import {
@@ -120,6 +120,11 @@ export interface GenerateOptions {
    * Defaults to true.
    */
   metricsEnabled?: boolean;
+  /**
+   * Coverage configuration forwarded to the core pipeline.
+   * When omitted, coverage mode defaults to 'off'.
+   */
+  coverage?: PipelineOptions['coverage'];
 }
 
 /**
@@ -243,6 +248,7 @@ export function Generate(
       validateFormats,
       discriminator,
     },
+    coverage: options.coverage,
   });
 
   async function* iterator(): AsyncIterableIterator<unknown> {

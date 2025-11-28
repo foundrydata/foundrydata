@@ -84,7 +84,7 @@ describe('CLI flag helpers', () => {
   });
 
   describe('parsePlanOptions', () => {
-    it('accepts coverage-related flags without throwing', () => {
+    it('accepts coverage-related flags without throwing (they are ignored)', () => {
       const options: CliOptions = {
         coverage: 'off',
         coverageDimensions: 'structure,branches',

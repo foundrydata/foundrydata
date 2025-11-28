@@ -118,7 +118,7 @@ describe('CLI generate command', () => {
     expect(stderr).toBe('');
   });
 
-  it('accepts coverage-related flags without changing basic behavior', async () => {
+  it('accepts coverage-related flags without changing basic behavior (and warns when coverage=off)', async () => {
     const { dir, schemaPath, schema } = await createSchemaFixture();
 
     const stdoutChunks: string[] = [];
@@ -181,7 +181,9 @@ describe('CLI generate command', () => {
     }
 
     const stderr = stderrChunks.join('');
-    expect(stderr).toBe('');
+    expect(stderr).toMatch(
+      /coverage-min\/coverage-report are ignored|ignored when coverage=off/i
+    );
   });
 
   it('exits with non-zero code when schema file is missing', async () => {
@@ -385,7 +387,7 @@ describe('CLI openapi command', () => {
     }
   });
 
-  it('accepts coverage-related flags on openapi command', async () => {
+  it('accepts coverage-related flags on openapi command (and warns when coverage=off)', async () => {
     const { dir, specPath, responseSchema } = await createOpenApiFixture();
 
     const stdoutChunks: string[] = [];
@@ -452,6 +454,8 @@ describe('CLI openapi command', () => {
     }
 
     const stderr = stderrChunks.join('');
-    expect(stderr).toBe('');
+    expect(stderr).toMatch(
+      /coverage-min\/coverage-report are ignored|ignored when coverage=off/i
+    );
   });
 });

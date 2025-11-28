@@ -38,10 +38,10 @@ This document maps the parent task 9304 bullets from Implementation Details, Del
 ## Mapping 9304 subtasks → parent bullets
 
 - **9304.9304001 – Add coverage flags to generate and openapi commands**  
-  Covers: [KR1], [DEL1], contributes to [DOD1], [TS1]. Status: in-progress.
+  Covers: [KR1], [DEL1], contributes to [DOD1], [TS1]. Status: covered.
 
 - **9304.9304002 – Map CLI coverage options to core pipeline configuration**  
-  Covers: [KR2], [KR4], [KR5], [KR6], [DOD1], [DOD2], [DOD3], contributes to [TS1], [TS2], [TS4]. Status: pending.
+  Covers: [KR2], [KR4], [KR5], [KR6], [DOD1], [DOD2], [DOD3], contributes to [TS1], [TS2], [TS4]. Status: covered.
 
 - **9304.9304003 – Implement coverage summary printer for CI logs**  
   Covers: [KR3], [DEL2], [DOD4], [TS3]. Status: pending.
@@ -94,4 +94,3 @@ This document maps the parent task 9304 bullets from Implementation Details, Del
 +- test: npm run test
 +- bench: npm run bench
 +- diag-schema: true
-
