@@ -39,14 +39,13 @@ This document maps the parent task 9307 bullets from Implementation Details, Del
 ## Mapping 9307 subtasks → parent bullets
 
 - **9307.9307001 – Implement per-instance coverage state and bitmap representation**  
-  Covers: [KR1], [KR2], [KR3], [DEL1], [DEL2], [DEL3], [DOD1], [DOD2], [TS1], [TS2], [TS3], [TS4]. Status: in-progress (data structures and unit tests implemented in coverage module).
+  Covers: [KR1], [KR2], [KR3], [DEL1], [DEL2], [DEL3], [DOD1], [DOD2], [TS1], [TS2], [TS3], [TS4]. Status: covered (per-instance state and streaming accumulator implemented in coverage/events.ts with unit tests in coverage/__tests__/events.test.ts).
 
 - **9307.9307002 – Wire streaming coverage into pipeline phases**  
-  Covers: [KR1], [KR4], [KR6], [DEL3], [DEL4], [DOD2], [DOD3]. Status: pending.
+  Covers: [KR1], [KR4], [KR6], [DEL3], [DEL4], [DOD2], [DOD3]. Status: covered (streaming coverage accumulator wired through orchestrator, generator and repair, with per-instance commit driven by validate in pipeline tests).
 
 - **9307.9307003 – Remove any post-pass coverage computation**  
   Covers: [KR2], [DOD2], [DOD5]. Status: pending.
 
 - **9307.9307004 – Benchmark streaming coverage overhead**  
   Covers: [KR5], [DOD4], [DOD5], [TS5]. Status: pending.
-

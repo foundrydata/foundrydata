@@ -74,8 +74,10 @@ import {
   type CoverageAnalyzerInput,
 } from '../coverage/analyzer.js';
 import {
-  createCoverageAccumulator,
   type CoverageAccumulator,
+  createStreamingCoverageAccumulator,
+  type StreamingCoverageAccumulator,
+  type InstanceCoverageState,
   type CoverageEvent,
   evaluateCoverage,
   type CoverageEvaluatorInput,
@@ -147,6 +149,7 @@ type AjvMarker = {
 type CoverageHookOptions = {
   mode: CoverageMode;
   emit: (event: CoverageEvent) => void;
+  emitForItem?: (itemIndex: number, event: CoverageEvent) => void;
 };
 
 class ExternalRefValidationError extends Error {
@@ -382,15 +385,43 @@ export async function executePipeline(
   let externalRefState: ExternalRefState | undefined;
   let canonicalSchema: unknown = schema;
   let coverageAccumulator: CoverageAccumulator | undefined;
+  let streamingCoverageAccumulator: StreamingCoverageAccumulator | undefined;
+  let perInstanceCoverageStates: InstanceCoverageState[] | undefined;
   let coverageHookOptions: CoverageHookOptions | undefined;
   if (shouldRunCoverageAnalyzer(options.coverage)) {
     const coverageMode = options.coverage?.mode ?? 'off';
     if (coverageMode === 'measure' || coverageMode === 'guided') {
+      const ensureInstanceCoverageState = (
+        itemIndex: number
+      ): InstanceCoverageState | undefined => {
+        if (!streamingCoverageAccumulator) return undefined;
+        if (!perInstanceCoverageStates) {
+          perInstanceCoverageStates = [];
+        }
+        let state = perInstanceCoverageStates[itemIndex];
+        if (!state) {
+          state = streamingCoverageAccumulator.createInstanceState();
+          perInstanceCoverageStates[itemIndex] = state;
+        }
+        return state;
+      };
       const emit: (event: CoverageEvent) => void = (event) => {
+        if (streamingCoverageAccumulator) {
+          streamingCoverageAccumulator.record(event);
+          return;
+        }
         if (!coverageAccumulator) return;
         coverageAccumulator.record(event);
       };
-      coverageHookOptions = { mode: coverageMode, emit };
+      const emitForItem = (itemIndex: number, event: CoverageEvent): void => {
+        const state = ensureInstanceCoverageState(itemIndex);
+        if (state) {
+          state.record(event);
+          return;
+        }
+        emit(event);
+      };
+      coverageHookOptions = { mode: coverageMode, emit, emitForItem };
     }
   }
   const runners: StageRunners = {
@@ -426,7 +457,21 @@ export async function executePipeline(
         resolverRunDiags,
         seenSchemaIds,
         registryDocs,
-        () => pendingAjvMismatch
+        () => pendingAjvMismatch,
+        (index, itemValid) => {
+          if (!streamingCoverageAccumulator || !perInstanceCoverageStates) {
+            return;
+          }
+          const state = perInstanceCoverageStates[index];
+          if (!state) {
+            return;
+          }
+          if (itemValid) {
+            streamingCoverageAccumulator.commitInstance(state);
+          } else {
+            state.reset();
+          }
+        }
       ),
   };
 
@@ -747,7 +792,10 @@ export async function executePipeline(
         const coverageResult = analyzeCoverage(coverageInput);
         artifacts.coverageGraph = coverageResult.graph;
         artifacts.coverageTargets = coverageResult.targets;
-        coverageAccumulator = createCoverageAccumulator(coverageResult.targets);
+        streamingCoverageAccumulator = createStreamingCoverageAccumulator(
+          coverageResult.targets
+        );
+        coverageAccumulator = streamingCoverageAccumulator;
       }
     }
 
@@ -1275,7 +1323,8 @@ function createDefaultValidate(
   resolverRunDiags?: ResolverDiagnosticNote[],
   seenSchemaIds?: Map<string, string>,
   registryDocs?: RegistryDoc[],
-  getPendingAjvMismatch?: () => AjvFlagsMismatchError | undefined
+  getPendingAjvMismatch?: () => AjvFlagsMismatchError | undefined,
+  onInstanceValidated?: (index: number, valid: boolean) => void
 ): StageRunners['validate'] {
   return async (items, schema, options) => {
     const planOptions = pipelineOptions.generate?.planOptions;
@@ -1429,7 +1478,8 @@ function createDefaultValidate(
     const errors: unknown[] = [];
     const validationDiagnostics: DiagnosticEnvelope[] = [];
     let allValid = true;
-    for (const it of items) {
+    for (let index = 0; index < items.length; index += 1) {
+      const it = items[index];
       const ok = validateFn(it);
       if (!ok) {
         allValid = false;
@@ -1439,6 +1489,13 @@ function createDefaultValidate(
         errors.push(failureErrors);
         if (failureErrors.length > 0) {
           validationDiagnostics.push(...ajvErrorsToDiagnostics(failureErrors));
+        }
+      }
+      if (onInstanceValidated) {
+        try {
+          onInstanceValidated(index, ok);
+        } catch {
+          // Coverage callbacks must never affect validation behavior.
         }
       }
     }

@@ -302,6 +302,66 @@ describe('executePipeline', () => {
     expect(schemaNodeTargets.some((t) => (t as any).hit === true)).toBe(true);
   });
 
+  it('keeps final items valid while routing coverage through streaming accumulator in measure mode', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        kind: { enum: ['alpha', 'beta'] },
+        alphaPayload: { type: 'string', minLength: 1 },
+        betaPayload: { type: 'string', minLength: 1 },
+      },
+      required: ['kind'],
+      allOf: [
+        {
+          if: {
+            properties: { kind: { const: 'alpha' } },
+            required: ['kind'],
+          },
+          then: {
+            required: ['alphaPayload'],
+          },
+          else: {
+            required: ['betaPayload'],
+          },
+        },
+      ],
+    } as const;
+
+    const result = await executePipeline(schema, {
+      generate: { count: 3, seed: 123 },
+      validate: { validateFormats: false },
+      coverage: { mode: 'measure' },
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.timeline).toEqual([
+      'normalize',
+      'compose',
+      'generate',
+      'repair',
+      'validate',
+    ]);
+
+    const finalItems =
+      result.artifacts.repaired ?? result.artifacts.generated?.items ?? [];
+
+    expect(Array.isArray(finalItems)).toBe(true);
+    expect(finalItems.length).toBeGreaterThan(0);
+
+    const targets = result.artifacts.coverageTargets ?? [];
+    expect(targets.length).toBeGreaterThan(0);
+    expect(
+      targets.some(
+        (t) =>
+          t.dimension === 'structure' &&
+          t.kind === 'SCHEMA_NODE' &&
+          t.canonPath === '#'
+      )
+    ).toBe(true);
+  });
+
   it('emits identical final items for coverage=off vs coverage=measure', async () => {
     const schema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
