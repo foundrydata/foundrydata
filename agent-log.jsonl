@@ -1,0 +1,1 @@
+{"ts":"2025-11-28T18:40:49.898Z","taskId":"9302.9302004","op":"subtask-complete","files":["packages/core/src/pipeline/orchestrator.ts","packages/core/src/pipeline/__tests__/pipeline-orchestrator.test.ts","PLAN.md"],"anchors":["cov://§3#coverage-model","cov://§3#dimensions","cov://§4#architecture-components"]}

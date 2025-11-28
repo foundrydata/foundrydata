@@ -171,10 +171,11 @@
             "id": 9302004,
             "title": "Integrate coverage accumulators into pipeline orchestrator",
             "description": "Wire coverage accumulators into the pipeline so coverage=measure collects events during Generate and Repair and finalizes after Validate, with all coverage code completely disabled when coverage=off.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/pipeline/orchestrator.ts",
-            "parentId": "9302"
+            "parentId": "9302",
+            "updatedAt": "2025-11-28T18:40:56.119Z"
           },
           {
             "id": 9302005,
@@ -186,7 +187,7 @@
             "parentId": "9302"
           }
         ],
-        "updatedAt": "2025-11-28T18:24:32.286Z"
+        "updatedAt": "2025-11-28T18:40:56.119Z"
       },
       {
         "id": "9303",
@@ -754,7 +755,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-28T18:24:32.287Z",
+      "lastModified": "2025-11-28T18:40:56.120Z",
       "taskCount": 13,
       "completedCount": 2,
       "tags": [

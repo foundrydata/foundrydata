@@ -253,4 +253,40 @@ describe('executePipeline', () => {
       )
     ).toBe(true);
   });
+
+  it('records coverage hits after validate in measure mode', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        required: { const: 1 },
+        optional: { const: 2 },
+      },
+      required: ['required'],
+      minProperties: 2,
+    } as const;
+
+    const result = await executePipeline(schema, {
+      generate: { count: 1 },
+      validate: { validateFormats: false },
+      coverage: { mode: 'measure' },
+    });
+
+    expect(result.status).toBe('completed');
+
+    const targets = result.artifacts.coverageTargets;
+    expect(targets).toBeDefined();
+    expect(Array.isArray(targets)).toBe(true);
+
+    const propertyTargets =
+      targets?.filter(
+        (t) =>
+          t.kind === 'PROPERTY_PRESENT' &&
+          t.canonPath === '#/properties/optional'
+      ) ?? [];
+
+    expect(propertyTargets.length).toBeGreaterThan(0);
+    expect(propertyTargets.some((t) => (t as any).hit === true)).toBe(true);
+  });
 });

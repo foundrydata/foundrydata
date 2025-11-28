@@ -73,6 +73,12 @@ import {
   analyzeCoverage,
   type CoverageAnalyzerInput,
 } from '../coverage/analyzer.js';
+import {
+  createCoverageAccumulator,
+  type CoverageAccumulator,
+  type CoverageEvent,
+} from '../coverage/index.js';
+import type { CoverageMode } from '@foundrydata/shared';
 
 const STAGE_SEQUENCE: PipelineStageName[] = [
   'normalize',
@@ -127,6 +133,11 @@ type AjvKeywordError = ErrorObject<string, Record<string, unknown>, unknown>;
 
 type AjvMarker = {
   __fd_ajvClass?: 'Ajv' | 'Ajv2019' | 'Ajv2020' | 'ajv-draft-04';
+};
+
+type CoverageHookOptions = {
+  mode: CoverageMode;
+  emit: (event: CoverageEvent) => void;
 };
 
 class ExternalRefValidationError extends Error {
@@ -359,19 +370,39 @@ export async function executePipeline(
     resolvedPlanOptions.failFast.externalRefStrict;
   let externalRefState: ExternalRefState | undefined;
   let canonicalSchema: unknown = schema;
+  let coverageAccumulator: CoverageAccumulator | undefined;
+  let coverageHookOptions: CoverageHookOptions | undefined;
+  if (shouldRunCoverageAnalyzer(options.coverage)) {
+    const coverageMode = options.coverage?.mode ?? 'off';
+    if (coverageMode === 'measure' || coverageMode === 'guided') {
+      const emit: (event: CoverageEvent) => void = (event) => {
+        if (!coverageAccumulator) return;
+        coverageAccumulator.record(event);
+      };
+      coverageHookOptions = { mode: coverageMode, emit };
+    }
+  }
   const runners: StageRunners = {
     normalize: overrides.normalize ?? normalize,
     compose: overrides.compose ?? compose,
     generate:
       overrides.generate ??
-      createDefaultGenerate(metrics, schema, options, {
-        registryDocs,
-        resolverHydrateFinalAjv: resolvedPlanOptions.resolver.hydrateFinalAjv,
-        resolverNotes: resolverRunDiags,
-        resolverSeenSchemaIds: seenSchemaIds,
-        sourceDialect,
-      }),
-    repair: overrides.repair ?? createDefaultRepair(options, metrics),
+      createDefaultGenerate(
+        metrics,
+        schema,
+        options,
+        {
+          registryDocs,
+          resolverHydrateFinalAjv: resolvedPlanOptions.resolver.hydrateFinalAjv,
+          resolverNotes: resolverRunDiags,
+          resolverSeenSchemaIds: seenSchemaIds,
+          sourceDialect,
+        },
+        coverageHookOptions
+      ),
+    repair:
+      overrides.repair ??
+      createDefaultRepair(options, metrics, coverageHookOptions),
     validate:
       overrides.validate ??
       createDefaultValidate(
@@ -705,6 +736,7 @@ export async function executePipeline(
         const coverageResult = analyzeCoverage(coverageInput);
         artifacts.coverageGraph = coverageResult.graph;
         artifacts.coverageTargets = coverageResult.targets;
+        coverageAccumulator = createCoverageAccumulator(coverageResult.targets);
       }
     }
 
@@ -1063,6 +1095,17 @@ export async function executePipeline(
     timeline.push('validate');
   }
 
+  if (
+    coverageAccumulator &&
+    shouldRunCoverageAnalyzer(options.coverage) &&
+    Array.isArray(artifacts.coverageTargets) &&
+    status === 'completed'
+  ) {
+    artifacts.coverageTargets = coverageAccumulator.toReport(
+      artifacts.coverageTargets
+    );
+  }
+
   return {
     status,
     schema,
@@ -1086,7 +1129,8 @@ function createDefaultGenerate(
     resolverNotes?: ResolverDiagnosticNote[];
     resolverSeenSchemaIds?: Map<string, string>;
     sourceDialect?: JsonSchemaDialect;
-  }
+  },
+  coverage?: CoverageHookOptions
 ): StageRunners['generate'] {
   return (effective, options) => {
     const generatorOptions: FoundryGeneratorOptions = {
@@ -1103,6 +1147,7 @@ function createDefaultGenerate(
       resolverNotes: opts?.resolverNotes,
       resolverSeenSchemaIds: opts?.resolverSeenSchemaIds,
       sourceDialect: opts?.sourceDialect,
+      coverage: coverage && coverage.mode !== 'off' ? coverage : undefined,
     };
     return generateFromCompose(effective, generatorOptions);
   };
@@ -1110,7 +1155,8 @@ function createDefaultGenerate(
 
 function createDefaultRepair(
   pipelineOptions: PipelineOptions,
-  metrics: MetricsCollector
+  metrics: MetricsCollector,
+  coverage?: CoverageHookOptions
 ): (
   items: unknown[],
   _args: { schema: unknown; effective: ReturnType<typeof compose> },
@@ -1125,7 +1171,11 @@ function createDefaultRepair(
       return repairItemsAjvDriven(
         items,
         { schema, effective, planOptions },
-        { attempts: _options?.attempts, metrics }
+        {
+          attempts: _options?.attempts,
+          metrics,
+          coverage: coverage && coverage.mode !== 'off' ? coverage : undefined,
+        }
       );
     } catch {
       // Conservative: on any unexpected error, fall back to pass-through
