@@ -48,4 +48,4 @@ This document maps the parent task 9307 bullets from Implementation Details, Del
   Covers: [KR2], [DOD2], [DOD5]. Status: covered (no remaining post-pass coverage recomputation paths in core or CLI; PLAN.md and SPEC-QUESTION clarify that coverage-report/v1 relies solely on streaming accumulator and CoverageEvaluator per coverage-aware V1).
 
 - **9307.9307004 – Benchmark streaming coverage overhead**  
-  Covers: [KR5], [DOD4], [DOD5], [TS5]. Status: pending.
+  Covers: [KR5], [DOD4], [DOD5], [TS5]. Status: covered (bench harness exercised via tests with coverage=measure on the simple profile, enforcing BENCH_BUDGETS for p95 latency and memory and confirming streaming overhead stays within V1 budgets).
