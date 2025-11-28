@@ -39,6 +39,13 @@
 9. Vérifier que les diagnostics respectent `diagnosticsEnvelope.schema.json` (diag-schema) et que les bench gates passent.
 10. Créer un commit avec le template fourni (scope = sous-tâche), incluant un trailer `REFONLY::{"anchors":[...],"summary":"..."}` valide, marquer la sous-tâche comme `done` puis consigner l’opération dans `agent-log.jsonl`. La tâche parente ne peut être terminée que lorsque toutes ses sous-tâches sont `done`.
 
+**Traçabilité tâche parente 93xx ↔ sous-tâches**
+
+- Pour chaque tâche parente 93xx, considérer la section Taskmaster `Implementation Details` (incluant `[Context]`, `[Key requirements]`, `[Deliverables]`, `[Definition of Done]`) ainsi que la section `Test Strategy` comme le **contrat global** de la tâche.
+- Lors du premier travail sur une tâche parente 93xx, établir une table de traçabilité (par exemple dans `PLAN.md` du parent ou un fichier dédié sous `.taskmaster/docs/`) listant les bullets clés de ces sections et les sous-tâches 93xx.y censées les couvrir. Aucun bullet critique ne doit rester sans sous-tâche associée ; si c’est le cas, créer une sous-tâche ou ouvrir une `SPEC-QUESTION`.
+- Chaque sous-tâche 93xx.y dérive un **sous-contrat** : dans son `PLAN.md`, elle référence explicitement les bullets du parent qu’elle couvre (par identifiant ou résumé court) dans une rubrique du type `Parent bullets couverts: [...]`. Le reste des bullets du parent est traité comme **hors scope** de cette sous-tâche.
+- À la clôture d’une sous-tâche, marquer les bullets correspondants comme “couverts” dans la table du parent. Avant de marquer le parent 93xx en `done`, vérifier que tous les bullets du contrat global sont mappés à ≥1 sous-tâche et marqués couverts.
+
 ---
 
 ## TL;DR opératoire
