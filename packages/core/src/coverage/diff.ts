@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import type {
   CoverageDimension,
   CoverageReport,
@@ -81,6 +82,16 @@ export interface CoverageDiffSummary {
 export interface CoverageReportsDiff {
   targets: CoverageTargetsDiff;
   summary: CoverageDiffSummary;
+}
+
+export type CoverageDiffCompatibilityIssueKind =
+  | 'versionMismatch'
+  | 'engineMajorMismatch'
+  | 'operationsScopeMismatch';
+
+export interface CoverageDiffCompatibilityIssue {
+  kind: CoverageDiffCompatibilityIssueKind;
+  message: string;
 }
 
 function makeTargetKey(target: CoverageTargetReport): string {
@@ -338,4 +349,83 @@ function computeOperationDeltas(
     operationsOnlyInA,
     operationsOnlyInB,
   };
+}
+
+function parseMajorVersion(version: string | undefined): string | undefined {
+  if (!version) return undefined;
+  const match = /^(\d+)/.exec(version);
+  return match?.[1];
+}
+
+function normalizeOperationsScope(report: CoverageReport): 'all' | 'selected' {
+  return report.run.operationsScope ?? 'all';
+}
+
+function normalizeSelectedOperations(
+  report: CoverageReport
+): string[] | undefined {
+  if (report.run.operationsScope !== 'selected') return undefined;
+  const ops = report.run.selectedOperations ?? [];
+  if (!ops.length) return undefined;
+  const unique = Array.from(new Set(ops));
+  unique.sort();
+  return unique;
+}
+
+// eslint-disable-next-line max-lines-per-function, complexity
+export function checkCoverageDiffCompatibility(
+  reportA: CoverageReport,
+  reportB: CoverageReport
+): CoverageDiffCompatibilityIssue[] {
+  const issues: CoverageDiffCompatibilityIssue[] = [];
+
+  if (reportA.version !== reportB.version) {
+    issues.push({
+      kind: 'versionMismatch',
+      message: `coverage-report version mismatch (A=${reportA.version}, B=${reportB.version})`,
+    });
+  }
+
+  const majorA = parseMajorVersion(reportA.engine?.foundryVersion);
+  const majorB = parseMajorVersion(reportB.engine?.foundryVersion);
+  if (majorA && majorB && majorA !== majorB) {
+    issues.push({
+      kind: 'engineMajorMismatch',
+      message: `FoundryData engine majors differ (A=${reportA.engine.foundryVersion}, B=${reportB.engine.foundryVersion})`,
+    });
+  }
+
+  const scopeA = normalizeOperationsScope(reportA);
+  const scopeB = normalizeOperationsScope(reportB);
+
+  if (scopeA !== scopeB) {
+    issues.push({
+      kind: 'operationsScopeMismatch',
+      message: `operationsScope mismatch (A=${scopeA}, B=${scopeB})`,
+    });
+    return issues;
+  }
+
+  if (scopeA === 'selected') {
+    const selectedA = normalizeSelectedOperations(reportA);
+    const selectedB = normalizeSelectedOperations(reportB);
+
+    if (!selectedA || !selectedB) {
+      issues.push({
+        kind: 'operationsScopeMismatch',
+        message:
+          'operationsScope is selected on both reports but selectedOperations is missing or empty on one side',
+      });
+    } else if (
+      selectedA.length !== selectedB.length ||
+      selectedA.some((op, idx) => op !== selectedB[idx])
+    ) {
+      issues.push({
+        kind: 'operationsScopeMismatch',
+        message: `selected operations differ between reports (A=${selectedA.join(',')}, B=${selectedB.join(',')})`,
+      });
+    }
+  }
+
+  return issues;
 }

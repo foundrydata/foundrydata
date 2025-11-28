@@ -11,6 +11,7 @@ import {
   diffCoverageTargets,
   diffCoverageReports,
   type CoverageMetricDelta,
+  checkCoverageDiffCompatibility,
 } from '../diff.js';
 
 function makeTarget(
@@ -325,5 +326,65 @@ describe('coverage diff reports', () => {
     // Newly uncovered includes both the regressed target (t2) and
     // the new uncovered target (t3).
     expect(newlyUncoveredIds).toEqual(['t2', 't3']);
+  });
+});
+
+describe('coverage diff compatibility checks', () => {
+  it('detects incompatible engine majors', () => {
+    const a = makeReport({
+      engine: { foundryVersion: '1.2.3', coverageMode: 'measure', ajvMajor: 8 },
+    } as Partial<CoverageReport>);
+    const b = makeReport({
+      engine: { foundryVersion: '2.0.0', coverageMode: 'measure', ajvMajor: 8 },
+    } as Partial<CoverageReport>);
+
+    const issues = checkCoverageDiffCompatibility(a, b);
+    expect(issues.some((i) => i.kind === 'engineMajorMismatch')).toBe(true);
+  });
+
+  it('detects incompatible operationsScope/selectedOperations', () => {
+    const base = makeReport();
+
+    const allScope = makeReport({
+      run: {
+        ...base.run,
+        operationsScope: 'all',
+        selectedOperations: undefined,
+      },
+    } as Partial<CoverageReport>);
+
+    const selectedScope = makeReport({
+      run: {
+        ...base.run,
+        operationsScope: 'selected',
+        selectedOperations: ['getUser'],
+      },
+    } as Partial<CoverageReport>);
+
+    const issuesScope = checkCoverageDiffCompatibility(allScope, selectedScope);
+    expect(issuesScope.some((i) => i.kind === 'operationsScopeMismatch')).toBe(
+      true
+    );
+
+    const selectedA = makeReport({
+      run: {
+        ...base.run,
+        operationsScope: 'selected',
+        selectedOperations: ['getUser', 'createUser'],
+      },
+    } as Partial<CoverageReport>);
+
+    const selectedB = makeReport({
+      run: {
+        ...base.run,
+        operationsScope: 'selected',
+        selectedOperations: ['getUser'],
+      },
+    } as Partial<CoverageReport>);
+
+    const issuesSelected = checkCoverageDiffCompatibility(selectedA, selectedB);
+    expect(
+      issuesSelected.some((i) => i.kind === 'operationsScopeMismatch')
+    ).toBe(true);
   });
 });

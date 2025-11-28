@@ -825,4 +825,127 @@ describe('CLI coverage diff command', () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it('fails with a clear error when operationsScope are incompatible', async () => {
+    const base = makeBaseReport();
+
+    const baseline: CoverageReport = {
+      ...base,
+      run: {
+        ...base.run,
+        operationsScope: 'all',
+        selectedOperations: undefined,
+      },
+    };
+
+    const comparison: CoverageReport = {
+      ...base,
+      run: {
+        ...base.run,
+        operationsScope: 'selected',
+        selectedOperations: ['getUser'],
+      },
+    };
+
+    const { dir, baselinePath, comparisonPath } =
+      await createCoverageReportFixture({
+        baseline,
+        comparison,
+      });
+
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(((
+      code?: number
+    ) => {
+      throw new Error(`EXIT:${code ?? 0}`);
+    }) as never);
+
+    const errorChunks: string[] = [];
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(((
+      msg?: unknown
+    ) => {
+      if (msg !== undefined) {
+        errorChunks.push(String(msg));
+      }
+    }) as never);
+
+    try {
+      await expect(
+        main([
+          'node',
+          'foundrydata',
+          'coverage',
+          'diff',
+          baselinePath,
+          comparisonPath,
+        ])
+      ).rejects.toThrow(/EXIT:/);
+
+      const stderr = errorChunks.join('\n');
+      expect(stderr).toMatch(/incompatible/i);
+    } finally {
+      exitSpy.mockRestore();
+      consoleErrorSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('prints status-changes section when targets change status without changing hit', async () => {
+    const base = makeBaseReport();
+
+    const baseline: CoverageReport = {
+      ...base,
+      targets: [
+        {
+          id: 't-status',
+          dimension: 'structure',
+          kind: 'SCHEMA_NODE',
+          canonPath: '#',
+          status: 'active',
+          hit: false,
+        } as CoverageTargetReport,
+      ],
+    };
+
+    const comparison: CoverageReport = {
+      ...base,
+      targets: [
+        {
+          id: 't-status',
+          dimension: 'structure',
+          kind: 'SCHEMA_NODE',
+          canonPath: '#',
+          status: 'unreachable',
+          hit: false,
+        } as CoverageTargetReport,
+      ],
+    };
+
+    const { dir, baselinePath, comparisonPath } =
+      await createCoverageReportFixture({
+        baseline,
+        comparison,
+      });
+
+    const stdoutChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      await program.parseAsync(
+        ['coverage', 'diff', baselinePath, comparisonPath],
+        { from: 'user' }
+      );
+
+      const stdout = stdoutChunks.join('');
+      expect(stdout).toMatch(/status-changes:/i);
+      expect(stdout).toMatch(/active -> unreachable/i);
+    } finally {
+      stdoutSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });
