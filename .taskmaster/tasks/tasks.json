@@ -341,7 +341,7 @@
           "9303",
           "9307"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 5,
         "details": "[Context]\nImplement the CoveragePlanner stage for coverage=guided, as specified in §4.2 (CoveragePlanner) and §6.2 (Budget & profiles). The planner consumes CoverageGraph and targets and produces a deterministic sequence of TestUnits with derived seeds, planned instance counts and per-unit hints, under an overall maxInstances budget and optional caps.\n\n[Key requirements]\n- Implement a static, greedy planner that builds all TestUnits up front from the initial CoverageTarget set, without adaptive feedback during the run.\n- Prioritize targets by scope (operations first when present), dimension (branches → enum → structure → boundaries) and then by weight and canonical path, with stable sorting rules.\n- Respect maxInstances as an upper bound, allowing early stop when all active targets are covered or when only unreachable or capped targets remain.\n- Implement deterministic caps per dimension/schema/operation and surface them via diagnostics.plannerCapsHit and meta.planned:false on unplanned targets.\n- Generate TestUnit seeds deterministically from a masterSeed and stable derivation rules so that runs are reproducible across executions.\n\n[Deliverables]\n- CoveragePlanner implementation under packages/core/src/coverage/coverage-planner.ts.\n- Planner diagnostics and meta fields wiring into CoverageTargets and CoverageReport.diagnostics.plannerCapsHit.\n- Integration in the pipeline orchestrator for coverage=guided mode, including mapping CLI --n and profiles to maxInstances and caps.\n\n[Commands]\n- npm run build\n- npm run test -- --runInBand\n- npm run test packages/core/src/coverage/__tests__/coverage-planner.spec.ts\n\n[Definition of Done]\n- For small schemas, planner produces TestUnits that exercise all active branch and enum targets within the budget, matching acceptance scenarios for oneOf and enums.\n- Planner respects maxInstances as a hard upper bound and may stop earlier once coverage objectives are satisfied.\n- Planner caps behavior (when large target sets are present) is deterministic and fully surfaced in plannerCapsHit and meta.planned:false on unplanned targets.\n- Seeds and TestUnit ordering are stable across runs for the same inputs and options.\n- Integration tests show that coverage=guided improves coverage.byDimension for branches and enums compared to coverage=measure under the same maxInstances.",
         "testStrategy": "Unit tests for planner prioritization and caps, using synthetic CoverageTargets to verify TestUnit sequences and meta.planned flags; property-based tests for seed derivation and determinism; integration tests that run coverage=guided on sample schemas and assert that branch and enum coverage reach 100% when budget permits, matching acceptance criteria; tests that compare planned vs unplanned targets when caps are hit.",
@@ -350,10 +350,11 @@
             "id": 9305001,
             "title": "Design TestUnit structure and planner inputs",
             "description": "Define TestUnit type and planner configuration (maxInstances, dimensions, priorities, caps) and integrate with CoverageGraph and CoverageTargets.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/coverage/coverage-planner.ts",
-            "parentId": "9305"
+            "parentId": "9305",
+            "updatedAt": "2025-11-28T23:40:00.002Z"
           },
           {
             "id": 9305002,
@@ -391,7 +392,8 @@
             "file": "packages/core/test/e2e/coverage-guided-planner.spec.ts",
             "parentId": "9305"
           }
-        ]
+        ],
+        "updatedAt": "2025-11-28T23:40:00.002Z"
       },
       {
         "id": "9306",
@@ -989,7 +991,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-28T23:24:13.149Z",
+      "lastModified": "2025-11-28T23:40:00.002Z",
       "taskCount": 18,
       "completedCount": 7,
       "tags": [

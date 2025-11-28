@@ -57,6 +57,28 @@ export {
   checkCoverageDiffCompatibility,
 } from './diff.js';
 
+export type {
+  CoverageHintKind,
+  CoverageHint,
+  PreferBranchHint,
+  EnsurePropertyPresenceHint,
+  CoverEnumValueHint,
+  TestUnit,
+  TestUnitScope,
+  CoveragePlannerCapsConfig,
+  CoveragePlannerUserOptions,
+  CoveragePlannerConfig,
+  CoveragePlannerInput,
+  ResolvePlannerConfigOptions,
+} from './coverage-planner.js';
+
+export {
+  DEFAULT_PLANNER_DIMENSIONS_ENABLED,
+  DEFAULT_PLANNER_DIMENSION_ORDER,
+  resolveCoveragePlannerConfig,
+  isCoverageHint,
+} from './coverage-planner.js';
+
 export type CoverageGraphNodeKind =
   | 'schema'
   | 'property'

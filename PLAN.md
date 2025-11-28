@@ -1,21 +1,23 @@
-Task: 9307   Title: Benchmark streaming coverage overhead (subtask 9307.9307004)
-Anchors: [cov://§4#architecture-components, cov://§4#generator-instrumentation, cov://§8#technical-constraints-invariants]
+Task: 9305   Title: 9305.9305001 – Design TestUnit structure and planner inputs
+Anchors: [cov://§4#architecture-components, cov://§4#coverage-planner, cov://§5#hints-interaction-with-repair]
 Touched files:
-- test/scripts/bench.test.ts
-- .taskmaster/docs/9307-traceability.md
+- packages/core/src/coverage/index.ts
+- packages/core/src/coverage/coverage-planner.ts
+- packages/core/src/pipeline/types.ts
+- .taskmaster/docs/9305-traceability.md
 - PLAN.md
 
 Approach:
-Pour la sous-tâche 9307.9307004, je vais utiliser le bench harness existant (`scripts/bench-core.ts` + `scripts/bench.ts`) via les tests `test/scripts/bench.test.ts` pour mesurer explicitement le coût de la couverture streaming, en comparant des profils simples exécutés avec coverage=off et coverage=measure/guided dans le même cadre de seeds et de budgets (§8 Technical constraints & invariants). L’objectif est de vérifier que l’activation de la couverture streaming respecte les budgets p95LatencyMs/memoryPeakMB hérités de bench-profiles et reste dans l’ordre de grandeur attendu par la SPEC (O(#instances + #targets)), sans introduire de régression cachée.
+Pour la sous-tâche 9305.9305001, je vais d’abord formaliser la structure `TestUnit` et les types de hints à partir de la SPEC coverage-aware (Architecture & components, CoveragePlanner, Hints). L’objectif est de disposer d’un contrat stable pour le planner V1 : chaque TestUnit doit encapsuler un identifiant stable, un seed dérivé du masterSeed, un nombre planifié d’instances (count) et une liste de hints typés, avec une portée optionnelle (operationKey, schemaPaths) permettant de cibler des zones du CoverageGraph. Ces types seront définis dans le module coverage core, de façon à pouvoir être réutilisés par le planner, le générateur et les rapports, tout en restant strictement passifs à ce stade (aucune logique de sélection ni de seed-derivation dans cette sous-tâche).
 
-Concrètement, je vais ajouter un test qui invoque `runProfile` sur le profil `simple` avec un override `pipelineOverrides.coverage` configuré en mode `measure` (dimensionsEnabled limitées à structure/branches) et un nombre réduit d’itérations, puis qui vérifie que le résumé de profil reste dans les BENCH_BUDGETS partagés et produit des métriques cohérentes. Ce test s’appuiera sur le même pipeline que le bench CLI (executePipeline + MetricsCollector en mode ci), ce qui garantit que l’overhead mesuré reflète bien l’implémentation streaming actuelle. Je garderai le bench CLI lui-même inchangé pour ne pas alourdir les exécutions par défaut, tout en documentant dans la traceability que des scénarios de bench dédiés à coverage=measure existent au niveau des tests.
+Ensuite, je vais définir un type de configuration de planner qui capture les objectifs décrits par la SPEC: dimensionsEnabled effectivement poursuivies, budget maxInstances (et éventuellement un soft time cap), ainsi qu’un schéma de priorisation et de caps suffisamment expressif pour couvrir les besoins de V1 (priorité par dimension et caps par dimension/schema/operation) tout en restant simple à manipuler. Ce type de configuration sera intégré à la fois côté coverage (CoveragePlannerInput combinant CoverageGraph, CoverageTargets et config) et dans les options du pipeline pour préparer le câblage ultérieur avec la CLI et les profils, sans encore modifier l’orchestrateur ni exécuter le planner. Je compléterai enfin par des tests de forme/type et quelques cas simples de construction de TestUnit et de configuration pour verrouiller l’API publique avant d’implémenter l’algorithme greedy dans les sous-tâches suivantes.
 
 Risks/Unknowns:
-Le principal risque est de rendre le test de bench trop fragile vis-à-vis des fluctuations de performance environnementales (CI vs local), en particulier si on introduit des assertions trop serrées sur p50/p95. Pour limiter cela, je me contenterai de recycler les BENCH_BUDGETS déjà utilisés par le bench gate et d’exiger simplement que le profil coverage=measure reste sous ces seuils, sans imposer de ratio précis coverage=measure/coverage=off. Un autre risque est d’introduire une dépendance forte à coverage dans les scripts de bench CLI eux-mêmes; je garderai la mesure coverage=measure confinée au niveau des tests, de sorte que `npm run bench` reste stable et rapide tout en permettant d’allumer des scénarios coverage-aware ciblés via `vitest`. Enfin, je veillerai à ne pas multiplier les profils pour coverage afin de garder la durée des tests raisonnable (itérations réduites, profil simple uniquement).
+Le principal risque est de figer trop tôt une forme de configuration des caps ou des priorités qui compliquerait l’implémentation des sous-tâches suivantes (caps, seeds, intégration pipeline) ou la génération de diagnostics `plannerCapsHit`. Je vais donc privilégier des structures explicites mais flexibles (par exemple des listes de règles plutôt que des maps opaques) tout en limitant le périmètre aux besoins identifiés de V1. Autre point d’attention : l’intégration avec PipelineOptions ne doit pas préempter un éventuel travail dédié sur le mapping CLI/profils; je veillerai à n’ajouter que les champs strictement nécessaires pour exprimer maxInstances et les objectifs de dimensions, en laissant les détails des profils à une future tâche.
 
-Parent bullets couverts: [KR5, DOD4, DOD5, TS5]
+Parent bullets couverts: [KR1, KR2, DEL1, TS1]
 
-SPEC-check: conforme aux anchors listés, pas d’écart identifié ; l’overhead de la couverture streaming est mesuré via le bench harness sur un profil simple en coverage=measure, et vérifié contre les mêmes BENCH_BUDGETS que le bench gate.
+SPEC-check: conforme aux anchors listés, pas d’écart identifié ; la sous-tâche se limite à la définition de types TestUnit/hints et de la configuration du planner, sans implémenter l’algorithme greedy, les caps ni l’intégration orchestrateur, qui sont couverts par d’autres sous-tâches 9305.x.
 
 Checks:
 - build: npm run build
