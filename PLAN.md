@@ -1,21 +1,23 @@
-Task: 9303   Title: Add snapshot tests for coverage-report/v1 JSON (subtask 9303.9303005)
-Anchors: [cov://§3#coverage-model, cov://§4#coverage-evaluator, cov://§7#json-coverage-report]
+Task: 9304   Title: Add coverage flags to generate and openapi commands (subtask 9304.9304001)
+Anchors: [cov://§6#execution-modes-ux, cov://§6#budget-profiles, cov://§7#cli-summary]
 Touched files:
-- packages/core/src/coverage/__tests__/evaluator.test.ts
-- packages/core/src/coverage/__tests__/coverage-report-json.test.ts
+- packages/cli/src/index.ts
+- packages/cli/src/flags.ts
+- packages/cli/src/index.test.ts
 
 Approach:
-Pour cette sous-tâche 9303.9303005, je vais ajouter des tests de snapshot qui valident la stabilité de la structure JSON et des valeurs clés du coverage-report/v1 produit par le pipeline, en particulier `metrics`, `dimensionsEnabled` et `metrics.targetsByStatus`. Je partirai des tests existants de `evaluateCoverage` dans `packages/core/src/coverage/__tests__/evaluator.test.ts` pour construire des scénarios représentatifs (dimensions multiples, `excludeUnreachable` vrai/faux, cibles `deprecated` de type SCHEMA_REUSED_COVERED) et j'ajouterai des assertions supplémentaires sur `metrics.targetsByStatus` et la cohérence entre `uncoveredTargets` et ces compteurs, conformément aux exigences de la tâche parente (DOD2, DOD5). En complément, je créerai un fichier de test dédié `coverage-report-json.test.ts` dans le même dossier, qui appellera la pipeline (ou un helper proche de la production du rapport) sur un petit ensemble de schémas de démonstration et fixera des snapshots JSON pour l'en-tête (version, reportMode, engine, run) et les structures `targets` / `uncoveredTargets`, en respectant les invariants `dimensionsEnabled` et `excludeUnreachable` (cov://§3#coverage-model, cov://§4#coverage-evaluator, cov://§7#json-coverage-report).
+Pour cette sous-tâche 9304.9304001, je vais étendre le CLI `foundrydata` pour accepter explicitement les options de couverture décrites par les anchors cov://§6#execution-modes-ux et cov://§6#budget-profiles, en ajoutant les flags `--coverage`, `--coverage-dimensions`, `--coverage-min`, `--coverage-report`, `--coverage-profile` et `--coverage-exclude-unreachable` aux commandes `generate` et `openapi`. Côté implémentation, cela consiste à enrichir la définition des options dans `packages/cli/src/index.ts`, à mettre à jour l’interface `CliOptions` dans `packages/cli/src/flags.ts` pour typer ces nouveaux champs, et à s’assurer que la phase de parsing (`parsePlanOptions`) reçoit bien les valeurs brutes sans encore décider de la façon dont elles seront transmises à l’orchestrateur coverage-aware (qui sera traitée par la sous-tâche 9304.9304002). Je veillerai à respecter les invariants de déterminisme (pas de nouvelle source d’aléa) et à ne pas activer d’analyseur de couverture tant que la configuration interne n’est pas branchée, afin que `coverage=off` reste strictement équivalent au comportement actuel.
 
-Ces snapshots seront conçus pour être robustes face aux évolutions non significatives (par exemple en normalisant les timestamps ou en les remplaçant par des valeurs stables dans les fixtures) afin de garantir une détection fine des régressions de structure sans rendre les tests fragiles. Je m'assurerai que les tests couvrent à la fois `reportMode:'full'` et `reportMode:'summary'` au niveau du JSON final, et qu'ils vérifient l'absence d'effets indésirables de `dimensionsEnabled` sur les IDs de cibles (projection uniquement). Les snapshots et assertions explicites sur `metrics.targetsByStatus` permettront de marquer comme couverts les bullets parent [DOD2], [DOD5] et [TS5] dans la table de traçabilité, en documentant clairement le lien entre les fixtures, les dimensions actives et les compteurs par statut.
+Je compléterai les tests existants de `packages/cli/src/index.test.ts` par des cas ciblés qui vérifient que les nouvelles options sont acceptées par Commander (présence dans `--help`, absence d’erreur sur un appel basique avec `--coverage=off` et `--coverage-report`), sans encore valider la production d’un rapport coverage-report/v1. Cela permettra de garder une bonne couverture de `index.ts` et de `flags.ts` tout en laissant la logique de mapping détaillée (minCoverage, dimensionsEnabled, profils) au scope de 9304.9304002 et 9304.9304003. Les points d’intégration avec le reste du pipeline resteront strictement en lecture/forwarding de flags pour cette itération.
 
 Risks/Unknowns:
-Les principaux risques sont de rendre les snapshots trop fragiles vis-à-vis de détails non normatifs (timestamps, champs annexes destinés au debug) ou de figer des valeurs liées à l'aléa contrôlé (seed de RNG) au lieu de se concentrer sur la structure et les invariants métier. Il faudra aussi veiller à ne pas violer les invariants de gating coverage=off (aucun rapport produit dans ce mode) ni ceux de `dimensionsEnabled` et `excludeUnreachable` (projection uniquement, dénominateurs modifiés sans changer les IDs ni les statuts). Enfin, si la production du JSON passe par plusieurs couches (CoverageEvaluator, orchestrateur, API), il faudra choisir des points d'accroche de tests qui restent suffisamment proches de la production réelle sans dupliquer des tests déjà couverts par d'autres sous-tâches.
+Les principaux risques sont de définir des types ou des noms d’options qui ne s’aligneraient pas parfaitement avec la future configuration coverage (par exemple si les profils ou les dimensions évoluent dans la SPEC) et de créer une confusion UX si `--coverage=off` interagit mal avec d’autres flags existants. Il faudra aussi s’assurer que l’ajout de ces options n’introduit pas de rupture dans les usages existants (scripts CI basés sur `foundrydata generate` sans couverture) et garder à l’esprit que la validation fine de `minCoverage` et des profils sera couverte par les sous-tâches suivantes.
 
-Parent bullets couverts: [DOD2, DOD5, TS5]
+Parent bullets couverts: [KR1, DEL1, DOD1, TS1]
 
 Checks:
 - build: npm run build
 - test: npm run test
 - bench: npm run bench
 - diag-schema: true
+

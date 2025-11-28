@@ -118,6 +118,72 @@ describe('CLI generate command', () => {
     expect(stderr).toBe('');
   });
 
+  it('accepts coverage-related flags without changing basic behavior', async () => {
+    const { dir, schemaPath, schema } = await createSchemaFixture();
+
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      await program.parseAsync(
+        [
+          'generate',
+          '--schema',
+          schemaPath,
+          '--n',
+          '2',
+          '--out',
+          'ndjson',
+          '--coverage',
+          'off',
+          '--coverage-dimensions',
+          'structure,branches',
+          '--coverage-min',
+          '0.5',
+          '--coverage-report',
+          'coverage.json',
+          '--coverage-profile',
+          'quick',
+          '--coverage-exclude-unreachable',
+          'true',
+        ],
+        { from: 'user' }
+      );
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+
+    const stdout = stdoutChunks.join('');
+    const lines = stdout
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+    expect(lines.length).toBe(2);
+
+    const instances = lines.map((line) => JSON.parse(line));
+    for (const instance of instances) {
+      const res = PublicValidate(instance, schema);
+      expect(res.valid).toBe(true);
+    }
+
+    const stderr = stderrChunks.join('');
+    expect(stderr).toBe('');
+  });
+
   it('exits with non-zero code when schema file is missing', async () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(((
       code?: number
@@ -317,5 +383,75 @@ describe('CLI openapi command', () => {
       consoleErrorSpy.mockRestore();
       await rm(dir, { recursive: true, force: true });
     }
+  });
+
+  it('accepts coverage-related flags on openapi command', async () => {
+    const { dir, specPath, responseSchema } = await createOpenApiFixture();
+
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      await program.parseAsync(
+        [
+          'openapi',
+          '--spec',
+          specPath,
+          '--path',
+          '/users',
+          '--method',
+          'get',
+          '--n',
+          '2',
+          '--out',
+          'ndjson',
+          '--coverage',
+          'off',
+          '--coverage-dimensions',
+          'structure,branches',
+          '--coverage-min',
+          '0.5',
+          '--coverage-report',
+          'coverage.json',
+          '--coverage-profile',
+          'quick',
+          '--coverage-exclude-unreachable',
+          'true',
+        ],
+        { from: 'user' }
+      );
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+
+    const stdout = stdoutChunks.join('');
+    const lines = stdout
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+    expect(lines.length).toBe(2);
+
+    const instances = lines.map((line) => JSON.parse(line));
+    for (const instance of instances) {
+      const res = PublicValidate(instance, responseSchema);
+      expect(res.valid).toBe(true);
+    }
+
+    const stderr = stderrChunks.join('');
+    expect(stderr).toBe('');
   });
 });

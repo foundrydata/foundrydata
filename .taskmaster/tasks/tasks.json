@@ -270,7 +270,7 @@
           "9302",
           "9303"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 3,
         "details": "[Context]\nExtend the CLI to configure coverage-aware behavior and surface summary metrics, per coverage-aware spec §6 (Execution modes & UX) and §7.2 (CLI summary). The CLI must support coverage modes, dimensions, thresholds, report path, excludeUnreachable and profiles, and output a clear summary for CI that emphasizes per-dimension and per-operation coverage before the global overall figure.\n\n[Key requirements]\n- Implement CLI flags: --coverage=off|measure|guided, --coverage-dimensions, --coverage-min, --coverage-report, --coverage-profile and --coverage-exclude-unreachable; map them to internal options and CoverageReport.run fields.\n- Ensure --n (or --count) is reused as maxInstances for coverage=guided and is passed to the planner and evaluator.\n- Implement CI-friendly summary output that prints metrics.byDimension, metrics.byOperation, metrics.overall, targetsByStatus and a short summary of planner caps and unsatisfied hints, in that order of importance.\n- Ensure coverage=off behaves exactly as today with minimal overhead, and coverage=measure does not change outputs relative to coverage=off for fixed seeds; pipeline wiring must not invoke CoverageAnalyzer or coverage instrumentation when coverage=off.\n- Implement coverage profiles as presets over maxInstances, dimensionsEnabled and planner caps:\n  - quick: dimensionsEnabled = ['structure','branches'], small maxInstances (order of 50–100) and aggressive caps per dimension/schema/operation.\n  - balanced (default): dimensionsEnabled = ['structure','branches','enum'], moderate maxInstances (order of 200–500) and moderate caps favoring branches and enums.\n  - thorough: dimensionsEnabled = ['structure','branches','enum','boundaries'] once the boundaries dimension is available, maxInstances >= 1000 and planner caps disabled except for hard global constraints (e.g. global memory/time limits).\n- Ensure any future debug/introspection CLI option that materializes additional targets beyond dimensionsEnabled is explicit opt-in and does not change metric or threshold semantics: coverage.overall, coverage.byDimension, coverage.byOperation and minCoverage MUST always be computed solely from dimensions listed in dimensionsEnabled.\n- Document coverage options and profiles in CLI help text and examples to match the spec’s suggested usage and default behavior.\n\n[Deliverables]\n- Extended CLI option parsing in packages/cli/src/commands/generate.ts and openapi.ts.\n- Summary printer in packages/cli/src/coverage/coverage-summary.ts.\n- Updated --help output and docs snippets for coverage usage.\n\n[Definition of Done]\n- CLI accepts coverage flags and forwards them to the core pipeline and coverage evaluator consistently for JSON Schema and OpenAPI entrypoints.\n- coverage=off, coverage=measure and coverage=guided modes can be invoked via CLI and map to the engine’s coverageMode field in the report and to whether CoverageAnalyzer/instrumentation are invoked.\n- Profiles quick, balanced and thorough map to well-defined presets for maxInstances, dimensionsEnabled and planner caps, and tests verify that selecting a profile results in the expected internal configuration.\n- Summary output for a representative run includes per-dimension and per-operation coverage, overall coverage, targetsByStatus and concise planner/hints summaries, with per-dimension and per-operation displayed before the overall figure.\n- CLI examples in README or dedicated docs show typical coverage usage patterns and are kept in sync with the implemented flags and profiles.",
         "testStrategy": "CLI integration tests that run foundrydata generate and foundrydata openapi with different coverage flags and assert exit codes, coverage summary output and generated coverage-report JSON; tests that verify coverage=off does not trigger CoverageAnalyzer or coverage instrumentation; snapshot tests for the summary formatter to ensure ordering (byDimension, byOperation, overall) remains stable; tests that run the CLI with --coverage-profile=quick|balanced|thorough and assert that the resulting dimensionsEnabled, maxInstances and caps match the documented presets.",
@@ -279,10 +279,11 @@
             "id": 9304001,
             "title": "Add coverage flags to generate and openapi commands",
             "description": "Extend CLI argument parsing to accept coverage mode, dimensions, minCoverage, report path, profile and excludeUnreachable options.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 3,
             "file": "packages/cli/src/commands/generate.ts",
-            "parentId": "9304"
+            "parentId": "9304",
+            "updatedAt": "2025-11-28T20:38:00.368Z"
           },
           {
             "id": 9304002,
@@ -311,7 +312,8 @@
             "file": "packages/cli/test/coverage-cli.spec.ts",
             "parentId": "9304"
           }
-        ]
+        ],
+        "updatedAt": "2025-11-28T20:38:00.368Z"
       },
       {
         "id": "9305",
@@ -762,7 +764,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-28T20:15:31.395Z",
+      "lastModified": "2025-11-28T20:38:00.369Z",
       "taskCount": 13,
       "completedCount": 4,
       "tags": [
