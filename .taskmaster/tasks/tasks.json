@@ -701,10 +701,11 @@
             "id": 9311003,
             "title": "Add CLI command for foundrydata coverage diff",
             "description": "Add a CLI command that reads two JSON coverage reports, runs the diff and prints a human-readable summary.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 2,
             "file": "packages/cli/src/commands/coverage-diff.ts",
-            "parentId": "9311"
+            "parentId": "9311",
+            "updatedAt": "2025-11-28T22:33:04.216Z"
           },
           {
             "id": 9311004,
@@ -716,7 +717,7 @@
             "parentId": "9311"
           }
         ],
-        "updatedAt": "2025-11-28T22:10:00.135Z"
+        "updatedAt": "2025-11-28T22:33:04.216Z"
       },
       {
         "id": "9312",
@@ -982,7 +983,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-28T22:10:00.136Z",
+      "lastModified": "2025-11-28T22:33:04.217Z",
       "taskCount": 18,
       "completedCount": 5,
       "tags": [

@@ -41,8 +41,7 @@ This document maps the parent task 9311 bullets from Implementation Details, Del
   Covers: [KR2], [KR3], contributes to [DEL1], [DOD1], [DOD4], [TS1]. Status: covered (adds metric-aware diff summary over the common universe of targets and dimensions, per-operation regression detection and explicit reporting of newly uncovered targets, with focused unit tests in `coverage-diff.spec.ts`).
 
 - **9311.9311003 – Add CLI command for foundrydata coverage diff**  
-  Covers: [KR5], [DEL2], contributes to [DOD1], [DOD3], [TS2], [TS4]. Status: pending (CLI wiring and human-readable summary rendering still to be implemented on top of the reporter diff API).
+  Covers: [KR5], [DEL2], contributes to [DOD1], [DOD3], [TS2], [TS4]. Status: covered (adds a `foundrydata coverage diff` subcommand that loads two coverage-report/v1 JSON files, delegates diff computation to the core coverage diff API, prints a CI-friendly summary of overall and per-operation deltas plus newly uncovered targets, and sets a non-zero exit code when regressions or new gaps are detected).
 
 - **9311.9311004 – Add fixtures and tests for coverage diff behavior**  
   Covers: [KR4], [DEL3], [DOD2], [DOD4], [TS2], [TS3], [TS4]. Status: pending (extended fixtures, CLI-level tests and compatibility/error-path coverage remain to be added to complete the multi-run diff contract).
-

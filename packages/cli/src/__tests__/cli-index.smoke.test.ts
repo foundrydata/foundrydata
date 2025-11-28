@@ -8,6 +8,9 @@ class FakeCommand {
   description(): this {
     return this;
   }
+  argument(): this {
+    return this;
+  }
   version(): this {
     return this;
   }
