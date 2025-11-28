@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { analyzeCoverage } from '../analyzer.js';
+import { analyzeCoverage, type CoverageAnalyzerInput } from '../analyzer.js';
 
 describe('analyzeCoverage', () => {
   it('is deterministic for fixed schema and diagnostics', () => {
@@ -12,7 +12,7 @@ describe('analyzeCoverage', () => {
       enum: ['a', 'b', 'c'],
     };
 
-    const input = {
+    const input: CoverageAnalyzerInput = {
       canonSchema: schema,
       ptrMap: new Map<string, string>([['', '#']]),
       coverageIndex: new Map(),
@@ -20,7 +20,7 @@ describe('analyzeCoverage', () => {
         fatal: [],
         unsatHints: [],
       },
-    } as const;
+    };
 
     const result1 = analyzeCoverage(input);
     const result2 = analyzeCoverage(input);
@@ -168,7 +168,7 @@ describe('analyzeCoverage', () => {
       ptrMap: new Map<string, string>([['', '#']]),
       coverageIndex: new Map(),
       planDiag: undefined,
-    } as const;
+    };
 
     const allDims = analyzeCoverage({
       ...baseInput,
@@ -208,16 +208,28 @@ describe('analyzeCoverage', () => {
       enum: enumValues,
     };
 
-    const input = {
+    const input: CoverageAnalyzerInput = {
       canonSchema: schema,
       ptrMap: new Map<string, string>([['', '#']]),
       coverageIndex: new Map(),
       planDiag: undefined,
       dimensionsEnabled: ['enum'],
-    } as const;
+    };
 
-    const result1 = analyzeCoverage(input);
-    const result2 = analyzeCoverage(input);
+    const result1 = analyzeCoverage({
+      canonSchema: input.canonSchema,
+      ptrMap: input.ptrMap,
+      coverageIndex: input.coverageIndex,
+      planDiag: input.planDiag,
+      dimensionsEnabled: [...(input.dimensionsEnabled ?? [])],
+    });
+    const result2 = analyzeCoverage({
+      canonSchema: input.canonSchema,
+      ptrMap: input.ptrMap,
+      coverageIndex: input.coverageIndex,
+      planDiag: input.planDiag,
+      dimensionsEnabled: [...(input.dimensionsEnabled ?? [])],
+    });
 
     const enumTargets1 = result1.targets.filter(
       (t) => t.dimension === 'enum' && t.kind === 'ENUM_VALUE_HIT'

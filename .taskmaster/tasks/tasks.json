@@ -151,10 +151,11 @@
             "id": 9302002,
             "title": "Instrument generator for branches and enums",
             "description": "Add hooks in the generator to emit coverage events when oneOf/anyOf/conditional branches are chosen and enum values are produced, keyed by canonical paths and branch identifiers.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 4,
             "file": "packages/core/src/generator/foundry-generator.ts",
-            "parentId": "9302"
+            "parentId": "9302",
+            "updatedAt": "2025-11-28T17:36:02.727Z"
           },
           {
             "id": 9302003,
@@ -184,7 +185,7 @@
             "parentId": "9302"
           }
         ],
-        "updatedAt": "2025-11-27T23:43:50.250Z"
+        "updatedAt": "2025-11-28T17:36:02.727Z"
       },
       {
         "id": "9303",
@@ -752,7 +753,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-27T23:43:50.251Z",
+      "lastModified": "2025-11-28T17:36:02.728Z",
       "taskCount": 13,
       "completedCount": 2,
       "tags": [
