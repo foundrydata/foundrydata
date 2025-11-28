@@ -151,20 +151,21 @@
             "id": 9302002,
             "title": "Instrument generator for branches and enums",
             "description": "Add hooks in the generator to emit coverage events when oneOf/anyOf/conditional branches are chosen and enum values are produced, keyed by canonical paths and branch identifiers.",
-            "status": "in-progress",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/generator/foundry-generator.ts",
             "parentId": "9302",
-            "updatedAt": "2025-11-28T17:36:02.727Z"
+            "updatedAt": "2025-11-28T18:06:32.425Z"
           },
           {
             "id": 9302003,
             "title": "Instrument repair and property presence",
             "description": "Emit coverage events when properties are added or removed in Repair and when optional properties are present in final instances, including AP:false objects where property names come from CoverageIndex.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/repair/repair-engine.ts",
-            "parentId": "9302"
+            "parentId": "9302",
+            "updatedAt": "2025-11-28T18:24:32.286Z"
           },
           {
             "id": 9302004,
@@ -185,7 +186,7 @@
             "parentId": "9302"
           }
         ],
-        "updatedAt": "2025-11-28T17:36:02.727Z"
+        "updatedAt": "2025-11-28T18:24:32.286Z"
       },
       {
         "id": "9303",
@@ -753,7 +754,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-28T17:36:02.728Z",
+      "lastModified": "2025-11-28T18:24:32.287Z",
       "taskCount": 13,
       "completedCount": 2,
       "tags": [
