@@ -1,22 +1,21 @@
-Task: 9304   Title: Write coverage-report JSON file to disk (subtask 9304.9304005)
-Anchors: [cov://§3#coverage-model, cov://§4#architecture-components, cov://§7#json-coverage-report]
+Task: 9311   Title: Implement CoverageReport diff classification logic (subtask 9311.9311001)
+Anchors: [cov://§7#multi-run-diff, cov://§7#json-coverage-report]
 Touched files:
-- packages/cli/src/index.ts
-- packages/cli/src/index.test.ts
+- packages/reporter/src/coverage/coverage-diff.ts
+- packages/reporter/src/coverage/__tests__/coverage-diff.spec.ts
 
 Approach:
-Pour cette sous-tâche 9304.9304005, je vais compléter le support CLI de coverage-report/v1 en faisant en sorte que `--coverage-report=<file>` persiste effectivement le rapport JSON produit par le pipeline lorsque `coverage=measure|guided`, comme décrit par la SPEC (cov://§3#coverage-model, cov://§4#architecture-components, cov://§7#json-coverage-report). Côté implémentation, cela passera par l’utilisation de la configuration déjà résolue par `resolveCliCoverageOptions` dans `packages/cli/src/index.ts` (champ `reportPath`) : après exécution du pipeline et une fois `artifacts.coverageReport` disponible, le CLI écrira ce rapport au chemin demandé (absolu ou relatif au cwd), en utilisant un format JSON pretty-printé pour faciliter les diff et la consommation en CI. Je veillerai à ce que cette écriture ne se produise jamais lorsque `coverage=off` (aucun rapport produit) et à ce qu’une erreur d’écriture soit signalée clairement sur stderr sans casser le flux de données principal.
+Pour la sous-tâche 9311.9311001, je vais implémenter la logique de classification de diff entre deux CoverageReport (coverage-report/v1) en me basant sur la structure définie dans les types partagés et sur la section Multi-run diff de la SPEC coverage-aware (cov://§7#multi-run-diff, cov://§7#json-coverage-report). J’ajouterai un nouveau module packages/reporter/src/coverage/coverage-diff.ts qui expose une fonction pure prenant deux CoverageReport (A et B) et renvoyant une structure de diff avec quatre catégories de cibles : unchanged, added, removed et statusChanged. L’algorithme itérera sur les targets des deux rapports en construisant un index par id et en vérifiant que la shape d’identification (dimension, kind, canonPath) est cohérente avant de classer une cible comme diffable; en cas de mismatch de shape pour un même id, je traiterai cela comme une incompatibilité et laisserai la responsabilité de lever une erreur ou de court-circuiter au niveau d’une tâche ultérieure centrée sur la validation des préconditions de diff.
 
-Dans `packages/cli/src/index.test.ts`, j’ajouterai un test d’intégration dédié qui exécute `foundrydata generate` sur un petit schéma avec `--coverage=measure` et `--coverage-report` pointant vers un fichier dans un répertoire temporaire, puis vérifie que le fichier est créé, parse en JSON et contient au moins `version: "coverage-report/v1"` et un `engine.coverageMode` cohérent. Les tests existants autour de `coverage=off` continueront de vérifier que, dans ce mode, `--coverage-report` est simplement ignoré avec une note sur stderr (sans fichier). Cela permettra de couvrir le chaînon manquant entre la production du rapport par le pipeline (tâche 9303) et son exposition pratique côté CLI (9304), tout en respectant les invariants de déterminisme et de gating coverage=off.
+Dans ce module, je veillerai à ne pas modifier ni dépendre de dimensionsEnabled ou excludeUnreachable pour les IDs : les CoverageTargetReport.id restent la source d’identité stable entre rapports, conformément aux invariants coverage-aware. La fonction de diff matérialisera explicitement la liste des cibles newlyUncovered en se basant sur les targets de B qui sont soit nouvelles (added) et non couvertes (hit:false), soit présentes dans A et B mais avec un passage de hit:true à hit:false (statusChanged avec hit qui régresse). Ces informations seront produites dans une structure de sortie simple et sérialisable que la sous-tâche suivante pourra enrichir avec des métriques agrégées. Enfin, j’ajouterai des tests unitaires ciblés dans packages/reporter/src/coverage/__tests__/coverage-diff.spec.ts pour couvrir chaque catégorie, en travaillant sur de petits fixtures inline, avec l’objectif d’atteindre ≥80 % de couverture sur le nouveau module coverage-diff.ts.
 
 Risks/Unknowns:
-Le principal risque est d’introduire des effets de bord inattendus lorsqu’un chemin invalide ou non inscriptible est passé à `--coverage-report` (par exemple en CI avec un répertoire en lecture seule). Je traiterai ce cas de manière défensive en journalisant un warning explicite sur stderr sans faire échouer le run principal, de sorte que la génération de données reste fiable même si le rapport ne peut pas être persisté. Il faudra aussi veiller à ne pas mélanger cette responsabilité d’écriture de fichier avec la sémantique de `minCoverage` et de `coverageStatus` (déjà gérées côté core) : la tâche se limite à sérialiser fidèlement le rapport déjà produit, sans tenter de recalculer des métriques.
+Les principaux risques concernent la gestion des cas limites : ids présents dans les deux rapports mais avec une shape divergente (dimension/kind/canonPath modifiés entre versions), cibles marquées unreachable ou deprecated, et rapports partiellement incompatibles (version ou FoundryData major différente). La validation stricte de ces préconditions est plutôt du ressort des sous-tâches orientées CLI et métriques; dans cette sous-tâche, je considérerai comme hors scope la logique de validation de version/engine et je me concentrerai sur une classification robuste, en documentant les hypothèses dans les tests et en laissant la possibilité au code appelant de décider quoi faire en cas de mismatch de shape. Je noterai également dans les tests les attentes sur le traitement des cibles unreachable pour ne pas les faire disparaître silencieusement du diff.
 
-Parent bullets couverts: [DEL2, DOD4, DOD5]
+Parent bullets couverts: [KR1, DOD1, TS1]
 
 Checks:
 - build: npm run build
 - test: npm run test
 - bench: npm run bench
 - diag-schema: true
-
