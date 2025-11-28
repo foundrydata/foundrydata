@@ -370,10 +370,11 @@
             "id": 9305003,
             "title": "Implement planner caps and diagnostics",
             "description": "Add deterministic caps per dimension/schema/operation and report them via diagnostics.plannerCapsHit and meta.planned:false.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/coverage/coverage-planner-caps.ts",
-            "parentId": "9305"
+            "parentId": "9305",
+            "updatedAt": "2025-11-28T23:53:13.809Z"
           },
           {
             "id": 9305004,
@@ -394,7 +395,7 @@
             "parentId": "9305"
           }
         ],
-        "updatedAt": "2025-11-28T23:46:27.776Z"
+        "updatedAt": "2025-11-28T23:53:13.809Z"
       },
       {
         "id": "9306",
@@ -992,7 +993,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-28T23:46:27.776Z",
+      "lastModified": "2025-11-28T23:53:13.810Z",
       "taskCount": 18,
       "completedCount": 7,
       "tags": [

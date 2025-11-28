@@ -43,7 +43,7 @@ This document maps the parent task 9305 bullets from Implementation Details, Del
   Covers: [KR2], [KR3], [KR4], [DEL1], [DOD1], [DOD2], [TS1].
 
 - **9305.9305003 – Implement planner caps and diagnostics**  
-  Covers: [KR5], [DEL2], [DOD3], [TS4].
+  Covers: [KR3], [KR4], [KR5], [DEL2], [DOD3], [TS4].
 
 - **9305.9305004 – Derive deterministic seeds for TestUnits**  
   Covers: [KR6], [DOD4], [TS2].
@@ -54,5 +54,5 @@ This document maps the parent task 9305 bullets from Implementation Details, Del
 Status:
 
 - 9305.9305001: covered
-- 9305.9305001: covered
 - 9305.9305002: covered
+- 9305.9305003: covered
