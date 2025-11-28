@@ -137,6 +137,14 @@ describe('generator coverage instrumentation for branches, enums and properties'
     expect(ev.dimension).toBe('enum');
     expect(ev.canonPath).toBe('#/properties/color');
     expect(ev.params).toMatchObject({ enumIndex: 0, value: 'red' });
+
+    const schemaNodeEvents = events.filter(
+      (e) => e.kind === 'SCHEMA_NODE' && e.dimension === 'structure'
+    );
+    expect(schemaNodeEvents.some((e) => e.canonPath === '#')).toBe(true);
+    expect(
+      schemaNodeEvents.some((e) => e.canonPath === '#/properties/color')
+    ).toBe(true);
   });
 
   it('does not emit coverage events when coverage hook is absent', () => {

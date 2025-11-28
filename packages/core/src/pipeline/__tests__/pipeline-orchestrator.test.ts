@@ -288,6 +288,17 @@ describe('executePipeline', () => {
 
     expect(propertyTargets.length).toBeGreaterThan(0);
     expect(propertyTargets.some((t) => (t as any).hit === true)).toBe(true);
+
+    const schemaNodeTargets =
+      targets?.filter(
+        (t) =>
+          t.dimension === 'structure' &&
+          t.kind === 'SCHEMA_NODE' &&
+          t.canonPath === '#/properties/optional'
+      ) ?? [];
+
+    expect(schemaNodeTargets.length).toBeGreaterThan(0);
+    expect(schemaNodeTargets.some((t) => (t as any).hit === true)).toBe(true);
   });
 
   it('emits identical final items for coverage=off vs coverage=measure', async () => {
