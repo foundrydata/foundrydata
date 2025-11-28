@@ -7,6 +7,7 @@ import { COVERAGE_REPORT_VERSION_V1 } from '@foundrydata/shared';
 import {
   diffCoverageReports,
   type CoverageReportsDiff,
+  checkCoverageDiffCompatibility,
 } from '@foundrydata/core';
 
 export interface CoverageDiffOptions {
@@ -15,6 +16,7 @@ export interface CoverageDiffOptions {
   failOnRegression?: boolean;
 }
 
+// eslint-disable-next-line max-lines-per-function
 export function registerCoverageDiffCommand(program: Command): void {
   const coverage = program
     .command('coverage')
@@ -43,6 +45,17 @@ export function registerCoverageDiffCommand(program: Command): void {
 
         const baseline = readCoverageReport(resolvedBaseline);
         const comparison = readCoverageReport(resolvedComparison);
+
+        const compatibilityIssues = checkCoverageDiffCompatibility(
+          baseline,
+          comparison
+        );
+        if (compatibilityIssues.length > 0) {
+          const details = compatibilityIssues.map((issue) => issue.message);
+          throw new Error(
+            `Coverage reports are incompatible for diff: ${details.join('; ')}`
+          );
+        }
 
         const diff = diffCoverageReports(baseline, comparison);
 
@@ -149,6 +162,29 @@ function formatCoverageDiffSummary(diff: CoverageReportsDiff): string {
       const opKey = target.operationKey ? ` ${target.operationKey}` : '';
       lines.push(
         `    [${target.dimension}]${opKey} ${target.kind} at ${target.canonPath} (id=${target.id})`
+      );
+    }
+  }
+
+  const statusChanges = diff.targets.targets.filter((entry) => {
+    if (entry.kind !== 'statusChanged' || !entry.from || !entry.to) {
+      return false;
+    }
+    const fromStatus = entry.from.status ?? 'active';
+    const toStatus = entry.to.status ?? 'active';
+    return fromStatus !== toStatus;
+  });
+
+  if (statusChanges.length > 0) {
+    lines.push('  status-changes:');
+    for (const entry of statusChanges) {
+      const from = entry.from!;
+      const to = entry.to!;
+      const fromStatus = from.status ?? 'active';
+      const toStatus = to.status ?? 'active';
+      const opKey = to.operationKey ? ` ${to.operationKey}` : '';
+      lines.push(
+        `    [${to.dimension}]${opKey} ${to.kind} at ${to.canonPath} (id=${to.id}): ${fromStatus} -> ${toStatus}`
       );
     }
   }

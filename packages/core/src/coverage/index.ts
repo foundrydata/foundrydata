@@ -49,6 +49,9 @@ export {
   type CoverageDiffSummary,
   type CoverageMetricDelta,
   type OperationCoverageDelta,
+  type CoverageDiffCompatibilityIssue,
+  type CoverageDiffCompatibilityIssueKind,
+  checkCoverageDiffCompatibility,
 } from './diff.js';
 
 export type CoverageGraphNodeKind =
