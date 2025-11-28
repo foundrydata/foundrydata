@@ -28,6 +28,12 @@ export {
   type EnumValueHitEvent,
 } from './events.js';
 
+export {
+  evaluateCoverage,
+  type CoverageEvaluatorInput,
+  type CoverageEvaluatorResult,
+} from './evaluator.js';
+
 export type CoverageGraphNodeKind =
   | 'schema'
   | 'property'
