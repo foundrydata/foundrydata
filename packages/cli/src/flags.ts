@@ -23,6 +23,12 @@ export interface CliOptions {
   rows?: string | number;
   n?: string | number;
   seed?: string | number;
+  coverage?: 'off' | 'measure' | 'guided' | string;
+  coverageDimensions?: string;
+  coverageMin?: string | number;
+  coverageReport?: string;
+  coverageProfile?: 'quick' | 'balanced' | 'thorough' | string;
+  coverageExcludeUnreachable?: string | boolean;
   mode?: 'strict' | 'lax' | string;
   compat?: 'strict' | 'lax' | string;
   out?: string;

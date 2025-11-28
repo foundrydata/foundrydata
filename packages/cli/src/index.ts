@@ -117,6 +117,24 @@ program
     'Set false to enable Lax planning stubs (maps to resolver.stubUnresolved=emptySchema)',
     (v) => String(v)
   )
+  .option('--coverage <mode>', 'Coverage mode: off|measure|guided', 'off')
+  .option(
+    '--coverage-dimensions <list>',
+    'Coverage dimensions (comma-separated, e.g., structure,branches,enum)'
+  )
+  .option(
+    '--coverage-min <number>',
+    'Minimum overall coverage threshold (0..1)'
+  )
+  .option('--coverage-report <file>', 'Path to write coverage-report/v1 JSON')
+  .option(
+    '--coverage-profile <profile>',
+    'Coverage profile: quick|balanced|thorough'
+  )
+  .option(
+    '--coverage-exclude-unreachable <bool>',
+    'Exclude unreachable targets from coverage denominators (true|false)'
+  )
   .option('--out <format>', 'Output format: json|ndjson', 'json')
   .option(
     '--prefer-examples',
@@ -300,6 +318,24 @@ program
     '--fail-on-unresolved <bool>',
     'Set false to enable Lax planning stubs (maps to resolver.stubUnresolved=emptySchema)',
     (v) => String(v)
+  )
+  .option('--coverage <mode>', 'Coverage mode: off|measure|guided', 'off')
+  .option(
+    '--coverage-dimensions <list>',
+    'Coverage dimensions (comma-separated, e.g., structure,branches,enum)'
+  )
+  .option(
+    '--coverage-min <number>',
+    'Minimum overall coverage threshold (0..1)'
+  )
+  .option('--coverage-report <file>', 'Path to write coverage-report/v1 JSON')
+  .option(
+    '--coverage-profile <profile>',
+    'Coverage profile: quick|balanced|thorough'
+  )
+  .option(
+    '--coverage-exclude-unreachable <bool>',
+    'Exclude unreachable targets from coverage denominators (true|false)'
   )
   .option('--out <format>', 'Output format: json|ndjson', 'json')
   .option(
