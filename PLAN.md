@@ -1,26 +1,21 @@
-Task: 9307   Title: Remove any post-pass coverage computation (subtask 9307.9307003)
+Task: 9307   Title: Benchmark streaming coverage overhead (subtask 9307.9307004)
 Anchors: [cov://§4#architecture-components, cov://§4#generator-instrumentation, cov://§8#technical-constraints-invariants]
 Touched files:
-- packages/core/src/coverage/events.ts
-- packages/core/src/coverage/index.ts
-- packages/core/src/generator/foundry-generator.ts
-- packages/core/src/repair/repair-engine.ts
-- packages/core/src/pipeline/orchestrator.ts
-- packages/core/src/pipeline/__tests__/pipeline-orchestrator.test.ts
+- test/scripts/bench.test.ts
 - .taskmaster/docs/9307-traceability.md
 - PLAN.md
 
 Approach:
-Pour la sous-tâche 9307.9307003, je vais vérifier qu’aucun chemin de code ne recalcule la couverture via un post-pass sur la sortie JSON et que la totalité des rapports coverage-report/v1 repose sur l’accumulateur streaming branché en 9307.9307002, conformément à cov://§4#generator-instrumentation et cov://§8#technical-constraints-invariants. Cela implique de confirmer que l’orchestrateur n’effectue plus de deuxième passe sur `artifacts.generated` ou `artifacts.repaired` pour reconstruire des hits, que le CLI ne réinterprète pas les items pour de la couverture, et que les tests n’assument plus l’existence d’un mode “post-pass” caché.
+Pour la sous-tâche 9307.9307004, je vais utiliser le bench harness existant (`scripts/bench-core.ts` + `scripts/bench.ts`) via les tests `test/scripts/bench.test.ts` pour mesurer explicitement le coût de la couverture streaming, en comparant des profils simples exécutés avec coverage=off et coverage=measure/guided dans le même cadre de seeds et de budgets (§8 Technical constraints & invariants). L’objectif est de vérifier que l’activation de la couverture streaming respecte les budgets p95LatencyMs/memoryPeakMB hérités de bench-profiles et reste dans l’ordre de grandeur attendu par la SPEC (O(#instances + #targets)), sans introduire de régression cachée.
 
-Concrètement, dans `orchestrator.ts`, je conserverai uniquement le chemin qui part des CoverageTargets produits par CoverageAnalyzer et applique `coverageAccumulator.toReport` puis CoverageEvaluator; si des helpers ou options hérités de la phase M0 (pre-streaming) existent encore pour rejouer la couverture sur un tableau d’items, je les supprimerai ou les marquerai explicitement hors scope V1. Dans les tests `pipeline-orchestrator.test.ts` et ceux du module coverage, je m’assurerai que les assertions portent sur les targets/hits/coverageReport issus du pipeline streaming, sans injection de faux hits via des accumulateurs reconstruits après coup. Enfin, je vérifierai qu’aucune doc ou commentaire n’encourage un pattern “reparse pour coverage”, et j’ajouterai au besoin une courte mention dans la traceability 9307 pour documenter que les chemins post-pass sont désormais considérés comme non conformes à V1.
+Concrètement, je vais ajouter un test qui invoque `runProfile` sur le profil `simple` avec un override `pipelineOverrides.coverage` configuré en mode `measure` (dimensionsEnabled limitées à structure/branches) et un nombre réduit d’itérations, puis qui vérifie que le résumé de profil reste dans les BENCH_BUDGETS partagés et produit des métriques cohérentes. Ce test s’appuiera sur le même pipeline que le bench CLI (executePipeline + MetricsCollector en mode ci), ce qui garantit que l’overhead mesuré reflète bien l’implémentation streaming actuelle. Je garderai le bench CLI lui-même inchangé pour ne pas alourdir les exécutions par défaut, tout en documentant dans la traceability que des scénarios de bench dédiés à coverage=measure existent au niveau des tests.
 
 Risks/Unknowns:
-Le principal risque est de supprimer un chemin utilisé par des tests de bas niveau qui se basaient sur le calcul de coverage post-pass, ce qui pourrait réduire la lisibilité de certains scénarios de tests ou introduire des régressions si des utilitaires sont encore exposés publiquement. Pour limiter cela, je ciblerai uniquement les chemins qui relisent des items pour reconstruire des hits et je laisserai en place les utilitaires purement algorithmiques (par exemple `createCoverageAccumulator`) qui restent utiles pour des tests unitaires sur les targets. Un autre risque est de manquer un appel indirect (via le CLI ou le reporter) qui ferait encore un JSON.parse + recomputation de coverage; je passerai donc aussi par les fichiers CLI et reporter pour vérifier que la couverture y est consommée comme un rapport prêt à l’emploi plutôt que recalculée. Enfin, je veillerai à ne pas empiéter sur la sous-tâche 9307.9307004 (benchmark overhead) en gardant cette tâche focalisée sur la suppression/guarding des chemins post-pass plutôt que sur la mesure détaillée des performances.
+Le principal risque est de rendre le test de bench trop fragile vis-à-vis des fluctuations de performance environnementales (CI vs local), en particulier si on introduit des assertions trop serrées sur p50/p95. Pour limiter cela, je me contenterai de recycler les BENCH_BUDGETS déjà utilisés par le bench gate et d’exiger simplement que le profil coverage=measure reste sous ces seuils, sans imposer de ratio précis coverage=measure/coverage=off. Un autre risque est d’introduire une dépendance forte à coverage dans les scripts de bench CLI eux-mêmes; je garderai la mesure coverage=measure confinée au niveau des tests, de sorte que `npm run bench` reste stable et rapide tout en permettant d’allumer des scénarios coverage-aware ciblés via `vitest`. Enfin, je veillerai à ne pas multiplier les profils pour coverage afin de garder la durée des tests raisonnable (itérations réduites, profil simple uniquement).
 
-Parent bullets couverts: [KR2, DOD2, DOD5]
+Parent bullets couverts: [KR5, DOD4, DOD5, TS5]
 
-SPEC-check: conforme aux anchors listés, pas d’écart identifié ; aucun recalcul coverage post-pass sur les items JSON, les rapports coverage-report/v1 s’appuient uniquement sur l’accumulateur streaming et CoverageEvaluator, et le cas `skippedValidation:true` a été formalisé dans une SPEC-QUESTION dédiée pour éviter toute interprétation implicite.
+SPEC-check: conforme aux anchors listés, pas d’écart identifié ; l’overhead de la couverture streaming est mesuré via le bench harness sur un profil simple en coverage=measure, et vérifié contre les mêmes BENCH_BUDGETS que le bench gate.
 
 Checks:
 - build: npm run build

@@ -65,4 +65,34 @@ describe('bench harness runProfile', () => {
     expect(summary.p95LatencyMs).toBeGreaterThan(0);
     expect(summary.memoryPeakMB).toBeGreaterThan(0);
   }, 20_000);
+
+  it('can run a simple profile with coverage=measure within bench budgets', async () => {
+    const simple = profiles.find((entry) => entry.id === 'simple');
+    expect(simple).toBeDefined();
+
+    const summary = await runProfile(simple!, {
+      iterations: { warmup: 0, measured: 1 },
+      generateCount: 2,
+      seeds: [1],
+      pipelineOverrides: {
+        coverage: {
+          mode: 'measure',
+          dimensionsEnabled: ['structure', 'branches'],
+          excludeUnreachable: false,
+        },
+        validate: { validateFormats: false },
+      },
+    });
+
+    expect(summary.measuredCount).toBe(1);
+    expect(summary.runs).toHaveLength(1);
+    expect(summary.p95LatencyMs).toBeGreaterThan(0);
+    expect(summary.memoryPeakMB).toBeGreaterThan(0);
+    expect(summary.p95LatencyMs).toBeLessThanOrEqual(
+      BENCH_BUDGETS.p95LatencyMs
+    );
+    expect(summary.memoryPeakMB).toBeLessThanOrEqual(
+      BENCH_BUDGETS.memoryPeakMB
+    );
+  }, 20_000);
 });
