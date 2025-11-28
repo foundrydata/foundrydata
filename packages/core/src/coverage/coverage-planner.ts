@@ -1,5 +1,7 @@
+/* eslint-disable max-lines */
 import type { CoverageDimension, CoverageTarget } from '@foundrydata/shared';
 import type { CoverageGraph } from './index.js';
+import { XorShift32, normalizeSeed } from '../util/rng.js';
 
 export type CoverageHintKind =
   | 'preferBranch'
@@ -383,4 +385,26 @@ export function planTestUnits(input: CoveragePlannerInput): TestUnit[] {
   }
 
   return units;
+}
+
+export interface TestUnitSeedOptions {
+  masterSeed: number;
+}
+
+export function assignTestUnitSeeds(
+  units: TestUnit[],
+  options: TestUnitSeedOptions
+): TestUnit[] {
+  const baseSeed = normalizeSeed(options.masterSeed);
+  return units.map((unit) => {
+    const scopeKey =
+      unit.scope?.operationKey ?? unit.scope?.schemaPaths?.[0] ?? '';
+    const canonPtr = `${unit.id}|${scopeKey}`;
+    const rng = new XorShift32(baseSeed, canonPtr);
+    const seed = rng.next();
+    return {
+      ...unit,
+      seed,
+    };
+  });
 }

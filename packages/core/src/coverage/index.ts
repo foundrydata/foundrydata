@@ -69,6 +69,7 @@ export type {
   CoveragePlannerUserOptions,
   CoveragePlannerConfig,
   CoveragePlannerInput,
+  TestUnitSeedOptions,
   ResolvePlannerConfigOptions,
 } from './coverage-planner.js';
 
@@ -78,6 +79,7 @@ export {
   resolveCoveragePlannerConfig,
   isCoverageHint,
   planTestUnits,
+  assignTestUnitSeeds,
 } from './coverage-planner.js';
 
 export {
