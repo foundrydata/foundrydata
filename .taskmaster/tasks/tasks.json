@@ -776,6 +776,192 @@
             "parentId": "9312"
           }
         ]
+      },
+      {
+        "id": "9320",
+        "title": "Document coverage-aware modes and CLI usage in README",
+        "description": "Update top-level README.md with coverage=off|measure|guided modes, dimensions, thresholds and examples for CLI and Node API.",
+        "priority": "medium",
+        "estimatedHours": 8,
+        "dependencies": [
+          "9302",
+          "9303",
+          "9304"
+        ],
+        "status": "pending",
+        "complexityScore": 2,
+        "details": "[Context]\nREADME.md currently focuses on the 5-stage pipeline, CLI and Node APIs but does not surface coverage-aware behavior or coverage CLI flags introduced in tasks 9302–9304.\n\n[Key requirements]\n- Add a dedicated \"Coverage-aware generation\" section explaining coverage modes (off/measure/guided), dimensionsEnabled, excludeUnreachable and minCoverage semantics at a high level.\n- Extend the CLI section with coverage flags (--coverage, --coverage-dimensions, --coverage-min, --coverage-report, --coverage-profile, --coverage-exclude-unreachable) and example commands for JSON Schema and OpenAPI entrypoints.\n- Explain where coverage reports are written (CLI --coverage-report path vs Node API Promise) and how they relate to the coverage-report/v1 spec document (docs/spec-coverage-aware-v1.x.md).\n- Keep the README balanced: coverage is an opt-in feature layered on top of the existing pipeline, not a separate product.\n\n[Deliverables]\n- Updated README.md with a coverage section under or near the existing \"How it works\" / \"CLI\" sections.\n- At least two worked examples showing coverage usage in CI (one JSON Schema, one OpenAPI).\n\n[Definition of Done]\n- All coverage explanations in README.md are consistent with the coverage-aware-v1 spec and with CLI behavior shipped in 9304.\n- README examples run successfully against the current CLI (manual check or simple smoke script).",
+        "testStrategy": "Manual doc review plus a small smoke script that runs the CLI examples from README in CI to ensure they stay valid over time.",
+        "subtasks": [
+          {
+            "id": 9320001,
+            "title": "Add coverage overview and modes to README",
+            "description": "Introduce a \"Coverage-aware generation\" section in README.md that explains coverage modes, dimensionsEnabled and the high-level reporting model, linking to docs/spec-coverage-aware-v1.x.md for full details.",
+            "status": "pending",
+            "estimatedHours": 3,
+            "file": "README.md",
+            "parentId": "9320"
+          },
+          {
+            "id": 9320002,
+            "title": "Document CLI coverage flags and examples in README",
+            "description": "Extend the CLI section in README.md with a table and short examples for --coverage, --coverage-dimensions, --coverage-min, --coverage-report, --coverage-profile and --coverage-exclude-unreachable on generate/openapi commands.",
+            "status": "pending",
+            "estimatedHours": 3,
+            "file": "README.md",
+            "parentId": "9320"
+          },
+          {
+            "id": 9320003,
+            "title": "Describe Node API access to coverage reports",
+            "description": "Add a short paragraph and code snippet in the Node.js API section showing how to consume the CoverageReport Promise from the pipeline result (coverageStatus, thresholds.overall, metrics.byDimension/byOperation).",
+            "status": "pending",
+            "estimatedHours": 2,
+            "file": "README.md",
+            "parentId": "9320"
+          }
+        ]
+      },
+      {
+        "id": "9321",
+        "title": "Align feature and limits docs with coverage-aware behavior",
+        "description": "Update COMPREHENSIVE_FEATURE_SUPPORT.md, Features.md and Known-Limits.md to describe coverage-aware v1 semantics, dimensions and guarded behaviors.",
+        "priority": "medium",
+        "estimatedHours": 10,
+        "dependencies": [
+          "9302",
+          "9303",
+          "9304",
+          "9307",
+          "9309",
+          "9310"
+        ],
+        "status": "pending",
+        "complexityScore": 3,
+        "details": "[Context]\nCOMPREHENSIVE_FEATURE_SUPPORT.md and Features.md focus on JSON Schema feature support, while Known-Limits.md documents complexity caps and AP:false coverage constraints. None of them currently describe coverage dimensions, coverage metrics or diagnostic-only targets as defined by coverage-aware-v1.\n\n[Key requirements]\n- Extend COMPREHENSIVE_FEATURE_SUPPORT.md with a short subsection summarizing which JSON Schema features have coverage-aware behavior (AP:false must-cover, contains, conditionals, boundaries, OpenAPI operations) and how they contribute to coverage metrics.\n- Add one or more rows to Features.md that track coverage support by dimension and phase (structure/branches/enum M0, guided coverage M1, boundaries and per-operation coverage M2), with the same ✓ / ~ / ⚠️ legend.\n- Expand Known-Limits.md with coverage-specific limits: caps on target counts where applicable, AP:false coverage nuances, boundaries dimension constraints, and how excludeUnreachable and dimensionsEnabled affect denominators while leaving IDs/statuses stable.\n- Explicitly document that diagnostic-only targets such as SCHEMA_REUSED_COVERED are emitted with status:'deprecated' so they never contribute to metrics or thresholds even when present in targets/uncoveredTargets.\n\n[Deliverables]\n- Updated COMPREHENSIVE_FEATURE_SUPPORT.md, Features.md and Known-Limits.md that mention coverage-aware behavior where relevant and link back to the coverage spec for full definitions.\n\n[Definition of Done]\n- Feature tables and narrative docs no longer contradict the coverage-aware-v1 spec or the implementation status of tasks 9302–9304/9309/9310.\n- Known-Limits.md has an explicit subsection for coverage-aware constraints, not just composition-time limits.",
+        "testStrategy": "Doc review against the coverage-aware-v1 spec plus a quick check that all added rows in Features.md remain accurate when scanning the implementation status of coverage tasks.",
+        "subtasks": [
+          {
+            "id": 9321001,
+            "title": "Extend COMPREHENSIVE_FEATURE_SUPPORT.md with coverage-aware notes",
+            "description": "Add a small \"Coverage-aware behavior\" subsection under JSON Schema features, calling out how AP:false, contains, numeric bounds and OpenAPI operations interact with coverage dimensions and metrics.",
+            "status": "pending",
+            "estimatedHours": 3,
+            "file": "COMPREHENSIVE_FEATURE_SUPPORT.md",
+            "parentId": "9321"
+          },
+          {
+            "id": 9321002,
+            "title": "Add coverage rows to Features.md matrix",
+            "description": "Add one or more rows to the feature matrix summarizing support for coverage measurement, guided coverage, boundaries and per-operation metrics, using the existing ✓ / ~ / ⚠️ legend.",
+            "status": "pending",
+            "estimatedHours": 3,
+            "file": "Features.md",
+            "parentId": "9321"
+          },
+          {
+            "id": 9321003,
+            "title": "Expand Known-Limits.md with coverage-aware limits",
+            "description": "Update Known-Limits.md with explicit coverage-aware constraints (AP:false coverage semantics, boundary target limits, streaming instrumentation overhead assumptions, operationsScope/selectedOperations semantics for byOperation).",
+            "status": "pending",
+            "estimatedHours": 4,
+            "file": "Known-Limits.md",
+            "parentId": "9321"
+          }
+        ]
+      },
+      {
+        "id": "9322",
+        "title": "Extend invariants and architecture docs for coverage-aware pipeline",
+        "description": "Document coverage-aware invariants and architecture, and add an evaluation hook for coverage usage.",
+        "priority": "medium",
+        "estimatedHours": 10,
+        "dependencies": [
+          "9302",
+          "9303",
+          "9307",
+          "9308",
+          "9312"
+        ],
+        "status": "pending",
+        "complexityScore": 3,
+        "details": "[Context]\nInvariants.md and ARCHITECTURE.md describe the 5-stage pipeline, AJV parity and AP:false behavior but do not yet capture the coverage-aware layers (CoverageAnalyzer, instrumentation, CoverageEvaluator, planner/hints) or their invariants. EVALUATION.md focuses on basic data generation evaluation and does not show how to quickly inspect coverage.\n\n[Key requirements]\n- Add a \"Coverage invariants\" section to Invariants.md, covering: CoverageTarget.id determinism, dimension semantics (structure/branches/enum/boundaries/operations), status values ('active'/'unreachable'/'deprecated'), metrics behavior under dimensionsEnabled/excludeUnreachable, and the guarantee that diagnostic-only targets are excluded from all denominators.\n- Describe streaming coverage instrumentation as an invariant: per-instance coverage state, commit-after-validate, no second JSON parse, no additional network I/O, and reuse of the original AJV as oracle.\n- Extend ARCHITECTURE.md with a description of coverage-specific modules (CoverageAnalyzer between Compose and Generate, CoveragePlanner/hints for coverage=guided, CoverageEvaluator/coverage-report, streaming instrumentation attached to Generate/Repair/Validate) and how they compose with the 5-stage pipeline.\n- Update EVALUATION.md with an optional step that demonstrates running with coverage enabled (e.g. coverage=measure with a small n and dimensionsEnabled) and interpreting the CLI coverage summary at a high level.\n\n[Deliverables]\n- New \"Coverage invariants\" section in Invariants.md.\n- Updated ARCHITECTURE.md showing coverage-aware modules and their constraints.\n- EVALUATION.md updated with an optional coverage evaluation step.\n\n[Definition of Done]\n- Core coverage invariants are written once in Invariants.md and referenced from other docs instead of being duplicated ad hoc.\n- Architecture and evaluation docs are consistent with the implementation and the spec-level doc docs/spec-coverage-aware-v1.x.md.",
+        "testStrategy": "Doc review against Invariants.md and ARCHITECTURE.md plus a quick manual run of the evaluation steps (with coverage enabled) to ensure the suggested commands still work.",
+        "subtasks": [
+          {
+            "id": 9322001,
+            "title": "Add coverage invariants section to Invariants.md",
+            "description": "Describe coverage-target ID stability, dimension semantics, status handling ('active'/'unreachable'/'deprecated'), minCoverage/coverageStatus and streaming commit-after-validate behavior in Invariants.md.",
+            "status": "pending",
+            "estimatedHours": 4,
+            "file": "Invariants.md",
+            "parentId": "9322"
+          },
+          {
+            "id": 9322002,
+            "title": "Extend ARCHITECTURE.md with coverage-aware modules",
+            "description": "Update ARCHITECTURE.md to show where CoverageAnalyzer, streaming instrumentation, CoveragePlanner/hints and CoverageEvaluator sit relative to Normalize → Compose → Generate → Repair → Validate, including their no-network-I/O and AJV-as-oracle constraints.",
+            "status": "pending",
+            "estimatedHours": 4,
+            "file": "ARCHITECTURE.md",
+            "parentId": "9322"
+          },
+          {
+            "id": 9322003,
+            "title": "Add optional coverage step to EVALUATION.md",
+            "description": "Extend EVALUATION.md with an optional step that runs the CLI with coverage=measure on a real schema, inspects the coverage summary and briefly explains how to read per-dimension/overall coverage.",
+            "status": "pending",
+            "estimatedHours": 2,
+            "file": "EVALUATION.md",
+            "parentId": "9322"
+          }
+        ]
+      },
+      {
+        "id": "9323",
+        "title": "Document coverage-report/v1 and coverage diff tooling",
+        "description": "Extend reporter docs with coverage-report/v1 contract and coverage diff CLI usage.",
+        "priority": "medium",
+        "estimatedHours": 8,
+        "dependencies": [
+          "9303",
+          "9304",
+          "9310",
+          "9311"
+        ],
+        "status": "pending",
+        "complexityScore": 3,
+        "details": "[Context]\npackages/reporter/README.md documents the json-schema-reporter CLI and bench/corpus modes but does not yet describe the coverage-report/v1 JSON format or the coverage diff command introduced in 9311.\n\n[Key requirements]\n- Add a concise description of the coverage-report/v1 structure to packages/reporter/README.md: header (version, engine, run), metrics.overall/byDimension/byOperation, targets/targetsByStatus/uncoveredTargets and thresholds/coverageStatus.\n- Document how to obtain coverage-report/v1 files via the core CLI (--coverage-report) and how the reporter layer can consume them if relevant.\n- Add a dedicated section for the coverage diff CLI (e.g. \"foundrydata coverage diff A.json B.json\"): arguments, basic behavior, version compatibility checks and exit-code semantics when regressions are detected.\n- Cross-link from the core README coverage section to the reporter diff documentation so users can discover the diff workflow from either side.\n\n[Deliverables]\n- Updated packages/reporter/README.md with coverage-report/v1 and coverage diff sections.\n- Optional small JSON snippet showing a trimmed example CoverageReport for illustration.\n\n[Definition of Done]\n- Users reading packages/reporter/README.md understand how to obtain coverage reports, how to diff them between runs and what guarantees/limits apply to the diff output.",
+        "testStrategy": "Doc review plus a small script in tests or CI that runs the coverage diff CLI on two fixture reports and ensures the documented command line matches reality.",
+        "subtasks": [
+          {
+            "id": 9323001,
+            "title": "Describe coverage-report/v1 in reporter README",
+            "description": "Add a section to packages/reporter/README.md that explains the CoverageReport header, metrics, targets, targetsByStatus and thresholds fields at a high level, with a small example.",
+            "status": "pending",
+            "estimatedHours": 3,
+            "file": "packages/reporter/README.md",
+            "parentId": "9323"
+          },
+          {
+            "id": 9323002,
+            "title": "Document coverage diff CLI usage",
+            "description": "Document the coverage diff CLI command in packages/reporter/README.md (or a linked doc): arguments, behavior on regressions, exit-code contract and compatibility rules for comparing reports.",
+            "status": "pending",
+            "estimatedHours": 3,
+            "file": "packages/reporter/README.md",
+            "parentId": "9323"
+          },
+          {
+            "id": 9323003,
+            "title": "Add cross-links between core README and reporter docs",
+            "description": "From README.md coverage section, link to the reporter / coverage diff documentation, and from packages/reporter/README.md link back to the coverage-aware overview in README.md.",
+            "status": "pending",
+            "estimatedHours": 2,
+            "file": "packages/reporter/README.md",
+            "parentId": "9323"
+          }
+        ]
       }
     ],
     "metadata": {
