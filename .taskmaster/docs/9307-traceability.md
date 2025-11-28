@@ -45,7 +45,7 @@ This document maps the parent task 9307 bullets from Implementation Details, Del
   Covers: [KR1], [KR4], [KR6], [DEL3], [DEL4], [DOD2], [DOD3]. Status: covered (streaming coverage accumulator wired through orchestrator, generator and repair, with per-instance commit driven by validate in pipeline tests).
 
 - **9307.9307003 – Remove any post-pass coverage computation**  
-  Covers: [KR2], [DOD2], [DOD5]. Status: pending.
+  Covers: [KR2], [DOD2], [DOD5]. Status: covered (no remaining post-pass coverage recomputation paths in core or CLI; PLAN.md and SPEC-QUESTION clarify that coverage-report/v1 relies solely on streaming accumulator and CoverageEvaluator per coverage-aware V1).
 
 - **9307.9307004 – Benchmark streaming coverage overhead**  
   Covers: [KR5], [DOD4], [DOD5], [TS5]. Status: pending.

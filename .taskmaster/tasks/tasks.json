@@ -495,10 +495,11 @@
             "id": 9307003,
             "title": "Remove any post-pass coverage computation",
             "description": "Eliminate or guard any remaining full post-pass coverage code paths and ensure tests rely only on streaming instrumentation.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 2,
             "file": "packages/core/src/coverage/coverage-postpass-legacy.ts",
-            "parentId": "9307"
+            "parentId": "9307",
+            "updatedAt": "2025-11-28T23:19:31.525Z"
           },
           {
             "id": 9307004,
@@ -510,7 +511,7 @@
             "parentId": "9307"
           }
         ],
-        "updatedAt": "2025-11-28T23:08:14.344Z"
+        "updatedAt": "2025-11-28T23:19:31.525Z"
       },
       {
         "id": "9308",
@@ -987,7 +988,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-28T23:08:14.345Z",
+      "lastModified": "2025-11-28T23:19:31.526Z",
       "taskCount": 18,
       "completedCount": 6,
       "tags": [
