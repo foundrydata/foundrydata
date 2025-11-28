@@ -13,6 +13,7 @@ import type {
   CoverageEntry,
   NodeDiagnostics,
 } from '../transform/composition-engine.js';
+import type { CoverageMode } from '@foundrydata/shared';
 import {
   computeEffectiveMaxItems,
   type ContainsNeed,
@@ -45,6 +46,7 @@ import {
 import type { ResolverDiagnosticNote } from '../resolver/options.js';
 import type Ajv from 'ajv';
 import type { ValidateFunction } from 'ajv';
+import type { CoverageEvent } from '../coverage/index.js';
 
 type JsonPointer = string;
 
@@ -118,6 +120,11 @@ export interface GeneratorStageOutput {
   seed: number;
 }
 
+interface GeneratorCoverageOptions {
+  mode: CoverageMode;
+  emit: (event: CoverageEvent) => void;
+}
+
 export interface FoundryGeneratorOptions {
   count?: number;
   seed?: number;
@@ -140,6 +147,12 @@ export interface FoundryGeneratorOptions {
    * when no example is present.
    */
   preferExamples?: boolean;
+  /**
+   * Optional passive coverage hook for generator instrumentation.
+   * When provided with mode 'measure' or 'guided', the generator
+   * will emit CoverageEvent entries for branches and enums.
+   */
+  coverage?: GeneratorCoverageOptions;
 }
 
 export function generateFromCompose(
@@ -186,6 +199,7 @@ class GeneratorEngine {
   private readonly stringTweakOrder: ReadonlyArray<'\u0000' | 'a'>;
   private readonly multipleOfEpsilon: number;
   private readonly preferExamples: boolean;
+  private readonly coverage?: GeneratorCoverageOptions;
   // E-Trace cache: per-candidate object instance → per-name proof (or null for negative).
   // Ephemeral per GeneratorEngine; keys are not retained strongly (WeakMap).
   private eTraceCache: WeakMap<
@@ -228,6 +242,7 @@ class GeneratorEngine {
       `1e-${this.resolved.rational.decimalPrecision}`
     );
     this.preferExamples = options.preferExamples === true;
+    this.coverage = options.coverage;
   }
 
   private readonly rootSchema: Schema | unknown;
@@ -288,7 +303,10 @@ class GeneratorEngine {
       return obj.const;
     }
     if (Array.isArray(obj.enum) && obj.enum.length > 0) {
-      return obj.enum[0];
+      const enumValues = obj.enum as unknown[];
+      const chosen = enumValues[0];
+      this.recordEnumValueHit(obj, effectiveCanonPath, chosen);
+      return chosen;
     }
 
     const type = determineType(obj);
@@ -1337,6 +1355,7 @@ class GeneratorEngine {
         used,
         evaluation.discriminants
       );
+      this.recordConditionalPathHit(canonPath, 'if+then');
       this.diagnostics.push({
         code: DIAGNOSTIC_CODES.IF_AWARE_HINT_APPLIED,
         phase: DIAGNOSTIC_PHASES.GENERATE,
@@ -1352,6 +1371,9 @@ class GeneratorEngine {
 
     if (evaluation.discriminants.size > 0) {
       this.blockConditionalNames(canonPath, evaluation.discriminants);
+    }
+    if (schema.else && typeof schema.else === 'object') {
+      this.recordConditionalPathHit(canonPath, 'if+else');
     }
     this.diagnostics.push({
       code: DIAGNOSTIC_CODES.IF_AWARE_HINT_APPLIED,
@@ -2292,6 +2314,7 @@ class GeneratorEngine {
         (value) => typeof value === 'boolean'
       );
       if (typeof firstBool === 'boolean') {
+        this.recordEnumValueHit(schema, undefined, firstBool);
         return firstBool;
       }
     }
@@ -2328,6 +2351,12 @@ class GeneratorEngine {
     const chosen =
       selectedIndex >= 0 && selectedIndex < branches.length ? selectedIndex : 0;
     const branchPath = this.buildOneOfBranchPointer(canonPath, chosen);
+    this.recordBranchSelection(
+      'ONEOF_BRANCH',
+      branches[chosen],
+      branchPath,
+      chosen
+    );
     const generated = this.generateValue(
       branches[chosen],
       branchPath,
@@ -2962,6 +2991,12 @@ class GeneratorEngine {
         ? chosen
         : fallbackIndex;
     const branchPointer = appendPointer(unionPointer, String(index));
+    this.recordBranchSelection(
+      'ANYOF_BRANCH',
+      branches[index],
+      branchPointer,
+      index
+    );
     return this.generateValue(branches[index]!, branchPointer, itemIndex);
   }
 
@@ -2996,6 +3031,70 @@ class GeneratorEngine {
       scoreDetails: {
         tiebreakRand: 0,
       },
+    });
+  }
+
+  private emitCoverageEvent(event: CoverageEvent): void {
+    if (!this.coverage) return;
+    const mode = this.coverage.mode;
+    if (mode !== 'measure' && mode !== 'guided') return;
+    try {
+      this.coverage.emit(event);
+    } catch {
+      // Coverage hooks must never affect generation behavior.
+    }
+  }
+
+  private recordBranchSelection(
+    kind: 'ONEOF_BRANCH' | 'ANYOF_BRANCH',
+    branchSchema: unknown,
+    branchPointer: JsonPointer,
+    index: number
+  ): void {
+    const pointerFromIndex =
+      branchSchema && typeof branchSchema === 'object'
+        ? getPointerFromIndex(this.pointerIndex, branchSchema)
+        : undefined;
+    const canonPtr = pointerFromIndex ?? branchPointer;
+    const canonPath = canonicalizeCoveragePath(canonPtr);
+    this.emitCoverageEvent({
+      dimension: 'branches',
+      kind,
+      canonPath,
+      params: { index },
+    });
+  }
+
+  private recordConditionalPathHit(
+    canonPath: JsonPointer,
+    pathKind: 'if+then' | 'if+else'
+  ): void {
+    const coveragePath = canonicalizeCoveragePath(canonPath);
+    this.emitCoverageEvent({
+      dimension: 'branches',
+      kind: 'CONDITIONAL_PATH',
+      canonPath: coveragePath,
+      params: { pathKind },
+    });
+  }
+
+  private recordEnumValueHit(
+    schema: Record<string, unknown>,
+    fallbackPointer: JsonPointer | undefined,
+    value: unknown
+  ): void {
+    const raw = (schema as { enum?: unknown[] }).enum;
+    if (!Array.isArray(raw) || raw.length === 0) return;
+    const idx = enumIndexOf(raw, value);
+    if (idx < 0) return;
+    const pointerFromIndex = getPointerFromIndex(this.pointerIndex, schema);
+    const canonPtr = pointerFromIndex ?? fallbackPointer ?? '';
+    const canonPath = canonicalizeCoveragePath(canonPtr);
+    this.emitCoverageEvent({
+      dimension: 'enum',
+      kind: 'ENUM_VALUE_HIT',
+      canonPath,
+      params: { enumIndex: idx, value },
     });
   }
 }
@@ -3661,6 +3760,22 @@ function appendPointer(base: string, segment: string): string {
     return `/${encoded}`;
   }
   return `${base}/${encoded}`;
+}
+
+function canonicalizeCoveragePath(pointer: JsonPointer): string {
+  if (!pointer) return '#';
+  if (pointer.startsWith('#')) return pointer;
+  if (pointer.startsWith('/')) return `#${pointer}`;
+  return `#/${pointer}`;
+}
+
+function enumIndexOf(values: unknown[], needle: unknown): number {
+  for (let index = 0; index < values.length; index += 1) {
+    if (Object.is(values[index], needle)) {
+      return index;
+    }
+  }
+  return -1;
 }
 
 function buildPointerIndex(schema: unknown): WeakMap<object, JsonPointer> {
