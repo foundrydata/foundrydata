@@ -43,8 +43,10 @@ import {
   resolveCompatMode,
   resolveOutputFormat,
   type OutputFormat,
+  type CliOptions,
 } from './flags.js';
 import { printComposeDebug } from './debug.js';
+import { resolveCliCoverageOptions } from './config/coverage-options.js';
 
 const program = new Command();
 
@@ -212,6 +214,13 @@ program
       const planOptions = parsePlanOptions(cliPlanOptions);
       const resolvedOptions = resolveOptions(planOptions);
 
+      const { coverage, ignoredReason } = resolveCliCoverageOptions(
+        options as unknown as CliOptions
+      );
+      if (ignoredReason) {
+        process.stderr.write(`[foundrydata] note: ${ignoredReason}\n`);
+      }
+
       // Print effective configuration if requested
       if (options.debugPasses) {
         process.stderr.write(
@@ -226,6 +235,12 @@ program
         preferExamples,
         repairAttempts,
         validateFormats: true,
+        coverage: {
+          mode: coverage.mode,
+          dimensionsEnabled: coverage.dimensionsEnabled,
+          excludeUnreachable: coverage.excludeUnreachable,
+          minCoverage: coverage.minCoverage,
+        },
       });
       const pipelineResult = await stream.result;
 
@@ -440,6 +455,13 @@ program
       const planOptions = parsePlanOptions(cliPlanOptions);
       const resolvedOptions = resolveOptions(planOptions);
 
+      const { coverage, ignoredReason } = resolveCliCoverageOptions(
+        options as unknown as CliOptions
+      );
+      if (ignoredReason) {
+        process.stderr.write(`[foundrydata] note: ${ignoredReason}\n`);
+      }
+
       if (options.debugPasses) {
         process.stderr.write(
           `[foundrydata] effective config: ${JSON.stringify(resolvedOptions, null, 2)}\n`
@@ -453,6 +475,12 @@ program
         preferExamples,
         repairAttempts,
         validateFormats: true,
+        coverage: {
+          mode: coverage.mode,
+          dimensionsEnabled: coverage.dimensionsEnabled,
+          excludeUnreachable: coverage.excludeUnreachable,
+          minCoverage: coverage.minCoverage,
+        },
       });
       const pipelineResult = await stream.result;
 
