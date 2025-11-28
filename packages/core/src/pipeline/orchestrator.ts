@@ -77,8 +77,16 @@ import {
   createCoverageAccumulator,
   type CoverageAccumulator,
   type CoverageEvent,
+  evaluateCoverage,
+  type CoverageEvaluatorInput,
+  applyReportModeToCoverageTargets,
 } from '../coverage/index.js';
-import type { CoverageMode } from '@foundrydata/shared';
+import {
+  COVERAGE_REPORT_VERSION_V1,
+  type CoverageMode,
+  type CoverageReportMode,
+} from '@foundrydata/shared';
+import corePackageJson from '../../package.json' assert { type: 'json' };
 
 const STAGE_SEQUENCE: PipelineStageName[] = [
   'normalize',
@@ -229,6 +237,8 @@ export async function executePipeline(
   options: PipelineOptions = {},
   overrides: PipelineStageOverrides = {}
 ): Promise<PipelineResult> {
+  const runStartTimeMs = Date.now();
+  const runStartedAtIso = new Date(runStartTimeMs).toISOString();
   const metrics =
     options.collector ?? new MetricsCollector(options.metrics ?? {});
   const sourceDialect = detectDialectFromSchema(schema);
@@ -1101,9 +1111,73 @@ export async function executePipeline(
     Array.isArray(artifacts.coverageTargets) &&
     status === 'completed'
   ) {
-    artifacts.coverageTargets = coverageAccumulator.toReport(
+    const reportTargets = coverageAccumulator.toReport(
       artifacts.coverageTargets
     );
+
+    artifacts.coverageTargets = reportTargets;
+
+    const coverageInput: CoverageEvaluatorInput = {
+      targets: reportTargets,
+      dimensionsEnabled: options.coverage?.dimensionsEnabled ?? [],
+      excludeUnreachable: options.coverage?.excludeUnreachable ?? false,
+      thresholds: undefined,
+    };
+
+    const coverageResult = evaluateCoverage(coverageInput);
+    artifacts.coverageMetrics = coverageResult.metrics;
+
+    const reportMode: CoverageReportMode = 'full';
+    const reportArrays = applyReportModeToCoverageTargets({
+      reportMode,
+      targets: reportTargets,
+      uncoveredTargets: coverageResult.uncoveredTargets,
+    });
+
+    const generateOutput = stages.generate.output;
+    const seed =
+      (generateOutput && typeof generateOutput.seed === 'number'
+        ? generateOutput.seed
+        : options.generate?.seed) ?? 0;
+    const maxInstances =
+      options.generate?.count ??
+      (Array.isArray(generateOutput?.items) ? generateOutput.items.length : 0);
+    const actualInstances = Array.isArray(artifacts.repaired)
+      ? artifacts.repaired.length
+      : Array.isArray(generateOutput?.items)
+        ? generateOutput.items.length
+        : 0;
+
+    const coverageMode = options.coverage?.mode ?? 'off';
+
+    artifacts.coverageReport = {
+      version: COVERAGE_REPORT_VERSION_V1,
+      reportMode,
+      engine: {
+        foundryVersion:
+          (corePackageJson as { version?: string }).version ?? '0.0.0',
+        coverageMode,
+        ajvMajor: 8,
+      },
+      run: {
+        seed,
+        masterSeed: seed,
+        maxInstances,
+        actualInstances,
+        dimensionsEnabled: coverageInput.dimensionsEnabled,
+        excludeUnreachable: coverageInput.excludeUnreachable,
+        startedAt: runStartedAtIso,
+        durationMs: Date.now() - runStartTimeMs,
+      },
+      metrics: coverageResult.metrics,
+      targets: reportArrays.targets,
+      uncoveredTargets: reportArrays.uncoveredTargets,
+      unsatisfiedHints: [],
+      diagnostics: {
+        plannerCapsHit: [],
+        notes: [],
+      },
+    };
   }
 
   return {

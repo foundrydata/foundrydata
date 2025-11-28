@@ -20,8 +20,9 @@ import type {
   CoverageDimension,
   CoverageMode,
   CoverageTarget,
+  CoverageReport,
 } from '@foundrydata/shared';
-import type { CoverageGraph } from '../coverage/index.js';
+import type { CoverageGraph, CoverageMetrics } from '../coverage/index.js';
 
 export type PipelineStageName =
   | 'normalize'
@@ -101,6 +102,8 @@ export interface PipelineArtifacts {
   }>;
   coverageGraph?: CoverageGraph;
   coverageTargets?: CoverageTarget[];
+  coverageMetrics?: CoverageMetrics;
+  coverageReport?: CoverageReport;
 }
 
 export interface PipelineStageOverrides {

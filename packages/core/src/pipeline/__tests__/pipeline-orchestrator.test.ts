@@ -6,6 +6,7 @@ import {
 } from '../../transform/composition-engine';
 import { MetricsCollector } from '../../util/metrics';
 import { executePipeline } from '../orchestrator';
+import { COVERAGE_REPORT_VERSION_V1 } from '@foundrydata/shared';
 
 describe('executePipeline', () => {
   it('runs normalize then compose with metrics captured', async () => {
@@ -355,5 +356,46 @@ describe('executePipeline', () => {
     expect(off.artifacts.coverageTargets).toBeUndefined();
     const measureTargets = measure.artifacts.coverageTargets ?? [];
     expect(measureTargets.length).toBeGreaterThan(0);
+  });
+
+  // eslint-disable-next-line complexity
+  it('attaches coverageMetrics and coverageReport when coverage is enabled', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        id: { type: 'integer', minimum: 0 },
+        title: { type: 'string', minLength: 1 },
+      },
+      required: ['id', 'title'],
+    } as const;
+
+    const result = await executePipeline(schema, {
+      generate: { count: 2, seed: 42 },
+      validate: { validateFormats: false },
+      coverage: {
+        mode: 'measure',
+        dimensionsEnabled: ['structure', 'branches'],
+        excludeUnreachable: false,
+      },
+    });
+
+    expect(result.status).toBe('completed');
+
+    const metrics = result.artifacts.coverageMetrics;
+    expect(metrics).toBeDefined();
+    expect(metrics?.overall).toBeGreaterThanOrEqual(0);
+    expect(metrics?.overall).toBeLessThanOrEqual(1);
+
+    const report = result.artifacts.coverageReport;
+    expect(report).toBeDefined();
+    expect(report?.version).toBe(COVERAGE_REPORT_VERSION_V1);
+    expect(report?.engine.coverageMode).toBe('measure');
+    expect(report?.run.seed).toBeGreaterThan(0);
+    expect(report?.run.masterSeed).toBe(report?.run.seed);
+    expect(report?.metrics.overall).toBe(metrics?.overall);
+    expect(Array.isArray(report?.targets)).toBe(true);
+    expect(Array.isArray(report?.uncoveredTargets)).toBe(true);
   });
 });

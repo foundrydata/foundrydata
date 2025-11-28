@@ -240,10 +240,11 @@
             "id": 9303004,
             "title": "Wire CoverageEvaluator into pipeline result and Node API",
             "description": "Attach coverage report computation to the pipeline orchestrator and expose it as a Promise alongside the data stream.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/pipeline/orchestrator.ts",
-            "parentId": "9303"
+            "parentId": "9303",
+            "updatedAt": "2025-11-28T20:07:26.512Z"
           },
           {
             "id": 9303005,
@@ -255,7 +256,7 @@
             "parentId": "9303"
           }
         ],
-        "updatedAt": "2025-11-28T19:51:24.348Z"
+        "updatedAt": "2025-11-28T20:07:26.512Z"
       },
       {
         "id": "9304",
@@ -760,7 +761,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-28T19:51:24.349Z",
+      "lastModified": "2025-11-28T20:07:26.513Z",
       "taskCount": 13,
       "completedCount": 3,
       "tags": [

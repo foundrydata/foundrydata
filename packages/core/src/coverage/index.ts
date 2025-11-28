@@ -5,6 +5,7 @@ import type {
   CoverageTargetKind,
   CoverageTarget,
   CoverageTargetReport,
+  CoverageMetrics,
 } from '@foundrydata/shared';
 
 export type {
@@ -14,6 +15,7 @@ export type {
   CoverageTargetKind,
   CoverageTarget,
   CoverageTargetReport,
+  CoverageMetrics,
 };
 
 export {

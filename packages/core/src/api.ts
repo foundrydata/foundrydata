@@ -12,6 +12,7 @@ import {
 } from './transform/composition-engine.js';
 import { executePipeline } from './pipeline/orchestrator.js';
 import type { PipelineResult } from './pipeline/types.js';
+import type { CoverageReport } from '@foundrydata/shared';
 import type { PlanOptions } from './types/options.js';
 import {
   createSourceAjv,
@@ -128,6 +129,7 @@ export interface GenerateOptions {
  */
 export interface GenerateIterable extends AsyncIterable<unknown> {
   readonly result: Promise<PipelineResult>;
+  readonly coverage?: Promise<CoverageReport | undefined>;
 }
 
 export interface ValidateOptions {
@@ -264,6 +266,14 @@ export function Generate(
   const asyncIterator = iterator() as unknown as GenerateIterable;
   Object.defineProperty(asyncIterator, 'result', {
     value: pipelinePromise,
+    enumerable: false,
+    writable: false,
+  });
+
+  Object.defineProperty(asyncIterator, 'coverage', {
+    value: pipelinePromise.then(
+      (result) => result.artifacts.coverageReport as CoverageReport | undefined
+    ),
     enumerable: false,
     writable: false,
   });
