@@ -4,7 +4,10 @@ import type {
   CoverageDimension,
   CoverageTargetReport,
 } from '@foundrydata/shared';
-import { evaluateCoverage } from '../evaluator.js';
+import {
+  applyReportModeToCoverageTargets,
+  evaluateCoverage,
+} from '../evaluator.js';
 
 function makeTarget(
   overrides: Partial<CoverageTargetReport> = {}
@@ -218,5 +221,90 @@ describe('evaluateCoverage', () => {
     expect(metrics.overall).toBeCloseTo(0.5, 6);
     expect(metrics.coverageStatus).toBe('minCoverageNotMet');
     expect(metrics.thresholds?.overall).toBe(0.8);
+  });
+
+  it('keeps full targets and sorts uncoveredTargets deterministically in full reportMode', () => {
+    const targets: CoverageTargetReport[] = [
+      makeTarget({
+        id: 'lowWeightStructure',
+        dimension: 'structure',
+        weight: 1,
+        kind: 'SCHEMA_NODE',
+        canonPath: '#/b',
+        hit: false,
+      }),
+      makeTarget({
+        id: 'highWeightBranches',
+        dimension: 'branches',
+        weight: 10,
+        kind: 'ONEOF_BRANCH',
+        canonPath: '#/a',
+        hit: false,
+      }),
+      makeTarget({
+        id: 'lowWeightBranches',
+        dimension: 'branches',
+        weight: 5,
+        kind: 'ONEOF_BRANCH',
+        canonPath: '#/z',
+        hit: false,
+      }),
+    ];
+
+    const { uncoveredTargets } = evaluateCoverage({
+      targets,
+      dimensionsEnabled: ['structure', 'branches'],
+      excludeUnreachable: false,
+    });
+
+    const reportArrays = applyReportModeToCoverageTargets({
+      reportMode: 'full',
+      targets,
+      uncoveredTargets,
+    });
+
+    expect(reportArrays.targets).toBe(targets);
+    expect(reportArrays.uncoveredTargets.map((t) => t.id)).toEqual([
+      'highWeightBranches',
+      'lowWeightBranches',
+      'lowWeightStructure',
+    ]);
+  });
+
+  it('omits targets and truncates uncoveredTargets in summary reportMode', () => {
+    const targets: CoverageTargetReport[] = [];
+    const uncovered: CoverageTargetReport[] = [];
+
+    for (let i = 0; i < 205; i++) {
+      const dimension: CoverageDimension =
+        i % 2 === 0 ? 'structure' : 'branches';
+      const target = makeTarget({
+        id: `t${i}`,
+        dimension,
+        hit: false,
+      });
+      targets.push(target);
+      uncovered.push(target);
+    }
+
+    const first = applyReportModeToCoverageTargets({
+      reportMode: 'summary',
+      targets,
+      uncoveredTargets: uncovered,
+    });
+
+    expect(first.targets).toEqual([]);
+    expect(first.uncoveredTargets.length).toBe(200);
+
+    const second = applyReportModeToCoverageTargets({
+      reportMode: 'summary',
+      targets,
+      uncoveredTargets: uncovered,
+    });
+
+    expect(second.targets).toEqual([]);
+    expect(second.uncoveredTargets.map((t) => t.id)).toEqual(
+      first.uncoveredTargets.map((t) => t.id)
+    );
   });
 });

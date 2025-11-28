@@ -32,6 +32,9 @@ export {
   evaluateCoverage,
   type CoverageEvaluatorInput,
   type CoverageEvaluatorResult,
+  applyReportModeToCoverageTargets,
+  type CoverageReportArraysInput,
+  type CoverageReportArrays,
 } from './evaluator.js';
 
 export type CoverageGraphNodeKind =

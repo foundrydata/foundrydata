@@ -12,6 +12,7 @@ import type {
   CoverageReportStatus,
   CoverageThresholds,
 } from '@foundrydata/shared';
+import type { CoverageReportMode } from '@foundrydata/shared';
 
 const DIAGNOSTIC_KIND_SET = new Set<string>(
   DIAGNOSTIC_TARGET_KINDS as readonly string[]
@@ -157,4 +158,76 @@ function computeCoverageStatus(
 function computeRatio(hit: number, total: number): number {
   if (total <= 0) return 1;
   return hit / total;
+}
+
+const SUMMARY_MAX_UNCOVERED_TARGETS = 200;
+
+export interface CoverageReportArraysInput {
+  reportMode: CoverageReportMode;
+  targets: CoverageTargetReport[];
+  uncoveredTargets: CoverageTargetReport[];
+}
+
+export interface CoverageReportArrays {
+  targets: CoverageTargetReport[];
+  uncoveredTargets: CoverageTargetReport[];
+}
+
+export function applyReportModeToCoverageTargets(
+  input: CoverageReportArraysInput
+): CoverageReportArrays {
+  const sortedUncovered = sortUncoveredTargets(input.uncoveredTargets);
+
+  if (input.reportMode === 'full') {
+    return {
+      targets: input.targets,
+      uncoveredTargets: sortedUncovered,
+    };
+  }
+
+  const limit = SUMMARY_MAX_UNCOVERED_TARGETS;
+  const truncatedUncovered =
+    sortedUncovered.length > limit
+      ? sortedUncovered.slice(0, limit)
+      : sortedUncovered;
+
+  return {
+    targets: [],
+    uncoveredTargets: truncatedUncovered,
+  };
+}
+
+function sortUncoveredTargets(
+  targets: CoverageTargetReport[]
+): CoverageTargetReport[] {
+  return [...targets].sort((a, b) => {
+    const dimensionCompare = compareStrings(a.dimension, b.dimension);
+    if (dimensionCompare !== 0) return dimensionCompare;
+
+    const weightA = typeof a.weight === 'number' ? a.weight : 0;
+    const weightB = typeof b.weight === 'number' ? b.weight : 0;
+    if (weightA !== weightB) {
+      return weightB - weightA;
+    }
+
+    const kindCompare = compareStrings(a.kind, b.kind);
+    if (kindCompare !== 0) return kindCompare;
+
+    const pathCompare = compareStrings(a.canonPath, b.canonPath);
+    if (pathCompare !== 0) return pathCompare;
+
+    const opKeyCompare = compareStrings(
+      a.operationKey ?? '',
+      b.operationKey ?? ''
+    );
+    if (opKeyCompare !== 0) return opKeyCompare;
+
+    return compareStrings(a.id, b.id);
+  });
+}
+
+function compareStrings(a: string, b: string): number {
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
 }
