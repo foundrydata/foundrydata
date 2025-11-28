@@ -528,6 +528,7 @@ class GeneratorEngine {
       );
       result[name] = value;
       usedNames.add(name);
+      this.recordPropertyPresent(resolved.pointer, name);
       this.recordEvaluationTrace(canonPath, name, evaluationProof);
       if (eTraceGuard) {
         this.invalidateEvaluationCacheForObject(result);
@@ -584,6 +585,7 @@ class GeneratorEngine {
         );
         result[name] = value;
         usedNames.add(name);
+        this.recordPropertyPresent(resolved.pointer, name);
         this.recordEvaluationTrace(canonPath, name, evaluationProof);
         if (eTraceGuard) {
           this.invalidateEvaluationCacheForObject(result);
@@ -632,6 +634,7 @@ class GeneratorEngine {
           result[candidate] = value;
           usedNames.add(candidate);
           namesFromPatterns.add(candidate);
+          this.recordPropertyPresent(resolved.pointer, candidate);
           this.recordEvaluationTrace(
             canonPath,
             candidate,
@@ -716,6 +719,7 @@ class GeneratorEngine {
           );
           result[candidate] = value;
           usedNames.add(candidate);
+          this.recordPropertyPresent(resolved.pointer, candidate);
           this.recordEvaluationTrace(canonPath, candidate, evaluationProof);
           if (eTraceGuard) {
             this.invalidateEvaluationCacheForObject(result);
@@ -1312,6 +1316,7 @@ class GeneratorEngine {
         );
         target[dep] = value;
         used.add(dep);
+        this.recordPropertyPresent(resolved.pointer, dep);
         this.recordEvaluationTrace(canonPath, dep, evaluationProof);
         if (eTraceGuard) {
           this.invalidateEvaluationCacheForObject(target);
@@ -1998,6 +2003,7 @@ class GeneratorEngine {
       );
       target[name] = value;
       used.add(name);
+      this.recordPropertyPresent(resolved.pointer, name);
       this.recordEvaluationTrace(canonPath, name, evaluationProof);
       if (eTraceGuard) {
         this.invalidateEvaluationCacheForObject(target);
@@ -3095,6 +3101,19 @@ class GeneratorEngine {
       kind: 'ENUM_VALUE_HIT',
       canonPath,
       params: { enumIndex: idx, value },
+    });
+  }
+
+  private recordPropertyPresent(
+    propertyPointer: JsonPointer,
+    propertyName: string
+  ): void {
+    const canonPath = canonicalizeCoveragePath(propertyPointer);
+    this.emitCoverageEvent({
+      dimension: 'structure',
+      kind: 'PROPERTY_PRESENT',
+      canonPath,
+      params: { propertyName },
     });
   }
 }

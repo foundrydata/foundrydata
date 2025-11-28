@@ -23,6 +23,8 @@ import {
 } from '../util/pattern-literals.js';
 import { resolveOptions } from '../types/options.js';
 import type { MetricsCollector } from '../util/metrics.js';
+import type { CoverageMode } from '@foundrydata/shared';
+import type { CoverageEvent } from '../coverage/index.js';
 
 export interface AjvErr {
   instancePath: string;
@@ -644,6 +646,38 @@ export interface RepairItemsResult {
   actions: RepairAction[];
 }
 
+interface RepairCoverageOptions {
+  mode: CoverageMode;
+  emit: (event: CoverageEvent) => void;
+}
+
+function canonicalizeCoveragePath(pointer: string): string {
+  if (!pointer) return '#';
+  if (pointer.startsWith('#')) return pointer;
+  if (pointer.startsWith('/')) return `#${pointer}`;
+  return `#/${pointer}`;
+}
+
+function emitPropertyPresentFromRepair(
+  coverage: RepairCoverageOptions | undefined,
+  canonPath: string,
+  propertyName: string
+): void {
+  if (!coverage) return;
+  const mode = coverage.mode;
+  if (mode !== 'measure' && mode !== 'guided') return;
+  try {
+    coverage.emit({
+      dimension: 'structure',
+      kind: 'PROPERTY_PRESENT',
+      canonPath: canonicalizeCoveragePath(canonPath),
+      params: { propertyName },
+    });
+  } catch {
+    // Coverage hooks must never affect repair behavior.
+  }
+}
+
 export function repairItemsAjvDriven(
   items: unknown[],
   args: {
@@ -651,7 +685,11 @@ export function repairItemsAjvDriven(
     effective: ComposeResult;
     planOptions?: Partial<PlanOptions>;
   },
-  options?: { attempts?: number; metrics?: MetricsCollector }
+  options?: {
+    attempts?: number;
+    metrics?: MetricsCollector;
+    coverage?: RepairCoverageOptions;
+  }
 ): RepairItemsResult {
   const { schema, effective } = args;
   const resolvedOptions = resolveOptions(args.planOptions);
@@ -666,6 +704,7 @@ export function repairItemsAjvDriven(
   const baseAttempts = Math.max(1, Math.min(5, attemptsOverride ?? 1));
   const maxCycles = Math.min(bailLimit, baseAttempts);
   const metrics = options?.metrics;
+  const coverage = options?.coverage;
   const dialect = detectDialect(schema);
   const sourceAjv = createRepairOnlyValidatorAjv({ dialect }, args.planOptions);
   const { schemaForAjv } = prepareSchemaForSourceAjv(schema, dialect);
@@ -1064,6 +1103,11 @@ export function repairItemsAjvDriven(
             /* istanbul ignore next */
             const eTraceUpdate2 = (_: string): void => {};
             eTraceUpdate2(canonPathReq);
+            emitPropertyPresentFromRepair(
+              coverage,
+              buildPropertyPointer(canonPathReq, missing),
+              missing
+            );
             changed = true;
             actions.push({
               action: 'addRequiredSynth',
@@ -1095,6 +1139,11 @@ export function repairItemsAjvDriven(
           /* istanbul ignore next */
           const eTraceUpdate = (_: string): void => {};
           eTraceUpdate(canonPathReq);
+          emitPropertyPresentFromRepair(
+            coverage,
+            buildPropertyPointer(canonPathReq, missing),
+            missing
+          );
           changed = true;
           actions.push({
             action: 'addRequiredDefault',

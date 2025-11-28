@@ -10,7 +10,7 @@ function composeSchema(schema: unknown): ReturnType<typeof compose> {
   return compose(normalized);
 }
 
-describe('generator coverage instrumentation for branches and enums', () => {
+describe('generator coverage instrumentation for branches, enums and properties', () => {
   it('emits ONEOF_BRANCH coverage events', () => {
     const schema = {
       oneOf: [
@@ -151,5 +151,40 @@ describe('generator coverage instrumentation for branches and enums', () => {
     generateFromCompose(effective);
 
     expect(events).toHaveLength(0);
+  });
+
+  it('emits PROPERTY_PRESENT events for optional properties', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        required: { const: 1 },
+        optional: { const: 2 },
+      },
+      required: ['required'],
+      minProperties: 2,
+    } as const;
+
+    const effective = composeSchema(schema);
+    const events: CoverageEvent[] = [];
+    generateFromCompose(effective, {
+      coverage: {
+        mode: 'measure',
+        emit: (event) => {
+          events.push(event);
+        },
+      },
+    });
+
+    const propertyEvents = events.filter((e) => e.kind === 'PROPERTY_PRESENT');
+
+    // Expect at least one event for the optional property
+    const optionalEvents = propertyEvents.filter(
+      (e) => (e.params as { propertyName?: string }).propertyName === 'optional'
+    );
+
+    expect(optionalEvents.length).toBeGreaterThanOrEqual(1);
+    const ev = optionalEvents[0]!;
+    expect(ev.dimension).toBe('structure');
+    expect(ev.canonPath).toBe('#/properties/optional');
   });
 });
