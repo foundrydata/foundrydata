@@ -162,6 +162,13 @@ export interface PipelineOptions {
     mode?: CoverageMode;
     dimensionsEnabled?: CoverageDimension[];
     excludeUnreachable?: boolean;
+    /**
+     * Global coverage threshold applied to metrics.overall only.
+     * When set, the CoverageEvaluator will populate
+     * metrics.thresholds.overall and set coverageStatus to
+     * 'minCoverageNotMet' when metrics.overall < minCoverage.
+     */
+    minCoverage?: number;
   };
   generate?: {
     count?: number;
