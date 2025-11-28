@@ -290,6 +290,8 @@ class GeneratorEngine {
     const obj = resolvedSchema;
     const effectiveCanonPath = resolvedPointer;
 
+    this.recordSchemaNodeHit(effectiveCanonPath);
+
     // CLI/JSG-P1: when preferExamples is enabled, honor root-level
     // schema examples when present, falling back to generation when not.
     if (this.preferExamples && canonPath === '') {
@@ -3049,6 +3051,15 @@ class GeneratorEngine {
     } catch {
       // Coverage hooks must never affect generation behavior.
     }
+  }
+
+  private recordSchemaNodeHit(canonPath: JsonPointer): void {
+    const coveragePath = canonicalizeCoveragePath(canonPath);
+    this.emitCoverageEvent({
+      dimension: 'structure',
+      kind: 'SCHEMA_NODE',
+      canonPath: coveragePath,
+    });
   }
 
   private recordBranchSelection(
