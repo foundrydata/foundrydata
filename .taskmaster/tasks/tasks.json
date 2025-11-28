@@ -672,7 +672,7 @@
         "dependencies": [
           "9303"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 3,
         "details": "[Context]\nImplement a coverage diff tool as described in §7.4 (Multi-run diff). The tool compares two coverage-report/v1 JSON files produced by compatible engine majors and report versions and surfaces changes in metrics and target statuses, suitable for CI regression checks.\n\n[Key requirements]\n- Implement a diff algorithm that classifies targets into unchanged, added, removed and statusChanged, based on id and identifying shape (dimension, kind, canonPath).\n- Compute and present deltas for metrics.overall and metrics.byOperation between the two reports, highlighting regressions; metric deltas must be computed over the common universe of targets and dimensions (targets present in both reports and dimensions enabled on both sides), while targets from newly enabled dimensions are treated as added and reported explicitly.\n- Identify newly uncovered targets (present in the newer report and uncovered, or that transitioned from hit:true to hit:false) and present them explicitly rather than folding into aggregate regressions.\n- Ensure diff is only considered valid when both reports share the same coverage-report version and compatible FoundryData major (and, for byOperation deltas, a compatible operationsScope); otherwise surface a clear error.\n- Provide a CLI entrypoint (e.g. foundrydata coverage diff A.json B.json) that prints a textual summary and can return a non-zero exit code on regressions if desired.\n\n[Deliverables]\n- Diff implementation in packages/reporter/src/coverage/coverage-diff.ts.\n- CLI command wiring in packages/cli/src/commands/coverage-diff.ts.\n- Tests and JSON fixtures for typical diff scenarios, including added/removed targets and status changes.\n\n[Commands]\n- npm run build\n- npm run test -- --runInBand\n- npm run test packages/reporter/src/coverage/__tests__/coverage-diff.spec.ts\n\n[Definition of Done]\n- coverage diff command correctly identifies target categories and metric deltas on synthetic and real coverage reports.\n- Incompatible versions, engine majors or irreconcilable operationsScope differences are rejected with clear diagnostics, and diff does not attempt to compare incompatible reports.\n- CLI output includes a concise summary of metrics.overall delta, per-operation regressions and lists of newly uncovered targets.\n- Tests cover edge cases such as empty reports, operations added or removed, dimensions newly enabled or disabled and targets changing status to or from unreachable.",
         "testStrategy": "Unit tests for coverage diff classification using small synthetic reports; integration tests that run coverage twice on modified schemas and then call the diff command to validate reported deltas; tests for error handling when versions or engine majors are incompatible; snapshot tests for the CLI diff summary output.",
@@ -681,10 +681,11 @@
             "id": 9311001,
             "title": "Implement CoverageReport diff classification logic",
             "description": "Compare two CoverageReports and classify targets as unchanged, added, removed or statusChanged, including hit changes.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/reporter/src/coverage/coverage-diff.ts",
-            "parentId": "9311"
+            "parentId": "9311",
+            "updatedAt": "2025-11-28T21:49:38.216Z"
           },
           {
             "id": 9311002,
@@ -713,7 +714,8 @@
             "file": "packages/reporter/src/coverage/__tests__/coverage-diff.spec.ts",
             "parentId": "9311"
           }
-        ]
+        ],
+        "updatedAt": "2025-11-28T21:49:38.216Z"
       },
       {
         "id": "9312",
@@ -778,7 +780,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-28T21:28:04.612Z",
+      "lastModified": "2025-11-28T21:49:38.217Z",
       "taskCount": 13,
       "completedCount": 5,
       "tags": [
