@@ -475,20 +475,21 @@
             "id": 9307001,
             "title": "Implement per-instance coverage state and bitmap representation",
             "description": "Create structures to capture per-instance events and global bitmaps for CoverageTargets in a streaming fashion.",
-            "status": "in-progress",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/coverage/coverage-state.ts",
             "parentId": "9307",
-            "updatedAt": "2025-11-28T22:48:08.680Z"
+            "updatedAt": "2025-11-28T22:57:47.902Z"
           },
           {
             "id": 9307002,
             "title": "Wire streaming coverage into pipeline phases",
             "description": "Attach coverage state across Generate, Repair and Validate so hits are committed only after successful validation.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/pipeline/orchestrator.ts",
-            "parentId": "9307"
+            "parentId": "9307",
+            "updatedAt": "2025-11-28T23:08:14.344Z"
           },
           {
             "id": 9307003,
@@ -509,7 +510,7 @@
             "parentId": "9307"
           }
         ],
-        "updatedAt": "2025-11-28T22:48:08.680Z"
+        "updatedAt": "2025-11-28T23:08:14.344Z"
       },
       {
         "id": "9308",
@@ -986,7 +987,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-28T22:48:08.681Z",
+      "lastModified": "2025-11-28T23:08:14.345Z",
       "taskCount": 18,
       "completedCount": 6,
       "tags": [

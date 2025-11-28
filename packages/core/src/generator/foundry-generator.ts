@@ -123,6 +123,7 @@ export interface GeneratorStageOutput {
 interface GeneratorCoverageOptions {
   mode: CoverageMode;
   emit: (event: CoverageEvent) => void;
+  emitForItem?: (itemIndex: number, event: CoverageEvent) => void;
 }
 
 export interface FoundryGeneratorOptions {
@@ -200,6 +201,7 @@ class GeneratorEngine {
   private readonly multipleOfEpsilon: number;
   private readonly preferExamples: boolean;
   private readonly coverage?: GeneratorCoverageOptions;
+  private currentItemIndex: number | null = null;
   // E-Trace cache: per-candidate object instance → per-name proof (or null for negative).
   // Ephemeral per GeneratorEngine; keys are not retained strongly (WeakMap).
   private eTraceCache: WeakMap<
@@ -255,6 +257,7 @@ class GeneratorEngine {
     }
     const items: unknown[] = [];
     for (let index = 0; index < count; index += 1) {
+      this.currentItemIndex = index;
       items.push(this.generateValue(this.rootSchema, '', index));
     }
 
@@ -3047,7 +3050,12 @@ class GeneratorEngine {
     const mode = this.coverage.mode;
     if (mode !== 'measure' && mode !== 'guided') return;
     try {
-      this.coverage.emit(event);
+      if (typeof this.coverage.emitForItem === 'function') {
+        const index = this.currentItemIndex ?? 0;
+        this.coverage.emitForItem(index, event);
+      } else {
+        this.coverage.emit(event);
+      }
     } catch {
       // Coverage hooks must never affect generation behavior.
     }

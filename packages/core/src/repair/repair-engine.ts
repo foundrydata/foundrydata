@@ -649,6 +649,7 @@ export interface RepairItemsResult {
 interface RepairCoverageOptions {
   mode: CoverageMode;
   emit: (event: CoverageEvent) => void;
+  emitForItem?: (itemIndex: number, event: CoverageEvent) => void;
 }
 
 function canonicalizeCoveragePath(pointer: string): string {
@@ -661,18 +662,24 @@ function canonicalizeCoveragePath(pointer: string): string {
 function emitPropertyPresentFromRepair(
   coverage: RepairCoverageOptions | undefined,
   canonPath: string,
-  propertyName: string
+  propertyName: string,
+  itemIndex?: number
 ): void {
   if (!coverage) return;
   const mode = coverage.mode;
   if (mode !== 'measure' && mode !== 'guided') return;
   try {
-    coverage.emit({
+    const event: CoverageEvent = {
       dimension: 'structure',
       kind: 'PROPERTY_PRESENT',
       canonPath: canonicalizeCoveragePath(canonPath),
       params: { propertyName },
-    });
+    };
+    if (typeof coverage.emitForItem === 'function' && itemIndex !== undefined) {
+      coverage.emitForItem(itemIndex, event);
+    } else {
+      coverage.emit(event);
+    }
   } catch {
     // Coverage hooks must never affect repair behavior.
   }
@@ -722,6 +729,7 @@ export function repairItemsAjvDriven(
     schema,
     effective.canonical
   );
+  let itemIndex = 0;
   for (const original of items) {
     // Fast-path: validate original without cloning to minimize overhead
     let pass = validateFn(original);
@@ -1106,7 +1114,8 @@ export function repairItemsAjvDriven(
             emitPropertyPresentFromRepair(
               coverage,
               buildPropertyPointer(canonPathReq, missing),
-              missing
+              missing,
+              itemIndex
             );
             changed = true;
             actions.push({
@@ -1142,7 +1151,8 @@ export function repairItemsAjvDriven(
           emitPropertyPresentFromRepair(
             coverage,
             buildPropertyPointer(canonPathReq, missing),
-            missing
+            missing,
+            itemIndex
           );
           changed = true;
           actions.push({
@@ -1784,6 +1794,8 @@ export function repairItemsAjvDriven(
         },
       });
     }
+
+    itemIndex += 1;
   }
 
   return { items: repaired, diagnostics, actions };
