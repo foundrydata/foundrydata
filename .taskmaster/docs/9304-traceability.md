@@ -44,10 +44,10 @@ This document maps the parent task 9304 bullets from Implementation Details, Del
   Covers: [KR2], [KR4], [KR5], [KR6], [DOD1], [DOD2], [DOD3], contributes to [TS1], [TS2], [TS4]. Status: covered.
 
 - **9304.9304003 – Implement coverage summary printer for CI logs**  
-  Covers: [KR3], [DEL2], [DOD4], [TS3]. Status: pending.
+  Covers: [KR3], [DEL2], [DOD4], [TS3]. Status: covered.
 
 - **9304.9304004 – Add CLI tests for coverage modes and thresholds**  
-  Covers: [DEL3], [DOD2], [DOD3], [DOD5], [TS1], [TS2], [TS3], [TS4]. Status: pending.
+  Covers: [DEL3], [DOD2], [DOD3], [DOD5], [TS1], [TS2], [TS3], [TS4]. Status: covered.
 
 *** Update File: PLAN.md
 @@

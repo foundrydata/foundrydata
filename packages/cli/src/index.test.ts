@@ -186,6 +186,96 @@ describe('CLI generate command', () => {
     );
   });
 
+  it('fails fast on unknown coverage dimensions with a clear error', async () => {
+    const { dir, schemaPath } = await createSchemaFixture();
+
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(((
+      code?: number
+    ) => {
+      throw new Error(`EXIT:${code ?? 0}`);
+    }) as never);
+
+    const errorChunks: string[] = [];
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(((
+      msg?: unknown
+    ) => {
+      if (msg !== undefined) {
+        errorChunks.push(String(msg));
+      }
+    }) as never);
+
+    try {
+      await expect(
+        main([
+          'node',
+          'foundrydata',
+          'generate',
+          '--schema',
+          schemaPath,
+          '--n',
+          '1',
+          '--coverage',
+          'measure',
+          '--coverage-dimensions',
+          'structure,unknown-dimension',
+        ])
+      ).rejects.toThrow(/EXIT:/);
+
+      const stderr = errorChunks.join('\n');
+      expect(stderr).toMatch(/Unknown coverage dimensions/i);
+    } finally {
+      exitSpy.mockRestore();
+      consoleErrorSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('emits coverage summary on stderr when coverage=measure is enabled', async () => {
+    const { dir, schemaPath } = await createSchemaFixture();
+
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      await program.parseAsync(
+        [
+          'generate',
+          '--schema',
+          schemaPath,
+          '--n',
+          '3',
+          '--out',
+          'ndjson',
+          '--coverage',
+          'measure',
+          '--coverage-dimensions',
+          'structure,branches',
+        ],
+        { from: 'user' }
+      );
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+
+    const stderr = stderrChunks.join('');
+    expect(stderr).toMatch(/coverage by dimension:/i);
+    expect(stderr).toMatch(/coverage overall:/i);
+  });
+
   it('exits with non-zero code when schema file is missing', async () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(((
       code?: number
@@ -457,5 +547,55 @@ describe('CLI openapi command', () => {
     expect(stderr).toMatch(
       /coverage-min\/coverage-report are ignored|ignored when coverage=off/i
     );
+  });
+
+  it('emits coverage summary on stderr for openapi when coverage=measure is enabled', async () => {
+    const { dir, specPath } = await createOpenApiFixture();
+
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      await program.parseAsync(
+        [
+          'openapi',
+          '--spec',
+          specPath,
+          '--path',
+          '/users',
+          '--method',
+          'get',
+          '--n',
+          '3',
+          '--out',
+          'ndjson',
+          '--coverage',
+          'measure',
+          '--coverage-dimensions',
+          'structure,branches',
+        ],
+        { from: 'user' }
+      );
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+
+    const stderr = stderrChunks.join('');
+    expect(stderr).toMatch(/coverage by dimension:/i);
+    expect(stderr).toMatch(/coverage overall:/i);
   });
 });
