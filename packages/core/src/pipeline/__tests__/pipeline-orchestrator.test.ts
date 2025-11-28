@@ -289,4 +289,60 @@ describe('executePipeline', () => {
     expect(propertyTargets.length).toBeGreaterThan(0);
     expect(propertyTargets.some((t) => (t as any).hit === true)).toBe(true);
   });
+
+  it('emits identical final items for coverage=off vs coverage=measure', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        kind: { enum: ['alpha', 'beta'] },
+        alphaPayload: { type: 'string', minLength: 1 },
+        betaPayload: { type: 'string', minLength: 1 },
+      },
+      required: ['kind'],
+      allOf: [
+        {
+          if: {
+            properties: { kind: { const: 'alpha' } },
+            required: ['kind'],
+          },
+          then: {
+            required: ['alphaPayload'],
+          },
+          else: {
+            required: ['betaPayload'],
+          },
+        },
+      ],
+    } as const;
+
+    const baseOptions = {
+      generate: { count: 5, seed: 37 },
+      validate: { validateFormats: false },
+    } as const;
+
+    const off = await executePipeline(schema, {
+      ...baseOptions,
+      coverage: { mode: 'off' },
+    });
+    const measure = await executePipeline(schema, {
+      ...baseOptions,
+      coverage: { mode: 'measure' },
+    });
+
+    expect(measure.status).toBe(off.status);
+    expect(measure.timeline).toEqual(off.timeline);
+
+    const finalOff =
+      off.artifacts.repaired ?? off.artifacts.generated?.items ?? [];
+    const finalMeasure =
+      measure.artifacts.repaired ?? measure.artifacts.generated?.items ?? [];
+
+    expect(finalMeasure).toEqual(finalOff);
+
+    expect(off.artifacts.coverageTargets).toBeUndefined();
+    const measureTargets = measure.artifacts.coverageTargets ?? [];
+    expect(measureTargets.length).toBeGreaterThan(0);
+  });
 });

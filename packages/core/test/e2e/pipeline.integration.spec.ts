@@ -661,6 +661,65 @@ describe('Foundry pipeline integration scenarios', () => {
     });
   });
 
+  describe('Coverage mode equivalence', () => {
+    const getFinalItems = (
+      result: Awaited<ReturnType<typeof executePipeline>>
+    ): unknown[] => {
+      const generated = result.artifacts.generated?.items ?? [];
+      return result.artifacts.repaired ?? generated;
+    };
+
+    it('keeps final items identical for coverage=off vs measure on conditional branches', async () => {
+      const baseOptions = {
+        generate: { count: 5, seed: 121 },
+        validate: { validateFormats: false },
+      } as const;
+
+      const off = await executePipeline(conditionalSafeRewriteSchema, {
+        ...baseOptions,
+        coverage: { mode: 'off' },
+      });
+      const measure = await executePipeline(conditionalSafeRewriteSchema, {
+        ...baseOptions,
+        coverage: { mode: 'measure' },
+      });
+
+      expect(measure.status).toBe(off.status);
+      expect(measure.timeline).toEqual(off.timeline);
+
+      expect(getFinalItems(measure)).toEqual(getFinalItems(off));
+
+      expect(off.artifacts.coverageTargets).toBeUndefined();
+      const measureTargets = measure.artifacts.coverageTargets ?? [];
+      expect(measureTargets.length).toBeGreaterThan(0);
+    });
+
+    it('keeps final items identical for coverage=off vs measure on dependentSchemas-based conditionals', async () => {
+      const baseOptions = {
+        generate: { count: 5, seed: 37 },
+        validate: { validateFormats: false },
+      } as const;
+
+      const off = await executePipeline(dependentAllOfCoverageSchema, {
+        ...baseOptions,
+        coverage: { mode: 'off' },
+      });
+      const measure = await executePipeline(dependentAllOfCoverageSchema, {
+        ...baseOptions,
+        coverage: { mode: 'measure' },
+      });
+
+      expect(measure.status).toBe(off.status);
+      expect(measure.timeline).toEqual(off.timeline);
+
+      expect(getFinalItems(measure)).toEqual(getFinalItems(off));
+
+      expect(off.artifacts.coverageTargets).toBeUndefined();
+      const measureTargets = measure.artifacts.coverageTargets ?? [];
+      expect(measureTargets.length).toBeGreaterThan(0);
+    });
+  });
+
   describe('PropertyNames coverage', () => {
     it('fails fast for gating-only propertyNames.pattern under presence pressure', async () => {
       const result = await executePipeline(propertyNamesPatternSchema, {
