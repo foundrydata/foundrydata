@@ -1,4 +1,10 @@
-import type { CoverageReport, CoverageTargetReport } from '@foundrydata/shared';
+/* eslint-disable max-lines */
+import { evaluateCoverage } from '@foundrydata/core';
+import type {
+  CoverageDimension,
+  CoverageReport,
+  CoverageTargetReport,
+} from '@foundrydata/shared';
 
 export type CoverageTargetDiffKind =
   | 'unchanged'
@@ -29,6 +35,52 @@ export interface CoverageTargetsDiff {
    * report B, as required by the SPEC multi-run diff section.
    */
   newlyUncovered: CoverageTargetDiffEntry[];
+}
+
+export interface CoverageMetricDelta {
+  from: number;
+  to: number;
+  delta: number;
+}
+
+export interface OperationCoverageDelta extends CoverageMetricDelta {
+  operationKey: string;
+}
+
+export interface CoverageDiffSummary {
+  /**
+   * Delta on metrics.overall computed over the common universe
+   * of targets (unchanged + statusChanged) and dimensions enabled
+   * on both reports.
+   */
+  overall: CoverageMetricDelta;
+  /**
+   * Per-operation deltas over the same common universe.
+   */
+  byOperation: {
+    common: OperationCoverageDelta[];
+    regressions: OperationCoverageDelta[];
+    improvements: OperationCoverageDelta[];
+  };
+  /**
+   * Operations that only appear (with at least one metric-contributing
+   * target) in the baseline report A.
+   */
+  operationsOnlyInA: string[];
+  /**
+   * Operations that only appear in the comparison report B.
+   */
+  operationsOnlyInB: string[];
+  /**
+   * Newly uncovered targets in B (either added and uncovered, or
+   * regressed from hit:true → hit:false).
+   */
+  newlyUncovered: CoverageTargetDiffEntry[];
+}
+
+export interface CoverageReportsDiff {
+  targets: CoverageTargetsDiff;
+  summary: CoverageDiffSummary;
 }
 
 function makeTargetKey(target: CoverageTargetReport): string {
@@ -141,4 +193,138 @@ export function diffCoverageTargets(
   }
 
   return { targets, newlyUncovered };
+}
+
+// eslint-disable-next-line max-lines-per-function
+export function diffCoverageReports(
+  reportA: CoverageReport,
+  reportB: CoverageReport
+): CoverageReportsDiff {
+  const targetsDiff = diffCoverageTargets(reportA, reportB);
+
+  const commonTargetsA: CoverageTargetReport[] = [];
+  const commonTargetsB: CoverageTargetReport[] = [];
+
+  for (const entry of targetsDiff.targets) {
+    if (entry.kind === 'unchanged' || entry.kind === 'statusChanged') {
+      if (entry.from) {
+        commonTargetsA.push(entry.from);
+      }
+      if (entry.to) {
+        commonTargetsB.push(entry.to);
+      }
+    }
+  }
+
+  const commonDimensions = intersectDimensions(
+    reportA.run.dimensionsEnabled,
+    reportB.run.dimensionsEnabled
+  );
+
+  const coverageA = evaluateCoverage({
+    targets: commonTargetsA,
+    dimensionsEnabled: commonDimensions,
+    excludeUnreachable: reportA.run.excludeUnreachable,
+  });
+
+  const coverageB = evaluateCoverage({
+    targets: commonTargetsB,
+    dimensionsEnabled: commonDimensions,
+    excludeUnreachable: reportB.run.excludeUnreachable,
+  });
+
+  const overall: CoverageMetricDelta = {
+    from: coverageA.metrics.overall,
+    to: coverageB.metrics.overall,
+    delta: coverageB.metrics.overall - coverageA.metrics.overall,
+  };
+
+  const {
+    deltas: byOperationDeltas,
+    operationsOnlyInA,
+    operationsOnlyInB,
+  } = computeOperationDeltas(
+    coverageA.metrics.byOperation,
+    coverageB.metrics.byOperation
+  );
+
+  const regressions = byOperationDeltas.filter((d) => d.delta < 0);
+  const improvements = byOperationDeltas.filter((d) => d.delta > 0);
+
+  const summary: CoverageDiffSummary = {
+    overall,
+    byOperation: {
+      common: byOperationDeltas,
+      regressions,
+      improvements,
+    },
+    operationsOnlyInA,
+    operationsOnlyInB,
+    newlyUncovered: targetsDiff.newlyUncovered,
+  };
+
+  return {
+    targets: targetsDiff,
+    summary,
+  };
+}
+
+function intersectDimensions(
+  dimsA: readonly CoverageDimension[],
+  dimsB: readonly CoverageDimension[]
+): CoverageDimension[] {
+  const setB = new Set<CoverageDimension>(dimsB);
+  const common: CoverageDimension[] = [];
+
+  for (const dim of dimsA) {
+    if (setB.has(dim) && !common.includes(dim)) {
+      common.push(dim);
+    }
+  }
+
+  return common;
+}
+
+function computeOperationDeltas(
+  byOpA: Record<string, number>,
+  byOpB: Record<string, number>
+): {
+  deltas: OperationCoverageDelta[];
+  operationsOnlyInA: string[];
+  operationsOnlyInB: string[];
+} {
+  const opsA = Object.keys(byOpA);
+  const opsB = Object.keys(byOpB);
+
+  const setA = new Set(opsA);
+  const setB = new Set(opsB);
+
+  const commonOps: string[] = [];
+  for (const op of opsA) {
+    if (setB.has(op)) {
+      commonOps.push(op);
+    }
+  }
+
+  commonOps.sort();
+
+  const operationsOnlyInA = opsA.filter((op) => !setB.has(op)).sort();
+  const operationsOnlyInB = opsB.filter((op) => !setA.has(op)).sort();
+
+  const deltas: OperationCoverageDelta[] = commonOps.map((operationKey) => {
+    const from = byOpA[operationKey] ?? 0;
+    const to = byOpB[operationKey] ?? 0;
+    return {
+      operationKey,
+      from,
+      to,
+      delta: to - from,
+    };
+  });
+
+  return {
+    deltas,
+    operationsOnlyInA,
+    operationsOnlyInB,
+  };
 }

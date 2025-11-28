@@ -5,7 +5,7 @@
   "coverage-aware-v1": {
     "tasks": [
       {
-        "id": 9300,
+        "id": "9300",
         "title": "Define coverage core types and ID semantics",
         "description": "Introduce CoverageTarget, CoverageGraph and related types with deterministic, stable IDs for coverage-aware runs.",
         "priority": "high",
@@ -56,7 +56,7 @@
         "updatedAt": "2025-11-27T22:28:08.637Z"
       },
       {
-        "id": 9301,
+        "id": "9301",
         "title": "Implement CoverageAnalyzer from canonical Compose artifacts",
         "description": "Build CoverageAnalyzer to derive the CoverageGraph and full CoverageTarget set from Normalize/Compose artifacts.",
         "priority": "high",
@@ -123,7 +123,7 @@
         "updatedAt": "2025-11-27T23:34:31.947Z"
       },
       {
-        "id": 9302,
+        "id": "9302",
         "title": "Add passive coverage instrumentation for measurement mode (M0)",
         "description": "Instrument generator and repair stages to emit coverage events for structure, branches and enums in coverage=measure mode without changing generated instances.",
         "priority": "high",
@@ -191,7 +191,7 @@
         "updatedAt": "2025-11-28T18:49:48.162Z"
       },
       {
-        "id": 9303,
+        "id": "9303",
         "title": "Implement coverage report format and CoverageEvaluator",
         "description": "Aggregate coverage results into the versioned JSON coverage-report/v1 format and expose coverage metrics and uncovered targets.",
         "priority": "high",
@@ -260,7 +260,7 @@
         "updatedAt": "2025-11-28T20:15:31.394Z"
       },
       {
-        "id": 9304,
+        "id": "9304",
         "title": "Add CLI coverage modes, options and CI-friendly summary",
         "description": "Expose coverage=off|measure|guided, dimensions, thresholds and report path via CLI flags and print a human-readable coverage summary for CI logs.",
         "priority": "high",
@@ -330,7 +330,7 @@
         "updatedAt": "2025-11-28T21:28:04.610Z"
       },
       {
-        "id": 9305,
+        "id": "9305",
         "title": "Implement static CoveragePlanner for guided coverage (M1)",
         "description": "Create a greedy, deterministic CoveragePlanner that proposes TestUnits with hints and respects maxInstances and planner caps.",
         "priority": "high",
@@ -394,7 +394,7 @@
         ]
       },
       {
-        "id": 9306,
+        "id": "9306",
         "title": "Wire coverage hints into generator with conflict resolution and unsatisfied hints",
         "description": "Implement preferBranch, ensurePropertyPresence and coverEnumValue hints in the generator and record unsatisfied hints and reasons.",
         "priority": "high",
@@ -457,7 +457,7 @@
         ]
       },
       {
-        "id": 9307,
+        "id": "9307",
         "title": "Implement streaming coverage instrumentation with per-instance commit",
         "description": "Upgrade coverage instrumentation to a streaming model that updates coverage as instances flow through Generate, Repair and Validate without a second JSON parse.",
         "priority": "medium",
@@ -510,7 +510,7 @@
         ]
       },
       {
-        "id": 9308,
+        "id": "9308",
         "title": "Enforce global minCoverage threshold and map to exit codes",
         "description": "Wire metrics.overall to a configurable minCoverage threshold and ensure CLI and Node API expose structured coverageStatus results.",
         "priority": "medium",
@@ -554,7 +554,7 @@
         ]
       },
       {
-        "id": 9309,
+        "id": "9309",
         "title": "Add boundaries coverage dimension and instrumentation (M2)",
         "description": "Extend coverage model, analyzer and instrumentation to track hits for numeric, string and array boundary constraints.",
         "priority": "medium",
@@ -609,7 +609,7 @@
         ]
       },
       {
-        "id": 9310,
+        "id": "9310",
         "title": "Implement OpenAPI per-operation coverage and byOperation metrics (M2)",
         "description": "Track coverage per OpenAPI operation, including OP_REQUEST_COVERED, OP_RESPONSE_COVERED, SCHEMA_REUSED_COVERED and coverage.byOperation ratios.",
         "priority": "medium",
@@ -664,7 +664,7 @@
         ]
       },
       {
-        "id": 9311,
+        "id": "9311",
         "title": "Add coverage diff tool for multi-run comparison (M2)",
         "description": "Provide a coverage diff command that compares two coverage-report/v1 files and highlights regressions, added and removed targets.",
         "priority": "medium",
@@ -691,11 +691,11 @@
             "id": 9311002,
             "title": "Compute metric deltas and regressions",
             "description": "Compute changes in metrics.overall and metrics.byOperation over targets present in both reports (unchanged + statusChanged) and expose them in a diff summary structure, reporting newly added uncovered targets separately as new gaps.",
-            "status": "in-progress",
+            "status": "done",
             "estimatedHours": 2,
             "file": "packages/reporter/src/coverage/coverage-diff.ts",
             "parentId": "9311",
-            "updatedAt": "2025-11-28T21:58:32.257Z"
+            "updatedAt": "2025-11-28T22:10:00.135Z"
           },
           {
             "id": 9311003,
@@ -716,10 +716,10 @@
             "parentId": "9311"
           }
         ],
-        "updatedAt": "2025-11-28T21:58:32.257Z"
+        "updatedAt": "2025-11-28T22:10:00.135Z"
       },
       {
-        "id": 9312,
+        "id": "9312",
         "title": "Validate coverage invariants, determinism and acceptance scenarios",
         "description": "Add cross-cutting tests and documentation that ensure coverage-aware behavior respects core invariants and satisfies all acceptance criteria.",
         "priority": "medium",
@@ -779,7 +779,7 @@
         ]
       },
       {
-        "id": 9320,
+        "id": "9320",
         "title": "Document coverage-aware modes and CLI usage in README",
         "description": "Update top-level README.md with coverage=off|measure|guided modes, dimensions, thresholds and examples for CLI and Node API.",
         "priority": "medium",
@@ -824,7 +824,7 @@
         ]
       },
       {
-        "id": 9321,
+        "id": "9321",
         "title": "Align feature and limits docs with coverage-aware behavior",
         "description": "Update COMPREHENSIVE_FEATURE_SUPPORT.md, Features.md and Known-Limits.md to describe coverage-aware v1 semantics, dimensions and guarded behaviors.",
         "priority": "medium",
@@ -872,7 +872,7 @@
         ]
       },
       {
-        "id": 9322,
+        "id": "9322",
         "title": "Extend invariants and architecture docs for coverage-aware pipeline",
         "description": "Document coverage-aware invariants and architecture, and add an evaluation hook for coverage usage.",
         "priority": "medium",
@@ -919,7 +919,7 @@
         ]
       },
       {
-        "id": 9323,
+        "id": "9323",
         "title": "Document coverage-report/v1 and coverage diff tooling",
         "description": "Extend reporter docs with coverage-report/v1 contract and coverage diff CLI usage.",
         "priority": "medium",
@@ -965,16 +965,16 @@
         ]
       },
       {
-        "id": 9324,
+        "id": "9324",
         "title": "Add coverage-aware CLI examples and use cases docs",
         "description": "Update docs/use-cases/product-scenarios.md and examples/README.md to demonstrate coverage-aware modes (measure/guided), profiles (quick/balanced/thorough), and CI integration patterns with practical examples.",
         "details": "[Context]\nExtend user-facing documentation to showcase coverage-aware capabilities introduced in M0/M1, per spec §6 (Execution modes & UX) and §7 (Reporting & observability). The examples and use cases should help developers understand when and how to use coverage modes, profiles, and thresholds in CI/CD workflows.\n\n[Key requirements]\n- Update `docs/use-cases/product-scenarios.md` to add new scenarios or extend existing ones (API mocks, contract tests, LLM testing) with coverage-aware examples showing:\n  - `coverage=measure` for passive coverage tracking without changing output\n  - `coverage=guided` for coverage-oriented generation with hints\n  - Profile selection (`--coverage-profile quick|balanced|thorough`) and their trade-offs\n  - Threshold enforcement (`--coverage-min 0.8`) for CI gates\n  - Coverage report generation (`--coverage-report coverage.json`) and inspection\n  \n- Update `examples/README.md` to include practical CLI examples demonstrating:\n  - Basic coverage measurement with existing example schemas (e.g., `ecommerce-schema.json`, `payment.json`)\n  - Guided coverage runs with dimension selection (`--coverage-dimensions structure,branches,enum`)\n  - Profile usage showing different instance budgets and coverage depth\n  - CI integration pattern with exit code handling for failed thresholds\n  - Reading and interpreting coverage-report/v1 JSON output\n  \n- Add a dedicated subsection to `examples/README.md` titled \"Coverage-aware generation\" that includes:\n  - Quick examples of `coverage=off|measure|guided` modes\n  - Dimension flags (`--coverage-dimensions`)\n  - Profile flags (`--coverage-profile`)\n  - Threshold and report path flags\n  - Sample CI snippet showing coverage threshold enforcement in GitHub Actions or similar\n  \n- Ensure all examples align with implemented CLI flags from task 9304 (coverage-options.ts: mode, dimensionsEnabled, excludeUnreachable, minCoverage, reportPath, profile)\n\n- Reference spec anchors for deeper reading but keep examples practical and copy-paste ready\n\n[Implementation notes]\n- Use existing example schemas (ecommerce-schema.json, payment.json, users-api.json) as test subjects\n- Show realistic instance counts and thresholds (e.g., `--n 100 --coverage-min 0.75`)\n- Demonstrate `--print-metrics` and `--debug-passes` for observability\n- Include a simple CI script example (bash/yaml) that runs coverage and fails the build if coverage < threshold\n- Keep examples concise and focused on one coverage feature at a time\n- Add cross-references between use-cases and examples for discoverability",
         "testStrategy": "Doc review checklist:\n- Verify all CLI flags referenced in examples match coverage-options.ts implementation (mode, dimensions, profile, minCoverage, reportPath, excludeUnreachable)\n- Run each CLI example command manually to confirm it executes without error and produces expected coverage output\n- Validate that coverage JSON report examples reference the correct coverage-report/v1 schema from spec §7.1\n- Check that CI integration examples are syntactically valid for target platforms (GitHub Actions, GitLab CI, or generic bash)\n- Confirm that product-scenarios.md examples align with existing scenario structure (User context, Goal, Success criteria, CLI example, Node API example, Friction/gaps, Current status)\n- Ensure cross-references between docs/use-cases and examples/README.md are correct and navigable\n- Snapshot test one or two coverage examples in CI to ensure they remain valid as coverage implementation evolves",
         "status": "pending",
         "dependencies": [
-          9302,
-          9303,
-          9304
+          "9302",
+          "9303",
+          "9304"
         ],
         "priority": "medium",
         "subtasks": []
@@ -982,8 +982,8 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-28T21:58:32.258Z",
-      "taskCount": 17,
+      "lastModified": "2025-11-28T22:10:00.136Z",
+      "taskCount": 18,
       "completedCount": 5,
       "tags": [
         "coverage-aware-v1"
