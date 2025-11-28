@@ -39,6 +39,18 @@ export {
   type CoverageReportArrays,
 } from './evaluator.js';
 
+export {
+  diffCoverageTargets,
+  diffCoverageReports,
+  type CoverageTargetDiffKind,
+  type CoverageTargetDiffEntry,
+  type CoverageTargetsDiff,
+  type CoverageReportsDiff,
+  type CoverageDiffSummary,
+  type CoverageMetricDelta,
+  type OperationCoverageDelta,
+} from './diff.js';
+
 export type CoverageGraphNodeKind =
   | 'schema'
   | 'property'

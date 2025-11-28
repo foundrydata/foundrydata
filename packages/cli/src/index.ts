@@ -48,6 +48,7 @@ import {
 import { printComposeDebug } from './debug.js';
 import { resolveCliCoverageOptions } from './config/coverage-options.js';
 import { formatCoverageSummary } from './coverage/coverage-summary.js';
+import { registerCoverageDiffCommand } from './commands/coverage-diff.js';
 
 const program = new Command();
 
@@ -552,6 +553,8 @@ program
       await handleCliError(err);
     }
   });
+
+registerCoverageDiffCommand(program);
 
 function handlePipelineOutput(
   result: PipelineResult,

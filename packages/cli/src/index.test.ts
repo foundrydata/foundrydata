@@ -6,6 +6,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 import { Validate as PublicValidate } from '@foundrydata/core';
 import { main, program } from './index.js';
+import type { CoverageReport, CoverageTargetReport } from '@foundrydata/shared';
 
 async function createSchemaFixture(): Promise<{
   dir: string;
@@ -69,6 +70,22 @@ async function createOpenApiFixture(): Promise<{
   await writeFile(specPath, JSON.stringify(document), 'utf8');
 
   return { dir, specPath, responseSchema };
+}
+
+async function createCoverageReportFixture(reports: {
+  baseline: CoverageReport;
+  comparison: CoverageReport;
+}): Promise<{ dir: string; baselinePath: string; comparisonPath: string }> {
+  const dir = await mkdtemp(
+    path.join(os.tmpdir(), 'foundrydata-cli-coverage-diff-')
+  );
+  const baselinePath = path.join(dir, 'baseline.json');
+  const comparisonPath = path.join(dir, 'comparison.json');
+
+  await writeFile(baselinePath, JSON.stringify(reports.baseline), 'utf8');
+  await writeFile(comparisonPath, JSON.stringify(reports.comparison), 'utf8');
+
+  return { dir, baselinePath, comparisonPath };
 }
 
 describe('CLI generate command', () => {
@@ -648,5 +665,164 @@ describe('CLI openapi command', () => {
     const stderr = stderrChunks.join('');
     expect(stderr).toMatch(/coverage by dimension:/i);
     expect(stderr).toMatch(/coverage overall:/i);
+  });
+});
+
+describe('CLI coverage diff command', () => {
+  function makeBaseReport(): CoverageReport {
+    return {
+      version: 'coverage-report/v1',
+      reportMode: 'full',
+      engine: {
+        foundryVersion: '0.0.0',
+        coverageMode: 'measure',
+        ajvMajor: 8,
+      },
+      run: {
+        seed: 1,
+        masterSeed: 1,
+        maxInstances: 10,
+        actualInstances: 10,
+        dimensionsEnabled: ['structure'],
+        excludeUnreachable: false,
+        startedAt: '2025-01-01T00:00:00Z',
+        durationMs: 1,
+      },
+      metrics: {
+        coverageStatus: 'ok',
+        overall: 0.5,
+        byDimension: { structure: 0.5 },
+        byOperation: { getUser: 0.5 },
+        targetsByStatus: { active: 2 },
+      },
+      targets: [],
+      uncoveredTargets: [],
+      unsatisfiedHints: [],
+      diagnostics: {
+        plannerCapsHit: [],
+        notes: [],
+      },
+    };
+  }
+
+  function makeTarget(id: string, hit: boolean): CoverageTargetReport {
+    return {
+      id,
+      dimension: 'structure',
+      kind: 'SCHEMA_NODE',
+      canonPath: '#',
+      hit,
+    } as CoverageTargetReport;
+  }
+
+  it('prints a human-readable summary and keeps exit code at 0 when there is no regression', async () => {
+    const base = makeBaseReport();
+    const comparison: CoverageReport = {
+      ...base,
+      metrics: {
+        ...base.metrics,
+        overall: 0.7,
+        byDimension: { structure: 0.7 },
+        byOperation: { getUser: 0.7 },
+      },
+    };
+
+    const { dir, baselinePath, comparisonPath } =
+      await createCoverageReportFixture({
+        baseline: base,
+        comparison,
+      });
+
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      const previousExitCode = process.exitCode;
+
+      process.exitCode = undefined;
+
+      await program.parseAsync(
+        ['coverage', 'diff', baselinePath, comparisonPath],
+        { from: 'user' }
+      );
+
+      const stdout = stdoutChunks.join('');
+      expect(stdout).toMatch(/coverage diff:/i);
+      expect(stdout).toMatch(/overall:/i);
+      expect(process.exitCode ?? 0).toBe(0);
+
+      // Restore previous exit code to avoid leaking state across tests.
+
+      process.exitCode = previousExitCode;
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('sets non-zero exit code when regressions or new gaps are detected', async () => {
+    const base = makeBaseReport();
+    const comparison = makeBaseReport();
+
+    base.targets = [makeTarget('t1', true), makeTarget('t2', true)];
+    comparison.targets = [makeTarget('t1', true), makeTarget('t2', false)];
+
+    const { dir, baselinePath, comparisonPath } =
+      await createCoverageReportFixture({
+        baseline: base,
+        comparison,
+      });
+
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      const previousExitCode = process.exitCode;
+
+      process.exitCode = undefined;
+
+      await program.parseAsync(
+        ['coverage', 'diff', baselinePath, comparisonPath],
+        { from: 'user' }
+      );
+
+      const stdout = stdoutChunks.join('');
+      expect(stdout).toMatch(/coverage diff:/i);
+      expect(stdout).toMatch(/overall:/i);
+      expect(process.exitCode).toBe(1);
+
+      // Restore previous exit code to avoid leaking state across tests.
+
+      process.exitCode = previousExitCode;
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });
