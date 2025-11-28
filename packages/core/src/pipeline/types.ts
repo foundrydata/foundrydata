@@ -22,7 +22,11 @@ import type {
   CoverageTarget,
   CoverageReport,
 } from '@foundrydata/shared';
-import type { CoverageGraph, CoverageMetrics } from '../coverage/index.js';
+import type {
+  CoverageGraph,
+  CoverageMetrics,
+  CoveragePlannerUserOptions,
+} from '../coverage/index.js';
 
 export type PipelineStageName =
   | 'normalize'
@@ -169,6 +173,12 @@ export interface PipelineOptions {
      * 'minCoverageNotMet' when metrics.overall < minCoverage.
      */
     minCoverage?: number;
+    /**
+     * Optional planner configuration for coverage=guided.
+     * When present, it refines how the planner uses the
+     * global maxInstances budget and dimension priorities.
+     */
+    planner?: CoveragePlannerUserOptions;
   };
   generate?: {
     count?: number;
