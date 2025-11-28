@@ -279,30 +279,31 @@
             "id": 9304001,
             "title": "Add coverage flags to generate and openapi commands",
             "description": "Extend CLI argument parsing to accept coverage mode, dimensions, minCoverage, report path, profile and excludeUnreachable options.",
-            "status": "in-progress",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/cli/src/commands/generate.ts",
             "parentId": "9304",
-            "updatedAt": "2025-11-28T20:38:00.368Z"
+            "updatedAt": "2025-11-28T21:04:06.170Z"
           },
           {
             "id": 9304002,
             "title": "Map CLI coverage options to core pipeline configuration",
             "description": "Translate CLI flags into the coverage configuration passed to the pipeline orchestrator and coverage evaluator, ensuring coverage=off fully skips CoverageAnalyzer and coverage instrumentation, that coverage-report and minCoverage-related options are ignored (with a clear warning or note) when coverage=off, and that unknown or not-yet-implemented dimensions in --coverage-dimensions are handled deterministically (either rejected with a clear error or dropped with a diagnostic note).",
-            "status": "in-progress",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/cli/src/config/coverage-options.ts",
             "parentId": "9304",
-            "updatedAt": "2025-11-28T20:51:22.894Z"
+            "updatedAt": "2025-11-28T21:04:14.482Z"
           },
           {
             "id": 9304003,
             "title": "Implement coverage summary printer for CI logs",
             "description": "Format metrics.byDimension, metrics.byOperation, metrics.overall, targetsByStatus and diagnostics into a concise CLI summary, with per-dimension and per-operation metrics emphasized before overall.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/cli/src/coverage/coverage-summary.ts",
-            "parentId": "9304"
+            "parentId": "9304",
+            "updatedAt": "2025-11-28T21:09:13.627Z"
           },
           {
             "id": 9304004,
@@ -314,7 +315,7 @@
             "parentId": "9304"
           }
         ],
-        "updatedAt": "2025-11-28T20:51:22.894Z"
+        "updatedAt": "2025-11-28T21:09:13.627Z"
       },
       {
         "id": "9305",
@@ -765,7 +766,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-28T20:51:22.895Z",
+      "lastModified": "2025-11-28T21:09:13.628Z",
       "taskCount": 13,
       "completedCount": 4,
       "tags": [

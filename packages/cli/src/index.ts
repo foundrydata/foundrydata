@@ -47,6 +47,7 @@ import {
 } from './flags.js';
 import { printComposeDebug } from './debug.js';
 import { resolveCliCoverageOptions } from './config/coverage-options.js';
+import { formatCoverageSummary } from './coverage/coverage-summary.js';
 
 const program = new Command();
 
@@ -253,6 +254,13 @@ program
         options.printMetrics === true,
         outFormat
       );
+
+      if (pipelineResult.artifacts.coverageReport) {
+        const summary = formatCoverageSummary(
+          pipelineResult.artifacts.coverageReport
+        );
+        process.stderr.write(`[foundrydata] coverage: ${summary}\n`);
+      }
     } catch (err: unknown) {
       await handleCliError(err);
     }
@@ -493,6 +501,13 @@ program
         options.printMetrics === true,
         outFormat
       );
+
+      if (pipelineResult.artifacts.coverageReport) {
+        const summary = formatCoverageSummary(
+          pipelineResult.artifacts.coverageReport
+        );
+        process.stderr.write(`[foundrydata] coverage: ${summary}\n`);
+      }
     } catch (err: unknown) {
       await handleCliError(err);
     }
