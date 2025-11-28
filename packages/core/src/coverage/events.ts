@@ -1,3 +1,5 @@
+/* eslint-disable max-lines-per-function */
+/* eslint-disable max-lines */
 /* eslint-disable complexity */
 import type {
   CoverageDimension,
@@ -78,6 +80,26 @@ export type CoverageEvent =
   | ConditionalPathHitEvent
   | EnumValueHitEvent;
 
+export interface InstanceCoverageState {
+  /**
+   * Record a coverage event for a single candidate instance.
+   * This must not mutate any global coverage bitmaps; hits are
+   * only propagated when the instance is explicitly committed.
+   */
+  record(event: CoverageEvent): void;
+
+  /**
+   * Return the set of CoverageTarget IDs hit for this instance.
+   */
+  getHitTargetIds(): ReadonlySet<string>;
+
+  /**
+   * Reset the per-instance state so it can be reused for a new
+   * candidate instance without affecting previously committed hits.
+   */
+  reset(): void;
+}
+
 export interface CoverageAccumulator {
   /**
    * Record a coverage event for a single emitted instance.
@@ -111,6 +133,20 @@ export interface CoverageAccumulator {
    * it never mutates the input targets.
    */
   toReport(targets: CoverageTarget[]): CoverageTargetReport[];
+}
+
+export interface StreamingCoverageAccumulator extends CoverageAccumulator {
+  /**
+   * Create a fresh per-instance coverage state that shares the
+   * same target index as the global accumulator.
+   */
+  createInstanceState(): InstanceCoverageState;
+
+  /**
+   * Commit hits from a per-instance state into the global bitmap.
+   * After commit, the per-instance state can be safely reused.
+   */
+  commitInstance(state: InstanceCoverageState): void;
 }
 
 interface TargetIdentity {
@@ -248,9 +284,7 @@ function buildEventIdentityKey(event: CoverageEvent): string | undefined {
   return buildIdentityKey(identity);
 }
 
-export function createCoverageAccumulator(
-  targets: CoverageTarget[]
-): CoverageAccumulator {
+function buildTargetIdIndex(targets: CoverageTarget[]): Map<string, string> {
   const targetIdByKey = new Map<string, string>();
 
   for (const target of targets) {
@@ -262,12 +296,98 @@ export function createCoverageAccumulator(
     }
   }
 
-  const hitTargetIds = new Set<string>();
+  return targetIdByKey;
+}
+
+function resolveEventTargetId(
+  targetIdByKey: Map<string, string>,
+  event: CoverageEvent
+): string | undefined {
+  const key = buildEventIdentityKey(event);
+  if (!key) return undefined;
+  return targetIdByKey.get(key);
+}
+
+export function createStreamingCoverageAccumulator(
+  targets: CoverageTarget[]
+): StreamingCoverageAccumulator {
+  const targetIdByKey = buildTargetIdIndex(targets);
+  const globalHitTargetIds = new Set<string>();
 
   const record = (event: CoverageEvent): void => {
     const key = buildEventIdentityKey(event);
     if (!key) return;
     const targetId = targetIdByKey.get(key);
+    if (targetId !== undefined) {
+      globalHitTargetIds.add(targetId);
+    }
+  };
+
+  const markTargetHit = (targetId: string): void => {
+    if (!targetId) return;
+    globalHitTargetIds.add(targetId);
+  };
+
+  const isHit = (targetId: string): boolean => globalHitTargetIds.has(targetId);
+
+  const getHitTargetIds = (): ReadonlySet<string> => globalHitTargetIds;
+
+  const toReport = (allTargets: CoverageTarget[]): CoverageTargetReport[] =>
+    allTargets.map((target) => ({
+      ...target,
+      hit: globalHitTargetIds.has(target.id),
+    }));
+
+  const createInstanceState = (): InstanceCoverageState => {
+    const instanceHits = new Set<string>();
+
+    const instanceRecord = (event: CoverageEvent): void => {
+      const targetId = resolveEventTargetId(targetIdByKey, event);
+      if (targetId !== undefined) {
+        instanceHits.add(targetId);
+      }
+    };
+
+    const instanceGetHitTargetIds = (): ReadonlySet<string> => instanceHits;
+
+    const reset = (): void => {
+      instanceHits.clear();
+    };
+
+    return {
+      record: instanceRecord,
+      getHitTargetIds: instanceGetHitTargetIds,
+      reset,
+    };
+  };
+
+  const commitInstance = (state: InstanceCoverageState): void => {
+    for (const targetId of state.getHitTargetIds()) {
+      globalHitTargetIds.add(targetId);
+    }
+    state.reset();
+  };
+
+  return {
+    record,
+    markTargetHit,
+    isHit,
+    getHitTargetIds,
+    toReport,
+    createInstanceState,
+    commitInstance,
+  };
+}
+
+export function createCoverageAccumulator(
+  targets: CoverageTarget[]
+): CoverageAccumulator {
+  const targetIdByKey = buildTargetIdIndex(targets);
+
+  const hitTargetIds = new Set<string>();
+
+  const record = (event: CoverageEvent): void => {
+    const targetId = resolveEventTargetId(targetIdByKey, event);
     if (targetId !== undefined) {
       hitTargetIds.add(targetId);
     }

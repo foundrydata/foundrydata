@@ -21,6 +21,9 @@ export type {
 export {
   createCoverageAccumulator,
   type CoverageAccumulator,
+  createStreamingCoverageAccumulator,
+  type StreamingCoverageAccumulator,
+  type InstanceCoverageState,
   type CoverageEvent,
   type SchemaNodeHitEvent,
   type PropertyPresentHitEvent,
