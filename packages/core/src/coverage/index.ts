@@ -80,6 +80,11 @@ export {
   planTestUnits,
 } from './coverage-planner.js';
 
+export {
+  applyPlannerCaps,
+  type ApplyPlannerCapsResult,
+} from './coverage-planner-caps.js';
+
 export type CoverageGraphNodeKind =
   | 'schema'
   | 'property'
