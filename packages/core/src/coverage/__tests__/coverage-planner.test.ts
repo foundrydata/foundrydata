@@ -3,6 +3,7 @@ import type { CoverageDimension } from '@foundrydata/shared';
 import {
   DEFAULT_PLANNER_DIMENSION_ORDER,
   DEFAULT_PLANNER_DIMENSIONS_ENABLED,
+  assignTestUnitSeeds,
   isCoverageHint,
   planTestUnits,
   resolveCoveragePlannerConfig,
@@ -234,5 +235,39 @@ describe('planTestUnits', () => {
     }
     const operationKey = firstUnit.scope.operationKey!;
     expect(operationKey).toBe('GET /users');
+  });
+
+  it('assigns deterministic seeds from masterSeed and unit id', () => {
+    const targets: CoveragePlannerInput['targets'] = [
+      {
+        id: 't1',
+        dimension: 'branches',
+        kind: 'ONEOF_BRANCH',
+        canonPath: '#/oneOf/0',
+      },
+      {
+        id: 't2',
+        dimension: 'branches',
+        kind: 'ONEOF_BRANCH',
+        canonPath: '#/oneOf/1',
+      },
+    ];
+
+    const config = resolveCoveragePlannerConfig({
+      maxInstances: 2,
+      dimensionsEnabled: ['branches'],
+      dimensionPriority: ['branches'],
+    });
+
+    const baseUnits = planTestUnits(makeInput(targets, config));
+    const unitsRun1 = assignTestUnitSeeds(baseUnits, { masterSeed: 42 });
+    const unitsRun2 = assignTestUnitSeeds(baseUnits, { masterSeed: 42 });
+
+    expect(unitsRun1.map((u) => u.seed)).toEqual(unitsRun2.map((u) => u.seed));
+
+    const unitsOtherSeed = assignTestUnitSeeds(baseUnits, { masterSeed: 43 });
+    expect(unitsOtherSeed.map((u) => u.seed)).not.toEqual(
+      unitsRun1.map((u) => u.seed)
+    );
   });
 });

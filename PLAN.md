@@ -1,24 +1,23 @@
-Task: 9305   Title: 9305.9305003 – Implement planner caps and diagnostics
-Anchors: [cov://§4#coverage-planner, cov://§6#execution-modes-ux, cov://§6#budget-profiles]
+Task: 9305   Title: 9305.9305004 – Derive deterministic seeds for TestUnits
+Anchors: [cov://§4#coverage-planner, cov://§6#execution-modes-ux]
 Touched files:
 - packages/core/src/coverage/index.ts
 - packages/core/src/coverage/coverage-planner.ts
-- packages/core/src/coverage/coverage-planner-caps.ts
 - packages/core/src/pipeline/types.ts
 - .taskmaster/docs/9305-traceability.md
 - PLAN.md
 
 Approach:
-Pour la sous-tâche 9305.9305003, je vais enrichir le planner existant avec une couche de caps déterministes par dimension/schema/operation, sans modifier encore l’orchestrateur ni la dérivation des seeds. Concrètement, j’introduirai un module dédié (`coverage-planner-caps.ts`) qui, à partir de la liste de targets ordonnée (comme dans `planTestUnits`) et d’un `CoveragePlannerConfig`, calcule pour chaque tuple `(dimension, scopeType, scopeKey)` un budget maximal de cibles planifiables (en s’appuyant sur `CoveragePlannerCapsConfig` et des valeurs par défaut raisonnables pour V1). Ce module renverra un ensemble de cibles effectivement planifiées et des structures `PlannerCapHit` synthétiques qui capturent, pour chaque scope affecté, `totalTargets`, `plannedTargets` et `unplannedTargets`.
+Pour la sous-tâche 9305.9305004, je vais ajouter une dérivation déterministe des seeds de TestUnit à partir du masterSeed du run, en respectant le modèle RNG existant (`XorShift32` / `normalizeSeed`) et les contraintes de la SPEC coverage-aware. L’idée est d’exposer une petite API de planning (par exemple une fonction `assignTestUnitSeeds`) qui prend un `masterSeed` normalisé et la liste de `TestUnit` construits par `planTestUnits`, puis qui remplit le champ `seed` de chaque unité à partir d’une fonction pure de `(masterSeed, unitId, scope)` sans introduire de RNG supplémentaire ni perturber le pattern d’appels RNG du générateur. Pour rester aligné avec les usages actuels, je m’appuierai sur `XorShift32` avec un canonPath synthétique dérivé de `TestUnit.id` et éventuellement du `operationKey`, de façon à garantir que la même configuration (schema, options, masterSeed) produise toujours les mêmes seeds de TestUnit.
 
-Sur la base de ces décisions, j’ajouterai un utilitaire qui met à jour les `CoverageTarget` en marquant `meta.planned:false` pour toutes les cibles non sélectionnées par le planner lorsque des caps sont atteints, tout en laissant les cibles hors caps inchangées. Les diagnostics de caps seront exposés sous une forme prête à être consommée par le CoverageEvaluator/rapport (`plannerCapsHit`), mais sans câbler encore cette intégration dans le pipeline (respect du scope de la sous-tâche). Côté tests, je créerai des scénarios unitaires avec des `CoverageTarget` synthétiques couvrant plusieurs dimensions et opérations, en vérifiant que : (1) les caps sont appliqués de façon déterministe, (2) les cibles non planifiées reçoivent bien `meta.planned:false`, et (3) les entrées `PlannerCapHit` reflètent correctement les décomptes total/planned/unplanned pour chaque scope.
+Je laisserai le pipeline et le CoverageReport continuer à traiter `run.seed` et `run.masterSeed` comme aujourd’hui (seed == masterSeed en V1), en me concentrant uniquement sur la cohérence interne des seeds de TestUnit. Côté tests, j’étendrai `coverage-planner.test.ts` pour vérifier que, pour un `masterSeed` donné, l’appel à la nouvelle fonction produit des seeds stables sur plusieurs exécutions et que de petits changements (dans `unit.id` ou `masterSeed`) entraînent des variations attendues. Les tests vérifieront aussi que la dérivation reste pure (mêmes inputs ⇒ mêmes seeds) et ne dépend pas de l’ordre d’appel ou d’un état global caché.
 
 Risks/Unknowns:
-Le principal risque est de choisir une stratégie de caps trop complexe ou trop implicite, difficile à expliquer dans les diagnostics et à stabiliser d’un run à l’autre. Je vais rester sur un modèle simple (par exemple des plafonds par dimension et par scope avec un ordre de priorité clair) et m’assurer que les caps n’affectent jamais le statut ou l’ID des cibles, uniquement leur planification (via `meta.planned:false` et `plannerCapsHit`). Un autre point d’attention est de ne pas surcharger cette sous-tâche avec l’intégration complète dans le CoverageReport; je me limiterai à produire des structures de diagnostics et des mutations de `CoverageTarget.meta` prêtes à être consommées, en laissant le câblage final au niveau du pipeline et du reporter aux tâches dédiées.
+Le principal risque est de créer un système de seeds qui ne soit pas clairement lié au masterSeed ou qui puisse diverger silencieusement si le format des `TestUnit.id`/`scope` change. Je vais limiter la dérivation à une combinaison simple (masterSeed + identifiant stable de TestUnit/operation) documentée dans le code de test, en évitant toute dépendance à l’index d’itération ou à des mutable globals. Autre point d’attention : ne pas introduire une nouvelle source RNG indépendante; j’utiliserai l’implémentation existante `XorShift32` comme fonction pure de hashage pour les seeds de TestUnit, de manière à rester conforme au contrat “pas de RNG supplémentaire” et à faciliter le raisonnement sur la stabilité.
 
-Parent bullets couverts: [KR3, KR4, KR5, DEL2, DOD3, TS4]
+Parent bullets couverts: [KR6, DOD4, TS2]
 
-SPEC-check: conforme aux anchors listés, pas d’écart identifié ; cette sous-tâche se concentre sur la matérialisation des caps déterministes et des diagnostics associés (`meta.planned:false`, structures `plannerCapsHit`), sans modifier l’orchestrateur ni la génération des seeds, ni la logique de calcul des métriques de couverture qui restent sous la responsabilité des tâches 9303 et des sous-tâches ultérieures de 9305.
+SPEC-check: conforme aux anchors listés, pas d’écart identifié ; cette sous-tâche se concentre sur la dérivation déterministe des seeds de TestUnit à partir du masterSeed et de l’identifiant de l’unité, sans modifier la sémantique des modes coverage ni le calcul des métriques, qui restent du ressort des tâches précédentes (9303) et des autres sous-tâches 9305.x.
 
 Checks:
 - build: npm run build

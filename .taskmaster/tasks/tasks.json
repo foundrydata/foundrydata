@@ -380,10 +380,11 @@
             "id": 9305004,
             "title": "Derive deterministic seeds for TestUnits",
             "description": "Implement masterSeed derivation into per-TestUnit seeds and add tests for reproducibility across runs.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/coverage/seed-planner.ts",
-            "parentId": "9305"
+            "parentId": "9305",
+            "updatedAt": "2025-11-28T23:57:18.596Z"
           },
           {
             "id": 9305005,
@@ -395,7 +396,7 @@
             "parentId": "9305"
           }
         ],
-        "updatedAt": "2025-11-28T23:53:13.809Z"
+        "updatedAt": "2025-11-28T23:57:18.596Z"
       },
       {
         "id": "9306",
@@ -993,7 +994,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-28T23:53:13.810Z",
+      "lastModified": "2025-11-28T23:57:18.598Z",
       "taskCount": 18,
       "completedCount": 7,
       "tags": [
