@@ -85,6 +85,7 @@ import {
   COVERAGE_REPORT_VERSION_V1,
   type CoverageMode,
   type CoverageReportMode,
+  type CoverageThresholds,
 } from '@foundrydata/shared';
 import corePackageJson from '../../package.json' assert { type: 'json' };
 
@@ -1117,11 +1118,17 @@ export async function executePipeline(
 
     artifacts.coverageTargets = reportTargets;
 
+    const overallThreshold = options.coverage?.minCoverage;
+    const thresholds: CoverageThresholds | undefined =
+      typeof overallThreshold === 'number'
+        ? { overall: overallThreshold }
+        : undefined;
+
     const coverageInput: CoverageEvaluatorInput = {
       targets: reportTargets,
       dimensionsEnabled: options.coverage?.dimensionsEnabled ?? [],
       excludeUnreachable: options.coverage?.excludeUnreachable ?? false,
-      thresholds: undefined,
+      thresholds,
     };
 
     const coverageResult = evaluateCoverage(coverageInput);

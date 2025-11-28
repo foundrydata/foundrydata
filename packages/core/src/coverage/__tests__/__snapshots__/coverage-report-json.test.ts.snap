@@ -1,0 +1,60 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`coverage-report/v1 JSON snapshots > emits a stable coverage-report/v1 JSON structure for a simple object schema 1`] = `
+{
+  "engine": {
+    "ajvMajor": 8,
+    "coverageMode": "measure",
+    "foundryVersion": "0.1.1",
+  },
+  "metrics": {
+    "byDimension": {
+      "structure": 1,
+    },
+    "byOperation": {},
+    "coverageStatus": "ok",
+    "overall": 1,
+    "targetsByStatus": {
+      "active": 3,
+      "deprecated": 0,
+      "unreachable": 0,
+    },
+  },
+  "reportMode": "full",
+  "run": {
+    "actualInstances": 3,
+    "coverageMode": "measure",
+    "dimensionsEnabled": [
+      "structure",
+      "branches",
+    ],
+    "durationMs": 0,
+    "excludeUnreachable": false,
+    "masterSeed": 37,
+    "maxInstances": 3,
+    "seed": 37,
+    "startedAt": "<normalized-timestamp>",
+  },
+  "targetsByStatus": {
+    "active": 3,
+    "deprecated": 0,
+    "unreachable": 0,
+  },
+  "version": "coverage-report/v1",
+}
+`;
+
+exports[`coverage-report/v1 JSON snapshots > respects excludeUnreachable toggle in metrics while keeping IDs and statuses stable 1`] = `
+{
+  "withExclude": {
+    "active": 5,
+    "deprecated": 0,
+    "unreachable": 0,
+  },
+  "withoutExclude": {
+    "active": 5,
+    "deprecated": 0,
+    "unreachable": 0,
+  },
+}
+`;
