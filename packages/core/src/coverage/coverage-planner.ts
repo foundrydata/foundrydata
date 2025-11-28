@@ -125,6 +125,13 @@ export interface CoveragePlannerInput {
   config: CoveragePlannerConfig;
 }
 
+interface SortableTarget {
+  target: CoverageTarget;
+  operationKey: string;
+  dimensionIndex: number;
+  weight: number;
+}
+
 export const DEFAULT_PLANNER_DIMENSIONS_ENABLED: readonly CoverageDimension[] =
   ['structure', 'branches', 'enum'] as const;
 
@@ -265,4 +272,115 @@ export function isCoverageHint(value: unknown): value is CoverageHint {
     default:
       return false;
   }
+}
+
+function buildSortableTargets(
+  targets: CoverageTarget[],
+  dimensionPriority: CoverageDimension[]
+): SortableTarget[] {
+  const dimensionIndexByName = new Map<string, number>();
+  dimensionPriority.forEach((dim, index) => {
+    dimensionIndexByName.set(dim, index);
+  });
+
+  return targets
+    .filter((t) => t.status === undefined || t.status === 'active')
+    .map((target) => {
+      const operationKey = target.operationKey ?? '';
+      const dimensionIndex =
+        dimensionIndexByName.get(target.dimension) ?? Number.MAX_SAFE_INTEGER;
+      const weight =
+        typeof target.weight === 'number' && Number.isFinite(target.weight)
+          ? target.weight
+          : 0;
+      return {
+        target,
+        operationKey,
+        dimensionIndex,
+        weight,
+      };
+    });
+}
+
+function sortTargetsForPlanning(sortable: SortableTarget[]): SortableTarget[] {
+  return sortable.slice().sort((a, b) => {
+    // Operations first when present
+    const aHasOp = a.operationKey !== '';
+    const bHasOp = b.operationKey !== '';
+    if (aHasOp !== bHasOp) {
+      return aHasOp ? -1 : 1;
+    }
+
+    // Dimension priority
+    if (a.dimensionIndex !== b.dimensionIndex) {
+      return a.dimensionIndex - b.dimensionIndex;
+    }
+
+    // Weight (higher weight first)
+    if (a.weight !== b.weight) {
+      return b.weight - a.weight;
+    }
+
+    // Canonical path
+    if (a.target.canonPath !== b.target.canonPath) {
+      return a.target.canonPath < b.target.canonPath ? -1 : 1;
+    }
+
+    // Stable tie-breaker on target id
+    if (a.target.id !== b.target.id) {
+      return a.target.id < b.target.id ? -1 : 1;
+    }
+
+    return 0;
+  });
+}
+
+export function planTestUnits(input: CoveragePlannerInput): TestUnit[] {
+  const {
+    targets,
+    config: {
+      budget: { maxInstances },
+      dimensionPriority,
+    },
+  } = input;
+
+  if (!Number.isFinite(maxInstances) || maxInstances <= 0) {
+    return [];
+  }
+
+  const sortable = buildSortableTargets(targets, dimensionPriority);
+  if (sortable.length === 0) {
+    return [];
+  }
+
+  const ordered = sortTargetsForPlanning(sortable);
+  const units: TestUnit[] = [];
+
+  let remaining = Math.floor(maxInstances);
+  let nextUnitId = 0;
+
+  for (const entry of ordered) {
+    if (remaining <= 0) break;
+
+    const target = entry.target;
+    const unitCount = 1;
+
+    const unit: TestUnit = {
+      id: `tu-${nextUnitId}`,
+      // Seed derivation is delegated to a dedicated sub-task.
+      seed: 0,
+      count: unitCount,
+      hints: [],
+      scope: {
+        operationKey: target.operationKey,
+        schemaPaths: [target.canonPath],
+      },
+    };
+
+    units.push(unit);
+    remaining -= unitCount;
+    nextUnitId += 1;
+  }
+
+  return units;
 }

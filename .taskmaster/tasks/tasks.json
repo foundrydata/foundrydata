@@ -360,10 +360,11 @@
             "id": 9305002,
             "title": "Implement greedy prioritization and budget handling",
             "description": "Implement the greedy selection algorithm over targets, enforcing prioritization rules and maxInstances constraints.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/coverage/coverage-planner.ts",
-            "parentId": "9305"
+            "parentId": "9305",
+            "updatedAt": "2025-11-28T23:46:27.776Z"
           },
           {
             "id": 9305003,
@@ -393,7 +394,7 @@
             "parentId": "9305"
           }
         ],
-        "updatedAt": "2025-11-28T23:40:00.002Z"
+        "updatedAt": "2025-11-28T23:46:27.776Z"
       },
       {
         "id": "9306",
@@ -991,7 +992,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-28T23:40:00.002Z",
+      "lastModified": "2025-11-28T23:46:27.776Z",
       "taskCount": 18,
       "completedCount": 7,
       "tags": [
