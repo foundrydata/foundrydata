@@ -463,13 +463,25 @@
             "id": 9306005,
             "title": "Add end-to-end tests for guided hints on schemas with oneOf and enums",
             "description": "Create e2e tests that show full branch and enum coverage under coverage=guided with sufficient budget and visible unsatisfied hints when impossible.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 2,
             "file": "packages/core/test/e2e/coverage-guided-hints.spec.ts",
-            "parentId": "9306"
+            "parentId": "9306",
+            "updatedAt": "2025-11-29T01:14:36.216Z"
+          },
+          {
+            "id": 9306006,
+            "title": "Wire planner hints into pipeline orchestrator and add guided hints e2e tests",
+            "description": "Wire CoveragePlanner TestUnit.hints through the pipeline orchestrator into the generator in coverage=guided mode, then add end-to-end tests (via executePipeline) on oneOf+enum schemas to demonstrate that planner-produced hints are actually consumed, improve branches/enum coverage vs coverage=measure under the same budget, and remain deterministic for fixed (schema, options, seed).",
+            "details": "",
+            "status": "in-progress",
+            "dependencies": [],
+            "parentTaskId": 9306,
+            "updatedAt": "2025-11-29T01:23:33.800Z",
+            "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-11-29T01:03:30.144Z"
+        "updatedAt": "2025-11-29T01:23:33.800Z"
       },
       {
         "id": "9307",
@@ -1004,7 +1016,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-29T01:03:30.145Z",
+      "lastModified": "2025-11-29T01:23:33.801Z",
       "taskCount": 18,
       "completedCount": 8,
       "tags": [

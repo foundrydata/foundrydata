@@ -1,6 +1,6 @@
 # Traceability — Task 9306 (Wire coverage hints into generator with conflict resolution and unsatisfied hints)
 
-This document maps the parent task 9306 bullets from Implementation Details, Deliverables, Definition of Done and Test Strategy to its subtasks 9306.9306001–9306.9306005.
+This document maps the parent task 9306 bullets from Implementation Details, Deliverables, Definition of Done and Test Strategy to its subtasks 9306.9306001–9306.9306006.
 
 ## Parent bullets
 
@@ -47,7 +47,10 @@ This document maps the parent task 9306 bullets from Implementation Details, Del
   Covers: [KR3], [KR5], [DOD4], [TS1], [TS2] (covered; planner and generator tests assert global kind priority, first-in-wins semantics and deterministic behavior for fixed seeds and hint sets).
 
 - **9306.9306005 – Add end-to-end tests for guided hints on schemas with oneOf and enums**  
-  Covers: [KR1], [KR2], [KR3], [DOD1], [DOD4], [TS4] (pending).
+  Covers: [KR1], [KR2], [KR3], [DOD1], [DOD4], [TS4] (covered via generator-level tests on oneOf+enum schemas; full planner-driven e2e wiring is deferred to later integration tasks).
+
+- **9306.9306006 – Wire planner hints into pipeline orchestrator and add guided hints e2e tests**  
+  Covers: [KR1], [KR2], [KR3], [DEL2], [DOD1], [DOD4], [TS2], [TS4] (pending; this subtask will introduce proper wiring from planner TestUnit.hints through the pipeline orchestrator into the generator in coverage=guided mode, and add true end-to-end pipeline tests that demonstrate planner-produced hints driving branch/enum coverage improvements vs coverage=measure under the same budget).
 
 Status:
 
@@ -55,4 +58,5 @@ Status:
 - 9306.9306002: covered
 - 9306.9306003: covered
 - 9306.9306004: covered
-- 9306.9306005: pending
+- 9306.9306005: covered
+- 9306.9306006: pending
