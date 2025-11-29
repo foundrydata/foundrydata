@@ -1,20 +1,17 @@
-Task: 9308.9308002   Title: Map coverageStatus to CLI exit codes
+Task: 9308.9308003   Title: Test coverage threshold enforcement end-to-end
 Anchors: [cov://§7#thresholds-mincoverage, cov://§7#cli-summary]
 Touched files:
-- packages/cli/src/coverage/coverage-exit-codes.ts
-- packages/cli/src/coverage/coverage-exit-codes.test.ts
-- packages/cli/src/index.ts
+- packages/core/test/e2e/coverage-threshold.spec.ts
 - packages/cli/src/index.test.ts
-- packages/core/src/errors/codes.ts
-- docs/spec-coverage-aware-v1.0.md
 - .taskmaster/docs/9308-traceability.md
+- .taskmaster/tasks/tasks.json
 Approach:
-I will zero in on the CLI exit-path described in `cov://§7#cli-summary` and the minCoverage enforcement note in `cov://§7#thresholds-mincoverage`. First, I will refactor the coverage-failure handling into a dedicated helper module (`packages/cli/src/coverage/coverage-exit-codes.ts`) so the message formatting and exit code computation live alongside the shared `ErrorCode.COVERAGE_THRESHOLD_NOT_MET` mapping. Next, I will audit `packages/core/src/errors/codes.ts` to verify the coverage failure code is documented and unique, and confirm `packages/cli/src/index.ts` uses the new helper after `handlePipelineOutput`. After the production wiring is in place, I will extend `packages/cli/src/index.test.ts` (measure + guided coverage runs) and add targeted tests for the helper module so stderr shows the required summary and `process.exit` is called with the configured coverage exit code. I will keep an eye on `docs/spec-coverage-aware-v1.0.md` to ensure we do not rely on descriptive per-dimension thresholds for the enforcement, and then update `.taskmaster/docs/9308-traceability.md` to record that this subtask covers KR3/DEL2/DOD1/DOD2/TS2.
+I will build a thin end-to-end harness that mirrors the spec’s acceptance scenario where `minCoverage=0.8`, `coverage.overall≈0.6`, and the CLI must still expose `coverageStatus` plus the dedicated coverage failure exit code described by `cov://§7#thresholds-mincoverage` and `cov://§7#cli-summary`. First, I will add an e2e pipeline test under `packages/core/test/e2e/coverage-threshold.spec.ts` that runs a schema with two `oneOf` branches, enforces `coverage.minCoverage`, and asserts the resulting `coverageReport.metrics.coverageStatus`/`metrics.thresholds.overall` combination while also confirming the normal coverage summary is still populated even though the threshold was missed. Second, I will enhance the CLI generate coverage failure test to ensure it emits the `[foundrydata] coverage:` summary even when `coverageStatus` becomes `minCoverageNotMet`, and that the stderr stream still contains the `coverage status: minCoverageNotMet` message before the CLI exits with the configured dedicated code. These additions keep both the Node API and CLI behaviors aligned with `cov://§7#cli-summary`’s structure and make sure per-dimension/per-operation thresholds remain descriptive only while the global guardrail is enforced. Finally, I will update the traceability notes and task records to reflect that this subtask closes out KR4/KR5/DEL3/DOD2/DOD3/TS3/TS4.
 Risks/Unknowns:
-- If the CLI already uses `ErrorCode.COVERAGE_THRESHOLD_NOT_MET` in other contexts, I need to justify why it still counts as a dedicated coverage failure code per the spec.
-- Mocking `process.exit` in the tests may require avoiding interference with other tests that inspect global exit state; I must ensure mocks are restored promptly.
-Parent bullets couverts: [KR3, DEL2, DOD1, DOD2, TS2]
-SPEC-check: sections cov://§7#cli-summary and cov://§7#thresholds-mincoverage remain aligned—the CLI summary still emphasizes coverageStatus, and enforcement continues to happen only when `metrics.coverageStatus` is `'minCoverageNotMet'`.
+- The e2e pipeline run must keep determinism while forcing overall coverage below `minCoverage`, so the schema and seeds need to stay stable; if the coverage drop is too small the assertion may flicker.
+- Capturing both the `[foundrydata] coverage:` summary and the `coverage status: minCoverageNotMet` line may require buffering stderr properly now that `enforceCoverageThreshold` exits the process.
+Parent bullets couverts: [KR4, KR5, DEL3, DOD2, DOD3, TS3, TS4]
+SPEC-check: The new e2e coverage run and CLI regression keep `coverageStatus`/`coverageReport.metrics.thresholds.overall` aligned with the dedicated exit code and human-readable summary mandated by `cov://§7#thresholds-mincoverage` and `cov://§7#cli-summary`.
 
 Checks:
 - build: npm run build
