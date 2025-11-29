@@ -133,6 +133,11 @@ program
   )
   .option('--coverage-report <file>', 'Path to write coverage-report/v1 JSON')
   .option(
+    '--coverage-report-mode <mode>',
+    'Coverage report mode: full|summary',
+    'full'
+  )
+  .option(
     '--coverage-profile <profile>',
     'Coverage profile: quick|balanced|thorough'
   )
@@ -244,6 +249,7 @@ program
           excludeUnreachable: coverage.excludeUnreachable,
           minCoverage: coverage.minCoverage,
           planner: coverage.planner,
+          reportMode: coverage.reportMode,
         },
       });
       const pipelineResult = await stream.result;
@@ -375,6 +381,11 @@ program
     'Minimum overall coverage threshold (0..1)'
   )
   .option('--coverage-report <file>', 'Path to write coverage-report/v1 JSON')
+  .option(
+    '--coverage-report-mode <mode>',
+    'Coverage report mode: full|summary',
+    'full'
+  )
   .option(
     '--coverage-profile <profile>',
     'Coverage profile: quick|balanced|thorough'
@@ -512,6 +523,7 @@ program
           excludeUnreachable: coverage.excludeUnreachable,
           minCoverage: coverage.minCoverage,
           planner: coverage.planner,
+          reportMode: coverage.reportMode,
         },
       });
       const pipelineResult = await stream.result;

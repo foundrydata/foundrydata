@@ -1,7 +1,12 @@
-import type {
-  CoverageDimension,
-  CoveragePlannerUserOptions,
+import {
+  DEFAULT_PLANNER_DIMENSIONS_ENABLED,
+  type CoverageDimension,
+  type CoveragePlannerUserOptions,
 } from '@foundrydata/core';
+import {
+  COVERAGE_REPORT_MODES,
+  type CoverageReportMode,
+} from '@foundrydata/shared';
 import type { CliOptions } from '../flags';
 
 type CoverageMode = 'off' | 'measure' | 'guided';
@@ -14,6 +19,7 @@ export interface CliCoverageConfig {
   reportPath?: string;
   profile?: 'quick' | 'balanced' | 'thorough';
   planner?: CoveragePlannerUserOptions;
+  reportMode?: CoverageReportMode;
 }
 
 export interface ResolvedCliCoverage {
@@ -125,6 +131,21 @@ function parseProfile(
   );
 }
 
+function parseCoverageReportMode(raw: unknown): CoverageReportMode {
+  if (raw === undefined || raw === null || raw === '') {
+    return 'full';
+  }
+  const value = String(raw).toLowerCase();
+  if (COVERAGE_REPORT_MODES.includes(value as CoverageReportMode)) {
+    return value as CoverageReportMode;
+  }
+  throw new Error(
+    `Invalid --coverage-report-mode value "${String(
+      raw
+    )}". Expected one of: ${COVERAGE_REPORT_MODES.join(', ')}.`
+  );
+}
+
 function resolvePlannerFromProfile(
   profile: 'quick' | 'balanced' | 'thorough'
 ): CoveragePlannerUserOptions | undefined {
@@ -158,11 +179,12 @@ function resolvePlannerFromProfile(
   }
 }
 
+// eslint-disable-next-line complexity
 export function resolveCliCoverageOptions(
   cliOptions: CliOptions
 ): ResolvedCliCoverage {
   const mode = parseCoverageMode(cliOptions.coverage);
-  const dimensionsEnabled = parseDimensions(cliOptions.coverageDimensions);
+  const parsedDimensions = parseDimensions(cliOptions.coverageDimensions);
   const excludeUnreachable = parseExcludeUnreachable(
     cliOptions.coverageExcludeUnreachable
   );
@@ -172,6 +194,14 @@ export function resolveCliCoverageOptions(
     typeof cliOptions.coverageReport === 'string'
       ? cliOptions.coverageReport
       : undefined;
+  const reportMode = parseCoverageReportMode(cliOptions.coverageReportMode);
+
+  const dimensionsEnabled =
+    parsedDimensions.length > 0
+      ? parsedDimensions
+      : mode === 'off'
+        ? []
+        : [...DEFAULT_PLANNER_DIMENSIONS_ENABLED];
 
   let ignoredReason: string | undefined;
   if (mode === 'off') {
@@ -195,6 +225,7 @@ export function resolveCliCoverageOptions(
       reportPath: mode === 'off' ? undefined : reportPath,
       profile,
       planner,
+      reportMode: mode === 'off' ? undefined : reportMode,
     },
     ignoredReason,
   };

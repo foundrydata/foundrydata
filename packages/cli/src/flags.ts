@@ -28,6 +28,7 @@ export interface CliOptions {
   coverageMin?: string | number;
   coverageReport?: string;
   coverageProfile?: 'quick' | 'balanced' | 'thorough' | string;
+  coverageReportMode?: 'full' | 'summary' | string;
   coverageExcludeUnreachable?: string | boolean;
   mode?: 'strict' | 'lax' | string;
   compat?: 'strict' | 'lax' | string;

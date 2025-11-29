@@ -1,19 +1,22 @@
-Task: 9301.9301003   Title: Generate CoverageTargets for structure, branches and enum dimensions
-Anchors: [cov://§3#coverage-model, cov://§4#coverageanalyzer]
+Task: 9303.9303003   Title: Implement reportMode full vs summary behavior
+Anchors: [cov://§7#json-coverage-report]
 Touched files:
-- packages/core/src/coverage/analyzer.ts
-- packages/core/src/coverage/__tests__/analyzer.test.ts
-- .taskmaster/docs/9301-traceability.md
-- PLAN.md
+- packages/core/src/pipeline/orchestrator.ts
+- packages/core/src/pipeline/types.ts
+- packages/core/src/coverage/__tests__/coverage-report-json.test.ts
+- packages/cli/src/config/coverage-options.ts
+- packages/cli/src/index.ts
 
 Approach:
-I will extend the analyzer so that once the declared `schema.properties` have been walked, the AP:false coverage entry for the current canonical object is consulted and its `enumerate()` witness is turned into PROPERTY_PRESENT targets that reuse CoverageTarget ID generation. Each enumerated name will be checked against the CoverageIndex predicate, skipped if required or already declared, and assigned the same canonical pointer that instrumentation emits (patternProperties pointer when a regex matches, otherwise the redundant `/additionalProperties` node) so the `structure` dimension keying stays deterministic. This keeps CoverageIndex as the sole source of truth for property names when `additionalProperties:false`, which is the invariant spelled out in `cov://§3#coverage-model`, while also honoring the gating requirements described in `cov://§4#coverageanalyzer`. In tandem I will add a fixture-based analyzer test that feeds a synthetic CoverageEntry with `enumerate()` output strings and asserts the extra property targets exist with the right `canonPath`/`propertyName` params, so the `analyzer` coverage suite still hits ≥80% while proving unreachable flags unchanged. Finally I will refresh `.taskmaster/docs/9301-traceability.md` to record the new bullet mapping and make sure the plan’s own file stays aligned.
+I will add a coverage report mode option (full|summary) to the CLI and pipeline so the existing helper in `applyReportModeToCoverageTargets` can actually be driven from user inputs rather than the current hard-coded `full`. This means extending every coverage option struct (`PipelineOptions`, CLI parser) with a `reportMode` field, wiring a new `--coverage-report-mode` flag in both the root and OpenAPI commands, and parsing/validating it through the same shared helpers that already resolve coverage modes and dimensions. The CLI will also keep canonical dimensions when the user leaves `--coverage-dimensions` empty so `dimensionsEnabled` is never an empty list for measure/guided runs, aligning with the “Dimensions enabled” requirements in the spec.
+
+In the orchestrator I will resolve the canonical dimensions (falling back to `[structure, branches, enum]`), reuse them for the analyzer, planner, evaluator and the final report metadata, and expose the parsed `reportMode` there. The coverage report builder will now set `reportMode` from options, pass it to `applyReportModeToCoverageTargets`, and keep the `run.dimensionsEnabled` array in sync with the resolved defaults. After the plumbing is wired I will add integration tests that generate coverage reports without explicit dimensions and with `reportMode:'summary'` to prove the new knobs produce the expected trailer (empty `targets[]`, canonical dims, `reportMode` metadata) while retaining deterministic metrics.
 
 Risks/Unknowns:
-- CoverageIndex enumerate() is only available when finiteness is proven; I need to skip adding PROPERTY_PRESENT targets for nodes where enumerate is missing so the analyzer remains conservative.
-- PatternProperties regex strings might not compile in the analyzer, so the pointer resolution must gracefully ignore invalid entries rather than crash.
-Parent bullets couverts: [KR3, KR5, DOD1, DOD6, TS1]
-SPEC-check: Leveraged CoverageIndex enumerate() as the authoritative source for AP:false property names and emitted PROPERTY_PRESENT targets with the same canonical paths used by the generator, keeping the behavior aligned with cov://§3#coverage-model and cov://§4#coverageanalyzer.
+- Summary mode truncates payloads; the test fixture needs enough uncovered targets to make the “empty targets” behavior meaningful without making the run flaky.
+- The CLI defaults must stay aligned with the pipeline defaults so `run.dimensionsEnabled` never drops to an empty array even if multiple entry points use the API directly.
+Parent bullets couverts: [KR5, KR6, DOD2, TS2, TS5]
+SPEC-check: Verified anchor cov://§7#json-coverage-report covers the report-mode semantics and dimension behavior that these changes expose.
 
 Checks:
 - build: npm run build

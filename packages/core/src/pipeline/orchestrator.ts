@@ -89,6 +89,8 @@ import {
   assignTestUnitSeeds,
   type TestUnit,
   type CoverageHint,
+  type CoverageDimension,
+  DEFAULT_PLANNER_DIMENSIONS_ENABLED,
 } from '../coverage/index.js';
 import {
   COVERAGE_REPORT_VERSION_V1,
@@ -264,6 +266,15 @@ function shouldRunCoverageAnalyzer(
 ): boolean {
   const mode = coverageOptions?.mode ?? 'off';
   return mode === 'measure' || mode === 'guided';
+}
+
+function resolveCoverageDimensions(
+  userDimensions?: CoverageDimension[]
+): CoverageDimension[] {
+  if (Array.isArray(userDimensions) && userDimensions.length > 0) {
+    return userDimensions;
+  }
+  return [...DEFAULT_PLANNER_DIMENSIONS_ENABLED];
 }
 
 export async function executePipeline(
@@ -841,19 +852,20 @@ export async function executePipeline(
       };
 
       if (shouldRunCoverageAnalyzer(options.coverage)) {
+        const coverageMode = options.coverage?.mode ?? 'off';
+        const coverageDimensions = resolveCoverageDimensions(
+          options.coverage?.dimensionsEnabled
+        );
+
         const coverageInput: CoverageAnalyzerInput = {
           canonSchema: canonicalSchema,
           ptrMap: normalizeResult?.ptrMap ?? new Map<string, string>(),
           coverageIndex: composeResult.coverageIndex,
           planDiag: composeResult.diag,
-          dimensionsEnabled: options.coverage?.dimensionsEnabled,
+          dimensionsEnabled: coverageDimensions,
         };
         const coverageResult = analyzeCoverage(coverageInput);
         artifacts.coverageGraph = coverageResult.graph;
-
-        const coverageMode = options.coverage?.mode ?? 'off';
-        const coverageDimensions =
-          options.coverage?.dimensionsEnabled ?? undefined;
 
         let plannedTargets = coverageResult.targets;
         let plannedTestUnits: TestUnit[] | undefined;
@@ -1289,6 +1301,12 @@ export async function executePipeline(
     Array.isArray(artifacts.coverageTargets) &&
     status === 'completed'
   ) {
+    const coverageDimensions = resolveCoverageDimensions(
+      options.coverage?.dimensionsEnabled
+    );
+    const coverageReportMode: CoverageReportMode =
+      options.coverage?.reportMode ?? 'full';
+
     const reportTargets = coverageAccumulator.toReport(
       artifacts.coverageTargets
     );
@@ -1303,7 +1321,7 @@ export async function executePipeline(
 
     const coverageInput: CoverageEvaluatorInput = {
       targets: reportTargets,
-      dimensionsEnabled: options.coverage?.dimensionsEnabled ?? [],
+      dimensionsEnabled: coverageDimensions,
       excludeUnreachable: options.coverage?.excludeUnreachable ?? false,
       thresholds,
     };
@@ -1311,9 +1329,8 @@ export async function executePipeline(
     const coverageResult = evaluateCoverage(coverageInput);
     artifacts.coverageMetrics = coverageResult.metrics;
 
-    const reportMode: CoverageReportMode = 'full';
     const reportArrays = applyReportModeToCoverageTargets({
-      reportMode,
+      reportMode: coverageReportMode,
       targets: reportTargets,
       uncoveredTargets: coverageResult.uncoveredTargets,
     });
@@ -1336,7 +1353,7 @@ export async function executePipeline(
 
     artifacts.coverageReport = {
       version: COVERAGE_REPORT_VERSION_V1,
-      reportMode,
+      reportMode: coverageReportMode,
       engine: {
         foundryVersion:
           (corePackageJson as { version?: string }).version ?? '0.0.0',
@@ -1348,7 +1365,7 @@ export async function executePipeline(
         masterSeed: seed,
         maxInstances,
         actualInstances,
-        dimensionsEnabled: coverageInput.dimensionsEnabled,
+        dimensionsEnabled: coverageDimensions,
         excludeUnreachable: coverageInput.excludeUnreachable,
         startedAt: runStartedAtIso,
         durationMs: Date.now() - runStartTimeMs,

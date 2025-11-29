@@ -48,7 +48,7 @@ This document maps the parent task 9303 bullets from Implementation Details, Del
   Covers: [KR1], [KR2], [KR3], [KR4], [DEL1], [DOD1], [DOD3], [TS1], [TS2], [TS3], [TS4].
 
 - **9303.9303003 – Implement reportMode full vs summary behavior**  
-  Covers: [KR5], [KR6], [KR7], contributes to [DOD2], [TS2], [TS5].
+  Covers: [KR5], [KR6], [KR7], [DOD2], [TS2], [TS5].
 
 - **9303.9303004 – Wire CoverageEvaluator into pipeline result and Node API**  
   Covers: [DEL3], [DOD6], [TS6], [TS7].
