@@ -591,6 +591,17 @@ Impact: Ambiguïté sur l’univers de targets et sur le calcul de `coverage.ove
 Proposition: Clarifier si, sous caps de Compose, les branches non visitées appartiennent encore à l’univers mais restent `status:'active', hit:false` (avec impact sur les métriques), ou si elles doivent être exclues de l’univers de cibles pour ce run (avec un diagnostic dédié).
 ```
 
+### C) Décider des problèmes hors-scope
+
+Lorsqu’un agent rencontre une séquence où la SPEC ou l’implémentation soulève un “trou” non couvert par le scope courant (ex. un hint qui devient incompatible avec un mot clé additionnel), appliquer cette démarche :
+
+1. **Documenter l’anomalie immédiatement** dans `agent-log.jsonl` et, si nécessaire, dans un nouveau `SPEC-QUESTION.md` (décrire le symptôme, l’impact, les anchors concernés et la décision envisagée).
+2. **Prendre une décision claire** : soit on considère que la garde-fou existe ailleurs et on refuse la tâche, soit on reconnaît un besoin d’extension (par exemple “detecter les hints impossibles lors de la planification”). Dans ce dernier cas, demander explicitement la création d’une nouvelle tâche ou en créer une si on en a la latitude.
+3. **Consigner la décision dans `AGENTS.md`** sous une section “Processus de résolution d’enjeux hors-scope”, en expliquant quand et comment prioriser une nouvelle tâche, quelles informations traquer (anchors, tests, logs) et quel niveau de preuve est requis.
+4. **Informer le reste de l’équipe** en mentionnant ce suivi dans les commentaires de la PR ou dans la trace Taskmaster, pour éviter que le sujet reste en suspens.
+
+Cette démarche vaut pour tout cas “spécifique mais hors du scope immediat” (pas seulement `not` + hint), et permet de maintenir la transparence sur les décisions et les sujets à déléguer à d’autres tâches.
+
 ---
 
 ## Templates
