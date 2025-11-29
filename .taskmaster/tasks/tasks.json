@@ -20,40 +20,44 @@
             "id": 9300001,
             "title": "Design CoverageTarget and CoverageGraph types",
             "description": "Sketch and implement CoverageTarget, CoverageTargetReport and CoverageGraph interfaces, including dimensions, status, weight, polarity and meta fields. Define branch target kinds ONEOF_BRANCH, ANYOF_BRANCH and CONDITIONAL_PATH (for if/then/else and dependentSchemas paths) and a params shape that records pathKind and branchKey without depending on dimensionsEnabled.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/coverage/model.ts",
-            "parentId": "9300"
+            "parentId": "9300",
+            "updatedAt": "2025-11-29T00:39:51.203Z"
           },
           {
             "id": 9300002,
             "title": "Implement deterministic CoverageTarget ID generator",
             "description": "Implement a stable ID generator for coverage targets based on canonical paths, kind, dimension and optional operationKey and params, independent of dimensionsEnabled. IDs MUST NOT depend on status, hit, weight, polarity, meta, dimensionsEnabled, excludeUnreachable, planner caps, hints or any runtime coverage results.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/coverage/id-generator.ts",
-            "parentId": "9300"
+            "parentId": "9300",
+            "updatedAt": "2025-11-29T00:39:57.522Z"
           },
           {
             "id": 9300003,
             "title": "Expose coverage types in shared package",
             "description": "Re-export coverage types in the shared package for consumption by CLI and reporter.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 2,
             "file": "packages/shared/src/types/coverage.ts",
-            "parentId": "9300"
+            "parentId": "9300",
+            "updatedAt": "2025-11-29T00:40:03.128Z"
           },
           {
             "id": 9300004,
             "title": "Add unit tests for ID stability and dimensions",
             "description": "Add tests that assert IDs are stable when dimensionsEnabled, excludeUnreachable or planner/cap options change, including a projection test where the same canonical schema is analyzed with different dimensionsEnabled sets (e.g. ['structure','branches'] vs ['structure','branches','enum']) and non-enum CoverageTarget.id values remain identical.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 2,
             "file": "packages/core/src/coverage/__tests__/model.spec.ts",
-            "parentId": "9300"
+            "parentId": "9300",
+            "updatedAt": "2025-11-29T00:40:09.261Z"
           }
         ],
-        "updatedAt": "2025-11-27T22:28:08.637Z"
+        "updatedAt": "2025-11-29T00:40:09.261Z"
       },
       {
         "id": "9301",
@@ -997,7 +1001,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-29T00:38:34.488Z",
+      "lastModified": "2025-11-29T00:40:09.262Z",
       "taskCount": 18,
       "completedCount": 8,
       "tags": [
