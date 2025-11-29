@@ -427,12 +427,78 @@ function sortTargetsForPlanning(sortable: SortableTarget[]): SortableTarget[] {
   });
 }
 
+function getParentCanonPath(canonPath: string): string {
+  if (!canonPath || canonPath === '#') {
+    return '#';
+  }
+  const trimmed = canonPath.startsWith('#') ? canonPath.slice(1) : canonPath;
+  if (!trimmed) {
+    return '#';
+  }
+  const segments = trimmed.split('/').filter((segment) => segment.length > 0);
+  if (segments.length <= 1) {
+    return '#';
+  }
+  const parent = segments.slice(0, -1).join('/');
+  return `#/${parent}`;
+}
+
+// eslint-disable-next-line complexity
+function buildHintsForTarget(target: CoverageTarget): CoverageHint[] {
+  const hints: CoverageHint[] = [];
+  const canonPath = target.canonPath;
+  if (typeof canonPath !== 'string' || !canonPath) {
+    return hints;
+  }
+
+  if (target.dimension === 'branches') {
+    const parentPath = getParentCanonPath(canonPath);
+    const segments = canonPath.startsWith('#')
+      ? canonPath
+          .slice(1)
+          .split('/')
+          .filter((segment) => segment.length > 0)
+      : canonPath.split('/').filter((segment) => segment.length > 0);
+    const lastSegment = segments[segments.length - 1];
+    const index =
+      lastSegment !== undefined ? Number.parseInt(lastSegment, 10) : NaN;
+    if (Number.isInteger(index) && index >= 0) {
+      hints.push({
+        kind: 'preferBranch',
+        canonPath: parentPath,
+        params: { branchIndex: index },
+      });
+    }
+  } else if (target.dimension === 'enum' && target.kind === 'ENUM_VALUE_HIT') {
+    const params = target.params as { enumIndex?: unknown } | undefined;
+    const enumIndex =
+      params && typeof params.enumIndex === 'number'
+        ? params.enumIndex
+        : undefined;
+    if (
+      typeof enumIndex === 'number' &&
+      Number.isInteger(enumIndex) &&
+      enumIndex >= 0
+    ) {
+      hints.push({
+        kind: 'coverEnumValue',
+        canonPath,
+        params: { valueIndex: enumIndex },
+      });
+    }
+  }
+
+  return hints;
+}
+
+// eslint-disable-next-line max-lines-per-function
 export function planTestUnits(input: CoveragePlannerInput): TestUnit[] {
   const {
     targets,
     config: {
       budget: { maxInstances },
       dimensionPriority,
+      dimensionsEnabled,
     },
   } = input;
 
@@ -440,6 +506,7 @@ export function planTestUnits(input: CoveragePlannerInput): TestUnit[] {
     return [];
   }
 
+  const enabledDimensions = new Set<CoverageDimension>(dimensionsEnabled);
   const sortable = buildSortableTargets(targets, dimensionPriority);
   if (sortable.length === 0) {
     return [];
@@ -456,13 +523,17 @@ export function planTestUnits(input: CoveragePlannerInput): TestUnit[] {
 
     const target = entry.target;
     const unitCount = 1;
+    const unitHints: CoverageHint[] = [];
+    if (enabledDimensions.has(target.dimension)) {
+      unitHints.push(...buildHintsForTarget(target));
+    }
 
     const unit: TestUnit = {
       id: `tu-${nextUnitId}`,
       // Seed derivation is delegated to a dedicated sub-task.
       seed: 0,
       count: unitCount,
-      hints: [],
+      hints: unitHints,
       scope: {
         operationKey: target.operationKey,
         schemaPaths: [target.canonPath],

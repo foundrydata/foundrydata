@@ -50,7 +50,7 @@ This document maps the parent task 9306 bullets from Implementation Details, Del
   Covers: [KR1], [KR2], [KR3], [DOD1], [DOD4], [TS4] (covered via generator-level tests on oneOf+enum schemas; full planner-driven e2e wiring is deferred to later integration tasks).
 
 - **9306.9306006 – Wire planner hints into pipeline orchestrator and add guided hints e2e tests**  
-  Covers: [KR1], [KR2], [KR3], [DEL2], [DOD1], [DOD4], [TS2], [TS4] (pending; this subtask will introduce proper wiring from planner TestUnit.hints through the pipeline orchestrator into the generator in coverage=guided mode, and add true end-to-end pipeline tests that demonstrate planner-produced hints driving branch/enum coverage improvements vs coverage=measure under the same budget).
+  Covers: [KR1], [KR2], [KR3], [DEL2], [DOD1], [DOD4], [TS2], [TS4] (covered; this subtask wires planner-produced TestUnit.hints through the pipeline orchestrator into the generator in coverage=guided mode and adds executePipeline-based tests that demonstrate guided runs matching or improving branches/enum coverage vs coverage=measure under the same budget while remaining deterministic for fixed (schema, options, seed)).
 
 Status:
 
@@ -59,4 +59,4 @@ Status:
 - 9306.9306003: covered
 - 9306.9306004: covered
 - 9306.9306005: covered
-- 9306.9306006: pending
+- 9306.9306006: covered
