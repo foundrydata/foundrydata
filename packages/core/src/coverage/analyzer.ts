@@ -553,6 +553,139 @@ function visitSchemaNode(
       state.targets.push({ ...enumTargetBase, id: tId });
     });
   }
+
+  // Boundaries targets (dimension: 'boundaries')
+  if (state.enabledDimensions.has('boundaries')) {
+    const canonPath = canonPtr === '' ? '#' : `#${canonPtr}`;
+
+    // Numeric boundaries
+    const hasNumericHint =
+      typeof schema.minimum === 'number' ||
+      typeof schema.maximum === 'number' ||
+      typeof schema.exclusiveMinimum === 'number' ||
+      typeof schema.exclusiveMaximum === 'number';
+    if (hasNumericHint) {
+      const minimum =
+        typeof schema.minimum === 'number' ? schema.minimum : undefined;
+      const maximum =
+        typeof schema.maximum === 'number' ? schema.maximum : undefined;
+      const exclusiveMinimum =
+        typeof schema.exclusiveMinimum === 'number'
+          ? schema.exclusiveMinimum
+          : undefined;
+      const exclusiveMaximum =
+        typeof schema.exclusiveMaximum === 'number'
+          ? schema.exclusiveMaximum
+          : undefined;
+
+      if (minimum !== undefined) {
+        const targetBase: CoverageTarget = {
+          id: '',
+          dimension: 'boundaries',
+          kind: 'NUMERIC_MIN_HIT',
+          canonPath,
+          params: { boundaryKind: 'minimum', boundaryValue: minimum },
+        };
+        const tId = computeCoverageTargetId(targetBase, state.idContext);
+        state.targets.push({ ...targetBase, id: tId });
+      }
+      if (exclusiveMinimum !== undefined) {
+        const targetBase: CoverageTarget = {
+          id: '',
+          dimension: 'boundaries',
+          kind: 'NUMERIC_MIN_HIT',
+          canonPath,
+          params: {
+            boundaryKind: 'exclusiveMinimum',
+            boundaryValue: exclusiveMinimum,
+          },
+        };
+        const tId = computeCoverageTargetId(targetBase, state.idContext);
+        state.targets.push({ ...targetBase, id: tId });
+      }
+      if (maximum !== undefined) {
+        const targetBase: CoverageTarget = {
+          id: '',
+          dimension: 'boundaries',
+          kind: 'NUMERIC_MAX_HIT',
+          canonPath,
+          params: { boundaryKind: 'maximum', boundaryValue: maximum },
+        };
+        const tId = computeCoverageTargetId(targetBase, state.idContext);
+        state.targets.push({ ...targetBase, id: tId });
+      }
+      if (exclusiveMaximum !== undefined) {
+        const targetBase: CoverageTarget = {
+          id: '',
+          dimension: 'boundaries',
+          kind: 'NUMERIC_MAX_HIT',
+          canonPath,
+          params: {
+            boundaryKind: 'exclusiveMaximum',
+            boundaryValue: exclusiveMaximum,
+          },
+        };
+        const tId = computeCoverageTargetId(targetBase, state.idContext);
+        state.targets.push({ ...targetBase, id: tId });
+      }
+    }
+
+    // String length boundaries
+    const minLength =
+      typeof schema.minLength === 'number' ? schema.minLength : undefined;
+    const maxLength =
+      typeof schema.maxLength === 'number' ? schema.maxLength : undefined;
+    if (minLength !== undefined) {
+      const targetBase: CoverageTarget = {
+        id: '',
+        dimension: 'boundaries',
+        kind: 'STRING_MIN_LENGTH_HIT',
+        canonPath,
+        params: { boundaryKind: 'minLength', boundaryValue: minLength },
+      };
+      const tId = computeCoverageTargetId(targetBase, state.idContext);
+      state.targets.push({ ...targetBase, id: tId });
+    }
+    if (maxLength !== undefined) {
+      const targetBase: CoverageTarget = {
+        id: '',
+        dimension: 'boundaries',
+        kind: 'STRING_MAX_LENGTH_HIT',
+        canonPath,
+        params: { boundaryKind: 'maxLength', boundaryValue: maxLength },
+      };
+      const tId = computeCoverageTargetId(targetBase, state.idContext);
+      state.targets.push({ ...targetBase, id: tId });
+    }
+
+    // Array length boundaries
+    const minItems =
+      typeof schema.minItems === 'number' ? schema.minItems : undefined;
+    const maxItems =
+      typeof schema.maxItems === 'number' ? schema.maxItems : undefined;
+    if (minItems !== undefined) {
+      const targetBase: CoverageTarget = {
+        id: '',
+        dimension: 'boundaries',
+        kind: 'ARRAY_MIN_ITEMS_HIT',
+        canonPath,
+        params: { boundaryKind: 'minItems', boundaryValue: minItems },
+      };
+      const tId = computeCoverageTargetId(targetBase, state.idContext);
+      state.targets.push({ ...targetBase, id: tId });
+    }
+    if (maxItems !== undefined) {
+      const targetBase: CoverageTarget = {
+        id: '',
+        dimension: 'boundaries',
+        kind: 'ARRAY_MAX_ITEMS_HIT',
+        canonPath,
+        params: { boundaryKind: 'maxItems', boundaryValue: maxItems },
+      };
+      const tId = computeCoverageTargetId(targetBase, state.idContext);
+      state.targets.push({ ...targetBase, id: tId });
+    }
+  }
 }
 
 export function analyzeCoverage(

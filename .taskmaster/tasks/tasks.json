@@ -656,7 +656,7 @@
           "9302",
           "9307"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 4,
         "details": "[Context]\nImplement the boundaries dimension for M2, covering numeric, string and array bounds as described in §3.3 (Boundaries) and §9 (M2 – Boundaries, OpenAPI & diff). This includes NUMERIC_MIN_HIT, NUMERIC_MAX_HIT, STRING_MIN_LENGTH_HIT, STRING_MAX_LENGTH_HIT, ARRAY_MIN_ITEMS_HIT and ARRAY_MAX_ITEMS_HIT targets and their hit semantics.\n\n[Key requirements]\n- Extend CoverageTarget model and CoverageAnalyzer to identify constraint nodes for numeric, string and array boundaries in the canonical view, and materialize corresponding boundary coverage targets when the dimension is enabled.\n- Implement hit semantics for inclusive and exclusive numeric bounds, including representative values based on existing numeric planning and multipleOf handling; avoid introducing separate numeric optimality logic in the coverage layer.\n- Handle degenerate cases where min==max (or similar for lengths and items) deterministically, either as a single logical boundary or as two co-hit targets.\n- Use existing UNSAT diagnostics and numeric feasibility checks to avoid marking unreachable boundary values as active; unreachable boundaries should be either omitted or flagged status:'unreachable'.\n- Instrument generator and repair to emit boundary coverage events in streaming mode without adding new passes over the data.\n\n[Deliverables]\n- Boundaries dimension extensions in coverage model and analyzer under packages/core/src/coverage/model.ts and coverage-analyzer.ts.\n- Boundary-specific instrumentation in generator and repair to record hits when boundary representatives are emitted.\n- Tests and fixtures for numeric bounds with multipleOf, string length and array length constraints, including unreachable cases.\n\n[Commands]\n- npm run build\n- npm run test -- --runInBand\n- npm run test packages/core/src/coverage/__tests__/boundaries.spec.ts\n\n[Definition of Done]\n- When boundaries dimension is enabled, reports contain boundary targets and coverage.byDimension['boundaries'] metrics consistent with hand-calculated expectations on fixtures.\n- Boundary targets respect reachability rules and do not stay active for values proven to be outside the admissible domain.\n- generator and repair instrumentation uses existing numeric planning rules to choose representative values and does not require special-case numeric logic in the coverage layer.\n- Performance remains acceptable when boundaries are enabled; tests measure the added overhead and ensure it remains bounded.",
         "testStrategy": "Unit tests for boundary target discovery in CoverageAnalyzer; generator-focused tests that emit values exactly at or around bounds and assert boundary hit flags; tests that combine boundaries with multipleOf and verify unreachable cases are marked correctly; integration tests with coverage=guided where boundaries dimension is enabled and coverage.byDimension['boundaries'] behaves as expected.",
@@ -665,10 +665,11 @@
             "id": 9309001,
             "title": "Extend coverage model and analyzer for boundaries dimension",
             "description": "Add boundaries dimension kinds and discover boundary constraints in canonical schemas to create coverage targets.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/coverage/coverage-analyzer.ts",
-            "parentId": "9309"
+            "parentId": "9309",
+            "updatedAt": "2025-11-29T18:21:06.887Z"
           },
           {
             "id": 9309002,
@@ -697,7 +698,8 @@
             "file": "packages/core/src/coverage/__tests__/boundaries.spec.ts",
             "parentId": "9309"
           }
-        ]
+        ],
+        "updatedAt": "2025-11-29T18:21:06.887Z"
       },
       {
         "id": "9310",
@@ -1135,7 +1137,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-29T16:47:43.498Z",
+      "lastModified": "2025-11-29T18:21:06.888Z",
       "taskCount": 21,
       "completedCount": 13,
       "tags": [

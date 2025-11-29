@@ -278,4 +278,146 @@ describe('analyzeCoverage', () => {
     expect(enumTargets2.length).toBe(enumValues.length);
     expect(enumTargets1).toEqual(enumTargets2);
   });
+
+  it('materializes boundaries targets for numeric, string and array constraints', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        num: {
+          type: 'number',
+          minimum: 0,
+          exclusiveMaximum: 10,
+        },
+        str: {
+          type: 'string',
+          minLength: 1,
+          maxLength: 5,
+        },
+        arr: {
+          type: 'array',
+          minItems: 2,
+          maxItems: 4,
+        },
+      },
+    };
+
+    const result = analyzeCoverage({
+      canonSchema: schema,
+      ptrMap: new Map<string, string>([['', '#']]),
+      coverageIndex: new Map(),
+      planDiag: undefined,
+      dimensionsEnabled: ['boundaries'],
+    });
+
+    const boundaryTargets = result.targets.filter(
+      (t) => t.dimension === 'boundaries'
+    );
+
+    const numPath = '#/properties/num';
+    const strPath = '#/properties/str';
+    const arrPath = '#/properties/arr';
+
+    const numericTargets = boundaryTargets.filter(
+      (t) => t.canonPath === numPath
+    );
+    const stringTargets = boundaryTargets.filter(
+      (t) => t.canonPath === strPath
+    );
+    const arrayTargets = boundaryTargets.filter((t) => t.canonPath === arrPath);
+
+    expect(
+      numericTargets.some(
+        (t) =>
+          t.kind === 'NUMERIC_MIN_HIT' &&
+          t.params?.boundaryKind === 'minimum' &&
+          t.params?.boundaryValue === 0
+      )
+    ).toBe(true);
+    expect(
+      numericTargets.some(
+        (t) =>
+          t.kind === 'NUMERIC_MAX_HIT' &&
+          t.params?.boundaryKind === 'exclusiveMaximum' &&
+          t.params?.boundaryValue === 10
+      )
+    ).toBe(true);
+
+    expect(
+      stringTargets.some(
+        (t) =>
+          t.kind === 'STRING_MIN_LENGTH_HIT' &&
+          t.params?.boundaryKind === 'minLength' &&
+          t.params?.boundaryValue === 1
+      )
+    ).toBe(true);
+    expect(
+      stringTargets.some(
+        (t) =>
+          t.kind === 'STRING_MAX_LENGTH_HIT' &&
+          t.params?.boundaryKind === 'maxLength' &&
+          t.params?.boundaryValue === 5
+      )
+    ).toBe(true);
+
+    expect(
+      arrayTargets.some(
+        (t) =>
+          t.kind === 'ARRAY_MIN_ITEMS_HIT' &&
+          t.params?.boundaryKind === 'minItems' &&
+          t.params?.boundaryValue === 2
+      )
+    ).toBe(true);
+    expect(
+      arrayTargets.some(
+        (t) =>
+          t.kind === 'ARRAY_MAX_ITEMS_HIT' &&
+          t.params?.boundaryKind === 'maxItems' &&
+          t.params?.boundaryValue === 4
+      )
+    ).toBe(true);
+  });
+
+  it('does not materialize boundaries targets when boundaries dimension is disabled', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        num: {
+          type: 'number',
+          minimum: 0,
+          maximum: 10,
+        },
+      },
+    };
+
+    const withBoundaries = analyzeCoverage({
+      canonSchema: schema,
+      ptrMap: new Map<string, string>([['', '#']]),
+      coverageIndex: new Map(),
+      planDiag: undefined,
+      dimensionsEnabled: ['structure', 'boundaries'],
+    });
+
+    const structureOnly = analyzeCoverage({
+      canonSchema: schema,
+      ptrMap: new Map<string, string>([['', '#']]),
+      coverageIndex: new Map(),
+      planDiag: undefined,
+      dimensionsEnabled: ['structure'],
+    });
+
+    const boundariesTargets = withBoundaries.targets.filter(
+      (t) => t.dimension === 'boundaries'
+    );
+    const structureTargetsWith = withBoundaries.targets.filter(
+      (t) => t.dimension === 'structure'
+    );
+    const structureTargetsOnly = structureOnly.targets.filter(
+      (t) => t.dimension === 'structure'
+    );
+
+    expect(boundariesTargets.length).toBeGreaterThan(0);
+    expect(structureTargetsWith.map((t) => t.id).sort()).toEqual(
+      structureTargetsOnly.map((t) => t.id).sort()
+    );
+  });
 });
