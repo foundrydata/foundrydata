@@ -29,7 +29,6 @@ import {
   isFoundryError,
   FoundryError,
   ErrorCode,
-  getExitCode,
   resolveOptions,
   Generate,
   PipelineStageError,
@@ -38,7 +37,6 @@ import {
   type OpenApiDriverOptions,
 } from '@foundrydata/core';
 import { renderCLIView } from './render.js';
-import type { CoverageReport } from '@foundrydata/shared';
 import {
   parsePlanOptions,
   resolveRowCount,
@@ -50,6 +48,7 @@ import {
 import { printComposeDebug } from './debug.js';
 import { resolveCliCoverageOptions } from './config/coverage-options.js';
 import { formatCoverageSummary } from './coverage/coverage-summary.js';
+import { enforceCoverageThreshold } from './coverage/coverage-exit-codes.js';
 import { registerCoverageDiffCommand } from './commands/coverage-diff.js';
 
 const program = new Command();
@@ -620,20 +619,6 @@ async function handleCliError(err: unknown): Promise<never> {
   console.error(renderCLIView(view));
 
   process.exit(error.getExitCode());
-}
-
-function enforceCoverageThreshold(report?: CoverageReport): void {
-  if (!report) return;
-  if (report.metrics.coverageStatus !== 'minCoverageNotMet') return;
-  const threshold = report.metrics.thresholds?.overall;
-  const thresholdLabel =
-    typeof threshold === 'number' ? threshold.toFixed(3) : 'unknown';
-  process.stderr.write(
-    `[foundrydata] coverage status: minCoverageNotMet (overall ${report.metrics.overall.toFixed(
-      3
-    )} < minCoverage ${thresholdLabel})\n`
-  );
-  process.exit(getExitCode(ErrorCode.COVERAGE_THRESHOLD_NOT_MET));
 }
 
 export async function main(argv: string[] = process.argv): Promise<void> {
