@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { analyzeCoverage, type CoverageAnalyzerInput } from '../analyzer.js';
+import type { CoverageEntry } from '../../transform/composition-engine.js';
 
 describe('analyzeCoverage', () => {
   it('is deterministic for fixed schema and diagnostics', () => {
@@ -79,6 +80,41 @@ describe('analyzeCoverage', () => {
     const edgePairs = result.graph.edges.map((e) => [e.from, e.to]);
     expect(edgePairs).toContainEqual(['#', '#/properties/id']);
     expect(edgePairs).toContainEqual(['#', '#/properties/title']);
+  });
+
+  it('materializes PROPERTY_PRESENT for AP:false names enumerated by CoverageIndex', () => {
+    const schema = { type: 'object', additionalProperties: false };
+    const coverageIndex = new Map<string, CoverageEntry>([
+      [
+        '',
+        {
+          has: (name: string) => name === 'extra',
+          enumerate: () => ['extra', 'ignored'],
+        },
+      ],
+    ]);
+
+    const result = analyzeCoverage({
+      canonSchema: schema,
+      ptrMap: new Map<string, string>([['', '#']]),
+      coverageIndex,
+      planDiag: undefined,
+      dimensionsEnabled: ['structure'],
+    });
+
+    const propertyTargets = result.targets.filter(
+      (t) => t.dimension === 'structure' && t.kind === 'PROPERTY_PRESENT'
+    );
+    expect(
+      propertyTargets.some(
+        (t) =>
+          t.canonPath === '#/additionalProperties' &&
+          t.params?.propertyName === 'extra'
+      )
+    ).toBe(true);
+    expect(
+      propertyTargets.some((t) => t.params?.propertyName === 'ignored')
+    ).toBe(false);
   });
 
   it('classifies oneOf/anyOf and conditional branches as branch nodes', () => {

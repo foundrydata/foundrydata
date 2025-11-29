@@ -1,17 +1,19 @@
-Task: 9308.9308003   Title: Test coverage threshold enforcement end-to-end
-Anchors: [cov://§7#thresholds-mincoverage, cov://§7#cli-summary]
+Task: 9301.9301003   Title: Generate CoverageTargets for structure, branches and enum dimensions
+Anchors: [cov://§3#coverage-model, cov://§4#coverageanalyzer]
 Touched files:
-- packages/core/test/e2e/coverage-threshold.spec.ts
-- packages/cli/src/index.test.ts
-- .taskmaster/docs/9308-traceability.md
-- .taskmaster/tasks/tasks.json
+- packages/core/src/coverage/analyzer.ts
+- packages/core/src/coverage/__tests__/analyzer.test.ts
+- .taskmaster/docs/9301-traceability.md
+- PLAN.md
+
 Approach:
-I will build a thin end-to-end harness that mirrors the spec’s acceptance scenario where `minCoverage=0.8`, `coverage.overall≈0.6`, and the CLI must still expose `coverageStatus` plus the dedicated coverage failure exit code described by `cov://§7#thresholds-mincoverage` and `cov://§7#cli-summary`. First, I will add an e2e pipeline test under `packages/core/test/e2e/coverage-threshold.spec.ts` that runs a schema with two `oneOf` branches, enforces `coverage.minCoverage`, and asserts the resulting `coverageReport.metrics.coverageStatus`/`metrics.thresholds.overall` combination while also confirming the normal coverage summary is still populated even though the threshold was missed. Second, I will enhance the CLI generate coverage failure test to ensure it emits the `[foundrydata] coverage:` summary even when `coverageStatus` becomes `minCoverageNotMet`, and that the stderr stream still contains the `coverage status: minCoverageNotMet` message before the CLI exits with the configured dedicated code. These additions keep both the Node API and CLI behaviors aligned with `cov://§7#cli-summary`’s structure and make sure per-dimension/per-operation thresholds remain descriptive only while the global guardrail is enforced. Finally, I will update the traceability notes and task records to reflect that this subtask closes out KR4/KR5/DEL3/DOD2/DOD3/TS3/TS4.
+I will extend the analyzer so that once the declared `schema.properties` have been walked, the AP:false coverage entry for the current canonical object is consulted and its `enumerate()` witness is turned into PROPERTY_PRESENT targets that reuse CoverageTarget ID generation. Each enumerated name will be checked against the CoverageIndex predicate, skipped if required or already declared, and assigned the same canonical pointer that instrumentation emits (patternProperties pointer when a regex matches, otherwise the redundant `/additionalProperties` node) so the `structure` dimension keying stays deterministic. This keeps CoverageIndex as the sole source of truth for property names when `additionalProperties:false`, which is the invariant spelled out in `cov://§3#coverage-model`, while also honoring the gating requirements described in `cov://§4#coverageanalyzer`. In tandem I will add a fixture-based analyzer test that feeds a synthetic CoverageEntry with `enumerate()` output strings and asserts the extra property targets exist with the right `canonPath`/`propertyName` params, so the `analyzer` coverage suite still hits ≥80% while proving unreachable flags unchanged. Finally I will refresh `.taskmaster/docs/9301-traceability.md` to record the new bullet mapping and make sure the plan’s own file stays aligned.
+
 Risks/Unknowns:
-- The e2e pipeline run must keep determinism while forcing overall coverage below `minCoverage`, so the schema and seeds need to stay stable; if the coverage drop is too small the assertion may flicker.
-- Capturing both the `[foundrydata] coverage:` summary and the `coverage status: minCoverageNotMet` line may require buffering stderr properly now that `enforceCoverageThreshold` exits the process.
-Parent bullets couverts: [KR4, KR5, DEL3, DOD2, DOD3, TS3, TS4]
-SPEC-check: The new e2e coverage run and CLI regression keep `coverageStatus`/`coverageReport.metrics.thresholds.overall` aligned with the dedicated exit code and human-readable summary mandated by `cov://§7#thresholds-mincoverage` and `cov://§7#cli-summary`.
+- CoverageIndex enumerate() is only available when finiteness is proven; I need to skip adding PROPERTY_PRESENT targets for nodes where enumerate is missing so the analyzer remains conservative.
+- PatternProperties regex strings might not compile in the analyzer, so the pointer resolution must gracefully ignore invalid entries rather than crash.
+Parent bullets couverts: [KR3, KR5, DOD1, DOD6, TS1]
+SPEC-check: Leveraged CoverageIndex enumerate() as the authoritative source for AP:false property names and emitted PROPERTY_PRESENT targets with the same canonical paths used by the generator, keeping the behavior aligned with cov://§3#coverage-model and cov://§4#coverageanalyzer.
 
 Checks:
 - build: npm run build
