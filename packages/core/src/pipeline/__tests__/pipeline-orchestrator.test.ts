@@ -530,7 +530,7 @@ describe('executePipeline', () => {
         hint.canonPath === '#/properties/color'
     );
     expect(enumHints.length).toBeGreaterThan(0);
-    expect(enumHints[0]?.reasonCode).toBe('INTERNAL_ERROR');
+    expect(enumHints[0]?.reasonCode).toBe('CONFLICTING_CONSTRAINTS');
 
     // Unsatisfied hints are diagnostic-only and must not alter metrics.
     const metrics = guidedResult.artifacts.coverageMetrics;

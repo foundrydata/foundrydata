@@ -7,6 +7,13 @@ import type {
   CoverageIndex,
   ComposeDiagnostics,
 } from '../transform/composition-engine.js';
+import {
+  buildPropertyCanonPath,
+  getBranchCountForTarget,
+  isPathUnderUnsat,
+  resolveSchemaNode,
+  stripHashPrefix,
+} from './conflict-detector-utils.js';
 
 type ConflictHintKind =
   | 'preferBranch'
@@ -51,7 +58,7 @@ export class ConflictDetector {
   private static checkPropertyPresenceConflict(
     input: ConflictCheckInput
   ): ConflictCheckResult {
-    const { hint, target, coverageIndex, unsatPaths } = input;
+    const { hint, target, coverageIndex, unsatPaths, canonSchema } = input;
     const propertyName =
       hint.params && typeof hint.params.propertyName === 'string'
         ? hint.params.propertyName
@@ -62,22 +69,40 @@ export class ConflictDetector {
     if (target && this.isTargetMarkedConflict(target)) {
       return this.composeResultFromTarget(target);
     }
-    if (unsatPaths && this.isPathUnderUnsat(hint.canonPath, unsatPaths)) {
-      return {
-        isConflicting: true,
-        reasonCode: 'CONFLICTING_CONSTRAINTS',
-        reasonDetail: `Path ${hint.canonPath ?? '#'} is blocked by Compose diagnostics`,
-      };
+    const propertyCanonPath = buildPropertyCanonPath(
+      hint.canonPath,
+      propertyName
+    );
+
+    const diagnosticsConflict = this.checkPropertyConflictFromDiagnostics(
+      propertyName,
+      hint.canonPath,
+      propertyCanonPath,
+      unsatPaths
+    );
+    if (diagnosticsConflict) {
+      return diagnosticsConflict;
     }
-    const ownerPointer = stripHashPrefix(hint.canonPath);
-    const entry = coverageIndex.get(ownerPointer);
-    if (entry && typeof entry.has === 'function' && !entry.has(propertyName)) {
-      return {
-        isConflicting: true,
-        reasonCode: 'CONFLICTING_CONSTRAINTS',
-        reasonDetail: `CoverageIndex forbids property '${propertyName}' under ${hint.canonPath ?? '#'} (AP:false).`,
-      };
+
+    const structuralConflict = this.checkPropertyConflictFromSchema(
+      propertyName,
+      hint.canonPath,
+      propertyCanonPath,
+      canonSchema
+    );
+    if (structuralConflict) {
+      return structuralConflict;
     }
+
+    const indexConflict = this.checkPropertyConflictFromCoverageIndex(
+      propertyName,
+      hint.canonPath,
+      coverageIndex
+    );
+    if (indexConflict) {
+      return indexConflict;
+    }
+
     return { isConflicting: false };
   }
 
@@ -85,52 +110,40 @@ export class ConflictDetector {
     input: ConflictCheckInput
   ): ConflictCheckResult {
     const { hint, target, canonSchema, unsatPaths } = input;
-    const rawBranchIndex = hint.params?.branchIndex;
-    const branchIndex =
-      typeof rawBranchIndex === 'number' &&
-      Number.isInteger(rawBranchIndex) &&
-      rawBranchIndex >= 0
-        ? rawBranchIndex
-        : undefined;
+    const branchIndex = this.extractNonNegativeInteger(
+      hint.params?.branchIndex
+    );
     if (branchIndex === undefined) {
       return { isConflicting: false };
     }
     if (target && this.isTargetMarkedConflict(target)) {
       return this.composeResultFromTarget(target);
     }
-    const branchSpecificPath =
-      hint.canonPath && branchIndex !== undefined
-        ? `${hint.canonPath.replace(/\/$/, '')}/${branchIndex}`
-        : undefined;
-    if (
-      branchSpecificPath &&
-      unsatPaths &&
-      unsatPaths.has(branchSpecificPath)
-    ) {
-      return {
-        isConflicting: true,
-        reasonCode: 'CONFLICTING_CONSTRAINTS',
-        reasonDetail: `Branch ${branchIndex} at ${branchSpecificPath} is unreachable via Compose UNSAT signals.`,
-      };
+    const branchSpecificPath = this.buildBranchSpecificPath(
+      hint.canonPath,
+      branchIndex
+    );
+
+    const diagnosticsConflict = this.checkBranchConflictFromDiagnostics(
+      branchIndex,
+      hint.canonPath,
+      branchSpecificPath,
+      unsatPaths
+    );
+    if (diagnosticsConflict) {
+      return diagnosticsConflict;
     }
-    if (unsatPaths && this.isPathUnderUnsat(hint.canonPath, unsatPaths)) {
-      return {
-        isConflicting: true,
-        reasonCode: 'CONFLICTING_CONSTRAINTS',
-        reasonDetail: `Branch ${branchIndex} at ${hint.canonPath ?? '#'} is unreachable via Compose UNSAT signals.`,
-      };
+
+    const structuralConflict = this.checkBranchConflictFromSchema(branchIndex, {
+      unionCanonPath: hint.canonPath,
+      branchSpecificPath,
+      target,
+      canonSchema,
+    });
+    if (structuralConflict) {
+      return structuralConflict;
     }
-    const schemaNode = this.resolveSchemaNode(canonSchema, hint.canonPath);
-    if (schemaNode && target) {
-      const branchCount = this.getBranchCountForTarget(target, schemaNode);
-      if (branchCount !== undefined && branchIndex >= branchCount) {
-        return {
-          isConflicting: true,
-          reasonCode: 'CONFLICTING_CONSTRAINTS',
-          reasonDetail: `Branch index ${branchIndex} exceeds available branches (${branchCount}) at ${hint.canonPath ?? '#'}.`,
-        };
-      }
-    }
+
     return { isConflicting: false };
   }
 
@@ -151,7 +164,7 @@ export class ConflictDetector {
     if (target && this.isTargetMarkedConflict(target)) {
       return this.composeResultFromTarget(target);
     }
-    const schemaNode = this.resolveSchemaNode(canonSchema, hint.canonPath);
+    const schemaNode = resolveSchemaNode(canonSchema, hint.canonPath);
     if (!schemaNode || typeof schemaNode !== 'object') {
       return { isConflicting: false };
     }
@@ -209,103 +222,174 @@ export class ConflictDetector {
     return target.meta as Record<string, unknown>;
   }
 
-  private static isPathUnderUnsat(
-    canonPath: string | undefined,
-    unsatPaths: Set<string>
-  ): boolean {
-    if (!canonPath || unsatPaths.size === 0) {
-      return false;
+  private static checkPropertyConflictFromDiagnostics(
+    propertyName: string,
+    ownerCanonPath: string | undefined,
+    propertyCanonPath: string | undefined,
+    unsatPaths?: Set<string>
+  ): ConflictCheckResult | undefined {
+    if (isPathUnderUnsat(propertyCanonPath, unsatPaths)) {
+      const blockedPath = propertyCanonPath ?? ownerCanonPath ?? '#';
+      return {
+        isConflicting: true,
+        reasonCode: 'CONFLICTING_CONSTRAINTS',
+        reasonDetail: `Property '${propertyName}' at ${blockedPath} is blocked by Compose diagnostics`,
+      };
     }
-    for (const unsatPath of unsatPaths) {
-      if (!unsatPath) {
-        continue;
-      }
-      if (canonPath === unsatPath) {
-        return true;
-      }
-      if (
-        canonPath.startsWith(unsatPath) &&
-        (canonPath.length === unsatPath.length ||
-          canonPath.charAt(unsatPath.length) === '/' ||
-          (unsatPath.endsWith('/') && canonPath.startsWith(unsatPath)))
-      ) {
-        return true;
-      }
+    if (isPathUnderUnsat(ownerCanonPath, unsatPaths)) {
+      const blockedPath = propertyCanonPath ?? ownerCanonPath ?? '#';
+      return {
+        isConflicting: true,
+        reasonCode: 'CONFLICTING_CONSTRAINTS',
+        reasonDetail: `Property '${propertyName}' at ${blockedPath} is blocked by Compose diagnostics`,
+      };
     }
-    return false;
+    return undefined;
   }
 
-  private static resolveSchemaNode(
-    schema: unknown,
-    canonPath?: string
-  ): unknown {
-    if (!canonPath || !schema || typeof schema !== 'object') {
-      return schema;
+  private static checkPropertyConflictFromSchema(
+    propertyName: string,
+    ownerCanonPath: string | undefined,
+    propertyCanonPath: string | undefined,
+    canonSchema: unknown
+  ): ConflictCheckResult | undefined {
+    if (!canonSchema) {
+      return undefined;
     }
-    const pointer = stripHashPrefix(canonPath);
-    if (pointer === '') {
-      return schema;
+    const ownerSchemaNode = resolveSchemaNode(canonSchema, ownerCanonPath);
+    const propertySchemaNode = propertyCanonPath
+      ? resolveSchemaNode(canonSchema, propertyCanonPath)
+      : undefined;
+    if (ownerSchemaNode === false || propertySchemaNode === false) {
+      return {
+        isConflicting: true,
+        reasonCode: 'CONFLICTING_CONSTRAINTS',
+        reasonDetail: `Property '${propertyName}' is attached to a boolean false subschema at ${
+          propertyCanonPath ?? ownerCanonPath ?? '#'
+        }.`,
+      };
     }
-    const segments = pointer.split('/').filter((segment) => segment.length > 0);
-    let current: unknown = schema;
-    for (const rawSegment of segments) {
-      const segment = decodePointerSegment(rawSegment);
-      if (Array.isArray(current)) {
-        const index = Number(segment);
-        if (Number.isInteger(index) && index >= 0 && index < current.length) {
-          current = current[index];
-          continue;
+    if (
+      ownerSchemaNode &&
+      typeof ownerSchemaNode === 'object' &&
+      (ownerSchemaNode as Record<string, unknown>).not &&
+      typeof (ownerSchemaNode as Record<string, unknown>).not === 'object'
+    ) {
+      const notNode = (
+        ownerSchemaNode as {
+          not?: { required?: unknown };
         }
-        return undefined;
-      }
+      ).not;
+      const required = Array.isArray(notNode?.required)
+        ? (notNode?.required as unknown[])
+        : [];
       if (
-        current &&
-        typeof current === 'object' &&
-        Object.prototype.hasOwnProperty.call(current, segment)
+        required.some(
+          (entry) => typeof entry === 'string' && entry === propertyName
+        )
       ) {
-        current = (current as Record<string, unknown>)[segment];
-        continue;
+        return {
+          isConflicting: true,
+          reasonCode: 'CONFLICTING_CONSTRAINTS',
+          reasonDetail: `Property '${propertyName}' is forbidden by not/required at ${
+            ownerCanonPath ?? '#'
+          }.`,
+        };
       }
+    }
+    return undefined;
+  }
+
+  private static checkPropertyConflictFromCoverageIndex(
+    propertyName: string,
+    ownerCanonPath: string | undefined,
+    coverageIndex: CoverageIndex
+  ): ConflictCheckResult | undefined {
+    const ownerPointer = stripHashPrefix(ownerCanonPath);
+    const entry = coverageIndex.get(ownerPointer);
+    if (entry && typeof entry.has === 'function' && !entry.has(propertyName)) {
+      return {
+        isConflicting: true,
+        reasonCode: 'CONFLICTING_CONSTRAINTS',
+        reasonDetail: `CoverageIndex forbids property '${propertyName}' under ${
+          ownerCanonPath ?? '#'
+        } (AP:false).`,
+      };
+    }
+    return undefined;
+  }
+
+  private static extractNonNegativeInteger(value: unknown): number | undefined {
+    return typeof value === 'number' && Number.isInteger(value) && value >= 0
+      ? value
+      : undefined;
+  }
+
+  private static buildBranchSpecificPath(
+    unionCanonPath: string | undefined,
+    branchIndex: number
+  ): string | undefined {
+    if (!unionCanonPath) {
       return undefined;
     }
-    return current;
+    const trimmed = unionCanonPath.replace(/\/$/, '');
+    return `${trimmed}/${branchIndex}`;
   }
 
-  private static getBranchCountForTarget(
-    target: CoverageTarget,
-    schemaNode: unknown
-  ): number | undefined {
-    if (Array.isArray(schemaNode)) {
-      return schemaNode.length;
+  private static checkBranchConflictFromDiagnostics(
+    branchIndex: number,
+    unionCanonPath: string | undefined,
+    branchSpecificPath: string | undefined,
+    unsatPaths?: Set<string>
+  ): ConflictCheckResult | undefined {
+    if (
+      branchSpecificPath &&
+      unsatPaths &&
+      unsatPaths.has(branchSpecificPath)
+    ) {
+      return {
+        isConflicting: true,
+        reasonCode: 'CONFLICTING_CONSTRAINTS',
+        reasonDetail: `Branch ${branchIndex} at ${branchSpecificPath} is unreachable via Compose UNSAT signals.`,
+      };
     }
-    if (!schemaNode || typeof schemaNode !== 'object') {
+    if (isPathUnderUnsat(unionCanonPath, unsatPaths)) {
+      const path = unionCanonPath ?? '#';
+      return {
+        isConflicting: true,
+        reasonCode: 'CONFLICTING_CONSTRAINTS',
+        reasonDetail: `Branch ${branchIndex} at ${path} is unreachable via Compose UNSAT signals.`,
+      };
+    }
+    return undefined;
+  }
+
+  private static checkBranchConflictFromSchema(
+    branchIndex: number,
+    context: {
+      unionCanonPath?: string;
+      branchSpecificPath?: string;
+      target?: CoverageTarget;
+      canonSchema: unknown;
+    }
+  ): ConflictCheckResult | undefined {
+    const { unionCanonPath, branchSpecificPath, target, canonSchema } = context;
+    if (!target || !canonSchema) {
       return undefined;
     }
-    switch (target.kind) {
-      case 'ONEOF_BRANCH':
-        return Array.isArray((schemaNode as Record<string, unknown>).oneOf)
-          ? ((schemaNode as Record<string, unknown>).oneOf as unknown[]).length
-          : undefined;
-      case 'ANYOF_BRANCH':
-        return Array.isArray((schemaNode as Record<string, unknown>).anyOf)
-          ? ((schemaNode as Record<string, unknown>).anyOf as unknown[]).length
-          : undefined;
-      default:
-        return undefined;
+    const schemaNode = resolveSchemaNode(canonSchema, unionCanonPath);
+    if (!schemaNode) {
+      return undefined;
     }
+    const branchCount = getBranchCountForTarget(target, schemaNode);
+    if (branchCount !== undefined && branchIndex >= branchCount) {
+      const path = branchSpecificPath ?? unionCanonPath ?? '#';
+      return {
+        isConflicting: true,
+        reasonCode: 'CONFLICTING_CONSTRAINTS',
+        reasonDetail: `Branch index ${branchIndex} exceeds available branches (${branchCount}) at ${path}.`,
+      };
+    }
+    return undefined;
   }
-}
-
-function stripHashPrefix(canonPath?: string): string {
-  if (!canonPath) {
-    return '';
-  }
-  if (canonPath.startsWith('#')) {
-    return canonPath.slice(1);
-  }
-  return canonPath;
-}
-
-function decodePointerSegment(segment: string): string {
-  return segment.replace(/~1/g, '/').replace(/~0/g, '~');
 }

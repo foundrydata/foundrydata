@@ -31,6 +31,29 @@ describe('ConflictDetector', () => {
     expect(result.reasonCode).toBe('CONFLICTING_CONSTRAINTS');
   });
 
+  it('flags ensurePropertyPresence hints when owning schema is boolean false', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        blocked: false,
+      },
+    };
+
+    const result = ConflictDetector.checkHintConflict({
+      hint: {
+        kind: 'ensurePropertyPresence',
+        canonPath: '#',
+        params: { propertyName: 'blocked', present: true },
+      },
+      canonSchema: schema,
+      coverageIndex: new Map() as CoverageIndex,
+    });
+
+    expect(result.isConflicting).toBe(true);
+    expect(result.reasonCode).toBe('CONFLICTING_CONSTRAINTS');
+  });
+
   it('flags property hints when CoverageIndex denies the property', () => {
     const coverageIndex: CoverageIndex = new Map();
     coverageIndex.set('', {
@@ -49,6 +72,32 @@ describe('ConflictDetector', () => {
 
     expect(result.isConflicting).toBe(true);
     expect(result.reasonDetail).toContain('CoverageIndex forbids property');
+  });
+
+  it('flags property hints when not/required forbids the property', () => {
+    const schema = {
+      type: 'object',
+      not: {
+        required: ['blocked'],
+      },
+      properties: {
+        blocked: { type: 'string' },
+      },
+    };
+
+    const result = ConflictDetector.checkHintConflict({
+      hint: {
+        kind: 'ensurePropertyPresence',
+        canonPath: '#',
+        params: { propertyName: 'blocked', present: true },
+      },
+      canonSchema: schema,
+      coverageIndex: new Map() as CoverageIndex,
+    });
+
+    expect(result.isConflicting).toBe(true);
+    expect(result.reasonCode).toBe('CONFLICTING_CONSTRAINTS');
+    expect(result.reasonDetail).toContain('not/required');
   });
 
   it('flags preferBranch hints that exceed branch count', () => {
