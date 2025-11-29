@@ -35,7 +35,7 @@
 5. Rédiger `PLAN.md` (200–400 mots) centré sur la sous-tâche en cours, avec `taskId`, `anchors`, `touchedFiles`, approche, risques et checks standard.
 6. Implémenter les changements pour cette sous-tâche dans les fichiers listés, en respectant les invariants coverage-aware et AP:false.
 7. Ajouter/mettre à jour les tests pour viser **cov ≥80 % sur chaque fichier touché** (ou isoler la logique dans un nouveau module bien couvert).
-8. Lancer au minimum `npm run build`, `npm run test`, `npm run bench` (et `npm run typecheck` si pertinent) depuis la racine.
+8. Lancer au minimum `npm run build`, puis `npm run typecheck`, ensuite `npm run lint`, puis `npm run test`, et enfin `npm run bench` depuis la racine ; **Codex doit s’assurer que `typecheck` et `lint` précèdent `test`.**
 9. Vérifier que les diagnostics respectent `diagnosticsEnvelope.schema.json` (diag-schema) et que les bench gates passent.
 10. Créer un commit avec le template fourni (scope = sous-tâche), incluant un trailer `REFONLY::{"anchors":[...],"summary":"..."}` valide, marquer la sous-tâche comme `done` puis consigner l’opération dans `agent-log.jsonl`. La tâche parente ne peut être terminée que lorsque toutes ses sous-tâches sont `done`.  
    *Remarque : si l’environnement d’exécution ne permet pas à l’agent de créer un commit (ex. restrictions Codex CLI), l’agent doit laisser explicitement ces actions au·à la humain·e dans sa réponse finale.*
@@ -166,7 +166,7 @@ Step 3  Produire PLAN.md (200–400 mots) + liste fichiers touchés.
 
 Step 4  Générer PATCH + TESTS (cov ≥80% sur fichiers touchés).
 
-Step 5  Exécuter build/test/bench (cmd standard).
+Step 5  Exécuter build/typecheck/lint/test/bench (cmd standard, dans cet ordre et avec `typecheck`/`lint` avant `test`).
 
 Step 6  Valider diagnostics (schéma "diagnosticsEnvelope.schema.json").
 
@@ -194,9 +194,10 @@ Après implémentation + tests d’une sous-tâche (avant le commit), l’agent 
 ```bash
 npm i
 npm run build
-npm run test
 npm run typecheck
 npm run lint
+npm run test
+npm run bench
 ```
 
 ---
