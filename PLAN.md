@@ -1,21 +1,19 @@
 Task: 9309   Title: Add boundaries coverage dimension and instrumentation (M2)
-Anchors: [cov://§3#coverage-model, cov://§4#boundaries, spec://§8#numbers-multipleof, spec://§8#early-unsat-checks]
+Anchors: [cov://§3#coverage-model, cov://§4#boundaries, cov://§7#json-coverage-report, spec://§8#numbers-multipleof]
 Touched files:
-- packages/core/src/coverage/coverage-analyzer-unreachable.ts
-- packages/core/src/coverage/analyzer.ts
-- packages/core/src/coverage/coverage-planner.ts
-- packages/core/src/coverage/__tests__/analyzer.test.ts
+- packages/core/src/coverage/__tests__/boundaries.spec.ts
+- packages/core/src/pipeline/__tests__/pipeline-coverage-boundaries.integration.test.ts
 - .taskmaster/docs/9309-traceability.md
 
 Approach:
-Pour 9309.9309003, je vais factoriser la logique de détection des chemins UNSAT et l’application des statuts `unreachable`/`deprecated` dans un module dédié `coverage-analyzer-unreachable`, puis l’utiliser depuis l’analyzer et le planner pour traiter proprement les cibles de frontières inatteignables (cov://§3#coverage-model, cov://§4#boundaries, spec://§8#early-unsat-checks). Ce module construira un ensemble de chemins UNSAT à partir des diagnostics Compose existants (y compris `UNSAT_NUMERIC_BOUNDS` et les gardes AP:false déjà utilisés pour la structure) et fournira une fonction pure qui, à partir d’une liste de CoverageTargets, marque comme `status:'unreachable'` toutes les cibles sous un chemin UNSAT (en conservant `SCHEMA_REUSED_COVERED` avec `status:'deprecated'`) tout en enrichissant `meta` avec des raisons de conflit. Dans `analyzer`, je remplacerai la logique inline par cet utilitaire afin que les cibles `boundaries` pour des domaines numériques ou de cardinalité vides héritent automatiquement du même traitement que les autres dimensions, sans ajouter de moteur de preuve supplémentaire. Dans `coverage-planner`, j’alignerai l’usage de `buildUnsatPathSet` sur ce nouveau module pour que la détection d’impossibilité de hints reste cohérente avec la notion de cibles inatteignables. Enfin, j’étendrai les tests d’analyzer pour couvrir explicitement les cibles de frontières sous `UNSAT_NUMERIC_BOUNDS` et vérifier que les targets `boundaries` deviennent `unreachable` sur les chemins concernés, tout en laissant les cas dégénérés `min == max` gérés de façon déterministe par l’instrumentation existante plutôt que par des heuristiques d’inatteignabilité.
+Pour 9309.9309004, je vais ajouter des tests ciblés qui valident les sémantiques de couverture de frontières de bout en bout: inclusif vs exclusif, cas dégénérés `min == max` et interactions avec `multipleOf`, en inspectant à la fois les hits de cibles `boundaries` et les métriques exposées dans le rapport de couverture (cov://§3#coverage-model, cov://§4#boundaries, cov://§7#json-coverage-report, spec://§8#numbers-multipleof). Dans `packages/core/src/coverage/__tests__/boundaries.spec.ts`, j’introduirai des tests unitaires qui exécutent l’analyzer et le générateur sur des petits schémas synthétiques (numérique, chaîne et tableau) via le pipeline ou des helpers internes, en contrôlant les valeurs émises pour vérifier que: (a) les bornes inclusives sont couvertes quand la valeur générée est exactement égale à la borne, (b) les bornes exclusives sont couvertes via la valeur représentative choisie par la planification numérique (y compris sous `multipleOf`), et (c) les cas `min == max` et `minLength == maxLength` / `minItems == maxItems` produisent des co-hit déterministes des cibles correspondantes. Je compléterai avec un test d’intégration dans `pipeline-coverage-boundaries.integration.test.ts` qui exécute `executePipeline` avec `coverage=guided` et `dimensionsEnabled` incluant `'boundaries'`, puis vérifie que `coverage.byDimension.boundaries` et `targets[]` reflètent les attentes manuelles sur un fixture mixte (incluant des bornes atteignables, des domaines vides déjà marqués `unreachable` par Compose et des combinaisons avec `multipleOf`). Les tests couvriront aussi un scénario où une valeur qui frappe une frontière et passe AJV reste inchangée par Repair en l’absence de contraintes supplémentaires, de sorte que les hits de frontières ne soient pas perdus inutilement.
 
 Risks/Unknowns:
-- La liste des codes UNSAT considérés comme “forts” doit rester alignée avec Compose; toute extension devra être tracée pour éviter de marquer à tort des cibles encore atteignables comme `unreachable`.
-- La factorisation de la logique d’UNSAT entre analyzer et planner ne doit pas introduire de divergences subtiles (par exemple des chemins UNSAT traités différemment pour les cibles de structure et les cibles de frontières); des tests ciblés doivent vérifier que les deux couches voient les mêmes chemins UNSAT.
-- Les traitements ultérieurs de 9309.9309004 sur les métriques by-dimension ne doivent pas supposer qu’aucune cible `boundaries` n’est marquée `unreachable`; cette sous-tâche doit donc se limiter au statut des cibles sans toucher au calcul des métriques.
+- Assurer que les tests restent déterministes malgré le RNG du générateur, en s’appuyant sur des seeds fixes et des schémas simples, est indispensable pour que les attentes sur les hits de frontières et les métriques by-dimension restent stables.
+- Les scénarios impliquant `multipleOf` et bornes exclusives peuvent être sensibles aux détails de la planification numérique; les tests devront vérifier la cohérence des hits sans figer des valeurs trop spécifiques qui pourraient être ajustées par d’autres tâches liées aux nombres.
+- L’intégration avec Repair pour le cas “boundary-hitting value unchanged” doit rester minimale dans cette sous-tâche (simple assertion de non-régression) afin de ne pas empiéter sur des ajustements de Repair potentiellement couverts par des tâches futures.
 
-Parent bullets couverts: [KR4, DEL3, DOD2, TS3]
+Parent bullets couverts: [DEL3, DOD1, DOD3, DOD4, TS2, TS4]
 
 Checks:
 - build: npm run build
