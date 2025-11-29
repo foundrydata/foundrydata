@@ -1,22 +1,21 @@
-Task: 9303.9303003   Title: Implement reportMode full vs summary behavior
-Anchors: [cov://§7#json-coverage-report]
+Task: 9304.9304006   Title: Enforce coverage profile presets
+Anchors: [cov://§6#budget-profiles, cov://§7#cli-summary]
 Touched files:
-- packages/core/src/pipeline/orchestrator.ts
-- packages/core/src/pipeline/types.ts
-- packages/core/src/coverage/__tests__/coverage-report-json.test.ts
-- packages/cli/src/config/coverage-options.ts
 - packages/cli/src/index.ts
+- packages/cli/src/config/coverage-options.ts
+- packages/cli/src/config/__tests__/coverage-options.test.ts
 
 Approach:
-I will add a coverage report mode option (full|summary) to the CLI and pipeline so the existing helper in `applyReportModeToCoverageTargets` can actually be driven from user inputs rather than the current hard-coded `full`. This means extending every coverage option struct (`PipelineOptions`, CLI parser) with a `reportMode` field, wiring a new `--coverage-report-mode` flag in both the root and OpenAPI commands, and parsing/validating it through the same shared helpers that already resolve coverage modes and dimensions. The CLI will also keep canonical dimensions when the user leaves `--coverage-dimensions` empty so `dimensionsEnabled` is never an empty list for measure/guided runs, aligning with the “Dimensions enabled” requirements in the spec.
+I will extend the CLI coverage parser so the quick/balanced/thorough profiles become the presets described by cov://§6#budget-profiles instead of just a caps shortcut. That means enriching `resolveCliCoverageOptions` with a small lookup from profile to `dimensionsEnabled`, planner caps/priority and a recommended `maxInstances`, then using that recommendation whenever the user runs a guided mode without an explicit `--n`. The `generate` and `openapi` command handlers will be updated to consume the new recommendation (while still honoring `--n/--count/--rows` when supplied) so the pipeline sees the expected budgets while the parser continues to gate coverage options under `coverage=off`. I will also refresh the `--coverage-profile` help text so the CLI documents the implied dimensions and instance ranges, keeping the CLI UI aligned with the spec’s requirement that users understand what each profile wires up.
 
-In the orchestrator I will resolve the canonical dimensions (falling back to `[structure, branches, enum]`), reuse them for the analyzer, planner, evaluator and the final report metadata, and expose the parsed `reportMode` there. The coverage report builder will now set `reportMode` from options, pass it to `applyReportModeToCoverageTargets`, and keep the `run.dimensionsEnabled` array in sync with the resolved defaults. After the plumbing is wired I will add integration tests that generate coverage reports without explicit dimensions and with `reportMode:'summary'` to prove the new knobs produce the expected trailer (empty `targets[]`, canonical dims, `reportMode` metadata) while retaining deterministic metrics.
+On the testing side I will add dedicated unit tests for `resolveCliCoverageOptions` to assert that each profile yields the right `dimensionsEnabled`, the planner `caps`/`dimensionPriority` from the preset, and the recommended `maxInstances` only in guided mode, plus that explicit `--coverage-dimensions` overrides the preset list. These tests will cover the `cov://§6#budget-profiles` expectations head-on (dimensions, budgets, caps) and satisfy the CLI test strategy bullet (TS4) by making the internal configuration observable even without running a full CLI invocation.
 
 Risks/Unknowns:
-- Summary mode truncates payloads; the test fixture needs enough uncovered targets to make the “empty targets” behavior meaningful without making the run flaky.
-- The CLI defaults must stay aligned with the pipeline defaults so `run.dimensionsEnabled` never drops to an empty array even if multiple entry points use the API directly.
-Parent bullets couverts: [KR5, KR6, DOD2, TS2, TS5]
-SPEC-check: Verified anchor cov://§7#json-coverage-report covers the report-mode semantics and dimension behavior that these changes expose.
+- The default `maxInstances` recommendation must never override an existing `--n` flag or break existing scripts that depend on `count` defaulting to 1; I need to be careful to only apply the preset when no explicit row count is provided.
+- The preset for thorough mentions `boundaries` once available; I should verify that enabling it today does not accidentally break runs that still expect only structure/branches/enum in `dimensionsEnabled`.
+- The planner caps from the profiles must stay stable even as the planner evolves; snapshotting the exact numbers in the tests makes this subtask sensitive to future refactors, but without it TS4 would remain unverified.
+
+Parent bullets couverts: [KR5, DOD3, TS4]
 
 Checks:
 - build: npm run build

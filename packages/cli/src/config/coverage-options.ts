@@ -28,7 +28,57 @@ export interface ResolvedCliCoverage {
    * Optional message describing ignored coverage options when coverage=off.
    */
   ignoredReason?: string;
+  recommendedMaxInstances?: number;
 }
+
+interface CoverageProfilePreset {
+  dimensions: CoverageDimension[];
+  recommendedMaxInstances: number;
+  planner?: CoveragePlannerUserOptions;
+}
+
+const COVERAGE_PROFILE_PRESETS: Record<
+  'quick' | 'balanced' | 'thorough',
+  CoverageProfilePreset
+> = {
+  quick: {
+    dimensions: ['structure', 'branches'],
+    recommendedMaxInstances: 75,
+    planner: {
+      dimensionPriority: ['branches', 'structure', 'enum', 'boundaries'],
+      caps: {
+        maxTargetsPerDimension: {
+          branches: 128,
+          enum: 128,
+        },
+        maxTargetsPerSchema: 64,
+        maxTargetsPerOperation: 32,
+      },
+    },
+  },
+  balanced: {
+    dimensions: ['structure', 'branches', 'enum'],
+    recommendedMaxInstances: 350,
+    planner: {
+      dimensionPriority: ['branches', 'enum', 'structure'],
+      caps: {
+        maxTargetsPerDimension: {
+          branches: 512,
+          enum: 512,
+        },
+        maxTargetsPerSchema: 256,
+        maxTargetsPerOperation: 128,
+      },
+    },
+  },
+  thorough: {
+    dimensions: ['structure', 'branches', 'enum', 'boundaries'],
+    recommendedMaxInstances: 1000,
+    planner: {
+      dimensionPriority: ['branches', 'enum', 'structure', 'boundaries'],
+    },
+  },
+};
 
 const KNOWN_DIMENSIONS: CoverageDimension[] = [
   'structure',
@@ -149,34 +199,21 @@ function parseCoverageReportMode(raw: unknown): CoverageReportMode {
 function resolvePlannerFromProfile(
   profile: 'quick' | 'balanced' | 'thorough'
 ): CoveragePlannerUserOptions | undefined {
-  switch (profile) {
-    case 'quick':
-      return {
-        caps: {
-          maxTargetsPerDimension: {
-            branches: 128,
-            enum: 128,
-          },
-          maxTargetsPerSchema: 64,
-          maxTargetsPerOperation: 32,
-        },
-      };
-    case 'balanced':
-      return {
-        caps: {
-          maxTargetsPerDimension: {
-            branches: 512,
-            enum: 512,
-          },
-          maxTargetsPerSchema: 256,
-          maxTargetsPerOperation: 128,
-        },
-      };
-    case 'thorough':
-      return {};
-    default:
-      return undefined;
+  return COVERAGE_PROFILE_PRESETS[profile]?.planner;
+}
+
+function resolveDimensionsEnabled(
+  mode: CoverageMode,
+  parsedDimensions: CoverageDimension[],
+  preset?: CoverageProfilePreset
+): CoverageDimension[] {
+  if (parsedDimensions.length > 0) {
+    return parsedDimensions;
   }
+  if (mode === 'off') {
+    return [];
+  }
+  return preset?.dimensions ?? [...DEFAULT_PLANNER_DIMENSIONS_ENABLED];
 }
 
 // eslint-disable-next-line complexity
@@ -196,12 +233,8 @@ export function resolveCliCoverageOptions(
       : undefined;
   const reportMode = parseCoverageReportMode(cliOptions.coverageReportMode);
 
-  const dimensionsEnabled =
-    parsedDimensions.length > 0
-      ? parsedDimensions
-      : mode === 'off'
-        ? []
-        : [...DEFAULT_PLANNER_DIMENSIONS_ENABLED];
+  const preset = profile ? COVERAGE_PROFILE_PRESETS[profile] : undefined;
+  const dimensionsEnabled = resolveDimensionsEnabled(mode, parsedDimensions, preset);
 
   let ignoredReason: string | undefined;
   if (mode === 'off') {
@@ -215,6 +248,8 @@ export function resolveCliCoverageOptions(
     mode === 'guided' && profile
       ? resolvePlannerFromProfile(profile)
       : undefined;
+  const recommendedMaxInstances =
+    mode === 'guided' ? preset?.recommendedMaxInstances : undefined;
 
   return {
     coverage: {
@@ -228,5 +263,6 @@ export function resolveCliCoverageOptions(
       reportMode: mode === 'off' ? undefined : reportMode,
     },
     ignoredReason,
+    recommendedMaxInstances,
   };
 }
