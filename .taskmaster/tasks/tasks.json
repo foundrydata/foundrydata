@@ -675,10 +675,11 @@
             "id": 9309002,
             "title": "Instrument generator for numeric and length boundary hits",
             "description": "Emit coverage events when numeric values, string lengths and array lengths hit boundary representatives.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/generator/foundry-generator.ts",
-            "parentId": "9309"
+            "parentId": "9309",
+            "updatedAt": "2025-11-29T18:37:13.813Z"
           },
           {
             "id": 9309003,
@@ -699,7 +700,7 @@
             "parentId": "9309"
           }
         ],
-        "updatedAt": "2025-11-29T18:21:06.887Z"
+        "updatedAt": "2025-11-29T18:37:13.813Z"
       },
       {
         "id": "9310",
@@ -1137,7 +1138,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-29T18:21:06.888Z",
+      "lastModified": "2025-11-29T18:37:13.816Z",
       "taskCount": 21,
       "completedCount": 13,
       "tags": [

@@ -10,7 +10,7 @@ function composeSchema(schema: unknown): ReturnType<typeof compose> {
   return compose(normalized);
 }
 
-describe('generator coverage instrumentation for branches, enums and properties', () => {
+describe('generator coverage instrumentation for branches, enums, properties and boundaries', () => {
   it('emits ONEOF_BRANCH coverage events', () => {
     const schema = {
       oneOf: [
@@ -194,5 +194,51 @@ describe('generator coverage instrumentation for branches, enums and properties'
     const ev = optionalEvents[0]!;
     expect(ev.dimension).toBe('structure');
     expect(ev.canonPath).toBe('#/properties/optional');
+  });
+
+  it('emits boundaries events for numeric, string and array constraints', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        num: { type: 'number', minimum: 0 },
+        str: { type: 'string', minLength: 3 },
+        arr: {
+          type: 'array',
+          minItems: 2,
+          items: { type: 'integer' },
+        },
+      },
+      required: ['num', 'str', 'arr'],
+    } as const;
+
+    const effective = composeSchema(schema);
+    const events: CoverageEvent[] = [];
+
+    generateFromCompose(effective, {
+      coverage: {
+        mode: 'measure',
+        emit: (event) => {
+          events.push(event);
+        },
+      },
+    });
+
+    const boundaryEvents = events.filter((e) => e.dimension === 'boundaries');
+
+    const numEvents = boundaryEvents.filter(
+      (e) => e.kind === 'NUMERIC_MIN_HIT' && e.canonPath === '#/properties/num'
+    );
+    const strEvents = boundaryEvents.filter(
+      (e) =>
+        e.kind === 'STRING_MIN_LENGTH_HIT' && e.canonPath === '#/properties/str'
+    );
+    const arrEvents = boundaryEvents.filter(
+      (e) =>
+        e.kind === 'ARRAY_MIN_ITEMS_HIT' && e.canonPath === '#/properties/arr'
+    );
+
+    expect(numEvents.length).toBeGreaterThanOrEqual(1);
+    expect(strEvents.length).toBeGreaterThanOrEqual(1);
+    expect(arrEvents.length).toBeGreaterThanOrEqual(1);
   });
 });

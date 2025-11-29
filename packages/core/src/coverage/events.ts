@@ -72,13 +72,49 @@ export interface EnumValueHitEvent {
   };
 }
 
+export interface NumericBoundaryHitEvent {
+  dimension: 'boundaries';
+  kind: 'NUMERIC_MIN_HIT' | 'NUMERIC_MAX_HIT';
+  canonPath: string;
+  operationKey?: string;
+  params: {
+    boundaryKind: string;
+    boundaryValue: number;
+  };
+}
+
+export interface StringBoundaryHitEvent {
+  dimension: 'boundaries';
+  kind: 'STRING_MIN_LENGTH_HIT' | 'STRING_MAX_LENGTH_HIT';
+  canonPath: string;
+  operationKey?: string;
+  params: {
+    boundaryKind: string;
+    boundaryValue: number;
+  };
+}
+
+export interface ArrayBoundaryHitEvent {
+  dimension: 'boundaries';
+  kind: 'ARRAY_MIN_ITEMS_HIT' | 'ARRAY_MAX_ITEMS_HIT';
+  canonPath: string;
+  operationKey?: string;
+  params: {
+    boundaryKind: string;
+    boundaryValue: number;
+  };
+}
+
 export type CoverageEvent =
   | SchemaNodeHitEvent
   | PropertyPresentHitEvent
   | OneOfBranchHitEvent
   | AnyOfBranchHitEvent
   | ConditionalPathHitEvent
-  | EnumValueHitEvent;
+  | EnumValueHitEvent
+  | NumericBoundaryHitEvent
+  | StringBoundaryHitEvent
+  | ArrayBoundaryHitEvent;
 
 export interface InstanceCoverageState {
   /**
@@ -187,6 +223,20 @@ function buildParamsKeyFromTarget(
       : undefined;
   }
 
+  if (
+    kind === 'NUMERIC_MIN_HIT' ||
+    kind === 'NUMERIC_MAX_HIT' ||
+    kind === 'STRING_MIN_LENGTH_HIT' ||
+    kind === 'STRING_MAX_LENGTH_HIT' ||
+    kind === 'ARRAY_MIN_ITEMS_HIT' ||
+    kind === 'ARRAY_MAX_ITEMS_HIT'
+  ) {
+    const boundaryKind = params.boundaryKind;
+    return typeof boundaryKind === 'string'
+      ? `boundaryKind:${boundaryKind}`
+      : undefined;
+  }
+
   return undefined;
 }
 
@@ -210,15 +260,19 @@ function buildTargetIdentity(
 
   const kind = target.kind;
 
-  // Only structural, branches and enum targets participate in the
-  // M0 event model for this sub-task.
   if (
     kind !== 'SCHEMA_NODE' &&
     kind !== 'PROPERTY_PRESENT' &&
     kind !== 'ONEOF_BRANCH' &&
     kind !== 'ANYOF_BRANCH' &&
     kind !== 'CONDITIONAL_PATH' &&
-    kind !== 'ENUM_VALUE_HIT'
+    kind !== 'ENUM_VALUE_HIT' &&
+    kind !== 'NUMERIC_MIN_HIT' &&
+    kind !== 'NUMERIC_MAX_HIT' &&
+    kind !== 'STRING_MIN_LENGTH_HIT' &&
+    kind !== 'STRING_MAX_LENGTH_HIT' &&
+    kind !== 'ARRAY_MIN_ITEMS_HIT' &&
+    kind !== 'ARRAY_MAX_ITEMS_HIT'
   ) {
     return undefined;
   }
@@ -261,6 +315,20 @@ function buildParamsKeyFromEvent(event: CoverageEvent): string | undefined {
     const enumIndex = event.params?.enumIndex;
     return typeof enumIndex === 'number' && Number.isFinite(enumIndex)
       ? `enumIndex:${enumIndex}`
+      : undefined;
+  }
+
+  if (
+    event.kind === 'NUMERIC_MIN_HIT' ||
+    event.kind === 'NUMERIC_MAX_HIT' ||
+    event.kind === 'STRING_MIN_LENGTH_HIT' ||
+    event.kind === 'STRING_MAX_LENGTH_HIT' ||
+    event.kind === 'ARRAY_MIN_ITEMS_HIT' ||
+    event.kind === 'ARRAY_MAX_ITEMS_HIT'
+  ) {
+    const boundaryKind = event.params?.boundaryKind;
+    return typeof boundaryKind === 'string'
+      ? `boundaryKind:${boundaryKind}`
       : undefined;
   }
 

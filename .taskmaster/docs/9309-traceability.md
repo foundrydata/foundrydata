@@ -38,7 +38,7 @@ This document maps parent task 9309 bullets from Implementation Details, Deliver
   Covers: [KR1], [DEL1], [DOD1], [TS1] (adds boundary target kinds for numeric, string and array constraints in the coverage model and extends the analyzer so canonical schemas materialize `boundaries` targets when the dimension is enabled, without changing behavior of existing dimensions).
 
 - **9309.9309002 – Instrument generator for numeric and length boundary hits**  
-  Covers: [KR2], [KR3], [KR5], [DEL2], [DOD3], [TS2] (emits streaming coverage events whenever generator and Repair hit inclusive or exclusive numeric bounds or length/item boundaries, aligning hit semantics with existing numeric planning and ensuring degenerate `min == max` cases are handled deterministically).
+  Covers: [KR2], [KR3], [KR5], [DEL2], [DOD3], [TS2] (emits streaming coverage events whenever the generator hits inclusive or exclusive numeric bounds or length/item boundaries, aligning hit semantics with existing numeric planning and preparing the path for Repair to reuse the same event model in a later subtask without adding new passes over emitted instances).
 
 - **9309.9309003 – Handle unreachable or degenerate boundary targets**  
   Covers: [KR4], [DEL3], [DOD2], [TS3] (uses UNSAT diagnostics and numeric feasibility checks to mark unreachable boundary targets with `status:'unreachable'` or omit them, including numeric bounds constrained by `multipleOf`, while keeping reachable domains active).
@@ -48,8 +48,7 @@ This document maps parent task 9309 bullets from Implementation Details, Deliver
 
 Status:
 
-- 9309.9309001: in-progress
-- 9309.9309002: pending
+- 9309.9309001: done
+- 9309.9309002: in-progress
 - 9309.9309003: pending
 - 9309.9309004: pending
-
