@@ -142,6 +142,12 @@ interface GeneratorCoverageOptions {
    * honored under the current constraints or were otherwise invalid.
    */
   recordUnsatisfiedHint?: (hint: UnsatisfiedHint) => void;
+  /**
+   * Optional hint trace shared with Repair for diagnostic-only
+   * unsatisfiedHints reporting. Representation is implementation-
+   * defined and must not affect RNG or output shape.
+   */
+  hintTrace?: unknown;
 }
 
 export interface FoundryGeneratorOptions {
@@ -230,6 +236,17 @@ class GeneratorEngine {
     Map<string, EvaluationProof | null>
   > = new WeakMap();
 
+  private readonly hintTrace?:
+    | {
+        recordApplication?: (entry: {
+          hint: CoverageHint;
+          canonPath: JsonPointer;
+          instancePath: string;
+          itemIndex: number;
+        }) => void;
+      }
+    | undefined;
+
   private recordUnsatisfiedHint(hint: UnsatisfiedHint): void {
     if (
       !this.coverage ||
@@ -243,6 +260,88 @@ class GeneratorEngine {
     } catch {
       // Unsatisfied hint reporting must not affect generation behavior.
     }
+  }
+
+  private recordEnsurePropertyPresenceHintApplication(
+    canonPath: JsonPointer,
+    propertyName: string
+  ): void {
+    if (
+      !this.coverage ||
+      this.coverage.mode !== 'guided' ||
+      !this.coverageHintsByPath
+    ) {
+      return;
+    }
+    const key = canonicalizeCoveragePath(canonPath);
+    const resolved = this.coverageHintsByPath.get(key);
+    if (!resolved) return;
+    for (const hint of resolved.effective) {
+      if (
+        hint.kind === 'ensurePropertyPresence' &&
+        hint.params.present === true &&
+        hint.params.propertyName === propertyName
+      ) {
+        this.recordHintApplication(hint, key);
+      }
+    }
+  }
+
+  private canonPathToInstancePath(canonPath: JsonPointer): string {
+    if (!canonPath) return '';
+    const raw = canonPath.startsWith('#') ? canonPath.slice(1) : canonPath;
+    if (!raw || raw === '/') return '';
+    const segments = raw
+      .split('/')
+      .filter((segment) => segment.length > 0)
+      .map((segment) => segment.replace(/~1/g, '/').replace(/~0/g, '~'));
+    const instanceSegments: string[] = [];
+    for (let i = 0; i < segments.length; i += 1) {
+      const seg = segments[i]!;
+      if (seg === 'properties' && i + 1 < segments.length) {
+        instanceSegments.push(segments[i + 1]!);
+        i += 1;
+        continue;
+      }
+      if (/^(items|prefixItems|contains|unevaluatedItems)$/.test(seg)) {
+        if (i + 1 < segments.length) {
+          instanceSegments.push(segments[i + 1]!);
+          i += 1;
+        }
+        continue;
+      }
+      // Structural keywords (oneOf, anyOf, allOf, if/then/else, etc.)
+      // do not contribute directly to instancePath.
+    }
+    if (instanceSegments.length === 0) return '';
+    return instanceSegments.reduce(
+      (ptr, token) =>
+        `${ptr}/${token.replace(/~/g, '~0').replace(/\//g, '~1')}`,
+      ''
+    );
+  }
+
+  private recordHintApplication(
+    hint: CoverageHint,
+    canonPath: JsonPointer
+  ): void {
+    if (
+      !this.coverage ||
+      this.coverage.mode !== 'guided' ||
+      !this.hintTrace ||
+      typeof this.hintTrace.recordApplication !== 'function'
+    ) {
+      return;
+    }
+    const instancePath = this.canonPathToInstancePath(canonPath);
+    const itemIndex =
+      this.currentItemIndex !== null ? this.currentItemIndex : 0;
+    this.hintTrace.recordApplication({
+      hint,
+      canonPath,
+      instancePath,
+      itemIndex,
+    });
   }
 
   private buildCoverageHintsIndex(
@@ -309,6 +408,9 @@ class GeneratorEngine {
       this.coverage.hints.length > 0
         ? this.buildCoverageHintsIndex(this.coverage.hints)
         : undefined;
+    this.hintTrace =
+      (this.coverage as { hintTrace?: GeneratorEngine['hintTrace'] })
+        ?.hintTrace ?? undefined;
   }
 
   private readonly rootSchema: Schema | unknown;
@@ -360,6 +462,7 @@ class GeneratorEngine {
       index >= 0 &&
       index < values.length
     ) {
+      this.recordHintApplication(enumHint, key);
       return index;
     }
     // Index outside enum bounds or invalid type: record as internal error.
@@ -698,6 +801,7 @@ class GeneratorEngine {
         result[name] = value;
         usedNames.add(name);
         this.recordPropertyPresent(resolved.pointer, name);
+        this.recordEnsurePropertyPresenceHintApplication(canonPath, name);
         this.recordEvaluationTrace(canonPath, name, evaluationProof);
         if (eTraceGuard) {
           this.invalidateEvaluationCacheForObject(result);
@@ -835,6 +939,10 @@ class GeneratorEngine {
           result[candidate] = value;
           usedNames.add(candidate);
           this.recordPropertyPresent(resolved.pointer, candidate);
+          this.recordEnsurePropertyPresenceHintApplication(
+            canonPath,
+            candidate
+          );
           this.recordEvaluationTrace(canonPath, candidate, evaluationProof);
           if (eTraceGuard) {
             this.invalidateEvaluationCacheForObject(result);
@@ -1247,6 +1355,7 @@ class GeneratorEngine {
       index >= 0 &&
       index < branchCount
     ) {
+      this.recordHintApplication(hint, key);
       return index;
     }
     this.recordUnsatisfiedHint({

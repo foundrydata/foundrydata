@@ -23,7 +23,7 @@ import {
 } from '../util/pattern-literals.js';
 import { resolveOptions } from '../types/options.js';
 import type { MetricsCollector } from '../util/metrics.js';
-import type { CoverageMode } from '@foundrydata/shared';
+import type { CoverageMode, UnsatisfiedHint } from '@foundrydata/shared';
 import type { CoverageEvent } from '../coverage/index.js';
 
 export interface AjvErr {
@@ -650,6 +650,8 @@ interface RepairCoverageOptions {
   mode: CoverageMode;
   emit: (event: CoverageEvent) => void;
   emitForItem?: (itemIndex: number, event: CoverageEvent) => void;
+  hintTrace?: unknown;
+  recordUnsatisfiedHint?: (hint: UnsatisfiedHint) => void;
 }
 
 function canonicalizeCoveragePath(pointer: string): string {
@@ -734,6 +736,66 @@ export function repairItemsAjvDriven(
     // Fast-path: validate original without cloning to minimize overhead
     let pass = validateFn(original);
     if (pass) {
+      if (
+        coverage &&
+        coverage.mode === 'guided' &&
+        typeof coverage.recordUnsatisfiedHint === 'function'
+      ) {
+        type HintApplication = {
+          hint: {
+            kind: string;
+            canonPath: string;
+            params?: Record<string, unknown>;
+          };
+          canonPath: string;
+          instancePath: string;
+          itemIndex: number;
+        };
+        type HintTraceLike = {
+          getApplicationsForItem?: (idx: number) => HintApplication[];
+        };
+        const hintTrace =
+          (coverage.hintTrace as HintTraceLike | undefined) ?? undefined;
+        const applications =
+          hintTrace?.getApplicationsForItem?.(itemIndex) ?? [];
+
+        const recordUnsatisfied = coverage.recordUnsatisfiedHint;
+
+        for (const app of applications) {
+          const { hint } = app;
+          const kind = hint.kind;
+          const canonPath = hint.canonPath ?? app.canonPath;
+          if (kind === 'ensurePropertyPresence') {
+            const params = hint.params as
+              | { propertyName?: unknown; present?: unknown }
+              | undefined;
+            const propertyName =
+              params && typeof params.propertyName === 'string'
+                ? params.propertyName
+                : undefined;
+            const present = params?.present === true;
+            if (!propertyName || !present) {
+              continue;
+            }
+            const container = getByPointer(original, app.instancePath);
+            const stillPresent =
+              container &&
+              typeof container === 'object' &&
+              !Array.isArray(container) &&
+              Object.prototype.hasOwnProperty.call(container, propertyName);
+            if (!stillPresent) {
+              recordUnsatisfied({
+                kind,
+                canonPath,
+                params: { propertyName, present: true },
+                reasonCode: 'REPAIR_MODIFIED_VALUE',
+                reasonDetail:
+                  'property missing in final instance despite applied ensurePropertyPresence(present:true) hint',
+              });
+            }
+          }
+        }
+      }
       repaired.push(original);
       continue;
     }
@@ -1775,6 +1837,108 @@ export function repairItemsAjvDriven(
       }
       lastErrorCount = nextErrorCount;
       if (pass) break;
+    }
+
+    // Best-effort unsatisfied hint reporting for Repair side when
+    // coverage=guided and a shared hint trace is available.
+    if (
+      coverage &&
+      coverage.mode === 'guided' &&
+      typeof coverage.recordUnsatisfiedHint === 'function'
+    ) {
+      type HintApplication = {
+        hint: {
+          kind: string;
+          canonPath: string;
+          params?: Record<string, unknown>;
+        };
+        canonPath: string;
+        instancePath: string;
+        itemIndex: number;
+      };
+      type HintTraceLike = {
+        getApplicationsForItem?: (idx: number) => HintApplication[];
+      };
+      const hintTrace =
+        (coverage.hintTrace as HintTraceLike | undefined) ?? undefined;
+      const applications = hintTrace?.getApplicationsForItem?.(itemIndex) ?? [];
+
+      const recordUnsatisfied = coverage.recordUnsatisfiedHint;
+
+      for (const app of applications) {
+        const { hint } = app;
+        const kind = hint.kind;
+        const canonPath = hint.canonPath ?? app.canonPath;
+        if (kind === 'ensurePropertyPresence') {
+          const params = hint.params as
+            | { propertyName?: unknown; present?: unknown }
+            | undefined;
+          const propertyName =
+            params && typeof params.propertyName === 'string'
+              ? params.propertyName
+              : undefined;
+          const present = params?.present === true;
+          if (!propertyName || !present) {
+            continue;
+          }
+          const container = getByPointer(current, app.instancePath);
+          const stillPresent =
+            container &&
+            typeof container === 'object' &&
+            !Array.isArray(container) &&
+            Object.prototype.hasOwnProperty.call(container, propertyName);
+          if (!stillPresent) {
+            recordUnsatisfied({
+              kind,
+              canonPath,
+              params: { propertyName, present: true },
+              reasonCode: 'REPAIR_MODIFIED_VALUE',
+              reasonDetail:
+                'property removed or relocated by Repair so ensurePropertyPresence(present:true) no longer holds in final instance',
+            });
+          }
+        } else if (kind === 'coverEnumValue') {
+          const params = hint.params as { valueIndex?: unknown } | undefined;
+          const valueIndex =
+            params && typeof params.valueIndex === 'number'
+              ? params.valueIndex
+              : undefined;
+          if (
+            valueIndex === undefined ||
+            !Number.isInteger(valueIndex) ||
+            valueIndex < 0
+          ) {
+            continue;
+          }
+          const finalValue = getByPointer(current, app.instancePath);
+          const resolved = resolveSchemaPointer(stripPointerPrefix(canonPath));
+          const enumSchema = getByPointer(schema, resolved.origin) as
+            | { enum?: unknown[] }
+            | undefined;
+          const values = Array.isArray(enumSchema?.enum)
+            ? enumSchema!.enum
+            : undefined;
+          if (!values || valueIndex < 0 || valueIndex >= values.length) {
+            // Generator side is responsible for signaling impossible enum indices.
+            continue;
+          }
+          const expected = values[valueIndex];
+          const stillEqual =
+            expected === finalValue ||
+            (Number.isNaN(expected as number) &&
+              Number.isNaN(finalValue as number));
+          if (!stillEqual) {
+            recordUnsatisfied({
+              kind,
+              canonPath,
+              params: { valueIndex },
+              reasonCode: 'REPAIR_MODIFIED_VALUE',
+              reasonDetail:
+                'enum value changed by Repair so coverEnumValue hint no longer holds in final AJV-valid instance',
+            });
+          }
+        }
+      }
     }
 
     repaired.push(current);

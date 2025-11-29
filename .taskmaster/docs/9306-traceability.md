@@ -58,6 +58,9 @@ This document maps the parent task 9306 bullets from Implementation Details, Del
 - **9306.9306008 – Collect unsatisfied hints in pipeline and expose coverageReport.unsatisfiedHints**  
   Covers: [KR4], [DOD3], [DOD4], [TS3] (covered; this subtask extends the pipeline orchestrator to aggregate unsatisfiedHints reported by the generator in coverage=guided mode via a CoverageHookOptions callback and to expose them in CoverageReport.unsatisfiedHints without affecting coverage metrics, minCoverage enforcement or CLI exit codes, with executePipeline tests verifying the presence and shape of unsatisfiedHints entries for scenarios where hints cannot be honored).
 
+- **9306.9306009 – Implement hint trace and Repair-side unsatisfied hints**  
+  Covers: [KR4], [KR5], [DEL3], [DOD3], [DOD4], [TS3] (covered; this subtask introduces an internal per-instance hint trace shared between Generate and Repair for guided runs, and extends Repair to emit UnsatisfiedHint entries with reasonCode REPAIR_MODIFIED_VALUE on a best-effort basis when applied hints (ensurePropertyPresence, coverEnumValue) are no longer satisfied in the final AJV-valid instance, while keeping unsatisfiedHints strictly diagnostic-only and preserving determinism for fixed inputs).
+
 Status:
 
 - 9306.9306001: covered
@@ -67,3 +70,4 @@ Status:
 - 9306.9306006: covered
 - 9306.9306007: covered
 - 9306.9306008: covered
+- 9306.9306009: covered
