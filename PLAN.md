@@ -1,21 +1,24 @@
-Task: 9304.9304006   Title: Enforce coverage profile presets
-Anchors: [cov://§6#budget-profiles, cov://§7#cli-summary]
+Task: 9325.1   Title: Implement early conflict detection
+Anchors: [cov://§4#coverageanalyzer, cov://§4#coverageplanner, cov://§5#hints-interaction-with-repair]
 Touched files:
-- packages/cli/src/index.ts
-- packages/cli/src/config/coverage-options.ts
-- packages/cli/src/config/__tests__/coverage-options.test.ts
+- packages/core/src/coverage/analyzer.ts
+- packages/core/src/coverage/coverage-planner.ts
+- packages/core/src/coverage/conflict-detector.ts
+- packages/core/src/coverage/index.ts
+- packages/core/src/pipeline/orchestrator.ts
+- packages/core/src/coverage/__tests__/coverage-planner.test.ts
+- packages/core/src/coverage/__tests__/conflict-detector.test.ts
+- packages/core/src/coverage/__tests__/analyzer.test.ts
 
 Approach:
-I will extend the CLI coverage parser so the quick/balanced/thorough profiles become the presets described by cov://§6#budget-profiles instead of just a caps shortcut. That means enriching `resolveCliCoverageOptions` with a small lookup from profile to `dimensionsEnabled`, planner caps/priority and a recommended `maxInstances`, then using that recommendation whenever the user runs a guided mode without an explicit `--n`. The `generate` and `openapi` command handlers will be updated to consume the new recommendation (while still honoring `--n/--count/--rows` when supplied) so the pipeline sees the expected budgets while the parser continues to gate coverage options under `coverage=off`. I will also refresh the `--coverage-profile` help text so the CLI documents the implied dimensions and instance ranges, keeping the CLI UI aligned with the spec’s requirement that users understand what each profile wires up.
-
-On the testing side I will add dedicated unit tests for `resolveCliCoverageOptions` to assert that each profile yields the right `dimensionsEnabled`, the planner `caps`/`dimensionPriority` from the preset, and the recommended `maxInstances` only in guided mode, plus that explicit `--coverage-dimensions` overrides the preset list. These tests will cover the `cov://§6#budget-profiles` expectations head-on (dimensions, budgets, caps) and satisfy the CLI test strategy bullet (TS4) by making the internal configuration observable even without running a full CLI invocation.
+I will expand the analyzer so it exposes the unsat-path snapshot called out by cov://§4#coverageanalyzer, annotates any target under those paths with metadata and status, and reuses the same helper during planning. planTestUnits will now accept the canonical schema, coverage index and diagnostics context, skip unreachable targets, and call a new ConflictDetector helper before building hints; the detector will cross-reference coverage-index constraints, unsat paths and target metadata so that coverEnumValue/preferBranch/ensurePropertyPresence hints that are provably impossible emit CONFLICTING_CONSTRAINTS and stay out of TestUnit.hints, in line with cov://§4#coverageplanner. The orchestrator will take the resulting CoveragePlannerResult, merge the conflicting hint diagnostics into artifacts.coverageReport.unsatisfiedHints, and keep coverage metrics untouched so the behavior stays diagnostic-only as described in cov://§5#hints-interaction-with-repair. I will add unit tests for the detector and the planner flow plus a regression that checks analyzer metadata, ensuring conflicting hints are surfaced without affecting coverage metrics, then run build/typecheck/lint/test/bench.
 
 Risks/Unknowns:
-- The default `maxInstances` recommendation must never override an existing `--n` flag or break existing scripts that depend on `count` defaulting to 1; I need to be careful to only apply the preset when no explicit row count is provided.
-- The preset for thorough mentions `boundaries` once available; I should verify that enabling it today does not accidentally break runs that still expect only structure/branches/enum in `dimensionsEnabled`.
-- The planner caps from the profiles must stay stable even as the planner evolves; snapshotting the exact numbers in the tests makes this subtask sensitive to future refactors, but without it TS4 would remain unverified.
+- Need to avoid double-reporting the same hint both early and again during generation; conflicting hints must be stripped from planner output so generator hooks never replay them.
+- The new metadata path should not mutate targets cached elsewhere (planner caps, coverage report) in ways that break deduplication or diagnostics.
+- Ensuring the new tests cover the interplay between CoverageIndex, diag paths, and hint filtering may require crafting synthetic compose diagnostics or targets.
 
-Parent bullets couverts: [KR5, DOD3, TS4]
+Parent bullets couverts: [KR1, KR2, TS1]
 
 Checks:
 - build: npm run build

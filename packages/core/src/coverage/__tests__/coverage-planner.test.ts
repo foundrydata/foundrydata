@@ -15,6 +15,10 @@ import {
   type CoveragePlannerInput,
   type ResolvePlannerConfigOptions,
 } from '../index.js';
+import type {
+  CoverageIndex,
+  ComposeDiagnostics,
+} from '../../transform/composition-engine.js';
 
 describe('resolveCoveragePlannerConfig', () => {
   it('uses defaults when only maxInstances is provided', () => {
@@ -237,12 +241,28 @@ describe('planTestUnits', () => {
 
   const makeInput = (
     targets: Parameters<typeof planTestUnits>[0]['targets'],
-    config: CoveragePlannerConfig
-  ): CoveragePlannerInput => ({
-    graph: { nodes: [], edges: [] },
-    targets,
-    config,
-  });
+    config: CoveragePlannerConfig,
+    options?: {
+      coverageIndexBuilder?: (map: CoverageIndex) => void;
+      planDiag?: ComposeDiagnostics;
+    }
+  ): CoveragePlannerInput => {
+    const coverageIndex: CoverageIndex = new Map();
+    coverageIndex.set('', {
+      has: (_name: string) => true,
+    } as const);
+    if (options?.coverageIndexBuilder) {
+      options.coverageIndexBuilder(coverageIndex);
+    }
+    return {
+      graph: { nodes: [], edges: [] },
+      targets,
+      config,
+      canonSchema: {},
+      coverageIndex,
+      planDiag: options?.planDiag,
+    };
+  };
 
   it('returns empty array when no active targets', () => {
     const config = makeConfig(5);
@@ -259,9 +279,10 @@ describe('planTestUnits', () => {
       config
     );
 
-    const units = planTestUnits(input);
+    const result = planTestUnits(input);
 
-    expect(units).toEqual([]);
+    expect(result.testUnits).toEqual([]);
+    expect(result.conflictingHints).toEqual([]);
   });
 
   it('plans at most maxInstances units and respects ordering', () => {
@@ -292,7 +313,8 @@ describe('planTestUnits', () => {
       dimensionPriority: ['branches', 'enum', 'structure'],
     });
 
-    const units = planTestUnits(makeInput([...targets], config));
+    const result = planTestUnits(makeInput([...targets], config));
+    const units = result.testUnits;
 
     const firstUnit = units[0];
     const secondUnit = units[1];
@@ -320,6 +342,7 @@ describe('planTestUnits', () => {
       },
     ]);
     expect(secondUnit.hints).toEqual([]);
+    expect(result.conflictingHints).toEqual([]);
   });
 
   it('groups units deterministically by operationKey when present', () => {
@@ -340,7 +363,8 @@ describe('planTestUnits', () => {
     ];
 
     const config = makeConfig(2);
-    const units = planTestUnits(makeInput(targets, config));
+    const result = planTestUnits(makeInput(targets, config));
+    const units = result.testUnits;
 
     const firstUnit = units[0];
     const secondUnit = units[1];
@@ -352,6 +376,7 @@ describe('planTestUnits', () => {
     }
     const operationKey = firstUnit.scope.operationKey!;
     expect(operationKey).toBe('GET /users');
+    expect(result.conflictingHints).toEqual([]);
   });
 
   it('assigns deterministic seeds from masterSeed and unit id', () => {
@@ -376,7 +401,8 @@ describe('planTestUnits', () => {
       dimensionPriority: ['branches'],
     });
 
-    const baseUnits = planTestUnits(makeInput(targets, config));
+    const result = planTestUnits(makeInput(targets, config));
+    const baseUnits = result.testUnits;
     const unitsRun1 = assignTestUnitSeeds(baseUnits, { masterSeed: 42 });
     const unitsRun2 = assignTestUnitSeeds(baseUnits, { masterSeed: 42 });
 
@@ -404,7 +430,8 @@ describe('planTestUnits', () => {
       dimensionsEnabled: ['structure'],
       dimensionPriority: ['structure'],
     });
-    const units = planTestUnits(makeInput(targets, config));
+    const result = planTestUnits(makeInput(targets, config));
+    const units = result.testUnits;
 
     expect(units).toHaveLength(1);
     const unit = units[0];
@@ -418,6 +445,7 @@ describe('planTestUnits', () => {
         params: { propertyName: 'name', present: true },
       },
     ]);
+    expect(result.conflictingHints).toEqual([]);
   });
 
   it('attaches ensurePropertyPresence hints for nested PROPERTY_PRESENT targets on the owning object schema node', () => {
@@ -436,7 +464,8 @@ describe('planTestUnits', () => {
       dimensionsEnabled: ['structure'],
       dimensionPriority: ['structure'],
     });
-    const units = planTestUnits(makeInput(targets, config));
+    const result = planTestUnits(makeInput(targets, config));
+    const units = result.testUnits;
 
     expect(units).toHaveLength(1);
     const unit = units[0];
@@ -452,6 +481,7 @@ describe('planTestUnits', () => {
         params: { propertyName: 'child', present: true },
       },
     ]);
+    expect(result.conflictingHints).toEqual([]);
   });
 
   it('omits ensurePropertyPresence hints when the structure dimension is disabled', () => {
@@ -470,7 +500,8 @@ describe('planTestUnits', () => {
       dimensionsEnabled: ['branches', 'enum'],
       dimensionPriority: ['branches', 'enum'],
     });
-    const units = planTestUnits(makeInput(targets, config));
+    const result = planTestUnits(makeInput(targets, config));
+    const units = result.testUnits;
 
     expect(units).toHaveLength(1);
     const unit = units[0];
@@ -478,5 +509,81 @@ describe('planTestUnits', () => {
       throw new Error('expected a planned unit when maxInstances>0');
     }
     expect(unit.hints).toEqual([]);
+    expect(result.conflictingHints).toEqual([]);
+  });
+
+  it('records conflicting hints when CoverageIndex forbids a property', () => {
+    const targets: CoveragePlannerInput['targets'] = [
+      {
+        id: 'prop-blocked',
+        dimension: 'structure',
+        kind: 'PROPERTY_PRESENT',
+        canonPath: '#/properties/blocked',
+        params: { propertyName: 'blocked' },
+      },
+    ];
+
+    const config = resolveCoveragePlannerConfig({
+      maxInstances: 1,
+      dimensionsEnabled: ['structure'],
+      dimensionPriority: ['structure'],
+    });
+
+    const result = planTestUnits(
+      makeInput(targets, config, {
+        coverageIndexBuilder: (coverageIndex) => {
+          coverageIndex.set('', {
+            has: (name: string) => name !== 'blocked',
+          } as const);
+        },
+      })
+    );
+
+    expect(result.testUnits).toHaveLength(1);
+    expect(result.testUnits[0]?.hints).toEqual([]);
+    expect(result.testUnits[0]?.hints).toEqual([]);
+    expect(result.conflictingHints).toHaveLength(1);
+    expect(result.conflictingHints[0]).toMatchObject({
+      kind: 'ensurePropertyPresence',
+      reasonCode: 'CONFLICTING_CONSTRAINTS',
+    });
+  });
+
+  it('records conflicting branch hints when Compose marks a branch UNSAT', () => {
+    const targets: CoveragePlannerInput['targets'] = [
+      {
+        id: 'branch-0',
+        dimension: 'branches',
+        kind: 'ONEOF_BRANCH',
+        canonPath: '#/oneOf/0',
+      },
+    ];
+
+    const config = resolveCoveragePlannerConfig({
+      maxInstances: 1,
+      dimensionsEnabled: ['branches'],
+      dimensionPriority: ['branches'],
+    });
+
+    const result = planTestUnits(
+      makeInput(targets, config, {
+        planDiag: {
+          fatal: [
+            {
+              code: 'UNSAT_NUMERIC_BOUNDS',
+              canonPath: '#/oneOf/0',
+              details: {},
+            },
+          ],
+        },
+      })
+    );
+
+    expect(result.testUnits).toHaveLength(1);
+    expect(result.conflictingHints).toHaveLength(1);
+    expect(result.conflictingHints[0]).toMatchObject({
+      kind: 'preferBranch',
+      reasonCode: 'CONFLICTING_CONSTRAINTS',
+    });
   });
 });

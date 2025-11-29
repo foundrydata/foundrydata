@@ -53,58 +53,99 @@ interface CoverageGraphBuildState {
   coverageIndex: CoverageIndex;
 }
 
-function buildUnsatPathSet(planDiag?: ComposeDiagnostics): Set<string> {
-  const unsatPaths = new Set<string>();
-  if (!planDiag) return unsatPaths;
+interface UnsatPathEntry {
+  canonPath: string;
+  code: string;
+  details?: unknown;
+}
 
-  const strongUnsatCodes = new Set<string>([
-    'UNSAT_AP_FALSE_EMPTY_COVERAGE',
-    'UNSAT_NUMERIC_BOUNDS',
-    'UNSAT_REQUIRED_AP_FALSE',
-    'UNSAT_REQUIRED_VS_PROPERTYNAMES',
-    'UNSAT_DEPENDENT_REQUIRED_AP_FALSE',
-    'UNSAT_MINPROPERTIES_VS_COVERAGE',
-    'UNSAT_MINPROPS_PNAMES',
-  ]);
+const STRONG_UNSAT_CODES = new Set<string>([
+  'UNSAT_AP_FALSE_EMPTY_COVERAGE',
+  'UNSAT_NUMERIC_BOUNDS',
+  'UNSAT_REQUIRED_AP_FALSE',
+  'UNSAT_REQUIRED_VS_PROPERTYNAMES',
+  'UNSAT_DEPENDENT_REQUIRED_AP_FALSE',
+  'UNSAT_MINPROPERTIES_VS_COVERAGE',
+  'UNSAT_MINPROPS_PNAMES',
+]);
 
-  const addIfStrong = (code: string, canonPath: string): void => {
-    if (!canonPath) return;
-    if (strongUnsatCodes.has(code)) {
-      unsatPaths.add(canonPath);
+function collectUnsatPathEntries(
+  planDiag?: ComposeDiagnostics
+): UnsatPathEntry[] {
+  if (!planDiag) {
+    return [];
+  }
+  const entries: UnsatPathEntry[] = [];
+  const addEntry = (
+    code: string,
+    canonPath: string,
+    details?: unknown
+  ): void => {
+    if (!canonPath || !STRONG_UNSAT_CODES.has(code)) {
+      return;
     }
+    entries.push({ code, canonPath, details });
   };
 
   for (const entry of planDiag.fatal ?? []) {
-    addIfStrong(entry.code, entry.canonPath);
+    addEntry(entry.code, entry.canonPath, entry.details);
   }
 
   for (const hint of planDiag.unsatHints ?? []) {
     if (hint.provable === true) {
-      addIfStrong(hint.code, hint.canonPath);
+      addEntry(hint.code, hint.canonPath, hint.details);
     }
   }
 
-  return unsatPaths;
+  return entries;
 }
 
-function isUnderUnsatPath(
+export function buildUnsatPathSet(planDiag?: ComposeDiagnostics): Set<string> {
+  return new Set(
+    collectUnsatPathEntries(planDiag).map((entry) => entry.canonPath)
+  );
+}
+
+function findUnsatEntryForPath(
   targetCanonPath: string,
-  unsatPaths: Set<string>
-): boolean {
-  if (unsatPaths.size === 0) return false;
-  for (const unsatPath of unsatPaths) {
-    if (!unsatPath) continue;
-    if (targetCanonPath === unsatPath) return true;
+  entries: UnsatPathEntry[]
+): UnsatPathEntry | undefined {
+  if (!targetCanonPath || entries.length === 0) {
+    return undefined;
+  }
+  for (const entry of entries) {
+    const unsatPath = entry.canonPath;
+    if (!unsatPath) {
+      continue;
+    }
+    if (targetCanonPath === unsatPath) {
+      return entry;
+    }
     if (
       targetCanonPath.startsWith(unsatPath) &&
       (targetCanonPath.length === unsatPath.length ||
         targetCanonPath.charAt(unsatPath.length) === '/' ||
         (unsatPath.endsWith('/') && targetCanonPath.startsWith(unsatPath)))
     ) {
-      return true;
+      return entry;
     }
   }
-  return false;
+  return undefined;
+}
+
+function buildConflictMeta(
+  existingMeta: Record<string, unknown> | undefined,
+  entry: UnsatPathEntry
+): Record<string, unknown> {
+  const detail =
+    entry.details !== undefined ? { conflictReasonDetail: entry.details } : {};
+  return {
+    ...(existingMeta ?? {}),
+    conflictDetected: true,
+    conflictReasonCode: entry.code,
+    conflictReasonCanonPath: entry.canonPath,
+    ...detail,
+  };
 }
 
 interface NodeClassification {
@@ -539,18 +580,24 @@ export function analyzeCoverage(
   // Root schema node at the canonical root.
   visitSchemaNode(input.canonSchema, '', undefined, state);
 
-  const unsatPaths = buildUnsatPathSet(input.planDiag);
-  if (unsatPaths.size > 0) {
+  const unsatEntries = collectUnsatPathEntries(input.planDiag);
+  if (unsatEntries.length > 0) {
     const updatedTargets: CoverageTarget[] = state.targets.map((t) => {
       const canonPath = t.canonPath || '';
-      if (isUnderUnsatPath(canonPath, unsatPaths)) {
-        return {
-          ...t,
-          status:
-            t.kind === 'SCHEMA_REUSED_COVERED' ? 'deprecated' : 'unreachable',
-        } as CoverageTarget;
+      const matching = findUnsatEntryForPath(canonPath, unsatEntries);
+      if (!matching) {
+        return t;
       }
-      return t;
+      const existingMeta =
+        t.meta && typeof t.meta === 'object'
+          ? (t.meta as Record<string, unknown>)
+          : undefined;
+      return {
+        ...t,
+        status:
+          t.kind === 'SCHEMA_REUSED_COVERED' ? 'deprecated' : 'unreachable',
+        meta: buildConflictMeta(existingMeta, matching),
+      } as CoverageTarget;
     });
     state.targets = updatedTargets;
   }
