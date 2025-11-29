@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 import type { CoverageDimension, CoverageReport } from '@foundrydata/shared';
 import { executePipeline } from '../../pipeline/orchestrator.js';
+import { DEFAULT_PLANNER_DIMENSIONS_ENABLED } from '../coverage-planner.js';
 
 const STRUCTURE_ONLY_DIMENSIONS: CoverageDimension[] = ['structure'];
 
@@ -70,6 +71,65 @@ describe('coverage-report/v1 JSON snapshots', () => {
 
     // Pre-9310 scenario: no operations dimension yet, so byOperation should be empty
     expect(normalised.metrics.byOperation).toEqual({});
+  });
+
+  it('defaults dimensionsEnabled when the flag is not supplied', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        id: { type: 'number' },
+      },
+      required: ['id'],
+    } as const;
+
+    const result = await executePipeline(schema, {
+      generate: { count: 1, seed: 123 },
+      validate: { validateFormats: false },
+      coverage: {
+        mode: 'measure',
+        excludeUnreachable: true,
+      },
+    });
+
+    const report = result.artifacts.coverageReport as
+      | CoverageReport
+      | undefined;
+    expect(report).toBeDefined();
+    expect(report?.run.dimensionsEnabled).toEqual(
+      DEFAULT_PLANNER_DIMENSIONS_ENABLED
+    );
+    expect(report?.reportMode).toBe('full');
+  });
+
+  it('honors summary reportMode and emits an empty targets array', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        flag: { enum: ['a', 'b'] },
+      },
+      required: ['flag'],
+    } as const;
+
+    const result = await executePipeline(schema, {
+      generate: { count: 1, seed: 55 },
+      validate: { validateFormats: false },
+      coverage: {
+        mode: 'measure',
+        dimensionsEnabled: ['structure', 'branches'],
+        reportMode: 'summary',
+        excludeUnreachable: false,
+      },
+    });
+
+    const report = result.artifacts.coverageReport as
+      | CoverageReport
+      | undefined;
+    expect(report).toBeDefined();
+    expect(report?.reportMode).toBe('summary');
+    expect(report?.targets).toEqual([]);
+    expect(report?.uncoveredTargets.length).toBeGreaterThanOrEqual(0);
   });
 
   it('respects excludeUnreachable toggle in metrics while keeping IDs and statuses stable', async () => {

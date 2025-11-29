@@ -21,6 +21,7 @@ import type {
   CoverageMode,
   CoverageTarget,
   CoverageReport,
+  CoverageReportMode,
 } from '@foundrydata/shared';
 import type {
   CoverageGraph,
@@ -180,6 +181,10 @@ export interface PipelineOptions {
      * global maxInstances budget and dimension priorities.
      */
     planner?: CoveragePlannerUserOptions;
+    /**
+     * Report mode for the coverage-report/v1 output.
+     */
+    reportMode?: CoverageReportMode;
   };
   generate?: {
     count?: number;
