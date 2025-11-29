@@ -595,7 +595,7 @@
           "9303",
           "9304"
         ],
-        "status": "in-progress",
+        "status": "done",
         "complexityScore": 3,
         "details": "[Context]\nImplement enforcement of minCoverage on metrics.overall and connect it to CLI exit codes and Node API status, per §7.3 (Thresholds) and the acceptance criterion on coverage threshold. In V1, only the overall threshold is honored; per-dimension and per-operation thresholds are reserved for future use.\n\n[Key requirements]\n- Add minCoverage configuration to coverage options and propagate it to CoverageEvaluator.\n- Compute metrics.thresholds.overall and metrics.coverageStatus:'ok'|'minCoverageNotMet' based on metrics.overall and minCoverage.\n- Map coverageStatus to a dedicated non-zero CLI exit code when minCoverage is not met, distinct from other error conditions.\n- Ensure Node API returns coverageStatus alongside the CoverageReport so callers can react programmatically.\n- Keep thresholds.byDimension and thresholds.byOperation descriptive only in V1, without affecting behavior.\n\n[Deliverables]\n- Thresholds handling in CoverageEvaluator and coverage-report/v1 metrics.\n- CLI exit code mapping and documentation for coverage failures.\n- Node API shape that exposes coverageStatus and thresholds to callers.\n\n[Commands]\n- npm run build\n- npm run test -- --runInBand\n- npm run test packages/cli/test/coverage-cli.spec.ts -- --runTestsByPath\n\n[Definition of Done]\n- Runs with metrics.overall below minCoverage produce metrics.coverageStatus:'minCoverageNotMet' and the CLI exits with the configured coverage failure code.\n- Acceptance scenario where minCoverage=0.8 and metrics.overall=0.6 is covered by tests that assert exit code and summary content.\n- Node API returns a structured result that includes coverageStatus and thresholds.overall.\n- Adding or omitting per-dimension and per-operation thresholds in metrics does not affect behavior in V1.",
         "testStrategy": "Unit tests in CoverageEvaluator for threshold handling; CLI tests that run with minCoverage set above expected coverage and assert non-zero exit codes and clear summary output; Node API tests that inspect coverageStatus and thresholds in the returned CoverageReport; regression tests to ensure behavior remains unchanged when thresholds.byDimension or thresholds.byOperation are present but not enforced.",
@@ -624,13 +624,14 @@
             "id": 9308003,
             "title": "Test coverage threshold enforcement end-to-end",
             "description": "Create an end-to-end test that runs with minCoverage above achievable coverage and asserts exit code and summary diagnostics.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 2,
             "file": "packages/core/test/e2e/coverage-threshold.spec.ts",
-            "parentId": "9308"
+            "parentId": "9308",
+            "updatedAt": "2025-11-29T14:29:46.134Z"
           }
         ],
-        "updatedAt": "2025-11-29T14:21:22.115Z"
+        "updatedAt": "2025-11-29T14:29:46.134Z"
       },
       {
         "id": "9309",
@@ -1108,9 +1109,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-29T14:21:22.117Z",
+      "lastModified": "2025-11-29T14:29:46.135Z",
       "taskCount": 21,
-      "completedCount": 9,
+      "completedCount": 10,
       "tags": [
         "coverage-aware-v1"
       ]

@@ -737,6 +737,9 @@ describe('CLI openapi command', () => {
 
     const stderr = stderrChunks.join('');
     expect(stderr).toMatch(/coverage status: minCoverageNotMet/i);
+    expect(stderr).toMatch(/\[foundrydata\] coverage:/i);
+    expect(stderr).toMatch(/coverage overall:/i);
+    expect(stderr).toMatch(/coverage by dimension:/i);
   });
 
   it('exits with coverage failure code when guided minCoverage is not met', async () => {
