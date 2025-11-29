@@ -154,10 +154,8 @@ describe('coverage=guided planning behavior', () => {
       additionalProperties: false,
       properties: {
         keep: { const: 'ok' },
-        drop: { const: 'block' },
       },
       required: ['keep'],
-      not: { required: ['drop'] },
     } as const;
 
     const options = {

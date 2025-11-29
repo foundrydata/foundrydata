@@ -126,4 +126,42 @@ describe('Node API — Generate & Validate', () => {
 
     expect(firstItems).toEqual(secondItems);
   });
+
+  it('returns coverageStatus and thresholds when minCoverage is configured', async () => {
+    const coverageSchema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      oneOf: [
+        {
+          type: 'object',
+          properties: {
+            branch: { const: 'a' },
+          },
+          required: ['branch'],
+        },
+        {
+          type: 'object',
+          properties: {
+            branch: { const: 'b' },
+          },
+          required: ['branch'],
+        },
+      ],
+    } as const;
+
+    const stream = PublicGenerate(1, 512, coverageSchema, {
+      mode: 'strict',
+      coverage: {
+        mode: 'measure',
+        dimensionsEnabled: ['branches'],
+        minCoverage: 0.9,
+      },
+    });
+    const pipelineResult = await stream.result;
+    expect(pipelineResult.status).toBe('completed');
+    const coverageReport = pipelineResult.artifacts.coverageReport;
+    expect(coverageReport).toBeDefined();
+    expect(coverageReport?.metrics.coverageStatus).toBe('minCoverageNotMet');
+    expect(coverageReport?.metrics.thresholds?.overall).toBe(0.9);
+    expect(coverageReport?.metrics.overall ?? 1).toBeLessThan(0.9);
+  });
 });
