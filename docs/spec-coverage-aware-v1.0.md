@@ -601,15 +601,27 @@ The existing generator is extended to:
 
 * Accept **hints** (see §5) in the `GenerationContext`.
 * Emit coverage events during generation and repair, in a streaming fashion.
+* Maintain a per-instance, implementation-defined **hint trace** that records which hints were actually applied to which
+  values or structures, and make this trace available to both `Generate` and `Repair` for the purpose of emitting
+  `unsatisfiedHints` (see §5.3).
 
-**Streaming vs post‑pass:**
+**Streaming vs post-pass:**
 
 * In `coverage=guided` mode, coverage marking MUST be streaming and MUST NOT require reparsing emitted instances.
 * Steady‑state V1 behavior must **not** require a full second parse of all generated instances to compute coverage; in particular, the implementation MUST NOT re‑parse the already‑emitted JSON stream solely to compute coverage.
 * Coverage state MAY be accumulated per instance as it flows through `Generate` and `Repair`; implementations MAY buffer per‑instance coverage events and only commit hits once `Validate` has accepted the instance.
 * “No full post‑pass re‑parse” therefore means “no second JSON parse of the output stream”, not “no per‑instance state” or “no buffering”.
-* Coverage must be updated **as instances are generated and repaired**, with finalization after validation, using in‑memory bitmaps or equivalent.
-* M0 may implement a temporary post‑pass over the generated instances, but this is an implementation detail; the target architecture is streaming only.
+* Coverage must be updated **as instances are generated and repaired**, with finalization after validation, using in-memory bitmaps or equivalent.
+* M0 may implement a temporary post-pass over the generated instances, but this is an implementation detail; the target architecture is streaming only.
+
+**Hint trace semantics:**
+
+* The hint trace MAY be stored in `GenerationContext` or an equivalent internal structure; its representation is
+  implementation-defined and MUST remain purely diagnostic.
+* The hint trace MUST at minimum allow the engine to associate, for each applied hint, its `(kind, canonPath, params)`
+  with one or more `instancePath` values where the hint influenced generation.
+* The presence of the hint trace MUST NOT change JSON output shape, AJV validity, RNG sequences, or any externally
+  observable behavior other than the contents of `CoverageReport.unsatisfiedHints`.
 
 **Complexity & overhead:**
 
@@ -715,6 +727,15 @@ Requirements:
 
   it should be recorded as an **unsatisfied hint**.
 
+* Implementations MUST use the hint trace described in §4.3 to know, in `Repair`, which values or structures were
+  influenced by which hints. For each modification applied by `Repair`, the engine MUST be able to decide whether the
+  modification touches a value/structure associated with one or more applied hints.
+
+* For a given hint and a given occurrence where it was applied, `Repair` SHOULD emit an `UnsatisfiedHint` with
+  `reasonCode: 'REPAIR_MODIFIED_VALUE'` **only** when the final AJV-valid instance no longer satisfies the semantics of
+  that hint at the relevant `instancePath`. If the hint remains satisfied after Repair (e.g. a property stays present
+  for `ensurePropertyPresence(present:true)`), no `UnsatisfiedHint` is required for that occurrence.
+
 * The coverage report must include:
 
   ```json
@@ -731,7 +752,33 @@ Requirements:
   }
   ```
 
-* In V1, `unsatisfiedHints` are **diagnostic‑only**: they do not affect `coverageStatus`, do not change CLI exit codes, and do not contribute to `minCoverage` enforcement. A future strict mode (e.g. `--coverage-strict-hints`) MAY treat certain classes of unsatisfied hints as failures for CI enforcement.
+* In V1, `unsatisfiedHints` are **diagnostic-only**: they do not affect `coverageStatus`, do not change CLI exit codes,
+  and do not contribute to `minCoverage` enforcement. Detection is **best-effort**: implementations are not required to
+  report every theoretically unsatisfied hint, but when they have enough information (via planner diagnostics, the hint
+  trace, or UNSAT signals) they SHOULD emit an entry with the most specific applicable `reasonCode`. A future strict
+  mode (e.g. `--coverage-strict-hints`) MAY treat certain classes of unsatisfied hints as failures for CI enforcement.
+
+**Reason code mapping (informative but recommended in V1):**
+
+For a given hint that is not satisfied by any final AJV-valid instance, implementations SHOULD choose
+`UnsatisfiedHint.reasonCode` according to the following precedence:
+
+1. `UNREACHABLE_BRANCH` – when the hint is a `preferBranch` whose target branch is marked `status:'unreachable'` based
+   on existing UNSAT / guardrail diagnostics from Normalize / Compose / `CoverageIndex` (e.g. `UNSAT_*`,
+   `UNSAT_NUMERIC_BOUNDS`, etc.).
+2. `PLANNER_CAP` – when the Planner explicitly chose not to plan any `TestUnit` attempting to satisfy this hint because
+   of deterministic caps or budget, as summarized in `diagnostics.plannerCapsHit`.
+3. `REPAIR_MODIFIED_VALUE` – when Generate applied the hint and `Repair` later modified the corresponding value or
+   structure so that the hint semantics no longer hold in the final AJV-valid instance.
+4. `CONFLICTING_CONSTRAINTS` – when the engine can prove that the hint is intrinsically impossible to satisfy under the
+   current schema constraints, even before `Repair` (for example, a `coverEnumValue` on an out-of-range enum index, or a
+   property presence hint contradicting a `false` subschema).
+5. `INTERNAL_ERROR` / `UNKNOWN` – for internal failures or cases where the implementation cannot classify the failure
+   more precisely.
+
+The above mapping is intended to keep behavior deterministic for a fixed `(canonical schema, options, seed)` while
+leaving room for implementations to be conservative: when in doubt, it is preferable to use `UNKNOWN` rather than guess
+between `REPAIR_MODIFIED_VALUE` and `CONFLICTING_CONSTRAINTS`.
 
 * Repair must respect the following principle:
 
@@ -852,11 +899,33 @@ type PlannerCapHit = {
 };
 
 type UnsatisfiedHintReasonCode =
+  /**
+   * The hint is impossible to satisfy under the current schema constraints, even after taking Repair into
+   * account (e.g. enum index out of range, property presence contradicting an always-false subschema).
+   */
   | 'CONFLICTING_CONSTRAINTS'
+  /**
+   * The hint was applied during Generate, but Repair later modified the corresponding value or structure so
+   * that the hint semantics no longer hold in the final AJV-valid instance.
+   */
   | 'REPAIR_MODIFIED_VALUE'
+  /**
+   * The hint targets a logical branch (e.g. preferBranch) whose CoverageTarget is marked status:'unreachable'
+   * based on existing UNSAT / guardrail diagnostics in the Analyzer / planDiag.
+   */
   | 'UNREACHABLE_BRANCH'
+  /**
+   * The Planner explicitly chose not to plan any TestUnit that attempts to satisfy this hint because of
+   * deterministic caps or budget, as summarized in diagnostics.plannerCapsHit.
+   */
   | 'PLANNER_CAP'
+  /**
+   * The engine encountered an internal error while trying to apply the hint or compute its status.
+   */
   | 'INTERNAL_ERROR'
+  /**
+   * Catch-all for cases where the implementation cannot classify the failure more precisely.
+   */
   | 'UNKNOWN';
 
 type UnsatisfiedHint = {
