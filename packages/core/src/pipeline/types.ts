@@ -115,7 +115,8 @@ export interface PipelineStageOverrides {
   compose?: (input: ComposeInput, options?: ComposeOptions) => ComposeResult;
   generate?: (
     effective: ComposeResult,
-    options?: PipelineOptions['generate']
+    options?: PipelineOptions['generate'],
+    coverage?: unknown
   ) => GeneratorStageOutput | Promise<GeneratorStageOutput>;
   repair?: (
     items: unknown[],
