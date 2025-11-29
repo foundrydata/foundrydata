@@ -242,6 +242,7 @@ program
           dimensionsEnabled: coverage.dimensionsEnabled,
           excludeUnreachable: coverage.excludeUnreachable,
           minCoverage: coverage.minCoverage,
+          planner: coverage.planner,
         },
       });
       const pipelineResult = await stream.result;
@@ -509,6 +510,7 @@ program
           dimensionsEnabled: coverage.dimensionsEnabled,
           excludeUnreachable: coverage.excludeUnreachable,
           minCoverage: coverage.minCoverage,
+          planner: coverage.planner,
         },
       });
       const pipelineResult = await stream.result;

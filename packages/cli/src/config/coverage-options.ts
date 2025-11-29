@@ -1,4 +1,7 @@
-import type { CoverageDimension } from '@foundrydata/core';
+import type {
+  CoverageDimension,
+  CoveragePlannerUserOptions,
+} from '@foundrydata/core';
 import type { CliOptions } from '../flags';
 
 type CoverageMode = 'off' | 'measure' | 'guided';
@@ -10,6 +13,7 @@ export interface CliCoverageConfig {
   minCoverage?: number;
   reportPath?: string;
   profile?: 'quick' | 'balanced' | 'thorough';
+  planner?: CoveragePlannerUserOptions;
 }
 
 export interface ResolvedCliCoverage {
@@ -121,6 +125,39 @@ function parseProfile(
   );
 }
 
+function resolvePlannerFromProfile(
+  profile: 'quick' | 'balanced' | 'thorough'
+): CoveragePlannerUserOptions | undefined {
+  switch (profile) {
+    case 'quick':
+      return {
+        caps: {
+          maxTargetsPerDimension: {
+            branches: 128,
+            enum: 128,
+          },
+          maxTargetsPerSchema: 64,
+          maxTargetsPerOperation: 32,
+        },
+      };
+    case 'balanced':
+      return {
+        caps: {
+          maxTargetsPerDimension: {
+            branches: 512,
+            enum: 512,
+          },
+          maxTargetsPerSchema: 256,
+          maxTargetsPerOperation: 128,
+        },
+      };
+    case 'thorough':
+      return {};
+    default:
+      return undefined;
+  }
+}
+
 export function resolveCliCoverageOptions(
   cliOptions: CliOptions
 ): ResolvedCliCoverage {
@@ -144,6 +181,11 @@ export function resolveCliCoverageOptions(
     }
   }
 
+  const planner =
+    mode === 'guided' && profile
+      ? resolvePlannerFromProfile(profile)
+      : undefined;
+
   return {
     coverage: {
       mode,
@@ -152,6 +194,7 @@ export function resolveCliCoverageOptions(
       minCoverage: mode === 'off' ? undefined : minCoverage,
       reportPath: mode === 'off' ? undefined : reportPath,
       profile,
+      planner,
     },
     ignoredReason,
   };
