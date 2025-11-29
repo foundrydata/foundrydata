@@ -308,9 +308,18 @@ describe('planTestUnits', () => {
     expect(secondPaths).toEqual(['#']);
     for (const unit of units) {
       expect(unit.count).toBe(1);
-      expect(unit.hints).toEqual([]);
       expect(typeof unit.seed).toBe('number');
     }
+    // Branch target produces a preferBranch hint at the union path,
+    // enum target does not carry hints when params are absent.
+    expect(firstUnit.hints).toEqual([
+      {
+        kind: 'preferBranch',
+        canonPath: '#/oneOf',
+        params: { branchIndex: 0 },
+      },
+    ]);
+    expect(secondUnit.hints).toEqual([]);
   });
 
   it('groups units deterministically by operationKey when present', () => {

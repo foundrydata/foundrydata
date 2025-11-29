@@ -85,6 +85,10 @@ import {
   applyPlannerCaps,
   resolveCoveragePlannerConfig,
   type CoveragePlannerConfig,
+  planTestUnits,
+  assignTestUnitSeeds,
+  type TestUnit,
+  type CoverageHint,
 } from '../coverage/index.js';
 import {
   COVERAGE_REPORT_VERSION_V1,
@@ -154,6 +158,7 @@ type CoverageHookOptions = {
   mode: CoverageMode;
   emit: (event: CoverageEvent) => void;
   emitForItem?: (itemIndex: number, event: CoverageEvent) => void;
+  hints?: CoverageHint[];
 };
 
 class ExternalRefValidationError extends Error {
@@ -801,6 +806,8 @@ export async function executePipeline(
         const coverageDimensions =
           options.coverage?.dimensionsEnabled ?? undefined;
 
+        let plannedTargets = coverageResult.targets;
+        let plannedTestUnits: TestUnit[] | undefined;
         if (coverageMode === 'guided') {
           const requestedCount = options.generate?.count;
           if (
@@ -820,18 +827,53 @@ export async function executePipeline(
               coverageResult.targets,
               plannerConfig
             );
-            artifacts.coverageTargets = capsResult.updatedTargets;
+            plannedTargets = capsResult.updatedTargets;
             plannerCapsHit = capsResult.capsHit;
+            const units = planTestUnits({
+              graph: coverageResult.graph,
+              targets: plannedTargets,
+              config: plannerConfig,
+            });
+            if (units.length > 0) {
+              const generateSeed = options.generate?.seed;
+              const masterSeed =
+                typeof generateSeed === 'number' &&
+                Number.isFinite(generateSeed)
+                  ? generateSeed
+                  : 0;
+              plannedTestUnits = assignTestUnitSeeds(units, {
+                masterSeed,
+              });
+            } else {
+              plannedTestUnits = [];
+            }
           } else {
-            artifacts.coverageTargets = coverageResult.targets;
+            plannedTargets = coverageResult.targets;
+            plannedTestUnits = [];
           }
         } else {
-          artifacts.coverageTargets = coverageResult.targets;
+          plannedTargets = coverageResult.targets;
+          plannedTestUnits = [];
         }
-        streamingCoverageAccumulator = createStreamingCoverageAccumulator(
-          artifacts.coverageTargets
-        );
+        artifacts.coverageTargets = plannedTargets;
+        streamingCoverageAccumulator =
+          createStreamingCoverageAccumulator(plannedTargets);
         coverageAccumulator = streamingCoverageAccumulator;
+        if (
+          coverageMode === 'guided' &&
+          plannedTestUnits &&
+          coverageHookOptions
+        ) {
+          const aggregatedHints: CoverageHint[] = [];
+          for (const unit of plannedTestUnits) {
+            if (Array.isArray(unit.hints) && unit.hints.length > 0) {
+              aggregatedHints.push(...unit.hints);
+            }
+          }
+          if (aggregatedHints.length > 0) {
+            coverageHookOptions.hints = aggregatedHints;
+          }
+        }
       }
     }
 
