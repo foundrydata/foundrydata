@@ -13,7 +13,7 @@ import type {
   CoverageEntry,
   NodeDiagnostics,
 } from '../transform/composition-engine.js';
-import type { CoverageMode } from '@foundrydata/shared';
+import type { CoverageMode, UnsatisfiedHint } from '@foundrydata/shared';
 import {
   computeEffectiveMaxItems,
   type ContainsNeed,
@@ -136,6 +136,12 @@ interface GeneratorCoverageOptions {
    * and enum values without violating AJV validity.
    */
   hints?: CoverageHint[];
+  /**
+   * Optional callback for recording unsatisfied hints in guided mode.
+   * When provided, the generator may report hints that could not be
+   * honored under the current constraints or were otherwise invalid.
+   */
+  recordUnsatisfiedHint?: (hint: UnsatisfiedHint) => void;
 }
 
 export interface FoundryGeneratorOptions {
@@ -223,6 +229,21 @@ class GeneratorEngine {
     Record<string, unknown>,
     Map<string, EvaluationProof | null>
   > = new WeakMap();
+
+  private recordUnsatisfiedHint(hint: UnsatisfiedHint): void {
+    if (
+      !this.coverage ||
+      this.coverage.mode !== 'guided' ||
+      typeof this.coverage.recordUnsatisfiedHint !== 'function'
+    ) {
+      return;
+    }
+    try {
+      this.coverage.recordUnsatisfiedHint(hint);
+    } catch {
+      // Unsatisfied hint reporting must not affect generation behavior.
+    }
+  }
 
   private buildCoverageHintsIndex(
     hints: CoverageHint[]
@@ -341,6 +362,14 @@ class GeneratorEngine {
     ) {
       return index;
     }
+    // Index outside enum bounds or invalid type: record as internal error.
+    this.recordUnsatisfiedHint({
+      kind: 'coverEnumValue',
+      canonPath: key,
+      params: { valueIndex: index },
+      reasonCode: 'INTERNAL_ERROR',
+      reasonDetail: 'coverEnumValue index out of range for enum',
+    });
     return undefined;
   }
 
@@ -826,6 +855,8 @@ class GeneratorEngine {
       orderedResult[name] = result[name];
     }
 
+    this.recordUnsatisfiedPropertyHints(canonPath, orderedResult);
+
     return orderedResult;
   }
 
@@ -924,6 +955,39 @@ class GeneratorEngine {
     }
     if (hinted.length === 0) return candidates;
     return [...hinted, ...others];
+  }
+
+  private recordUnsatisfiedPropertyHints(
+    canonPath: JsonPointer,
+    objectValue: Record<string, unknown>
+  ): void {
+    if (
+      !this.coverage ||
+      this.coverage.mode !== 'guided' ||
+      !this.coverageHintsByPath
+    ) {
+      return;
+    }
+    const key = canonicalizeCoveragePath(canonPath);
+    const resolved = this.coverageHintsByPath.get(key);
+    if (!resolved) return;
+    for (const hint of resolved.effective) {
+      if (
+        hint.kind === 'ensurePropertyPresence' &&
+        hint.params.present === true
+      ) {
+        const name = hint.params.propertyName;
+        if (!Object.prototype.hasOwnProperty.call(objectValue, name)) {
+          this.recordUnsatisfiedHint({
+            kind: hint.kind,
+            canonPath: key,
+            params: { propertyName: name, present: true },
+            reasonCode: 'CONFLICTING_CONSTRAINTS',
+            reasonDetail: 'property not present in generated instance',
+          });
+        }
+      }
+    }
   }
 
   private isNameWithinCoverage(
@@ -1185,6 +1249,13 @@ class GeneratorEngine {
     ) {
       return index;
     }
+    this.recordUnsatisfiedHint({
+      kind: 'preferBranch',
+      canonPath: key,
+      params: { branchIndex: index },
+      reasonCode: 'INTERNAL_ERROR',
+      reasonDetail: 'preferBranch index out of range for branch count',
+    });
     return undefined;
   }
 
