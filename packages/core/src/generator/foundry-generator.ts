@@ -229,6 +229,7 @@ class GeneratorEngine {
     | Map<JsonPointer, ResolvedCoverageHintsForPath>
     | undefined;
   private currentItemIndex: number | null = null;
+  private readonly instancePathStack: string[] = [];
   // E-Trace cache: per-candidate object instance → per-name proof (or null for negative).
   // Ephemeral per GeneratorEngine; keys are not retained strongly (WeakMap).
   private eTraceCache: WeakMap<
@@ -282,7 +283,7 @@ class GeneratorEngine {
         hint.params.present === true &&
         hint.params.propertyName === propertyName
       ) {
-        this.recordHintApplication(hint, key);
+        this.recordHintApplication(hint, key, this.currentInstancePath);
       }
     }
   }
@@ -323,7 +324,8 @@ class GeneratorEngine {
 
   private recordHintApplication(
     hint: CoverageHint,
-    canonPath: JsonPointer
+    canonPath: JsonPointer,
+    instancePathOverride?: string
   ): void {
     if (
       !this.coverage ||
@@ -333,7 +335,10 @@ class GeneratorEngine {
     ) {
       return;
     }
-    const instancePath = this.canonPathToInstancePath(canonPath);
+    const instancePath =
+      typeof instancePathOverride === 'string'
+        ? instancePathOverride
+        : this.canonPathToInstancePath(canonPath);
     const itemIndex =
       this.currentItemIndex !== null ? this.currentItemIndex : 0;
     this.hintTrace.recordApplication({
@@ -342,6 +347,23 @@ class GeneratorEngine {
       instancePath,
       itemIndex,
     });
+  }
+
+  private withInstancePath<T>(path: string, callback: () => T): T {
+    this.instancePathStack.push(path);
+    try {
+      return callback();
+    } finally {
+      this.instancePathStack.pop();
+    }
+  }
+
+  private get currentInstancePath(): string {
+    const { instancePathStack } = this;
+    if (instancePathStack.length === 0) {
+      return '';
+    }
+    return instancePathStack[instancePathStack.length - 1]!;
   }
 
   private buildCoverageHintsIndex(
@@ -424,7 +446,11 @@ class GeneratorEngine {
     const items: unknown[] = [];
     for (let index = 0; index < count; index += 1) {
       this.currentItemIndex = index;
-      items.push(this.generateValue(this.rootSchema, '', index));
+      items.push(
+        this.withInstancePath('', () =>
+          this.generateValue(this.rootSchema, '', index)
+        )
+      );
     }
 
     const metrics: GeneratorStageOutput['metrics'] = {};
@@ -732,10 +758,9 @@ class GeneratorEngine {
         patternProperties,
         additionalProperties
       );
-      const value = this.generateValue(
-        resolved.schema,
-        resolved.pointer,
-        itemIndex
+      const childPath = appendPointer(this.currentInstancePath, name);
+      const value = this.withInstancePath(childPath, () =>
+        this.generateValue(resolved.schema, resolved.pointer, itemIndex)
       );
       result[name] = value;
       usedNames.add(name);
@@ -793,10 +818,9 @@ class GeneratorEngine {
           patternProperties,
           additionalProperties
         );
-        const value = this.generateValue(
-          resolved.schema,
-          resolved.pointer,
-          itemIndex
+        const childPath = appendPointer(this.currentInstancePath, name);
+        const value = this.withInstancePath(childPath, () =>
+          this.generateValue(resolved.schema, resolved.pointer, itemIndex)
         );
         result[name] = value;
         usedNames.add(name);
@@ -842,10 +866,9 @@ class GeneratorEngine {
             patternProperties,
             additionalProperties
           );
-          const value = this.generateValue(
-            resolved.schema,
-            resolved.pointer,
-            itemIndex
+          const childPath = appendPointer(this.currentInstancePath, candidate);
+          const value = this.withInstancePath(childPath, () =>
+            this.generateValue(resolved.schema, resolved.pointer, itemIndex)
           );
           result[candidate] = value;
           usedNames.add(candidate);
@@ -931,10 +954,9 @@ class GeneratorEngine {
             patternProperties,
             additionalProperties
           );
-          const value = this.generateValue(
-            resolved.schema,
-            resolved.pointer,
-            itemIndex
+          const childPath = appendPointer(this.currentInstancePath, candidate);
+          const value = this.withInstancePath(childPath, () =>
+            this.generateValue(resolved.schema, resolved.pointer, itemIndex)
           );
           result[candidate] = value;
           usedNames.add(candidate);
@@ -1645,10 +1667,9 @@ class GeneratorEngine {
           patternProperties,
           additionalProperties
         );
-        const value = this.generateValue(
-          resolved.schema,
-          resolved.pointer,
-          itemIndex
+        const childPath = appendPointer(this.currentInstancePath, dep);
+        const value = this.withInstancePath(childPath, () =>
+          this.generateValue(resolved.schema, resolved.pointer, itemIndex)
         );
         target[dep] = value;
         used.add(dep);
@@ -1847,7 +1868,12 @@ class GeneratorEngine {
 
     for (let idx = 0; idx < prefixItems.length; idx += 1) {
       const childCanon = appendPointer(canonPath, `prefixItems/${idx}`);
-      result.push(this.generateValue(prefixItems[idx], childCanon, itemIndex));
+      const childPath = appendPointer(this.currentInstancePath, String(idx));
+      result.push(
+        this.withInstancePath(childPath, () =>
+          this.generateValue(prefixItems[idx], childCanon, itemIndex)
+        )
+      );
     }
 
     const minItems =
@@ -1904,7 +1930,14 @@ class GeneratorEngine {
         (hardCap === undefined || result.length < hardCap)
       ) {
         const childCanon = appendPointer(canonPath, 'items');
-        const value = this.generateValue(itemsSchema, childCanon, itemIndex);
+        const nextIndex = result.length;
+        const childPath = appendPointer(
+          this.currentInstancePath,
+          String(nextIndex)
+        );
+        const value = this.withInstancePath(childPath, () =>
+          this.generateValue(itemsSchema, childCanon, itemIndex)
+        );
         result.push(value);
       }
     }
@@ -1980,7 +2013,14 @@ class GeneratorEngine {
         if (maxLength !== undefined && result.length >= maxLength) {
           break;
         }
-        const value = this.generateValue(need.schema, childCanon, itemIndex);
+        const childIndex = result.length;
+        const childPath = appendPointer(
+          this.currentInstancePath,
+          String(childIndex)
+        );
+        const value = this.withInstancePath(childPath, () =>
+          this.generateValue(need.schema, childCanon, itemIndex)
+        );
         result.push(value);
         satisfied += 1;
       }
@@ -2332,10 +2372,9 @@ class GeneratorEngine {
         mergedPatterns,
         schema.additionalProperties
       );
-      const value = this.generateValue(
-        resolved.schema,
-        resolved.pointer,
-        itemIndex
+      const childPath = appendPointer(this.currentInstancePath, name);
+      const value = this.withInstancePath(childPath, () =>
+        this.generateValue(resolved.schema, resolved.pointer, itemIndex)
       );
       target[name] = value;
       used.add(name);

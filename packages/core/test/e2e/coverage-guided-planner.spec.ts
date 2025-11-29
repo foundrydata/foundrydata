@@ -223,4 +223,58 @@ describe('coverage=guided planning behavior', () => {
 
     expect(repairHints.length).toBeGreaterThanOrEqual(1);
   });
+
+  it('keeps reused definition ensurePropertyPresence hints from being flagged as REPAIR_MODIFIED_VALUE', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      $defs: {
+        shared: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            guarded: { const: 'ok' },
+          },
+        },
+      },
+      type: 'object',
+      properties: {
+        entry: { $ref: '#/$defs/shared' },
+      },
+    } as const;
+
+    const options = {
+      mode: 'strict' as const,
+      coverage: {
+        mode: 'guided' as const,
+        dimensionsEnabled: ['structure'] as const,
+        hints: [
+          {
+            kind: 'ensurePropertyPresence',
+            canonPath: '#/$defs/shared/properties/guarded',
+            params: { propertyName: 'guarded', present: true },
+          },
+        ],
+      },
+      generate: {
+        count: 1,
+        seed: 4242,
+      },
+      validate: {
+        validateFormats: false,
+      },
+    } as const;
+
+    const result = await executePipeline(schema, options);
+    expect(result.status).toBe('completed');
+
+    const unsatisfied = result.artifacts.coverageReport?.unsatisfiedHints ?? [];
+    const falsePositives = unsatisfied.filter(
+      (hint) =>
+        hint.kind === 'ensurePropertyPresence' &&
+        hint.canonPath === '#/$defs/shared/properties/guarded' &&
+        hint.reasonCode === 'REPAIR_MODIFIED_VALUE'
+    );
+
+    expect(falsePositives).toHaveLength(0);
+  });
 });
