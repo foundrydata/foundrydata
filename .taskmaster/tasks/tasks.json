@@ -604,20 +604,21 @@
             "id": 9308001,
             "title": "Propagate minCoverage config to CoverageEvaluator",
             "description": "Extend coverage options to include minCoverage and apply it when computing thresholds.overall and coverageStatus.",
-            "status": "in-progress",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/coverage/coverage-evaluator.ts",
             "parentId": "9308",
-            "updatedAt": "2025-11-29T12:42:38.886Z"
+            "updatedAt": "2025-11-29T14:08:45.721Z"
           },
           {
             "id": 9308002,
             "title": "Map coverageStatus to CLI exit codes",
             "description": "Add a dedicated coverage failure exit code in the CLI and wire it to metrics.coverageStatus.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/cli/src/coverage/coverage-exit-codes.ts",
-            "parentId": "9308"
+            "parentId": "9308",
+            "updatedAt": "2025-11-29T14:21:22.115Z"
           },
           {
             "id": 9308003,
@@ -629,7 +630,7 @@
             "parentId": "9308"
           }
         ],
-        "updatedAt": "2025-11-29T12:42:38.886Z"
+        "updatedAt": "2025-11-29T14:21:22.115Z"
       },
       {
         "id": "9309",
@@ -1107,7 +1108,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-29T13:40:15.969Z",
+      "lastModified": "2025-11-29T14:21:22.117Z",
       "taskCount": 21,
       "completedCount": 9,
       "tags": [

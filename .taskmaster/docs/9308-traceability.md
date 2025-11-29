@@ -35,14 +35,14 @@ This document maps parent task 9308 bullets from Implementation Details, Deliver
 ## Mapping 9308 subtasks → parent bullets
 
 - **9308.9308001 – Propagate minCoverage config to CoverageEvaluator**  
-  Covers: [KR1], [KR2], [DEL1], [DOD1], [TS1], [TS3], [TS4] (in-progress; ensures thresholds.overall is populated from the options, coverageStatus honors minCoverage without altering the rest of the coverage metrics, and guided-mode CLI/Node API tests confirm the same enforcement path).
-- **9308.9308002 – Map coverageStatus to CLI exit codes**  
-  Covers: [KR3], [DEL2], [DOD1], [DOD2], [TS2] (pending; wires CLI summary + exit handling to coverage reports and documents the dedicated coverage failure code).
+  Covers: [KR1], [KR2], [DEL1], [DOD1], [TS1], [TS3], [TS4] (completed; ensures thresholds.overall is populated from the options, coverageStatus honors minCoverage without altering the rest of the coverage metrics, and guided-mode CLI/Node API tests confirm the same enforcement path).
+ - **9308.9308002 – Map coverageStatus to CLI exit codes**  
+  Covers: [KR3], [DEL2], [DOD1], [DOD2], [TS2] (done; relocates the coverage failure messaging/exit-code logic into `packages/cli/src/coverage/coverage-exit-codes.ts`, keeps the summary/exit wiring in the CLI, and exercises the path via helper + CLI tests per cov://§7#cli-summary).
 - **9308.9308003 – Test coverage threshold enforcement end-to-end**  
   Covers: [KR4], [KR5], [DEL3], [DOD2], [DOD3], [TS3], [TS4] (pending; exercises the Node API and CLI with minCoverage scenarios and regression tests for descriptive thresholds).
 
 Status:
 
-- 9308.9308001: in-progress
-- 9308.9308002: pending
+- 9308.9308001: done
+- 9308.9308002: done
 - 9308.9308003: pending
