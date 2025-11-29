@@ -130,6 +130,7 @@
 ## Règles d’or
 
 1. **SPEC seules font foi.** Pas d’élargissement de périmètre au-delà des deux documents de SPEC (canonique + coverage-aware).
+1bis. **Conformité SPEC non optionnelle.** Ne jamais présenter l’alignement à la SPEC comme un “plus” facultatif ou formulé en conditionnel (ex. “si tu veux coller à la spec”, “si tu veux pousser au niveau SPEC”). Toute formulation doit considérer la conformité intégrale à la SPEC comme obligatoire et non comme une optimisation ou un niveau “premium”.
 2. **REFONLY par anchors.** Pas de prose SPEC recopiée; référencer par `spec://...` ou `cov://...`.
 3. **Séparation des phases** (Normalize → Compose → CoverageAnalyzer → CoveragePlanner → Generate → Repair → Validate → CoverageEvaluator).
 4. **Determinism** : RNG seedée, pas d’état global, journaux de décision.
