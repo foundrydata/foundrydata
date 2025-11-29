@@ -463,7 +463,7 @@
             "id": 9306005,
             "title": "Add end-to-end tests for guided hints on schemas with oneOf and enums",
             "description": "Create e2e tests that show full branch and enum coverage under coverage=guided with sufficient budget and visible unsatisfied hints when impossible.",
-            "status": "done",
+            "status": "pending",
             "estimatedHours": 2,
             "file": "packages/core/test/e2e/coverage-guided-hints.spec.ts",
             "parentId": "9306",
@@ -485,10 +485,10 @@
             "title": "Attach ensurePropertyPresence hints for PROPERTY_PRESENT targets in CoveragePlanner",
             "description": "Implement ensurePropertyPresence(schemaPath, property, present:true) hints in the CoveragePlanner based on PROPERTY_PRESENT targets from the Analyzer. Map each PROPERTY_PRESENT target to a hint on the owning object schema node, keeping IDs and ordering of CoverageTargets unchanged and respecting AP:false / CoverageIndex invariants. Add planner-level tests to verify that TestUnits receive ensurePropertyPresence hints consistent with active PROPERTY_PRESENT targets.",
             "details": "",
-            "status": "in-progress",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 9306,
-            "updatedAt": "2025-11-29T11:01:35.493Z",
+            "updatedAt": "2025-11-29T11:16:07.088Z",
             "parentId": "undefined"
           },
           {
@@ -496,13 +496,14 @@
             "title": "Collect unsatisfied hints in pipeline and expose coverageReport.unsatisfiedHints",
             "description": "Extend the pipeline orchestrator to collect unsatisfiedHints emitted by the generator (and Repair when applicable), aggregate them at run level, and expose them in artifacts.coverageReport.unsatisfiedHints in accordance with the coverage-aware SPEC (§5.3, §7.1). Ensure unsatisfied hints remain diagnostic-only (no impact on coverageStatus, minCoverage enforcement or CLI exit codes), conform to the UnsatisfiedHint schema (kind, canonPath, params, reasonCode, reasonDetail?), and leave coverage=off and coverage=measure behavior unchanged. Add executePipeline tests that validate the presence of unsatisfiedHints in the coverage report for scenarios where hints cannot be honored, while keeping AJV validity and coverage metrics intact.",
             "details": "",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 9306,
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-11-29T11:34:47.437Z"
           }
         ],
-        "updatedAt": "2025-11-29T11:01:35.493Z"
+        "updatedAt": "2025-11-29T11:34:47.437Z"
       },
       {
         "id": "9307",
@@ -1037,7 +1038,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-29T11:01:35.494Z",
+      "lastModified": "2025-11-29T11:34:47.438Z",
       "taskCount": 18,
       "completedCount": 8,
       "tags": [

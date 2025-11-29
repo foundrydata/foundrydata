@@ -96,6 +96,7 @@ import {
   type CoverageReportMode,
   type CoverageThresholds,
   type PlannerCapHit,
+  type UnsatisfiedHint,
 } from '@foundrydata/shared';
 import corePackageJson from '../../package.json' assert { type: 'json' };
 
@@ -130,7 +131,8 @@ interface StageRunners {
   compose: ComposeRunner;
   generate: (
     effective: ReturnType<typeof compose>,
-    options?: PipelineOptions['generate']
+    options?: PipelineOptions['generate'],
+    coverage?: CoverageHookOptions
   ) => Promise<GeneratorStageOutput> | GeneratorStageOutput;
   repair: (
     items: unknown[],
@@ -159,6 +161,7 @@ type CoverageHookOptions = {
   emit: (event: CoverageEvent) => void;
   emitForItem?: (itemIndex: number, event: CoverageEvent) => void;
   hints?: CoverageHint[];
+  recordUnsatisfiedHint?: (hint: UnsatisfiedHint) => void;
 };
 
 class ExternalRefValidationError extends Error {
@@ -398,6 +401,7 @@ export async function executePipeline(
   let perInstanceCoverageStates: InstanceCoverageState[] | undefined;
   let coverageHookOptions: CoverageHookOptions | undefined;
   let plannerCapsHit: PlannerCapHit[] = [];
+  const unsatisfiedHints: UnsatisfiedHint[] = [];
   if (shouldRunCoverageAnalyzer(options.coverage)) {
     const coverageMode = options.coverage?.mode ?? 'off';
     if (coverageMode === 'measure' || coverageMode === 'guided') {
@@ -431,7 +435,18 @@ export async function executePipeline(
         }
         emit(event);
       };
-      coverageHookOptions = { mode: coverageMode, emit, emitForItem };
+      const recordUnsatisfiedHint =
+        coverageMode === 'guided'
+          ? (hint: UnsatisfiedHint): void => {
+              unsatisfiedHints.push(hint);
+            }
+          : undefined;
+      coverageHookOptions = {
+        mode: coverageMode,
+        emit,
+        emitForItem,
+        recordUnsatisfiedHint,
+      };
     }
   }
   const runners: StageRunners = {
@@ -979,7 +994,9 @@ export async function executePipeline(
   metrics.begin(METRIC_PHASE_BY_STAGE.generate);
   try {
     const eff = stages.compose.output!;
-    generated = await Promise.resolve(runners.generate(eff, options.generate));
+    generated = await Promise.resolve(
+      runners.generate(eff, options.generate, coverageHookOptions)
+    );
     stages.generate = { status: 'completed', output: generated };
     artifacts.generated = generated;
 
@@ -1305,7 +1322,7 @@ export async function executePipeline(
       metrics: coverageResult.metrics,
       targets: reportArrays.targets,
       uncoveredTargets: reportArrays.uncoveredTargets,
-      unsatisfiedHints: [],
+      unsatisfiedHints,
       diagnostics: {
         plannerCapsHit,
         notes: [],
@@ -1339,7 +1356,7 @@ function createDefaultGenerate(
   },
   coverage?: CoverageHookOptions
 ): StageRunners['generate'] {
-  return (effective, options) => {
+  return (effective, options, _coverageHooks) => {
     const generatorOptions: FoundryGeneratorOptions = {
       count: options?.count,
       seed: options?.seed,

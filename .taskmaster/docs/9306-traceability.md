@@ -1,6 +1,6 @@
 # Traceability — Task 9306 (Wire coverage hints into generator with conflict resolution and unsatisfied hints)
 
-This document maps the parent task 9306 bullets from Implementation Details, Deliverables, Definition of Done and Test Strategy to its subtasks 9306.9306001–9306.9306007.
+This document maps the parent task 9306 bullets from Implementation Details, Deliverables, Definition of Done and Test Strategy to its subtasks 9306.9306001–9306.9306008.
 
 ## Parent bullets
 
@@ -47,13 +47,16 @@ This document maps the parent task 9306 bullets from Implementation Details, Del
   Covers: [KR3], [KR5], [DOD4], [TS1], [TS2] (covered; planner and generator tests assert global kind priority, first-in-wins semantics and deterministic behavior for fixed seeds and hint sets).
 
 - **9306.9306005 – Add end-to-end tests for guided hints on schemas with oneOf and enums**  
-  Covers: [KR1], [KR2], [KR3], [DOD1], [DOD4], [TS4] (covered via generator-level tests on oneOf+enum schemas; full planner-driven e2e wiring is deferred to later integration tasks).
+  Covers: [KR1], [KR2], [KR3], [DOD1], [DOD4], [TS4] (covered via generator-level tests on oneOf+enum schemas.
 
 - **9306.9306006 – Wire planner hints into pipeline orchestrator and add guided hints e2e tests**  
   Covers: [KR1], [KR2], [KR3], [DEL2], [DOD1], [DOD4], [TS2], [TS4] (covered; this subtask wires planner-produced TestUnit.hints through the pipeline orchestrator into the generator in coverage=guided mode and adds executePipeline-based tests that demonstrate guided runs matching or improving branches/enum coverage vs coverage=measure under the same budget while remaining deterministic for fixed (schema, options, seed)).
 
 - **9306.9306007 – Attach ensurePropertyPresence hints for PROPERTY_PRESENT targets in CoveragePlanner**  
-  Covers: [KR1], [DOD1], [DOD4], [TS2] (in-progress → covered after implementation and tests; this subtask projects structural PROPERTY_PRESENT targets from the CoverageAnalyzer into ensurePropertyPresence(present:true) hints on the owning object schema nodes in the CoveragePlanner, without changing CoverageTarget IDs, ordering or AP:false / CoverageIndex semantics, and adds planner-level tests to validate the mapping and dimensionsEnabled gating).
+  Covers: [KR1], [DOD1], [DOD4], [TS2] (covered; this subtask projects structural PROPERTY_PRESENT targets from the CoverageAnalyzer into ensurePropertyPresence(present:true) hints on the owning object schema nodes in the CoveragePlanner, without changing CoverageTarget IDs, ordering or AP:false / CoverageIndex semantics, and adds planner-level tests to validate the mapping and dimensionsEnabled gating).
+
+- **9306.9306008 – Collect unsatisfied hints in pipeline and expose coverageReport.unsatisfiedHints**  
+  Covers: [KR4], [DOD3], [DOD4], [TS3] (covered; this subtask extends the pipeline orchestrator to aggregate unsatisfiedHints reported by the generator in coverage=guided mode via a CoverageHookOptions callback and to expose them in CoverageReport.unsatisfiedHints without affecting coverage metrics, minCoverage enforcement or CLI exit codes, with executePipeline tests verifying the presence and shape of unsatisfiedHints entries for scenarios where hints cannot be honored).
 
 Status:
 
@@ -61,6 +64,6 @@ Status:
 - 9306.9306002: covered
 - 9306.9306003: covered
 - 9306.9306004: covered
-- 9306.9306005: covered
 - 9306.9306006: covered
-- 9306.9306007: in-progress
+- 9306.9306007: covered
+- 9306.9306008: covered

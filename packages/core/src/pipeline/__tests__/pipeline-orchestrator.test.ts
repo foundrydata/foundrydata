@@ -3,10 +3,13 @@ import { describe, expect, it } from 'vitest';
 import {
   compose as runCompose,
   type ComposeInput,
+  type ComposeResult,
 } from '../../transform/composition-engine';
 import { MetricsCollector } from '../../util/metrics';
 import { executePipeline } from '../orchestrator';
 import { COVERAGE_REPORT_VERSION_V1 } from '@foundrydata/shared';
+import { generateFromCompose } from '../../generator/foundry-generator.js';
+import type { PipelineOptions } from '../types';
 
 describe('executePipeline', () => {
   it('runs normalize then compose with metrics captured', async () => {
@@ -457,5 +460,81 @@ describe('executePipeline', () => {
     expect(report?.metrics.overall).toBe(metrics?.overall);
     expect(Array.isArray(report?.targets)).toBe(true);
     expect(Array.isArray(report?.uncoveredTargets)).toBe(true);
+  });
+
+  it('collects unsatisfied hints from generator into coverageReport.unsatisfiedHints in guided mode', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        color: { enum: ['red', 'green'] },
+      },
+      required: ['color'],
+    } as const;
+
+    const guidedResult = await executePipeline(
+      schema,
+      {
+        mode: 'strict',
+        generate: { count: 1, seed: 42 },
+        validate: { validateFormats: false },
+        coverage: {
+          mode: 'guided',
+          dimensionsEnabled: ['enum'],
+          excludeUnreachable: false,
+        },
+      },
+      {
+        // Override generate to attach an invalid coverEnumValue hint while
+        // still using the core generator and coverage hooks from the pipeline.
+        generate(
+          effective: ComposeResult,
+          options?: PipelineOptions['generate'],
+          coverage?: any
+        ) {
+          const hints = [
+            {
+              kind: 'coverEnumValue',
+              canonPath: '#/properties/color',
+              params: { valueIndex: 5 },
+            },
+          ];
+          const generatorOptions = {
+            ...(options ?? {}),
+            coverage:
+              coverage && coverage.mode !== 'off'
+                ? {
+                    ...coverage,
+                    hints,
+                  }
+                : coverage,
+          } as unknown;
+          return generateFromCompose(effective, generatorOptions as any);
+        },
+      }
+    );
+
+    expect(guidedResult.status).toBe('completed');
+
+    const report = guidedResult.artifacts.coverageReport;
+    expect(report).toBeDefined();
+    expect(report?.engine.coverageMode).toBe('guided');
+
+    const unsatisfiedHints = report?.unsatisfiedHints ?? [];
+    expect(unsatisfiedHints.length).toBeGreaterThan(0);
+
+    const enumHints = unsatisfiedHints.filter(
+      (hint) =>
+        hint.kind === 'coverEnumValue' &&
+        hint.canonPath === '#/properties/color'
+    );
+    expect(enumHints.length).toBeGreaterThan(0);
+    expect(enumHints[0]?.reasonCode).toBe('INTERNAL_ERROR');
+
+    // Unsatisfied hints are diagnostic-only and must not alter metrics.
+    const metrics = guidedResult.artifacts.coverageMetrics;
+    expect(metrics).toBeDefined();
+    expect(report?.metrics.overall).toBe(metrics?.overall);
   });
 });
