@@ -59,7 +59,7 @@ describe('coverage=guided planning behavior', () => {
       },
     });
 
-    const measureMetrics = guidedResult.artifacts.coverageMetrics;
+    const measureMetrics = measureResult.artifacts.coverageMetrics;
     const guidedMetrics = guidedResult.artifacts.coverageMetrics;
 
     expect(measureMetrics).toBeDefined();

@@ -82,12 +82,16 @@ import {
   evaluateCoverage,
   type CoverageEvaluatorInput,
   applyReportModeToCoverageTargets,
+  applyPlannerCaps,
+  resolveCoveragePlannerConfig,
+  type CoveragePlannerConfig,
 } from '../coverage/index.js';
 import {
   COVERAGE_REPORT_VERSION_V1,
   type CoverageMode,
   type CoverageReportMode,
   type CoverageThresholds,
+  type PlannerCapHit,
 } from '@foundrydata/shared';
 import corePackageJson from '../../package.json' assert { type: 'json' };
 
@@ -388,6 +392,7 @@ export async function executePipeline(
   let streamingCoverageAccumulator: StreamingCoverageAccumulator | undefined;
   let perInstanceCoverageStates: InstanceCoverageState[] | undefined;
   let coverageHookOptions: CoverageHookOptions | undefined;
+  let plannerCapsHit: PlannerCapHit[] = [];
   if (shouldRunCoverageAnalyzer(options.coverage)) {
     const coverageMode = options.coverage?.mode ?? 'off';
     if (coverageMode === 'measure' || coverageMode === 'guided') {
@@ -791,9 +796,40 @@ export async function executePipeline(
         };
         const coverageResult = analyzeCoverage(coverageInput);
         artifacts.coverageGraph = coverageResult.graph;
-        artifacts.coverageTargets = coverageResult.targets;
+
+        const coverageMode = options.coverage?.mode ?? 'off';
+        const coverageDimensions =
+          options.coverage?.dimensionsEnabled ?? undefined;
+
+        if (coverageMode === 'guided') {
+          const requestedCount = options.generate?.count;
+          if (
+            typeof requestedCount === 'number' &&
+            Number.isFinite(requestedCount) &&
+            requestedCount > 0
+          ) {
+            const plannerConfig: CoveragePlannerConfig =
+              resolveCoveragePlannerConfig({
+                maxInstances: requestedCount,
+                dimensionsEnabled: coverageDimensions,
+                dimensionPriority: options.coverage?.planner?.dimensionPriority,
+                softTimeMs: options.coverage?.planner?.softTimeMs,
+                caps: options.coverage?.planner?.caps,
+              });
+            const capsResult = applyPlannerCaps(
+              coverageResult.targets,
+              plannerConfig
+            );
+            artifacts.coverageTargets = capsResult.updatedTargets;
+            plannerCapsHit = capsResult.capsHit;
+          } else {
+            artifacts.coverageTargets = coverageResult.targets;
+          }
+        } else {
+          artifacts.coverageTargets = coverageResult.targets;
+        }
         streamingCoverageAccumulator = createStreamingCoverageAccumulator(
-          coverageResult.targets
+          artifacts.coverageTargets
         );
         coverageAccumulator = streamingCoverageAccumulator;
       }
@@ -1229,7 +1265,7 @@ export async function executePipeline(
       uncoveredTargets: reportArrays.uncoveredTargets,
       unsatisfiedHints: [],
       diagnostics: {
-        plannerCapsHit: [],
+        plannerCapsHit,
         notes: [],
       },
     };
