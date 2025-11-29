@@ -501,9 +501,20 @@
             "parentTaskId": 9306,
             "parentId": "undefined",
             "updatedAt": "2025-11-29T11:34:47.437Z"
+          },
+          {
+            "id": 9306009,
+            "title": "Implement hint trace and Repair-side unsatisfied hints",
+            "description": "Maintain a per-instance hint trace shared between Generate and Repair and emit UnsatisfiedHint entries from Repair with appropriate reasonCode (REPAIR_MODIFIED_VALUE, CONFLICTING_CONSTRAINTS, UNREACHABLE_BRANCH, PLANNER_CAP) when hints are applied, modified or impossible, as per §4.3, §5.3 and §7.1 of the coverage-aware SPEC.",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9306,
+            "updatedAt": "2025-11-29T12:34:10.135Z",
+            "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-11-29T11:44:40.542Z"
+        "updatedAt": "2025-11-29T12:34:10.135Z"
       },
       {
         "id": "9307",
@@ -573,7 +584,7 @@
           "9303",
           "9304"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 3,
         "details": "[Context]\nImplement enforcement of minCoverage on metrics.overall and connect it to CLI exit codes and Node API status, per §7.3 (Thresholds) and the acceptance criterion on coverage threshold. In V1, only the overall threshold is honored; per-dimension and per-operation thresholds are reserved for future use.\n\n[Key requirements]\n- Add minCoverage configuration to coverage options and propagate it to CoverageEvaluator.\n- Compute metrics.thresholds.overall and metrics.coverageStatus:'ok'|'minCoverageNotMet' based on metrics.overall and minCoverage.\n- Map coverageStatus to a dedicated non-zero CLI exit code when minCoverage is not met, distinct from other error conditions.\n- Ensure Node API returns coverageStatus alongside the CoverageReport so callers can react programmatically.\n- Keep thresholds.byDimension and thresholds.byOperation descriptive only in V1, without affecting behavior.\n\n[Deliverables]\n- Thresholds handling in CoverageEvaluator and coverage-report/v1 metrics.\n- CLI exit code mapping and documentation for coverage failures.\n- Node API shape that exposes coverageStatus and thresholds to callers.\n\n[Commands]\n- npm run build\n- npm run test -- --runInBand\n- npm run test packages/cli/test/coverage-cli.spec.ts -- --runTestsByPath\n\n[Definition of Done]\n- Runs with metrics.overall below minCoverage produce metrics.coverageStatus:'minCoverageNotMet' and the CLI exits with the configured coverage failure code.\n- Acceptance scenario where minCoverage=0.8 and metrics.overall=0.6 is covered by tests that assert exit code and summary content.\n- Node API returns a structured result that includes coverageStatus and thresholds.overall.\n- Adding or omitting per-dimension and per-operation thresholds in metrics does not affect behavior in V1.",
         "testStrategy": "Unit tests in CoverageEvaluator for threshold handling; CLI tests that run with minCoverage set above expected coverage and assert non-zero exit codes and clear summary output; Node API tests that inspect coverageStatus and thresholds in the returned CoverageReport; regression tests to ensure behavior remains unchanged when thresholds.byDimension or thresholds.byOperation are present but not enforced.",
@@ -582,10 +593,11 @@
             "id": 9308001,
             "title": "Propagate minCoverage config to CoverageEvaluator",
             "description": "Extend coverage options to include minCoverage and apply it when computing thresholds.overall and coverageStatus.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 3,
             "file": "packages/core/src/coverage/coverage-evaluator.ts",
-            "parentId": "9308"
+            "parentId": "9308",
+            "updatedAt": "2025-11-29T12:42:38.886Z"
           },
           {
             "id": 9308002,
@@ -605,7 +617,8 @@
             "file": "packages/core/test/e2e/coverage-threshold.spec.ts",
             "parentId": "9308"
           }
-        ]
+        ],
+        "updatedAt": "2025-11-29T12:42:38.886Z"
       },
       {
         "id": "9309",
@@ -1038,7 +1051,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-29T11:44:40.543Z",
+      "lastModified": "2025-11-29T12:42:38.887Z",
       "taskCount": 18,
       "completedCount": 9,
       "tags": [

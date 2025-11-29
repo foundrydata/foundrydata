@@ -156,12 +156,30 @@ type AjvMarker = {
   __fd_ajvClass?: 'Ajv' | 'Ajv2019' | 'Ajv2020' | 'ajv-draft-04';
 };
 
+type HintApplication = {
+  hint: {
+    kind: string;
+    canonPath: string;
+    params?: Record<string, unknown>;
+  };
+  canonPath: string;
+  instancePath: string;
+  itemIndex: number;
+};
+
+type HintTrace = {
+  recordApplication(entry: HintApplication): void;
+  getApplicationsForItem(itemIndex: number): HintApplication[];
+  getAllApplications(): HintApplication[];
+};
+
 type CoverageHookOptions = {
   mode: CoverageMode;
   emit: (event: CoverageEvent) => void;
   emitForItem?: (itemIndex: number, event: CoverageEvent) => void;
   hints?: CoverageHint[];
   recordUnsatisfiedHint?: (hint: UnsatisfiedHint) => void;
+  hintTrace?: HintTrace;
 };
 
 class ExternalRefValidationError extends Error {
@@ -401,6 +419,7 @@ export async function executePipeline(
   let perInstanceCoverageStates: InstanceCoverageState[] | undefined;
   let coverageHookOptions: CoverageHookOptions | undefined;
   let plannerCapsHit: PlannerCapHit[] = [];
+  let hintTrace: HintTrace | undefined;
   const unsatisfiedHints: UnsatisfiedHint[] = [];
   if (shouldRunCoverageAnalyzer(options.coverage)) {
     const coverageMode = options.coverage?.mode ?? 'off';
@@ -441,11 +460,26 @@ export async function executePipeline(
               unsatisfiedHints.push(hint);
             }
           : undefined;
+      if (coverageMode === 'guided') {
+        const applications: HintApplication[] = [];
+        hintTrace = {
+          recordApplication(entry: HintApplication): void {
+            applications.push(entry);
+          },
+          getApplicationsForItem(itemIndex: number): HintApplication[] {
+            return applications.filter((app) => app.itemIndex === itemIndex);
+          },
+          getAllApplications(): HintApplication[] {
+            return applications.slice();
+          },
+        };
+      }
       coverageHookOptions = {
         mode: coverageMode,
         emit,
         emitForItem,
         recordUnsatisfiedHint,
+        ...(hintTrace ? { hintTrace } : {}),
       };
     }
   }

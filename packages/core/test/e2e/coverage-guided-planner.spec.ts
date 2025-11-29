@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
+import { generateFromCompose } from '../../src/generator/foundry-generator.js';
 import { executePipeline } from '../../src/pipeline/orchestrator.js';
 
 const schemaWithOneOfAndEnum = {
@@ -144,5 +145,84 @@ describe('coverage=guided planning behavior', () => {
     expect(guidedMetricsRepeat?.byDimension['enum']).toBe(
       guidedMetrics?.byDimension['enum']
     );
+  });
+
+  it('shows Repair-side unsatisfied hints in coverageReport.unsatisfiedHints', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        keep: { const: 'ok' },
+        drop: { const: 'block' },
+      },
+      required: ['keep'],
+      not: { required: ['drop'] },
+    } as const;
+
+    const options = {
+      mode: 'strict' as const,
+      coverage: {
+        mode: 'guided' as const,
+        dimensionsEnabled: ['structure'] as const,
+        planner: {
+          dimensionPriority: ['structure'] as const,
+        },
+      },
+      generate: {
+        count: 100,
+        seed: 31415,
+      },
+      validate: {
+        validateFormats: false,
+      },
+    } as const;
+
+    const result = await executePipeline(schema, options, {
+      generate(effective, opts, coverage) {
+        const output = generateFromCompose(effective, {
+          ...(opts ?? {}),
+          coverage,
+        });
+        if (
+          coverage &&
+          coverage.mode === 'guided' &&
+          coverage.hintTrace &&
+          typeof coverage.hintTrace.recordApplication === 'function'
+        ) {
+          const firstItem = output.items[0];
+          if (firstItem && typeof firstItem === 'object') {
+            (firstItem as Record<string, unknown>).drop = 'blocked';
+          }
+          coverage.hintTrace.recordApplication({
+            hint: {
+              kind: 'ensurePropertyPresence',
+              canonPath: '#',
+              params: { propertyName: 'drop', present: true },
+            },
+            canonPath: '#',
+            instancePath: '',
+            itemIndex: 0,
+          });
+        }
+        return output;
+      },
+    });
+
+    expect(result.status).toBe('completed');
+
+    const report = result.artifacts.coverageReport;
+    expect(report).toBeDefined();
+    const unsatisfied = report?.unsatisfiedHints ?? [];
+
+    const repairHints = unsatisfied.filter(
+      (hint) =>
+        hint.kind === 'ensurePropertyPresence' &&
+        hint.canonPath === '#' &&
+        (hint.params as { propertyName?: unknown })?.propertyName === 'drop' &&
+        hint.reasonCode === 'REPAIR_MODIFIED_VALUE'
+    );
+
+    expect(repairHints.length).toBeGreaterThanOrEqual(1);
   });
 });
