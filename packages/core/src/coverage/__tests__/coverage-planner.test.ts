@@ -387,4 +387,96 @@ describe('planTestUnits', () => {
       unitsRun1.map((u) => u.seed)
     );
   });
+
+  it('attaches ensurePropertyPresence hints for PROPERTY_PRESENT targets on the root object', () => {
+    const targets: CoveragePlannerInput['targets'] = [
+      {
+        id: 'prop-root',
+        dimension: 'structure',
+        kind: 'PROPERTY_PRESENT',
+        canonPath: '#/properties/name',
+        params: { propertyName: 'name' },
+      },
+    ];
+
+    const config = resolveCoveragePlannerConfig({
+      maxInstances: 1,
+      dimensionsEnabled: ['structure'],
+      dimensionPriority: ['structure'],
+    });
+    const units = planTestUnits(makeInput(targets, config));
+
+    expect(units).toHaveLength(1);
+    const unit = units[0];
+    if (!unit) {
+      throw new Error('expected a planned unit for PROPERTY_PRESENT target');
+    }
+    expect(unit.hints).toEqual([
+      {
+        kind: 'ensurePropertyPresence',
+        canonPath: '#',
+        params: { propertyName: 'name', present: true },
+      },
+    ]);
+  });
+
+  it('attaches ensurePropertyPresence hints for nested PROPERTY_PRESENT targets on the owning object schema node', () => {
+    const targets: CoveragePlannerInput['targets'] = [
+      {
+        id: 'prop-nested',
+        dimension: 'structure',
+        kind: 'PROPERTY_PRESENT',
+        canonPath: '#/properties/parent/properties/child',
+        params: { propertyName: 'child' },
+      },
+    ];
+
+    const config = resolveCoveragePlannerConfig({
+      maxInstances: 1,
+      dimensionsEnabled: ['structure'],
+      dimensionPriority: ['structure'],
+    });
+    const units = planTestUnits(makeInput(targets, config));
+
+    expect(units).toHaveLength(1);
+    const unit = units[0];
+    if (!unit) {
+      throw new Error(
+        'expected a planned unit for nested PROPERTY_PRESENT target'
+      );
+    }
+    expect(unit.hints).toEqual([
+      {
+        kind: 'ensurePropertyPresence',
+        canonPath: '#/properties/parent',
+        params: { propertyName: 'child', present: true },
+      },
+    ]);
+  });
+
+  it('omits ensurePropertyPresence hints when the structure dimension is disabled', () => {
+    const targets: CoveragePlannerInput['targets'] = [
+      {
+        id: 'prop-root',
+        dimension: 'structure',
+        kind: 'PROPERTY_PRESENT',
+        canonPath: '#/properties/name',
+        params: { propertyName: 'name' },
+      },
+    ];
+
+    const config = resolveCoveragePlannerConfig({
+      maxInstances: 1,
+      dimensionsEnabled: ['branches', 'enum'],
+      dimensionPriority: ['branches', 'enum'],
+    });
+    const units = planTestUnits(makeInput(targets, config));
+
+    expect(units).toHaveLength(1);
+    const unit = units[0];
+    if (!unit) {
+      throw new Error('expected a planned unit when maxInstances>0');
+    }
+    expect(unit.hints).toEqual([]);
+  });
 });
