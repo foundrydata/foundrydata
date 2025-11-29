@@ -15,7 +15,7 @@ import {
   ConflictDetector,
   type ConflictCheckResult,
 } from './conflict-detector.js';
-import { buildUnsatPathSet } from './analyzer.js';
+import { buildUnsatPathSet } from './coverage-analyzer-unreachable.js';
 import { XorShift32, normalizeSeed } from '../util/rng.js';
 
 export type CoverageHintKind =

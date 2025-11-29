@@ -685,10 +685,11 @@
             "id": 9309003,
             "title": "Handle unreachable or degenerate boundary targets",
             "description": "Use existing UNSAT diagnostics and numeric feasibility checks to mark unreachable boundaries appropriately.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/coverage/coverage-analyzer-unreachable.ts",
-            "parentId": "9309"
+            "parentId": "9309",
+            "updatedAt": "2025-11-29T18:42:04.281Z"
           },
           {
             "id": 9309004,
@@ -700,7 +701,7 @@
             "parentId": "9309"
           }
         ],
-        "updatedAt": "2025-11-29T18:37:13.813Z"
+        "updatedAt": "2025-11-29T18:42:04.281Z"
       },
       {
         "id": "9310",
@@ -1138,7 +1139,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-29T18:37:13.816Z",
+      "lastModified": "2025-11-29T18:42:04.282Z",
       "taskCount": 21,
       "completedCount": 13,
       "tags": [
