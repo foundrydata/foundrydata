@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 /* eslint-disable max-lines */
 import type { CoverageDimension, CoverageTarget } from '@foundrydata/shared';
 import type { CoverageGraph } from './index.js';
@@ -443,6 +444,27 @@ function getParentCanonPath(canonPath: string): string {
   return `#/${parent}`;
 }
 
+function getOwningObjectCanonPathForPropertyTarget(
+  canonPath: string
+): string | undefined {
+  if (!canonPath) {
+    return undefined;
+  }
+  const trimmed = canonPath.startsWith('#') ? canonPath.slice(1) : canonPath;
+  if (!trimmed) {
+    return '#';
+  }
+  const segments = trimmed.split('/').filter((segment) => segment.length > 0);
+  if (segments.length < 2) {
+    return undefined;
+  }
+  const objectSegments = segments.slice(0, -2);
+  if (objectSegments.length === 0) {
+    return '#';
+  }
+  return `#/${objectSegments.join('/')}`;
+}
+
 // eslint-disable-next-line complexity
 function buildHintsForTarget(target: CoverageTarget): CoverageHint[] {
   const hints: CoverageHint[] = [];
@@ -451,7 +473,23 @@ function buildHintsForTarget(target: CoverageTarget): CoverageHint[] {
     return hints;
   }
 
-  if (target.dimension === 'branches') {
+  if (target.dimension === 'structure' && target.kind === 'PROPERTY_PRESENT') {
+    const params = target.params as { propertyName?: unknown } | undefined;
+    const propertyName =
+      params && typeof params.propertyName === 'string'
+        ? params.propertyName
+        : undefined;
+    const ownerPath = propertyName
+      ? getOwningObjectCanonPathForPropertyTarget(canonPath)
+      : undefined;
+    if (propertyName && ownerPath) {
+      hints.push({
+        kind: 'ensurePropertyPresence',
+        canonPath: ownerPath,
+        params: { propertyName, present: true },
+      });
+    }
+  } else if (target.dimension === 'branches') {
     const parentPath = getParentCanonPath(canonPath);
     const segments = canonPath.startsWith('#')
       ? canonPath
@@ -491,7 +529,6 @@ function buildHintsForTarget(target: CoverageTarget): CoverageHint[] {
   return hints;
 }
 
-// eslint-disable-next-line max-lines-per-function
 export function planTestUnits(input: CoveragePlannerInput): TestUnit[] {
   const {
     targets,
