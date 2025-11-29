@@ -64,6 +64,30 @@ function makeTargets(): CoverageTarget[] {
       status: 'active',
     },
     {
+      id: 't-num-min',
+      dimension: 'boundaries',
+      kind: 'NUMERIC_MIN_HIT',
+      canonPath: '#/properties/num',
+      params: { boundaryKind: 'minimum', boundaryValue: 0 },
+      status: 'active',
+    },
+    {
+      id: 't-str-minlen',
+      dimension: 'boundaries',
+      kind: 'STRING_MIN_LENGTH_HIT',
+      canonPath: '#/properties/str',
+      params: { boundaryKind: 'minLength', boundaryValue: 3 },
+      status: 'active',
+    },
+    {
+      id: 't-arr-minitems',
+      dimension: 'boundaries',
+      kind: 'ARRAY_MIN_ITEMS_HIT',
+      canonPath: '#/properties/arr',
+      params: { boundaryKind: 'minItems', boundaryValue: 2 },
+      status: 'active',
+    },
+    {
       id: 't-diagnostic',
       dimension: 'operations',
       kind: 'SCHEMA_REUSED_COVERED',
@@ -149,6 +173,40 @@ describe('createCoverageAccumulator', () => {
     expect(acc.isHit('t-oneof-1')).toBe(true);
     expect(acc.isHit('t-conditional-then')).toBe(true);
     expect(acc.isHit('t-enum-1')).toBe(true);
+  });
+
+  it('maps boundaries events to the corresponding targets', () => {
+    const targets = makeTargets();
+    const acc = createCoverageAccumulator(targets);
+
+    const events: CoverageEvent[] = [
+      {
+        dimension: 'boundaries',
+        kind: 'NUMERIC_MIN_HIT',
+        canonPath: '#/properties/num',
+        params: { boundaryKind: 'minimum', boundaryValue: 0 },
+      },
+      {
+        dimension: 'boundaries',
+        kind: 'STRING_MIN_LENGTH_HIT',
+        canonPath: '#/properties/str',
+        params: { boundaryKind: 'minLength', boundaryValue: 3 },
+      },
+      {
+        dimension: 'boundaries',
+        kind: 'ARRAY_MIN_ITEMS_HIT',
+        canonPath: '#/properties/arr',
+        params: { boundaryKind: 'minItems', boundaryValue: 2 },
+      },
+    ];
+
+    for (const event of events) {
+      acc.record(event);
+    }
+
+    expect(acc.isHit('t-num-min')).toBe(true);
+    expect(acc.isHit('t-str-minlen')).toBe(true);
+    expect(acc.isHit('t-arr-minitems')).toBe(true);
   });
 
   it('ignores unmatched events and unknown target kinds', () => {

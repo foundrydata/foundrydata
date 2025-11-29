@@ -1977,6 +1977,7 @@ class GeneratorEngine {
       }
     }
 
+    this.recordArrayBoundaryHits(schema, canonPath, result.length);
     return result;
   }
 
@@ -2389,13 +2390,19 @@ class GeneratorEngine {
   private generateString(schema: Record<string, unknown>): string {
     // const/enum outrank type
     if (schema.const !== undefined && typeof schema.const === 'string') {
-      return schema.const as string;
+      const value = schema.const as string;
+      this.recordStringBoundaryHits(schema, value);
+      return value;
     }
     if (Array.isArray(schema.enum)) {
       const first = (schema.enum as unknown[]).find(
         (v) => typeof v === 'string'
       );
-      if (typeof first === 'string') return first;
+      if (typeof first === 'string') {
+        const value = first;
+        this.recordStringBoundaryHits(schema, value);
+        return value;
+      }
     }
 
     const minLength =
@@ -2416,7 +2423,9 @@ class GeneratorEngine {
           patternLength >= minLength &&
           (maxLength === undefined || patternLength <= maxLength)
         ) {
-          return patternValue;
+          const value = patternValue;
+          this.recordStringBoundaryHits(schema, value);
+          return value;
         }
       }
     }
@@ -2432,6 +2441,7 @@ class GeneratorEngine {
         if (maxLength !== undefined && codePointLength(value) > maxLength) {
           value = truncateToCodePoints(value, maxLength);
         }
+        this.recordStringBoundaryHits(schema, value);
         return value;
       }
     }
@@ -2440,6 +2450,7 @@ class GeneratorEngine {
     if (maxLength !== undefined && codePointLength(candidate) > maxLength) {
       candidate = truncateToCodePoints(candidate, maxLength);
     }
+    this.recordStringBoundaryHits(schema, candidate);
     return candidate;
   }
 
@@ -2448,11 +2459,17 @@ class GeneratorEngine {
       schema.const !== undefined &&
       (typeof schema.const === 'number' || typeof schema.const === 'bigint')
     ) {
-      return Number(schema.const);
+      const value = Number(schema.const);
+      this.recordNumericBoundaryHits(schema, value);
+      return value;
     }
     if (Array.isArray(schema.enum)) {
       const first = (schema.enum as unknown[]).find((v) => Number.isInteger(v));
-      if (typeof first === 'number') return first;
+      if (typeof first === 'number') {
+        const value = first;
+        this.recordNumericBoundaryHits(schema, value);
+        return value;
+      }
     }
     let value = 0;
     if (typeof schema.minimum === 'number') {
@@ -2480,18 +2497,25 @@ class GeneratorEngine {
         value = Math.min(value, Math.floor(schema.maximum));
       }
     }
+    this.recordNumericBoundaryHits(schema, value);
     return value;
   }
 
   private generateNumber(schema: Record<string, unknown>): number {
     if (typeof schema.const === 'number') {
-      return schema.const as number;
+      const value = schema.const as number;
+      this.recordNumericBoundaryHits(schema, value);
+      return value;
     }
     if (Array.isArray(schema.enum)) {
       const first = (schema.enum as unknown[]).find(
         (v) => typeof v === 'number'
       );
-      if (typeof first === 'number') return first;
+      if (typeof first === 'number') {
+        const value = first;
+        this.recordNumericBoundaryHits(schema, value);
+        return value;
+      }
     }
     const multiple =
       typeof schema.multipleOf === 'number' && schema.multipleOf !== 0
@@ -2500,6 +2524,7 @@ class GeneratorEngine {
     if (multiple) {
       const aligned = this.generateMultipleAlignedNumber(schema, multiple);
       if (typeof aligned === 'number' && Number.isFinite(aligned)) {
+        this.recordNumericBoundaryHits(schema, aligned);
         return aligned;
       }
     }
@@ -2547,6 +2572,7 @@ class GeneratorEngine {
         value = rescue;
       }
     }
+    this.recordNumericBoundaryHits(schema, value);
     return value;
   }
 
@@ -3527,6 +3553,173 @@ class GeneratorEngine {
       canonPath,
       params: { propertyName },
     });
+  }
+
+  private recordNumericBoundaryHits(
+    schema: Record<string, unknown>,
+    value: number
+  ): void {
+    if (!this.coverage) return;
+    const pointerFromIndex = getPointerFromIndex(this.pointerIndex, schema);
+    if (!pointerFromIndex) return;
+    const canonPath = canonicalizeCoveragePath(pointerFromIndex);
+
+    if (
+      typeof schema.minimum === 'number' &&
+      Object.is(value, schema.minimum)
+    ) {
+      this.emitCoverageEvent({
+        dimension: 'boundaries',
+        kind: 'NUMERIC_MIN_HIT',
+        canonPath,
+        params: {
+          boundaryKind: 'minimum',
+          boundaryValue: value,
+        },
+      });
+    }
+
+    if (
+      typeof schema.maximum === 'number' &&
+      Object.is(value, schema.maximum)
+    ) {
+      this.emitCoverageEvent({
+        dimension: 'boundaries',
+        kind: 'NUMERIC_MAX_HIT',
+        canonPath,
+        params: {
+          boundaryKind: 'maximum',
+          boundaryValue: value,
+        },
+      });
+    }
+
+    if (
+      typeof schema.exclusiveMinimum === 'number' &&
+      value > schema.exclusiveMinimum
+    ) {
+      this.emitCoverageEvent({
+        dimension: 'boundaries',
+        kind: 'NUMERIC_MIN_HIT',
+        canonPath,
+        params: {
+          boundaryKind: 'exclusiveMinimum',
+          boundaryValue: value,
+        },
+      });
+    }
+
+    if (
+      typeof schema.exclusiveMaximum === 'number' &&
+      value < schema.exclusiveMaximum
+    ) {
+      this.emitCoverageEvent({
+        dimension: 'boundaries',
+        kind: 'NUMERIC_MAX_HIT',
+        canonPath,
+        params: {
+          boundaryKind: 'exclusiveMaximum',
+          boundaryValue: value,
+        },
+      });
+    }
+  }
+
+  private recordStringBoundaryHits(
+    schema: Record<string, unknown>,
+    value: string
+  ): void {
+    if (!this.coverage) return;
+    const pointerFromIndex = getPointerFromIndex(this.pointerIndex, schema);
+    if (!pointerFromIndex) return;
+    const canonPath = canonicalizeCoveragePath(pointerFromIndex);
+
+    const minLengthRaw =
+      typeof schema.minLength === 'number' ? schema.minLength : undefined;
+    const maxLengthRaw =
+      typeof schema.maxLength === 'number' ? schema.maxLength : undefined;
+
+    const minLength =
+      minLengthRaw !== undefined
+        ? Math.max(0, Math.floor(minLengthRaw))
+        : undefined;
+    const maxLength =
+      maxLengthRaw !== undefined
+        ? Math.max(minLength ?? 0, Math.floor(maxLengthRaw))
+        : undefined;
+
+    const length = codePointLength(value);
+
+    if (minLength !== undefined && length === minLength) {
+      this.emitCoverageEvent({
+        dimension: 'boundaries',
+        kind: 'STRING_MIN_LENGTH_HIT',
+        canonPath,
+        params: {
+          boundaryKind: 'minLength',
+          boundaryValue: length,
+        },
+      });
+    }
+
+    if (maxLength !== undefined && length === maxLength) {
+      this.emitCoverageEvent({
+        dimension: 'boundaries',
+        kind: 'STRING_MAX_LENGTH_HIT',
+        canonPath,
+        params: {
+          boundaryKind: 'maxLength',
+          boundaryValue: length,
+        },
+      });
+    }
+  }
+
+  private recordArrayBoundaryHits(
+    schema: Record<string, unknown>,
+    canonPath: JsonPointer,
+    actualLength: number
+  ): void {
+    if (!this.coverage) return;
+    const coveragePath = canonicalizeCoveragePath(canonPath);
+
+    const minItemsRaw =
+      typeof schema.minItems === 'number' ? schema.minItems : undefined;
+    const maxItemsRaw =
+      typeof schema.maxItems === 'number' ? schema.maxItems : undefined;
+
+    const minItems =
+      minItemsRaw !== undefined
+        ? Math.max(0, Math.floor(minItemsRaw))
+        : undefined;
+    const maxItems =
+      maxItemsRaw !== undefined
+        ? Math.max(minItems ?? 0, Math.floor(maxItemsRaw))
+        : undefined;
+
+    if (minItems !== undefined && actualLength === minItems) {
+      this.emitCoverageEvent({
+        dimension: 'boundaries',
+        kind: 'ARRAY_MIN_ITEMS_HIT',
+        canonPath: coveragePath,
+        params: {
+          boundaryKind: 'minItems',
+          boundaryValue: actualLength,
+        },
+      });
+    }
+
+    if (maxItems !== undefined && actualLength === maxItems) {
+      this.emitCoverageEvent({
+        dimension: 'boundaries',
+        kind: 'ARRAY_MAX_ITEMS_HIT',
+        canonPath: coveragePath,
+        params: {
+          boundaryKind: 'maxItems',
+          boundaryValue: actualLength,
+        },
+      });
+    }
   }
 }
 
