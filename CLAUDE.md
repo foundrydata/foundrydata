@@ -4,6 +4,9 @@
 > **Canonical Spec**: **Feature Support Simplification Plan** — single source of truth for pipeline, options, and SLO/SLI.
 > This guide complements the spec and also includes non-functional guidance (workflow, testing, quality gates).
 
+> **Scope**: General-purpose guide for Claude AI assistance on FoundryData project.
+> **For coverage-aware tasks (9300..9327)**: See **[AGENTS.md](AGENTS.md)** for detailed runbook with coverage-specific workflows, schemas, and invariants.
+
 ---
 
 ## 🚀 TL;DR — FoundryData in 30 seconds
@@ -55,8 +58,8 @@ foundrydata generate --schema user.json --n 100 --scenario errors
 
 ### MVP Constraints (v0.1)
 
-* **Performance**: Adhere to spec SLO/SLI (e.g., \~1K simple/medium rows p50 ≈ 200–400 ms).
-* **Bundle target**: <1 MB (core package; current builds may exceed this while optimization work is ongoing)
+* **Performance**: Adhere to spec SLO/SLI (e.g., \~1K simple/medium rows p50 ≈ 200–400 ms).
+* **Bundle target**: <1 MB (core package; current builds may exceed this while optimization work is ongoing)
 * **Runtime**: Single Node.js process, offline‑friendly
 
 ### JSON Schema Support (high‑level)
@@ -76,12 +79,14 @@ foundrydata generate --schema user.json --n 100 --scenario errors
 ### Core Principles
 
 1. **AJV is the oracle** — validate against the original schema (not transforms).
-2. **Pipeline simplicity** — `Normalize → Compose → Generate → Repair → Validate`.
+2. **Pipeline modularity** — Core: `Normalize → Compose → Generate → Repair → Validate`. Coverage-aware extends with optional phases.
 3. **Determinism** — same seed ⇒ same data.
 4. **Performance** — meet documented SLO/SLI with budgets and graceful degradation.
 5. **Developer‑friendly** — clear diagnostics.
 
-### 5‑Stage Generation Pipeline
+### Generation Pipeline
+
+**Core Pipeline (5 stages)**:
 
 ```mermaid
 flowchart LR
@@ -93,7 +98,74 @@ flowchart LR
 * **Generate**: Deterministic, seeded; `enum/const` outrank `type`; if‑aware‑lite.
 * **Repair**: AJV‑driven corrections (keyword→action), idempotent, budgeted.
 * **Validate**: Final AJV validation against the **original** schema.
-  Contracts and behaviors follow the spec.
+
+**Coverage-Aware Extension** (when `coverage.mode !== 'off'`):
+
+```mermaid
+flowchart LR
+  A[Normalize] --> B[Compose] --> C[CoverageAnalyzer] --> D[CoveragePlanner]
+  D --> E[Generate] --> F[Repair] --> G[Validate] --> H[CoverageEvaluator]
+```
+
+* **CoverageAnalyzer**: Build coverage graph from canonical schema + OpenAPI spec
+* **CoveragePlanner**: Generate test units with hints to maximize coverage
+* **CoverageEvaluator**: Measure achieved coverage, emit reports
+
+See [docs/spec-coverage-aware-v1.0.md](docs/spec-coverage-aware-v1.0.md) and [AGENTS.md](AGENTS.md) for details.
+
+---
+
+## 🎯 Coverage-Aware Generation (V1.0)
+
+FoundryData includes optional coverage-guided generation for maximizing schema and OpenAPI operation coverage.
+
+### Coverage Modes
+
+* **`off`** (default): No coverage tracking or instrumentation
+* **`measure`**: Track coverage without modifying generation behavior
+* **`guided`**: Optimize instance generation to maximize coverage via hints
+
+### Coverage Dimensions
+
+* **`structure`**: Schema keywords (type, properties, items, etc.)
+* **`branches`**: oneOf/anyOf branch selection, if/then/else paths
+* **`enum`**: Enum value coverage
+* **`boundaries`**: Min/max bounds, edge values
+
+### CLI Profiles
+
+```bash
+# Quick profile: ~75 instances, structure + branches only
+foundrydata generate --schema api.json --coverage quick
+
+# Balanced profile: ~350 instances, structure + branches + enum
+foundrydata generate --schema api.json --coverage balanced
+
+# Thorough profile: >=1000 instances, all dimensions
+foundrydata generate --schema api.json --coverage thorough
+
+# Custom configuration
+foundrydata generate --schema api.json \
+  --coverage guided \
+  --coverage-dimensions structure,branches,enum \
+  --coverage-min 0.85
+```
+
+### Coverage Reports
+
+```bash
+# Generate with coverage report
+foundrydata generate --schema api.json \
+  --coverage balanced \
+  --coverage-report ./coverage-report.json
+
+# View coverage summary in stderr
+# [foundrydata] coverage: 87.5% overall (structure: 92%, branches: 83%)
+```
+
+**Report Format**: JSON conforming to `coverage-report/v1` schema. See [AGENTS.md](AGENTS.md) §7 for schema details.
+
+**Key Invariant**: Coverage tracking never modifies core generation semantics. Same `(schema, seed, options)` tuple produces identical instances in `measure` mode vs `off` mode.
 
 ---
 
@@ -101,15 +173,24 @@ flowchart LR
 
 ```
 packages/
-├── core/                    # Domain logic (AJV, generator, repair)
+├── core/                    # Domain logic (AJV, generator, repair, coverage)
 │   ├── transform/           # Normalizer + Composition Engine
-│   ├── generator/           # Stage 3
-│   ├── repair/              # Stage 4
-│   ├── validator/           # Stage 5
-│   ├── util/                # RNG, hashing, metrics, rational, ptr-map
-│   └── types/
-├── cli/                     # CLI (Commander.js)
-├── shared/                  # Shared utilities
+│   ├── generator/           # Core generation logic
+│   ├── repair/              # Repair engine (AJV-driven corrections)
+│   ├── pipeline/            # Pipeline orchestrator + validation integration
+│   ├── coverage/            # Coverage analyzer, planner, evaluator (V1.0)
+│   ├── diag/                # Diagnostic system + validation
+│   ├── resolver/            # External $ref resolution (local/remote/schemastore)
+│   ├── openapi/             # OpenAPI 3.1 driver
+│   ├── ajv/                 # AJV instance management
+│   ├── dialect/             # Draft detection & canonicalization
+│   ├── regex/               # Pattern generation + complexity analysis
+│   ├── util/                # RNG, hashing, metrics, rational, ptr-map, cache
+│   ├── errors/              # Error hierarchy (FoundryError subtypes)
+│   └── types/               # TypeScript type definitions
+├── cli/                     # CLI (Commander.js) - generate, openapi, coverage-diff
+├── reporter/                # Coverage report rendering (JSON/MD/HTML)
+├── shared/                  # Shared utilities (release tooling, etc.)
 └── api/                     # REST API (future)
 ```
 
@@ -135,7 +216,7 @@ abstract class FoundryError extends Error
 
 ### PlanOptions (canonical reference)
 
-The authoritative `PlanOptions` shape and defaults live in the **Feature Support Simplification Plan** (§5 “Configuration Overview”). Defer to the spec for exact fields and defaults (including `guards`, `cache`, `failFast`, `encoding`, `rational`, `trials`, `complexity`, and conditional strategy mapping).
+The authoritative `PlanOptions` shape and defaults live in the **Feature Support Simplification Plan** (§5 "Configuration Overview"). Defer to the spec for exact fields and defaults (including `guards`, `cache`, `failFast`, `encoding`, `rational`, `trials`, `complexity`, and conditional strategy mapping).
 
 ### Configuration Strategies (presets)
 
@@ -172,10 +253,10 @@ const prodConfig: PlanOptions = {
 ```ts
 const testConfig: PlanOptions = {
   trials: { perBranch: 1, skipTrials: true }, // Stable branch selection
-  metrics: false,                             
-  debugFreeze: false,                         
-  failFast: { externalRefStrict: 'error' },   
-  cache: { lruSize: 16 },                     
+  metrics: false,
+  debugFreeze: false,
+  failFast: { externalRefStrict: 'error' },
+  cache: { lruSize: 16 },
 };
 ```
 
@@ -236,18 +317,18 @@ const testConfig: PlanOptions = {
 ```
 
 **Targets (documented, not hard guarantees)**
-For **simple/medium schemas (\~1000 rows)**, the spec sets **p50 ≈ 200–400 ms**, `validationsPerRow ≤ 3`, `repairPassesPerRow ≤ 1`.
+For **simple/medium schemas (\~1000 rows)**, the spec sets **p50 ≈ 200–400 ms**, `validationsPerRow ≤ 3`, `repairPassesPerRow ≤ 1`.
 
 **Performance Budgets by Schema Complexity (aligned to p50)**
 
 | Schema Type  | \~1K rows (**p50**) | Validations/Row | Repair/Row | Memory  |
 | ------------ | ------------------- | --------------- | ---------- | ------- |
-| Simple       | ≈200–400 ms         | ≤3              | ≤1         | <50 MB  |
-| Medium       | ≈200–400 ms         | ≤3              | ≤1         | <75 MB  |
-| Complex      | Varies              | ≤5              | ≤2         | <100 MB |
+| Simple       | ≈200–400 ms         | ≤3              | ≤1         | <50 MB  |
+| Medium       | ≈200–400 ms         | ≤3              | ≤1         | <75 MB  |
+| Complex      | Varies              | ≤5              | ≤2         | <100 MB |
 | Pathological | Degraded            | Capped          | Capped     | Capped  |
 
-> The previous table header used p95 with too‑tight numbers; it is now p50 to match the spec’s normative target.
+> The previous table header used p95 with too‑tight numbers; it is now p50 to match the spec's normative target.
 
 ---
 
@@ -325,10 +406,12 @@ Read(.taskmaster/tasks/tasks.json)
 **Anchor Mapping**:
 ```
 spec://§<n>#<slug> → docs/spec-canonical-json-schema-generator.md#s<n>-<slug>
+cov://§<n>#<slug>  → docs/spec-coverage-aware-v1.0.md#s<n>-<slug>
 ```
 
-**Example**:
+**Examples**:
 - `spec://§8#branch-selection-algorithm` maps to `docs/spec-canonical-json-schema-generator.md#s8-branch-selection-algorithm`
+- `cov://§3#coverage-model` maps to `docs/spec-coverage-aware-v1.0.md#s3-coverage-model`
 
 **Working Context**:
 - **Keep working context small**: Load only anchors required by the current task
@@ -500,7 +583,7 @@ Semantics, caps, and fallbacks are governed by the spec.
 ## ✅ Compliance Guarantee
 
 * **We guarantee**: AJV validation against the original schema; deterministic generation with seed; adherence to documented behavior and limits.
-* **We don’t guarantee**: Business semantics; realism of synthetic data; top performance on pathological schemas.
+* **We don't guarantee**: Business semantics; realism of synthetic data; top performance on pathological schemas.
 
 ---
 
@@ -514,7 +597,7 @@ When implementing features on the `feature-simplification` branch, always follow
 4. **Numeric order** — Implement tasks 1..24 in sequence, respecting dependencies
 5. **Clean slate** — Build from scratch per SPEC architecture; no legacy carryover
 6. **AJV is oracle** — Validate against original schema (not transforms)
-7. **Pipeline integrity** — Normalize → Compose → Generate → Repair → Validate
+7. **Pipeline integrity** — Core: Normalize → Compose → Generate → Repair → Validate (+ optional coverage phases)
 8. **80% coverage** — Maintain test coverage on all touched files
 9. **Bench gates** — Adhere to p50 ≈ 200-400ms for simple/medium schemas (~1K rows)
 10. **Task Master CLI** — Use `/project:tm/` commands or MCP tools; never parse `.taskmaster/tasks/tasks.json` directly
@@ -529,6 +612,7 @@ When implementing features on the `feature-simplification` branch, always follow
 This guide consolidates engineering practices for Claude assistance and aligns them with the **Feature Support Simplification Plan**. Where differences existed (notably performance table p95 vs p50 and a non‑canonical options key), they have been resolved to match the spec and avoid ambiguity.
 
 **Related Documentation**:
-- **AGENTS.md** — Detailed agent runbook with execution discipline, guardrails, and self-audit checklists
-- **Feature Support Simplification Plan** — Canonical SPEC (single source of truth for all semantics)
+- **AGENTS.md** — Detailed agent runbook with execution discipline, guardrails, and self-audit checklists (for coverage-aware tasks 9300..9327)
+- **Feature Support Simplification Plan** — Canonical SPEC (single source of truth for all semantics): [docs/spec-canonical-json-schema-generator.md](docs/spec-canonical-json-schema-generator.md)
+- **Coverage-Aware Spec V1.0** — Coverage model, dimensions, and semantics: [docs/spec-coverage-aware-v1.0.md](docs/spec-coverage-aware-v1.0.md)
 - **.taskmaster/CLAUDE.md** — Task Master workflow integration guide
