@@ -40,6 +40,51 @@ describe('generator guided coverage hints', () => {
     expect(output.items[0]).toBe('y');
   });
 
+  it('applies hint precedence when both coverEnumValue and ensurePropertyPresence target the same node', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        choice: { enum: ['red', 'green', 'blue'] },
+      },
+      required: [],
+      minProperties: 1,
+    } as const;
+
+    const effective = composeSchema(schema);
+
+    const hints: CoverageHint[] = [
+      {
+        kind: 'ensurePropertyPresence',
+        canonPath: '#',
+        params: { propertyName: 'choice', present: true },
+      },
+      {
+        kind: 'coverEnumValue',
+        canonPath: '#/properties/choice',
+        params: { valueIndex: 1 },
+      },
+    ];
+
+    const runOnce = (): { choice?: string } => {
+      const output = generateFromCompose(effective, {
+        count: 1,
+        coverage: {
+          mode: 'guided',
+          emit: () => {},
+          hints,
+        },
+      });
+      const obj = output.items[0] as { choice?: string };
+      return obj;
+    };
+
+    const first = runOnce();
+    const second = runOnce();
+
+    expect(first.choice).toBe('green');
+    expect(second.choice).toBe('green');
+  });
+
   it('uses coverEnumValue hints to steer enum selection in coverage=guided', () => {
     const schema = {
       type: 'object',

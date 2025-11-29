@@ -453,10 +453,11 @@
             "id": 9306004,
             "title": "Add tests for hint precedence and determinism",
             "description": "Write tests confirming hint precedence order and stable behavior across runs for the same hints.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 2,
             "file": "packages/core/src/generator/__tests__/coverage-hints.spec.ts",
-            "parentId": "9306"
+            "parentId": "9306",
+            "updatedAt": "2025-11-29T01:03:30.144Z"
           },
           {
             "id": 9306005,
@@ -468,7 +469,7 @@
             "parentId": "9306"
           }
         ],
-        "updatedAt": "2025-11-29T00:59:52.070Z"
+        "updatedAt": "2025-11-29T01:03:30.144Z"
       },
       {
         "id": "9307",
@@ -1003,7 +1004,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-29T00:59:52.071Z",
+      "lastModified": "2025-11-29T01:03:30.145Z",
       "taskCount": 18,
       "completedCount": 8,
       "tags": [
