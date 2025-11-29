@@ -50,6 +50,7 @@ interface CoverageGraphBuildState {
   targets: CoverageTarget[];
   enabledDimensions: Set<CoverageDimension>;
   idContext: CoverageTargetIdContext;
+  coverageIndex: CoverageIndex;
 }
 
 function buildUnsatPathSet(planDiag?: ComposeDiagnostics): Set<string> {
@@ -116,6 +117,28 @@ function appendPointer(base: string, token: string): string {
   const escaped = token.replace(/~/g, '~0').replace(/\//g, '~1');
   if (base === '') return `/${escaped}`;
   return `${base}/${escaped}`;
+}
+
+function resolvePatternPropertyPointer(
+  name: string,
+  patternProperties: Record<string, unknown> | undefined,
+  objectPtr: string
+): string | undefined {
+  if (!patternProperties) return undefined;
+  const basePointer = appendPointer(objectPtr, 'patternProperties');
+  for (const pattern of Object.keys(patternProperties)) {
+    if (typeof pattern !== 'string') continue;
+    try {
+      const regex = new RegExp(pattern, 'u');
+      if (!regex.test(name)) {
+        continue;
+      }
+    } catch {
+      continue;
+    }
+    return appendPointer(basePointer, pattern);
+  }
+  return undefined;
 }
 
 function classifyNode(canonPtr: string): NodeClassification {
@@ -208,6 +231,17 @@ function visitSchemaNode(
   }
 
   const schema = node as Record<string, unknown>;
+  const requiredRaw = Array.isArray(schema.required)
+    ? (schema.required as unknown[]).filter(
+        (v): v is string => typeof v === 'string'
+      )
+    : [];
+  const required = new Set<string>(requiredRaw);
+  const patternPropertiesRecord =
+    schema.patternProperties && typeof schema.patternProperties === 'object'
+      ? (schema.patternProperties as Record<string, unknown>)
+      : undefined;
+  const declaredPropertyNames = new Set<string>();
 
   // Structural dimension: SCHEMA_NODE for every canonical schema node.
   if (state.enabledDimensions.has('structure')) {
@@ -227,13 +261,8 @@ function visitSchemaNode(
   if (properties && typeof properties === 'object') {
     const propsRecord = properties as Record<string, unknown>;
     const basePtr = appendPointer(canonPtr, 'properties');
-    const requiredRaw = Array.isArray(schema.required)
-      ? (schema.required as unknown[]).filter(
-          (v): v is string => typeof v === 'string'
-        )
-      : [];
-    const required = new Set<string>(requiredRaw);
     for (const [propName, propSchema] of Object.entries(propsRecord)) {
+      declaredPropertyNames.add(propName);
       const childPtr = appendPointer(basePtr, propName);
       if (state.enabledDimensions.has('structure')) {
         const propCanonPath = `#${childPtr}`;
@@ -253,6 +282,51 @@ function visitSchemaNode(
         }
       }
       visitSchemaNode(propSchema, childPtr, canonPtr, state);
+    }
+  }
+
+  if (
+    state.enabledDimensions.has('structure') &&
+    schema.additionalProperties === false
+  ) {
+    const coverageEntry = state.coverageIndex.get(canonPtr);
+    const enumeratedNames = coverageEntry?.enumerate?.();
+    if (
+      coverageEntry &&
+      Array.isArray(enumeratedNames) &&
+      enumeratedNames.length > 0
+    ) {
+      const additionalPropsPtr = appendPointer(
+        canonPtr,
+        'additionalProperties'
+      );
+      const seenAdditionalNames = new Set<string>();
+      for (const name of enumeratedNames) {
+        if (typeof name !== 'string') continue;
+        if (required.has(name) || declaredPropertyNames.has(name)) continue;
+        if (seenAdditionalNames.has(name)) continue;
+        if (!coverageEntry.has(name)) continue;
+        const pointer =
+          resolvePatternPropertyPointer(
+            name,
+            patternPropertiesRecord,
+            canonPtr
+          ) ?? additionalPropsPtr;
+        const propertyCanonPath = pointer === '' ? '#' : `#${pointer}`;
+        const propertyTargetBase: CoverageTarget = {
+          id: '',
+          dimension: 'structure',
+          kind: 'PROPERTY_PRESENT',
+          canonPath: propertyCanonPath,
+          params: { propertyName: name },
+        };
+        const tId = computeCoverageTargetId(
+          propertyTargetBase,
+          state.idContext
+        );
+        state.targets.push({ ...propertyTargetBase, id: tId });
+        seenAdditionalNames.add(name);
+      }
     }
   }
 
@@ -459,6 +533,7 @@ export function analyzeCoverage(
     targets: [],
     enabledDimensions: new Set(enabledDimensions),
     idContext,
+    coverageIndex: input.coverageIndex,
   };
 
   // Root schema node at the canonical root.

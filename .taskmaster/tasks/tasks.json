@@ -101,7 +101,7 @@
             "estimatedHours": 3,
             "file": "packages/core/src/coverage/coverage-analyzer.ts",
             "parentId": "9301",
-            "updatedAt": "2025-11-27T23:24:56.021Z"
+            "updatedAt": "2025-11-29T14:43:30.917Z"
           },
           {
             "id": 9301004,
@@ -124,7 +124,7 @@
             "updatedAt": "2025-11-27T23:34:31.947Z"
           }
         ],
-        "updatedAt": "2025-11-27T23:34:31.947Z"
+        "updatedAt": "2025-11-29T14:43:30.917Z"
       },
       {
         "id": "9302",
@@ -1109,7 +1109,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-29T14:29:46.135Z",
+      "lastModified": "2025-11-29T14:43:30.918Z",
       "taskCount": 21,
       "completedCount": 10,
       "tags": [
