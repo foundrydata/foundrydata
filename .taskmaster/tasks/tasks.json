@@ -1106,14 +1106,15 @@
         "description": "Recognize when coverage hints target schema fragments that are structurally ruled out (not+required, contradictory allOf/oneOf, etc.), emit CONFLICTING_CONSTRAINTS early, and document the rule in AGENTS.md.",
         "details": "[Context]\nExtend the hint conflict detection pipeline to identify and report coverage hints that are impossible to satisfy due to structural schema constraints. Per the coverage-aware spec and the existing UnsatisfiedHintReasonCode infrastructure (coverage-report.ts:38-44), hints can conflict not only with each other but also with schema keywords that make them structurally unreachable. This task implements early detection of such impossible hints during the CoveragePlanner phase and ensures they are surfaced as CONFLICTING_CONSTRAINTS diagnostics.\n\n[Key requirements]\n- Implement structural constraint analysis in CoveragePlanner that detects impossible hint scenarios:\n  * Hints targeting properties marked as required in a schema fragment with \"not\" around it\n  * Contradictory allOf branches where hints request mutually exclusive constraints\n  * oneOf branches where a hint targets a branch that is structurally incompatible with other constraints\n  * Property presence hints conflicting with additionalProperties:false and missing from properties/patternProperties\n- Emit CONFLICTING_CONSTRAINTS (already defined in UnsatisfiedHintReasonCode) during the planning phase when impossible hints are detected, before generation begins\n- Add detection hook in CoveragePlanner.planTestUnits() that validates hints against canonical schema structure using compose artifacts (canonSchema, ptrMap)\n- Record impossible hints in unsatisfiedHints[] with reasonCode:'CONFLICTING_CONSTRAINTS' and detailed reasonDetail explaining the structural conflict\n- Ensure traceability: each detected conflict must reference the specific canonPath, hint kind, hint params, and conflicting schema keywords\n- Document the detection rules and examples in AGENTS.md under a new section \"Coverage hint structural validation\"\n\n[Deliverables]\n- packages/core/src/coverage/coverage-planner.ts: Add validateHintStructuralFeasibility() function that analyzes hints against canonical schema\n- packages/core/src/coverage/coverage-planner.ts: Integrate validation into planTestUnits() to filter out impossible hints before test unit creation\n- packages/core/src/coverage/__tests__/coverage-planner.test.ts: Unit tests for each impossible hint pattern (not+required, contradictory allOf, incompatible oneOf, AP:false violations)\n- packages/core/test/e2e/coverage-guided-planner.spec.ts: Integration tests using executePipeline that verify CONFLICTING_CONSTRAINTS appears in coverage report unsatisfiedHints\n- AGENTS.md: New section documenting the structural validation rules with examples\n- Ensure generator hooks respect the filtered hints and do not attempt to apply structurally impossible hints\n\n[Definition of Done]\n- CoveragePlanner detects and filters hints that conflict with \"not\" wrapping required properties\n- CoveragePlanner detects hints targeting branches ruled out by contradictory allOf/oneOf constraints\n- Impossible hints appear in CoverageReport.unsatisfiedHints[] with reasonCode:'CONFLICTING_CONSTRAINTS' and actionable reasonDetail\n- Unit tests achieve >=80% coverage on new validation logic in coverage-planner.ts\n- Integration tests with executePipeline demonstrate end-to-end flow: impossible hint → planner detection → unsatisfiedHints in coverage-report/v1\n- AGENTS.md documents each detection rule with canonical schema examples\n- No regression in existing hint resolution tests",
         "testStrategy": "Unit tests in coverage-planner.test.ts:\n- Test validateHintStructuralFeasibility() with schemas containing \"not\": {\"required\": [\"foo\"]} and hints requesting ensurePropertyPresence for \"foo\" → expect CONFLICTING_CONSTRAINTS\n- Test contradictory allOf scenarios where hints request conflicting enum values or type constraints\n- Test oneOf with hints targeting mutually exclusive branches\n- Test property presence hints against AP:false schemas where property is not in properties/patternProperties\n- Property-based tests that generate random hint sets and verify no false positives on valid hints\n\nIntegration tests in coverage-guided-planner.spec.ts:\n- Create schemas with impossible hint scenarios and run executePipeline with coverage=guided\n- Assert that CoverageReport.unsatisfiedHints includes entries with reasonCode:'CONFLICTING_CONSTRAINTS'\n- Verify reasonDetail contains specific schema keyword conflicts (e.g., \"hint targets property 'x' marked required within 'not' constraint at #/not\")\n- Ensure metrics.overall and coverage.byDimension are unaffected by impossible hint filtering\n\nEnd-to-end traceability tests:\n- Run pipeline with multiple impossible hints and verify each appears exactly once in unsatisfiedHints\n- Verify that valid hints in the same TestUnit are not affected by filtering of impossible hints\n- Snapshot tests for unsatisfiedHints output format consistency",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "9305",
           "9307",
           "9308"
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2025-11-29T16:47:43.497Z"
       },
       {
         "id": "9327",
@@ -1134,9 +1135,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-29T16:28:21.407Z",
+      "lastModified": "2025-11-29T16:47:43.498Z",
       "taskCount": 21,
-      "completedCount": 12,
+      "completedCount": 13,
       "tags": [
         "coverage-aware-v1"
       ]

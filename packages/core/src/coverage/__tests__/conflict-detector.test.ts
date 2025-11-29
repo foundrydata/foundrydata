@@ -31,29 +31,6 @@ describe('ConflictDetector', () => {
     expect(result.reasonCode).toBe('CONFLICTING_CONSTRAINTS');
   });
 
-  it('flags ensurePropertyPresence hints when owning schema is boolean false', () => {
-    const schema = {
-      type: 'object',
-      additionalProperties: false,
-      properties: {
-        blocked: false,
-      },
-    };
-
-    const result = ConflictDetector.checkHintConflict({
-      hint: {
-        kind: 'ensurePropertyPresence',
-        canonPath: '#',
-        params: { propertyName: 'blocked', present: true },
-      },
-      canonSchema: schema,
-      coverageIndex: new Map() as CoverageIndex,
-    });
-
-    expect(result.isConflicting).toBe(true);
-    expect(result.reasonCode).toBe('CONFLICTING_CONSTRAINTS');
-  });
-
   it('flags property hints when CoverageIndex denies the property', () => {
     const coverageIndex: CoverageIndex = new Map();
     coverageIndex.set('', {
@@ -124,7 +101,26 @@ describe('ConflictDetector', () => {
     });
 
     expect(result.isConflicting).toBe(true);
+    expect(result.reasonCode).toBe('CONFLICTING_CONSTRAINTS');
     expect(result.reasonDetail).toContain('exceeds available branches');
+  });
+
+  it('flags preferBranch hints as UNREACHABLE_BRANCH when Compose marks the branch UNSAT', () => {
+    const result = ConflictDetector.checkHintConflict({
+      hint: {
+        kind: 'preferBranch',
+        canonPath: '#/oneOf',
+        params: { branchIndex: 0 },
+      },
+      canonSchema: {},
+      coverageIndex: new Map() as CoverageIndex,
+      planDiag: undefined,
+      unsatPaths: new Set<string>(['#/oneOf/0']),
+    });
+
+    expect(result.isConflicting).toBe(true);
+    expect(result.reasonCode).toBe('UNREACHABLE_BRANCH');
+    expect(result.reasonDetail).toContain('unreachable via Compose UNSAT');
   });
 
   it('flags coverEnumValue hints with out-of-range index', () => {

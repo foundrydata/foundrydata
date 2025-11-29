@@ -11,7 +11,10 @@ import type {
   CoverageIndex,
   ComposeDiagnostics,
 } from '../transform/composition-engine.js';
-import { ConflictDetector } from './conflict-detector.js';
+import {
+  ConflictDetector,
+  type ConflictCheckResult,
+} from './conflict-detector.js';
 import { buildUnsatPathSet } from './analyzer.js';
 import { XorShift32, normalizeSeed } from '../util/rng.js';
 
@@ -53,6 +56,28 @@ export type CoverageHint =
   | PreferBranchHint
   | EnsurePropertyPresenceHint
   | CoverEnumValueHint;
+
+export interface HintFeasibilityContext {
+  target?: CoverageTarget;
+  canonSchema: unknown;
+  coverageIndex: CoverageIndex;
+  planDiag?: ComposeDiagnostics;
+  unsatPaths?: Set<string>;
+}
+
+export function validateHintStructuralFeasibility(
+  hint: CoverageHint,
+  context: HintFeasibilityContext
+): ConflictCheckResult {
+  return ConflictDetector.checkHintConflict({
+    hint,
+    target: context.target,
+    canonSchema: context.canonSchema,
+    coverageIndex: context.coverageIndex,
+    planDiag: context.planDiag,
+    unsatPaths: context.unsatPaths,
+  });
+}
 
 export const COVERAGE_HINT_KIND_PRIORITY: readonly CoverageHintKind[] = [
   'coverEnumValue',
@@ -595,8 +620,7 @@ export function planTestUnits(
     if (enabledDimensions.has(target.dimension)) {
       const candidateHints = buildHintsForTarget(target);
       for (const hint of candidateHints) {
-        const conflict = ConflictDetector.checkHintConflict({
-          hint,
+        const conflict = validateHintStructuralFeasibility(hint, {
           target,
           canonSchema,
           coverageIndex,
