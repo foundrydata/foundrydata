@@ -35,7 +35,7 @@ This document maps parent task 9308 bullets from Implementation Details, Deliver
 ## Mapping 9308 subtasks → parent bullets
 
 - **9308.9308001 – Propagate minCoverage config to CoverageEvaluator**  
-  Covers: [KR1], [KR2], [DEL1], [DOD1], [TS1], [TS4] (in-progress; ensures thresholds.overall is populated from the options and coverageStatus honors minCoverage without altering the rest of the coverage metrics).
+  Covers: [KR1], [KR2], [DEL1], [DOD1], [TS1], [TS3], [TS4] (in-progress; ensures thresholds.overall is populated from the options, coverageStatus honors minCoverage without altering the rest of the coverage metrics, and guided-mode CLI/Node API tests confirm the same enforcement path).
 - **9308.9308002 – Map coverageStatus to CLI exit codes**  
   Covers: [KR3], [DEL2], [DOD1], [DOD2], [TS2] (pending; wires CLI summary + exit handling to coverage reports and documents the dedicated coverage failure code).
 - **9308.9308003 – Test coverage threshold enforcement end-to-end**  

@@ -76,6 +76,26 @@ describe('Node API — Generate & Validate', () => {
     required: ['id', 'name'],
   };
 
+  const coverageSchema = {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    oneOf: [
+      {
+        type: 'object',
+        properties: {
+          branch: { const: 'a' },
+        },
+        required: ['branch'],
+      },
+      {
+        type: 'object',
+        properties: {
+          branch: { const: 'b' },
+        },
+        required: ['branch'],
+      },
+    ],
+  } as const;
+
   it('Generate+Validate produce only AJV-valid instances for a simple schema', async () => {
     const count = 5;
     const seed = 4242;
@@ -128,26 +148,6 @@ describe('Node API — Generate & Validate', () => {
   });
 
   it('returns coverageStatus and thresholds when minCoverage is configured', async () => {
-    const coverageSchema = {
-      $schema: 'https://json-schema.org/draft/2020-12/schema',
-      oneOf: [
-        {
-          type: 'object',
-          properties: {
-            branch: { const: 'a' },
-          },
-          required: ['branch'],
-        },
-        {
-          type: 'object',
-          properties: {
-            branch: { const: 'b' },
-          },
-          required: ['branch'],
-        },
-      ],
-    } as const;
-
     const stream = PublicGenerate(1, 512, coverageSchema, {
       mode: 'strict',
       coverage: {
@@ -163,5 +163,24 @@ describe('Node API — Generate & Validate', () => {
     expect(coverageReport?.metrics.coverageStatus).toBe('minCoverageNotMet');
     expect(coverageReport?.metrics.thresholds?.overall).toBe(0.9);
     expect(coverageReport?.metrics.overall ?? 1).toBeLessThan(0.9);
+  });
+
+  it('enforces minCoverage for guided mode runs as well', async () => {
+    const stream = PublicGenerate(1, 31415, coverageSchema, {
+      mode: 'strict',
+      coverage: {
+        mode: 'guided',
+        dimensionsEnabled: ['branches'],
+        minCoverage: 0.95,
+      },
+    });
+    const pipelineResult = await stream.result;
+
+    expect(pipelineResult.status).toBe('completed');
+    const coverageReport = pipelineResult.artifacts.coverageReport;
+    expect(coverageReport).toBeDefined();
+    expect(coverageReport?.metrics.coverageStatus).toBe('minCoverageNotMet');
+    expect(coverageReport?.metrics.thresholds?.overall).toBe(0.95);
+    expect(coverageReport?.metrics.overall ?? 1).toBeLessThan(0.95);
   });
 });
