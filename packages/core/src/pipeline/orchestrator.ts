@@ -890,11 +890,22 @@ export async function executePipeline(
             );
             plannedTargets = capsResult.updatedTargets;
             plannerCapsHit = capsResult.capsHit;
-            const units = planTestUnits({
+            const plannerResult = planTestUnits({
               graph: coverageResult.graph,
               targets: plannedTargets,
               config: plannerConfig,
+              canonSchema: canonicalSchema,
+              coverageIndex: composeResult.coverageIndex,
+              planDiag: composeResult.diag,
             });
+            const units = plannerResult.testUnits;
+            const { conflictingHints } = plannerResult;
+            if (
+              Array.isArray(conflictingHints) &&
+              conflictingHints.length > 0
+            ) {
+              unsatisfiedHints.push(...conflictingHints);
+            }
             if (units.length > 0) {
               const generateSeed = options.generate?.seed;
               const masterSeed =

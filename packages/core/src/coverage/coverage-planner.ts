@@ -1,7 +1,18 @@
+/* eslint-disable max-depth */
 /* eslint-disable max-lines-per-function */
 /* eslint-disable max-lines */
-import type { CoverageDimension, CoverageTarget } from '@foundrydata/shared';
+import type {
+  CoverageDimension,
+  CoverageTarget,
+  UnsatisfiedHint,
+} from '@foundrydata/shared';
 import type { CoverageGraph } from './index.js';
+import type {
+  CoverageIndex,
+  ComposeDiagnostics,
+} from '../transform/composition-engine.js';
+import { ConflictDetector } from './conflict-detector.js';
+import { buildUnsatPathSet } from './analyzer.js';
 import { XorShift32, normalizeSeed } from '../util/rng.js';
 
 export type CoverageHintKind =
@@ -216,6 +227,14 @@ export interface CoveragePlannerInput {
   graph: CoverageGraph;
   targets: CoverageTarget[];
   config: CoveragePlannerConfig;
+  canonSchema: unknown;
+  coverageIndex: CoverageIndex;
+  planDiag?: ComposeDiagnostics;
+}
+
+export interface CoveragePlannerResult {
+  testUnits: TestUnit[];
+  conflictingHints: UnsatisfiedHint[];
 }
 
 interface SortableTarget {
@@ -529,9 +548,15 @@ function buildHintsForTarget(target: CoverageTarget): CoverageHint[] {
   return hints;
 }
 
-export function planTestUnits(input: CoveragePlannerInput): TestUnit[] {
+// eslint-disable-next-line complexity
+export function planTestUnits(
+  input: CoveragePlannerInput
+): CoveragePlannerResult {
   const {
     targets,
+    canonSchema,
+    coverageIndex,
+    planDiag,
     config: {
       budget: { maxInstances },
       dimensionPriority,
@@ -540,17 +565,19 @@ export function planTestUnits(input: CoveragePlannerInput): TestUnit[] {
   } = input;
 
   if (!Number.isFinite(maxInstances) || maxInstances <= 0) {
-    return [];
+    return { testUnits: [], conflictingHints: [] };
   }
 
   const enabledDimensions = new Set<CoverageDimension>(dimensionsEnabled);
   const sortable = buildSortableTargets(targets, dimensionPriority);
   if (sortable.length === 0) {
-    return [];
+    return { testUnits: [], conflictingHints: [] };
   }
 
   const ordered = sortTargetsForPlanning(sortable);
   const units: TestUnit[] = [];
+  const conflictingHints: UnsatisfiedHint[] = [];
+  const unsatPaths = buildUnsatPathSet(planDiag);
 
   let remaining = Math.floor(maxInstances);
   let nextUnitId = 0;
@@ -559,10 +586,48 @@ export function planTestUnits(input: CoveragePlannerInput): TestUnit[] {
     if (remaining <= 0) break;
 
     const target = entry.target;
+    if (target.status === 'unreachable') {
+      continue;
+    }
+
     const unitCount = 1;
     const unitHints: CoverageHint[] = [];
     if (enabledDimensions.has(target.dimension)) {
-      unitHints.push(...buildHintsForTarget(target));
+      const candidateHints = buildHintsForTarget(target);
+      for (const hint of candidateHints) {
+        const conflict = ConflictDetector.checkHintConflict({
+          hint,
+          target,
+          canonSchema,
+          coverageIndex,
+          planDiag,
+          unsatPaths,
+        });
+        if (conflict.isConflicting) {
+          conflictingHints.push({
+            kind: hint.kind,
+            canonPath: hint.canonPath ?? '',
+            params: hint.params,
+            reasonCode: conflict.reasonCode ?? 'CONFLICTING_CONSTRAINTS',
+            reasonDetail: conflict.reasonDetail,
+          });
+          const existingMeta =
+            target.meta && typeof target.meta === 'object'
+              ? (target.meta as Record<string, unknown>)
+              : {};
+          target.meta = {
+            ...existingMeta,
+            conflictDetected: true,
+            conflictReasonCode:
+              conflict.reasonCode ?? 'CONFLICTING_CONSTRAINTS',
+            ...(conflict.reasonDetail
+              ? { conflictReasonDetail: conflict.reasonDetail }
+              : {}),
+          };
+          continue;
+        }
+        unitHints.push(hint);
+      }
     }
 
     const unit: TestUnit = {
@@ -582,7 +647,7 @@ export function planTestUnits(input: CoveragePlannerInput): TestUnit[] {
     nextUnitId += 1;
   }
 
-  return units;
+  return { testUnits: units, conflictingHints };
 }
 
 export interface TestUnitSeedOptions {
