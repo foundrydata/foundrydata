@@ -100,7 +100,7 @@ import {
   type PlannerCapHit,
   type UnsatisfiedHint,
 } from '@foundrydata/shared';
-import corePackageJson from '../../package.json' assert { type: 'json' };
+import corePackageJson from '../../package.json' with { type: 'json' };
 
 const STAGE_SEQUENCE: PipelineStageName[] = [
   'normalize',
