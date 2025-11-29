@@ -44,7 +44,7 @@ This document maps the parent task 9306 bullets from Implementation Details, Del
   Covers: [KR4], [DEL1], [DOD3], [TS3] (covered for generator-side detection; repair-side hooks and full report wiring remain for later subtasks).
 
 - **9306.9306004 – Add tests for hint precedence and determinism**  
-  Covers: [KR3], [DOD4], [TS1], [TS2] (pending).
+  Covers: [KR3], [KR5], [DOD4], [TS1], [TS2] (covered; planner and generator tests assert global kind priority, first-in-wins semantics and deterministic behavior for fixed seeds and hint sets).
 
 - **9306.9306005 – Add end-to-end tests for guided hints on schemas with oneOf and enums**  
   Covers: [KR1], [KR2], [KR3], [DOD1], [DOD4], [TS4] (pending).
@@ -54,5 +54,5 @@ Status:
 - 9306.9306001: covered
 - 9306.9306002: covered
 - 9306.9306003: covered
-- 9306.9306004: pending
+- 9306.9306004: covered
 - 9306.9306005: pending
