@@ -1,11 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import type { CoverageDimension } from '@foundrydata/shared';
 import {
+  COVERAGE_HINT_KIND_PRIORITY,
   DEFAULT_PLANNER_DIMENSION_ORDER,
   DEFAULT_PLANNER_DIMENSIONS_ENABLED,
   assignTestUnitSeeds,
+  getCoverageHintKindPriority,
   isCoverageHint,
   planTestUnits,
+  resolveCoverageHintConflicts,
   resolveCoveragePlannerConfig,
   type CoverageHint,
   type CoveragePlannerConfig,
@@ -118,6 +121,111 @@ describe('isCoverageHint', () => {
         params: { valueIndex: '0' },
       })
     ).toBe(false);
+  });
+});
+
+describe('coverage hint priority and conflict resolution', () => {
+  it('exposes the expected global priority order by kind', () => {
+    expect(COVERAGE_HINT_KIND_PRIORITY).toEqual([
+      'coverEnumValue',
+      'preferBranch',
+      'ensurePropertyPresence',
+    ]);
+
+    const enumPriority = getCoverageHintKindPriority('coverEnumValue');
+    const branchPriority = getCoverageHintKindPriority('preferBranch');
+    const propertyPriority = getCoverageHintKindPriority(
+      'ensurePropertyPresence'
+    );
+
+    expect(enumPriority).toBeLessThan(branchPriority);
+    expect(branchPriority).toBeLessThan(propertyPriority);
+  });
+
+  it('returns effective hints ordered by kind priority with stable intra-kind ordering', () => {
+    const hints: CoverageHint[] = [
+      {
+        kind: 'ensurePropertyPresence',
+        canonPath: '#/properties/name',
+        params: { propertyName: 'name', present: true },
+      },
+      {
+        kind: 'preferBranch',
+        canonPath: '#/oneOf',
+        params: { branchIndex: 1 },
+      },
+      {
+        kind: 'coverEnumValue',
+        canonPath: '#/enum',
+        params: { valueIndex: 0 },
+      },
+      {
+        kind: 'preferBranch',
+        canonPath: '#/oneOf',
+        params: { branchIndex: 2 },
+      },
+    ];
+
+    const { effective, shadowed } = resolveCoverageHintConflicts(hints);
+
+    expect(shadowed).toEqual([]);
+    expect(effective.map((hint) => hint.kind)).toEqual([
+      'coverEnumValue',
+      'preferBranch',
+      'preferBranch',
+      'ensurePropertyPresence',
+    ]);
+    // Intra-kind ordering for preferBranch remains stable (branchIndex:1 before branchIndex:2)
+    const branchHints = effective.filter(
+      (hint) => hint.kind === 'preferBranch'
+    ) as CoverageHint[];
+    expect(branchHints.length).toBe(2);
+    expect(branchHints[0]!.params).toEqual({ branchIndex: 1 });
+    expect(branchHints[1]!.params).toEqual({ branchIndex: 2 });
+  });
+
+  it('applies "first in hints[] wins" for identical tuples and tracks shadowed hints', () => {
+    const firstBranchHint: CoverageHint = {
+      kind: 'preferBranch',
+      canonPath: '#/oneOf',
+      params: { branchIndex: 0 },
+    };
+    const secondBranchHint: CoverageHint = {
+      kind: 'preferBranch',
+      canonPath: '#/oneOf',
+      params: { branchIndex: 0 },
+    };
+    const firstPropertyHint: CoverageHint = {
+      kind: 'ensurePropertyPresence',
+      canonPath: '#/properties/name',
+      params: { propertyName: 'name', present: true },
+    };
+    const conflictingPropertyHint: CoverageHint = {
+      kind: 'ensurePropertyPresence',
+      canonPath: '#/properties/name',
+      params: { propertyName: 'name', present: false },
+    };
+
+    const { effective, shadowed } = resolveCoverageHintConflicts([
+      firstBranchHint,
+      secondBranchHint,
+      firstPropertyHint,
+      conflictingPropertyHint,
+    ]);
+
+    expect(effective).toContain(firstBranchHint);
+    expect(effective).toContain(firstPropertyHint);
+    expect(effective).not.toContain(secondBranchHint);
+    expect(effective).not.toContain(conflictingPropertyHint);
+
+    expect(shadowed).toContain(secondBranchHint);
+    expect(shadowed).toContain(conflictingPropertyHint);
+  });
+
+  it('handles empty hint lists without errors', () => {
+    const result = resolveCoverageHintConflicts([]);
+    expect(result.effective).toEqual([]);
+    expect(result.shadowed).toEqual([]);
   });
 });
 
