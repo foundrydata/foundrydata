@@ -29,6 +29,7 @@ import {
   isFoundryError,
   FoundryError,
   ErrorCode,
+  getExitCode,
   resolveOptions,
   Generate,
   PipelineStageError,
@@ -37,6 +38,7 @@ import {
   type OpenApiDriverOptions,
 } from '@foundrydata/core';
 import { renderCLIView } from './render.js';
+import type { CoverageReport } from '@foundrydata/shared';
 import {
   parsePlanOptions,
   resolveRowCount,
@@ -257,10 +259,9 @@ program
         outFormat
       );
 
-      if (pipelineResult.artifacts.coverageReport) {
-        const summary = formatCoverageSummary(
-          pipelineResult.artifacts.coverageReport
-        );
+      const coverageReport = pipelineResult.artifacts.coverageReport;
+      if (coverageReport) {
+        const summary = formatCoverageSummary(coverageReport);
         process.stderr.write(`[foundrydata] coverage: ${summary}\n`);
 
         if (coverage.reportPath) {
@@ -271,7 +272,7 @@ program
               : path.resolve(process.cwd(), coverage.reportPath);
             fs.writeFileSync(
               outputPath,
-              JSON.stringify(pipelineResult.artifacts.coverageReport, null, 2),
+              JSON.stringify(coverageReport, null, 2),
               'utf8'
             );
           } catch (error) {
@@ -283,6 +284,7 @@ program
           }
         }
       }
+      enforceCoverageThreshold(coverageReport);
     } catch (err: unknown) {
       await handleCliError(err);
     }
@@ -525,10 +527,9 @@ program
         outFormat
       );
 
-      if (pipelineResult.artifacts.coverageReport) {
-        const summary = formatCoverageSummary(
-          pipelineResult.artifacts.coverageReport
-        );
+      const coverageReport = pipelineResult.artifacts.coverageReport;
+      if (coverageReport) {
+        const summary = formatCoverageSummary(coverageReport);
         process.stderr.write(`[foundrydata] coverage: ${summary}\n`);
 
         if (coverage.reportPath) {
@@ -539,7 +540,7 @@ program
               : path.resolve(process.cwd(), coverage.reportPath);
             fs.writeFileSync(
               outputPath,
-              JSON.stringify(pipelineResult.artifacts.coverageReport, null, 2),
+              JSON.stringify(coverageReport, null, 2),
               'utf8'
             );
           } catch (error) {
@@ -551,6 +552,7 @@ program
           }
         }
       }
+      enforceCoverageThreshold(coverageReport);
     } catch (err: unknown) {
       await handleCliError(err);
     }
@@ -618,6 +620,20 @@ async function handleCliError(err: unknown): Promise<never> {
   console.error(renderCLIView(view));
 
   process.exit(error.getExitCode());
+}
+
+function enforceCoverageThreshold(report?: CoverageReport): void {
+  if (!report) return;
+  if (report.metrics.coverageStatus !== 'minCoverageNotMet') return;
+  const threshold = report.metrics.thresholds?.overall;
+  const thresholdLabel =
+    typeof threshold === 'number' ? threshold.toFixed(3) : 'unknown';
+  process.stderr.write(
+    `[foundrydata] coverage status: minCoverageNotMet (overall ${report.metrics.overall.toFixed(
+      3
+    )} < minCoverage ${thresholdLabel})\n`
+  );
+  process.exit(getExitCode(ErrorCode.COVERAGE_THRESHOLD_NOT_MET));
 }
 
 export async function main(argv: string[] = process.argv): Promise<void> {

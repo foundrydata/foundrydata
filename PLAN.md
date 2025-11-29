@@ -1,23 +1,18 @@
-Task: 9306   Title: 9306.9306009 – Implement hint trace and Repair-side unsatisfied hints
-Anchors: [cov://§4#generator-instrumentation, cov://§5#unsatisfied-hints-repair, cov://§7#json-coverage-report]
+Task: 9308   Title: 9308.9308001 – Propagate minCoverage config to CoverageEvaluator
+Anchors: [cov://§7#thresholds-mincoverage, cov://§7#cli-summary]
 Touched files:
-- packages/core/src/generator/foundry-generator.ts
-- packages/core/src/repair/repair-engine.ts
-- packages/core/src/repair/__tests__/repair-hints.spec.ts
-- .taskmaster/docs/9306-traceability.md
-- PLAN.md
+- packages/core/src/coverage/__tests__/coverage-report-json.test.ts
+- packages/core/test/unit/api.spec.ts
+- packages/cli/src/index.ts
+- packages/cli/src/index.test.ts
+- .taskmaster/docs/9308-traceability.md
 
 Approach:
-Pour la sous-tâche 9306.9306009, je vais d’abord introduire une trace de hints par instance dans le générateur, conforme à §4.3 : chaque fois qu’un hint est effectivement appliqué (preferBranch, ensurePropertyPresence, coverEnumValue), le générateur enregistrera un enregistrement interne associant `(kind, canonPath, params)` à un `instancePath` AJV (chemin dans l’instance). Cette trace restera purement diagnostique (pas d’impact sur RNG ni sur la forme JSON) et sera exposée via les options de couverture vers Repair en `coverage=guided`, de manière à ce que Repair puisse savoir quelles valeurs ont été influencées par quels hints.
-
-Ensuite, j’étendrai `repairItemsAjvDriven` pour consommer cette trace et émettre, de façon best-effort mais déterministe, des `UnsatisfiedHint` côté Repair lorsque (a) une valeur influencée par un hint est modifiée et que le hint n’est plus satisfait dans l’instance finale (`REPAIR_MODIFIED_VALUE`), ou (b) lorsque des contraintes rendent le hint impossible à satisfaire (`CONFLICTING_CONSTRAINTS`), en respectant la hiérarchie de `reasonCode` recommandée (§5.3). Côté tests, je créerai un nouveau fichier `repair-hints.spec.ts` avec des scénarios ciblés qui génèrent une instance guidée par des hints, forcent Repair à modifier ou invalider ces valeurs (par exemple via des contraintes supplémentaires ou des erreurs Ajv), et vérifient que les `UnsatisfiedHint` attendus apparaissent dans le rapport via `executePipeline` sans changer les métriques ni le comportement de `coverage=off`/`coverage=measure`.
+Start by making sure the CoverageEvaluator wiring honors `minCoverage` as described in §7.3: the pipeline must tag `metrics.thresholds.overall`, compute `coverageStatus` as `'minCoverageNotMet'` whenever `overall` falls short, and leave the rest of the report unchanged. I will add an integration test in `coverage-report-json.test.ts` and a Node API test in `api.spec.ts` that both configure `coverage.minCoverage` higher than what a single-branch schema can deliver, then assert that the returned report contains `coverageStatus: 'minCoverageNotMet'` and `metrics.thresholds.overall` equals the requested guardrail. Once the evaluator behavior is solid, I will extend the CLI summary/exit path (citing §7.2) by logging the status after the usual `formatCoverageSummary()` output and by calling a helper that prints the failure detail and exits with the new coverage-failure code. The CLI test suite will run this command with `--coverage count` and assert `process.exit` fires with `getExitCode(ErrorCode.COVERAGE_THRESHOLD_NOT_MET)` while the stderr summary mentions `minCoverageNotMet`. The approach also includes keeping `thresholds.byDimension`/`byOperation` descriptive, and it respects the mandated command order: `npm run build`, `npm run typecheck`, `npm run lint`, `npm run test`, `npm run bench`.
 
 Risks/Unknowns:
-Les principaux risques sont : (1) introduire, par erreur, un couplage entre la trace de hints et le RNG ou la structure des instances (violant les invariants de déterminisme de §6.1/6.2) ; (2) rendre Repair trop intrusif en sur‑produisant des `UnsatisfiedHint` (par exemple en déclarant `REPAIR_MODIFIED_VALUE` alors que le hint reste satisfait dans l’instance finale) ; (3) faire baisser la lisibilité ou la performance de `repair-engine` en ajoutant une instrumentation trop lourde. Pour limiter ces risques, je garderai la trace de hints encapsulée dans le contexte de génération / réparation, je m’appuierai uniquement sur les informations déjà disponibles (canonPath, instancePath, diagnostics UNSAT) pour classifier les cas, et j’écrirai des tests ciblés qui vérifient à la fois la présence des `UnsatisfiedHint` attendus et l’absence d’impact sur les métriques et les modes `off`/`measure`.
-
-Parent bullets couverts: [KR4, KR5, DEL3, DOD3, DOD4, TS3]
-
-SPEC-check: conforme aux anchors listés, aucun écart identifié ; cette sous-tâche introduira la trace de hints partagée Generate↔Repair et la détection best-effort des unsatisfiedHints côté Repair, tout en respectant le caractère diagnostique-only de ces entrées et les contraintes de déterminisme.
+Making the CLI exit after the summary must not suppress the coverage report write path or run again, so I will keep the helper after the summary block and only exit when the helper sees `'minCoverageNotMet'`. Coverage thresholds can be very close, so the tests will use a schema with two mutually exclusive branches to ensure `overall` stays safely below the 0.8–0.9 guardrail; we also need to guard against flaky `process.exit` observers by restoring spies and removing temporary files. Parent bullets couverts: [KR1, KR2, DEL1, DOD1, TS1, TS4]
+SPEC-check: coverage thresholds + CLI summary behavior remain aligned with cov://§7#thresholds-mincoverage and cov://§7#cli-summary.
 
 Checks:
 - build: npm run build

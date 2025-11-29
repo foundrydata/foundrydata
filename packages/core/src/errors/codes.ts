@@ -19,6 +19,7 @@ export enum ErrorCode {
   // Generation Errors (E100–E199)
   CONSTRAINT_VIOLATION = 'E100',
   GENERATION_LIMIT_EXCEEDED = 'E101',
+  COVERAGE_THRESHOLD_NOT_MET = 'E102',
 
   // Validation Errors (E200–E299)
   COMPLIANCE_VALIDATION_FAILED = 'E200',
@@ -43,6 +44,7 @@ export const EXIT_CODES = {
   [ErrorCode.CIRCULAR_REFERENCE_DETECTED]: 22,
   [ErrorCode.CONSTRAINT_VIOLATION]: 30,
   [ErrorCode.GENERATION_LIMIT_EXCEEDED]: 31,
+  [ErrorCode.COVERAGE_THRESHOLD_NOT_MET]: 70,
   [ErrorCode.COMPLIANCE_VALIDATION_FAILED]: 40,
   [ErrorCode.CONFIGURATION_ERROR]: 50,
   [ErrorCode.PARSE_ERROR]: 60,
@@ -62,6 +64,7 @@ export const HTTP_STATUS_BY_CODE = {
   [ErrorCode.COMPLIANCE_VALIDATION_FAILED]: 422,
   [ErrorCode.CONFIGURATION_ERROR]: 500,
   [ErrorCode.PARSE_ERROR]: 400,
+  [ErrorCode.COVERAGE_THRESHOLD_NOT_MET]: 422,
   [ErrorCode.INTERNAL_ERROR]: 500,
 } satisfies Record<ErrorCode, number>;
 

@@ -175,4 +175,42 @@ describe('coverage-report/v1 JSON snapshots', () => {
       withoutExclude: metricsWithoutExclude.targetsByStatus,
     }).toMatchSnapshot();
   });
+
+  it('reports coverageStatus minCoverageNotMet when overall is below minCoverage', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      oneOf: [
+        {
+          type: 'object',
+          properties: {
+            choice: { const: 'a' },
+          },
+          required: ['choice'],
+        },
+        {
+          type: 'object',
+          properties: {
+            choice: { const: 'b' },
+          },
+          required: ['choice'],
+        },
+      ],
+    } as const;
+
+    const result = await executePipeline(schema, {
+      generate: { count: 1, seed: 101 },
+      validate: { validateFormats: false },
+      coverage: {
+        mode: 'measure',
+        dimensionsEnabled: ['structure', 'branches'],
+        minCoverage: 0.8,
+      },
+    });
+
+    const report = result.artifacts.coverageReport;
+    expect(report).toBeDefined();
+    expect(report?.metrics.coverageStatus).toBe('minCoverageNotMet');
+    expect(report?.metrics.thresholds?.overall).toBe(0.8);
+    expect(report?.metrics.overall ?? 1).toBeLessThan(0.8);
+  });
 });
