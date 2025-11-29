@@ -738,6 +738,70 @@ describe('CLI openapi command', () => {
     const stderr = stderrChunks.join('');
     expect(stderr).toMatch(/coverage status: minCoverageNotMet/i);
   });
+
+  it('exits with coverage failure code when guided minCoverage is not met', async () => {
+    const { dir, schemaPath } = await createSchemaFixture();
+    const coverageSchema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      oneOf: [
+        {
+          type: 'object',
+          properties: { branch: { const: 'a' } },
+          required: ['branch'],
+        },
+        {
+          type: 'object',
+          properties: { branch: { const: 'b' } },
+          required: ['branch'],
+        },
+      ],
+    } as const;
+    await writeFile(schemaPath, JSON.stringify(coverageSchema), 'utf8');
+
+    const stderrChunks: string[] = [];
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation(() => undefined as never);
+
+    try {
+      await program.parseAsync(
+        [
+          'generate',
+          '--schema',
+          schemaPath,
+          '--n',
+          '1',
+          '--out',
+          'ndjson',
+          '--coverage',
+          'guided',
+          '--coverage-dimensions',
+          'branches',
+          '--coverage-min',
+          '0.95',
+        ],
+        { from: 'user' }
+      );
+
+      expect(exitSpy).toHaveBeenCalledWith(
+        getExitCode(ErrorCode.COVERAGE_THRESHOLD_NOT_MET)
+      );
+    } finally {
+      exitSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+
+    const stderr = stderrChunks.join('');
+    expect(stderr).toMatch(/coverage status: minCoverageNotMet/i);
+  });
 });
 
 describe('CLI coverage diff command', () => {
