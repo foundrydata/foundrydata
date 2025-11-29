@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import type { CoverageDimension } from '@foundrydata/shared';
+import fc from 'fast-check';
+import type { CoverageDimension, CoverageTarget } from '@foundrydata/shared';
 import {
   COVERAGE_HINT_KIND_PRIORITY,
   DEFAULT_PLANNER_DIMENSION_ORDER,
@@ -15,6 +16,7 @@ import {
   type CoveragePlannerInput,
   type ResolvePlannerConfigOptions,
 } from '../index.js';
+import { validateHintStructuralFeasibility } from '../coverage-planner.js';
 import type {
   CoverageIndex,
   ComposeDiagnostics,
@@ -245,6 +247,7 @@ describe('planTestUnits', () => {
     options?: {
       coverageIndexBuilder?: (map: CoverageIndex) => void;
       planDiag?: ComposeDiagnostics;
+      canonSchema?: unknown;
     }
   ): CoveragePlannerInput => {
     const coverageIndex: CoverageIndex = new Map();
@@ -258,7 +261,7 @@ describe('planTestUnits', () => {
       graph: { nodes: [], edges: [] },
       targets,
       config,
-      canonSchema: {},
+      canonSchema: options?.canonSchema ?? {},
       coverageIndex,
       planDiag: options?.planDiag,
     };
@@ -583,7 +586,183 @@ describe('planTestUnits', () => {
     expect(result.conflictingHints).toHaveLength(1);
     expect(result.conflictingHints[0]).toMatchObject({
       kind: 'preferBranch',
+      reasonCode: 'UNREACHABLE_BRANCH',
+    });
+  });
+
+  it('records conflicting property hints when not/required forbids the property', () => {
+    const schema = {
+      type: 'object',
+      not: {
+        required: ['blocked'],
+      },
+      properties: {
+        blocked: { type: 'string' },
+      },
+    } as const;
+
+    const targets: CoveragePlannerInput['targets'] = [
+      {
+        id: 'prop-blocked',
+        dimension: 'structure',
+        kind: 'PROPERTY_PRESENT',
+        canonPath: '#/properties/blocked',
+        params: { propertyName: 'blocked' },
+      },
+    ];
+
+    const config = resolveCoveragePlannerConfig({
+      maxInstances: 1,
+      dimensionsEnabled: ['structure'],
+      dimensionPriority: ['structure'],
+    });
+
+    const result = planTestUnits(
+      makeInput(targets, config, {
+        canonSchema: schema,
+      })
+    );
+
+    expect(result.testUnits).toHaveLength(1);
+    expect(result.testUnits[0]?.hints).toEqual([]);
+    expect(result.conflictingHints).toHaveLength(1);
+    expect(result.conflictingHints[0]).toMatchObject({
+      kind: 'ensurePropertyPresence',
       reasonCode: 'CONFLICTING_CONSTRAINTS',
     });
+    expect(result.conflictingHints[0]?.reasonDetail).toContain('not/required');
+  });
+});
+
+describe('validateHintStructuralFeasibility', () => {
+  it('flags ensurePropertyPresence hints forbidden by not/required', () => {
+    const schema = {
+      type: 'object',
+      not: {
+        required: ['blocked'],
+      },
+      properties: {
+        blocked: { type: 'string' },
+      },
+    } as const;
+
+    const coverageIndex: CoverageIndex = new Map();
+    coverageIndex.set('', {
+      has: (_name: string) => true,
+    } as const);
+
+    const hint: CoverageHint = {
+      kind: 'ensurePropertyPresence',
+      canonPath: '#',
+      params: { propertyName: 'blocked', present: true },
+    };
+
+    const result = validateHintStructuralFeasibility(hint, {
+      target: undefined,
+      canonSchema: schema,
+      coverageIndex,
+      planDiag: undefined,
+      unsatPaths: undefined,
+    });
+
+    expect(result.isConflicting).toBe(true);
+    expect(result.reasonCode).toBe('CONFLICTING_CONSTRAINTS');
+    expect(result.reasonDetail).toContain('not/required');
+  });
+
+  it('does not mark valid hints as conflicting (property-based)', () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        a: { type: 'string' },
+        b: { type: 'string' },
+        color: { enum: ['red', 'green', 'blue'] },
+      },
+      oneOf: [
+        {
+          type: 'object',
+          properties: {
+            typeTag: { const: 'A' },
+          },
+        },
+        {
+          type: 'object',
+          properties: {
+            typeTag: { const: 'B' },
+          },
+        },
+      ],
+    } as const;
+
+    const allowedNames = new Set<string>(['a', 'b', 'color', 'typeTag']);
+
+    const coverageIndex: CoverageIndex = new Map();
+    coverageIndex.set('', {
+      has: (name: string) => allowedNames.has(name),
+    } as const);
+
+    const baseTarget: CoverageTarget = {
+      id: 'branch',
+      dimension: 'branches',
+      kind: 'ONEOF_BRANCH',
+      canonPath: '#/oneOf/0',
+    } as CoverageTarget;
+
+    const property = fc.property(
+      fc.constantFrom('a', 'b'),
+      fc.integer({ min: 0, max: 1 }),
+      fc.integer({ min: 0, max: 2 }),
+      (propertyName, branchIndex, enumIndex) => {
+        const propertyHint: CoverageHint = {
+          kind: 'ensurePropertyPresence',
+          canonPath: '#',
+          params: { propertyName, present: true },
+        };
+        const propertyResult = validateHintStructuralFeasibility(propertyHint, {
+          target: undefined,
+          canonSchema: schema,
+          coverageIndex,
+          planDiag: undefined,
+          unsatPaths: undefined,
+        });
+        expect(propertyResult.isConflicting).toBe(false);
+
+        const branchHint: CoverageHint = {
+          kind: 'preferBranch',
+          canonPath: '#/oneOf',
+          params: { branchIndex },
+        };
+        const branchTarget: CoverageTarget = {
+          ...baseTarget,
+          canonPath: `#/oneOf/${branchIndex}`,
+        };
+        const branchResult = validateHintStructuralFeasibility(branchHint, {
+          target: branchTarget,
+          canonSchema: schema,
+          coverageIndex,
+          planDiag: undefined,
+          unsatPaths: undefined,
+        });
+        expect(branchResult.isConflicting).toBe(false);
+
+        const enumHint: CoverageHint = {
+          kind: 'coverEnumValue',
+          canonPath: '#/properties/color',
+          params: { valueIndex: enumIndex },
+        };
+        const enumResult = validateHintStructuralFeasibility(enumHint, {
+          target: undefined,
+          canonSchema: schema,
+          coverageIndex,
+          planDiag: undefined,
+          unsatPaths: undefined,
+        });
+        expect(enumResult.isConflicting).toBe(false);
+      }
+    );
+
+    fc.assert(property, { seed: 202_704, numRuns: 25 });
   });
 });

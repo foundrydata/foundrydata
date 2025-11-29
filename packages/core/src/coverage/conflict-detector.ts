@@ -1,4 +1,5 @@
 /* eslint-disable complexity */
+/* eslint-disable max-lines */
 import type {
   CoverageTarget,
   UnsatisfiedHintReasonCode,
@@ -206,9 +207,15 @@ export class ConflictDetector {
       (code
         ? `${code} at ${canonPath}`
         : `Target ${target.canonPath ?? '#'} is unreachable`);
+    const reasonCode: UnsatisfiedHintReasonCode =
+      target.dimension === 'branches' ||
+      target.kind === 'ONEOF_BRANCH' ||
+      target.kind === 'ANYOF_BRANCH'
+        ? 'UNREACHABLE_BRANCH'
+        : 'CONFLICTING_CONSTRAINTS';
     return {
       isConflicting: true,
-      reasonCode: 'CONFLICTING_CONSTRAINTS',
+      reasonCode,
       reasonDetail: detail,
     };
   }
@@ -250,25 +257,30 @@ export class ConflictDetector {
   private static checkPropertyConflictFromSchema(
     propertyName: string,
     ownerCanonPath: string | undefined,
-    propertyCanonPath: string | undefined,
+    _propertyCanonPath: string | undefined,
     canonSchema: unknown
   ): ConflictCheckResult | undefined {
     if (!canonSchema) {
       return undefined;
     }
     const ownerSchemaNode = resolveSchemaNode(canonSchema, ownerCanonPath);
-    const propertySchemaNode = propertyCanonPath
-      ? resolveSchemaNode(canonSchema, propertyCanonPath)
-      : undefined;
-    if (ownerSchemaNode === false || propertySchemaNode === false) {
-      return {
-        isConflicting: true,
-        reasonCode: 'CONFLICTING_CONSTRAINTS',
-        reasonDetail: `Property '${propertyName}' is attached to a boolean false subschema at ${
-          propertyCanonPath ?? ownerCanonPath ?? '#'
-        }.`,
-      };
+    const notRequiredConflict = this.checkNotRequiredConflict(
+      propertyName,
+      ownerCanonPath,
+      ownerSchemaNode
+    );
+    if (notRequiredConflict) {
+      return notRequiredConflict;
     }
+
+    return undefined;
+  }
+
+  private static checkNotRequiredConflict(
+    propertyName: string,
+    ownerCanonPath: string | undefined,
+    ownerSchemaNode: unknown
+  ): ConflictCheckResult | undefined {
     if (
       ownerSchemaNode &&
       typeof ownerSchemaNode === 'object' &&
@@ -349,7 +361,7 @@ export class ConflictDetector {
     ) {
       return {
         isConflicting: true,
-        reasonCode: 'CONFLICTING_CONSTRAINTS',
+        reasonCode: 'UNREACHABLE_BRANCH',
         reasonDetail: `Branch ${branchIndex} at ${branchSpecificPath} is unreachable via Compose UNSAT signals.`,
       };
     }
@@ -357,7 +369,7 @@ export class ConflictDetector {
       const path = unionCanonPath ?? '#';
       return {
         isConflicting: true,
-        reasonCode: 'CONFLICTING_CONSTRAINTS',
+        reasonCode: 'UNREACHABLE_BRANCH',
         reasonDetail: `Branch ${branchIndex} at ${path} is unreachable via Compose UNSAT signals.`,
       };
     }

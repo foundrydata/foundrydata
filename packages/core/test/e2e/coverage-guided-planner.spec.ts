@@ -277,4 +277,73 @@ describe('coverage=guided planning behavior', () => {
 
     expect(falsePositives).toHaveLength(0);
   });
+
+  it('reports CONFLICTING_CONSTRAINTS for impossible enum hints in guided runs', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        color: { enum: ['red', 'green'] },
+      },
+      required: ['color'],
+    } as const;
+
+    const options = {
+      mode: 'strict' as const,
+      coverage: {
+        mode: 'guided' as const,
+        dimensionsEnabled: ['enum'] as const,
+      },
+      generate: {
+        count: 2,
+        seed: 42,
+      },
+      validate: {
+        validateFormats: false,
+      },
+    } as const;
+
+    const result = await executePipeline(schema, options, {
+      generate(
+        effective,
+        generateOptions,
+        coverageHooks
+      ): ReturnType<typeof generateFromCompose> {
+        const hints = [
+          {
+            kind: 'coverEnumValue',
+            canonPath: '#/properties/color',
+            params: { valueIndex: 5 },
+          },
+        ];
+        const generatorOptions = {
+          ...(generateOptions ?? {}),
+          coverage:
+            coverageHooks && coverageHooks.mode !== 'off'
+              ? {
+                  ...coverageHooks,
+                  hints,
+                }
+              : coverageHooks,
+        } as unknown;
+
+        return generateFromCompose(effective, generatorOptions as any);
+      },
+    });
+
+    expect(result.status).toBe('completed');
+
+    const report = result.artifacts.coverageReport;
+    expect(report).toBeDefined();
+    const unsatisfied = report?.unsatisfiedHints ?? [];
+    const enumConflicts = unsatisfied.filter(
+      (hint) =>
+        hint.kind === 'coverEnumValue' &&
+        hint.canonPath === '#/properties/color' &&
+        (hint.params as { valueIndex?: unknown })?.valueIndex === 5 &&
+        hint.reasonCode === 'CONFLICTING_CONSTRAINTS'
+    );
+    expect(enumConflicts.length).toBeGreaterThan(0);
+  });
 });
