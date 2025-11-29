@@ -1,23 +1,23 @@
-Task: 9305   Title: 9305.9305004 – Derive deterministic seeds for TestUnits
-Anchors: [cov://§4#coverage-planner, cov://§6#execution-modes-ux]
+Task: 9305   Title: 9305.9305005 – Add integration tests for coverage=guided planning behavior
+Anchors: [cov://§3#coverage-model, cov://§4#coverage-planner, cov://§6#execution-modes-ux]
 Touched files:
 - packages/core/src/coverage/index.ts
 - packages/core/src/coverage/coverage-planner.ts
-- packages/core/src/pipeline/types.ts
+- packages/core/test/e2e/coverage-guided-planner.spec.ts
 - .taskmaster/docs/9305-traceability.md
 - PLAN.md
 
 Approach:
-Pour la sous-tâche 9305.9305004, je vais ajouter une dérivation déterministe des seeds de TestUnit à partir du masterSeed du run, en respectant le modèle RNG existant (`XorShift32` / `normalizeSeed`) et les contraintes de la SPEC coverage-aware. L’idée est d’exposer une petite API de planning (par exemple une fonction `assignTestUnitSeeds`) qui prend un `masterSeed` normalisé et la liste de `TestUnit` construits par `planTestUnits`, puis qui remplit le champ `seed` de chaque unité à partir d’une fonction pure de `(masterSeed, unitId, scope)` sans introduire de RNG supplémentaire ni perturber le pattern d’appels RNG du générateur. Pour rester aligné avec les usages actuels, je m’appuierai sur `XorShift32` avec un canonPath synthétique dérivé de `TestUnit.id` et éventuellement du `operationKey`, de façon à garantir que la même configuration (schema, options, masterSeed) produise toujours les mêmes seeds de TestUnit.
+Pour la sous-tâche 9305.9305005, je vais ajouter des tests d’intégration qui exercent le pipeline complet en `coverage=guided` sur de petits schémas d’acceptance (oneOf + enum), afin de vérifier que le planner statique (cibles + caps + seeds) permet effectivement d’atteindre tous les branches et valeurs d’enum quand le budget maxInstances est suffisant. Concrètement, je vais introduire un nouveau fichier `packages/core/test/e2e/coverage-guided-planner.spec.ts` qui invoque l’API Node/pipeline avec un schéma synthétique partagé entre un run `coverage=measure` (baseline) et un run `coverage=guided`, avec les mêmes valeurs de `maxInstances` et de `seed/masterSeed`. Les assertions compareront `coverage.metrics.byDimension` pour `branches` et `enum`, en vérifiant que le mode guided atteint au moins autant (et idéalement 1.0 sur ces dimensions pour le schéma choisi) que le mode measure.
 
-Je laisserai le pipeline et le CoverageReport continuer à traiter `run.seed` et `run.masterSeed` comme aujourd’hui (seed == masterSeed en V1), en me concentrant uniquement sur la cohérence interne des seeds de TestUnit. Côté tests, j’étendrai `coverage-planner.test.ts` pour vérifier que, pour un `masterSeed` donné, l’appel à la nouvelle fonction produit des seeds stables sur plusieurs exécutions et que de petits changements (dans `unit.id` ou `masterSeed`) entraînent des variations attendues. Les tests vérifieront aussi que la dérivation reste pure (mêmes inputs ⇒ mêmes seeds) et ne dépend pas de l’ordre d’appel ou d’un état global caché.
+Ces tests resteront focalisés sur le comportement observable du rapport de couverture (targets et metrics), sans modifier l’orchestrateur ni les structures internes du planner. Si nécessaire, j’utiliserai les helpers existants (par ex. `executePipeline` et les fixtures de schémas simples) pour isoler des cas où les stratégies heuristiques seules n’atteignent pas toutes les branches/enum sous un budget donné, tandis que la combinaison Analyzer + Planner + seeds améliorera la couverture dans le run guided. Je veillerai aussi à garder les tests déterministes (seeds fixés, masterSeed stable) et à ne pas introduire de dépendance fragile à des détails de mise en œuvre non spécifiés (comme l’ordre exact des TestUnits), en me limitant aux métriques de couverture et au statut des targets.
 
 Risks/Unknowns:
-Le principal risque est de créer un système de seeds qui ne soit pas clairement lié au masterSeed ou qui puisse diverger silencieusement si le format des `TestUnit.id`/`scope` change. Je vais limiter la dérivation à une combinaison simple (masterSeed + identifiant stable de TestUnit/operation) documentée dans le code de test, en évitant toute dépendance à l’index d’itération ou à des mutable globals. Autre point d’attention : ne pas introduire une nouvelle source RNG indépendante; j’utiliserai l’implémentation existante `XorShift32` comme fonction pure de hashage pour les seeds de TestUnit, de manière à rester conforme au contrat “pas de RNG supplémentaire” et à faciliter le raisonnement sur la stabilité.
+Le principal risque est de rendre les tests trop étroitement couplés à des détails de scoring ou d’heuristiques non normatifs, ce qui pourrait les rendre fragiles face à de futures optimisations de planner ou de generator. Je vais donc choisir des schémas très simples où la correspondance entre cibles (branches/enums) et instances est triviale, et où l’on peut atteindre une couverture complète sans dépendre de heuristiques fines. Autre point d’attention : vérifier que le mode guided ne viole pas les invariants déterministes (mêmes inputs ⇒ même rapport) et qu’il ne détériore pas la couverture sur d’autres dimensions; les tests se concentreront toutefois uniquement sur branches/enum, conformément au scope de M1.
 
-Parent bullets couverts: [KR6, DOD4, TS2]
+Parent bullets couverts: [KR1, KR2, KR6, DOD1, DOD4, TS3]
 
-SPEC-check: conforme aux anchors listés, pas d’écart identifié ; cette sous-tâche se concentre sur la dérivation déterministe des seeds de TestUnit à partir du masterSeed et de l’identifiant de l’unité, sans modifier la sémantique des modes coverage ni le calcul des métriques, qui restent du ressort des tâches précédentes (9303) et des autres sous-tâches 9305.x.
+SPEC-check: conforme aux anchors listés, pas d’écart identifié ; cette sous-tâche se limite à documenter par des tests d’intégration les gains de couverture du mode guided sur branches/enum, en réutilisant le pipeline existant, sans étendre la sémantique de coverage ni toucher aux autres phases du pipeline.
 
 Checks:
 - build: npm run build

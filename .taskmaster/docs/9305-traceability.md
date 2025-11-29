@@ -49,7 +49,7 @@ This document maps the parent task 9305 bullets from Implementation Details, Del
   Covers: [KR6], [DOD4], [TS2].
 
 - **9305.9305005 – Add integration tests for coverage=guided planning behavior**  
-  Covers: [DEL3], [DOD1], [DOD5], [TS3], [TS4].
+  Covers: [DEL3], [DOD1], [DOD4], [DOD5], [TS3], [TS4].
 
 Status:
 
@@ -57,3 +57,5 @@ Status:
 - 9305.9305002: covered
 - 9305.9305003: covered
 - 9305.9305004: covered
+- 9305.9305005: in-progress
+- 9305.9305005: covered
