@@ -61,6 +61,9 @@ This document maps the parent task 9306 bullets from Implementation Details, Del
 - **9306.9306009 – Implement hint trace and Repair-side unsatisfied hints**  
   Covers: [KR4], [KR5], [DEL3], [DOD3], [DOD4], [TS3] (covered; this subtask introduces an internal per-instance hint trace shared between Generate and Repair for guided runs, and extends Repair to emit UnsatisfiedHint entries with reasonCode REPAIR_MODIFIED_VALUE on a best-effort basis when applied hints (ensurePropertyPresence, coverEnumValue) are no longer satisfied in the final AJV-valid instance, while keeping unsatisfiedHints strictly diagnostic-only and preserving determinism for fixed inputs).
 
+- **9306.9306010 – Fix ensurePropertyPresence hint trace for reused definitions**  
+  Covers: [KR4], [KR5], [DEL3], [DOD3], [DOD4], [TS3] (in-progress; this subtask ensures the instance path recorded for hints that originate from reused `$defs`/`definitions` matches the actual container when Repair re-checks the final instance, removing the false `REPAIR_MODIFIED_VALUE` diagnostics described by the latest review).
+
 Status:
 
 - 9306.9306001: covered
@@ -71,3 +74,4 @@ Status:
 - 9306.9306007: covered
 - 9306.9306008: covered
 - 9306.9306009: covered
+- 9306.9306010: in-progress
