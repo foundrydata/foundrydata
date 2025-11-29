@@ -119,6 +119,12 @@
   * Cible présente dans `targets[]` et diagnostics **uniquement pour l’insight**.
   * Ne contribue **jamais** à `coverage.overall` ni à `coverage.byDimension`/`byOperation` ni à `minCoverage`.
 
+* **Hints impossibles / `CONFLICTING_CONSTRAINTS`**
+
+  * Les hints qui sont structurellement impossibles (AP:false qui interdit le nom, schéma booléen `false`, chemins marqués UNSAT par Compose, index enum ou branche hors bornes) doivent être filtrés dès le CoveragePlanner via le `ConflictDetector` et remontés comme `UnsatisfiedHint` avec `reasonCode:'CONFLICTING_CONSTRAINTS'` (cov://§3#coverage-model, cov://§4#coverage-planner, spec://§8#early-unsat-checks).
+  * Le générateur ne fait qu’un fallback défensif pour les hints invalides injectés à la main (par exemple un `coverEnumValue` avec index hors intervalle ou un `preferBranch` au‑delà du nombre de branches) et utilise aussi `CONFLICTING_CONSTRAINTS` dans ces cas, sans changer le flux d’instances ni les seeds.
+  * `INTERNAL_ERROR` reste réservé aux échecs internes non structurels ; une hint impossible au sens du modèle de contraintes doit toujours être classée en `CONFLICTING_CONSTRAINTS`, et les entrées correspondantes dans `coverageReport.unsatisfiedHints` restent purement diagnostiques (cov://§5#unsatisfied-hints-repair, cov://§7#json-coverage-report).
+
 * **Profils CLI**
 
   * `quick` : petite `maxInstances` (~50–100), `dimensionsEnabled=['structure','branches']`, caps agressifs.

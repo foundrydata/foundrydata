@@ -285,6 +285,6 @@ describe('generator guided coverage hints', () => {
         (h.params as { valueIndex?: unknown })?.valueIndex === 5
     );
     expect(entry).toBeDefined();
-    expect(entry?.reasonCode).toBe('INTERNAL_ERROR');
+    expect(entry?.reasonCode).toBe('CONFLICTING_CONSTRAINTS');
   });
 });

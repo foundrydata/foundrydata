@@ -491,12 +491,12 @@ class GeneratorEngine {
       this.recordHintApplication(enumHint, key);
       return index;
     }
-    // Index outside enum bounds or invalid type: record as internal error.
+    // Index outside enum bounds or invalid type: treat as conflicting constraints.
     this.recordUnsatisfiedHint({
       kind: 'coverEnumValue',
       canonPath: key,
       params: { valueIndex: index },
-      reasonCode: 'INTERNAL_ERROR',
+      reasonCode: 'CONFLICTING_CONSTRAINTS',
       reasonDetail: 'coverEnumValue index out of range for enum',
     });
     return undefined;
@@ -1384,7 +1384,7 @@ class GeneratorEngine {
       kind: 'preferBranch',
       canonPath: key,
       params: { branchIndex: index },
-      reasonCode: 'INTERNAL_ERROR',
+      reasonCode: 'CONFLICTING_CONSTRAINTS',
       reasonDetail: 'preferBranch index out of range for branch count',
     });
     return undefined;
