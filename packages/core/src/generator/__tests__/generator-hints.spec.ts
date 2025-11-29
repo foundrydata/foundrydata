@@ -4,6 +4,7 @@ import { normalize } from '../../transform/schema-normalizer.js';
 import { compose } from '../../transform/composition-engine.js';
 import { generateFromCompose } from '../foundry-generator.js';
 import type { CoverageHint } from '../../coverage/index.js';
+import type { UnsatisfiedHint } from '@foundrydata/shared';
 
 function composeSchema(schema: unknown): ReturnType<typeof compose> {
   const normalized = normalize(schema);
@@ -148,5 +149,97 @@ describe('generator guided coverage hints', () => {
 
     expect(guidedObj.color).toBe('blue');
     expect(measureObj.color).toBe('red');
+  });
+
+  it('records unsatisfied ensurePropertyPresence hints when the property is absent', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        a: { const: 1 },
+      },
+      required: [],
+    } as const;
+
+    const effective = composeSchema(schema);
+
+    const hints: CoverageHint[] = [
+      {
+        kind: 'ensurePropertyPresence',
+        canonPath: '#',
+        params: { propertyName: 'missing', present: true },
+      },
+    ];
+
+    const unsatisfied: UnsatisfiedHint[] = [];
+
+    generateFromCompose(effective, {
+      count: 1,
+      coverage: {
+        mode: 'guided',
+        emit: () => {},
+        hints,
+        recordUnsatisfiedHint: (hint) => {
+          unsatisfied.push(hint);
+        },
+      },
+    });
+
+    expect(unsatisfied.length).toBeGreaterThanOrEqual(1);
+    const entry = unsatisfied.find(
+      (h) =>
+        h.kind === 'ensurePropertyPresence' &&
+        h.canonPath === '#' &&
+        h.params?.propertyName === 'missing'
+    );
+    expect(entry).toBeDefined();
+    expect(entry?.reasonCode).toBe('CONFLICTING_CONSTRAINTS');
+  });
+
+  it('records unsatisfied coverEnumValue hints when valueIndex is out of range', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        color: { enum: ['red', 'green'] },
+      },
+      required: ['color'],
+    } as const;
+
+    const effective = composeSchema(schema);
+
+    const hints: CoverageHint[] = [
+      {
+        kind: 'coverEnumValue',
+        canonPath: '#/properties/color',
+        params: { valueIndex: 5 },
+      },
+    ];
+
+    const unsatisfied: UnsatisfiedHint[] = [];
+
+    const output = generateFromCompose(effective, {
+      count: 1,
+      coverage: {
+        mode: 'guided',
+        emit: () => {},
+        hints,
+        recordUnsatisfiedHint: (hint) => {
+          unsatisfied.push(hint);
+        },
+      },
+    });
+
+    // Fallback still emits a valid value
+    expect(output.items).toHaveLength(1);
+    const obj = output.items[0] as { color?: string };
+    expect(['red', 'green']).toContain(obj.color);
+
+    const entry = unsatisfied.find(
+      (h) =>
+        h.kind === 'coverEnumValue' &&
+        h.canonPath === '#/properties/color' &&
+        (h.params as { valueIndex?: unknown })?.valueIndex === 5
+    );
+    expect(entry).toBeDefined();
+    expect(entry?.reasonCode).toBe('INTERNAL_ERROR');
   });
 });

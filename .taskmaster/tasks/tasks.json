@@ -443,10 +443,11 @@
             "id": 9306003,
             "title": "Record unsatisfied hints from generator and repair",
             "description": "Detect when hints cannot be satisfied or are undone by Repair and record UnsatisfiedHint entries with reason codes.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/coverage/unsatisfied-hints.ts",
-            "parentId": "9306"
+            "parentId": "9306",
+            "updatedAt": "2025-11-29T00:59:52.070Z"
           },
           {
             "id": 9306004,
@@ -467,7 +468,7 @@
             "parentId": "9306"
           }
         ],
-        "updatedAt": "2025-11-29T00:51:17.747Z"
+        "updatedAt": "2025-11-29T00:59:52.070Z"
       },
       {
         "id": "9307",
@@ -1002,7 +1003,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-29T00:51:17.748Z",
+      "lastModified": "2025-11-29T00:59:52.071Z",
       "taskCount": 18,
       "completedCount": 8,
       "tags": [

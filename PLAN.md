@@ -1,23 +1,24 @@
-Task: 9306   Title: 9306.9306002 – Integrate hints into generator decision points
-Anchors: [cov://§4#generator-instrumentation, cov://§5#hint-types, cov://§5#priority-conflict-resolution]
+Task: 9306   Title: 9306.9306003 – Record unsatisfied hints from generator and repair
+Anchors: [cov://§4#generator-instrumentation, cov://§5#unsatisfied-hints-repair]
 Touched files:
 - packages/core/src/generator/foundry-generator.ts
-- packages/core/src/generator/index.ts
-- packages/core/src/generator/__tests__/generator-hints.spec.ts
+- packages/core/src/repair/repair-engine.ts
+- packages/core/src/coverage/evaluator.ts
+- packages/core/src/coverage/__tests__/evaluator.test.ts
 - .taskmaster/docs/9306-traceability.md
 - PLAN.md
 
 Approach:
-Pour la sous-tâche 9306.9306002, je vais intégrer la consommation des hints dans le générateur JSON Schema/OpenAPI en `coverage=guided`, en m’appuyant sur les types et règles de priorité définis dans la sous-tâche précédente. Concrètement, je vais étendre le `GenerationContext` pour porter une liste de hints par TestUnit, puis ajouter des helpers internes au module generator qui, pour un nœud donné (`canonPath`), filtrent les hints applicables, résolvent les conflits via `resolveCoverageHintConflicts` et exposent des décisions de haut niveau: branche à sélectionner (`preferBranch`), présence souhaitée d’une propriété (`ensurePropertyPresence`) et index d’énumération (`coverEnumValue`). Ces décisions ne seront appliquées que lorsque `coverage.mode === 'guided'` et uniquement sur les dimensions `branches`, `structure` et `enum`, en laissant AJV et les règles existantes décider en dernier ressort en cas de conflit ou d’impossibilité.
+Pour la sous-tâche 9306.9306003, je vais ajouter un chemin de retour pour les hints qui n’ont pas pu être honorés par le générateur ou qui sont “défaits” par Repair, de façon à produire des entrées `unsatisfiedHints` conformes à la SPEC dans le rapport de couverture. Concrètement, je vais introduire une petite structure interne pour collecter, côté generator et côté Repair, des événements d’hints non satisfaits (par exemple “branch preferBranch non atteinte”, “coverEnumValue impossible sous les contraintes”, “valeur modifiée par Repair”), en les normalisant vers le type `UnsatisfiedHint` déjà défini dans `@foundrydata/shared`. Ces événements resteront purement diagnostiques: ils seront agrégés dans la couche coverage/evaluator ou directement au moment de la construction du `CoverageReport` dans l’orchestrateur, sans influencer `coverageStatus`, `minCoverage` ni les métriques de coverage.
 
-Du côté tests, je vais créer un fichier dédié `generator-hints.spec.ts` qui couvre des cas unitaires ciblés au niveau du générateur (sans passer par tout le pipeline): un schéma simple avec `oneOf`, un objet avec propriétés optionnelles et un `enum`. Pour chacun, je ferai tourner la génération avec et sans hints sous les mêmes seeds en `coverage=guided`, et j’asserterai que les hints pilotent bien la sélection de branche, la présence de propriété ou la valeur d’énum, tout en vérifiant que les modes `coverage=off` et `coverage=measure` restent inchangés (mêmes valeurs qu’avant). Les tests vérifieront aussi que, lorsque des hints sont inapplicables ou insatisfaisables, le générateur retombe sur les heuristiques existantes, sans modifier AP:false ni CoverageIndex et sans introduire de non-déterminisme supplémentaire.
+Du côté tests, je vais étendre les tests de l’Evaluator pour couvrir des scénarios simples où l’on fournit une petite collection d’`unsatisfiedHints` synthétiques en entrée et où l’on vérifie qu’elles sont restituées telles quelles dans `coverageReport.unsatisfiedHints`, sans impact sur `metrics.overall` ou `targetsByStatus`. Pour garder cette sous-tâche concentrée sur la collecte et la propagation, je limiterai le câblage au cas minimal: un hook côté generator/Repair permettant de pousser des `UnsatisfiedHint` dans un accumulateur de run, et l’agrégation finale dans le champ `unsatisfiedHints` du rapport. La logique de classification fine par `reasonCode` restera simple (par exemple `UNREACHABLE_BRANCH`, `REPAIR_MODIFIED_VALUE`, `CONFLICTING_CONSTRAINTS`), en laissant aux sous-tâches ultérieures le soin d’enrichir les diagnostics ou de brancher ces informations dans des vues plus détaillées.
 
 Risks/Unknowns:
-Les principaux risques sont : (1) altérer par erreur le comportement du générateur en `coverage=off` ou `coverage=measure` (ce qui serait contraire à la SPEC), (2) coupler trop fortement l’implémentation aux détails internes de la RNG ou d’AJV, et (3) effleurer des aspects relevant de la sous-tâche suivante (unsatisfiedHints, diagnostics) en sortant du scope. Pour les limiter, je vais encapsuler l’usage des hints derrière des helpers pures et ne les invoquer que lorsque `coverage.mode === 'guided'`, en gardant un chemin de code inchangé pour les autres modes. Je resterai aussi au niveau des décisions locales (branche/propriété/enum) sans instrumenter la remontée d’`unsatisfiedHints`, qui sera traitée plus tard.
+Les risques principaux sont : (1) faire dériver la mécanique d’`unsatisfiedHints` vers un changement de comportement (par exemple en court-circuitant Repair ou en modifiant la sélection de branches), alors qu’elle doit rester purement diagnostique; (2) doubler ou perdre des hints lors de l’agrégation, ce qui nuirait à la traçabilité; (3) introduire une dépendance forte à l’implémentation interne des hints de generator, au détriment de la stabilité. Pour les limiter, je vais traiter `unsatisfiedHints` comme un flux parallèle: collecte d’événements structurés, agrégation pure, puis inclusion telle quelle dans le rapport, sans branches conditionnelles sur ces diagnostics. Je veillerai aussi à ce que les tests restent décorrélés des détails d’implémentation de Generator/Repair (ils manipuleront des `UnsatisfiedHint` déjà formés).
 
-Parent bullets couverts: [KR2, KR3, DEL2, DOD1, DOD2, TS2]
+Parent bullets couverts: [KR4, DEL3, DOD3, TS3]
 
-SPEC-check: conforme aux anchors listés, aucun écart identifié ; cette sous-tâche se limite à consommer les hints dans le générateur en mode guided sur branches/enum/propriétés, sans impacter AP:false, CoverageIndex ni la sémantique des autres modes de coverage, et en laissant la gestion des unsatisfiedHints aux sous-tâches ultérieures.
+SPEC-check: conforme aux anchors listés, aucun écart identifié ; cette sous-tâche se concentre sur la collecte et la propagation des unsatisfiedHints en tant que diagnostics dans le rapport de coverage, sans modifier le comportement de génération ou de réparation ni les métriques de coverage.
 
 Checks:
 - build: npm run build
