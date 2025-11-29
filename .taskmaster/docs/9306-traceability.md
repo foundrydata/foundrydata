@@ -38,7 +38,7 @@ This document maps the parent task 9306 bullets from Implementation Details, Del
   Covers: [KR1], [KR3], [DEL1], [TS1] (in-progress → covered after implementation and tests).
 
 - **9306.9306002 – Integrate hints into generator decision points**  
-  Covers: [KR2], [KR3], [DEL2], [DOD1], [TS2] (pending).
+  Covers: [KR2], [KR3], [DEL2], [DOD1], [TS2] (covered).
 
 - **9306.9306003 – Record unsatisfied hints from generator and repair**  
   Covers: [KR4], [DEL1], [DEL3], [DOD3], [TS3] (pending).
@@ -51,9 +51,8 @@ This document maps the parent task 9306 bullets from Implementation Details, Del
 
 Status:
 
-- 9306.9306001: in-progress
-- 9306.9306002: pending
+- 9306.9306001: covered
+- 9306.9306002: covered
 - 9306.9306003: pending
 - 9306.9306004: pending
 - 9306.9306005: pending
-

@@ -433,10 +433,11 @@
             "id": 9306002,
             "title": "Integrate hints into generator decision points",
             "description": "Consume hints in the generator when selecting branches, deciding property presence and picking enum values in coverage=guided mode, without changing AP:false name semantics or CoverageIndex behavior (property-name coverage still comes solely from CoverageIndex).",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/generator/foundry-generator.ts",
-            "parentId": "9306"
+            "parentId": "9306",
+            "updatedAt": "2025-11-29T00:51:17.747Z"
           },
           {
             "id": 9306003,
@@ -466,7 +467,7 @@
             "parentId": "9306"
           }
         ],
-        "updatedAt": "2025-11-29T00:38:34.487Z"
+        "updatedAt": "2025-11-29T00:51:17.747Z"
       },
       {
         "id": "9307",
@@ -1001,7 +1002,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-29T00:40:09.262Z",
+      "lastModified": "2025-11-29T00:51:17.748Z",
       "taskCount": 18,
       "completedCount": 8,
       "tags": [
