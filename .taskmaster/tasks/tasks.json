@@ -414,7 +414,7 @@
           "9305",
           "9307"
         ],
-        "status": "in-progress",
+        "status": "done",
         "complexityScore": 4,
         "details": "[Context]\nImplement coverage hints and their interaction with the generator and Repair, as described in §5 (Hints & interaction with Repair). coverage=guided uses hints attached to TestUnits to steer branch choices, property presence and enum values while preserving AJV validity and determinism, and records unsatisfied hints when constraints prevent their satisfaction.\n\n[Key requirements]\n- Implement hint types preferBranch(schemaPath, branchIndex), ensurePropertyPresence(schemaPath, property, present) and coverEnumValue(schemaPath, valueIndex) and attach them to TestUnits from the planner.\n- Extend the generator to consume hints in coverage=guided mode only, with AJV validity taking precedence and default heuristics used when hints are absent, inapplicable or unsatisfiable.\n- Implement deterministic conflict resolution with a global priority order (coverEnumValue > preferBranch > ensurePropertyPresence) and stable ordering within each kind (first in hints[] wins).\n- Detect unsatisfied hints when Repair modifies values or when constraints make the hinted target unreachable, and record them as unsatisfiedHints with reasonCode and reasonDetail in the coverage report.\n- Ensure hints have no effect in coverage=off and coverage=measure modes and do not alter external driver behavior.\n\n[Deliverables]\n- Hint definitions and helper utilities in packages/core/src/coverage/hints.ts.\n- Generator integration for hint consumption in packages/core/src/generator/foundry-generator.ts.\n- UnsatisfiedHints collection and wiring into CoverageEvaluator and CoverageReport.unsatisfiedHints.\n\n[Commands]\n- npm run build\n- npm run test -- --runInBand\n- npm run test packages/core/src/generator/__tests__/coverage-hints.spec.ts\n\n[Definition of Done]\n- Generator respects hints in coverage=guided mode while still emitting only AJV-valid instances; invalid instances caused by hints are rejected and hints are marked unsatisfied.\n- Conflict resolution across multiple hints for the same node is deterministic and covered by unit tests.\n- Unsatisfied hints are reported with appropriate reasonCode values such as UNREACHABLE_BRANCH, REPAIR_MODIFIED_VALUE or PLANNER_CAP, and are visible in coverage reports without affecting coverageStatus in V1.\n- Runs with coverage=off or coverage=measure show no behavioral difference compared to pre-hints behavior.\n- Acceptance scenarios for oneOf branches and enum coverage are supported by guided runs that use hints to reach full coverage under sufficient budget.",
         "testStrategy": "Focused unit tests that drive the generator with individual hints and conflicting hints and assert chosen branches, properties and enum values; tests that exercise Repair interactions to produce unsatisfied hints; integration tests in coverage=guided mode verifying that hints improve coverage and that unsatisfiedHints are recorded when constraints make hints impossible to satisfy.",
@@ -463,21 +463,21 @@
             "id": 9306005,
             "title": "Add end-to-end tests for guided hints on schemas with oneOf and enums",
             "description": "Create e2e tests that show full branch and enum coverage under coverage=guided with sufficient budget and visible unsatisfied hints when impossible.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 2,
             "file": "packages/core/test/e2e/coverage-guided-hints.spec.ts",
             "parentId": "9306",
-            "updatedAt": "2025-11-29T01:14:36.216Z"
+            "updatedAt": "2025-11-29T11:44:40.542Z"
           },
           {
             "id": 9306006,
             "title": "Wire planner hints into pipeline orchestrator and add guided hints e2e tests",
             "description": "Wire CoveragePlanner TestUnit.hints through the pipeline orchestrator into the generator in coverage=guided mode, then add end-to-end tests (via executePipeline) on oneOf+enum schemas to demonstrate that planner-produced hints are actually consumed, improve branches/enum coverage vs coverage=measure under the same budget, and remain deterministic for fixed (schema, options, seed).",
             "details": "",
-            "status": "in-progress",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 9306,
-            "updatedAt": "2025-11-29T01:23:33.800Z",
+            "updatedAt": "2025-11-29T11:39:50.269Z",
             "parentId": "undefined"
           },
           {
@@ -503,7 +503,7 @@
             "updatedAt": "2025-11-29T11:34:47.437Z"
           }
         ],
-        "updatedAt": "2025-11-29T11:34:47.437Z"
+        "updatedAt": "2025-11-29T11:44:40.542Z"
       },
       {
         "id": "9307",
@@ -1038,9 +1038,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-29T11:34:47.438Z",
+      "lastModified": "2025-11-29T11:44:40.543Z",
       "taskCount": 18,
-      "completedCount": 8,
+      "completedCount": 9,
       "tags": [
         "coverage-aware-v1"
       ]
