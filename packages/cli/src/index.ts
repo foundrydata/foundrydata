@@ -139,7 +139,7 @@ program
   )
   .option(
     '--coverage-profile <profile>',
-    'Coverage profile: quick|balanced|thorough'
+    'Coverage profile: quick|balanced|thorough (quick: structure+branches, ~75 instances; balanced: structure+branches+enum, ~350 instances; thorough: adds boundaries, >=1000 instances, no caps)'
   )
   .option(
     '--coverage-exclude-unreachable <bool>',
@@ -201,11 +201,15 @@ program
       }
 
       const schemaForGen = input;
-      const count = resolveRowCount({
+      const requestedCount = resolveRowCount({
         rows: options.rows,
         count: options.count,
         n: options.n,
       });
+      const hasExplicitCount =
+        options.rows !== undefined ||
+        options.count !== undefined ||
+        options.n !== undefined;
       const seed = Number(options.seed ?? 424242);
       const repairAttempts = Number(options.repairAttempts ?? 1);
       const outFormat: OutputFormat = resolveOutputFormat(options.out);
@@ -222,9 +226,11 @@ program
       const planOptions = parsePlanOptions(cliPlanOptions);
       const resolvedOptions = resolveOptions(planOptions);
 
-      const { coverage, ignoredReason } = resolveCliCoverageOptions(
-        options as unknown as CliOptions
-      );
+      const {
+        coverage,
+        ignoredReason,
+        recommendedMaxInstances,
+      } = resolveCliCoverageOptions(options as unknown as CliOptions);
       if (ignoredReason) {
         process.stderr.write(`[foundrydata] note: ${ignoredReason}\n`);
       }
@@ -236,7 +242,11 @@ program
         );
       }
 
-      const stream = Generate(count, seed, schemaForGen as object, {
+      const instanceCount = hasExplicitCount
+        ? requestedCount
+        : recommendedMaxInstances ?? requestedCount;
+
+      const stream = Generate(instanceCount, seed, schemaForGen as object, {
         mode: compat,
         metricsEnabled: options.metrics !== false,
         planOptions,
@@ -388,7 +398,7 @@ program
   )
   .option(
     '--coverage-profile <profile>',
-    'Coverage profile: quick|balanced|thorough'
+    'Coverage profile: quick|balanced|thorough (quick: structure+branches, ~75 instances; balanced: structure+branches+enum, ~350 instances; thorough: adds boundaries, >=1000 instances, no caps)'
   )
   .option(
     '--coverage-exclude-unreachable <bool>',
@@ -423,11 +433,15 @@ program
       });
       const outFormat: OutputFormat = resolveOutputFormat(options.out);
       const preferExamples = options.preferExamples === true;
-      const count = resolveRowCount({
+      const requestedCount = resolveRowCount({
         rows: options.rows,
         count: options.count,
         n: options.n,
       });
+      const hasExplicitCount =
+        options.rows !== undefined ||
+        options.count !== undefined ||
+        options.n !== undefined;
       const seed = Number(options.seed ?? 424242);
       const repairAttempts = Number(options.repairAttempts ?? 1);
 
@@ -497,9 +511,11 @@ program
       const planOptions = parsePlanOptions(cliPlanOptions);
       const resolvedOptions = resolveOptions(planOptions);
 
-      const { coverage, ignoredReason } = resolveCliCoverageOptions(
-        options as unknown as CliOptions
-      );
+      const {
+        coverage,
+        ignoredReason,
+        recommendedMaxInstances,
+      } = resolveCliCoverageOptions(options as unknown as CliOptions);
       if (ignoredReason) {
         process.stderr.write(`[foundrydata] note: ${ignoredReason}\n`);
       }
@@ -510,7 +526,11 @@ program
         );
       }
 
-      const stream = Generate(count, seed, schemaForGen as object, {
+      const instanceCount = hasExplicitCount
+        ? requestedCount
+        : recommendedMaxInstances ?? requestedCount;
+
+      const stream = Generate(instanceCount, seed, schemaForGen as object, {
         mode: compat,
         metricsEnabled: options.metrics !== false,
         planOptions,
