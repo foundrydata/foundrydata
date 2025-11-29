@@ -1,23 +1,23 @@
-Task: 9306   Title: 9306.9306001 – Define hint types and priority rules
-Anchors: [cov://§5#hint-types, cov://§5#priority-conflict-resolution]
+Task: 9306   Title: 9306.9306002 – Integrate hints into generator decision points
+Anchors: [cov://§4#generator-instrumentation, cov://§5#hint-types, cov://§5#priority-conflict-resolution]
 Touched files:
-- packages/core/src/coverage/coverage-planner.ts
-- packages/core/src/coverage/__tests__/coverage-planner.test.ts
-- packages/core/src/coverage/index.ts
+- packages/core/src/generator/foundry-generator.ts
+- packages/core/src/generator/index.ts
+- packages/core/src/generator/__tests__/generator-hints.spec.ts
 - .taskmaster/docs/9306-traceability.md
 - PLAN.md
 
 Approach:
-Pour la sous-tâche 9306.9306001, je vais consolider la définition des hints de coverage côté core en alignant les types `preferBranch`, `ensurePropertyPresence` et `coverEnumValue` avec la SPEC, puis en introduisant des règles explicites de priorité et de résolution de conflits entre ces hints. Concrètement, je vais factoriser la définition des types de hints et de leur discriminant `kind` dans `coverage-planner.ts`, ajouter une structure d’ordre global documentée (par exemple un tableau de priorité ou un mapping) qui encode `coverEnumValue > preferBranch > ensurePropertyPresence`, et fournir de petits helpers purs pour exposer cette priorité au générateur sans introduire de dépendance au pipeline ni à AJV. Je veillerai aussi à ce que la représentation des hints reste suffisamment générale pour être réutilisée par le Planner et par la génération, en préservant la forme actuelle des TestUnits.
+Pour la sous-tâche 9306.9306002, je vais intégrer la consommation des hints dans le générateur JSON Schema/OpenAPI en `coverage=guided`, en m’appuyant sur les types et règles de priorité définis dans la sous-tâche précédente. Concrètement, je vais étendre le `GenerationContext` pour porter une liste de hints par TestUnit, puis ajouter des helpers internes au module generator qui, pour un nœud donné (`canonPath`), filtrent les hints applicables, résolvent les conflits via `resolveCoverageHintConflicts` et exposent des décisions de haut niveau: branche à sélectionner (`preferBranch`), présence souhaitée d’une propriété (`ensurePropertyPresence`) et index d’énumération (`coverEnumValue`). Ces décisions ne seront appliquées que lorsque `coverage.mode === 'guided'` et uniquement sur les dimensions `branches`, `structure` et `enum`, en laissant AJV et les règles existantes décider en dernier ressort en cas de conflit ou d’impossibilité.
 
-Du côté des tests, je vais enrichir `coverage-planner.test.ts` avec des cas ciblés qui valident la fonction de validation `isCoverageHint` sur les nouveaux invariants éventuels et qui vérifient que la priorité par kind et l’ordre stable “first in hints[] wins” sont respectés pour un ensemble de hints artificiels attachés à un même `canonPath`. Ces tests resteront purement fonctionnels et déterministes (aucun RNG, pas d’appel à la pipeline), et viseront une couverture élevée de la logique de priorité sans anticiper l’implémentation exacte de la consommation des hints par le générateur, qui sera traitée dans les sous-tâches suivantes. Enfin, je mettrai à jour la traçabilité 9306 pour rattacher cette sous-tâche aux bullets “hint types” et “priority rules”.
+Du côté tests, je vais créer un fichier dédié `generator-hints.spec.ts` qui couvre des cas unitaires ciblés au niveau du générateur (sans passer par tout le pipeline): un schéma simple avec `oneOf`, un objet avec propriétés optionnelles et un `enum`. Pour chacun, je ferai tourner la génération avec et sans hints sous les mêmes seeds en `coverage=guided`, et j’asserterai que les hints pilotent bien la sélection de branche, la présence de propriété ou la valeur d’énum, tout en vérifiant que les modes `coverage=off` et `coverage=measure` restent inchangés (mêmes valeurs qu’avant). Les tests vérifieront aussi que, lorsque des hints sont inapplicables ou insatisfaisables, le générateur retombe sur les heuristiques existantes, sans modifier AP:false ni CoverageIndex et sans introduire de non-déterminisme supplémentaire.
 
 Risks/Unknowns:
-Les principaux risques sont : (1) sur-spécifier la forme des hints ou de leur ordre au point de rigidifier inutilement les futurs usages côté générateur ou Repair, et (2) introduire par inadvertance une dépendance implicite à l’ordre de tri ou à d’autres heuristiques non décrites par la SPEC. Pour limiter cela, je vais garder les helpers de priorité minimaux (ordre global + stabilité intra-kind) et laisser la logique d’application concrète aux sous-tâches suivantes. Autre inconnue : certains aspects de la représentation finale des `unsatisfiedHints` seront précisés plus loin ; je m’assurerai que la modélisation actuelle des hints n’entrave pas cette extension.
+Les principaux risques sont : (1) altérer par erreur le comportement du générateur en `coverage=off` ou `coverage=measure` (ce qui serait contraire à la SPEC), (2) coupler trop fortement l’implémentation aux détails internes de la RNG ou d’AJV, et (3) effleurer des aspects relevant de la sous-tâche suivante (unsatisfiedHints, diagnostics) en sortant du scope. Pour les limiter, je vais encapsuler l’usage des hints derrière des helpers pures et ne les invoquer que lorsque `coverage.mode === 'guided'`, en gardant un chemin de code inchangé pour les autres modes. Je resterai aussi au niveau des décisions locales (branche/propriété/enum) sans instrumenter la remontée d’`unsatisfiedHints`, qui sera traitée plus tard.
 
-Parent bullets couverts: [KR1, KR3, DEL1, TS1]
+Parent bullets couverts: [KR2, KR3, DEL2, DOD1, DOD2, TS2]
 
-SPEC-check: conforme aux anchors listés, aucun écart identifié ; cette sous-tâche se limite à formaliser les types de hints et leur ordre de priorité global, sans activer la consommation des hints dans le générateur ni la gestion des unsatisfiedHints, qui restent hors scope ici.
+SPEC-check: conforme aux anchors listés, aucun écart identifié ; cette sous-tâche se limite à consommer les hints dans le générateur en mode guided sur branches/enum/propriétés, sans impacter AP:false, CoverageIndex ni la sémantique des autres modes de coverage, et en laissant la gestion des unsatisfiedHints aux sous-tâches ultérieures.
 
 Checks:
 - build: npm run build

@@ -46,7 +46,8 @@ import {
 import type { ResolverDiagnosticNote } from '../resolver/options.js';
 import type Ajv from 'ajv';
 import type { ValidateFunction } from 'ajv';
-import type { CoverageEvent } from '../coverage/index.js';
+import type { CoverageEvent, CoverageHint } from '../coverage/index.js';
+import { resolveCoverageHintConflicts } from '../coverage/index.js';
 
 type JsonPointer = string;
 
@@ -82,6 +83,10 @@ interface InstanceTweakTarget {
   get(): string | number;
   set(value: string | number): void;
 }
+
+type ResolvedCoverageHintsForPath = ReturnType<
+  typeof resolveCoverageHintConflicts
+>;
 
 export interface GeneratorDiagnostic {
   code: DiagnosticCode;
@@ -124,6 +129,13 @@ interface GeneratorCoverageOptions {
   mode: CoverageMode;
   emit: (event: CoverageEvent) => void;
   emitForItem?: (itemIndex: number, event: CoverageEvent) => void;
+  /**
+   * Optional coverage hints attached to the current TestUnit when
+   * running in coverage=guided mode. When provided, the generator
+   * may use these hints to steer branch selection, property presence
+   * and enum values without violating AJV validity.
+   */
+  hints?: CoverageHint[];
 }
 
 export interface FoundryGeneratorOptions {
@@ -201,6 +213,9 @@ class GeneratorEngine {
   private readonly multipleOfEpsilon: number;
   private readonly preferExamples: boolean;
   private readonly coverage?: GeneratorCoverageOptions;
+  private readonly coverageHintsByPath?:
+    | Map<JsonPointer, ResolvedCoverageHintsForPath>
+    | undefined;
   private currentItemIndex: number | null = null;
   // E-Trace cache: per-candidate object instance → per-name proof (or null for negative).
   // Ephemeral per GeneratorEngine; keys are not retained strongly (WeakMap).
@@ -208,6 +223,27 @@ class GeneratorEngine {
     Record<string, unknown>,
     Map<string, EvaluationProof | null>
   > = new WeakMap();
+
+  private buildCoverageHintsIndex(
+    hints: CoverageHint[]
+  ): Map<JsonPointer, ResolvedCoverageHintsForPath> {
+    const byPath = new Map<JsonPointer, CoverageHint[]>();
+    for (const hint of hints) {
+      if (!hint || typeof hint.canonPath !== 'string') continue;
+      const path = canonicalizeCoveragePath(hint.canonPath as JsonPointer);
+      const existing = byPath.get(path);
+      if (existing) {
+        existing.push(hint);
+      } else {
+        byPath.set(path, [hint]);
+      }
+    }
+    const resolved = new Map<JsonPointer, ResolvedCoverageHintsForPath>();
+    for (const [path, bucket] of byPath) {
+      resolved.set(path, resolveCoverageHintConflicts(bucket));
+    }
+    return resolved;
+  }
 
   constructor(effective: ComposeResult, options: FoundryGeneratorOptions) {
     this.options = options;
@@ -245,6 +281,13 @@ class GeneratorEngine {
     );
     this.preferExamples = options.preferExamples === true;
     this.coverage = options.coverage;
+    this.coverageHintsByPath =
+      this.coverage &&
+      this.coverage.mode === 'guided' &&
+      Array.isArray(this.coverage.hints) &&
+      this.coverage.hints.length > 0
+        ? this.buildCoverageHintsIndex(this.coverage.hints)
+        : undefined;
   }
 
   private readonly rootSchema: Schema | unknown;
@@ -272,6 +315,33 @@ class GeneratorEngine {
       metrics,
       seed: this.baseSeed,
     };
+  }
+
+  private getEnumHintIndex(
+    canonPath: JsonPointer,
+    values: unknown[]
+  ): number | undefined {
+    if (!this.coverage || this.coverage.mode !== 'guided') return undefined;
+    if (!this.coverageHintsByPath || !Array.isArray(values)) {
+      return undefined;
+    }
+    const key = canonicalizeCoveragePath(canonPath);
+    const resolved = this.coverageHintsByPath.get(key);
+    if (!resolved) return undefined;
+    const enumHint = resolved.effective.find(
+      (hint) => hint.kind === 'coverEnumValue'
+    ) as CoverageHint | undefined;
+    if (!enumHint || enumHint.kind !== 'coverEnumValue') return undefined;
+    const index = enumHint.params.valueIndex;
+    if (
+      typeof index === 'number' &&
+      Number.isInteger(index) &&
+      index >= 0 &&
+      index < values.length
+    ) {
+      return index;
+    }
+    return undefined;
   }
 
   private generateValue(
@@ -309,7 +379,11 @@ class GeneratorEngine {
     }
     if (Array.isArray(obj.enum) && obj.enum.length > 0) {
       const enumValues = obj.enum as unknown[];
-      const chosen = enumValues[0];
+      const hintedIndex = this.getEnumHintIndex(effectiveCanonPath, enumValues);
+      const chosen =
+        hintedIndex !== undefined && enumValues[hintedIndex] !== undefined
+          ? enumValues[hintedIndex]
+          : enumValues[0];
       this.recordEnumValueHit(obj, effectiveCanonPath, chosen);
       return chosen;
     }
@@ -561,9 +635,13 @@ class GeneratorEngine {
 
     // Add optional properties from explicit definitions first
     if (usedNames.size < minProperties) {
-      const candidates = Object.keys(properties)
-        .filter((name) => !usedNames.has(name))
-        .sort();
+      const baseCandidates = Object.keys(properties).filter(
+        (name) => !usedNames.has(name)
+      );
+      const candidates = this.orderOptionalPropertyCandidates(
+        canonPath,
+        baseCandidates.sort()
+      );
       for (const name of candidates) {
         if (usedNames.size >= minProperties) break;
         if (this.isConditionallyBlocked(canonPath, name)) continue;
@@ -683,13 +761,16 @@ class GeneratorEngine {
         (!apFalse || rewriteApplied)
       ) {
         const seen = new Set<string>();
-        const sortedCandidates = propertyNamesEnum
-          .filter((value) => {
-            if (seen.has(value)) return false;
-            seen.add(value);
-            return true;
-          })
-          .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+        const sortedCandidates = this.orderOptionalPropertyCandidates(
+          canonPath,
+          propertyNamesEnum
+            .filter((value) => {
+              if (seen.has(value)) return false;
+              seen.add(value);
+              return true;
+            })
+            .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+        );
         for (const candidate of sortedCandidates) {
           if (usedNames.size >= minProperties) break;
           if (usedNames.has(candidate)) continue;
@@ -803,6 +884,46 @@ class GeneratorEngine {
     const result = fallbackProof;
     cacheForObject.set(name, result ?? null);
     return result;
+  }
+
+  private orderOptionalPropertyCandidates(
+    canonPath: JsonPointer,
+    candidates: string[]
+  ): string[] {
+    if (
+      !this.coverage ||
+      this.coverage.mode !== 'guided' ||
+      !this.coverageHintsByPath ||
+      candidates.length === 0
+    ) {
+      return candidates;
+    }
+    const key = canonicalizeCoveragePath(canonPath);
+    const resolved = this.coverageHintsByPath.get(key);
+    if (!resolved || resolved.effective.length === 0) {
+      return candidates;
+    }
+    const preferredNames = new Set<string>();
+    for (const hint of resolved.effective) {
+      if (
+        hint.kind === 'ensurePropertyPresence' &&
+        hint.params.present === true
+      ) {
+        preferredNames.add(hint.params.propertyName);
+      }
+    }
+    if (preferredNames.size === 0) return candidates;
+    const hinted: string[] = [];
+    const others: string[] = [];
+    for (const name of candidates) {
+      if (preferredNames.has(name)) {
+        hinted.push(name);
+      } else {
+        others.push(name);
+      }
+    }
+    if (hinted.length === 0) return candidates;
+    return [...hinted, ...others];
   }
 
   private isNameWithinCoverage(
@@ -1035,6 +1156,36 @@ class GeneratorEngine {
     const node = this.diagNodes?.[canonPath];
     const idx = node?.chosenBranch?.index;
     return typeof idx === 'number' ? idx : undefined;
+  }
+
+  private getPreferredBranchIndex(
+    canonPath: JsonPointer,
+    branchCount: number
+  ): number | undefined {
+    if (
+      !this.coverage ||
+      this.coverage.mode !== 'guided' ||
+      !this.coverageHintsByPath
+    ) {
+      return undefined;
+    }
+    const key = canonicalizeCoveragePath(canonPath);
+    const resolved = this.coverageHintsByPath.get(key);
+    if (!resolved) return undefined;
+    const hint = resolved.effective.find(
+      (entry) => entry.kind === 'preferBranch'
+    ) as CoverageHint | undefined;
+    if (!hint || hint.kind !== 'preferBranch') return undefined;
+    const index = hint.params.branchIndex;
+    if (
+      typeof index === 'number' &&
+      Number.isInteger(index) &&
+      index >= 0 &&
+      index < branchCount
+    ) {
+      return index;
+    }
+    return undefined;
   }
 
   private hasPnamesRewrite(canonPath: JsonPointer): boolean {
@@ -2354,13 +2505,30 @@ class GeneratorEngine {
     const branches = Array.isArray(schema.oneOf)
       ? (schema.oneOf as unknown[])
       : [];
-    const record = this.diagNodes?.[canonPath];
-    const selectedIndex =
-      typeof record?.chosenBranch?.index === 'number'
-        ? record.chosenBranch.index
-        : 0;
-    const chosen =
-      selectedIndex >= 0 && selectedIndex < branches.length ? selectedIndex : 0;
+    const fallbackIndex = 0;
+    const unionPointer = appendPointer(canonPath, 'oneOf');
+    const hintedIndex = this.getPreferredBranchIndex(
+      unionPointer,
+      branches.length
+    );
+    let chosen =
+      hintedIndex !== undefined && branches[hintedIndex] !== undefined
+        ? hintedIndex
+        : fallbackIndex;
+    if (hintedIndex === undefined) {
+      const record = this.diagNodes?.[canonPath];
+      const selectedIndex =
+        typeof record?.chosenBranch?.index === 'number'
+          ? record.chosenBranch.index
+          : fallbackIndex;
+      if (
+        selectedIndex >= 0 &&
+        selectedIndex < branches.length &&
+        branches[selectedIndex] !== undefined
+      ) {
+        chosen = selectedIndex;
+      }
+    }
     const branchPath = this.buildOneOfBranchPointer(canonPath, chosen);
     this.recordBranchSelection(
       'ONEOF_BRANCH',
@@ -2995,12 +3163,18 @@ class GeneratorEngine {
       : [];
     if (branches.length === 0) return {};
     const unionPointer = appendPointer(canonPath, 'anyOf');
-    const chosen = this.getChosenBranchIndex(unionPointer);
+    const hintedIndex = this.getPreferredBranchIndex(
+      unionPointer,
+      branches.length
+    );
+    const chosenFromDiag = this.getChosenBranchIndex(unionPointer);
     const fallbackIndex = 0;
     const index =
-      chosen !== undefined && branches[chosen] !== undefined
-        ? chosen
-        : fallbackIndex;
+      hintedIndex !== undefined && branches[hintedIndex] !== undefined
+        ? hintedIndex
+        : chosenFromDiag !== undefined && branches[chosenFromDiag] !== undefined
+          ? chosenFromDiag
+          : fallbackIndex;
     const branchPointer = appendPointer(unionPointer, String(index));
     this.recordBranchSelection(
       'ANYOF_BRANCH',
