@@ -1,21 +1,21 @@
 Task: 9309   Title: Add boundaries coverage dimension and instrumentation (M2)
-Anchors: [cov://§3#coverage-model, cov://§4#boundaries, spec://§8#numbers-multipleof]
+Anchors: [cov://§3#coverage-model, cov://§4#boundaries, spec://§8#numbers-multipleof, spec://§8#early-unsat-checks]
 Touched files:
-- packages/core/src/generator/foundry-generator.ts
-- packages/core/src/coverage/events.ts
-- packages/core/src/coverage/__tests__/events.test.ts
-- packages/core/src/generator/__tests__/coverage-branches-enum.test.ts
+- packages/core/src/coverage/coverage-analyzer-unreachable.ts
+- packages/core/src/coverage/analyzer.ts
+- packages/core/src/coverage/coverage-planner.ts
+- packages/core/src/coverage/__tests__/analyzer.test.ts
 - .taskmaster/docs/9309-traceability.md
 
 Approach:
-For 9309.9309002, I will instrument the generator so that whenever emitted instances hit numeric, string or array boundary representatives, the coverage layer receives explicit `boundaries`-dimension events that can be matched to the `NUMERIC_*`, `STRING_*` et `ARRAY_*` targets déjà découverts par l’analyzer (cov://§3#coverage-model, cov://§4#boundaries). Je vais étendre le modèle d’événements de coverage avec des événements dédiés aux frontières dont l’identité est définie uniquement par `(dimension, kind, canonPath, params)`, en alignement avec la projection ID-stable existante, puis adapter les accumulateurs streaming et non-streaming pour qu’ils indexent aussi ces cibles sans ajouter de nouveaux parcours ni d’état global supplémentaire. Dans `foundry-generator`, j’identifierai les points où les valeurs numériques et les tailles de chaînes/tableaux sont choisies en suivant les règles de planification numérique existantes, y compris l’alignement sur `multipleOf` (spec://§8#numbers-multipleof), et, lorsqu’un accumulateur de coverage est présent et que la dimension `boundaries` est activée, j’émettrai des événements de frontières attachés au pointeur canonique et à la valeur représentative (ou longueur) plutôt qu’à une nouvelle logique de sélection. Cela garantit que les bornes inclusives sont comptées lorsqu’une valeur exactement égale est produite, que les bornes exclusives s’appuient sur la valeur représentative retenue par la planification numérique et que les cas dégénérés `min == max` (et équivalents pour longueurs/items) se traduisent en co-hit déterministes sans logique ad hoc côté générateur. Je complèterai avec des tests ciblés sur `createCoverageAccumulator` / `createStreamingCoverageAccumulator` et des événements synthétiques de frontières pour confirmer que les événements se résolvent vers les bons IDs de cibles et que le comportement des autres dimensions reste inchangé.
+Pour 9309.9309003, je vais factoriser la logique de détection des chemins UNSAT et l’application des statuts `unreachable`/`deprecated` dans un module dédié `coverage-analyzer-unreachable`, puis l’utiliser depuis l’analyzer et le planner pour traiter proprement les cibles de frontières inatteignables (cov://§3#coverage-model, cov://§4#boundaries, spec://§8#early-unsat-checks). Ce module construira un ensemble de chemins UNSAT à partir des diagnostics Compose existants (y compris `UNSAT_NUMERIC_BOUNDS` et les gardes AP:false déjà utilisés pour la structure) et fournira une fonction pure qui, à partir d’une liste de CoverageTargets, marque comme `status:'unreachable'` toutes les cibles sous un chemin UNSAT (en conservant `SCHEMA_REUSED_COVERED` avec `status:'deprecated'`) tout en enrichissant `meta` avec des raisons de conflit. Dans `analyzer`, je remplacerai la logique inline par cet utilitaire afin que les cibles `boundaries` pour des domaines numériques ou de cardinalité vides héritent automatiquement du même traitement que les autres dimensions, sans ajouter de moteur de preuve supplémentaire. Dans `coverage-planner`, j’alignerai l’usage de `buildUnsatPathSet` sur ce nouveau module pour que la détection d’impossibilité de hints reste cohérente avec la notion de cibles inatteignables. Enfin, j’étendrai les tests d’analyzer pour couvrir explicitement les cibles de frontières sous `UNSAT_NUMERIC_BOUNDS` et vérifier que les targets `boundaries` deviennent `unreachable` sur les chemins concernés, tout en laissant les cas dégénérés `min == max` gérés de façon déterministe par l’instrumentation existante plutôt que par des heuristiques d’inatteignabilité.
 
 Risks/Unknowns:
-- Aligner précisément les événements de frontières sur les valeurs effectivement émises par le générateur (surtout sous `multipleOf` et pour les bornes exclusives) dépend des décisions déjà prises dans la planification; cette sous-tâche doit rester strictement observatrice et éviter d’introduire une logique numérique concurrente.
-- L’extension du modèle d’événements à la dimension `boundaries` doit rester compatible avec la sémantique existante des accumulateurs, y compris le cas `coverage=off` et les dimensions non activées; des tests ciblés sont nécessaires pour éviter des régressions silencieuses.
-- L’instrumentation ne doit pas introduire de passes supplémentaires sur les données générées ni dégrader sensiblement les performances mesurées par les profils de bench; tout surcoût lié aux événements de frontières devra rester borné et sera réévalué lorsque les tests bout en bout de 9309.9309004 renforceront la validation de la dimension.
+- La liste des codes UNSAT considérés comme “forts” doit rester alignée avec Compose; toute extension devra être tracée pour éviter de marquer à tort des cibles encore atteignables comme `unreachable`.
+- La factorisation de la logique d’UNSAT entre analyzer et planner ne doit pas introduire de divergences subtiles (par exemple des chemins UNSAT traités différemment pour les cibles de structure et les cibles de frontières); des tests ciblés doivent vérifier que les deux couches voient les mêmes chemins UNSAT.
+- Les traitements ultérieurs de 9309.9309004 sur les métriques by-dimension ne doivent pas supposer qu’aucune cible `boundaries` n’est marquée `unreachable`; cette sous-tâche doit donc se limiter au statut des cibles sans toucher au calcul des métriques.
 
-Parent bullets couverts: [KR2, KR3, KR5, DEL2, DOD3, TS2]
+Parent bullets couverts: [KR4, DEL3, DOD2, TS3]
 
 Checks:
 - build: npm run build

@@ -179,6 +179,7 @@ describe('analyzeCoverage', () => {
           },
         ],
       },
+      dimensionsEnabled: ['structure', 'boundaries'],
     });
 
     const unreachableTargets = result.targets.filter(
@@ -188,6 +189,11 @@ describe('analyzeCoverage', () => {
     for (const target of unreachableTargets) {
       expect(target.canonPath.startsWith('#/properties/id')).toBe(true);
     }
+
+    const unreachableBoundaries = unreachableTargets.filter(
+      (t) => t.dimension === 'boundaries'
+    );
+    expect(unreachableBoundaries.length).toBeGreaterThan(0);
   });
 
   it('respects dimensionsEnabled when materializing targets', () => {
