@@ -1,24 +1,19 @@
-Task: 9326   Title: Detect impossible hints conflicting with keywords
-Anchors: [cov://§3#coverage-model, cov://§4#coverage-planner, cov://§5#unsatisfied-hints-repair, cov://§7#json-coverage-report, spec://§8#early-unsat-checks]
+Task: 9309   Title: Add boundaries coverage dimension and instrumentation (M2)
+Anchors: [cov://§3#coverage-model, spec://§8#numbers-multipleof]
 Touched files:
-- packages/core/src/coverage/conflict-detector.ts
-- packages/core/src/coverage/conflict-detector-utils.ts
-- packages/core/src/coverage/coverage-planner.ts
-- packages/core/src/coverage/__tests__/coverage-planner.test.ts
-- packages/core/src/coverage/__tests__/conflict-detector.test.ts
-- packages/core/test/e2e/coverage-guided-planner.spec.ts
-- AGENTS.md
-- .taskmaster/docs/9326-traceability.md
+- packages/core/src/coverage/analyzer.ts
+- packages/core/src/coverage/__tests__/analyzer.test.ts
+- .taskmaster/docs/9309-traceability.md
 
 Approach:
-I will review the existing ConflictDetector and planner integration added for 9325/9327 and tighten it so that impossible hints are captured exactly where the coverage-aware spec expects: during planning, using canonical schema structure, Compose UNSAT metadata and AP:false CoverageIndex gaps as proof (cov://§3#coverage-model, cov://§4#coverage-planner, spec://§8#early-unsat-checks). I will extract shared pointer and UNSAT helpers into conflict-detector-utils so ConflictDetector focuses on feasibility checks, then extend property and branch logic to cover not/required contradictions while ensuring property presence hints on AP:false schemas rely solely on CoverageIndex.has. In coverage-planner tests, I will add cases and light property-based checks that feed random but valid hints through validateHintStructuralFeasibility to guard against false CONFLICTING_CONSTRAINTS, and in guided planning/e2e tests I will assert that impossible hints appear as CONFLICTING_CONSTRAINTS entries in coverageReport.unsatisfiedHints without altering coverage metrics or by-dimension breakdowns (cov://§5#unsatisfied-hints-repair, cov://§7#json-coverage-report). Finally, I will update AGENTS.md and the new 9326 traceability file so future work reuses the same impossible-hint rule instead of reintroducing divergent heuristics.
+For 9309.9309001, I will extend the coverage analyzer so it discovers numeric, string and array boundary constraints directly from the canonical schema and materializes `boundaries`-dimension CoverageTargets in a way that is deterministic and consistent with the existing coverage model (cov://§3#coverage-model). Concretely, I will scan each canonical schema node for numeric bounds (`minimum`, `maximum`, `exclusiveMinimum`, `exclusiveMaximum`, `multipleOf`-related) using the same numeric-likeness checks that Compose already relies on, and create `NUMERIC_MIN_HIT` / `NUMERIC_MAX_HIT` targets anchored at the schema’s canonical pointer with params that record which keyword and value they correspond to, without attempting to introduce any new numeric optimality logic beyond what the numeric planning layer already provides (spec://§8#numbers-multipleof). I will do the same for string (`minLength`/`maxLength`) and array (`minItems`/`maxItems`) constraints, emitting `STRING_MIN_LENGTH_HIT`, `STRING_MAX_LENGTH_HIT`, `ARRAY_MIN_ITEMS_HIT` and `ARRAY_MAX_ITEMS_HIT` targets at the corresponding schema locations. The analyzer will respect `dimensionsEnabled` so boundaries targets are only materialized when the `boundaries` dimension is requested, and it will continue to pipe UNSAT information from Compose via existing diagnostics so empty-domain cases naturally mark associated targets as `status:'unreachable'` alongside other targets on the same canonPath. I will update the analyzer unit tests to assert that boundaries targets are created for numeric, string and array constraints, that they are gated solely by `dimensionsEnabled`, and that existing structure/branches/enum behavior (including determinism and ID stability for a fixed canonical view) remains unchanged.
 
 Risks/Unknowns:
-- Avoiding double-reporting between planner-level conflicts and generator fallbacks requires clear precedence rules and tests that assert each impossible hint appears exactly once in unsatisfiedHints.
-- Structural checks must not misclassify merely unlikely hints as impossible; property-based tests and targeted fixtures are needed to guard against false positives under AP:false and complex allOf/oneOf compositions.
-- Keeping coverage metrics and minCoverage behavior unchanged while adding new unsatisfiedHints flows may require tightening existing pipeline tests that snapshot coverage reports.
+- Ensuring that boundary targets align with the effective numeric domains derived by Compose (especially when `multipleOf` interacts with inclusive/exclusive bounds) may require follow-up work in 9309.9309003 to refine reachability, so this subtask must avoid baking in assumptions that contradict future UNSAT-based handling.
+- The analyzer currently assumes a simple graph over schema/property/branch nodes; extending target discovery for boundaries without adding explicit constraint nodes means later planner stages must still be able to reason about boundary targets using only canonPath and params, which should be validated by unit tests.
+- Adding new target kinds increases the total target count for some schemas; although this subtask deliberately avoids changing planner caps or dimension ordering, there is a small risk that downstream tests depending on exact target counts may need to be refreshed once boundaries are fully wired into guided planning.
 
-Parent bullets couverts: [KR1, KR2, KR3, IM1, TS1, TS2]
+Parent bullets couverts: [KR1, DEL1, DOD1, TS1]
 
 Checks:
 - build: npm run build
