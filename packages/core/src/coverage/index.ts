@@ -74,10 +74,13 @@ export type {
 } from './coverage-planner.js';
 
 export {
+  COVERAGE_HINT_KIND_PRIORITY,
+  getCoverageHintKindPriority,
   DEFAULT_PLANNER_DIMENSIONS_ENABLED,
   DEFAULT_PLANNER_DIMENSION_ORDER,
   resolveCoveragePlannerConfig,
   isCoverageHint,
+  resolveCoverageHintConflicts,
   planTestUnits,
   assignTestUnitSeeds,
 } from './coverage-planner.js';

@@ -42,6 +42,96 @@ export type CoverageHint =
   | EnsurePropertyPresenceHint
   | CoverEnumValueHint;
 
+export const COVERAGE_HINT_KIND_PRIORITY: readonly CoverageHintKind[] = [
+  'coverEnumValue',
+  'preferBranch',
+  'ensurePropertyPresence',
+] as const;
+
+const COVERAGE_HINT_KIND_PRIORITY_RANK: Readonly<
+  Record<CoverageHintKind, number>
+> = {
+  coverEnumValue: 0,
+  preferBranch: 1,
+  ensurePropertyPresence: 2,
+};
+
+export function getCoverageHintKindPriority(kind: CoverageHintKind): number {
+  return COVERAGE_HINT_KIND_PRIORITY_RANK[kind];
+}
+
+function buildHintConflictKey(hint: CoverageHint): string {
+  switch (hint.kind) {
+    case 'preferBranch':
+      return `${hint.kind}|${hint.canonPath}|${hint.params.branchIndex}`;
+    case 'ensurePropertyPresence':
+      return `${hint.kind}|${hint.canonPath}|${hint.params.propertyName}`;
+    case 'coverEnumValue':
+      return `${hint.kind}|${hint.canonPath}|${hint.params.valueIndex}`;
+  }
+}
+
+export interface HintConflictResolutionResult {
+  /**
+   * Hints that remain effective after applying per-kind priority and
+   * "first in hints[] wins" semantics for identical tuples.
+   *
+   * Effective hints are returned in a deterministic order consistent
+   * with COVERAGE_HINT_KIND_PRIORITY and stable within each kind.
+   */
+  effective: CoverageHint[];
+  /**
+   * Hints that were shadowed by earlier hints with the same conflict
+   * key (kind + canonPath + branch/property/value index).
+   *
+   * These hints are candidates for unsatisfiedHints recording when
+   * conflicts make them impossible to apply.
+   */
+  shadowed: CoverageHint[];
+}
+
+export function resolveCoverageHintConflicts(
+  hints: CoverageHint[]
+): HintConflictResolutionResult {
+  if (!Array.isArray(hints) || hints.length === 0) {
+    return { effective: [], shadowed: [] };
+  }
+
+  const seenByKey = new Map<string, CoverageHint>();
+  const shadowed: CoverageHint[] = [];
+
+  for (const hint of hints) {
+    const key = buildHintConflictKey(hint);
+    if (!seenByKey.has(key)) {
+      // First hint for this (kind, path, index/property) tuple wins.
+      seenByKey.set(key, hint);
+    } else {
+      shadowed.push(hint);
+    }
+  }
+
+  const effectiveEntries = Array.from(seenByKey.values()).map(
+    (hint, index) => ({ hint, index })
+  );
+
+  effectiveEntries.sort((left, right) => {
+    const priorityDelta =
+      getCoverageHintKindPriority(left.hint.kind) -
+      getCoverageHintKindPriority(right.hint.kind);
+    if (priorityDelta !== 0) {
+      return priorityDelta;
+    }
+    // Stable ordering within a kind: earlier hints in the original
+    // sequence keep precedence.
+    return left.index - right.index;
+  });
+
+  return {
+    effective: effectiveEntries.map((entry) => entry.hint),
+    shadowed,
+  };
+}
+
 export interface TestUnitScope {
   /**
    * Operation key when an OpenAPI context is present.
