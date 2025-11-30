@@ -2,7 +2,7 @@
 
 **Purpose.** Discipline d’exécution et garde-fous pour implémenter **FoundryData – couche coverage-aware V1** à partir des **SPEC** (générateur canonique + spec coverage-aware).
 
-**Audience.** Agent GPT-5 Codex (VS Code) opérant sur les tâches **9300..9327** (tag `coverage-aware-v1`).
+**Audience.** Agent GPT-5 Codex (VS Code) opérant sur les tâches **9300..9334** (tag `coverage-aware-v1`).
 
 **Status.** Actif — à appliquer systématiquement pour ce tag.
 
@@ -10,7 +10,7 @@
 
 ## Mode d’emploi (cheat-sheet agent)
 
-**Pré-hook obligatoire (TOUJOURS avant toute implémentation sur 9300..9327)**
+**Pré-hook obligatoire (TOUJOURS avant toute implémentation sur 9300..9334)**
 
 1. Identifier la sous-tâche visée (ex. via `npx task-master next` → `9301.9301001`).
 2. Lancer, depuis la racine du repo :  
@@ -19,11 +19,11 @@
    - `npx task-master show 9301` (tâche parente)  
    - `npx task-master show 9301.9301001` (sous-tâche)  
    - `npx task-master set-status --id=9301.9301001 --status=in-progress`
-3. Ne jamais appeler `npx task-master set-status --status=in-progress` directement pour une sous-tâche 9300..9327 sans être passé par ce script ou par la séquence manuelle `show parent` → `show subtask`.
+3. Ne jamais appeler `npx task-master set-status --status=in-progress` directement pour une sous-tâche 9300..9334 sans être passé par ce script ou par la séquence manuelle `show parent` → `show subtask`.
 
 **Boucle principale**
 
-1. Vérifier que le tag actif est `coverage-aware-v1` et qu’une **tâche parente** 9300..9327 est disponible (`/tm:next` ou `npx task-master next`).
+1. Vérifier que le tag actif est `coverage-aware-v1` et qu’une **tâche parente** 9300..9334 est disponible (`/tm:next` ou `npx task-master next`).
 2. Afficher la tâche parente (`/tm:show <id>` ou `npx task-master show <id>`) et lire sa description globale + la liste de ses sous-tâches (ne pas tenter de “tout faire” en une seule passe).  
    (Si vous utilisez le script `tm-start-coverage-subtask.sh`, cette étape est incluse pour la sous-tâche choisie.)
 3. Choisir une sous-tâche active (ex. `9300.1`) en respectant l’ordre / les dépendances, puis la marquer `in-progress` via le script `./scripts/tm-start-coverage-subtask.sh 9300.1` ou, à défaut, en exécutant manuellement dans cet ordre :  
@@ -278,7 +278,7 @@ import { executePipeline } from './packages/core/dist/pipeline/orchestrator.js';
 }
 ```
 
-**Encapsulation REFONLY (tâches 9300..9327 et trailer de commit)**
+**Encapsulation REFONLY (tâches 9300..9334 et trailer de commit)**
 
 Chaîne stockée :
 
@@ -559,7 +559,7 @@ Deux instances AJV : **source** (schéma original) et **planning/génération** 
 
 ## Playbooks (tag coverage-aware-v1)
 
-### A) No Task Available (aucune tâche 9300..9327 disponible)
+### A) No Task Available (aucune tâche 9300..9334 disponible)
 
 1. **Renforcer les tests d’acceptance coverage**
 
@@ -670,7 +670,7 @@ Checks:
 
 ## Intégration Task Master — Slash Commands & CLI
 
-*(inchangé, mais contextualisé pour les tâches 9300..9327)*
+*(inchangé, mais contextualisé pour les tâches 9300..9334)*
 
 * `/tm:list:list-tasks`
 * `/tm:show:show-task <id>`
@@ -719,7 +719,7 @@ Les outils MCP Task Master (`mcp__task-master-ai__*`) restent indisponibles; uti
 
 ## Définition de Fini (DoD) — coverage-aware-v1
 
-* Fichiers livrés selon le plan Taskmaster 9300..9327.
+* Fichiers livrés selon le plan Taskmaster 9300..9334.
 * Tests verts, **cov ≥80%** sur fichiers touchés.
 * Diagnostics conformes au schéma `diagnosticsEnvelope.schema.json`.
 * Validation finale AJV sur le **schéma original**.
