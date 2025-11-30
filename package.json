@@ -1,7 +1,7 @@
 {
   "name": "foundrydata-monorepo",
   "version": "0.1.1",
-  "description": "AJV-first, contract-true test data engine for JSON Schema and OpenAPI 3.1",
+  "description": "AJV-first contract execution and coverage engine for JSON Schema and OpenAPI 3.1",
   "type": "module",
   "private": true,
   "workspaces": [
@@ -40,15 +40,17 @@
     "url": "git+https://github.com/foundrydata/foundrydata.git"
   },
   "keywords": [
-    "test-data",
     "json-schema",
     "openapi",
     "openapi-3.1",
     "ajv",
+    "contract-testing",
+    "contract-coverage",
+    "schema-coverage",
+    "test-data",
     "data-generator",
-    "deterministic",
     "fixtures",
-    "mock-data",
+    "deterministic",
     "cli",
     "testing",
     "schema-validation",

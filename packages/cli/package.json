@@ -2,7 +2,7 @@
   "name": "foundrydata",
   "version": "0.1.1",
   "type": "module",
-  "description": "CLI to generate deterministic, contract-true test data from JSON Schema and OpenAPI 3.1",
+  "description": "CLI for AJV-first contract execution, coverage and deterministic fixtures from JSON Schema and OpenAPI 3.1",
   "bin": {
     "foundrydata": "./dist/index.js"
   },
@@ -20,17 +20,19 @@
   "homepage": "https://foundrydata.dev",
   "keywords": [
     "cli",
-    "test-data",
     "json-schema",
     "openapi",
     "openapi-3.1",
     "ajv",
+    "contract-testing",
+    "contract-coverage",
+    "schema-coverage",
+    "test-data",
     "generator",
     "fixtures",
-    "mock-data",
+    "deterministic",
     "testing",
     "schema-validation",
-    "deterministic",
     "metrics",
     "ci"
   ],

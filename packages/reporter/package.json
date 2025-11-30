@@ -2,7 +2,7 @@
   "name": "json-schema-reporter",
   "version": "0.1.0",
   "type": "module",
-  "description": "Reporting layer and CLI for FoundryData: run the Normalize → Compose → Generate → Repair → Validate pipeline and render JSON, Markdown, or HTML reports",
+  "description": "Reporting and coverage CLI for FoundryData: consume the Normalize → Compose → Generate → Repair → Validate pipeline outputs and render coverage-report/v1, JSON, Markdown, or HTML reports and bench summaries",
   "main": "dist/cli.js",
   "bin": {
     "json-schema-reporter": "dist/cli.js"
@@ -35,6 +35,10 @@
   "keywords": [
     "json-schema",
     "reports",
+    "coverage-report",
+    "contract-coverage",
+    "schema-coverage",
+    "coverage-diff",
     "cli",
     "markdown",
     "html",

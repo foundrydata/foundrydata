@@ -2,7 +2,7 @@
   "name": "@foundrydata/shared",
   "version": "0.1.1",
   "type": "module",
-  "description": "Shared utilities and types for FoundryData core, CLI, and reporter packages",
+  "description": "Shared utilities and types for FoundryData core, CLI, and reporter packages (contract execution, deterministic fixtures, coverage)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "license": "MIT",
@@ -24,7 +24,10 @@
     "foundrydata",
     "json-schema",
     "openapi",
-    "ajv"
+    "ajv",
+    "contract-testing",
+    "contract-coverage",
+    "schema-coverage"
   ],
   "scripts": {
     "build": "tsc --build",
