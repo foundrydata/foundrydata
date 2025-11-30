@@ -200,6 +200,17 @@ Repository‑level bench harnesses (`npm run bench`, `npm run bench:real-world`)
 
 ```
 foundrydata/
+├── apps/                         # Workbench and auxiliary apps
+├── assets/                       # Logos, favicons, social images
+├── bench/                        # Bench gate configs (p95 / memory)
+├── bench-reports/                # Bench run outputs (CI artifacts)
+├── coverage/                     # Aggregate coverage reports (HTML + lcov)
+├── docs/                         # Specs, invariants, feature docs
+├── examples/                     # Example configs / usage snippets
+├── profiles/                     # Bench profiles + real‑world schemas corpus
+├── reports/                      # Corpus / scenario summary reports
+├── scripts/                      # Dev / CI helper scripts
+├── test/                         # Cross‑package acceptance + scripts harness
 ├── packages/
 │   ├── core/
 │   │   ├── src/
@@ -221,6 +232,17 @@ This structure is unchanged; descriptions now reflect the clarified contracts ab
 
 ---
 
+## Packages & boundaries
+
+* **Core public API:** `packages/core/src/api.ts` exposes the supported Node.js facades (Normalize/Compose/Generate/Validate). The package entrypoint (`packages/core/src/index.ts`) re‑exports these along with lower‑level building blocks such as `executePipeline`; other `packages/core/src/**` modules are internal implementation details behind this surface.
+* **CLI integration:** `packages/cli` maps commands and profiles (quick/balanced/thorough) onto the core API and coverage options, without adding new pipeline logic or bypassing AJV/coverage invariants.
+* **Reporting layer:** `packages/reporter` consumes coverage reports and bench outputs produced by `core`/CLI and renders JSON/Markdown/HTML; it never mutates pipeline semantics, only presentation and summaries.
+* **Shared contracts:** `packages/shared/src/{types,coverage}` contains the shared types and schemas (coverage-report, diagnostics, bench gates) used by `core`, `cli` et `reporter` pour rester alignés sur les mêmes formats.
+* **Workbench app:** `apps/workbench` est une UI d’exploration et de debug branchée sur l’API publique; elle ne définit pas de logique de pipeline supplémentaire et n’est pas la source de vérité sur les contrats.
+* **Resolver extension boundary:** les modules `packages/core/src/resolver/**` implémentent l’extension de résolution HTTP(S) pré‑pipeline; les cinq stages `Normalize → Compose → Generate → Repair → Validate` restent eux‑mêmes I/O‑free.
+
+---
+
 ## Key Design Decisions (recap)
 
 * **Result\<T,E>** across stages; no exceptions for expected failures.
@@ -234,6 +256,7 @@ This structure is unchanged; descriptions now reflect the clarified contracts ab
 * **Unit per stage:** `packages/core/src/transform/__tests__` for normalizer + composer, `packages/core/src/generator/__tests__` for generator determinism/precedence/coverage, `packages/core/src/repair/__tests__` for repair idempotence and error reduction, plus `diag`/`util` unit tests (e.g. draft detection, dynamic refs).
 * **Pipeline & policy integration:** `packages/core/src/pipeline/__tests__` and `packages/core/test/e2e/pipeline.integration.spec.ts` cover end‑to‑end `executePipeline` behavior, AJV parity, external `$ref`/`$dynamicRef` policies, skip‑flow modes, exclusivity diagnostics, and final validation against the original schema.
 * **Reporter & bench harness:** `packages/reporter/test/reporter.snapshot.test.ts` fixes stable JSON/Markdown/HTML reports, and `packages/reporter/test/bench.runner.test.ts` exercises the bench runner + summary output used by the repo‑level bench/CI workflows (including p50/p95 and caps behavior at the reporting layer).
+* **Cross‑package acceptance & scripts:** `test/acceptance` and `test/scripts` drive end‑to‑end flows (CLI, coverage README smoke, bench invocation) across packages on top of the core pipeline.
 
 ---
 
