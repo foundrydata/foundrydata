@@ -147,6 +147,16 @@ program
   )
   .option('--out <format>', 'Output format: json|ndjson', 'json')
   .option(
+    '--summary',
+    'Print a compact JSON summary suitable for CI to stderr',
+    false
+  )
+  .option(
+    '--manifest',
+    'Alias for --summary (prints the same compact JSON summary to stderr)',
+    false
+  )
+  .option(
     '--prefer-examples',
     'Prefer OpenAPI examples over generated data when available'
   )
@@ -296,6 +306,48 @@ program
           }
         }
       }
+
+      if (options.summary || options.manifest) {
+        const generatedStage = pipelineResult.stages.generate.output;
+        const repairedItems = pipelineResult.artifacts.repaired;
+        const items = Array.isArray(repairedItems)
+          ? repairedItems
+          : (generatedStage?.items ?? []);
+
+        const summaryPayload = {
+          version: 'foundrydata-cli-summary/v1',
+          command: 'generate' as const,
+          status: pipelineResult.status,
+          mode: compat,
+          schemaPath: abs,
+          seed,
+          count: instanceCount,
+          outFormat,
+          items: {
+            total: Array.isArray(items) ? items.length : 0,
+          },
+          metrics: pipelineResult.metrics,
+          coverage: coverageReport
+            ? {
+                mode: coverageReport.engine.coverageMode,
+                dimensionsEnabled: coverageReport.run.dimensionsEnabled,
+                excludeUnreachable: coverageReport.run.excludeUnreachable,
+                overall: coverageReport.metrics.overall,
+                byDimension: coverageReport.metrics.byDimension,
+                byOperation: coverageReport.metrics.byOperation,
+                coverageStatus: coverageReport.metrics.coverageStatus,
+                minCoverage:
+                  coverageReport.metrics.thresholds?.overall ?? undefined,
+                targetsByStatus: coverageReport.metrics.targetsByStatus,
+              }
+            : undefined,
+        };
+
+        process.stderr.write(
+          `[foundrydata] summary: ${JSON.stringify(summaryPayload)}\n`
+        );
+      }
+
       enforceCoverageThreshold(coverageReport);
     } catch (err: unknown) {
       await handleCliError(err);
@@ -405,6 +457,16 @@ program
   .option(
     '--prefer-examples',
     'Prefer OpenAPI examples over generated data when available'
+  )
+  .option(
+    '--summary',
+    'Print a compact JSON summary suitable for CI to stderr',
+    false
+  )
+  .option(
+    '--manifest',
+    'Alias for --summary (prints the same compact JSON summary to stderr)',
+    false
   )
   .option(
     '--status <code>',
@@ -576,6 +638,49 @@ program
             );
           }
         }
+      }
+      if (options.summary || options.manifest) {
+        const generatedStage = pipelineResult.stages.generate.output;
+        const repairedItems = pipelineResult.artifacts.repaired;
+        const items = Array.isArray(repairedItems)
+          ? repairedItems
+          : (generatedStage?.items ?? []);
+
+        const summaryPayload = {
+          version: 'foundrydata-cli-summary/v1',
+          command: 'openapi' as const,
+          status: pipelineResult.status,
+          mode: compat,
+          specPath: abs,
+          operationId: options.operationId,
+          path: options.path,
+          method: options.method,
+          seed,
+          count: instanceCount,
+          outFormat,
+          items: {
+            total: Array.isArray(items) ? items.length : 0,
+          },
+          metrics: pipelineResult.metrics,
+          coverage: coverageReport
+            ? {
+                mode: coverageReport.engine.coverageMode,
+                dimensionsEnabled: coverageReport.run.dimensionsEnabled,
+                excludeUnreachable: coverageReport.run.excludeUnreachable,
+                overall: coverageReport.metrics.overall,
+                byDimension: coverageReport.metrics.byDimension,
+                byOperation: coverageReport.metrics.byOperation,
+                coverageStatus: coverageReport.metrics.coverageStatus,
+                minCoverage:
+                  coverageReport.metrics.thresholds?.overall ?? undefined,
+                targetsByStatus: coverageReport.metrics.targetsByStatus,
+              }
+            : undefined,
+        };
+
+        process.stderr.write(
+          `[foundrydata] summary: ${JSON.stringify(summaryPayload)}\n`
+        );
       }
       enforceCoverageThreshold(coverageReport);
     } catch (err: unknown) {

@@ -208,6 +208,77 @@ describe('CLI generate command', () => {
     );
   });
 
+  it('prints a compact JSON summary for generate when --summary is provided (without coverage)', async () => {
+    const { dir, schemaPath, schema } = await createSchemaFixture();
+
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      await program.parseAsync(
+        [
+          'generate',
+          '--schema',
+          schemaPath,
+          '--n',
+          '3',
+          '--out',
+          'ndjson',
+          '--summary',
+        ],
+        { from: 'user' }
+      );
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+
+    const stdout = stdoutChunks.join('');
+    const lines = stdout
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+    expect(lines).toHaveLength(3);
+
+    const instances = lines.map((line) => JSON.parse(line));
+    for (const instance of instances) {
+      const res = PublicValidate(instance, schema);
+      expect(res.valid).toBe(true);
+    }
+
+    const stderr = stderrChunks.join('');
+    const summaryLine = stderr
+      .split('\n')
+      .find((line) => /\[foundrydata\] summary:/.test(line));
+    expect(summaryLine).toBeDefined();
+
+    const payloadText = summaryLine!.replace('[foundrydata] summary: ', '');
+    const payload = JSON.parse(payloadText) as {
+      version: string;
+      command: string;
+      items: { total: number };
+      coverage?: unknown;
+    };
+
+    expect(payload.version).toBe('foundrydata-cli-summary/v1');
+    expect(payload.command).toBe('generate');
+    expect(payload.items.total).toBe(3);
+    expect(payload.coverage).toBeUndefined();
+  });
+
   it('fails fast on unknown coverage dimensions with a clear error', async () => {
     const { dir, schemaPath } = await createSchemaFixture();
 
@@ -296,6 +367,67 @@ describe('CLI generate command', () => {
     const stderr = stderrChunks.join('');
     expect(stderr).toMatch(/coverage by dimension:/i);
     expect(stderr).toMatch(/coverage overall:/i);
+  });
+
+  it('includes coverage metrics in the JSON summary when coverage is enabled', async () => {
+    const { dir, schemaPath } = await createSchemaFixture();
+
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      await program.parseAsync(
+        [
+          'generate',
+          '--schema',
+          schemaPath,
+          '--n',
+          '3',
+          '--out',
+          'ndjson',
+          '--coverage',
+          'measure',
+          '--coverage-dimensions',
+          'structure,branches',
+          '--summary',
+        ],
+        { from: 'user' }
+      );
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+
+    const stderr = stderrChunks.join('');
+    const summaryLine = stderr
+      .split('\n')
+      .find((line) => /\[foundrydata\] summary:/.test(line));
+    expect(summaryLine).toBeDefined();
+
+    const payloadText = summaryLine!.replace('[foundrydata] summary: ', '');
+    const payload = JSON.parse(payloadText) as {
+      coverage?: {
+        overall: number;
+        byDimension: Record<string, number>;
+      };
+    };
+
+    expect(payload.coverage).toBeDefined();
+    expect(typeof payload.coverage!.overall).toBe('number');
+    expect(payload.coverage!.byDimension).toBeDefined();
   });
 
   it('aligns generate coverage summary with coverage-report/v1 metrics', async () => {
@@ -687,6 +819,79 @@ describe('CLI openapi command', () => {
     expect(stderr).toMatch(
       /coverage-min\/coverage-report are ignored|ignored when coverage=off/i
     );
+  });
+
+  it('prints a compact JSON summary for openapi when --summary is provided (without coverage)', async () => {
+    const { dir, specPath, responseSchema } = await createOpenApiFixture();
+
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      await program.parseAsync(
+        [
+          'openapi',
+          '--spec',
+          specPath,
+          '--operation-id',
+          'getUsers',
+          '--n',
+          '3',
+          '--out',
+          'ndjson',
+          '--summary',
+        ],
+        { from: 'user' }
+      );
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+
+    const stdout = stdoutChunks.join('');
+    const lines = stdout
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+    expect(lines).toHaveLength(3);
+
+    const instances = lines.map((line) => JSON.parse(line));
+    for (const instance of instances) {
+      const res = PublicValidate(instance, responseSchema);
+      expect(res.valid).toBe(true);
+    }
+
+    const stderr = stderrChunks.join('');
+    const summaryLine = stderr
+      .split('\n')
+      .find((line) => /\[foundrydata\] summary:/.test(line));
+    expect(summaryLine).toBeDefined();
+
+    const payloadText = summaryLine!.replace('[foundrydata] summary: ', '');
+    const payload = JSON.parse(payloadText) as {
+      version: string;
+      command: string;
+      items: { total: number };
+      coverage?: unknown;
+    };
+
+    expect(payload.version).toBe('foundrydata-cli-summary/v1');
+    expect(payload.command).toBe('openapi');
+    expect(payload.items.total).toBe(3);
+    expect(payload.coverage).toBeUndefined();
   });
 
   it('emits coverage summary on stderr for openapi when coverage=measure is enabled', async () => {

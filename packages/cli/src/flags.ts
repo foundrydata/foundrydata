@@ -34,6 +34,8 @@ export interface CliOptions {
   compat?: 'strict' | 'lax' | string;
   out?: string;
   preferExamples?: boolean;
+  summary?: boolean;
+  manifest?: boolean;
   // Resolver extension flags
   resolve?: string; // e.g., "local,remote,schemastore"
   cacheDir?: string;

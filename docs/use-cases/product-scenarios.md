@@ -98,12 +98,13 @@ You own a service or event producer that exposes a JSON Schema for requests or e
 **CLI example**
 
 ```bash
-# Contract-style fixtures for a payment schema
+# Contract-style fixtures for a payment schema (with CI-friendly summary)
 foundrydata generate \
   --schema examples/payment.json \
   --n 10 \
   --seed 123 \
-  --out ndjson
+  --out ndjson \
+  --summary
 ```
 
 **Node API example**
@@ -151,13 +152,13 @@ If the resulting `coverage-report/v1` shows `coverage.overall < minCoverage` for
 >   --coverage-report=coverage-payments-measure.json
 > ```
 >
-> In this mode the instance stream is still identical to `coverage=off` for a fixed seed; coverage-report/v1 and the `[foundrydata] coverage: …` summary are used purely as a CI gate and observability layer.
+> In this mode the instance stream is still identical to `coverage=off` for a fixed seed; coverage-report/v1 and the `[foundrydata] coverage: …` summary are used purely as a CI gate and observability layer. Adding `--summary` (or its alias `--manifest`) on the CLI prints a compact JSON summary to stderr (counts, metrics, coverage aggregates when enabled) without changing the NDJSON fixtures on stdout, which is convenient for CI dashboards or post-processing.
 
 **Friction / gaps**
 
-- What feels easy / obvious: calling `foundrydata generate --schema … --n … --seed … --out ndjson` matches expectations, and piping NDJSON into other tools (or reading it from a Node test) is straightforward.
+- What feels easy / obvious: calling `foundrydata generate --schema … --n … --seed … --out ndjson` matches expectations, and piping NDJSON into other tools (or reading it from a Node test) is straightforward. The `--summary` flag makes it easy to grab a compact JSON record for CI without touching the fixtures.
 - What feels confusing: deciding when to use `--compat lax` vs. strict mode is not clearly documented from a contract-testing perspective, and the presence of many advanced flags (resolver, diagnostics, branch trials) can make it hard to know the minimal set needed for “boring contract tests”.
-- What feels missing: there is no first-class “test harness” mode that would, for example, emit a compact summary JSON (counts, diagnostics) alongside the fixtures, or a helper to generate fixtures plus a ready-to-use validation helper for the same schema.
+- What feels missing: there is still no first-class “test harness” mode that couples fixture generation with a ready-to-use validation helper for the same schema; users have to wire `foundrydata generate`/NDJSON and `Validate` together manually in their test runner.
 
 **Current status**
 
@@ -165,8 +166,8 @@ If the resulting `coverage-report/v1` shows `coverage.overall < minCoverage` for
 
 **Potential next steps**
 
-- Add a simple `--summary` or `--manifest` option in `packages/cli` that prints a small JSON document describing counts, schema metadata, and diagnostics, tailored for CI integration and optionally consumed by `packages/reporter`.
-- Document a recommended “contract testing profile” (e.g. which flags to use or avoid) in the main README.
+- Extend `packages/reporter` and the docs to show how to consume the `--summary` / `--manifest` JSON in CI (for example to drive dashboards or GitHub checks) rather than relying only on coverage-report/v1.
+- Document a recommended “contract testing profile” (e.g. which flags to use or avoid, including `--summary`) in the main README.
 - Provide an example test harness (for example under `examples/` or `test/`) that reads NDJSON fixtures and runs `Validate` in a loop, to make the pattern copy-pasteable.
 
 ## Scenario 3 — LLM structured output testing
