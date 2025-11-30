@@ -53,6 +53,57 @@
 
 ---
 
+## Gardes-fous “Definition of Done” (9300..9334)
+
+> Objectif : éviter qu’une sous-tâche soit marquée `done` ou qu’un commit soit créé tant que le contrat Taskmaster (Implementation Details / Deliverables / Definition of Done / Test Strategy) n’est pas effectivement respecté.
+
+**R1 — Lien explicite avec Deliverables et Test Strategy**
+
+- Une sous-tâche 93xx.y ne doit être marquée `done` que si :
+  - tous les Deliverables qui la concernent dans `93xx-traceability.md` sont effectivement implémentés (fichiers créés/modifiés), et
+  - les tests mentionnés dans `Test Strategy` pour ces bullets existent et ont été exécutés (`npm run build`, `npm run typecheck`, `npm run lint`, `npm run test`, `npm run bench`).
+- Si un Deliverable ou un test reste manifestement non traité, laisser la sous-tâche en `in-progress` et expliquer dans `agent-log.jsonl` pourquoi.
+
+**R2 — Checklist DoD dans PLAN.md**
+
+- Pour chaque sous-tâche active, PLAN.md doit contenir une mini-checklist de Definition of Done (DoD) dérivée de `93xx-traceability.md`, par exemple :
+
+  ```text
+  DoD:
+  - [ ] Schéma coverage-report/v1 défini
+  - [ ] Tests AJV reporter ajoutés
+  - [ ] build/typecheck/lint/test/bench OK
+  ```
+
+- Avant d’appeler `npx task-master set-status --id=<id> --status=done`, Codex doit **cocher** (mettre `[x]`) chaque ligne réellement satisfaite. Une checklist partiellement cochée ⇒ la sous-tâche reste en `in-progress`.
+
+**R3 — Règle “pas de tests → pas de done”**
+
+- Si la section `Test Strategy` d’une tâche ou sous-tâche mentionne des tests nouveaux/étendus (unit/e2e/CLI/reporter) et qu’aucun fichier de test n’a été touché dans cette itération, la sous-tâche **ne doit pas** passer à `done`.
+- Inversement, si seul le code est modifié sans tests alors que la stratégie en exige, considérer la sous-tâche comme incomplète et documenter le gap dans `agent-log.jsonl`.
+
+**R4 — Traçabilité de la validation dans agent-log.jsonl**
+
+- Chaque entrée `action":"complete-subtask"` dans `agent-log.jsonl` doit contenir :
+  - `anchors` (liste SPEC),
+  - `touchedFiles` (liste exhaustive des fichiers modifiés pour cette itération),
+  - et une note implicite de validation (ex. “npm run build/typecheck/lint/test/bench (all commands succeeded)”).
+- Si Codex ne peut pas exécuter ces commandes dans l’environnement courant, il doit :
+  - s’abstenir de marquer la sous-tâche `done`, **ou**
+  - expliciter clairement dans sa réponse que la validation est laissée à l’humain·e.
+
+**R5 — Discipline Taskmaster**
+
+- Ne jamais :
+  - marquer une sous-tâche 93xx.y `done` **avant** le commit correspondant,
+  - marquer une sous-tâche `done` sur la seule base d’une “préparation” (ajout de schéma, refactor partiel) sans les tests associés.
+- Avant de marquer la tâche parente 93xx `done`, vérifier :
+  - que toutes les sous-tâches sont `done`,
+  - que `93xx-traceability.md` ne contient plus de bullets `[KR*]`, `[DEL*]`, `[DOD*]`, `[TS*]` non couverts,
+  - et que `agent-log.jsonl` contient au moins une entrée `complete-subtask` par sous-tâche.
+
+---
+
 ## TL;DR opératoire
 
 1. **Sources de vérité** :
