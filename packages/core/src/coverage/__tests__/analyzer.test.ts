@@ -459,6 +459,121 @@ describe('analyzeCoverage', () => {
     ).toBe(true);
   });
 
+  it('materializes numeric boundaries for inclusive, exclusive and degenerate min/max combinations', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        inclusive: {
+          type: 'number',
+          minimum: 0,
+          maximum: 10,
+        },
+        exclusive: {
+          type: 'number',
+          exclusiveMinimum: 1,
+          exclusiveMaximum: 5,
+        },
+        degenerate: {
+          type: 'number',
+          minimum: 2,
+          maximum: 2,
+        },
+        mixed: {
+          type: 'number',
+          exclusiveMinimum: 3,
+          maximum: 7,
+        },
+      },
+    };
+
+    const result = analyzeCoverage({
+      canonSchema: schema,
+      ptrMap: new Map<string, string>([['', '#']]),
+      coverageIndex: new Map(),
+      planDiag: undefined,
+      dimensionsEnabled: ['boundaries'],
+    });
+
+    const boundaryTargets = result.targets.filter(
+      (t) => t.dimension === 'boundaries'
+    );
+
+    const byPath = (canonPath: string): typeof boundaryTargets =>
+      boundaryTargets.filter((t) => t.canonPath === canonPath);
+
+    const inclusiveTargets = byPath('#/properties/inclusive');
+    expect(
+      inclusiveTargets.some(
+        (t) =>
+          t.kind === 'NUMERIC_MIN_HIT' &&
+          t.params?.boundaryKind === 'minimum' &&
+          t.params?.boundaryValue === 0
+      )
+    ).toBe(true);
+    expect(
+      inclusiveTargets.some(
+        (t) =>
+          t.kind === 'NUMERIC_MAX_HIT' &&
+          t.params?.boundaryKind === 'maximum' &&
+          t.params?.boundaryValue === 10
+      )
+    ).toBe(true);
+
+    const exclusiveTargets = byPath('#/properties/exclusive');
+    expect(
+      exclusiveTargets.some(
+        (t) =>
+          t.kind === 'NUMERIC_MIN_HIT' &&
+          t.params?.boundaryKind === 'exclusiveMinimum' &&
+          t.params?.boundaryValue === 1
+      )
+    ).toBe(true);
+    expect(
+      exclusiveTargets.some(
+        (t) =>
+          t.kind === 'NUMERIC_MAX_HIT' &&
+          t.params?.boundaryKind === 'exclusiveMaximum' &&
+          t.params?.boundaryValue === 5
+      )
+    ).toBe(true);
+
+    const degenerateTargets = byPath('#/properties/degenerate');
+    expect(
+      degenerateTargets.some(
+        (t) =>
+          t.kind === 'NUMERIC_MIN_HIT' &&
+          t.params?.boundaryKind === 'minimum' &&
+          t.params?.boundaryValue === 2
+      )
+    ).toBe(true);
+    expect(
+      degenerateTargets.some(
+        (t) =>
+          t.kind === 'NUMERIC_MAX_HIT' &&
+          t.params?.boundaryKind === 'maximum' &&
+          t.params?.boundaryValue === 2
+      )
+    ).toBe(true);
+
+    const mixedTargets = byPath('#/properties/mixed');
+    expect(
+      mixedTargets.some(
+        (t) =>
+          t.kind === 'NUMERIC_MIN_HIT' &&
+          t.params?.boundaryKind === 'exclusiveMinimum' &&
+          t.params?.boundaryValue === 3
+      )
+    ).toBe(true);
+    expect(
+      mixedTargets.some(
+        (t) =>
+          t.kind === 'NUMERIC_MAX_HIT' &&
+          t.params?.boundaryKind === 'maximum' &&
+          t.params?.boundaryValue === 7
+      )
+    ).toBe(true);
+  });
+
   it('does not materialize boundaries targets when boundaries dimension is disabled', () => {
     const schema = {
       type: 'object',

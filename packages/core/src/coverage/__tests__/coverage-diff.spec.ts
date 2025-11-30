@@ -254,6 +254,104 @@ describe('coverage diff reports', () => {
     expectDelta(ops[0]!, 1, 1);
   });
 
+  it('keeps non-boundaries/non-operations IDs stable when toggling boundaries and operations dimensions', () => {
+    const commonTargets: CoverageTargetReport[] = [
+      makeTarget({
+        id: 's1',
+        dimension: 'structure',
+        canonPath: '#',
+        hit: true,
+      }),
+      makeTarget({
+        id: 'b-struct',
+        dimension: 'branches',
+        kind: 'ONEOF_BRANCH',
+        canonPath: '#/oneOf/0',
+        hit: false,
+      }),
+      makeTarget({
+        id: 'e-color',
+        dimension: 'enum',
+        kind: 'ENUM_VALUE_HIT',
+        canonPath: '#/properties/color',
+        params: { enumIndex: 0, value: 'red' },
+        hit: false,
+      }),
+    ];
+
+    const boundariesAndOpsTargets: CoverageTargetReport[] = [
+      makeTarget({
+        id: 'num-min',
+        dimension: 'boundaries',
+        kind: 'NUMERIC_MIN_HIT',
+        canonPath: '#/properties/age',
+        params: { boundaryKind: 'minimum', boundaryValue: 0 },
+        hit: false,
+      }),
+      makeTarget({
+        id: 'op-req',
+        dimension: 'operations',
+        kind: 'OP_REQUEST_COVERED',
+        canonPath: '#/paths/~1users/get',
+        operationKey: 'GET /users',
+        hit: false,
+      }),
+    ];
+
+    const reportStructureOnly = makeReport({
+      targets: commonTargets,
+      run: {
+        dimensionsEnabled: ['structure', 'branches', 'enum'],
+        excludeUnreachable: false,
+      } as CoverageReport['run'],
+    });
+
+    const reportWithBoundariesAndOps = makeReport({
+      targets: [...commonTargets, ...boundariesAndOpsTargets],
+      run: {
+        dimensionsEnabled: [
+          'structure',
+          'branches',
+          'enum',
+          'boundaries',
+          'operations',
+        ],
+        excludeUnreachable: false,
+      } as CoverageReport['run'],
+    });
+
+    const { summary, targets: targetsDiff } = diffCoverageReports(
+      reportStructureOnly,
+      reportWithBoundariesAndOps
+    );
+
+    // IDs for non-boundaries/non-operations remain identical across reports.
+    const nonBoundaryNonOpsInA = reportStructureOnly.targets
+      .filter(
+        (t) => t.dimension !== 'boundaries' && t.dimension !== 'operations'
+      )
+      .map((t) => t.id)
+      .sort();
+    const nonBoundaryNonOpsInB = reportWithBoundariesAndOps.targets
+      .filter(
+        (t) => t.dimension !== 'boundaries' && t.dimension !== 'operations'
+      )
+      .map((t) => t.id)
+      .sort();
+    expect(nonBoundaryNonOpsInB).toEqual(nonBoundaryNonOpsInA);
+
+    // Diff marks only boundaries/operations targets as added.
+    const addedIds = targetsDiff.targets
+      .filter((entry) => entry.kind === 'added')
+      .map((entry) => entry.to?.id)
+      .filter((id): id is string => !!id)
+      .sort();
+    expect(addedIds).toEqual(['num-min', 'op-req']);
+
+    // Metrics deltas are computed over the common universe; here structure/branches/enum coverage stays the same.
+    expectDelta(summary.overall, 1 / 3, 1 / 3);
+  });
+
   it('highlights regressions over the common universe and includes newly uncovered targets', () => {
     const baseTargets: CoverageTargetReport[] = [
       makeTarget({

@@ -1,18 +1,19 @@
-Task: 9330   Title: Harden coverage invariants (unreachable, AP:false, determinism) — subtask 9330.9330003
-Anchors: [spec://§3#branch-selection-algorithm, cov://§3#coverage-model, cov://§4#coverage-planner, cov://§6#execution-modes-ux]
+Task: 9332   Title: Refine boundaries and operations coverage model — subtask 9332.9332003
+Anchors: [cov://§3#coverage-model, cov://§3#dimensions-v1, cov://§9#boundaries-openapi-diff]
 Touched files:
-- packages/core/test/e2e/coverage-acceptance.spec.ts
-- .taskmaster/docs/9330-traceability.md
+- packages/core/src/coverage/diff.ts
+- packages/core/src/coverage/__tests__/coverage-diff.spec.ts
+- .taskmaster/docs/9332-traceability.md
 
 Approach:
-Pour la sous-tâche 9330.9330003, je vais étendre les tests e2e de `executePipeline` dans `coverage-acceptance.spec.ts` afin de couvrir explicitement les invariants de déterminisme et de monotonicité entre `coverage=off`, `coverage=measure` et `coverage=guided`, en m’appuyant sur la spec canonique pour la sélection de branches (spec://§3#branch-selection-algorithm) et sur la spec coverage-aware pour le modèle de couverture, le planner et les modes d’exécution (cov://§3#coverage-model, cov://§4#coverage-planner, cov://§6#execution-modes-ux). Je vais ajouter des scénarios sur un petit schéma JSON Schema simple, un schéma AP:false et un petit OpenAPI (déjà présent dans les fixtures) qui exécutent `executePipeline` avec les trois modes, puis : (1) comparent les items générés entre `off` et `measure` pour s’assurer qu’ils sont byte-identiques (même ordre, même contenus) pour un triplet `(schema, options, seed)` donné; (2) vérifient que `coverage=guided` produit un flux d’instances déterministe pour les mêmes entrées, que les `CoverageTarget.id` et les statuts (y compris `unreachable`) restent identiques à ceux observés en `measure`, et que la couverture (branches/enum) mesurée dans le rapport est ≥ celle de `measure` pour les mêmes cibles; (3) valident que `excludeUnreachable` ne modifie que les dénominateurs des métriques en gardant cibles, IDs et statuts inchangés. Les tests resteront purement observateurs (aucune nouvelle logique) et se contenteront d’appeler l’API publique du pipeline et de comparer les artefacts retournés.
+Pour la sous-tâche 9332.9332003, je vais ajouter des tests de diff et d’ID-stability focalisés sur les dimensions `boundaries` et `operations`, en m’appuyant sur le modèle de couverture et la section M2/diff (cov://§3#coverage-model, cov://§3#dimensions-v1, cov://§9#boundaries-openapi-diff). L’objectif est de démontrer que : (1) activer ou désactiver les dimensions `boundaries` et `operations` dans `dimensionsEnabled` ne change jamais les IDs ni les statuts des cibles des autres dimensions (structure/branches/enum) pour un schéma donné; (2) `diffCoverageReports` et les structures de diff continuent de fonctionner proprement quand un rapport contient des cibles boundaries/operations et l’autre non, en traitant ces cibles comme des ajouts/suppressions sans signaler de problème de compatibilité. Concrètement, je vais introduire dans `coverage-diff.spec.ts` un couple de rapports synthétiques (ou construits via `evaluateCoverage`) qui ne diffèrent que par la présence des dimensions `boundaries`/`operations`, et vérifier : (a) que l’ensemble des IDs non-boundaries/non-operations est identique des deux côtés; (b) que le diff classe uniquement les cibles boundaries/operations dans les deltas, sans remapper les IDs des autres; (c) que le résumeur/compatibility checker reste stable et n’élève pas de warning inattendu pour ce cas.
 
 Risks/Unknowns:
-- La comparaison “byte-identique” entre items off/measure nécessite de bien contrôler les options (seed, ajvMajor, registryFingerprint); un oubli pourrait rendre les tests fragiles. Je veillerai à fixer explicitement seed et options dans chaque scénario et à comparer la représentation JSON normalisée.
-- Les rapports de couverture guided doivent améliorer la couverture sans violer les contraintes de génération; les tests ne doivent pas re-spécifier le comportement interne du planner, mais se limiter à des assertions de monotonie (>=) sur des métriques simples (branches/enum) pour éviter le sur-ajustement.
-- Sur OpenAPI, la combinaison des dimensions (structure/branches/enum/operations) et des options de sélection d’opérations peut compliquer les assertions; je choisirai un cas étroit (petit spec, toutes opérations activées) pour garder les tests robustes tout en exerçant byOperation.
+- Construire des rapports synthétiques trop proches de l’implémentation interne de diff pourrait rendre les tests fragiles à des refactors bénins; je veillerai à les exprimer dans le vocabulaire de la spec (targets, dimensions, metrics) plutôt qu’en supposant des détails de représentation.
+- Selon la manière dont `diffCoverageReports` gère les rapports avec un set de dimensions différents, certains cas pourraient être déjà couverts par les tests actuels; il faudra éviter le doublon et cibler spécifiquement le scénario “dimensionsEnabled limites” demandé par 9332.
+- Le contrôle de compatibilité (`checkCoverageDiffCompatibility`) doit rester strict sur les changements de version/report; les tests devront rester dans le périmètre “même version, dimensions togglées” pour ne pas brouiller les assertions.
 
-Parent bullets couverts: [KR2, KR4, DEL3, DOD3, TS3]
+Parent bullets couverts: [KR3, DEL3, DOD3, TS3]
 
 Checks:
 - build: npm run build

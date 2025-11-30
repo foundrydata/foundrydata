@@ -1283,7 +1283,7 @@
           "9309",
           "9310"
         ],
-        "status": "pending",
+        "status": "done",
         "complexityScore": 5,
         "details": "[Context]\nBoundaries (numeric/string/array) and operations coverage (OpenAPI operations, SCHEMA_REUSED_COVERED) are implemented but need a tighter contract for semantics, volumetry and diagnostics. The spec requires precise target shapes, deterministic IDs and clear diagnostic-only behavior for SCHEMA_REUSED_COVERED.\n\n[Key requirements]\n- Precisely document and implement which combinations of min/max/exclusive*, minLength/maxLength and minItems/maxItems map to NUMERIC_, STRING_ and ARRAY_* boundary targets, with deterministic IDs and limited volumetry.\n- For operations: ensure operation nodes and edges cover realistic OpenAPI patterns (multiple responses, components refs, request-only or response-only operations). SCHEMA_REUSED_COVERED targets must always be diagnostic-only (status:'deprecated') and excluded from metrics.\n- Extend tests to cover boundary/operations target IDs stability and diff behavior when toggling dimensionsEnabled, ensuring non-operations/non-boundaries targets keep identical IDs.\n\n[Deliverables]\n- Clarified boundary materialization logic and tests in analyzer and generator.\n- Enhanced OpenAPI coverage analyzer handling for additional request/response patterns and SCHEMA_REUSED_COVERED behavior.\n- Tests for ID stability and metrics correctness across dimensions projections.\n\n[Definition of Done]\n- Boundary and operations targets have a documented mapping from schema/OpenAPI patterns to target kinds and params.\n- SCHEMA_REUSED_COVERED is always status:'deprecated' and never influences metrics.overall/byDimension/byOperation or thresholds.\n- ID stability tests pass when toggling boundaries/operations in dimensionsEnabled.",
         "testStrategy": "In analyzer tests, add cases for multiple numeric, string and array boundary combinations and assert which targets are materialized and with which params. In generator tests, verify that boundary hit events toggle hit flags as expected without affecting RNG decisions. In OpenAPI analyzer tests, add scenarios with multiple content types, multiple responses and shared component schemas, and verify operation nodes, edges and SCHEMA_REUSED_COVERED targets. Extend diff and evaluator tests to check that turning operations/boundaries on/off in dimensionsEnabled preserves IDs for other dimensions.",
@@ -1292,30 +1292,34 @@
             "id": 9332001,
             "title": "Clarify boundaries target semantics and tests",
             "description": "Refine boundaries target creation (numeric, string, array) and add tests to pin the mapping between schema constraints and NUMERIC_/STRING_/ARRAY_* targets, including mixed min/max and exclusive* cases.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 6,
             "file": "packages/core/src/coverage/analyzer.ts",
-            "parentId": "9332"
+            "parentId": "9332",
+            "updatedAt": "2025-11-30T15:52:08.691Z"
           },
           {
             "id": 9332002,
             "title": "Harden operations dimension and SCHEMA_REUSED_COVERED behavior",
             "description": "Extend coverage-analyzer-openapi to handle richer OpenAPI patterns and add tests ensuring operation-level targets and SCHEMA_REUSED_COVERED entries behave exactly as specified and remain diagnostic-only.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 6,
             "file": "packages/core/src/coverage/coverage-analyzer-openapi.ts",
-            "parentId": "9332"
+            "parentId": "9332",
+            "updatedAt": "2025-11-30T15:55:35.595Z"
           },
           {
             "id": 9332003,
             "title": "Validate ID stability and diff for boundaries/operations",
             "description": "Add tests around coverage ID generation and diff that confirm toggling boundaries/operations in dimensionsEnabled does not change IDs of targets in other dimensions and that diff remains compatible across reports.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/coverage/tests/coverage-diff.spec.ts",
-            "parentId": "9332"
+            "parentId": "9332",
+            "updatedAt": "2025-11-30T15:59:53.853Z"
           }
-        ]
+        ],
+        "updatedAt": "2025-11-30T15:59:53.853Z"
       },
       {
         "id": "9333",
@@ -1411,9 +1415,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-30T15:41:07.652Z",
+      "lastModified": "2025-11-30T15:59:53.855Z",
       "taskCount": 26,
-      "completedCount": 22,
+      "completedCount": 23,
       "tags": [
         "coverage-aware-v1"
       ]
