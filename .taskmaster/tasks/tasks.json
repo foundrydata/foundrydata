@@ -1042,7 +1042,7 @@
           "9310",
           "9311"
         ],
-        "status": "in-progress",
+        "status": "done",
         "complexityScore": 3,
         "details": "[Context]\npackages/reporter/README.md documents the json-schema-reporter CLI and bench/corpus modes but does not yet describe the coverage-report/v1 JSON format or the coverage diff command introduced in 9311.\n\n[Key requirements]\n- Add a concise description of the coverage-report/v1 structure to packages/reporter/README.md: header (version, engine, run), metrics.overall/byDimension/byOperation, targets/targetsByStatus/uncoveredTargets and thresholds/coverageStatus.\n- Document how to obtain coverage-report/v1 files via the core CLI (--coverage-report) and how the reporter layer can consume them if relevant.\n- Add a dedicated section for the coverage diff CLI (e.g. \"foundrydata coverage diff A.json B.json\"): arguments, basic behavior, version compatibility checks and exit-code semantics when regressions are detected.\n- Cross-link from the core README coverage section to the reporter diff documentation so users can discover the diff workflow from either side.\n\n[Deliverables]\n- Updated packages/reporter/README.md with coverage-report/v1 and coverage diff sections.\n- Optional small JSON snippet showing a trimmed example CoverageReport for illustration.\n\n[Definition of Done]\n- Users reading packages/reporter/README.md understand how to obtain coverage reports, how to diff them between runs and what guarantees/limits apply to the diff output.",
         "testStrategy": "Doc review plus a small script in tests or CI that runs the coverage diff CLI on two fixture reports and ensures the documented command line matches reality.",
@@ -1061,22 +1061,24 @@
             "id": 9323002,
             "title": "Document coverage diff CLI usage",
             "description": "Document the coverage diff CLI command in packages/reporter/README.md (or a linked doc): arguments, behavior on regressions, exit-code contract and compatibility rules for comparing reports.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/reporter/README.md",
-            "parentId": "9323"
+            "parentId": "9323",
+            "updatedAt": "2025-11-30T12:56:56.560Z"
           },
           {
             "id": 9323003,
             "title": "Add cross-links between core README and reporter docs",
             "description": "From README.md coverage section, link to the reporter / coverage diff documentation, and from packages/reporter/README.md link back to the coverage-aware overview in README.md.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 2,
             "file": "packages/reporter/README.md",
-            "parentId": "9323"
+            "parentId": "9323",
+            "updatedAt": "2025-11-30T13:01:10.566Z"
           }
         ],
-        "updatedAt": "2025-11-30T12:43:15.675Z"
+        "updatedAt": "2025-11-30T13:01:10.566Z"
       },
       {
         "id": "9324",
@@ -1169,9 +1171,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-30T12:43:15.677Z",
+      "lastModified": "2025-11-30T13:01:10.567Z",
       "taskCount": 21,
-      "completedCount": 18,
+      "completedCount": 19,
       "tags": [
         "coverage-aware-v1"
       ]

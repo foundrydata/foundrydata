@@ -490,6 +490,10 @@ The `excludeUnreachable` option only affects denominators when computing coverag
 
 Coverage-aware runs emit a versioned JSON coverage report (coverage-report/v1) that contains the full target list, hit flags and aggregated metrics such as `coverage.overall`, `coverage.byDimension` and, when available, `coverage.byOperation`. You can configure an overall `minCoverage` threshold so that coverage-aware runs fail with a dedicated non-zero exit code in CI when the required level is not met. The CLI and Node.js API sections below explain how to enable coverage modes and where coverage reports are returned, and `docs/spec-coverage-aware-v1.0.md` documents the exact JSON schema for coverage-report/v1.
 
+For a more detailed description of the `coverage-report/v1` JSON structure and the `foundrydata coverage diff` CLI to compare two reports (baseline vs comparison) in CI, see:
+
+- `packages/reporter/README.md` — coverage-report/v1 overview and coverage diff CLI usage.
+
 ---
 
 ## Feature support (summary)

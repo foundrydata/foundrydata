@@ -34,7 +34,7 @@ This document maps the parent task 9323 bullets from Implementation Details, Del
   Covers: [KR1], [DEL1], [DOD1], [TS1]. Status: covered (reporter README now includes a dedicated coverage-report/v1 overview and example fragment aligned with the shared CoverageReport type and coverage-aware spec).
 
 - **9323.9323002 – Document coverage diff CLI usage**  
-  Covers: [KR3], [DEL2], [DOD2], [TS2]. Status: pending.
+  Covers: [KR3], [DEL2], [DOD2], [TS2]. Status: covered (coverage diff CLI usage, compatibility checks and exit-code semantics are documented in the reporter README, aligned with the core CLI implementation).
 
 - **9323.9323003 – Add cross-links between core README and reporter docs**  
-  Covers: [KR2], [KR4], [DEL3], [DOD3]. Status: pending.
+  Covers: [KR2], [KR4], [DEL3], [DOD3]. Status: covered (core README coverage section now links to the reporter coverage-report/v1 and diff documentation, and the reporter README links back to the coverage-aware overview in the root README).

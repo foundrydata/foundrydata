@@ -175,6 +175,39 @@ An example fragment (fields abridged for brevity) looks like:
 
 Consumers that need full details should rely on the `CoverageReport` type in `@foundrydata/shared` and the coverage-aware spec, and treat this section as a navigational overview rather than a complete schema reference.
 
+### Coverage diff CLI usage
+
+To compare two `coverage-report/v1` JSON files and highlight regressions, the core CLI exposes a dedicated diff command that the reporter can rely on in CI or local workflows:
+
+```bash
+# Compare two coverage-report/v1 files (baseline vs comparison)
+npx foundrydata coverage diff path/to/baseline.json path/to/comparison.json
+```
+
+The two inputs must be valid coverage reports with `version: "coverage-report/v1"` and compatible metadata (same engine major, compatible operations scope, etc.), as enforced by the compatibility checks in the core. When they are compatible, the diff command:
+
+- Reads both reports and runs a structural diff aligned with the coverage-aware spec (overall coverage, per-operation coverage, targets and statuses).
+- Prints a human-readable summary to stdout, including:
+  - Global coverage delta (`overall` from → to, with numeric delta).
+  - Per-operation coverage deltas for operations present in both reports.
+  - Lists of operations only present in the baseline or only in the comparison.
+  - Newly uncovered targets (targets that were covered before and are now uncovered).
+  - Status changes for targets (for example `active -> unreachable`).
+- Uses a simple exit-code contract controlled by `--fail-on-regression` (default: `true`):
+  - Exit code `0` when there is no regression in `coverage.overall`, no per-operation regressions and no newly uncovered targets.
+  - Exit code `1` when any of the above regressions or new gaps are detected (while still printing the diff summary).
+  - Exit code `0` even in the presence of regressions when `--fail-on-regression=false` is passed, which is useful for exploratory comparisons.
+
+If the reports are not compatible for diff (for example mismatched operations scope or unsupported version), the command fails with a clear error describing the incompatibility rather than attempting a partial diff.
+
+In practice, the typical workflow is:
+
+1. Generate coverage-report/v1 files for two runs (for example, `coverage-baseline.json` on `main` and `coverage-pr.json` on a feature branch) using the core CLI `--coverage-report` option.
+2. Call `foundrydata coverage diff coverage-baseline.json coverage-pr.json` in CI.
+3. Let the diff summary and exit code drive gatekeeping policies while using the reporter’s own rendering for richer, per-report dashboards when needed.
+
+For an overview of coverage modes, dimensions, thresholds and how to turn coverage on in the core CLI or Node.js API, see the “Coverage-aware generation” section in the repository root `README.md`.
+
 ## Testing & snapshots
 
 The package ships with Vitest snapshot tests under `test/`:
