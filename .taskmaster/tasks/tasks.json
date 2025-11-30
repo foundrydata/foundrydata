@@ -1338,7 +1338,7 @@
           "9323",
           "9324"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 4,
         "details": "[Context]\nThe CLI exposes coverage through profiles, dimensions flags and a stderr summary, while coverage-report/v1 provides the canonical machine-readable view. To support platform integration and CI, these layers must be tightly aligned and tested end-to-end.\n\n[Key requirements]\n- For each profile quick/balanced/thorough, formalize and test the effective dimensionsEnabled, maxInstances recommendation and planner caps, ensuring they match the spec narrative.\n- Add CLI-level tests that run foundrydata generate/openapi with different coverage modes and profiles, then assert the coverage summary is a faithful projection of coverage-report/v1 (dimensions, operations, overall, targetsByStatus, caps, unsatisfiedHints counts).\n- Provide a documented “recommended CI profile” using coverage=measure + a specific profile and minCoverage, with examples based on coverage-report/v1.\n\n[Deliverables]\n- Strengthened resolveCliCoverageOptions behavior with tests encoding profile semantics and error handling.\n- CLI tests validating coverage summary and coverage-report/v1 alignment for generate and openapi.\n- Updated docs describing profiles, flags and coverage-report fields as a coherent UX.\n\n[Definition of Done]\n- Changing profile or flags has well-specified, tested effects on coverage options and reported metrics.\n- CLI coverage summary is demonstrably derived from coverage-report/v1 for all covered scenarios.",
         "testStrategy": "In coverage-options tests, assert for each profile the exact dimensionsEnabled, planner caps and recommendedMaxInstances. In CLI index tests, run foundrydata generate/openapi on small schemas with coverage=measure and different profiles, then parse stderr summary and the written coverage-report/v1 file to check consistency of metrics, targetsByStatus, caps count and unsatisfiedHints count. Update docs examples to mirror these tests and avoid drift.",
@@ -1347,19 +1347,21 @@
             "id": 9333001,
             "title": "Pin CLI coverage profile semantics with tests",
             "description": "Add tests for quick/balanced/thorough in resolveCliCoverageOptions to enforce dimensions, caps and recommendedMaxInstances as per spec, including error handling for invalid flags.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 5,
             "file": "packages/cli/src/config/coverage-options.ts",
-            "parentId": "9333"
+            "parentId": "9333",
+            "updatedAt": "2025-11-30T17:32:10.884Z"
           },
           {
             "id": 9333002,
             "title": "Align CLI coverage summary with coverage-report/v1",
             "description": "Extend CLI tests so that coverage summary lines are compared against coverage-report/v1 metrics and diagnostics for both generate and openapi flows.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 5,
             "file": "packages/cli/src/index.test.ts",
-            "parentId": "9333"
+            "parentId": "9333",
+            "updatedAt": "2025-11-30T17:49:48.651Z"
           },
           {
             "id": 9333003,
@@ -1370,7 +1372,8 @@
             "file": "docs/Features.md",
             "parentId": "9333"
           }
-        ]
+        ],
+        "updatedAt": "2025-11-30T17:49:48.651Z"
       },
       {
         "id": "9334",
@@ -1423,7 +1426,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-30T17:25:36.500Z",
+      "lastModified": "2025-11-30T17:49:48.652Z",
       "taskCount": 26,
       "completedCount": 25,
       "tags": [
