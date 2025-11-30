@@ -34,7 +34,7 @@ This document maps the parent task 9333 bullets from Implementation Details, Del
   Covers: [KR1, DEL1, DOD1, TS1] (status: covered).
  
 - **9333.9333002 – Align CLI coverage summary with coverage-report/v1**  
-  Covers: [KR2, DEL2, DOD2, TS2] (status: pending).
+  Covers: [KR2, DEL2, DOD2, TS2] (status: covered).
  
 - **9333.9333003 – Document recommended CI profile and report reading**  
   Covers: [KR3, DEL3, DOD3, TS3] (status: pending).

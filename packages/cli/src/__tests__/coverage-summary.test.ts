@@ -99,6 +99,7 @@ describe('coverage summary formatter', () => {
     expect(summary).toMatch(/coverage overall:/);
     expect(summary).toMatch(/targets by status:/);
     expect(summary).toMatch(/planner caps:/);
+    expect(summary).toMatch(/unsatisfied hints:/);
 
     const order = [
       'coverage by dimension:',
@@ -106,6 +107,7 @@ describe('coverage summary formatter', () => {
       'coverage overall:',
       'targets by status:',
       'planner caps:',
+      'unsatisfied hints:',
     ];
     const indices = order.map((marker) => summary.indexOf(marker));
     for (let i = 1; i < indices.length; i += 1) {

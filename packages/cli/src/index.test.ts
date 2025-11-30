@@ -298,6 +298,74 @@ describe('CLI generate command', () => {
     expect(stderr).toMatch(/coverage overall:/i);
   });
 
+  it('aligns generate coverage summary with coverage-report/v1 metrics', async () => {
+    const { dir, schemaPath } = await createSchemaFixture();
+    const reportPath = path.join(dir, 'coverage.json');
+
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      await program.parseAsync(
+        [
+          'generate',
+          '--schema',
+          schemaPath,
+          '--n',
+          '5',
+          '--out',
+          'ndjson',
+          '--coverage',
+          'measure',
+          '--coverage-dimensions',
+          'structure,branches',
+          '--coverage-report',
+          reportPath,
+        ],
+        { from: 'user' }
+      );
+
+      const contents = await fs.promises.readFile(reportPath, 'utf8');
+      const report = JSON.parse(contents) as CoverageReport;
+
+      const stderr = stderrChunks.join('');
+      expect(stderr).toMatch(/\[foundrydata\] coverage:/i);
+
+      const summaryLine = stderr
+        .split('\n')
+        .find((line) => /\[foundrydata\] coverage:/i.test(line));
+      expect(summaryLine).toBeDefined();
+
+      const summary = summaryLine ?? '';
+      expect(summary).toMatch(
+        new RegExp(`coverage overall:\\s*${report.metrics.overall.toFixed(2)}`)
+      );
+
+      const capsCount = report.diagnostics.plannerCapsHit.length;
+      const hintsCount = report.unsatisfiedHints.length;
+      expect(summary).toMatch(new RegExp(`planner caps:\\s*${capsCount}`, 'i'));
+      expect(summary).toMatch(
+        new RegExp(`unsatisfied hints:\\s*${hintsCount}`, 'i')
+      );
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('writes coverage-report/v1 JSON to the path provided via --coverage-report', async () => {
     const { dir, schemaPath } = await createSchemaFixture();
     const reportPath = path.join(dir, 'coverage.json');
@@ -669,6 +737,86 @@ describe('CLI openapi command', () => {
     const stderr = stderrChunks.join('');
     expect(stderr).toMatch(/coverage by dimension:/i);
     expect(stderr).toMatch(/coverage overall:/i);
+  });
+
+  it('aligns openapi coverage summary with coverage-report/v1 metrics', async () => {
+    const { dir, specPath } = await createOpenApiFixture();
+    const reportPath = path.join(dir, 'coverage-openapi.json');
+
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      await program.parseAsync(
+        [
+          'openapi',
+          '--spec',
+          specPath,
+          '--path',
+          '/users',
+          '--method',
+          'get',
+          '--n',
+          '3',
+          '--out',
+          'ndjson',
+          '--coverage',
+          'measure',
+          '--coverage-dimensions',
+          'structure,branches,operations',
+          '--coverage-report',
+          reportPath,
+        ],
+        { from: 'user' }
+      );
+
+      const contents = await fs.promises.readFile(reportPath, 'utf8');
+      const report = JSON.parse(contents) as CoverageReport;
+
+      const stderr = stderrChunks.join('');
+      expect(stderr).toMatch(/\[foundrydata\] coverage:/i);
+
+      const summaryLine = stderr
+        .split('\n')
+        .find((line) => /\[foundrydata\] coverage:/i.test(line));
+      expect(summaryLine).toBeDefined();
+
+      const summary = summaryLine ?? '';
+      expect(summary).toMatch(
+        new RegExp(`coverage overall:\\s*${report.metrics.overall.toFixed(2)}`)
+      );
+
+      for (const [op, value] of Object.entries(
+        report.metrics.byOperation ?? {}
+      )) {
+        if (!Number.isFinite(value)) continue;
+        const formatted = (value as number).toFixed(2);
+        expect(summary).toMatch(new RegExp(`${op}:\\s*${formatted}`, 'i'));
+      }
+
+      const capsCount = report.diagnostics.plannerCapsHit.length;
+      const hintsCount = report.unsatisfiedHints.length;
+      expect(summary).toMatch(new RegExp(`planner caps:\\s*${capsCount}`, 'i'));
+      expect(summary).toMatch(
+        new RegExp(`unsatisfied hints:\\s*${hintsCount}`, 'i')
+      );
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   it('exits with coverage failure code when minCoverage is not met', async () => {
