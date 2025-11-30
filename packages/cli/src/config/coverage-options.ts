@@ -72,7 +72,7 @@ const COVERAGE_PROFILE_PRESETS: Record<
     },
   },
   thorough: {
-    dimensions: ['structure', 'branches', 'enum', 'boundaries'],
+    dimensions: ['structure', 'branches', 'enum', 'boundaries', 'operations'],
     recommendedMaxInstances: 1000,
     planner: {
       dimensionPriority: ['branches', 'enum', 'structure', 'boundaries'],
@@ -85,6 +85,7 @@ const KNOWN_DIMENSIONS: CoverageDimension[] = [
   'branches',
   'enum',
   'boundaries',
+  'operations',
 ];
 
 function parseCoverageMode(raw: unknown): CoverageMode {
@@ -234,7 +235,11 @@ export function resolveCliCoverageOptions(
   const reportMode = parseCoverageReportMode(cliOptions.coverageReportMode);
 
   const preset = profile ? COVERAGE_PROFILE_PRESETS[profile] : undefined;
-  const dimensionsEnabled = resolveDimensionsEnabled(mode, parsedDimensions, preset);
+  const dimensionsEnabled = resolveDimensionsEnabled(
+    mode,
+    parsedDimensions,
+    preset
+  );
 
   let ignoredReason: string | undefined;
   if (mode === 'off') {

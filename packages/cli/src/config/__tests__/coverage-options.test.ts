@@ -62,6 +62,7 @@ describe('resolveCliCoverageOptions', () => {
       'branches',
       'enum',
       'boundaries',
+      'operations',
     ]);
     expect(recommendedMaxInstances).toBeUndefined();
   });
