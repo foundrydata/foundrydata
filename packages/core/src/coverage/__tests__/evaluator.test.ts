@@ -161,6 +161,72 @@ describe('evaluateCoverage', () => {
     expect(uncoveredIds).toEqual(['diag1']);
   });
 
+  it('ignores SCHEMA_REUSED_COVERED targets in byDimension/byOperation metrics while still counting them as deprecated', () => {
+    const baselineTargets: CoverageTargetReport[] = [
+      makeTarget({
+        id: 'schemaStruct',
+        dimension: 'structure',
+        hit: true,
+        meta: { operationKeys: ['getUsers'] },
+      }),
+      makeTarget({
+        id: 'opReq',
+        dimension: 'operations',
+        kind: 'OP_REQUEST_COVERED',
+        operationKey: 'getUsers',
+        hit: true,
+      }),
+    ];
+
+    const baseline = evaluateCoverage({
+      targets: baselineTargets,
+      dimensionsEnabled: ['structure', 'operations'],
+      excludeUnreachable: false,
+    });
+
+    const withDiagTargets: CoverageTargetReport[] = [
+      ...baselineTargets,
+      makeTarget({
+        id: 'reused',
+        dimension: 'operations',
+        kind: 'SCHEMA_REUSED_COVERED',
+        status: 'deprecated',
+        hit: false,
+        meta: { operationKeys: ['getUsers'] },
+      }),
+    ];
+
+    const withDiag = evaluateCoverage({
+      targets: withDiagTargets,
+      dimensionsEnabled: ['structure', 'operations'],
+      excludeUnreachable: false,
+    });
+
+    // Overall and per-dimension metrics must be unchanged by diagnostic-only targets.
+    expect(withDiag.metrics.overall).toBeCloseTo(baseline.metrics.overall, 6);
+    expect(withDiag.metrics.byDimension.structure).toBeCloseTo(
+      baseline.metrics.byDimension.structure,
+      6
+    );
+    expect(withDiag.metrics.byDimension.operations).toBeCloseTo(
+      baseline.metrics.byDimension.operations ?? 0,
+      6
+    );
+
+    // Per-operation metrics must also be unchanged.
+    expect(withDiag.metrics.byOperation['getUsers']).toBeCloseTo(
+      baseline.metrics.byOperation['getUsers'],
+      6
+    );
+
+    // The diagnostic target is counted only as deprecated and appears in uncoveredTargets.
+    expect(withDiag.metrics.targetsByStatus.deprecated).toBe(
+      baseline.metrics.targetsByStatus.deprecated + 1
+    );
+    const uncoveredIds = withDiag.uncoveredTargets.map((t) => t.id);
+    expect(uncoveredIds).toContain('reused');
+  });
+
   it('computes byOperation as a projection over eligible targets', () => {
     const targets: CoverageTargetReport[] = [
       makeTarget({

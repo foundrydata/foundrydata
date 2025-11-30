@@ -90,43 +90,63 @@ function normalizeCoverageReport(report: CoverageReport): unknown {
 }
 
 describe('OpenAPI coverage acceptance scenarios', () => {
-  it('populates coverage.byOperation and OP_* targets for operations with and without operationId', async () => {
-    const result = await executePipeline(openApiAcceptanceDoc, {
-      mode: 'strict',
+  it('keeps coverage.byOperation stable across measure vs guided and populates OP_* targets for operations with and without operationId', async () => {
+    const baseOptions = {
+      mode: 'strict' as const,
       generate: {
         count: 4,
         seed: 2026,
-      },
+      } as const,
       validate: {
         validateFormats: false,
-      },
+      } as const,
+    } as const;
+
+    const measureResult = await executePipeline(openApiAcceptanceDoc, {
+      ...baseOptions,
       coverage: {
-        mode: 'measure',
-        dimensionsEnabled: ['structure', 'operations'],
+        mode: 'measure' as const,
+        dimensionsEnabled: ['structure', 'operations'] as const,
       },
     });
 
-    expect(result.status).toBe('completed');
+    const guidedResult = await executePipeline(openApiAcceptanceDoc, {
+      ...baseOptions,
+      coverage: {
+        mode: 'guided' as const,
+        dimensionsEnabled: ['structure', 'operations'] as const,
+      },
+    });
 
-    const report = result.artifacts.coverageReport;
-    expect(report).toBeDefined();
+    expect(measureResult.status).toBe('completed');
+    expect(guidedResult.status).toBe('completed');
 
-    const byOperation = report!.metrics.byOperation;
-    const operationKeys = Object.keys(byOperation);
+    const measureReport = measureResult.artifacts.coverageReport;
+    const guidedReport = guidedResult.artifacts.coverageReport;
+    expect(measureReport).toBeDefined();
+    expect(guidedReport).toBeDefined();
 
-    // We expect entries for the operation with operationId and the one without (using "<METHOD> <path>").
-    expect(operationKeys).toEqual(
+    const measureByOp = measureReport!.metrics.byOperation;
+    const guidedByOp = guidedReport!.metrics.byOperation;
+
+    const measureKeys = Object.keys(measureByOp).sort();
+    const guidedKeys = Object.keys(guidedByOp).sort();
+
+    // We expect entries for the operation with operationId and the one without (using "<METHOD> <path>"),
+    // and a stable set of operation keys across coverage modes.
+    expect(measureKeys).toEqual(
       expect.arrayContaining(['getUsers', 'POST /users'])
     );
+    expect(guidedKeys).toEqual(measureKeys);
 
-    const operationsTargets = report!.targets.filter(
+    const guidedOperationsTargets = guidedReport!.targets.filter(
       (target) => target.dimension === 'operations'
     );
 
-    const requestTargets = operationsTargets.filter(
+    const requestTargets = guidedOperationsTargets.filter(
       (target) => target.kind === 'OP_REQUEST_COVERED'
     );
-    const responseTargets = operationsTargets.filter(
+    const responseTargets = guidedOperationsTargets.filter(
       (target) => target.kind === 'OP_RESPONSE_COVERED'
     );
 
@@ -146,12 +166,16 @@ describe('OpenAPI coverage acceptance scenarios', () => {
       responseTargets.some((target) => target.operationKey === 'POST /users')
     ).toBe(true);
 
-    // coverage.byOperation ratios must be valid numbers in [0,1].
-    operationKeys.forEach((key) => {
-      const value = byOperation[key];
-      expect(typeof value).toBe('number');
-      expect(value).toBeGreaterThanOrEqual(0);
-      expect(value).toBeLessThanOrEqual(1);
+    // coverage.byOperation ratios must be valid numbers in [0,1] in both modes.
+    measureKeys.forEach((key) => {
+      const measureValue = measureByOp[key];
+      const guidedValue = guidedByOp[key];
+      expect(typeof measureValue).toBe('number');
+      expect(typeof guidedValue).toBe('number');
+      expect(measureValue).toBeGreaterThanOrEqual(0);
+      expect(measureValue).toBeLessThanOrEqual(1);
+      expect(guidedValue).toBeGreaterThanOrEqual(0);
+      expect(guidedValue).toBeLessThanOrEqual(1);
     });
   });
 

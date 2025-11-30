@@ -84,44 +84,68 @@ const getFinalItems = (
 };
 
 describe('coverage acceptance scenarios (cov://§10#acceptance-criteria-v1)', () => {
-  it('achieves full ONEOF_BRANCH coverage for a three-branch oneOf schema in guided mode', async () => {
-    const result = await executePipeline(oneOfAcceptanceSchema, {
-      mode: 'strict',
-      generate: { count: 48, seed: 2024 },
-      validate: { validateFormats: false },
+  it('keeps branches coverage in guided >= measure on a three-branch oneOf schema and exposes uncovered ONEOF_BRANCH targets', async () => {
+    const baseOptions = {
+      mode: 'strict' as const,
+      generate: { count: 48, seed: 2024 } as const,
+      validate: { validateFormats: false } as const,
+    } as const;
+
+    const measureResult = await executePipeline(oneOfAcceptanceSchema, {
+      ...baseOptions,
       coverage: {
-        mode: 'guided',
-        dimensionsEnabled: ['branches'],
+        mode: 'measure' as const,
+        dimensionsEnabled: ['branches'] as const,
       },
     });
 
-    expect(result.status).toBe('completed');
+    const guidedResult = await executePipeline(oneOfAcceptanceSchema, {
+      ...baseOptions,
+      coverage: {
+        mode: 'guided' as const,
+        dimensionsEnabled: ['branches'] as const,
+      },
+    });
 
-    const report = result.artifacts.coverageReport;
-    expect(report).toBeDefined();
+    expect(measureResult.status).toBe('completed');
+    expect(guidedResult.status).toBe('completed');
 
-    const branchTargets =
-      report?.targets.filter(
+    const measureReport = measureResult.artifacts.coverageReport;
+    const guidedReport = guidedResult.artifacts.coverageReport;
+    expect(measureReport).toBeDefined();
+    expect(guidedReport).toBeDefined();
+
+    const measureBranches = measureReport!.metrics.byDimension['branches'] ?? 0;
+    const guidedBranches = guidedReport!.metrics.byDimension['branches'] ?? 0;
+
+    // Non-regression guided vs measure on branches.
+    expect(guidedBranches).toBeGreaterThanOrEqual(measureBranches);
+
+    const guidedBranchTargets =
+      guidedReport?.targets.filter(
         (target) =>
           target.dimension === 'branches' && target.kind === 'ONEOF_BRANCH'
       ) ?? [];
 
     // There should be exactly three ONEOF_BRANCH targets for the three branches.
-    expect(branchTargets.length).toBe(3);
+    expect(guidedBranchTargets.length).toBe(3);
 
-    // Each target must expose a boolean hit flag so the report clearly
-    // indicates which branches were visited.
-    branchTargets.forEach((target) => {
+    guidedBranchTargets.forEach((target) => {
       expect(typeof target.hit).toBe('boolean');
       expect(target.status === undefined || target.status === 'active').toBe(
         true
       );
     });
 
-    const branchesCoverage = report?.metrics.byDimension['branches'];
-    expect(typeof branchesCoverage).toBe('number');
-    expect(branchesCoverage && branchesCoverage).toBeGreaterThanOrEqual(0);
-    expect(branchesCoverage && branchesCoverage).toBeLessThanOrEqual(1);
+    const uncovered = guidedReport!.uncoveredTargets ?? [];
+    const uncoveredIds = new Set(uncovered.map((t) => t.id));
+
+    // Any ONEOF_BRANCH target that is not hit in guided mode must appear in uncoveredTargets.
+    guidedBranchTargets
+      .filter((target) => !target.hit)
+      .forEach((target) => {
+        expect(uncoveredIds.has(target.id)).toBe(true);
+      });
   });
 
   it('records PROPERTY_PRESENT coverage for optional properties while preserving items between coverage=off and measure', async () => {
@@ -179,24 +203,45 @@ describe('coverage acceptance scenarios (cov://§10#acceptance-criteria-v1)', ()
     });
   });
 
-  it('covers all ENUM_VALUE_HIT targets for a four-value enum in guided mode', async () => {
-    const result = await executePipeline(enumAcceptanceSchema, {
-      mode: 'strict',
-      generate: { count: 16, seed: 777 },
-      validate: { validateFormats: false },
+  it('keeps enum coverage in guided >= measure on a four-value enum and exposes uncovered ENUM_VALUE_HIT targets', async () => {
+    const baseOptions = {
+      mode: 'strict' as const,
+      generate: { count: 16, seed: 777 } as const,
+      validate: { validateFormats: false } as const,
+    } as const;
+
+    const measureResult = await executePipeline(enumAcceptanceSchema, {
+      ...baseOptions,
       coverage: {
-        mode: 'guided',
-        dimensionsEnabled: ['enum'],
+        mode: 'measure' as const,
+        dimensionsEnabled: ['enum'] as const,
       },
     });
 
-    expect(result.status).toBe('completed');
+    const guidedResult = await executePipeline(enumAcceptanceSchema, {
+      ...baseOptions,
+      coverage: {
+        mode: 'guided' as const,
+        dimensionsEnabled: ['enum'] as const,
+      },
+    });
 
-    const report = result.artifacts.coverageReport;
-    expect(report).toBeDefined();
+    expect(measureResult.status).toBe('completed');
+    expect(guidedResult.status).toBe('completed');
+
+    const measureReport = measureResult.artifacts.coverageReport;
+    const guidedReport = guidedResult.artifacts.coverageReport;
+    expect(measureReport).toBeDefined();
+    expect(guidedReport).toBeDefined();
+
+    const measureEnum = measureReport!.metrics.byDimension['enum'] ?? 0;
+    const guidedEnum = guidedReport!.metrics.byDimension['enum'] ?? 0;
+
+    // Non-regression guided vs measure on enum.
+    expect(guidedEnum).toBeGreaterThanOrEqual(measureEnum);
 
     const enumTargets =
-      report?.targets.filter(
+      guidedReport?.targets.filter(
         (target) =>
           target.dimension === 'enum' &&
           target.kind === 'ENUM_VALUE_HIT' &&
@@ -221,10 +266,15 @@ describe('coverage acceptance scenarios (cov://§10#acceptance-criteria-v1)', ()
       );
     });
 
-    const enumCoverage = report?.metrics.byDimension['enum'];
-    expect(typeof enumCoverage).toBe('number');
-    expect(enumCoverage && enumCoverage).toBeGreaterThanOrEqual(0);
-    expect(enumCoverage && enumCoverage).toBeLessThanOrEqual(1);
+    const uncovered = guidedReport!.uncoveredTargets ?? [];
+    const uncoveredIds = new Set(uncovered.map((t) => t.id));
+
+    // Any ENUM_VALUE_HIT target that is not hit in guided mode must appear in uncoveredTargets.
+    enumTargets
+      .filter((target) => !target.hit)
+      .forEach((target) => {
+        expect(uncoveredIds.has(target.id)).toBe(true);
+      });
   });
 
   it('marks coverageStatus minCoverageNotMet and attaches an overall threshold when coverage falls below minCoverage', async () => {

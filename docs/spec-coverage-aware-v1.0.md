@@ -814,6 +814,13 @@ Three modes are expected:
    * Coverage is optimized but still deterministic.
    * As in `coverage=measure`, the coverage layer MUST NOT introduce any additional RNG source or perturb the generator’s RNG call pattern. All randomness used to derive TestUnit seeds and hint decisions MUST be drawn from the same seeded RNG model already used by the generator (or from pure functions of `(masterSeed, canonPath, target id, TestUnit id, …)`), in a way that remains deterministic for a fixed `(canonical schema, OpenAPI spec, coverage options, seed, AJV.major, registryFingerprint)`.
 
+**Non-regression of guided vs measure (branches & enum)**
+
+For a fixed tuple
+`(canonical schema, OpenAPI spec?, coverage options except coverageMode, seed, ajvMajor, registryFingerprint)` and a fixed budget (`maxInstances`, `dimensionsEnabled`, `excludeUnreachable`), a `coverage=guided` run MUST NOT produce a lower `coverage.byDimension['branches']` or `coverage.byDimension['enum']` than a corresponding `coverage=measure` run.
+
+When a guided run cannot improve coverage for some targets because of planner caps, unreachable diagnostics or conflicting constraints, these targets MUST still appear in `targets[]` / `uncoveredTargets[]`, and the reasons SHOULD be observable via `unsatisfiedHints` and/or `diagnostics.plannerCapsHit`.
+
 ### 6.2 Budget & profiles
 
 **Budget options:**
@@ -1237,10 +1244,18 @@ The coverage layer inherits and must respect the core invariants:
 1. **OneOf branches**
 
    * Schema with `oneOf` of 3 branches.
-   * `coverage=guided`, sufficient budget:
+   * Run once with `coverage=measure` and once with `coverage=guided`, using the same seed,
+     `dimensionsEnabled` including `'branches'`, and the same `maxInstances`.
 
-     * all 3 `ONEOF_BRANCH` targets have `hit:true`,
-     * branch coverage for that schema is 100%.
+   Expected:
+
+   * `coverage.byDimension['branches']` in `coverage=guided` is **not lower** than in
+     `coverage=measure` for this run, and
+   * all 3 `ONEOF_BRANCH` targets are present in `targets[]`; any target that remains `hit:false`
+     in guided mode appears in `uncoveredTargets[]` with either:
+
+     * `status:'unreachable'`, or
+     * an associated diagnostic (e.g. an `unsatisfiedHint` or a `PLANNER_CAP` entry).
 
 2. **Optional properties**
 
@@ -1253,10 +1268,18 @@ The coverage layer inherits and must respect the core invariants:
 3. **Enums**
 
    * Schema with an enum of 4 values.
-   * `coverage=guided`, sufficient budget:
+   * Run once with `coverage=measure` and once with `coverage=guided`, using the same seed,
+     `dimensionsEnabled` including `'enum'`, and the same `maxInstances`.
 
-     * all 4 `ENUM_VALUE_HIT` targets are hit, or
-     * coverage report clearly explains which ones are not (lack of budget, unsatisfied hints, or `unreachable`).
+   Expected:
+
+   * `coverage.byDimension['enum']` in `coverage=guided` is **not lower** than in
+     `coverage=measure` for this run, and
+   * all 4 `ENUM_VALUE_HIT` targets are present in `targets[]`; any target that remains `hit:false`
+     in guided mode appears in `uncoveredTargets[]` with either:
+
+     * `status:'unreachable'`, or
+     * an associated diagnostic (e.g. `unsatisfiedHint` with `reasonCode` or a `PLANNER_CAP` entry).
 
 4. **Coverage threshold**
 
@@ -1268,14 +1291,20 @@ The coverage layer inherits and must respect the core invariants:
 5. **OpenAPI coverage**
 
    * OpenAPI document with multiple operations, some sharing schemas.
-   * `coverage=guided`, sufficient budget:
+   * Run once with `coverage=measure` and once with `coverage=guided`, using the same seed,
+     `dimensionsEnabled` including `'operations'`, and the same `maxInstances`.
 
-     * report includes `coverage.byOperation[operationKey]` for:
+   Expected:
 
-       * operations with `operationId`,
-       * operations without `operationId` (using `"<METHOD> <path>"` keys),
-     * `OP_REQUEST_COVERED` / `OP_RESPONSE_COVERED` targets are set appropriately,
-     * schema‑level targets map deterministically to operations.
+   * both runs produce `coverage.byOperation[operationKey]` entries for:
+
+     * operations with `operationId`,
+     * operations without `operationId` (using `"<METHOD> <path>"` keys),
+   * `OP_REQUEST_COVERED` / `OP_RESPONSE_COVERED` targets are set appropriately for each operation
+     in scope, and
+   * schema‑level targets reachable from each operation map deterministically to operations via
+     `operationKey` / `meta.operationKeys`, so that `coverage.byOperation` is a stable projection
+     over the underlying CoverageTargets across repeated runs and across `measure` vs `guided`.
 
 6. **Reproducibility**
 
@@ -1286,6 +1315,15 @@ The coverage layer inherits and must respect the core invariants:
      * coverage options (including dimensions and `excludeUnreachable`),
      * seed,
    * produce byte‑identical coverage reports except for timestamp fields.
+
+> **Note (informative) – Small, regular schemas**
+>
+> For small `oneOf`/`anyOf` constructs and small enums with no conflicting constraints, a
+> conforming implementation in `coverage=guided` mode and with a reasonable budget (such as the
+> default `balanced` or `thorough` profile) is expected to reach close to 100 % coverage on the
+> `branches` and `enum` dimensions. However, V1 does not make this a formal conformance
+> requirement unless a CLI profile explicitly documents stronger guarantees together with the
+> corresponding budgets.
 
 ---
 
