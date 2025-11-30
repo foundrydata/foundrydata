@@ -6,13 +6,13 @@ This document maps the parent task 9331 bullets from Implementation Details, Del
 
 ### Implementation Details
 
-- [KR1] Introduce a small internal API (coverage runtime) that takes canonical schema, Compose artifacts, resolved coverage options and generator outcomes, then returns coverageTargets, coverageMetrics, coverageReport and any planner diagnostics.
-- [KR2] Move Analyzer + Planner + accumulator + Evaluator wiring into this runtime, preserving existing options semantics (mode, dimensionsEnabled, excludeUnreachable, minCoverage, reportMode) and determinism guarantees.
+- [KR1] Introduce a small internal API (coverage runtime) that takes canonical schema, Compose artifacts, resolved coverage options and generator run metadata (seed, instance counts), then returns coverageTargets, coverageMetrics, coverageReport and any planner diagnostics.
+- [KR2] Move Analyzer + Planner + Evaluator wiring into this runtime, preserving existing options semantics (mode, dimensionsEnabled, excludeUnreachable, minCoverage, reportMode) and determinism guarantees, while keeping the streaming accumulator and coverage hooks gated in `executePipeline` but driven by the runtime’s planned targets and hints.
 - [KR3] Keep executePipeline responsible for phase sequencing and diagnostics envelope enforcement, but make coverage a clearly separated phase after Validate.
 
 ### Deliverables
 
-- [DEL1] New module encapsulating coverage orchestration and hooks.
+- [DEL1] New module encapsulating coverage orchestration (Analyzer, Planner, Evaluator, coverage-report/v1 wiring) behind an internal runtime API.
 - [DEL2] executePipeline updated to call this module when coverage is enabled, with no behavior change visible to existing tests or CLI.
 
 ### Definition of Done
