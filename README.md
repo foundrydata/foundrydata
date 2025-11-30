@@ -324,8 +324,8 @@ Work with OpenAPI 3.1 responses:
 ```bash
 # Generate 3 response payloads for an operationId
 foundrydata openapi \
-  --spec api.openapi.json \
-  --operation-id getUser \
+  --spec examples/users-api.json \
+  --operation-id getUsers \
   --n 3 \
   --out ndjson
 ```
@@ -480,7 +480,7 @@ FoundryData includes an optional coverage layer that measures which parts of you
 
 ### Dimensions and unreachable targets
 
-Coverage is organised into dimensions such as structure, branches, enums and, when enabled, boundaries and operations. The `dimensionsEnabled` option selects which dimensions are materialised in metrics; it does **not** change the underlying universe of coverage targets or their IDs. For OpenAPI inputs, enabling operation-level coverage adds metrics broken down by operation without changing the base generator behavior.
+Coverage is organised into dimensions such as structure, branches, enums and, when enabled, boundaries and operations. The `dimensionsEnabled` option controls which dimensions actually materialise coverage targets and appear in metrics and reports. In V1, only dimensions listed in `dimensionsEnabled` produce `CoverageTarget` entries in `targets[]` and contribute to `coverage.overall`, `coverage.byDimension` and `coverage.byOperation`. For OpenAPI inputs, enabling operation-level coverage adds metrics broken down by operation without changing the base generator behavior.
 
 Some targets can be proven unreachable by the planner and analyzer (for example when a schema branch is structurally unsatisfiable). These targets are kept in the report with `status:'unreachable'` so they remain visible for diagnostics and debugging.
 
@@ -577,14 +577,14 @@ Run a coverage-guided profile for an OpenAPI operation:
 
 ```bash
 foundrydata openapi \
-  --spec ./examples/api.openapi.json \
-  --operation-id getUser \
+  --spec ./examples/users-api.json \
+  --operation-id getUsers \
   --n 500 \
   --coverage guided \
   --coverage-profile balanced \
   --coverage-dimensions structure,branches,enum \
   --coverage-min 0.8 \
-  --coverage-report ./coverage/getUser.coverage.json
+  --coverage-report ./coverage/getUsers.coverage.json
 ```
 
 For the full set of options:
