@@ -25,6 +25,10 @@ import { resolveOptions } from '../types/options.js';
 import type { MetricsCollector } from '../util/metrics.js';
 import type { CoverageMode, UnsatisfiedHint } from '@foundrydata/shared';
 import type { CoverageEvent } from '../coverage/index.js';
+import {
+  getCachedValidator,
+  setCachedValidator,
+} from '../util/validator-cache.js';
 
 export interface AjvErr {
   instancePath: string;
@@ -717,8 +721,23 @@ export function repairItemsAjvDriven(
   const dialect = detectDialect(schema);
   const sourceAjv = createRepairOnlyValidatorAjv({ dialect }, args.planOptions);
   const { schemaForAjv } = prepareSchemaForSourceAjv(schema, dialect);
-  const validateFn = sourceAjv.compile(schemaForAjv as object);
-  const ajvValidator = validateFn as AjvValidateFn;
+  const cached =
+    getCachedValidator<AjvValidateFn>({
+      ajv: sourceAjv,
+      schema: schemaForAjv,
+      planOptions: args.planOptions,
+    }) ?? undefined;
+  const validateFn: AjvValidateFn =
+    cached ?? (sourceAjv.compile(schemaForAjv as object) as AjvValidateFn);
+  if (!cached) {
+    setCachedValidator<AjvValidateFn>({
+      ajv: sourceAjv,
+      schema: schemaForAjv,
+      planOptions: args.planOptions,
+      validateFn,
+    });
+  }
+  const ajvValidator = validateFn;
   const ajvFlags = extractAjvFlags(sourceAjv);
   const decimalPrecision = ajvFlags.multipleOfPrecision ?? 12;
   const repairPlanOptions = resolvedOptions.repair;

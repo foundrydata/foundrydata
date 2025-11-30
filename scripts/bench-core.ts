@@ -6,6 +6,7 @@ import process from 'node:process';
 import {
   executePipeline,
   MetricsCollector,
+  type MetricsSnapshot,
   type PipelineOptions,
 } from '../packages/core/src/index.js';
 import {
@@ -97,6 +98,49 @@ export function computeGateSummary(
     p95LatencyMs: worstP95,
     memoryPeakMB: worstMemory,
   };
+}
+
+const PHASE_KEYS = [
+  { key: 'normalizeMs', label: 'normalize' },
+  { key: 'composeMs', label: 'compose' },
+  { key: 'generateMs', label: 'generate' },
+  { key: 'repairMs', label: 'repair' },
+  { key: 'validateMs', label: 'validate' },
+  { key: 'compileMs', label: 'compile' },
+] as const satisfies readonly {
+  key: keyof MetricsSnapshot;
+  label: string;
+}[];
+
+export function formatProfilePhaseSummary(
+  summary: ProfileSummary
+): string | undefined {
+  if (summary.runs.length === 0) {
+    return undefined;
+  }
+
+  const metricsList = summary.runs.map((run) => run.metrics);
+  const parts: string[] = [];
+
+  for (const { key, label } of PHASE_KEYS) {
+    const values = metricsList
+      .map((entry) => entry[key])
+      .filter((value): value is number => typeof value === 'number')
+      .filter((value) => Number.isFinite(value) && value > 0);
+
+    if (values.length === 0) {
+      continue;
+    }
+
+    const p50 = calculatePercentile(values, 0.5);
+    parts.push(`${label}=${p50.toFixed(2)}ms`);
+  }
+
+  if (parts.length === 0) {
+    return undefined;
+  }
+
+  return `phases(p50): ${parts.join(' · ')}`;
 }
 
 export async function runProfile(

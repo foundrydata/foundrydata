@@ -3,6 +3,8 @@
 /* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
 /* eslint-disable max-lines */
+import { performance } from 'node:perf_hooks';
+import process from 'node:process';
 import {
   DIAGNOSTIC_CODES,
   DIAGNOSTIC_PHASES,
@@ -237,6 +239,13 @@ class GeneratorEngine {
     Map<string, EvaluationProof | null>
   > = new WeakMap();
 
+  private readonly debugTrace?:
+    | {
+        validateCalls: number;
+        validateMs: number;
+      }
+    | undefined;
+
   private readonly hintTrace?:
     | {
         recordApplication?: (entry: {
@@ -433,6 +442,11 @@ class GeneratorEngine {
     this.hintTrace =
       (this.coverage as { hintTrace?: GeneratorEngine['hintTrace'] })
         ?.hintTrace ?? undefined;
+    const traceEnv = process.env.FOUNDRY_GEN_TRACE;
+    this.debugTrace =
+      traceEnv === '1' || traceEnv?.toLowerCase() === 'true'
+        ? { validateCalls: 0, validateMs: 0 }
+        : undefined;
   }
 
   private readonly rootSchema: Schema | unknown;
@@ -458,12 +472,27 @@ class GeneratorEngine {
       metrics.patternWitnessTried = this.patternWitnessTrials;
     }
 
-    return {
+    const result: GeneratorStageOutput = {
       items,
       diagnostics: this.diagnostics,
       metrics,
       seed: this.baseSeed,
     };
+
+    if (this.debugTrace && this.debugTrace.validateCalls > 0) {
+      const title =
+        this.rootSchema &&
+        typeof (this.rootSchema as { title?: unknown }).title === 'string'
+          ? String((this.rootSchema as { title?: unknown }).title ?? 'unknown')
+          : 'unknown';
+      const totalMs = this.debugTrace.validateMs.toFixed(2);
+      const calls = this.debugTrace.validateCalls;
+      process.stderr.write(
+        `[foundrygen-trace] schema="${title}" validateAgainstOriginalAt calls=${calls} total=${totalMs}ms\n`
+      );
+    }
+
+    return result;
   }
 
   private getEnumHintIndex(
@@ -1413,9 +1442,16 @@ class GeneratorEngine {
     canonPtr: JsonPointer,
     data: unknown
   ): boolean {
+    const trace = this.debugTrace;
+    const startedAt = trace ? performance.now() : 0;
     const originalPtr = this.ptrMap.get(canonPtr);
     const sub = this.getOriginalSubschema(originalPtr);
-    if (!sub) return false;
+    if (!sub) {
+      if (trace) {
+        trace.validateCalls += 1;
+      }
+      return false;
+    }
 
     const refInfo = this.buildSourceRef(originalPtr);
     const cacheKey = refInfo?.cacheKey ?? originalPtr ?? `#canon:${canonPtr}`;
@@ -1434,13 +1470,29 @@ class GeneratorEngine {
         }
         this.branchValidatorCache.set(cacheKey, validate);
       } catch {
+        if (trace) {
+          const elapsed = performance.now() - startedAt;
+          trace.validateCalls += 1;
+          trace.validateMs += elapsed;
+        }
         return false;
       }
     }
 
     try {
-      return !!validate(data);
+      const ok = !!validate(data);
+      if (trace) {
+        const elapsed = performance.now() - startedAt;
+        trace.validateCalls += 1;
+        trace.validateMs += elapsed;
+      }
+      return ok;
     } catch {
+      if (trace) {
+        const elapsed = performance.now() - startedAt;
+        trace.validateCalls += 1;
+        trace.validateMs += elapsed;
+      }
       return false;
     }
   }

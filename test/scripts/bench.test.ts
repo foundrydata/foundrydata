@@ -3,10 +3,12 @@ import {
   BENCH_BUDGETS,
   calculatePercentile,
   computeGateSummary,
+  formatProfilePhaseSummary,
   runProfile,
   type ProfileSummary,
   profiles,
 } from '../../scripts/bench-core.js';
+import type { MetricsSnapshot } from '../../packages/core/src/index.js';
 
 describe('bench harness utilities', () => {
   it('computes percentiles deterministically', () => {
@@ -45,6 +47,55 @@ describe('bench harness utilities', () => {
     expect(gate.memoryPeakMB).toBe(256);
     expect(gate.p95LatencyMs).toBeLessThanOrEqual(BENCH_BUDGETS.p95LatencyMs);
     expect(gate.memoryPeakMB).toBeLessThanOrEqual(BENCH_BUDGETS.memoryPeakMB);
+  });
+
+  it('formats phase breakdown when metrics are available', () => {
+    const metrics: MetricsSnapshot = {
+      normalizeMs: 5,
+      composeMs: 10,
+      generateMs: 15,
+      repairMs: 0,
+      validateMs: 2,
+      compileMs: 0,
+      validationsPerRow: 0,
+      repairPassesPerRow: 0,
+      memoryPeakMB: 64,
+      p50LatencyMs: 0,
+      p95LatencyMs: 0,
+      evalTraceChecks: 0,
+      evalTraceProved: 0,
+      nameBfsNodesExpanded: 0,
+      nameBfsQueuePeak: 0,
+      nameBeamWidthPeak: 0,
+      nameEnumResults: 0,
+      nameEnumElapsedMs: 0,
+      patternPropsHit: 0,
+      presencePressureResolved: 0,
+    };
+
+    const summary: ProfileSummary = {
+      id: 'alpha',
+      label: 'Alpha',
+      warmupCount: 0,
+      measuredCount: 1,
+      p50LatencyMs: 5,
+      p95LatencyMs: 5,
+      memoryPeakMB: 64,
+      runs: [
+        {
+          seed: 1,
+          latencyMs: 5,
+          memoryPeakMB: 64,
+          metrics,
+        },
+      ],
+    };
+
+    const formatted = formatProfilePhaseSummary(summary);
+    expect(formatted).toBeDefined();
+    expect(formatted).toContain('normalize=');
+    expect(formatted).toContain('compose=');
+    expect(formatted).toContain('generate=');
   });
 });
 

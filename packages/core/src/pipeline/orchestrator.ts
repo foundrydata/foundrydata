@@ -70,6 +70,10 @@ import {
   type RegistryDoc,
 } from '../resolver/hydrateSourceAjvFromRegistry.js';
 import {
+  getCachedValidator,
+  setCachedValidator,
+} from '../util/validator-cache.js';
+import {
   analyzeCoverage,
   type CoverageAnalyzerInput,
 } from '../coverage/analyzer.js';
@@ -299,6 +303,8 @@ export async function executePipeline(
   let registryFingerprint: string | undefined;
   let registryDocs: RegistryDoc[] | undefined;
   let pendingAjvMismatch: AjvFlagsMismatchError | undefined;
+  let sourceAjvForRun: Ajv | undefined;
+  let planningAjvForRun: Ajv | undefined;
   // Track seen $id across AJV hydration to avoid duplicate-id conflicts
   const seenSchemaIds = new Map<string, string>();
   // Seed seenSchemaIds with any $id present in the root schema so that in-document definitions
@@ -349,6 +355,8 @@ export async function executePipeline(
       },
       planOptions
     );
+    sourceAjvForRun = sourceAjv;
+    planningAjvForRun = planningAjv;
     const sourceClass =
       (sourceAjv as unknown as AjvMarker).__fd_ajvClass ?? 'Ajv';
 
@@ -527,6 +535,9 @@ export async function executePipeline(
         resolverRunDiags,
         seenSchemaIds,
         registryDocs,
+        registryFingerprint,
+        () => sourceAjvForRun,
+        () => planningAjvForRun,
         () => pendingAjvMismatch,
         (index, itemValid) => {
           if (!streamingCoverageAccumulator || !perInstanceCoverageStates) {
@@ -672,7 +683,7 @@ export async function executePipeline(
         return ajv;
       };
       try {
-        const sourceAjv = sourceAjvFactory();
+        const sourceAjv = sourceAjvForRun ?? sourceAjvFactory();
         sourceAjv.compile(schemaForSourceAjv as object);
       } catch (error) {
         const classification = classifyExternalRefFailure({
@@ -734,14 +745,16 @@ export async function executePipeline(
         }
       }
     }
-    const planningForCompose = createPlanningAjv(
-      {
-        validateFormats,
-        discriminator,
-        multipleOfPrecision: expectedMoP,
-      },
-      planOptions
-    );
+    const planningForCompose =
+      planningAjvForRun ??
+      createPlanningAjv(
+        {
+          validateFormats,
+          discriminator,
+          multipleOfPrecision: expectedMoP,
+        },
+        planOptions
+      );
     // Hydrate planning Ajv with resolver registry for in-planning compiles
     if (registryDocs && resolverRegistry) {
       hydrateSourceAjvFromRegistry(planningForCompose, registryDocs, {
@@ -1480,6 +1493,9 @@ function createDefaultValidate(
   resolverRunDiags?: ResolverDiagnosticNote[],
   seenSchemaIds?: Map<string, string>,
   registryDocs?: RegistryDoc[],
+  registryFingerprint?: string,
+  getSourceAjvForRun?: () => Ajv | undefined,
+  getPlanningAjvForRun?: () => Ajv | undefined,
   getPendingAjvMismatch?: () => AjvFlagsMismatchError | undefined,
   onInstanceValidated?: (index: number, valid: boolean) => void
 ): StageRunners['validate'] {
@@ -1508,6 +1524,19 @@ function createDefaultValidate(
     const invalidPatternDiagnostics: DiagnosticEnvelope[] = [];
 
     const sourceAjvFactory = (): Ajv => {
+      const canReuseSourceAjv =
+        getSourceAjvForRun &&
+        // For draft-06 in lax mode we must keep tolerant pattern diagnostics,
+        // so prefer a fresh instance with onInvalidPatternDraft06 hook.
+        !(dialect === 'draft-06' && mode === 'lax');
+
+      if (canReuseSourceAjv) {
+        const shared = getSourceAjvForRun();
+        if (shared) {
+          return shared;
+        }
+      }
+
       const ajv = createSourceAjv(
         {
           dialect,
@@ -1545,10 +1574,12 @@ function createDefaultValidate(
       return ajv;
     };
     const sourceAjv = sourceAjvFactory();
-    const planningAjv = createPlanningAjv(
-      { validateFormats, discriminator, multipleOfPrecision: expectedMoP },
-      planOptions
-    );
+    const planningAjv =
+      getPlanningAjvForRun?.() ??
+      createPlanningAjv(
+        { validateFormats, discriminator, multipleOfPrecision: expectedMoP },
+        planOptions
+      );
     const flags = {
       source: extractAjvFlags(sourceAjv) as unknown as Record<string, unknown>,
       planning: extractAjvFlags(planningAjv) as unknown as Record<
@@ -1570,7 +1601,25 @@ function createDefaultValidate(
     const compileTarget = schemaForSourceAjvOverride ?? schema;
     let validateFn: ValidateFunction;
     try {
-      validateFn = sourceAjv.compile(compileTarget as object);
+      const cached =
+        getCachedValidator<ValidateFunction>({
+          ajv: sourceAjv,
+          schema: compileTarget,
+          planOptions: planOptions,
+          registryFingerprint,
+        }) ?? undefined;
+      if (cached) {
+        validateFn = cached;
+      } else {
+        validateFn = sourceAjv.compile(compileTarget as object);
+        setCachedValidator<ValidateFunction>({
+          ajv: sourceAjv,
+          schema: compileTarget,
+          planOptions: planOptions,
+          registryFingerprint,
+          validateFn,
+        });
+      }
     } catch (error) {
       const classification = classifyExternalRefFailure({
         schema,

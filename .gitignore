@@ -172,3 +172,4 @@ test/performance/baseline.json
 bench/bench-gate.json
 bench/bench-gate.real-world.json
 bench-reports*/
+cpu-profiles

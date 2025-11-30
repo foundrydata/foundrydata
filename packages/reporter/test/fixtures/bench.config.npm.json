@@ -1,0 +1,8 @@
+[
+  {
+    "id": "real-world-npm-package-schema",
+    "schema": "../../../../profiles/real-world/npm-package.schema.json",
+    "maxInstances": 1
+  }
+]
+
