@@ -342,4 +342,52 @@ describe('diffCoverageReports', () => {
     // the new uncovered target (t3).
     expect(newlyUncoveredIds).toEqual(['t2', 't3']);
   });
+
+  it('handles newer reports with additional optional fields without changing common-universe deltas', () => {
+    const baseTargets: CoverageTargetReport[] = [
+      makeTarget({
+        id: 't1',
+        dimension: 'structure',
+        operationKey: 'getUser',
+        hit: true,
+      }),
+    ];
+
+    const baseline = makeReport({
+      targets: baseTargets,
+      run: {
+        dimensionsEnabled: ['structure'],
+        excludeUnreachable: false,
+        operationsScope: undefined,
+        selectedOperations: undefined,
+      } as CoverageReport['run'],
+    });
+
+    const comparison = makeReport({
+      targets: baseTargets,
+      run: {
+        dimensionsEnabled: ['structure'],
+        excludeUnreachable: false,
+        operationsScope: 'all',
+        selectedOperations: undefined,
+      } as CoverageReport['run'],
+      metrics: {
+        ...baseline.metrics,
+        thresholds: {
+          overall: 0.8,
+          byDimension: { structure: 0.8 },
+        },
+      },
+      diagnostics: {
+        ...baseline.diagnostics,
+        notes: [{ kind: 'info', message: 'extended diagnostics' }],
+      },
+    });
+
+    const { summary } = diffCoverageReports(baseline, comparison);
+
+    expectDelta(summary.overall, 1, 1);
+    expect(summary.operationsOnlyInA).toEqual([]);
+    expect(summary.operationsOnlyInB).toEqual([]);
+  });
 });

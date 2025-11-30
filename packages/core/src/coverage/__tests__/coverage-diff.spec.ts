@@ -428,6 +428,16 @@ describe('coverage diff reports', () => {
 });
 
 describe('coverage diff compatibility checks', () => {
+  it('detects coverage-report version mismatch', () => {
+    const a = makeReport({ version: 'coverage-report/v1' });
+    const b = makeReport({
+      version: 'coverage-report/v2',
+    } as Partial<CoverageReport>);
+
+    const issues = checkCoverageDiffCompatibility(a, b);
+    expect(issues.some((i) => i.kind === 'versionMismatch')).toBe(true);
+  });
+
   it('detects incompatible engine majors', () => {
     const a = makeReport({
       engine: { foundryVersion: '1.2.3', coverageMode: 'measure', ajvMajor: 8 },
@@ -484,5 +494,66 @@ describe('coverage diff compatibility checks', () => {
     expect(
       issuesSelected.some((i) => i.kind === 'operationsScopeMismatch')
     ).toBe(true);
+  });
+
+  it('treats all-scope reports with additional optional fields as compatible', () => {
+    const base = makeReport();
+
+    const oldReport = makeReport({
+      run: {
+        ...base.run,
+        operationsScope: undefined,
+        selectedOperations: undefined,
+      },
+    } as Partial<CoverageReport>);
+
+    const newReport = makeReport({
+      run: {
+        ...base.run,
+        operationsScope: 'all',
+        selectedOperations: undefined,
+      },
+      metrics: {
+        ...base.metrics,
+        thresholds: {
+          overall: 0.8,
+          byDimension: { structure: 0.8 },
+        },
+      },
+      diagnostics: {
+        ...(base.diagnostics as CoverageReport['diagnostics']),
+        notes: [{ kind: 'info', message: 'extended diagnostics' }],
+      },
+    } as Partial<CoverageReport>);
+
+    const issues = checkCoverageDiffCompatibility(oldReport, newReport);
+    expect(issues).toHaveLength(0);
+
+    const diff = diffCoverageReports(oldReport, newReport);
+    expect(diff.summary.operationsOnlyInA).toEqual([]);
+    expect(diff.summary.operationsOnlyInB).toEqual([]);
+  });
+
+  it('treats selected operations with different order and duplicates as compatible', () => {
+    const base = makeReport();
+
+    const reportA = makeReport({
+      run: {
+        ...base.run,
+        operationsScope: 'selected',
+        selectedOperations: ['GET /users', 'POST /users', 'GET /users'],
+      },
+    } as Partial<CoverageReport>);
+
+    const reportB = makeReport({
+      run: {
+        ...base.run,
+        operationsScope: 'selected',
+        selectedOperations: ['POST /users', 'GET /users'],
+      },
+    } as Partial<CoverageReport>);
+
+    const issues = checkCoverageDiffCompatibility(reportA, reportB);
+    expect(issues).toHaveLength(0);
   });
 });

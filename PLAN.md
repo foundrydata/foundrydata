@@ -1,20 +1,19 @@
-Task: 9334   Title: Define coverage-report/v1 JSON schema and compatibility guards — subtask 9334.9334002
+Task: 9334   Title: Define coverage-report/v1 JSON schema and compatibility guards — subtask 9334.9334003
 Anchors: [cov://§3#coverage-model, cov://§7#json-coverage-report, cov://§10#acceptance-criteria-v1]
 Touched files:
-- packages/reporter/src/schemas/coverage-report-v1.schema.json
-- packages/reporter/test/coverage-report-schema.test.ts
-- packages/reporter/test/fixtures/coverage-report.v1.sample.json
+- packages/core/src/coverage/__tests__/coverage-diff.spec.ts
+- packages/reporter/src/coverage/__tests__/coverage-diff.spec.ts
 - .taskmaster/docs/9334-traceability.md
 
 Approach:
-Pour la sous-tâche 9334.9334002, je branche le schéma JSON coverage-report/v1 dans la couche reporter afin de valider des rapports réels contre le contrat formalisé par la spec (cov://§3#coverage-model, cov://§7#json-coverage-report, cov://§10#acceptance-criteria-v1). Concrètement, j’ai : (1) introduit un test dédié `packages/reporter/test/coverage-report-schema.test.ts` qui charge `coverage-report-v1.schema.json` via Ajv 2020-12 et applique `ajv-formats`, puis valide une fixture stable `coverage-report.v1.sample.json` représentant un rapport minimal mais complet; (2) aligné la fixture sur les types `CoverageReport` partagés (`@foundrydata/shared`) pour couvrir version/reportMode, en-têtes engine/run, métriques, cibles, hints et diagnostics, en respectant les invariants coverage-aware sans coupler les tests core ↔ reporter. L’objectif est que tout changement incompatible dans la forme du rapport soit détecté immédiatement par ce test AJV, tout en laissant le schéma suffisamment extensible pour les diagnostics additionnels.
+Pour la sous-tâche 9334.9334003, je vais étendre les tests de compatibilité diff afin de garantir que les évolutions du contrat coverage-report/v1 restent rétro-compatibles et que les incompatibilités sont signalées explicitement, en cohérence avec la spec (cov://§3#coverage-model, cov://§7#json-coverage-report, cov://§10#acceptance-criteria-v1). Concrètement, je vais : (1) ajouter des fixtures/constructeurs de rapports « anciens » vs « nouveaux » dans les tests core `coverage-diff.spec.ts` pour couvrir des scénarios où des champs optionnels sont absents d’un côté (par exemple `operationsScope`, `selectedOperations`, nouveaux champs de diagnostics) et vérifier que `checkCoverageDiffCompatibility` considère ces cas comme compatibles; (2) compléter les tests reporter `coverage-diff.spec.ts` pour couvrir les chemins où la commande de diff consomme des rapports acceptables mais non strictement identiques (dimensions activées, champs additionnels) et s’assurer que les résumés et les issues de compatibilité restent stables et déterministes. L’objectif est que toute divergence réellement incompatible (version, engine major, opérationsScope réellement incompatibles) soit détectée, tandis que les ajouts non critiques restent transparents pour les consommateurs.
 
 Risks/Unknowns:
-- Introduire AJV dans les tests coverage (via reporter ou directement) ajoute un point de défaillance supplémentaire; il faudra veiller à ne pas rendre les tests trop couplés à la version précise du schéma en laissant une marge d’extension dans celui-ci.
-- Certains rapports utilisés dans les tests peuvent contenir des champs additionnels (notes, diagnostics spécifiques) non explicitement décrits par la spec; je devrai m’assurer que le schéma reste permissif sur ces extensions pour éviter des faux positifs.
-- Il faudra garder les tests de validation de schéma ciblés (sur quelques fixtures représentatives) afin de ne pas alourdir excessivement le temps d’exécution global de la suite.
+- Il faudra veiller à ne pas sur-contraindre `checkCoverageDiffCompatibility` : certains deltas attendus (par exemple changements de dimensionsEnabled ou ajout de cibles dans de nouvelles dimensions) doivent rester compatibles tout en étant reflétés dans le diff.
+- Les tests devront rester indépendants du détail complet du schéma JSON (déjà couvert par 9334.9334001/002) et se concentrer sur le comportement de compatibilité/diff, au risque sinon de dédoubler la responsabilité.
+- Il faudra couvrir suffisamment de cas pour refléter les scénarios décrits dans la spec (versions identiques vs différentes, operationsScope, ajouts de champs), sans alourdir excessivement la suite de tests.
 
-Parent bullets couverts: [KR2, DEL2, DOD2, TS2]
+Parent bullets couverts: [KR3, DEL3, DOD3, TS3]
 
 Checks:
 - build: npm run build

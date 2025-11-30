@@ -31,11 +31,10 @@ This document maps the parent task 9334 bullets from Implementation Details, Del
 ## Mapping 9334 subtasks → parent bullets
 
 - **9334.9334001 – Define coverage-report/v1 JSON Schema**  
-  Covers: [KR1], [DEL1], [DOD1], [TS1].
+  Covers: [KR1], [DEL1], [DOD1], [TS1] (status: covered).
 
 - **9334.9334002 – Validate generated reports against the schema in tests**  
-  Covers: [KR2], [DEL2], [DOD2], [TS2].
+  Covers: [KR2], [DEL2], [DOD2], [TS2] (status: covered).
 
 - **9334.9334003 – Extend coverage diff compatibility tests**  
-  Covers: [KR3], [DEL3], [DOD3], [TS3].
-
+  Covers: [KR3], [DEL3], [DOD3], [TS3] (status: covered).
