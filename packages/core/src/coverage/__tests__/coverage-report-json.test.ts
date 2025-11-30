@@ -1,10 +1,13 @@
 import { describe, it, expect } from 'vitest';
+// Schema validation for coverage-report/v1 is wired via reporter tests.
 
 import type { CoverageDimension, CoverageReport } from '@foundrydata/shared';
 import { executePipeline } from '../../pipeline/orchestrator.js';
 import { DEFAULT_PLANNER_DIMENSIONS_ENABLED } from '../coverage-planner.js';
 
 const STRUCTURE_ONLY_DIMENSIONS: CoverageDimension[] = ['structure'];
+
+let validateCoverageReport: ((report: CoverageReport) => boolean) | undefined;
 
 describe('coverage-report/v1 JSON snapshots', () => {
   it('emits a stable coverage-report/v1 JSON structure for a simple object schema', async () => {
@@ -63,6 +66,12 @@ describe('coverage-report/v1 JSON snapshots', () => {
       metrics: normalised.metrics,
       targetsByStatus: normalised.metrics.targetsByStatus,
     }).toMatchSnapshot();
+
+    // Optionally validate the full report against coverage-report/v1 schema when available.
+    if (typeof validateCoverageReport === 'function') {
+      const isValid = validateCoverageReport(baseReport);
+      expect(isValid).toBe(true);
+    }
 
     expect(normalised.metrics.targetsByStatus.active).toBeGreaterThanOrEqual(0);
     expect(

@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://foundrydata.dev/schemas/coverage-report-v1.schema.json",
+  "title": "FoundryData Coverage Report v1",
+  "type": "object",
+  "required": [
+    "version",
+    "reportMode",
+    "engine",
+    "run",
+    "metrics",
+    "targets",
+    "uncoveredTargets",
+    "unsatisfiedHints",
+    "diagnostics"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "coverage-report/v1"
+    },
+    "reportMode": {
+      "type": "string",
+      "enum": ["full", "summary"]
+    },
+    "engine": {
+      "type": "object",
+      "required": ["foundryVersion", "coverageMode", "ajvMajor"],
+      "properties": {
+        "foundryVersion": { "type": "string", "minLength": 1 },
+        "coverageMode": {
+          "type": "string",
+          "enum": ["off", "measure", "guided"]
+        },
+        "ajvMajor": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "run": {
+      "type": "object",
+      "required": [
+        "seed",
+        "masterSeed",
+        "maxInstances",
+        "actualInstances",
+        "dimensionsEnabled",
+        "excludeUnreachable",
+        "startedAt",
+        "durationMs"
+      ],
+      "properties": {
+        "seed": { "type": "integer" },
+        "masterSeed": { "type": "integer" },
+        "maxInstances": { "type": "integer", "minimum": 0 },
+        "actualInstances": { "type": "integer", "minimum": 0 },
+        "dimensionsEnabled": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["structure", "branches", "enum", "boundaries", "operations"]
+          },
+          "minItems": 1
+        },
+        "excludeUnreachable": { "type": "boolean" },
+        "startedAt": { "type": "string" },
+        "durationMs": { "type": "number", "minimum": 0 },
+        "operationsScope": {
+          "type": "string",
+          "enum": ["all", "selected"]
+        },
+        "selectedOperations": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": true
+    },
+    "metrics": {
+      "type": "object",
+      "required": ["coverageStatus", "overall", "byDimension", "byOperation", "targetsByStatus"],
+      "properties": {
+        "coverageStatus": {
+          "type": "string",
+          "enum": ["ok", "minCoverageNotMet"]
+        },
+        "overall": { "type": "number", "minimum": 0, "maximum": 1 },
+        "byDimension": {
+          "type": "object",
+          "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 }
+        },
+        "byOperation": {
+          "type": "object",
+          "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 }
+        },
+        "targetsByStatus": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "thresholds": {
+          "type": "object",
+          "properties": {
+            "overall": { "type": "number", "minimum": 0, "maximum": 1 },
+            "byDimension": {
+              "type": "object",
+              "additionalProperties": { "type": "number" }
+            },
+            "byOperation": {
+              "type": "object",
+              "additionalProperties": { "type": "number" }
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "targets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/coverageTargetReport" }
+    },
+    "uncoveredTargets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/coverageTargetReport" }
+    },
+    "unsatisfiedHints": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/unsatisfiedHint" }
+    },
+    "diagnostics": {
+      "type": "object",
+      "required": ["plannerCapsHit", "notes"],
+      "properties": {
+        "plannerCapsHit": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/plannerCapHit" }
+        },
+        "notes": {
+          "type": "array"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "coverageTargetReport": {
+      "type": "object",
+      "required": ["id", "dimension", "kind", "canonPath", "hit"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "dimension": {
+          "type": "string",
+          "enum": ["structure", "branches", "enum", "boundaries", "operations"]
+        },
+        "kind": { "type": "string", "minLength": 1 },
+        "canonPath": { "type": "string", "minLength": 1 },
+        "operationKey": { "type": "string" },
+        "params": { "type": "object", "additionalProperties": true },
+        "status": {
+          "type": "string",
+          "enum": ["active", "unreachable", "deprecated"]
+        },
+        "weight": { "type": "number" },
+        "polarity": {
+          "type": "string",
+          "enum": ["positive", "negative"]
+        },
+        "meta": { "type": "object", "additionalProperties": true },
+        "hit": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "plannerCapHit": {
+      "type": "object",
+      "required": [
+        "dimension",
+        "scopeType",
+        "scopeKey",
+        "totalTargets",
+        "plannedTargets",
+        "unplannedTargets"
+      ],
+      "properties": {
+        "dimension": { "type": "string", "minLength": 1 },
+        "scopeType": { "type": "string", "enum": ["schema", "operation"] },
+        "scopeKey": { "type": "string", "minLength": 1 },
+        "totalTargets": { "type": "integer", "minimum": 0 },
+        "plannedTargets": { "type": "integer", "minimum": 0 },
+        "unplannedTargets": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "unsatisfiedHint": {
+      "type": "object",
+      "required": ["kind", "canonPath", "reasonCode"],
+      "properties": {
+        "kind": { "type": "string", "minLength": 1 },
+        "canonPath": { "type": "string", "minLength": 1 },
+        "params": { "type": "object", "additionalProperties": true },
+        "reasonCode": {
+          "type": "string",
+          "enum": [
+            "CONFLICTING_CONSTRAINTS",
+            "REPAIR_MODIFIED_VALUE",
+            "UNREACHABLE_BRANCH",
+            "PLANNER_CAP",
+            "INTERNAL_ERROR",
+            "UNKNOWN"
+          ]
+        },
+        "reasonDetail": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}
+

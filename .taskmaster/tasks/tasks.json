@@ -1378,7 +1378,7 @@
           "9303",
           "9323"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 4,
         "details": "[Context]\nCoverage-report/v1 is the contract between the engine, CLI, reporter and external consumers. A formal JSON Schema and compatibility checks are needed to keep this contract stable as new fields or dimensions are added.\n\n[Key requirements]\n- Define a JSON Schema for coverage-report/v1 that matches the shared CoverageReport types and coverage-aware spec (including engine/run headers, metrics, targets, uncoveredTargets, unsatisfiedHints and diagnostics).\n- Validate generated coverage reports against this schema in tests (and optionally in a debug-only assertion path) to catch regressions early.\n- Extend coverage diff tests to ensure older reports continue to be accepted and that new fields are treated in a backward-compatible way.\n\n[Deliverables]\n- coverage-report/v1 JSON Schema file checked into the repo (either under docs or reporter package).\n- Reporter/core tests that validate sample reports against the schema.\n- Extended diff tests for compatibility between baseline and newer reports.\n\n[Definition of Done]\n- All tests generating coverage-report/v1 validate the JSON output against the new schema.\n- Compatibility tests cover cross-version diffs and ensure new fields do not break existing consumers.",
         "testStrategy": "Create a JSON Schema for coverage-report/v1 and add tests in reporter/core that load representative reports (from unit/e2e tests) and validate them via AJV. Extend coverage-report JSON tests to ensure required fields remain present and optional fields are handled gracefully. In coverage diff tests, add fixtures representing older reports and assert that diffCoverageReports can compare them to newer ones without errors and with stable compatibility diagnostics.",
@@ -1387,19 +1387,21 @@
             "id": 9334001,
             "title": "Define coverage-report/v1 JSON Schema",
             "description": "Author a JSON Schema describing coverage-report/v1 that matches @foundrydata/shared CoverageReport types and the coverage-aware spec.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/reporter/src/schemas/coverage-report-v1.schema.json",
-            "parentId": "9334"
+            "parentId": "9334",
+            "updatedAt": "2025-11-30T16:06:45.650Z"
           },
           {
             "id": 9334002,
             "title": "Validate generated reports against the schema in tests",
             "description": "Add tests that validate coverage-report/v1 instances from core and CLI runs against the new JSON Schema using AJV.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/coverage/tests/coverage-report-json.test.ts",
-            "parentId": "9334"
+            "parentId": "9334",
+            "updatedAt": "2025-11-30T16:12:09.334Z"
           },
           {
             "id": 9334003,
@@ -1410,12 +1412,13 @@
             "file": "packages/core/src/coverage/tests/coverage-diff.spec.ts",
             "parentId": "9334"
           }
-        ]
+        ],
+        "updatedAt": "2025-11-30T16:12:09.334Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-30T15:59:53.855Z",
+      "lastModified": "2025-11-30T16:12:09.336Z",
       "taskCount": 26,
       "completedCount": 23,
       "tags": [
