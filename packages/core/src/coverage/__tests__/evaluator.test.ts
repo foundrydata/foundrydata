@@ -197,6 +197,80 @@ describe('evaluateCoverage', () => {
     expect(uncoveredIds).toEqual(['t2', 't3']);
   });
 
+  it('uses meta.operationKeys to project schema-level targets onto multiple operations', () => {
+    const targets: CoverageTargetReport[] = [
+      makeTarget({
+        id: 's1',
+        dimension: 'structure',
+        hit: true,
+        meta: { operationKeys: ['getUser', 'createUser'] },
+      }),
+      makeTarget({
+        id: 's2',
+        dimension: 'structure',
+        hit: false,
+        meta: { operationKeys: ['getUser'] },
+      }),
+      makeTarget({
+        id: 'opReq',
+        dimension: 'operations',
+        kind: 'OP_REQUEST_COVERED',
+        operationKey: 'getUser',
+        hit: true,
+      }),
+      makeTarget({
+        id: 'opRes',
+        dimension: 'operations',
+        kind: 'OP_RESPONSE_COVERED',
+        operationKey: 'createUser',
+        hit: false,
+      }),
+    ];
+
+    const { metrics } = evaluateCoverage({
+      targets,
+      dimensionsEnabled: ['structure', 'operations'],
+      excludeUnreachable: false,
+    });
+
+    expect(metrics.byOperation['getUser']).toBeCloseTo(2 / 3, 6);
+    expect(metrics.byOperation['createUser']).toBeCloseTo(1 / 2, 6);
+  });
+
+  it('keeps byOperation defined over schema targets when operations dimension is disabled', () => {
+    const targets: CoverageTargetReport[] = [
+      makeTarget({
+        id: 's1',
+        dimension: 'structure',
+        hit: true,
+        meta: { operationKeys: ['getUser', 'createUser'] },
+      }),
+      makeTarget({
+        id: 's2',
+        dimension: 'structure',
+        hit: false,
+        meta: { operationKeys: ['getUser'] },
+      }),
+      makeTarget({
+        id: 'opReq',
+        dimension: 'operations',
+        kind: 'OP_REQUEST_COVERED',
+        operationKey: 'getUser',
+        hit: true,
+      }),
+    ];
+
+    const { metrics } = evaluateCoverage({
+      targets,
+      dimensionsEnabled: ['structure'],
+      excludeUnreachable: false,
+    });
+
+    expect(metrics.byOperation['getUser']).toBeCloseTo(1 / 2, 6);
+    expect(metrics.byOperation['createUser']).toBeCloseTo(1, 6);
+    expect(metrics.byDimension.operations).toBeUndefined();
+  });
+
   it('sets coverageStatus to minCoverageNotMet when overall is below thresholds.overall', () => {
     const targets: CoverageTargetReport[] = [
       makeTarget({

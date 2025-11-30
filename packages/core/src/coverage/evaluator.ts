@@ -30,6 +30,22 @@ export interface CoverageEvaluatorResult {
   uncoveredTargets: CoverageTargetReport[];
 }
 
+function getOperationKeysForTarget(target: CoverageTargetReport): string[] {
+  if (typeof target.operationKey === 'string' && target.operationKey) {
+    return [target.operationKey];
+  }
+  const maybeMeta = target.meta as { operationKeys?: unknown } | undefined;
+  const metaOps = maybeMeta?.operationKeys;
+  if (!Array.isArray(metaOps)) return [];
+  const result: string[] = [];
+  for (const value of metaOps) {
+    if (typeof value === 'string' && value) {
+      result.push(value);
+    }
+  }
+  return result;
+}
+
 // eslint-disable-next-line max-lines-per-function, complexity
 export function evaluateCoverage(
   input: CoverageEvaluatorInput
@@ -86,8 +102,8 @@ export function evaluateCoverage(
       hitByDimension.set(dimKey, (hitByDimension.get(dimKey) ?? 0) + 1);
     }
 
-    const opKey = target.operationKey;
-    if (opKey) {
+    const opKeys = getOperationKeysForTarget(target);
+    for (const opKey of opKeys) {
       totalByOperation.set(opKey, (totalByOperation.get(opKey) ?? 0) + 1);
       if (target.hit) {
         hitByOperation.set(opKey, (hitByOperation.get(opKey) ?? 0) + 1);

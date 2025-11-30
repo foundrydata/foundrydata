@@ -745,10 +745,11 @@
             "id": 9310003,
             "title": "Map schema targets to operations for coverage.byOperation",
             "description": "Implement deterministic mapping from schema-level targets to operation keys and compute coverage.byOperation ratios, without changing schema-level CoverageTarget.id values.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/coverage/coverage-evaluator.ts",
-            "parentId": "9310"
+            "parentId": "9310",
+            "updatedAt": "2025-11-30T01:24:05.474Z"
           },
           {
             "id": 9310004,
@@ -760,7 +761,7 @@
             "parentId": "9310"
           }
         ],
-        "updatedAt": "2025-11-30T01:14:05.155Z"
+        "updatedAt": "2025-11-30T01:24:05.474Z"
       },
       {
         "id": "9311",
@@ -1143,7 +1144,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-30T01:14:05.156Z",
+      "lastModified": "2025-11-30T01:24:05.475Z",
       "taskCount": 21,
       "completedCount": 14,
       "tags": [

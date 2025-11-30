@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import type { CoverageDimension, CoverageTarget } from '@foundrydata/shared';
 import type { CoverageGraph } from './index.js';
 import {
@@ -247,6 +248,71 @@ function addResponseEdgesForOperation(
   return added;
 }
 
+function buildOperationReachability(
+  graph: CoverageGraph
+): Map<string, Set<string>> {
+  const adjacency = new Map<string, string[]>();
+  for (const edge of graph.edges) {
+    const existing = adjacency.get(edge.from) ?? [];
+    existing.push(edge.to);
+    adjacency.set(edge.from, existing);
+  }
+
+  const nodeOps = new Map<string, Set<string>>();
+  const queue: Array<{ nodeId: string; opKey: string }> = [];
+
+  for (const node of graph.nodes) {
+    if (node.kind !== 'operation' || !node.operationKey) continue;
+    queue.push({ nodeId: node.id, opKey: node.operationKey });
+  }
+
+  while (queue.length > 0) {
+    const { nodeId, opKey } = queue.shift()!;
+    const existing = nodeOps.get(nodeId) ?? new Set<string>();
+    if (existing.has(opKey)) {
+      continue;
+    }
+    existing.add(opKey);
+    nodeOps.set(nodeId, existing);
+
+    const neighbors = adjacency.get(nodeId);
+    if (!neighbors) continue;
+    for (const neighbor of neighbors) {
+      queue.push({ nodeId: neighbor, opKey });
+    }
+  }
+
+  return nodeOps;
+}
+
+function attachOperationKeysToTargets(
+  graph: CoverageGraph,
+  nodeOps: Map<string, Set<string>>,
+  targets: CoverageTarget[]
+): void {
+  if (nodeOps.size === 0) return;
+
+  const opsByCanonPath = new Map<string, Set<string>>();
+  for (const node of graph.nodes) {
+    const ops = nodeOps.get(node.id);
+    if (!ops || ops.size === 0) continue;
+    const existing = opsByCanonPath.get(node.canonPath) ?? new Set<string>();
+    for (const opKey of ops) {
+      existing.add(opKey);
+    }
+    opsByCanonPath.set(node.canonPath, existing);
+  }
+
+  for (const target of targets) {
+    const ops = opsByCanonPath.get(target.canonPath);
+    if (!ops || ops.size === 0) continue;
+    const operationKeys = Array.from(ops).sort();
+    const meta = target.meta ? { ...target.meta } : {};
+    (meta as Record<string, unknown>).operationKeys = operationKeys;
+    target.meta = meta;
+  }
+}
+
 function addSchemaReusedTargetsFromIndex(
   reuseIndex: Map<string, Set<string>>,
   operationsEnabled: boolean,
@@ -348,4 +414,7 @@ export function attachOpenApiOperationNodes(
     targets,
     idContext
   );
+
+  const nodeOps = buildOperationReachability(graph);
+  attachOperationKeysToTargets(graph, nodeOps, targets);
 }
