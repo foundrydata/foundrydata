@@ -838,7 +838,7 @@
           "9309",
           "9310"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 4,
         "details": "[Context]\nConsolidate cross-cutting coverage tests and docs to ensure the coverage layer respects the core pipeline invariants and satisfies the acceptance criteria listed in §10 (Acceptance criteria) and constraints in §8 (Technical constraints & invariants). This includes determinism, AJV-as-oracle behavior, no network I/O in coverage stages and compatibility with CoverageIndex under AP:false.\n\n[Key requirements]\n- Add end-to-end tests for each acceptance scenario: oneOf branches, optional properties, enums, coverage threshold, OpenAPI coverage and reproducibility of coverage reports for identical inputs.\n- Verify that coverage-aware pipeline runs preserve AJV-as-oracle behavior: final validation still uses the original schema and coverage logic never re-parses or re-interprets JSON Schema semantics independently.\n- Confirm deterministic behavior: for fixed (canonical schema, OpenAPI spec, coverage options, seed, AJV major, registryFingerprint), CoverageGraph, TestUnits, generated instances and coverage reports are identical across runs.\n- Ensure coverage stages do not introduce network I/O and remain compatible with existing external $ref resolver behavior and CoverageIndex invariants under AP:false.\n- Document coverage invariants and known limitations in docs to align with existing architecture and known-limits documents.\n\n[Deliverables]\n- Acceptance-focused e2e test suite in packages/core/test/e2e/coverage-acceptance.spec.ts.\n- Determinism tests and tooling to compare coverage reports across multiple runs.\n- Documentation updates in docs/spec-coverage-aware-v1.x and high-level README/Architecture notes.\n\n[Commands]\n- npm run build\n- npm run test -- --runInBand\n- npm run test packages/core/test/e2e/coverage-acceptance.spec.ts\n\n[Definition of Done]\n- All acceptance scenarios from the spec are covered by automated tests that assert expected coverage metrics, exit codes and report content.\n- Reproducibility tests confirm that repeated runs produce byte-identical coverage reports except for allowed timestamp fields.\n- Additional tests confirm there is no network I/O in coverage stages and that CoverageIndex semantics under AP:false are preserved.\n- Documentation for coverage invariants, determinism and limitations is merged and aligned with existing architecture and invariants docs.",
         "testStrategy": "End-to-end Vitest suites exercising coverage-aware runs over small JSON Schema and OpenAPI fixtures, asserting each acceptance criterion; determinism tests that run the same configuration multiple times and compare normalized coverage reports; tests that instrument or mock network layers to ensure coverage stages remain I/O-free; manual and code-reviewed documentation updates that describe coverage invariants and how they relate to the existing core pipeline contracts, including status:'deprecated' semantics for diagnostic-only targets such as SCHEMA_REUSED_COVERED and the use of status:'unreachable' (rather than a dedicated unreachableTargets array) to represent unreachable targets in coverage-report/v1.",
@@ -847,39 +847,44 @@
             "id": 9312001,
             "title": "Implement acceptance tests for oneOf, optional properties and enums",
             "description": "Add e2e tests that validate oneOf branch coverage, PROPERTY_PRESENT behavior and enum coverage under measure and guided modes.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 4,
             "file": "packages/core/test/e2e/coverage-acceptance.spec.ts",
-            "parentId": "9312"
+            "parentId": "9312",
+            "updatedAt": "2025-11-30T01:35:38.984Z"
           },
           {
             "id": 9312002,
             "title": "Add tests for minCoverage and coverage threshold behavior",
             "description": "Create tests that assert coverageStatus, CLI exit codes and summary output when minCoverage is not met.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 2,
             "file": "packages/core/test/e2e/coverage-acceptance.spec.ts",
-            "parentId": "9312"
+            "parentId": "9312",
+            "updatedAt": "2025-11-30T01:43:03.491Z"
           },
           {
             "id": 9312003,
             "title": "Add OpenAPI coverage and reproducibility tests",
             "description": "Add e2e tests that validate coverage.byOperation, OP_* targets and reproducibility of coverage reports across identical runs.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 3,
             "file": "packages/core/test/e2e/coverage-openapi-acceptance.spec.ts",
-            "parentId": "9312"
+            "parentId": "9312",
+            "updatedAt": "2025-11-30T01:45:40.962Z"
           },
           {
             "id": 9312004,
             "title": "Document coverage invariants and limitations",
             "description": "Update architecture and invariants docs to describe coverage-specific constraints and how they compose with existing pipeline guarantees. Document that diagnostic-only targets such as SCHEMA_REUSED_COVERED are emitted with status:'deprecated' so they are excluded from all coverage denominators while remaining visible in reports, and that unreachable targets are identified by status:'unreachable' in CoverageTargetReport entries with no separate unreachableTargets array in coverage-report/v1; consumers must derive unreachable views by filtering on status.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 3,
             "file": "docs/spec-coverage-aware-v1.x.md",
-            "parentId": "9312"
+            "parentId": "9312",
+            "updatedAt": "2025-11-30T01:48:29.709Z"
           }
-        ]
+        ],
+        "updatedAt": "2025-11-30T01:48:29.709Z"
       },
       {
         "id": "9320",
@@ -1145,7 +1150,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-30T01:33:01.180Z",
+      "lastModified": "2025-11-30T01:48:29.711Z",
       "taskCount": 21,
       "completedCount": 15,
       "tags": [

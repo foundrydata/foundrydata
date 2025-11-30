@@ -295,7 +295,7 @@ type CoverageDimension =
        * if no `2xx` JSON responses exist, the implementation MUST select the first `(status, mediaType)` pair whose media type is JSON when sorted lexicographically by status code and media type.
 
    * For V1, `OP_RESPONSE_COVERED` is defined with respect to 2xx JSON responses only. Other status codes and content types are excluded from coverage metrics.
-   * In V1, `SCHEMA_REUSED_COVERED` is diagnostic‑only: it MAY be reported in `targets[]` and diagnostics, but it does not contribute to `coverage.overall` or `coverage.byDimension` and MUST NOT affect `minCoverage` enforcement.
+   * In V1, `SCHEMA_REUSED_COVERED` is diagnostic‑only: implementations MUST emit these targets with `status:'deprecated'` and `dimension:'operations'`. They MAY appear in `targets[]`, `uncoveredTargets[]` and diagnostics, but they do not contribute to `coverage.overall`, `coverage.byDimension` or `coverage.byOperation` and MUST NOT affect `minCoverage` enforcement; they are counted only in `metrics.targetsByStatus.deprecated`.
    * **Operation scope for a run:**
 
      * When the engine is invoked against an OpenAPI document but only a subset of operations is explicitly targeted (for example via CLI selection flags), the coverage report MUST set `run.operationsScope:'selected'` and list the operation keys that were actually in scope in `run.selectedOperations`.
