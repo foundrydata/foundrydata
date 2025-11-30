@@ -179,10 +179,10 @@ With these constraints, the minimal valid instance is no longer `{}`. Running Fo
 Most teams already have JSON Schemas or OpenAPI specs, but still:
 
 - hand-write fixtures that drift away from the contract,
-- rely on “best-effort” generators that don’t always agree with AJV,
-- debug intermittent test failures caused par des données non déterministes.
+- rely on "best-effort" generators that don't always agree with AJV,
+- debug intermittent test failures caused by non-deterministic data.
 
-FoundryData is built specifically to make those issues moins fréquents dans les pipelines CI :
+FoundryData is built specifically to make those issues less frequent in CI pipelines:
 
 - **Same schema + same seed ⇒ same data.**  
   You can replay exactly the dataset that triggered a regression.
