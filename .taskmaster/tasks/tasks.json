@@ -735,10 +735,11 @@
             "id": 9310002,
             "title": "Implement OP_REQUEST_COVERED, OP_RESPONSE_COVERED and SCHEMA_REUSED_COVERED targets",
             "description": "Create operation-level coverage targets for request and response schemas and diagnostic-only SCHEMA_REUSED_COVERED targets for schemas reused across operations, and mark hits when at least one payload is generated.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/coverage/coverage-analyzer-openapi.ts",
-            "parentId": "9310"
+            "parentId": "9310",
+            "updatedAt": "2025-11-30T01:14:05.155Z"
           },
           {
             "id": 9310003,
@@ -759,7 +760,7 @@
             "parentId": "9310"
           }
         ],
-        "updatedAt": "2025-11-30T01:04:11.633Z"
+        "updatedAt": "2025-11-30T01:14:05.155Z"
       },
       {
         "id": "9311",
@@ -1142,7 +1143,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-30T01:04:11.633Z",
+      "lastModified": "2025-11-30T01:14:05.156Z",
       "taskCount": 21,
       "completedCount": 14,
       "tags": [

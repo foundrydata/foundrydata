@@ -607,12 +607,14 @@ export function analyzeCoverage(
     engineVersion: '0.0.0',
   });
 
+  const enabledSet = new Set(enabledDimensions);
+
   const state: CoverageGraphBuildState = {
     nodes: [],
     edges: [],
     nodeIndexById: new Map(),
     targets: [],
-    enabledDimensions: new Set(enabledDimensions),
+    enabledDimensions: enabledSet,
     idContext,
     coverageIndex: input.coverageIndex,
   };
@@ -623,6 +625,9 @@ export function analyzeCoverage(
   attachOpenApiOperationNodes({
     rootSchema: input.canonSchema,
     graph: { nodes: state.nodes, edges: state.edges },
+    targets: state.targets,
+    enabledDimensions: enabledSet,
+    idContext,
   });
 
   const updatedTargets = applyUnreachableStatusToTargets(

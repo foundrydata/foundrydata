@@ -52,8 +52,7 @@ This document maps parent task 9310 bullets from Implementation Details, Deliver
 
 Status:
 
-- 9310.9310001: in-progress
-- 9310.9310002: pending
+- 9310.9310001: done
+- 9310.9310002: in-progress
 - 9310.9310003: pending
 - 9310.9310004: pending
-
