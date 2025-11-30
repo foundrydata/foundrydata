@@ -77,7 +77,7 @@ Coverage-aware features build on top of the same JSON Schema support and invaria
     - `enum` tracks which enum values are exercised,
     - `boundaries` (M2) focuses on min/max constraints for numbers, strings and arrays,
     - `operations` (OpenAPI) projects targets onto operation keys.
-  - `dimensionsEnabled` selects which dimensions are materialised in metrics; it does not change the underlying target universe or `CoverageTarget.id` values.
+  - `dimensionsEnabled` selects which coverage dimensions are active for a given run: only the listed dimensions materialise `CoverageTarget` entries and participate in metrics for that run. Turning a dimension on or off does not renumber existing targets in other dimensions; for a given dimension, IDs remain stable as long as `(canonical schema, options, seed, AJV posture, registryFingerprint)` stays the same.
 
 - **AP:false & must-cover**
   - Under `additionalProperties:false`, the coverage layer consumes the existing must-cover/CoverageIndex semantics: `PROPERTY_PRESENT` targets for undeclared names are only considered under AP:false when backed by `CoverageIndex.has`/`CoverageIndex.enumerate`.

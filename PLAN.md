@@ -1,18 +1,19 @@
-Task: 9321   Title: Expand Known-Limits.md with coverage-aware limits
-Anchors: [cov://§3#coverage-model, cov://§7#json-coverage-report, cov://§8#technical-constraints-invariants]
+Task: 9321   Title: Fix dimensionsEnabled/excludeUnreachable documentation for coverage-aware limits
+Anchors: [cov://§3#dimensions-v1, cov://§3#coverage-model, cov://§7#json-coverage-report, cov://§8#technical-constraints-invariants]
 Touched files:
 - docs/Known-Limits.md
+- docs/COMPREHENSIVE_FEATURE_SUPPORT.md
 - .taskmaster/docs/9321-traceability.md
 
 Approach:
-Pour la sous-tâche 9321.9321003, je vais enrichir `docs/Known-Limits.md` avec une sous-section explicite sur les limites coverage-aware, en m’appuyant sur la SPEC coverage-aware (cov://§3#coverage-model, cov://§7#json-coverage-report, cov://§8#technical-constraints-invariants). Cette section détaillera : (1) les caps sur le nombre de cibles par dimension/schema/opération côté planificateur (par ex. limites configurables sur les targets pour éviter l’explosion combinatoire, tout en restant déterministes), (2) les nuances AP:false côté coverage (PROPERTY_PRESENT uniquement adossé à CoverageIndex, cibles unreachable ou non matérialisées plutôt que devinées, pas d’automate parallèle), (3) les contraintes autour de la dimension boundaries (ciblage des min/max, impact potentiel sur le volume de cibles et caps associés) et (4) les effets de `dimensionsEnabled` / `excludeUnreachable` sur les dénominateurs de coverage tout en gardant les IDs/statuts stables. Je rappellerai également que les targets purement diagnostiques (comme `SCHEMA_REUSED_COVERED` en `status:'deprecated'`) n’entrent jamais dans les dénominateurs ni dans `minCoverage`, même lorsqu’elles sont présentes dans `targets` / `uncoveredTargets`, et que `operationsScope`/`selectedOperations` imposent des contraintes de compatibilité sur `coverage.byOperation` et le diff de rapports. L’objectif est de rendre visibles ces limites/précautions pour les utilisateurs sans réécrire toute la SPEC.
+Pour la sous-tâche 9321.9321003, je vais corriger la description de `dimensionsEnabled` et `excludeUnreachable` dans `docs/Known-Limits.md` et `docs/COMPREHENSIVE_FEATURE_SUPPORT.md` afin qu’elle reflète exactement la SPEC coverage-aware V1 (cov://§3#dimensions-v1, cov://§3#coverage-model, cov://§7#json-coverage-report, cov://§8#technical-constraints-invariants) et le comportement réel de l’analyzer/evaluator. Concrètement, je vais remplacer les formulations actuelles qui laissent entendre que `dimensionsEnabled` n’affecte que les métriques par une description qui indique que seules les dimensions listées sont matérialisées en CoverageTargets pour un run, tout en rappelant que l’ID des cibles existantes reste stable lorsqu’on active ou désactive d’autres dimensions. Je garderai la sémantique existante d’`excludeUnreachable` (effet uniquement sur les dénominateurs, cibles `unreachable` toujours présentes dans `targets`/`uncoveredTargets`) et je vérifierai que les mentions de cibles purement diagnostiques (comme `SCHEMA_REUSED_COVERED` en `status:'deprecated'`) restent cohérentes avec l’évaluator et la SPEC. Aucune logique TypeScript n’est modifiée ; l’objectif est d’aligner strictement la documentation sur les invariants déjà garantis par le code et le coverage-report/v1, sans introduire de nouveau comportement.
 
 Risks/Unknowns:
-- Risque de figer des chiffres ou caps trop précis alors qu’ils sont configurables ou susceptibles d’évoluer; je resterai au niveau des principes (présence de caps, comportement en cas de dépassement, diagnostics) en renvoyant à la SPEC et au code pour les valeurs exactes.
-- Il faut éviter de contredire les invariants déjà décrits (ID stables, projection via dimensionsEnabled, excludeUnreachable sur le dénominateur, cibles diagnostiques hors métriques); je m’alignerai avec Invariants.md/ARCHITECTURE.md pour toutes les mentions coverage.
-- La page Known-Limits est déjà dense; je veillerai à insérer la section coverage-aware de manière lisible, en regroupant les points coverage plutôt qu’en dispersant des bullets partout.
+- Risque de créer une divergence entre ces deux fichiers et d’autres docs coverage (Invariants.md, ARCHITECTURE.md) si une ancienne formulation a été copié-collée; je ferai une passe rapide pour éviter toute contradiction flagrante au niveau des invariants de haut niveau.
+- La nuance entre “univers de cibles conceptuel” et “cibles matérialisées dans targets[] pour un run donné” doit rester claire sans recopier la SPEC; je veillerai à parler de matérialisation/rapport plutôt que de redéfinir l’univers de cibles.
+- Comme seules des docs sont modifiées, il n’y a pas de tests ciblés à ajouter; je m’appuierai sur la CI standard (build/typecheck/lint/test/bench) pour vérifier l’absence de régression dans le code ou les types.
 
-Parent bullets couverts: [KR3, KR4, DEL3, DOD3, TS1]
+Parent bullets couverts: [KR1, KR3, KR4, DEL1, DEL3, DOD1, DOD3, TS1]
 
 Checks:
 - build: npm run build
