@@ -116,6 +116,65 @@ The `Report` interface defined in [`src/model/report.ts`](./src/model/report.ts)
 
 Raw Normalize/Compose/Generate artefacts are marked `@internal` in the type and may change as the core evolves. Consumers should stick to the documented fields above plus `coverageIndexSnapshot`, `repair.actions`, and `validate.errors` when needed.
 
+### Coverage-report/v1 overview
+
+When coverage is enabled in the core engine (CLI or Node API), each run in `coverage=measure` or `coverage=guided` mode produces a JSON coverage report with a stable, versioned contract (`coverage-report/v1`). The shared `CoverageReport` type, defined in `@foundrydata/shared` and specified in the coverage-aware spec (cov://§7#json-coverage-report, cov://§7#thresholds-mincoverage), is the reference for this format.
+
+At a high level, a coverage report contains:
+
+- A **header** (`version`, `engine`, `run`) that records the report version, engine metadata (FoundryData version, coverage mode, AJV major) and run parameters (seed/masterSeed, `maxInstances`/`actualInstances`, `dimensionsEnabled`, `excludeUnreachable`, timestamps).
+- A **metrics** block that aggregates coverage ratios and thresholds:
+  - `metrics.overall` — global coverage ratio for the enabled dimensions.
+  - `metrics.byDimension` — per-dimension coverage (e.g. `structure`, `branches`, `enum`).
+  - `metrics.byOperation` — per-operation coverage when an OpenAPI context is present.
+  - `metrics.targetsByStatus` — counts of targets per status (e.g. `active`, `unreachable`).
+  - `metrics.thresholds` — optional thresholds; in V1 only `thresholds.overall` participates in `coverageStatus`, while per-dimension/per-operation thresholds are descriptive only.
+  - `metrics.coverageStatus` — `ok` or `minCoverageNotMet` depending on whether the configured global threshold has been satisfied.
+- Two **target arrays**:
+  - `targets` — the universe of coverage targets materialized by the analyzer for the enabled dimensions.
+  - `uncoveredTargets` — a filtered view containing only targets that were not hit.
+- **Planner diagnostics**:
+  - `unsatisfiedHints` — structured records for hints the planner/generator could not realise (for example because of conflicting constraints or caps).
+  - `diagnostics.plannerCapsHit` — a summary of where deterministic caps limited planning.
+
+An example fragment (fields abridged for brevity) looks like:
+
+```json
+{
+  "version": "coverage-report/v1",
+  "engine": {
+    "foundryVersion": "1.2.3",
+    "coverageMode": "guided",
+    "ajvMajor": 8
+  },
+  "run": {
+    "seed": 42,
+    "maxInstances": 100,
+    "actualInstances": 87,
+    "dimensionsEnabled": ["structure", "branches", "enum"],
+    "excludeUnreachable": true
+  },
+  "metrics": {
+    "coverageStatus": "ok",
+    "overall": 0.84,
+    "byDimension": { "structure": 0.9, "branches": 0.8, "enum": 0.75 },
+    "targetsByStatus": { "active": 120, "unreachable": 8 },
+    "thresholds": { "overall": 0.8 }
+  },
+  "targets": [
+    { "id": "T1", "dimension": "structure", "kind": "SCHEMA_NODE", "canonPath": "#", "hit": true }
+  ],
+  "uncoveredTargets": [],
+  "unsatisfiedHints": [],
+  "diagnostics": {
+    "plannerCapsHit": [],
+    "notes": []
+  }
+}
+```
+
+Consumers that need full details should rely on the `CoverageReport` type in `@foundrydata/shared` and the coverage-aware spec, and treat this section as a navigational overview rather than a complete schema reference.
+
 ## Testing & snapshots
 
 The package ships with Vitest snapshot tests under `test/`:

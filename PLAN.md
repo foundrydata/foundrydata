@@ -1,19 +1,18 @@
-Task: 9324   Title: Implement coverage-aware CLI examples and docs
-Anchors: [cov://§6#execution-modes-ux, cov://§6#budget-profiles, cov://§7#json-coverage-report, cov://§7#cli-summary, cov://§7#thresholds-mincoverage]
+Task: 9323   Title: Describe coverage-report/v1 in reporter README
+Anchors: [cov://§7#json-coverage-report, cov://§7#thresholds-mincoverage]
 Touched files:
-- docs/use-cases/product-scenarios.md
-- examples/README.md
-- .taskmaster/docs/9324-traceability.md
+- packages/reporter/README.md
+- .taskmaster/docs/9323-traceability.md
 
 Approach:
-Pour la sous-tâche 9324.1, je vais d’abord mettre à jour `docs/use-cases/product-scenarios.md` pour ajouter, dans chaque scénario existant (API mocks, contract tests, LLM testing), un bloc “Extension coverage-aware” qui montre comment activer `coverage=measure` ou `coverage=guided` sur les mêmes schémas, en restant cohérent avec les modes décrits en cov://§6#execution-modes-ux et les profils/budgets de cov://§6#budget-profiles. Chaque extension présentera un ou deux appels CLI concrets (generate ou openapi) avec des flags `--coverage`, `--coverage-dimensions`, `--coverage-profile` et un `--coverage-report` pointant vers un fichier simple (par ex. `coverage.json`), en expliquant brièvement ce que l’équipe peut tirer du rapport (inspection rapide de `metrics.overall` et des dimensions clés), en renvoyant vers la SPEC pour les détails. Ensuite, j’ajouterai à `examples/README.md` une sous-section dédiée “Coverage-aware generation” qui centralise des exemples plus systématiques : un run `coverage=measure` pour audit passif, un run `coverage=guided` avec profile `balanced` ou `thorough`, un exemple `quick` adapté aux jobs rapides, et un extrait de flux CI montrant l’usage de `--coverage-min` et `--coverage-exclude-unreachable` en cohérence avec cov://§7#json-coverage-report, cov://§7#cli-summary et cov://§7#thresholds-mincoverage. Je garderai les commandes copy‑pasteables depuis la racine du repo, alignées sur `coverage-options.ts` (noms de flags, valeurs par défaut, profils) et je mettrai à jour `.taskmaster/docs/9324-traceability.md` pour refléter que cette sous-tâche couvre l’ensemble des bullets KR/DEL/DOD/TS définis pour 9324.
+Pour la sous-tâche 9323.9323001, je vais ajouter à `packages/reporter/README.md` une section dédiée à `coverage-report/v1` qui décrit, à un niveau d’abstraction adapté au reporter, la structure du `CoverageReport` telle que définie dans la SPEC coverage-aware (cov://§7#json-coverage-report, cov://§7#thresholds-mincoverage). Cette section expliquera les grandes familles de champs (en-tête `version`/`engine`/`run`, bloc `metrics` avec `overall`, `byDimension`, `byOperation`, `targetsByStatus` et `thresholds`, puis tableaux `targets`/`uncoveredTargets` et `unsatisfiedHints`/`diagnostics`) en insistant sur le fait que le reporter consomme ces rapports comme une source d’insights, sans redéfinir la sémantique du format. Je m’alignerai sur le type `CoverageReport` partagé (packages/shared) et sur les sections 7.x de la SPEC pour choisir quelques champs représentatifs dans un petit exemple JSON, en évitant de recopier la SPEC et en renvoyant explicitement vers `docs/spec-coverage-aware-v1.0.md` pour le contrat exhaustif. Enfin, je garderai la documentation claire quant à la provenance des fichiers (générés en amont par le CLI core via `--coverage-report`) et je mettrai à jour `.taskmaster/docs/9323-traceability.md` pour marquer cette sous-tâche comme couvrant les bullets KR1/DEL1/DOD1/TS1 du parent 9323.
 
 Risks/Unknowns:
-- Risque de divergence entre les commandes documentées et le comportement réel du CLI (en particulier les profils et la sémantique de `--coverage-min` / `--coverage-exclude-unreachable`) ; je m’alignerai strictement sur `packages/cli/src/index.ts` et `packages/cli/src/config/coverage-options.ts` et je vérifierai que les chemins et counts proposés restent raisonnables (budgets proches des presets quick/balanced/thorough).
-- Éviter de paraphraser de larges portions de la SPEC coverage-aware : je décrirai uniquement le minimum nécessaire (modes, profils, seuil global) et renverrai vers `docs/spec-coverage-aware-v1.0.md` pour les détails sur coverage-report/v1, en gardant les exemples centrés sur l’UX CLI.
-- S’assurer que les scénarios produit restent lisibles malgré l’ajout de blocs coverage-aware ; je garderai une structure répétable “CLI de base → Extension coverage-aware” pour chaque scénario et je veillerai à ce que les nouvelles commandes ne masquent pas les usages non coverage.
+- Le principal risque est de désynchroniser le contenu du README reporter par rapport au type `CoverageReport` réel ou à la SPEC coverage-aware ; je limiterai le texte à une vue d’ensemble stable (champs majeurs, rôle des seuils et de `coverageStatus`) et je vérifierai les noms de champs directement dans `packages/shared` et la SPEC.
+- Il faudra trouver un équilibre entre un exemple JSON suffisamment parlant (quelques champs `metrics`, un extrait de `run`, un élément de `targets`) et la nécessité de ne pas dupliquer la SPEC ni figer des détails de représentation qui peuvent évoluer (par exemple l’ordre des champs ou la présence de nouveaux diagnostics).
+- Comme cette sous-tâche ne couvre pas encore le CLI diff ni les liens croisés avec le README core, je m’assurerai que le texte reste strictement focalisé sur la structure de `coverage-report/v1` et qu’il n’anticipe pas de workflows diff/CI qui seront documentés dans les sous-tâches suivantes.
 
-Parent bullets couverts: [KR1, KR2, KR3, KR4, KR5, DEL1, DEL2, DEL3, DOD1, DOD2, DOD3, TS1, TS2, TS3, TS4, TS5]
+Parent bullets couverts: [KR1, DEL1, DOD1, TS1]
 
 Checks:
 - build: npm run build
