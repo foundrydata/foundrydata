@@ -897,7 +897,7 @@
           "9303",
           "9304"
         ],
-        "status": "pending",
+        "status": "done",
         "complexityScore": 2,
         "details": "[Context]\nREADME.md currently focuses on the 5-stage pipeline, CLI and Node APIs but does not surface coverage-aware behavior or coverage CLI flags introduced in tasks 9302–9304.\n\n[Key requirements]\n- Add a dedicated \"Coverage-aware generation\" section explaining coverage modes (off/measure/guided), dimensionsEnabled, excludeUnreachable and minCoverage semantics at a high level.\n- Extend the CLI section with coverage flags (--coverage, --coverage-dimensions, --coverage-min, --coverage-report, --coverage-profile, --coverage-exclude-unreachable) and example commands for JSON Schema and OpenAPI entrypoints.\n- Explain where coverage reports are written (CLI --coverage-report path vs Node API Promise) and how they relate to the coverage-report/v1 spec document (docs/spec-coverage-aware-v1.x.md).\n- Keep the README balanced: coverage is an opt-in feature layered on top of the existing pipeline, not a separate product.\n\n[Deliverables]\n- Updated README.md with a coverage section under or near the existing \"How it works\" / \"CLI\" sections.\n- At least two worked examples showing coverage usage in CI (one JSON Schema, one OpenAPI).\n\n[Definition of Done]\n- All coverage explanations in README.md are consistent with the coverage-aware-v1 spec and with CLI behavior shipped in 9304.\n- README examples run successfully against the current CLI (manual check or simple smoke script).",
         "testStrategy": "Manual doc review plus a small smoke script that runs the CLI examples from README in CI to ensure they stay valid over time.",
@@ -906,30 +906,34 @@
             "id": 9320001,
             "title": "Add coverage overview and modes to README",
             "description": "Introduce a \"Coverage-aware generation\" section in README.md that explains coverage modes, dimensionsEnabled and the high-level reporting model, linking to docs/spec-coverage-aware-v1.x.md for full details.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "README.md",
-            "parentId": "9320"
+            "parentId": "9320",
+            "updatedAt": "2025-11-30T02:59:10.696Z"
           },
           {
             "id": 9320002,
             "title": "Document CLI coverage flags and examples in README",
             "description": "Extend the CLI section in README.md with a table and short examples for --coverage, --coverage-dimensions, --coverage-min, --coverage-report, --coverage-profile and --coverage-exclude-unreachable on generate/openapi commands.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "README.md",
-            "parentId": "9320"
+            "parentId": "9320",
+            "updatedAt": "2025-11-30T02:59:16.270Z"
           },
           {
             "id": 9320003,
             "title": "Describe Node API access to coverage reports",
             "description": "Add a short paragraph and code snippet in the Node.js API section showing how to consume the CoverageReport Promise from the pipeline result (coverageStatus, thresholds.overall, metrics.byDimension/byOperation).",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 2,
             "file": "README.md",
-            "parentId": "9320"
+            "parentId": "9320",
+            "updatedAt": "2025-11-30T02:59:21.335Z"
           }
-        ]
+        ],
+        "updatedAt": "2025-11-30T02:59:21.335Z"
       },
       {
         "id": "9321",
@@ -1150,9 +1154,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-30T02:44:39.176Z",
+      "lastModified": "2025-11-30T02:59:21.336Z",
       "taskCount": 21,
-      "completedCount": 16,
+      "completedCount": 17,
       "tags": [
         "coverage-aware-v1"
       ]

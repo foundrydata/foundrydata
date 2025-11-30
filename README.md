@@ -70,6 +70,7 @@ Implementation Status
 - [CI integration examples](#ci-integration-examples)
 - [Core invariants](#core-invariants)
 - [Pre-flight & 5-stage pipeline](#pre-flight--5-stage-pipeline)
+- [Coverage-aware generation](#coverage-aware-generation)
 - [Feature support (summary)](#feature-support-summary)
 - [CLI](#cli)
 - [Node.js API](#nodejs-api)
@@ -467,6 +468,30 @@ Normalize → Compose → Generate → Repair → Validate
 
 ---
 
+## Coverage-aware generation
+
+FoundryData includes an optional coverage layer that measures which parts of your JSON Schema or OpenAPI contract are exercised by generated instances and, in guided mode, can steer generation toward uncovered areas under a fixed budget. This layer is built strictly on top of the existing `Normalize → Compose → Generate → Repair → Validate` pipeline: AJV remains the oracle, and coverage never relaxes or changes validation semantics.
+
+### Coverage modes
+
+- `coverage=off` (default) — coverage is disabled. The pipeline behaves exactly as described above: there is no coverage graph, no instrumentation and no coverage report. Use this when you only need deterministic, schema-true data.
+- `coverage=measure` — instrumentation is enabled and FoundryData records which targets are hit, but the sequence of generated instances remains identical to a `coverage=off` run for the same schema, options, seed and AJV posture. This mode is useful to understand how well your existing tests exercise a contract without changing the data they see.
+- `coverage=guided` — FoundryData uses coverage-oriented planning to try additional seeds and instance batches that are likely to hit new targets (branches, optional properties, enums, etc.), while still emitting only AJV-valid instances. Guided runs aim to maximise coverage under a configured budget, not to change validation rules.
+
+### Dimensions and unreachable targets
+
+Coverage is organised into dimensions such as structure, branches, enums and, when enabled, boundaries and operations. The `dimensionsEnabled` option selects which dimensions are materialised in metrics; it does **not** change the underlying universe of coverage targets or their IDs. For OpenAPI inputs, enabling operation-level coverage adds metrics broken down by operation without changing the base generator behavior.
+
+Some targets can be proven unreachable by the planner and analyzer (for example when a schema branch is structurally unsatisfiable). These targets are kept in the report with `status:'unreachable'` so they remain visible for diagnostics and debugging.
+
+The `excludeUnreachable` option only affects denominators when computing coverage percentages. When it is set, unreachable targets are ignored in `coverage.overall` and per-dimension/per-operation metrics, but they are still present in `targets` / `uncoveredTargets` and keep their IDs and statuses.
+
+### Thresholds and reports
+
+Coverage-aware runs emit a versioned JSON coverage report (coverage-report/v1) that contains the full target list, hit flags and aggregated metrics such as `coverage.overall`, `coverage.byDimension` and, when available, `coverage.byOperation`. You can configure an overall `minCoverage` threshold so that coverage-aware runs fail with a dedicated non-zero exit code in CI when the required level is not met. The CLI and Node.js API sections below explain how to enable coverage modes and where coverage reports are returned, and `docs/spec-coverage-aware-v1.0.md` documents the exact JSON schema for coverage-report/v1.
+
+---
+
 ## Feature support (summary)
 
 * **Composition & logic**
@@ -517,6 +542,46 @@ foundrydata openapi --spec <openapi.json> [selection] [options]
 | `--resolve <strategies>`         | Resolver strategies for external `$ref`: comma-separated list of `local`, `remote`, `schemastore`. Default is `local` (offline-friendly; no network).                                            |
 | `--cache-dir <path>`             | Override on-disk cache directory used by the resolver extension when fetching and caching external schemas.                                                                                      |
 | `--fail-on-unresolved <bool>`    | When set to `false` in Lax mode, enables planning-time stubs for unresolved externals (maps to `resolver.stubUnresolved = 'emptySchema'` in plan options).                                       |
+
+### Coverage-related options (`generate`)
+
+Coverage is opt-in at the CLI level. By default, `foundrydata generate` runs with coverage disabled and behaves as a plain deterministic generator.
+
+| Option                                  | Description                                                                                                                                                                                                                 |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--coverage <mode>`                     | Coverage mode: `off` (default, no coverage graph or report), `measure` (passive measurement; same instances as coverage=off for given schema/options/seed) or `guided` (coverage-guided generation under a fixed budget).  |
+| `--coverage-dimensions <list>`          | Comma-separated list of coverage dimensions to enable in metrics and reports (for example `structure,branches,enum`). This selects which dimensions are materialised; it does not change target IDs or the underlying data. |
+| `--coverage-min <ratio>`                | Overall coverage threshold in `[0,1]`. When set and not met, the CLI exits with a dedicated non-zero coverage failure code based on `coverage.overall`. Ignored when `--coverage=off`.                                     |
+| `--coverage-report <path>`              | Write a JSON coverage-report/v1 file for the run at the given path. The report includes metrics (`coverage.overall`, `coverage.byDimension`, `coverage.byOperation` when available) and the full target set.               |
+| `--coverage-profile <profile>`          | Predefined coverage budget/profile: `quick`, `balanced` or `thorough`. Profiles control instance budgets and hints used by `coverage=guided` runs; they do not change JSON Schema semantics or AJV behavior.               |
+| `--coverage-exclude-unreachable <bool>` | When `true`, exclude targets proven unreachable from coverage denominators (overall/byDimension/byOperation) while keeping them visible in `targets` / `uncoveredTargets` with `status:'unreachable'`.                     |
+
+### Coverage examples (CLI)
+
+Measure coverage for a JSON Schema and write a report:
+
+```bash
+foundrydata generate \
+  --schema ./examples/user.schema.json \
+  --n 200 \
+  --coverage measure \
+  --coverage-dimensions structure,branches,enum \
+  --coverage-report ./coverage/user.coverage.json
+```
+
+Run a coverage-guided profile for an OpenAPI operation:
+
+```bash
+foundrydata openapi \
+  --spec ./examples/api.openapi.json \
+  --operation-id getUser \
+  --n 500 \
+  --coverage guided \
+  --coverage-profile balanced \
+  --coverage-dimensions structure,branches,enum \
+  --coverage-min 0.8 \
+  --coverage-report ./coverage/getUser.coverage.json
+```
 
 For the full set of options:
 
@@ -586,6 +651,20 @@ for (const item of items) {
   const v = Validate(item, schema, { validateFormats: true });
   if (!v.valid) {
     console.error('Unexpected validation failure', v.ajvErrors);
+  }
+}
+
+// Option 3 — when coverage is enabled in options.coverage,
+// await the attached CoverageReport Promise for coverage-aware runs
+if (stream.coverage) {
+  const coverageReport = await stream.coverage;
+  if (coverageReport) {
+    console.log('coverageStatus:', coverageReport.metrics.coverageStatus);
+    console.log('overall coverage:', coverageReport.metrics.overall);
+    console.log(
+      'branches coverage:',
+      coverageReport.metrics.byDimension['branches']
+    );
   }
 }
 ```

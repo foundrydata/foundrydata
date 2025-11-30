@@ -1,18 +1,18 @@
-Task: 9312   Title: Document coverage invariants and limitations
-Anchors: [cov://§3#coverage-model, cov://§7#json-coverage-report, cov://§3#dimensions]
+Task: 9320   Title: Describe Node API access to coverage reports
+Anchors: [cov://§1#context-goals, cov://§3#coverage-model, cov://§7#json-coverage-report]
 Touched files:
-- docs/spec-coverage-aware-v1.0.md
-- .taskmaster/docs/9312-traceability.md
+- README.md
+- .taskmaster/docs/9320-traceability.md
 
 Approach:
-Pour 9312.9312004, je vais renforcer la spécification `docs/spec-coverage-aware-v1.0.md` pour expliciter les invariants coverage‑aware déjà mis en œuvre dans le code: statuts des cibles (`active`, `unreachable`, `deprecated`), rôle de `SCHEMA_REUSED_COVERED` comme cible purement diagnostique et absence volontaire d’un tableau `unreachableTargets` dans `coverage-report/v1`. Dans la section sur la dimension `operations` (cov://§3#dimensions), j’alignerai la prose sur le comportement de l’évaluator en précisant que `SCHEMA_REUSED_COVERED` est toujours émis avec `status:'deprecated'`, `dimension:'operations'` et qu’il ne contribue jamais aux dénominateurs de `coverage.overall`, `coverage.byDimension`, `coverage.byOperation` ni à l’enforcement de `minCoverage`; ces cibles restent visibles dans `targets[]` / `uncoveredTargets[]` et ne sont comptabilisées que dans `metrics.targetsByStatus.deprecated` (cov://§3#coverage-model, cov://§7#json-coverage-report). Dans la section 7.1 (JSON coverage report), je vérifierai que la représentation des cibles `status:'unreachable'` et la phrase normative sur l’absence de champ `unreachableTargets` sont explicites et cohérentes avec le type `CoverageReport`; si nécessaire, j’ajouterai une courte note rappelant que les consommateurs doivent dériver toute vue “unreachable” en filtrant `targets` / `uncoveredTargets` et que cette décision est intentionnelle pour conserver un format compact et stable. Enfin, je m’assurerai que ces ajouts restent compatibles avec les invariants du pipeline décrits dans les autres docs (Invariants/Architecture) sans dupliquer inutilement leur contenu.
+Pour la sous-tâche 9320.9320003, je vais compléter la section “Node.js API” de `README.md` avec un paragraphe et un petit extrait de code montrant comment accéder au rapport de couverture depuis le Node API lorsque la couverture est activée. À partir de la SPEC coverage-aware (cov://§1#context-goals, cov://§3#coverage-model, cov://§7#json-coverage-report) et de l’API `Generate` existante (qui expose déjà une propriété `coverage?: Promise<CoverageReport | undefined>`), je documenterai un patron d’usage simple : activer la couverture via l’option `coverage` dans `Generate`, consommer les items via l’async iterable comme aujourd’hui, puis `await stream.coverage` pour récupérer un `CoverageReport` typé (avec `metrics.overall`, `metrics.byDimension`, `metrics.byOperation` quand disponible et `metrics.thresholds.overall` pour `minCoverage`). Je préciserai que, conformément à la SPEC, le rapport est déterministe pour un tuple `(schema, options, seed, ajvMajor, registryFingerprint)` donné, que `coverageStatus` reflète l’application éventuelle d’un seuil global `minCoverage`, et que `excludeUnreachable` affecte uniquement les dénominateurs sans retirer les cibles `status:'unreachable'` du rapport. Enfin, je veillerai à rester dans le périmètre Node API (sans redécrire la structure complète de coverage-report/v1) en renvoyant vers `docs/spec-coverage-aware-v1.0.md` pour les détails de schéma et vers la section CLI pour la configuration des flags correspondants.
 
 Risks/Unknowns:
-- Le document coverage-aware étant déjà dense, le principal risque est de réintroduire de la redondance ou de rendre certaines sections moins lisibles; je viserai des ajouts courts, ancrés dans les sections existantes (statuts, dimension `operations`, JSON report) plutôt que de nouvelles sections entières.
-- Il faudra veiller à rester parfaitement aligné avec l’implémentation actuelle (evaluator, Analyzer OpenAPI): si un écart est détecté (par exemple présence involontaire de `SCHEMA_REUSED_COVERED` dans les métriques), il faudra le traiter dans une autre tâche plutôt que d’étendre la SPEC à posteriori.
-- Toute mention aux docs d’architecture / invariants devra rester sous forme de renvoi conceptuel sans copier ces documents, pour respecter la politique REFONLY et limiter les divergences futures.
+- Le principal risque est de suggérer une API Node côté couverture qui divergerait de l’implémentation réelle; je m’alignerai strictement sur `GenerateIterable.coverage` (promesse optionnelle de `CoverageReport`) sans inventer de nouveau façade et je clarifierai que cette propriété n’est renseignée que lorsque la couverture est activée.
+- Il faudra trouver un équilibre entre la simplicité de l’exemple (boucle `for await` + `await stream.coverage`) et la nécessité de mentionner les champs clés du rapport (`coverageStatus`, `metrics.overall`, `metrics.thresholds.overall`, `metrics.byDimension` / `byOperation`) sans paraphraser toute la SPEC; en cas de doute, je renverrai explicitement à `docs/spec-coverage-aware-v1.0.md`.
+- L’exemple Node doit rester compatible avec les tests existants (e2e coverage, `coverage-threshold.spec.ts`) et ne pas introduire de promesses implicites sur des comportements non garantis (par exemple des seuils par dimension qui ne sont pas encore normatifs en V1).
 
-Parent bullets couverts: [KR5, DEL3, DOD4, TS3]
+Parent bullets couverts: [KR3, DEL3, DOD3, DOD4, TS1]
 
 Checks:
 - build: npm run build
