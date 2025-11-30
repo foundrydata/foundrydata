@@ -84,6 +84,81 @@ const getFinalItems = (
 };
 
 describe('coverage acceptance scenarios (cov://§10#acceptance-criteria-v1)', () => {
+  it('keeps final items deterministic between coverage=off and coverage=measure on a simple object schema', async () => {
+    const simpleSchema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        id: { type: 'integer', minimum: 0 },
+        flag: { type: 'boolean' },
+      },
+      required: ['id'],
+      additionalProperties: false,
+    } as const;
+
+    const baseOptions = {
+      mode: 'strict' as const,
+      generate: { count: 24, seed: 1337 },
+      validate: { validateFormats: false },
+    } as const;
+
+    const offResult = await executePipeline(simpleSchema, {
+      ...baseOptions,
+      coverage: { mode: 'off' },
+    });
+    const measureResult = await executePipeline(simpleSchema, {
+      ...baseOptions,
+      coverage: {
+        mode: 'measure',
+        dimensionsEnabled: ['structure', 'branches', 'enum'],
+      },
+    });
+
+    expect(offResult.status).toBe('completed');
+    expect(measureResult.status).toBe('completed');
+
+    // coverage=measure must be a pure observation layer: same items as coverage=off.
+    expect(getFinalItems(measureResult)).toEqual(getFinalItems(offResult));
+  });
+
+  it('keeps final items deterministic between coverage=off and coverage=measure on an AP:false-heavy schema', async () => {
+    const apFalseSchema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        a: { type: 'string' },
+        b: { type: 'integer' },
+      },
+      patternProperties: {
+        '^x-': { type: 'string' },
+      },
+    } as const;
+
+    const baseOptions = {
+      mode: 'strict' as const,
+      generate: { count: 24, seed: 4242 },
+      validate: { validateFormats: false },
+    } as const;
+
+    const offResult = await executePipeline(apFalseSchema, {
+      ...baseOptions,
+      coverage: { mode: 'off' },
+    });
+    const measureResult = await executePipeline(apFalseSchema, {
+      ...baseOptions,
+      coverage: {
+        mode: 'measure',
+        dimensionsEnabled: ['structure'],
+      },
+    });
+
+    expect(offResult.status).toBe('completed');
+    expect(measureResult.status).toBe('completed');
+
+    expect(getFinalItems(measureResult)).toEqual(getFinalItems(offResult));
+  });
+
   it('keeps branches coverage in guided >= measure on a three-branch oneOf schema and exposes uncovered ONEOF_BRANCH targets', async () => {
     const baseOptions = {
       mode: 'strict' as const,

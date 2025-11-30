@@ -117,6 +117,82 @@ describe('analyzeCoverage', () => {
     ).toBe(false);
   });
 
+  it('does not materialize PROPERTY_PRESENT for AP:false when CoverageIndex does not enumerate names', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      patternProperties: {
+        '^x-': { type: 'string' },
+      },
+    };
+    const coverageIndex = new Map<string, CoverageEntry>([
+      [
+        '',
+        {
+          has: () => false,
+          enumerate: () => [],
+        },
+      ],
+    ]);
+
+    const result = analyzeCoverage({
+      canonSchema: schema,
+      ptrMap: new Map<string, string>([['', '#']]),
+      coverageIndex,
+      planDiag: undefined,
+      dimensionsEnabled: ['structure'],
+    });
+
+    const propertyTargets = result.targets.filter(
+      (t) => t.dimension === 'structure' && t.kind === 'PROPERTY_PRESENT'
+    );
+
+    // No undeclared-property PROPERTY_PRESENT targets should be created when CoverageIndex is effectively empty.
+    expect(propertyTargets.length).toBe(0);
+  });
+
+  it('uses CoverageIndex.has/enumerate for AP:false PROPERTY_PRESENT and maps canonPath through patternProperties when applicable', () => {
+    const schema = {
+      type: 'object',
+      additionalProperties: false,
+      patternProperties: {
+        '^x-': { type: 'string' },
+      },
+    };
+    const coverageIndex = new Map<string, CoverageEntry>([
+      [
+        '',
+        {
+          has: (name: string) => name === 'x-extra',
+          enumerate: () => ['x-extra', 'x-ignored'],
+        },
+      ],
+    ]);
+
+    const result = analyzeCoverage({
+      canonSchema: schema,
+      ptrMap: new Map<string, string>([['', '#']]),
+      coverageIndex,
+      planDiag: undefined,
+      dimensionsEnabled: ['structure'],
+    });
+
+    const propertyTargets = result.targets.filter(
+      (t) => t.dimension === 'structure' && t.kind === 'PROPERTY_PRESENT'
+    );
+
+    expect(
+      propertyTargets.some(
+        (t) =>
+          t.canonPath === '#/patternProperties/^x-' &&
+          t.params?.propertyName === 'x-extra'
+      )
+    ).toBe(true);
+    expect(
+      propertyTargets.some((t) => t.params?.propertyName === 'x-ignored')
+    ).toBe(false);
+  });
+
   it('classifies oneOf/anyOf and conditional branches as branch nodes', () => {
     const schema = {
       oneOf: [{ type: 'string' }, { type: 'number' }],

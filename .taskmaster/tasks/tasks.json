@@ -5,7 +5,7 @@
   "coverage-aware-v1": {
     "tasks": [
       {
-        "id": 9300,
+        "id": "9300",
         "title": "Define coverage core types and ID semantics",
         "description": "Introduce CoverageTarget, CoverageGraph and related types with deterministic, stable IDs for coverage-aware runs.",
         "priority": "high",
@@ -60,7 +60,7 @@
         "updatedAt": "2025-11-29T00:40:09.261Z"
       },
       {
-        "id": 9301,
+        "id": "9301",
         "title": "Implement CoverageAnalyzer from canonical Compose artifacts",
         "description": "Build CoverageAnalyzer to derive the CoverageGraph and full CoverageTarget set from Normalize/Compose artifacts.",
         "priority": "high",
@@ -127,7 +127,7 @@
         "updatedAt": "2025-11-29T14:43:30.917Z"
       },
       {
-        "id": 9302,
+        "id": "9302",
         "title": "Add passive coverage instrumentation for measurement mode (M0)",
         "description": "Instrument generator and repair stages to emit coverage events for structure, branches and enums in coverage=measure mode without changing generated instances.",
         "priority": "high",
@@ -195,7 +195,7 @@
         "updatedAt": "2025-11-28T18:49:48.162Z"
       },
       {
-        "id": 9303,
+        "id": "9303",
         "title": "Implement coverage report format and CoverageEvaluator",
         "description": "Aggregate coverage results into the versioned JSON coverage-report/v1 format and expose coverage metrics and uncovered targets.",
         "priority": "high",
@@ -264,7 +264,7 @@
         "updatedAt": "2025-11-29T15:08:47.393Z"
       },
       {
-        "id": 9304,
+        "id": "9304",
         "title": "Add CLI coverage modes, options and CI-friendly summary",
         "description": "Expose coverage=off|measure|guided, dimensions, thresholds and report path via CLI flags and print a human-readable coverage summary for CI logs.",
         "priority": "high",
@@ -345,7 +345,7 @@
         "updatedAt": "2025-11-29T15:20:46.542Z"
       },
       {
-        "id": 9305,
+        "id": "9305",
         "title": "Implement static CoveragePlanner for guided coverage (M1)",
         "description": "Create a greedy, deterministic CoveragePlanner that proposes TestUnits with hints and respects maxInstances and planner caps.",
         "priority": "high",
@@ -415,7 +415,7 @@
         "updatedAt": "2025-11-29T00:05:04.858Z"
       },
       {
-        "id": 9306,
+        "id": "9306",
         "title": "Wire coverage hints into generator with conflict resolution and unsatisfied hints",
         "description": "Implement preferBranch, ensurePropertyPresence and coverEnumValue hints in the generator and record unsatisfied hints and reasons.",
         "priority": "high",
@@ -539,7 +539,7 @@
         "updatedAt": "2025-11-29T13:40:15.968Z"
       },
       {
-        "id": 9307,
+        "id": "9307",
         "title": "Implement streaming coverage instrumentation with per-instance commit",
         "description": "Upgrade coverage instrumentation to a streaming model that updates coverage as instances flow through Generate, Repair and Validate without a second JSON parse.",
         "priority": "medium",
@@ -597,7 +597,7 @@
         "updatedAt": "2025-11-28T23:24:13.148Z"
       },
       {
-        "id": 9308,
+        "id": "9308",
         "title": "Enforce global minCoverage threshold and map to exit codes",
         "description": "Wire metrics.overall to a configurable minCoverage threshold and ensure CLI and Node API expose structured coverageStatus results.",
         "priority": "medium",
@@ -645,7 +645,7 @@
         "updatedAt": "2025-11-29T14:29:46.134Z"
       },
       {
-        "id": 9309,
+        "id": "9309",
         "title": "Add boundaries coverage dimension and instrumentation (M2)",
         "description": "Extend coverage model, analyzer and instrumentation to track hits for numeric, string and array boundary constraints.",
         "priority": "medium",
@@ -705,7 +705,7 @@
         "updatedAt": "2025-11-29T18:47:46.271Z"
       },
       {
-        "id": 9310,
+        "id": "9310",
         "title": "Implement OpenAPI per-operation coverage and byOperation metrics (M2)",
         "description": "Track coverage per OpenAPI operation, including OP_REQUEST_COVERED, OP_RESPONSE_COVERED, SCHEMA_REUSED_COVERED and coverage.byOperation ratios.",
         "priority": "medium",
@@ -765,7 +765,7 @@
         "updatedAt": "2025-11-30T01:33:01.178Z"
       },
       {
-        "id": 9311,
+        "id": "9311",
         "title": "Add coverage diff tool for multi-run comparison (M2)",
         "description": "Provide a coverage diff command that compares two coverage-report/v1 files and highlights regressions, added and removed targets.",
         "priority": "medium",
@@ -822,7 +822,7 @@
         "updatedAt": "2025-11-28T22:39:39.668Z"
       },
       {
-        "id": 9312,
+        "id": "9312",
         "title": "Validate coverage invariants, determinism and acceptance scenarios",
         "description": "Add cross-cutting tests and documentation that ensure coverage-aware behavior respects core invariants and satisfies all acceptance criteria.",
         "priority": "medium",
@@ -887,7 +887,7 @@
         "updatedAt": "2025-11-30T02:44:39.175Z"
       },
       {
-        "id": 9320,
+        "id": "9320",
         "title": "Document coverage-aware modes and CLI usage in README",
         "description": "Update top-level README.md with coverage=off|measure|guided modes, dimensions, thresholds and examples for CLI and Node API.",
         "priority": "medium",
@@ -936,7 +936,7 @@
         "updatedAt": "2025-11-30T02:59:21.335Z"
       },
       {
-        "id": 9321,
+        "id": "9321",
         "title": "Align feature and limits docs with coverage-aware behavior",
         "description": "Update COMPREHENSIVE_FEATURE_SUPPORT.md, Features.md and Known-Limits.md to describe coverage-aware v1 semantics, dimensions and guarded behaviors.",
         "priority": "medium",
@@ -988,7 +988,7 @@
         "updatedAt": "2025-11-30T14:07:37.081Z"
       },
       {
-        "id": 9322,
+        "id": "9322",
         "title": "Extend invariants and architecture docs for coverage-aware pipeline",
         "description": "Document coverage-aware invariants and architecture, and add an evaluation hook for coverage usage.",
         "priority": "medium",
@@ -1039,7 +1039,7 @@
         "updatedAt": "2025-11-30T13:19:24.724Z"
       },
       {
-        "id": 9323,
+        "id": "9323",
         "title": "Document coverage-report/v1 and coverage diff tooling",
         "description": "Extend reporter docs with coverage-report/v1 contract and coverage diff CLI usage.",
         "priority": "medium",
@@ -1089,7 +1089,7 @@
         "updatedAt": "2025-11-30T13:01:10.566Z"
       },
       {
-        "id": 9324,
+        "id": "9324",
         "title": "Add coverage-aware CLI examples and use cases docs",
         "description": "Update docs/use-cases/product-scenarios.md and examples/README.md to demonstrate coverage-aware modes (measure/guided), profiles (quick/balanced/thorough), and CI integration patterns with practical examples.",
         "details": "[Context]\nExtend user-facing documentation to showcase coverage-aware capabilities introduced in M0/M1, per spec §6 (Execution modes & UX) and §7 (Reporting & observability). The examples and use cases should help developers understand when and how to use coverage modes, profiles, and thresholds in CI/CD workflows.\n\n[Key requirements]\n- Update `docs/use-cases/product-scenarios.md` to add new scenarios or extend existing ones (API mocks, contract tests, LLM testing) with coverage-aware examples showing:\n  - `coverage=measure` for passive coverage tracking without changing output\n  - `coverage=guided` for coverage-oriented generation with hints\n  - Profile selection (`--coverage-profile quick|balanced|thorough`) and their trade-offs\n  - Threshold enforcement (`--coverage-min 0.8`) for CI gates\n  - Coverage report generation (`--coverage-report coverage.json`) and inspection\n  \n- Update `examples/README.md` to include practical CLI examples demonstrating:\n  - Basic coverage measurement with existing example schemas (e.g., `ecommerce-schema.json`, `payment.json`)\n  - Guided coverage runs with dimension selection (`--coverage-dimensions structure,branches,enum`)\n  - Profile usage showing different instance budgets and coverage depth\n  - CI integration pattern with exit code handling for failed thresholds\n  - Reading and interpreting coverage-report/v1 JSON output\n  \n- Add a dedicated subsection to `examples/README.md` titled \"Coverage-aware generation\" that includes:\n  - Quick examples of `coverage=off|measure|guided` modes\n  - Dimension flags (`--coverage-dimensions`)\n  - Profile flags (`--coverage-profile`)\n  - Threshold and report path flags\n  - Sample CI snippet showing coverage threshold enforcement in GitHub Actions or similar\n  \n- Ensure all examples align with implemented CLI flags from task 9304 (coverage-options.ts: mode, dimensionsEnabled, excludeUnreachable, minCoverage, reportPath, profile)\n\n- Reference spec anchors for deeper reading but keep examples practical and copy-paste ready\n\n[Implementation notes]\n- Use existing example schemas (ecommerce-schema.json, payment.json, users-api.json) as test subjects\n- Show realistic instance counts and thresholds (e.g., `--n 100 --coverage-min 0.75`)\n- Demonstrate `--print-metrics` and `--debug-passes` for observability\n- Include a simple CI script example (bash/yaml) that runs coverage and fails the build if coverage < threshold\n- Keep examples concise and focused on one coverage feature at a time\n- Add cross-references between use-cases and examples for discoverability",
@@ -1117,7 +1117,7 @@
         "updatedAt": "2025-11-30T12:26:02.263Z"
       },
       {
-        "id": 9325,
+        "id": "9325",
         "title": "Detect conflicting coverage hints early with CONFLICTING_CONSTRAINTS",
         "description": "Extend CoverageAnalyzer and CoveragePlanner to detect when coverage hints target structurally impossible schema fragments (e.g., ensurePropertyPresence on properties disabled by not/required combinations) and emit CONFLICTING_CONSTRAINTS early, before generation begins.",
         "details": "[Context]\nImplement early static detection of conflicting coverage hints as described in spec §5 (Hints & interaction with Repair) and the UnsatisfiedHintReasonCode type definition in coverage-report.ts. Currently, CONFLICTING_CONSTRAINTS is emitted reactively during or after generation/repair when hints fail. This task adds proactive detection at the CoverageAnalyzer/Planner stage to catch structurally impossible hints before any instance generation occurs.\n\n[Key requirements]\n- Extend CoverageAnalyzer (packages/core/src/coverage/analyzer.ts) to detect structurally impossible targets during graph construction:\n  * Property presence hints targeting properties that are provably unreachable due to not/allOf/required contradictions\n  * Branch hints (preferBranch) targeting oneOf/anyOf branches already marked unreachable in planDiag\n  * Enum hints (coverEnumValue) targeting out-of-range enum indices or values incompatible with other constraints\n  * Property presence hints on AP:false objects where CoverageIndex.has() returns false for the target property\n  \n- Add a static constraint validation phase in CoveragePlanner.buildHintsForTarget() (packages/core/src/coverage/coverage-planner.ts:469-530):\n  * Before constructing hints for a target, check if the target's status is 'unreachable'\n  * Validate that ensurePropertyPresence hints reference properties that exist in the CoverageIndex when AP:false applies\n  * Validate that preferBranch hints reference branches within valid index bounds for the parent oneOf/anyOf\n  * Validate that coverEnumValue hints reference valid enum indices based on the canonical schema enum array length\n  \n- Introduce a ConflictDetector utility class in coverage/conflict-detector.ts:\n  ```typescript\n  export interface ConflictCheckInput {\n    hint: CoverageHint;\n    target: CoverageTarget;\n    canonSchema: unknown;\n    coverageIndex: CoverageIndex;\n    planDiag?: ComposeDiagnostics;\n  }\n  \n  export interface ConflictCheckResult {\n    isConflicting: boolean;\n    reasonCode?: UnsatisfiedHintReasonCode;\n    reasonDetail?: string;\n  }\n  \n  export class ConflictDetector {\n    static checkHintConflict(input: ConflictCheckInput): ConflictCheckResult;\n    private static checkPropertyPresenceConflict(...): ConflictCheckResult;\n    private static checkBranchConflict(...): ConflictCheckResult;\n    private static checkEnumConflict(...): ConflictCheckResult;\n  }\n  ```\n  \n- Emit conflicting hints early as UnsatisfiedHint records:\n  * When planTestUnits() constructs TestUnits, run ConflictDetector.checkHintConflict() on each generated hint\n  * Accumulate conflicting hints in a new CoveragePlannerResult.conflictingHints: UnsatisfiedHint[] field\n  * Mark the corresponding targets with diagnostic metadata (e.g., meta.conflictDetected: true)\n  * Ensure these early-detected conflicting hints are merged into the final CoverageReport.unsatisfiedHints array\n  \n- Integrate with existing UNSAT detection:\n  * Reuse buildUnsatPathSet() from analyzer.ts:55-87 to identify unreachable schema paths\n  * Cross-reference hints against unsatPaths to detect UNREACHABLE_BRANCH cases early\n  * Respect the existing strongUnsatCodes set (UNSAT_AP_FALSE_EMPTY_COVERAGE, UNSAT_NUMERIC_BOUNDS, etc.)\n  * Ensure conflict detection does NOT introduce a separate proof engine; rely solely on existing planDiag diagnostics\n  \n- Extend CoveragePlannerInput and CoveragePlannerResult types:\n  ```typescript\n  // In coverage-planner.ts\n  export interface CoveragePlannerInput {\n    graph: CoverageGraph;\n    targets: CoverageTarget[];\n    config: CoveragePlannerConfig;\n    canonSchema: unknown; // NEW: for conflict validation\n    coverageIndex: CoverageIndex; // NEW: for AP:false property checks\n    planDiag?: ComposeDiagnostics; // NEW: for UNSAT cross-checks\n  }\n  \n  export interface CoveragePlannerResult {\n    testUnits: TestUnit[];\n    conflictingHints: UnsatisfiedHint[]; // NEW\n  }\n  ```\n  \n- Update the orchestrator (packages/core/src/pipeline/orchestrator.ts) to:\n  * Pass canonSchema, coverageIndex, and planDiag to planTestUnits()\n  * Collect conflictingHints from CoveragePlannerResult\n  * Merge them into the final CoverageReport.unsatisfiedHints before CoverageEvaluator runs\n  \n- Document conflict detection heuristics in ARCHITECTURE.md or Invariants.md:\n  * List the specific structural patterns that trigger CONFLICTING_CONSTRAINTS\n  * Clarify that this is a conservative early filter, not a complete proof system\n  * Note that some conflicts may still be detected later during generation/repair if static analysis misses them\n\n[Example scenarios to handle]\n1. Schema with `{\"not\": {\"required\": [\"foo\"]}}` → ensurePropertyPresence(foo, true) is conflicting\n2. Schema with `{\"properties\": {\"bar\": false}}` → ensurePropertyPresence(bar, true) is conflicting (bar schema is false)\n3. oneOf with 3 branches, one marked unreachable → preferBranch(unreachableBranch) is UNREACHABLE_BRANCH\n4. enum with 5 values → coverEnumValue(valueIndex: 10) is CONFLICTING_CONSTRAINTS (out of bounds)\n5. AP:false object with CoverageIndex that excludes \"baz\" → ensurePropertyPresence(baz, true) is CONFLICTING_CONSTRAINTS\n\n[Implementation notes]\n- Keep conflict detection deterministic and side-effect-free\n- Prefer false negatives (missing conflicts) over false positives (incorrectly flagging valid hints)\n- Reuse existing UNSAT diagnostics from Compose; do not re-implement schema constraint solving\n- Ensure conflict detection overhead is O(#hints), not O(#hints * #targets)\n- Add a feature flag or config option to disable early conflict detection for debugging if needed",
@@ -1145,7 +1145,7 @@
         "updatedAt": "2025-11-29T16:03:37.626Z"
       },
       {
-        "id": 9326,
+        "id": "9326",
         "title": "Detect impossible hints conflicting with keywords",
         "description": "Recognize when coverage hints target schema fragments that are structurally ruled out (not+required, contradictory allOf/oneOf, etc.), emit CONFLICTING_CONSTRAINTS early, and document the rule in AGENTS.md.",
         "details": "[Context]\nExtend the hint conflict detection pipeline to identify and report coverage hints that are impossible to satisfy due to structural schema constraints. Per the coverage-aware spec and the existing UnsatisfiedHintReasonCode infrastructure (coverage-report.ts:38-44), hints can conflict not only with each other but also with schema keywords that make them structurally unreachable. This task implements early detection of such impossible hints during the CoveragePlanner phase and ensures they are surfaced as CONFLICTING_CONSTRAINTS diagnostics.\n\n[Key requirements]\n- Implement structural constraint analysis in CoveragePlanner that detects impossible hint scenarios:\n  * Hints targeting properties marked as required in a schema fragment with \"not\" around it\n  * Contradictory allOf branches where hints request mutually exclusive constraints\n  * oneOf branches where a hint targets a branch that is structurally incompatible with other constraints\n  * Property presence hints conflicting with additionalProperties:false and missing from properties/patternProperties\n- Emit CONFLICTING_CONSTRAINTS (already defined in UnsatisfiedHintReasonCode) during the planning phase when impossible hints are detected, before generation begins\n- Add detection hook in CoveragePlanner.planTestUnits() that validates hints against canonical schema structure using compose artifacts (canonSchema, ptrMap)\n- Record impossible hints in unsatisfiedHints[] with reasonCode:'CONFLICTING_CONSTRAINTS' and detailed reasonDetail explaining the structural conflict\n- Ensure traceability: each detected conflict must reference the specific canonPath, hint kind, hint params, and conflicting schema keywords\n- Document the detection rules and examples in AGENTS.md under a new section \"Coverage hint structural validation\"\n\n[Deliverables]\n- packages/core/src/coverage/coverage-planner.ts: Add validateHintStructuralFeasibility() function that analyzes hints against canonical schema\n- packages/core/src/coverage/coverage-planner.ts: Integrate validation into planTestUnits() to filter out impossible hints before test unit creation\n- packages/core/src/coverage/__tests__/coverage-planner.test.ts: Unit tests for each impossible hint pattern (not+required, contradictory allOf, incompatible oneOf, AP:false violations)\n- packages/core/test/e2e/coverage-guided-planner.spec.ts: Integration tests using executePipeline that verify CONFLICTING_CONSTRAINTS appears in coverage report unsatisfiedHints\n- AGENTS.md: New section documenting the structural validation rules with examples\n- Ensure generator hooks respect the filtered hints and do not attempt to apply structurally impossible hints\n\n[Definition of Done]\n- CoveragePlanner detects and filters hints that conflict with \"not\" wrapping required properties\n- CoveragePlanner detects hints targeting branches ruled out by contradictory allOf/oneOf constraints\n- Impossible hints appear in CoverageReport.unsatisfiedHints[] with reasonCode:'CONFLICTING_CONSTRAINTS' and actionable reasonDetail\n- Unit tests achieve >=80% coverage on new validation logic in coverage-planner.ts\n- Integration tests with executePipeline demonstrate end-to-end flow: impossible hint → planner detection → unsatisfiedHints in coverage-report/v1\n- AGENTS.md documents each detection rule with canonical schema examples\n- No regression in existing hint resolution tests",
@@ -1161,7 +1161,7 @@
         "updatedAt": "2025-11-29T16:47:43.497Z"
       },
       {
-        "id": 9327,
+        "id": "9327",
         "title": "Detect impossible coverage hints",
         "description": "Identify when a coverage hint targets schema fragments the SPEC renders impossible (e.g., ensurePropertyPresence under not/required blocks, contradictory allOf/oneOf), emit CONFLICTING_CONSTRAINTS during planning or generation, and update AGENTS.md to capture the decision process so the topic isn't left dangling.",
         "details": "[Context]\nExtend the hint conflict detection pipeline to identify and report coverage hints that are impossible to satisfy due to structural schema constraints. Per the coverage-aware spec and the existing UnsatisfiedHintReasonCode infrastructure (coverage-report.ts:38-44), hints can conflict not only with each other but also with schema keywords that make them structurally unreachable. This task implements early detection of such impossible hints during the CoveragePlanner phase and ensures the generator and repair stages honor this classification.\n\n[Key requirements]\n- Implement a structural feasibility check in CoveragePlanner that validates hints against canonical schema constraints before planning TestUnits\n- Detect ensurePropertyPresence hints that conflict with \"not\": {\"required\": [\"prop\"]}, false schemas under properties, or additionalProperties: false for undeclared properties\n- Detect preferBranch hints that target branches marked unreachable in planDiag or that violate allOf/oneOf exclusivity constraints\n- Detect coverEnumValue hints with valueIndex outside the enum array bounds or targeting empty enums\n- Emit CONFLICTING_CONSTRAINTS early via recordUnsatisfiedHint when structural conflicts are detected, before TestUnit generation begins\n- Integrate the feasibility check into the CoveragePlanner workflow: resolve hint conflicts first (resolveCoverageHintConflicts), then validate structural feasibility, filtering out impossible hints before buildHintsForTarget\n- Update AGENTS.md to document the decision process for impossible hint detection, including the rationale for structural checks and examples of conflicting constraints\n- Ensure the detection logic operates on the canonical schema view and honors the same invariants as the generator (no side effects on RNG or instance shape)\n\n[Deliverables]\n- New module coverage/hint-feasibility.ts with validation helpers:\n  - validateHintStructuralFeasibility(hint: CoverageHint, canonSchema: Schema, graph: CoverageGraph, planDiag?: NodeDiagnostics): UnsatisfiedHint | null\n  - checkPropertyPresenceConflict(hint: EnsurePropertyPresenceHint, canonSchema: Schema): boolean\n  - checkBranchConflict(hint: PreferBranchHint, canonSchema: Schema, planDiag?: NodeDiagnostics): boolean\n  - checkEnumConflict(hint: CoverEnumValueHint, canonSchema: Schema): boolean\n- Integration of feasibility checks into CoveragePlanner.planTestUnits: after resolveCoverageHintConflicts, run validateHintStructuralFeasibility on each effective hint and record unsatisfied hints with CONFLICTING_CONSTRAINTS before proceeding to TestUnit construction\n- Generator-side assertion: when processing hints, if a hint was missed by planner validation, emit CONFLICTING_CONSTRAINTS during generation (defensive fallback)\n- AGENTS.md entry documenting:\n  - The decision to detect impossible hints at planning time\n  - Schema patterns that trigger CONFLICTING_CONSTRAINTS (not/required, false schemas, allOf/oneOf contradictions, out-of-bounds enum indices)\n  - Traceability note linking this capability to task 9327 and the coverage-aware spec §5 (Hints & interaction with Repair)\n- Unit tests in coverage/__tests__/hint-feasibility.test.ts covering:\n  - ensurePropertyPresence vs \"not\": {\"required\": [\"foo\"]}\n  - ensurePropertyPresence vs additionalProperties: false for undeclared properties\n  - preferBranch vs unreachable oneOf branches (planDiag-marked)\n  - coverEnumValue vs out-of-range indices and empty enums\n  - contradictory allOf scenarios where hints request conflicting enum values or branches\n- Integration test in coverage-planner.test.ts that constructs a CoverageGraph with planDiag, passes hints that conflict with schema structure, and asserts CONFLICTING_CONSTRAINTS entries are recorded before TestUnits are built\n- E2E pipeline test in test/e2e/coverage-guided-planner.spec.ts that runs executePipeline with coverage=guided, impossible hints, and checks the coverage report's unsatisfiedHints array contains the expected CONFLICTING_CONSTRAINTS entries\n\n[Definition of Done]\n- validateHintStructuralFeasibility and helper functions exist in coverage/hint-feasibility.ts with type-safe signatures\n- CoveragePlanner.planTestUnits integrates feasibility validation after hint conflict resolution and before TestUnit construction\n- Generator emits CONFLICTING_CONSTRAINTS for impossible hints as a defensive fallback (coverage/foundry-generator.ts:1089-1093 pattern)\n- AGENTS.md contains a dedicated section on impossible hint detection with examples and traceability\n- Unit tests for all conflict patterns pass with ≥80% coverage on hint-feasibility.ts\n- Integration test in coverage-planner.test.ts asserts early unsatisfied hint recording\n- E2E test in coverage-guided-planner.spec.ts validates the full pipeline behavior with impossible hints\n- npm run build, typecheck, lint, test all pass without regressions",
@@ -1177,7 +1177,7 @@
         "updatedAt": "2025-11-29T16:28:21.406Z"
       },
       {
-        "id": 9330,
+        "id": "9330",
         "title": "Harden coverage invariants (unreachable, AP:false, determinism)",
         "description": "Strengthen coverage-aware invariants around unreachable targets, AP:false behavior and determinism so that coverage=measure/guided remains a pure projection layer fully aligned with the canonical + coverage-aware specs.",
         "priority": "high",
@@ -1188,7 +1188,7 @@
           "9302",
           "9303"
         ],
-        "status": "pending",
+        "status": "done",
         "complexityScore": 4,
         "details": "[Context]\nThe current coverage implementation respects the high-level invariants (no coverage layer under coverage=off, AP:false delegated to CoverageIndex, deterministic IDs and reports) but relies on several implicit assumptions (diagnostic codes, AP:false branches, planner diagnostics). This task consolidates those invariants into explicit code paths and tests.\n\n[Key requirements]\n- Centralize the mapping between UNSAT/guardrail diagnostics and unreachable targets so that applyUnreachableStatusToTargets is driven by a single, well-documented list of strong UNSAT codes.\n- Guarantee that excludeUnreachable only affects denominators in metrics (overall, byDimension, byOperation) and never changes CoverageTarget.id or status; unreachable targets must remain discoverable through status:'unreachable' in targets/uncoveredTargets.\n- Under AP:false, assert that PROPERTY_PRESENT targets for undeclared names are only materialized when backed by CoverageIndex.has/enumerate, and never by patternProperties/propertyNames heuristics alone.\n- Extend determinism checks for coverage=off vs coverage=measure and coverage=measure vs coverage=guided on a broader schema corpus (including AP:false, OpenAPI and compound conditionals), ensuring instance streams and metrics obey the spec.\n\n[Deliverables]\n- Hardened unreachable mapping logic and tests in coverage-analyzer-unreachable.\n- Additional AP:false/ CoverageIndex-specific tests in analyzer and generator acceptance suites.\n- Extended pipeline/e2e tests comparing off vs measure and measure vs guided for representative schemas.\n\n[Definition of Done]\n- All unreachable/UNSAT behavior goes through a single mapping table with tests capturing expected paths.\n- AP:false invariants for PROPERTY_PRESENT and CoverageIndex are enforced by targeted unit/e2e tests.\n- Determinism tests for off/measure/guided cover at least: simple object schema, AP:false schema, oneOf/anyOf with hints, and a small OpenAPI spec; tests pass consistently.",
         "testStrategy": "Add unit tests in coverage-analyzer-unreachable to assert which diagnostic codes produce unreachable targets and to verify prefix-based matching on canonPath. Extend analyzer tests to cover AP:false + CoverageIndex combinations, including propertyNames/patternProperties with and without PNAMES_REWRITE_APPLIED. In pipeline-orchestrator and e2e coverage tests, add scenarios that run executePipeline under coverage=off vs coverage=measure and measure vs guided on multiple schemas and assert that (a) final items are byte-identical for off vs measure, and (b) guided branch/enum coverage is >= measure while IDs and unreachable statuses remain stable. Validate metrics with excludeUnreachable true/false and confirm only denominators change.",
@@ -1197,33 +1197,37 @@
             "id": 9330001,
             "title": "Centralize UNSAT codes and unreachable mapping",
             "description": "Refactor applyUnreachableStatusToTargets to use a single, shared list of strong UNSAT/guardrail codes, and add tests that prove unreachable status is derived only from these diagnostics and canonPath relations.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/coverage/coverage-analyzer-unreachable.ts",
-            "parentId": "9330"
+            "parentId": "9330",
+            "updatedAt": "2025-11-30T15:34:04.232Z"
           },
           {
             "id": 9330002,
             "title": "Reinforce AP:false & CoverageIndex invariants",
             "description": "Add explicit checks and tests ensuring that PROPERTY_PRESENT targets under additionalProperties:false and AP:false cases are always backed by CoverageIndex.has/enumerate, never by heuristics over propertyNames or patternProperties alone.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 5,
             "file": "packages/core/src/coverage/analyzer.ts",
-            "parentId": "9330"
+            "parentId": "9330",
+            "updatedAt": "2025-11-30T15:38:16.726Z"
           },
           {
             "id": 9330003,
             "title": "Extend determinism tests for off/measure/guided",
             "description": "Broaden the pipeline/e2e coverage tests so that executePipeline is exercised with coverage=off, measure and guided on a corpus of schemas (plain JSON Schema, AP:false heavy schema, OpenAPI spec) and assert deterministic items, CoverageTargets and metrics.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 5,
             "file": "packages/core/test/e2e/coverage-acceptance.spec.ts",
-            "parentId": "9330"
+            "parentId": "9330",
+            "updatedAt": "2025-11-30T15:41:07.651Z"
           }
-        ]
+        ],
+        "updatedAt": "2025-11-30T15:41:07.651Z"
       },
       {
-        "id": 9331,
+        "id": "9331",
         "title": "Extract a dedicated coverage runtime from the pipeline orchestrator",
         "description": "Refactor executePipeline to delegate coverage-specific orchestration (Analyzer, Planner, hooks, Evaluator, report) to a focused coverage runtime module without changing observable behavior or spec compliance.",
         "priority": "medium",
@@ -1268,7 +1272,7 @@
         ]
       },
       {
-        "id": 9332,
+        "id": "9332",
         "title": "Refine boundaries and operations coverage model",
         "description": "Consolidate and extend the coverage model for boundaries and operations dimensions so that target materialization, IDs and diagnostics match the coverage-aware spec and remain scalable.",
         "priority": "medium",
@@ -1314,7 +1318,7 @@
         ]
       },
       {
-        "id": 9333,
+        "id": "9333",
         "title": "Harden CLI coverage profiles and coverage-report UX",
         "description": "Make coverage profiles (quick/balanced/thorough), CLI flags and coverage-summary output strictly conform to the coverage-aware spec, with black-box tests driving the CLI and mapping precisely to coverage-report/v1.",
         "priority": "medium",
@@ -1361,7 +1365,7 @@
         ]
       },
       {
-        "id": 9334,
+        "id": "9334",
         "title": "Define coverage-report/v1 JSON schema and compatibility guards",
         "description": "Introduce a formal JSON Schema for coverage-report/v1 and add compatibility tests so that future changes remain backward compatible and spec-compliant.",
         "priority": "medium",
@@ -1407,14 +1411,12 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-30T14:07:37.082Z",
-      "taskCount": 21,
-      "completedCount": 21,
+      "lastModified": "2025-11-30T15:41:07.652Z",
+      "taskCount": 26,
+      "completedCount": 22,
       "tags": [
         "coverage-aware-v1"
-      ],
-      "created": "2025-11-30T15:23:06.283Z",
-      "description": "Tasks for coverage-aware-v1 context"
+      ]
     }
   }
 }

@@ -1,20 +1,21 @@
 import type { CoverageTarget } from '@foundrydata/shared';
+import { DIAGNOSTIC_CODES, type DiagnosticCode } from '../diag/codes.js';
 import type { ComposeDiagnostics } from '../transform/composition-engine.js';
 
 interface UnsatPathEntry {
   canonPath: string;
-  code: string;
+  code: DiagnosticCode;
   details?: unknown;
 }
 
-const STRONG_UNSAT_CODES = new Set<string>([
-  'UNSAT_AP_FALSE_EMPTY_COVERAGE',
-  'UNSAT_NUMERIC_BOUNDS',
-  'UNSAT_REQUIRED_AP_FALSE',
-  'UNSAT_REQUIRED_VS_PROPERTYNAMES',
-  'UNSAT_DEPENDENT_REQUIRED_AP_FALSE',
-  'UNSAT_MINPROPERTIES_VS_COVERAGE',
-  'UNSAT_MINPROPS_PNAMES',
+const STRONG_UNSAT_CODES = new Set<DiagnosticCode>([
+  DIAGNOSTIC_CODES.UNSAT_AP_FALSE_EMPTY_COVERAGE,
+  DIAGNOSTIC_CODES.UNSAT_NUMERIC_BOUNDS,
+  DIAGNOSTIC_CODES.UNSAT_REQUIRED_AP_FALSE,
+  DIAGNOSTIC_CODES.UNSAT_REQUIRED_VS_PROPERTYNAMES,
+  DIAGNOSTIC_CODES.UNSAT_DEPENDENT_REQUIRED_AP_FALSE,
+  DIAGNOSTIC_CODES.UNSAT_MINPROPERTIES_VS_COVERAGE,
+  DIAGNOSTIC_CODES.UNSAT_MINPROPS_PNAMES,
 ]);
 
 function collectUnsatPathEntries(
@@ -25,7 +26,7 @@ function collectUnsatPathEntries(
   }
   const entries: UnsatPathEntry[] = [];
   const addEntry = (
-    code: string,
+    code: DiagnosticCode,
     canonPath: string,
     details?: unknown
   ): void => {
