@@ -135,6 +135,24 @@ foundrydata generate \
 
 If the resulting `coverage-report/v1` shows `coverage.overall < minCoverage` for the enabled dimensions, the CLI exits with a dedicated non-zero code while still emitting fixtures, making it easy to fail the job but keep artifacts for debugging. The stderr summary mirrors the structure described in the coverage-aware spec (per-dimension, per-operation, overall coverage plus caps and unsatisfied hints). See `examples/README.md` for a minimal CI snippet wiring this pattern into a job.
 
+> **Recommended CI baseline (measure)**  
+> For many teams, a first step before guided runs is to enforce coverage in `coverage=measure` mode with a balanced profile and a global threshold:
+>
+> ```bash
+> foundrydata generate \
+>   --schema examples/payment.json \
+>   --n 300 \
+>   --seed 123 \
+>   --out ndjson \
+>   --coverage=measure \
+>   --coverage-profile=balanced \
+>   --coverage-dimensions=structure,branches,enum \
+>   --coverage-min=0.8 \
+>   --coverage-report=coverage-payments-measure.json
+> ```
+>
+> In this mode the instance stream is still identical to `coverage=off` for a fixed seed; coverage-report/v1 and the `[foundrydata] coverage: …` summary are used purely as a CI gate and observability layer.
+
 **Friction / gaps**
 
 - What feels easy / obvious: calling `foundrydata generate --schema … --n … --seed … --out ndjson` matches expectations, and piping NDJSON into other tools (or reading it from a Node test) is straightforward.

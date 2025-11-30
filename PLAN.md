@@ -1,20 +1,19 @@
-Task: 9333   Title: Harden CLI coverage profiles and coverage-report UX — subtask 9333.9333002
-Anchors: [cov://§3#coverage-model, cov://§7#json-coverage-report]
+Task: 9333   Title: Harden CLI coverage profiles and coverage-report UX — subtask 9333.9333003
+Anchors: [cov://§3#coverage-model, cov://§6#budget-profiles, cov://§7#json-coverage-report, cov://§7#cli-summary]
 Touched files:
 - PLAN.md
 - .taskmaster/docs/9333-traceability.md
-- packages/cli/src/index.test.ts
-- packages/cli/src/__tests__/coverage-summary.test.ts
+- docs/Features.md
 
 Approach:
-Pour la sous-tâche 9333.9333002, je vais aligner le résumé coverage CLI (stderr) sur coverage-report/v1 en le traitant comme une projection lisible des mêmes métriques et diagnostics (cov://§3#coverage-model, cov://§7#json-coverage-report). Concrètement : (1) m’appuyer sur les tests existants de `formatCoverageSummary` pour confirmer que la forme du résumé correspond à `metrics` et `diagnostics.plannerCapsHit`/`unsatisfiedHints` et, si besoin, les étendre pour couvrir targetsByStatus et les cas de caps/hints; (2) dans `packages/cli/src/index.test.ts`, ajouter des tests end-to-end pour `generate` et `openapi` en mode `coverage=measure` qui écrivent coverage-report/v1 sur disque via `--coverage-report`, capturent en parallèle les lignes de résumé sur stderr, rechargent le rapport JSON et comparent que les valeurs clés (overall, byDimension, byOperation, targetsByStatus, nombre de caps et d’unsatisfiedHints) sont reflétées dans le résumé; (3) veiller à ne pas changer le câblage runtime dans `index.ts` (qui appelle déjà `formatCoverageSummary(coverageReport)`), de sorte que la tâche reste centrée sur les tests et la vérification de conformité à la spec; (4) garder les fixtures de schéma petites pour maintenir des temps de test raisonnables tout en obtenant des métriques non triviales.
+Pour la sous-tâche 9333.9333003, je vais documenter une configuration CI recommandée qui s’appuie sur la sémantique des profils coverage (cov://§6#budget-profiles) et sur la forme de coverage-report/v1 et du résumé CLI (cov://§3#coverage-model, cov://§7#json-coverage-report, cov://§7#cli-summary), en capitalisant sur les tests ajoutés dans 9333.9333001/9333.9333002. Concrètement : (1) ajouter dans `docs/Features.md` une section “Coverage en CI” qui décrit un scénario type `coverage=measure` avec un profil (par exemple `balanced`) et un `coverage-min` explicite, en précisant comment cela se traduit en `dimensionsEnabled`, budget d’instances et thresholds; (2) illustrer le flux empirique côté CLI (`foundrydata generate` / `openapi`) en montrant comment consommer le fichier coverage-report/v1 (chemins metrics.overall/byDimension/byOperation/targetsByStatus et diagnostics) et le résumé stderr pour les logs CI, sans recopier la SPEC mais en renvoyant conceptuellement vers ces champs; (3) veiller à ce que les exemples textuels restent alignés avec les profils et résumés réellement testés (semantique des profils quick/balanced/thorough, présence des lignes `coverage by dimension`, `coverage overall`, `targets by status`, `planner caps`, `unsatisfied hints`) afin que les docs ne divergent pas des comportements couverts par les tests; (4) garder le ton prescriptif (“profil recommandé”) tout en laissant à la plateforme la liberté d’ajuster les seuils numériques exacts.
 
 DoD:
-- [x] Le résumé coverage CLI pour `generate` et `openapi` est testé comme projection fidèle de coverage-report/v1 (overall, byDimension, byOperation, targetsByStatus, caps, unsatisfiedHints) pour un petit schéma/OpenAPI.
-- [x] Les tests de `formatCoverageSummary` couvrent explicitement l’alignement avec les champs metrics/diagnostics de coverage-report/v1.
+- [x] Une section dédiée de `docs/Features.md` décrit un profil CI recommandé (coverage mode/profile/minCoverage) cohérent avec les presets et budgets de la spec (cov://§6#budget-profiles).
+- [x] Les docs expliquent comment lire coverage-report/v1 et le résumé CLI dans ce contexte (overall, byDimension/byOperation, targetsByStatus, caps, unsatisfied hints) sans contredire la spec (cov://§3#coverage-model, cov://§7#json-coverage-report, cov://§7#cli-summary).
 - [x] build/typecheck/lint/test/bench OK.
 
-Parent bullets couverts: [KR2, DEL2, DOD2, TS2]
+Parent bullets couverts: [KR3, DEL3, DOD3, TS3]
 
 Checks:
 - build: npm run build

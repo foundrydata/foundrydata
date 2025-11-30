@@ -37,4 +37,4 @@ This document maps the parent task 9333 bullets from Implementation Details, Del
   Covers: [KR2, DEL2, DOD2, TS2] (status: covered).
  
 - **9333.9333003 – Document recommended CI profile and report reading**  
-  Covers: [KR3, DEL3, DOD3, TS3] (status: pending).
+  Covers: [KR3, DEL3, DOD3, TS3] (status: covered).
