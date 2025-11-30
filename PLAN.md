@@ -1,18 +1,18 @@
-Task: 9322   Title: Add optional coverage step to EVALUATION.md
-Anchors: [cov://§6#execution-modes-ux, cov://§7#json-coverage-report, cov://§7#cli-summary]
+Task: 9321   Title: Extend COMPREHENSIVE_FEATURE_SUPPORT.md with coverage-aware notes
+Anchors: [cov://§3#coverage-model, cov://§6#execution-modes-ux, cov://§8#technical-constraints-invariants]
 Touched files:
-- EVALUATION.md
-- .taskmaster/docs/9322-traceability.md
+- docs/COMPREHENSIVE_FEATURE_SUPPORT.md
+- .taskmaster/docs/9321-traceability.md
 
 Approach:
-Pour la sous-tâche 9322.9322003, je vais étendre `EVALUATION.md` avec une petite étape optionnelle “Coverage (facultatif)” qui montre comment lancer rapidement un run `coverage=measure` sur le même schéma réel utilisé dans l’évaluation de base, en m’alignant sur la SPEC coverage-aware (cov://§6#execution-modes-ux, cov://§7#json-coverage-report, cov://§7#cli-summary). Cette étape proposera une commande CLI simple (JSON Schema et/ou OpenAPI) qui ajoute `--coverage=measure`, `--coverage-dimensions` et `--coverage-report` à la commande de génération, en expliquant : (1) que `coverage=measure` n’altère pas les instances par rapport à `coverage=off` pour un tuple fixé, (2) comment lire le résumé coverage sur stderr (per-dimension, per-operation, overall) et (3) comment inspecter le fichier coverage-report/v1 généré si besoin. Je veillerai à positionner cette étape comme purement optionnelle, sans rendre la couverture obligatoire pour évaluer FoundryData, et à garder les commandes copy‑pasteables pour un projet externe (pas le repo FoundryData lui‑même). Enfin, je mettrai à jour `.taskmaster/docs/9322-traceability.md` pour marquer cette sous-tâche comme couvrant [KR4, DEL3, DOD3, TS3] du parent 9322.
+Pour la sous-tâche 9321.9321001, je vais ajouter à `docs/COMPREHENSIVE_FEATURE_SUPPORT.md` un court sous-paragraphe “Coverage-aware behavior” sous la section JSON Schema, en m’appuyant sur la SPEC coverage-aware (cov://§3#coverage-model, cov://§6#execution-modes-ux, cov://§8#technical-constraints-invariants). Ce bloc résumera quels aspects du support de fonctionnalités ont une sémantique coverage spécifique : AP:false/must-cover (PROPERTY_PRESENT adossé à CoverageIndex, cibles unreachable plutôt que devinées), `contains`/`minContains`/`maxContains` avec bag semantics comme source de cibles coverage, conditionnels (if/then/else) visibles via branches et propriétés optionnelles, dimensions boundaries/opérations lorsqu’elles sont activées, et la notion de cibles purement diagnostiques (par ex. SCHEMA_REUSED_COVERED) émises avec `status:'deprecated'` et exclues des dénominateurs. L’objectif est de donner, pour chaque catégorie de fonctionnalités déjà listée, un angle “coverage”: comment ces features se reflètent en targets/dimensions et en métriques, sans recopier la SPEC ni transformer cette page en guide coverage complet (qui reste dans les docs coverage). Je veillerai à rester cohérent avec Invariants.md/ARCHITECTURE.md et à mettre à jour `.taskmaster/docs/9321-traceability.md` pour marquer cette sous-tâche comme couvrant [KR1, DEL1, DOD1, TS1].
 
 Risks/Unknowns:
-- Risque de rendre l’évaluation initiale trop lourde si l’étape coverage est présentée comme obligatoire ; je la positionnerai explicitement comme “optionnelle” et m’assurerai que le flux core (Steps 1–5) reste valide sans coverage.
-- Il faut éviter de sur-promettre des garanties coverage qui ne sont pas normatives en V1 (par exemple 100 % branches/enum) ; je me bornerai à encourager l’inspection des métriques (par dimension, par opération) en renvoyant vers les specs et docs plus détaillées pour l’interprétation avancée.
-- Les commandes d’exemple doivent rester réalistes pour un projet externe (schémas côté utilisateur, pas ceux de ce repo) tout en restant alignées sur les flags coverage réellement disponibles (`--coverage`, `--coverage-dimensions`, `--coverage-report`) ; je réutiliserai le style de commandes déjà présenté dans README/examples pour garder la cohérence.
+- Risque de ré-expliquer trop de détails coverage sur une page qui est d’abord centrée sur le support de fonctionnalités JSON Schema; je garderai le texte concis, en renvoyant vers la SPEC coverage-aware et les sections Invariants/Architecture pour les détails.
+- Il faut éviter de créer de la divergence entre ce résumé et les invariants coverage déjà décrits (IDs stables, dimensionsEnabled comme projection, excludeUnreachable agissant uniquement sur le dénominateur, cibles diagnostiques exclues des métriques); je m’alignerai explicitement sur ces invariants pour toute mention coverage.
+- Cette sous-tâche n’introduit pas de nouvelle matrice ni de tableau; il faudra vérifier que le ton reste cohérent avec le reste de COMPREHENSIVE_FEATURE_SUPPORT.md (focus sur “ce que le moteur fait” plutôt que sur les options CLI).
 
-Parent bullets couverts: [KR4, DEL3, DOD3, TS3]
+Parent bullets couverts: [KR1, DEL1, DOD1, TS1]
 
 Checks:
 - build: npm run build
