@@ -217,7 +217,7 @@ function resolveDimensionsEnabled(
   return preset?.dimensions ?? [...DEFAULT_PLANNER_DIMENSIONS_ENABLED];
 }
 
-// eslint-disable-next-line complexity
+// eslint-disable-next-line complexity, max-lines-per-function
 export function resolveCliCoverageOptions(
   cliOptions: CliOptions
 ): ResolvedCliCoverage {
