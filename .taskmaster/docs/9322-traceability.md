@@ -35,7 +35,7 @@ This document maps the parent task 9322 bullets from Implementation Details, Del
   Covers: [KR1], [KR2], [DEL1], [DOD1], [TS1]. Status: covered (Invariants.md now includes a dedicated coverage invariants section aligned with the coverage-aware spec, target semantics and instrumentation behavior).
 
 - **9322.9322002 – Extend ARCHITECTURE.md with coverage-aware modules**  
-  Covers: [KR3], [DEL2], [DOD2], [TS2]. Status: pending.
+  Covers: [KR3], [DEL2], [DOD2], [TS2]. Status: covered (ARCHITECTURE.md now describes coverage-aware modules and their position in the pipeline, including Analyzer, Planner, Evaluator and streaming instrumentation, consistent with the implemented wiring and coverage-aware spec).
 
 - **9322.9322003 – Add optional coverage step to EVALUATION.md**  
-  Covers: [KR4], [DEL3], [DOD3], [TS3]. Status: pending.
+  Covers: [KR4], [DEL3], [DOD3], [TS3]. Status: covered (EVALUATION.md now contains an optional coverage step showing how to run coverage=measure on a real schema, read the CLI summary and inspect a coverage-report/v1 without making coverage mandatory for the base evaluation flow).

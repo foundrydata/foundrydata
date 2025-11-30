@@ -22,9 +22,10 @@ A preparatory step (not part of the normative pipeline): draft detection, basic 
 
 ---
 
-## 5‑Stage Generation Pipeline
+## 5‑Stage Generation Pipeline (with coverage-aware layer)
 
-**Core flow:** `Normalize → Compose → Generate → Repair → Validate`
+**Core flow:** `Normalize → Compose → Generate → Repair → Validate`  
+The coverage-aware layer attaches to this pipeline without changing its guarantees: AJV remains the oracle, determinism and AP:false invariants are preserved, and no additional network I/O is introduced in coverage-specific stages.
 
 ### Stage 1 — Normalize
 
@@ -36,6 +37,35 @@ A preparatory step (not part of the normative pipeline): draft detection, basic 
 * **Guards:** cap nested `not` via `guards.maxGeneratedNotNesting`.
 
 **Module:** `packages/core/src/transform/schema-normalizer.ts` (non‑destructive; notes for risky rewrites).
+
+---
+
+### Coverage-aware components (Analyzer, Planner, Evaluator, instrumentation)
+
+Coverage-aware features are layered on top of the 5‑stage pipeline in a way that preserves the core architecture:
+
+- **CoverageAnalyzer (between Compose and Generate)**  
+  Operates on the canonical + composed schema view to build a `CoverageGraph` and a set of `CoverageTarget` entries across dimensions (structure, branches, enum, boundaries, operations). It consumes existing artifacts such as `coverageIndex` and OpenAPI-aware graph metadata and never redefines AP:false behavior; under AP:false, it relies on `CoverageIndex` as the single source of truth for property-name coverage. No network calls are performed in this stage.
+
+- **CoveragePlanner & hints (guided mode)**  
+  When `coverage=guided`, a planner takes the analyzer output and produces `TestUnit`s plus hints (e.g. `preferBranch`, `ensurePropertyPresence`, `coverEnumValue`) within a deterministic budget. It uses the same seeded RNG model as the generator and respects the determinism tuple `(canonical schema, OpenAPI spec?, coverage options, seed, ajvMajor, registryFingerprint)`. Planner diagnostics (caps, unsatisfied hints) are fed into the final coverage report and CLI summary.
+
+- **Streaming instrumentation (attached to Generate/Repair/Validate)**  
+  Coverage instrumentation observes instances as they flow through Generate/Repair/Validate using the same JSON values and AJV validations as the core pipeline:
+  - no second JSON parse,
+  - commit of coverage state after validation (commit-after-validate),
+  - no additional network I/O,
+  - AJV is always the oracle for validity-sensitive targets.  
+  Instrumentation maintains per-instance coverage state and updates hit/miss status for targets in a streaming fashion; it does not require re-running the pipeline.
+
+- **CoverageEvaluator & coverage-report/v1 (after Validate)**  
+  Once a run completes, the evaluator projects target hits into aggregated metrics:
+  - `coverage.overall`, `coverage.byDimension`, `coverage.byOperation`,
+  - `metrics.targetsByStatus`,
+  - optional `metrics.thresholds.overall` and `metrics.coverageStatus` when `minCoverage` is configured.  
+  It also assembles the `coverage-report/v1` JSON (versioned CoverageReport) which includes `targets`, `uncoveredTargets`, `unsatisfiedHints` and `diagnostics.plannerCapsHit`. Diagnostic-only targets never contribute to denominators, and `excludeUnreachable` only affects denominators, not target IDs or statuses.
+
+Coverage-aware configuration is passed through `PipelineOptions.coverage` and surfaced in the CLI/Node.js API; with `coverage=off`, CoverageAnalyzer, Planner and instrumentation are disabled and the pipeline behaves exactly as described in the core stages below.
 
 ---
 

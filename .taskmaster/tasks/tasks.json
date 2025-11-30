@@ -996,7 +996,7 @@
           "9308",
           "9312"
         ],
-        "status": "in-progress",
+        "status": "done",
         "complexityScore": 3,
         "details": "[Context]\nInvariants.md and ARCHITECTURE.md describe the 5-stage pipeline, AJV parity and AP:false behavior but do not yet capture the coverage-aware layers (CoverageAnalyzer, instrumentation, CoverageEvaluator, planner/hints) or their invariants. EVALUATION.md focuses on basic data generation evaluation and does not show how to quickly inspect coverage.\n\n[Key requirements]\n- Add a \"Coverage invariants\" section to Invariants.md, covering: CoverageTarget.id determinism, dimension semantics (structure/branches/enum/boundaries/operations), status values ('active'/'unreachable'/'deprecated'), metrics behavior under dimensionsEnabled/excludeUnreachable, and the guarantee that diagnostic-only targets are excluded from all denominators.\n- Describe streaming coverage instrumentation as an invariant: per-instance coverage state, commit-after-validate, no second JSON parse, no additional network I/O, and reuse of the original AJV as oracle.\n- Extend ARCHITECTURE.md with a description of coverage-specific modules (CoverageAnalyzer between Compose and Generate, CoveragePlanner/hints for coverage=guided, CoverageEvaluator/coverage-report, streaming instrumentation attached to Generate/Repair/Validate) and how they compose with the 5-stage pipeline.\n- Update EVALUATION.md with an optional step that demonstrates running with coverage enabled (e.g. coverage=measure with a small n and dimensionsEnabled) and interpreting the CLI coverage summary at a high level.\n\n[Deliverables]\n- New \"Coverage invariants\" section in Invariants.md.\n- Updated ARCHITECTURE.md showing coverage-aware modules and their constraints.\n- EVALUATION.md updated with an optional coverage evaluation step.\n\n[Definition of Done]\n- Core coverage invariants are written once in Invariants.md and referenced from other docs instead of being duplicated ad hoc.\n- Architecture and evaluation docs are consistent with the implementation and the spec-level doc docs/spec-coverage-aware-v1.x.md.",
         "testStrategy": "Doc review against Invariants.md and ARCHITECTURE.md plus a quick manual run of the evaluation steps (with coverage enabled) to ensure the suggested commands still work.",
@@ -1015,22 +1015,24 @@
             "id": 9322002,
             "title": "Extend ARCHITECTURE.md with coverage-aware modules",
             "description": "Update ARCHITECTURE.md to show where CoverageAnalyzer, streaming instrumentation, CoveragePlanner/hints and CoverageEvaluator sit relative to Normalize → Compose → Generate → Repair → Validate, including their no-network-I/O and AJV-as-oracle constraints.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "ARCHITECTURE.md",
-            "parentId": "9322"
+            "parentId": "9322",
+            "updatedAt": "2025-11-30T13:15:11.158Z"
           },
           {
             "id": 9322003,
             "title": "Add optional coverage step to EVALUATION.md",
             "description": "Extend EVALUATION.md with an optional step that runs the CLI with coverage=measure on a real schema, inspects the coverage summary and briefly explains how to read per-dimension/overall coverage.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 2,
             "file": "EVALUATION.md",
-            "parentId": "9322"
+            "parentId": "9322",
+            "updatedAt": "2025-11-30T13:19:24.724Z"
           }
         ],
-        "updatedAt": "2025-11-30T13:08:17.315Z"
+        "updatedAt": "2025-11-30T13:19:24.724Z"
       },
       {
         "id": "9323",
@@ -1173,9 +1175,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-30T13:08:17.316Z",
+      "lastModified": "2025-11-30T13:19:24.725Z",
       "taskCount": 21,
-      "completedCount": 19,
+      "completedCount": 20,
       "tags": [
         "coverage-aware-v1"
       ]

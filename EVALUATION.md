@@ -135,7 +135,48 @@ Questions to ask yourself:
 - Do some tests fail because the schema and the code are not aligned?
 - Does the perceived integration cost feel acceptable for the benefits?
 
-If you only have ~30 minutes, you can stop after Step 4 and still get a solid initial feel for the value. Step 5 (and the Bonus below) is optional but recommended if you want to see FoundryData in a real test run.
+If you only have ~30 minutes, you can stop after Step 4 and still get a solid initial feel for the value. Step 5 (and the optional coverage step below) is optional but recommended if you want to see FoundryData in a real test run.
+
+---
+
+## Optional — Observe coverage for your schema
+
+If you want to go one step further and understand **how well your schema is exercised** (structure, branches, enums, operations) without changing the data your tests see, you can run FoundryData with `coverage=measure` on the same schema:
+
+```bash
+# JSON Schema case — measure structure/branches coverage while keeping instances identical
+npx foundrydata generate \
+  --schema ./path/to/your-schema.json \
+  --n 100 \
+  --seed 42 \
+  --coverage=measure \
+  --coverage-dimensions=structure,branches,enum \
+  --coverage-report=./tmp/foundrydata.coverage.json
+
+# OpenAPI case — measure coverage for a specific operation
+npx foundrydata openapi \
+  --spec ./path/to/your-api.openapi.json \
+  --operation-id getUser \
+  --n 100 \
+  --seed 42 \
+  --coverage=measure \
+  --coverage-dimensions=structure,branches,enum,operations \
+  --coverage-report=./tmp/foundrydata.openapi.coverage.json
+```
+
+In `coverage=measure` mode, the sequence of generated instances is the same as in `coverage=off` for a fixed `(schema, options, seed, ajv posture)` tuple; the coverage layer only tracks which targets are hit. Two things to look at:
+
+1. **CLI summary on stderr**  
+   Each run prints a one-line coverage summary to stderr (per-dimension, per-operation and overall coverage, plus target status counts and planner caps/unsatisfied hints when relevant). This gives you a quick feel for whether, for example, branch/enum coverage is healthy or very low.
+
+2. **JSON coverage report (coverage-report/v1)**  
+   The `--coverage-report` file contains a structured coverage report (versioned `coverage-report/v1`) with:
+   - `metrics.overall`, `metrics.byDimension`, and `metrics.byOperation` (when OpenAPI is in play),
+   - `metrics.targetsByStatus` (how many targets are active vs unreachable),
+   - `targets` / `uncoveredTargets` arrays and planner diagnostics.  
+   You can inspect this JSON directly, pipe it into your own tooling, or use it as input to `foundrydata coverage diff` later if you want to compare coverage across branches or versions.
+
+This step is deliberately **optional** in the evaluation: it should help you judge whether coverage-aware features are relevant for your use case, without being required to assess the core “schema‑true, deterministic data” promise.
 
 ---
 
