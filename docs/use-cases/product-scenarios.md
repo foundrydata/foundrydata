@@ -107,7 +107,7 @@ foundrydata generate \
   --summary
 ```
 
-**Node API example**
+**Node API harness example**
 
 ```bash
 npx tsx scripts/examples/contract-tests.ts \
@@ -158,20 +158,32 @@ If the resulting `coverage-report/v1` shows `coverage.overall < minCoverage` for
 >
 > In this mode the instance stream is still identical to `coverage=off` for a fixed seed; coverage-report/v1 and the `[foundrydata] coverage: …` summary are used purely as a CI gate and observability layer. Adding `--summary` (or its alias `--manifest`) on the CLI prints a compact JSON summary to stderr (counts, metrics, coverage aggregates when enabled) without changing the NDJSON fixtures on stdout, which is convenient for CI dashboards or post-processing. This configuration matches the “Recommended contract-testing profile” described in the main README (strict mode, coverage=measure, balanced profile, `structure,branches,enum` dimensions, global coverage-min).
 
+You can also use the dedicated `contracts` CLI command, which applies this profile with sensible defaults:
+
+```bash
+foundrydata contracts \
+  --schema examples/payment.json \
+  --n 200 \
+  --seed 424242 \
+  --out ndjson \
+  --coverage-dimensions=structure,branches,enum \
+  --coverage-min=0.8 \
+  --coverage-report=coverage-payments-contracts.json
+```
+
 **Friction / gaps**
 
-- What feels easy / obvious: calling `foundrydata generate --schema … --n … --seed … --out ndjson` matches expectations, and piping NDJSON into other tools (or reading it from a Node test) is straightforward. The `--summary` flag makes it easy to grab a compact JSON record for CI without touching the fixtures.
-- What feels confusing: deciding when to use `--compat lax` vs. strict mode is not clearly documented from a contract-testing perspective, and the presence of many advanced flags (resolver, diagnostics, branch trials) can make it hard to know the minimal set needed for “boring contract tests”.
-- What feels missing: there is still no first-class “test harness” mode that couples fixture generation with a ready-to-use validation helper for the same schema; users have to wire `foundrydata generate`/NDJSON and `Validate` together manually in their test runner.
+- What feels easy / obvious: calling `foundrydata generate --schema … --n … --seed … --out ndjson` or `foundrydata contracts --schema …` matches expectations, and piping NDJSON into other tools (or reading it from a Node test) is straightforward. The `--summary` flag makes it easy to grab a compact JSON record for CI without touching the fixtures.
+- What feels confusing: deciding when to use `--compat lax` vs. strict mode is not clearly documented from a contract-testing perspective, and the presence of many advanced flags (resolver, diagnostics, branch trials) can make it hard to identify the “minimum viable” setup for simple contract tests.
+- What feels missing: beyond the `contracts` command and the Node harness, there is still no multi-schema, first-class “contract suite” mode with integrated reporting; teams still have to orchestrate multiple runs and plug summaries (summary JSON, coverage-report/v1) into their own dashboards or CI checks.
 
 **Current status**
 
-- ✅ Good enough as-is for users comfortable with JSON Schema and CLI tools; the public `Generate` and `Validate` APIs already support deterministic, AJV-true contract fixtures, and `scripts/examples/contract-tests.ts` offers a concrete, reusable harness on top of the Node API.
+- ✅ Good enough as-is for users comfortable with JSON Schema and CLI tools; the public `Generate` and `Validate` APIs already support deterministic, AJV-true contract fixtures, `scripts/examples/contract-tests.ts` provides a reusable Node harness, and `foundrydata contracts` exposes a first-class CLI entrypoint aligned with the recommended contract-testing profile.
 
 **Potential next steps**
 
-- Extend `packages/reporter` and the docs to show how to consume both the `--summary` / `--manifest` JSON and the harness output in CI (for example to drive dashboards or GitHub checks) rather than relying only on coverage-report/v1.
-- Document a recommended “contract testing profile” (e.g. which flags to use or avoid, including `--summary`) in the main README, with pointers to the harness as a reference implementation.
+- Extend `packages/reporter` and the documentation to show how to consume both the `--summary` / `--manifest` JSON and the harness output in CI flows (dashboards, PR comments, GitHub checks) instead of relying only on coverage-report/v1.
 
 ## Scenario 3 — LLM structured output testing
 

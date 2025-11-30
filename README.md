@@ -433,6 +433,19 @@ foundrydata generate \
 
 This command generates deterministic NDJSON fixtures for the payment schema, validates all items with AJV in strict mode, emits a `coverage-report/v1` JSON for coverage=measure with a balanced profile, enforces a global `coverage.overall >= 0.8` threshold, and prints a compact JSON summary to stderr for CI consumption.
 
+As a shorter CLI entry point, you can use the dedicated `contracts` command, which defaults to `coverage=measure` and `coverage-profile=balanced`:
+
+```bash
+foundrydata contracts \
+  --schema ./examples/payment.json \
+  --n 200 \
+  --seed 424242 \
+  --out ndjson \
+  --coverage-dimensions=structure,branches,enum \
+  --coverage-min 0.8 \
+  --coverage-report ./coverage/payment.coverage.json
+```
+
 **Node.js harness (same profile, programmatic use)**
 
 ```ts
@@ -570,6 +583,7 @@ For a more detailed description of the `coverage-report/v1` JSON structure and t
 ```bash
 foundrydata generate --schema <path> --n <count> [options]
 foundrydata openapi --spec <openapi.json> [selection] [options]
+foundrydata contracts --schema <path> [options]
 ```
 
 ### Selected options (`generate`)

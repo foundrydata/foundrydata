@@ -1266,6 +1266,126 @@ describe('CLI openapi command', () => {
   });
 });
 
+describe('CLI contracts command', () => {
+  it('emits NDJSON with AJV-valid instances for a basic schema and prints a summary', async () => {
+    const { dir, schemaPath, schema } = await createSchemaFixture();
+
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      await program.parseAsync(
+        ['contracts', '--schema', schemaPath, '--n', '3', '--out', 'ndjson'],
+        { from: 'user' }
+      );
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+
+    const stdout = stdoutChunks.join('');
+    const lines = stdout
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+    expect(lines).toHaveLength(3);
+
+    const instances = lines.map((line) => JSON.parse(line));
+    for (const instance of instances) {
+      const res = PublicValidate(instance, schema);
+      expect(res.valid).toBe(true);
+    }
+
+    const stderr = stderrChunks.join('');
+    const summaryLine = stderr
+      .split('\n')
+      .find((line) => /\[foundrydata\] summary:/.test(line));
+    expect(summaryLine).toBeDefined();
+
+    const payloadText = summaryLine!.replace('[foundrydata] summary: ', '');
+    const payload = JSON.parse(payloadText) as {
+      version: string;
+      command: string;
+      items: { total: number };
+      coverage?: unknown;
+    };
+
+    expect(payload.version).toBe('foundrydata-cli-summary/v1');
+    expect(payload.command).toBe('contracts');
+    expect(payload.items.total).toBe(3);
+    expect(payload.coverage).toBeDefined();
+  });
+
+  it('respects coverage options and writes a coverage-report/v1 JSON when requested', async () => {
+    const { dir, schemaPath } = await createSchemaFixture();
+    const reportPath = path.join(dir, 'contracts-coverage.json');
+
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      await program.parseAsync(
+        [
+          'contracts',
+          '--schema',
+          schemaPath,
+          '--n',
+          '5',
+          '--out',
+          'ndjson',
+          '--coverage',
+          'measure',
+          '--coverage-dimensions',
+          'structure,branches',
+          '--coverage-report',
+          reportPath,
+          '--coverage-min',
+          '0.0',
+        ],
+        { from: 'user' }
+      );
+
+      const contents = await fs.promises.readFile(reportPath, 'utf8');
+      const report = JSON.parse(contents) as CoverageReport;
+
+      expect(report.version).toBe('coverage-report/v1');
+      expect(report.engine.coverageMode).toBe('measure');
+
+      const stderr = stderrChunks.join('');
+      expect(stderr).toMatch(/\[foundrydata] coverage:/i);
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('CLI coverage diff command', () => {
   function makeBaseReport(): CoverageReport {
     return {

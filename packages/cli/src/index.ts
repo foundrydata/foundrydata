@@ -688,7 +688,189 @@ program
     }
   });
 
+program
+  .command('contracts')
+  .description(
+    'Generate and validate contract-style fixtures for a JSON Schema'
+  )
+  .option('-s, --schema <file>', 'JSON Schema file path')
+  .option('-c, --count <number>', 'Number of items to generate')
+  .option('-r, --rows <number>', 'Alias for --count')
+  .option('-n, --n <number>', 'Alias for --count')
+  .option('--seed <number>', 'Deterministic seed', '424242')
+  .option('--out <format>', 'Output format: json|ndjson', 'ndjson')
+  .option('--mode <mode>', 'Execution mode: strict|lax', 'strict')
+  .option('--coverage <mode>', 'Coverage mode: off|measure|guided', 'measure')
+  .option(
+    '--coverage-dimensions <list>',
+    'Coverage dimensions (comma-separated, e.g., structure,branches,enum,operations)'
+  )
+  .option(
+    '--coverage-min <number>',
+    'Minimum overall coverage threshold (0..1)'
+  )
+  .option('--coverage-report <file>', 'Path to write coverage-report/v1 JSON')
+  .option(
+    '--coverage-report-mode <mode>',
+    'Coverage report mode: full|summary',
+    'full'
+  )
+  .option(
+    '--coverage-profile <profile>',
+    'Coverage profile: quick|balanced|thorough',
+    'balanced'
+  )
+  .option(
+    '--coverage-exclude-unreachable <bool>',
+    'Exclude unreachable targets from coverage denominators (true|false)'
+  )
+  .option(
+    '--summary',
+    'Print a compact JSON summary suitable for CI to stderr',
+    true
+  )
+  .option(
+    '--manifest',
+    'Alias for --summary (prints the same compact JSON summary to stderr)',
+    false
+  )
+  .option('--print-metrics', 'Print pipeline metrics as JSON to stderr', false)
+  .action(async function (this: Command, options) {
+    try {
+      const schemaPath = options.schema as string | undefined;
+      if (!schemaPath) throw new Error('Missing --schema <file>');
+      const abs = path.resolve(process.cwd(), schemaPath);
+      if (!fs.existsSync(abs)) throw new Error(`Schema file not found: ${abs}`);
+      const raw = fs.readFileSync(abs, 'utf8');
+      const input = JSON.parse(raw);
+
+      const compat = resolveCompatMode({
+        mode: options.mode,
+        compat: options.mode,
+      });
+      const outFormat: OutputFormat = resolveOutputFormat(options.out);
+
+      const requestedCount = resolveRowCount({
+        rows: options.rows,
+        count: options.count,
+        n: options.n,
+      });
+      const hasExplicitCount =
+        options.rows !== undefined ||
+        options.count !== undefined ||
+        options.n !== undefined;
+      const seed = Number(options.seed ?? 424242);
+
+      const { coverage, ignoredReason, recommendedMaxInstances } =
+        resolveCliCoverageOptions(options as unknown as CliOptions);
+      if (ignoredReason) {
+        process.stderr.write(`[foundrydata] note: ${ignoredReason}\n`);
+      }
+
+      const instanceCount = hasExplicitCount
+        ? requestedCount
+        : (recommendedMaxInstances ?? requestedCount);
+
+      const stream = Generate(instanceCount, seed, input as object, {
+        mode: compat,
+        validateFormats: true,
+        coverage: {
+          mode: coverage.mode,
+          dimensionsEnabled: coverage.dimensionsEnabled,
+          excludeUnreachable: coverage.excludeUnreachable,
+          minCoverage: coverage.minCoverage,
+          planner: coverage.planner,
+          reportMode: coverage.reportMode,
+        },
+      });
+      const pipelineResult = await stream.result;
+
+      handlePipelineOutput(
+        pipelineResult,
+        options.printMetrics === true,
+        outFormat
+      );
+
+      const coverageReport = pipelineResult.artifacts.coverageReport;
+      if (coverageReport) {
+        const summary = formatCoverageSummary(coverageReport);
+        process.stderr.write(`[foundrydata] coverage: ${summary}\n`);
+
+        if (coverage.reportPath) {
+          writeCoverageReportToPath(coverageReport, coverage.reportPath);
+        }
+      }
+
+      if (options.summary || options.manifest) {
+        const generatedStage = pipelineResult.stages.generate.output;
+        const repairedItems = pipelineResult.artifacts.repaired;
+        const items = Array.isArray(repairedItems)
+          ? repairedItems
+          : (generatedStage?.items ?? []);
+
+        const summaryPayload = {
+          version: 'foundrydata-cli-summary/v1',
+          command: 'contracts' as const,
+          status: pipelineResult.status,
+          mode: compat,
+          schemaPath: abs,
+          seed,
+          count: instanceCount,
+          outFormat,
+          items: {
+            total: Array.isArray(items) ? items.length : 0,
+          },
+          metrics: pipelineResult.metrics,
+          coverage: coverageReport
+            ? {
+                mode: coverageReport.engine.coverageMode,
+                dimensionsEnabled: coverageReport.run.dimensionsEnabled,
+                excludeUnreachable: coverageReport.run.excludeUnreachable,
+                overall: coverageReport.metrics.overall,
+                byDimension: coverageReport.metrics.byDimension,
+                byOperation: coverageReport.metrics.byOperation,
+                coverageStatus: coverageReport.metrics.coverageStatus,
+                minCoverage:
+                  coverageReport.metrics.thresholds?.overall ?? undefined,
+                targetsByStatus: coverageReport.metrics.targetsByStatus,
+              }
+            : undefined,
+        };
+
+        process.stderr.write(
+          `[foundrydata] summary: ${JSON.stringify(summaryPayload)}\n`
+        );
+      }
+
+      enforceCoverageThreshold(coverageReport);
+    } catch (err: unknown) {
+      await handleCliError(err);
+    }
+  });
+
 registerCoverageDiffCommand(program);
+
+function writeCoverageReportToPath(
+  coverageReport: NonNullable<PipelineResult['artifacts']['coverageReport']>,
+  reportPath: string
+): void {
+  if (!reportPath) return;
+  try {
+    const outputPath = path.isAbsolute(reportPath)
+      ? reportPath
+      : path.resolve(process.cwd(), reportPath);
+    fs.writeFileSync(
+      outputPath,
+      JSON.stringify(coverageReport, null, 2),
+      'utf8'
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    process.stderr.write(
+      `[foundrydata] warning: failed to write coverage report to ${reportPath}: ${message}\n`
+    );
+  }
+}
 
 function handlePipelineOutput(
   result: PipelineResult,

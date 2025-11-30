@@ -45,13 +45,12 @@ npx foundrydata generate --schema examples/api-transaction-schema.json --n 200 -
 # Write output to a file (stdout -> redirect)
 npx foundrydata generate --schema examples/quick-test-schema.json --n 5 > out.json
 
-# CI-friendly summary for contract-style fixtures
-npx foundrydata generate \
+# CI-friendly contract-testing run (fixtures + coverage + summary)
+npx foundrydata contracts \
   --schema examples/payment.json \
   --n 50 \
   --seed 424242 \
-  --out ndjson \
-  --summary
+  --out ndjson
 ```
 
 Streams: generated data goes to `stdout`; metrics/errors go to `stderr`. This makes piping in CI straightforward.
