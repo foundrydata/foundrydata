@@ -968,10 +968,11 @@
             "id": 9321002,
             "title": "Add coverage rows to Features.md matrix",
             "description": "Add one or more rows to the feature matrix summarizing support for coverage measurement, guided coverage, boundaries and per-operation metrics, using the existing ✓ / ~ / ⚠️ legend.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "Features.md",
-            "parentId": "9321"
+            "parentId": "9321",
+            "updatedAt": "2025-11-30T13:36:04.824Z"
           },
           {
             "id": 9321003,
@@ -983,7 +984,7 @@
             "parentId": "9321"
           }
         ],
-        "updatedAt": "2025-11-30T13:27:36.369Z"
+        "updatedAt": "2025-11-30T13:36:04.824Z"
       },
       {
         "id": "9322",
@@ -1177,7 +1178,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-30T13:27:36.370Z",
+      "lastModified": "2025-11-30T13:36:04.825Z",
       "taskCount": 21,
       "completedCount": 20,
       "tags": [

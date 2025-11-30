@@ -15,3 +15,12 @@
 | `$dynamicRef` / `$dynamicAnchor` / `$recursiveRef` | ~ | Normalizer/Compose leave them untouched, but the generator currently resolves `$dynamicRef` chains (bounded hops) before generation—this diverges from the SPEC pass-through stance and leaves final behavior to AJV. |
 
 **Legend**: ✓ full support, ~ partial / passthrough, ⚠️ guarded behavior (feature available but subject to policy or diagnostics).
+
+## Coverage-aware features (V1)
+
+| Capability | Status | Implementation notes |
+| --- | --- | --- |
+| Coverage measurement (structure/branches/enum) | ✓ | `coverage=measure` mode is implemented for JSON Schema and OpenAPI entrypoints; it materialises coverage targets for structure, branches and enums while keeping the generated instances identical to coverage=off for a fixed `(schema, options, seed, ajv posture)` tuple. Metrics and coverage-report/v1 are available, and diagnostic-only targets (e.g. SCHEMA_REUSED_COVERED) are excluded from denominators and thresholds. |
+| Guided coverage (structure/branches/enum) | ~ | `coverage=guided` mode uses CoveragePlanner and hints to steer generation toward uncovered targets under a deterministic budget; guided runs respect the invariants guided ≥ measure on branches/enum and reuse the same AJV oracle and AP:false constraints. Some acceptance criteria (e.g. full branch/enum saturation on simple schemas) remain best-effort rather than hard guarantees in V1. |
+| Boundaries coverage (min/max, numeric/string/array) | ~ | Boundaries coverage dimension is implemented as part of coverage-report/v1 and byDimension metrics, focusing on min/max-style constraints. It is considered M2 and may be disabled in default profiles; enabling it can increase target counts and is subject to documented caps/limits in the coverage-aware spec and Known-Limits.md. |
+| Per-operation coverage (OpenAPI operations) | ✓ | OpenAPI-aware CoverageAnalyzer and CoverageEvaluator project schema-level targets onto operations; `coverage.byOperation` and OP_* targets are available when the operations dimension is enabled. CLI supports coverage for `foundrydata openapi` with per-operation metrics and compatibility with coverage diff. |

@@ -34,7 +34,7 @@ This document maps the parent task 9321 bullets from Implementation Details, Del
   Covers: [KR1], [DEL1], [DOD1], [TS1]. Status: covered (COMPREHENSIVE_FEATURE_SUPPORT.md now includes a concise coverage-aware behavior subsection that maps core JSON Schema features to coverage dimensions and invariants).
 
 - **9321.9321002 – Add coverage rows to Features.md matrix**  
-  Covers: [KR2], [DEL2], [DOD2], [TS2]. Status: pending.
+  Covers: [KR2], [DEL2], [DOD2], [TS2]. Status: covered (Features.md now includes coverage rows that summarise measurement/guided/boundaries/operations support per dimension and phase using the ✓ / ~ / ⚠️ legend).
 
 - **9321.9321003 – Expand Known-Limits.md with coverage-aware limits**  
   Covers: [KR3], [KR4], [DEL3], [DOD3], [TS1]. Status: pending.
