@@ -1,8 +1,8 @@
 # FoundryData
 
-> Contract-true, deterministic test data for JSON Schema & OpenAPI.
+> AJV-first contract execution, coverage and deterministic fixtures for JSON Schema & OpenAPI.
 
-FoundryData is an AJV-first test data engine. It generates JSON/NDJSON fixtures directly from your JSON Schema or OpenAPI 3.1 contracts, validates every item with AJV in strict mode, and makes the output fully reproducible with a seed. The goal is not to “fake” realistic data, but to execute your schemas as they are written and feed your CI pipelines with data that is exactly as strict — or as permissive — as your contracts.
+FoundryData is an AJV-first contract execution engine. It turns your JSON Schema or OpenAPI 3.1 contracts into deterministic, AJV-valid fixtures **plus** coverage and metrics you can plug into CI. The goal is not to “fake” realistic data, but to execute your schemas as they are written, show you what they actually cover (structure / branches / enums), and feed your tests with just enough valid data to exercise those contracts in a reproducible way.
 
 ### Why FoundryData?
 
@@ -12,8 +12,21 @@ FoundryData is an AJV-first test data engine. It generates JSON/NDJSON fixtures 
 - **Deterministic by design**  
   `same schema + same seed ⇒ same data`. CI failures are reproducible locally by re-running the same command with the same seed.
 
+- **Observable contracts**  
+  Coverage over structure / branches / enums, JSON coverage reports, and per-run metrics (latency, validations per row, complexity caps) make it possible to see how well your contracts are exercised, not just whether individual items validate.
+
 - **Built for CI, not for pretty demos**  
   JSON/NDJSON on stdout, metrics on stderr, and a composable 5-stage pipeline make it easy to plug into Jest/Vitest, GitHub Actions, or any other CI system.
+
+### What FoundryData is not
+
+FoundryData focuses on **valid instances, contract coverage and reproducibility**. It is not:
+
+- a fake data generator for pretty or “realistic” demo payloads,
+- an HTTP mock server or full API simulator,
+- a fuzzing engine for large volumes of invalid inputs.
+
+If you need synthetic data for demos or front-end prototypes, or if you want to fuzz invalid payloads aggressively, you should pair FoundryData with other tools. FoundryData’s role is to keep your tests and CI honest about what your contracts actually say and what they really cover.
 
 ---
 
@@ -29,7 +42,7 @@ npx foundrydata generate \
 This will:
 
 1. Compile `user.schema.json` with AJV in strict mode.
-2. Generate 5 non-empty JSON objects that are valid for this schema.
+2. Generate 5 JSON instances that are valid for this schema.
 3. Produce the exact same 5 objects every time you run with `--seed 42`.
 
 You can also try the full CLI+AJV flow via:
@@ -84,17 +97,18 @@ Implementation Status
 
 ## What is FoundryData?
 
-FoundryData is an **AJV-first test data engine** for JSON Schema and OpenAPI 3.1.
+FoundryData is an **AJV-first contract execution and coverage engine** for JSON Schema and OpenAPI 3.1.
 
-It generates **deterministic, schema-true fixtures** from your schemas and specs, so your CI pipelines can rely on data that:
+It generates **deterministic, schema-true fixtures** and **contract coverage metrics** from your schemas and specs, so your CI pipelines can rely on data and reports that:
 
-- matches the same validator posture you use in production (AJV),
-- is fully reproducible (seeded),
-- exposes metrics and limits (latency, validations per row, complexity caps).
+- match the same validator posture you use in production (AJV),
+- are fully reproducible (seeded),
+- expose metrics and limits (latency, validations per row, complexity caps),
+- show which parts of your contracts are actually exercised (structure, branches, enums, operations).
 
 You can use it as:
 
-- a **CLI** (`foundrydata`) to generate JSON / NDJSON in your test scripts and CI jobs,
+- a **CLI** (`foundrydata`) to execute contracts in your test scripts and CI jobs (fixtures + coverage reports),
 - a **Node.js library** (`@foundrydata/core`) to plug directly into your test runner or tooling.
 
 * * *
@@ -191,6 +205,8 @@ FoundryData is built specifically to make those issues less frequent in CI pipel
   Every item is validated against the **original schema** (in strict mode), not an internal rewrite.
 - **Metrics & limits.**  
   You can track how much validation is happening per row, how long the pipeline takes, and where it degrades under complex schemas.
+- **Contract-level coverage.**  
+  Optional coverage reports (structure / branches / enums) help you see which parts of a contract your tests actually exercise, not just whether individual payloads validate.
 
 ---
 
@@ -213,22 +229,30 @@ In CI / test pipelines:
 - **No visibility on generation cost**
   - Hard to know why a generator suddenly becomes slow or memory-heavy as schemas grow.
 
+- **No visibility on which parts of the contract are exercised**
+  - Tests hit some code paths, but it is unclear which branches / enums / structures of the JSON Schema or OpenAPI spec are actually used.
+  - Contract changes can hide dead branches or untested additions without a contract-level coverage signal.
+
 ---
 
 ## Key CI use cases
 
 Some concrete scenarios:
 
+- **Contract coverage and drift detection**
+  - Measure which parts of your JSON Schemas / OpenAPI contracts are exercised by generated fixtures.
+  - Gate contract changes in CI with coverage reports and thresholds.
+
 - **Backend / API tests**
   - Generate request and response payloads from JSON Schemas or OpenAPI 3.1.
   - Use them as fixtures in Jest/Vitest/Mocha or integration tests.
 
 - **Contract-driven tests**
-  - Use the same schemas that drive AJV in your services to drive the test data.
+  - Use the same schemas that drive AJV in your services to drive the test data and get contract-level coverage reports as part of your test runs.
   - Ensure changes to schemas are reflected in fixtures immediately.
 
 - **End-to-end & load testing**
-  - Generate realistic, schema-driven data for E2E tests and load tests (k6, Artillery, etc.).
+  - Generate contract-true, schema-driven data for E2E tests and load tests (k6, Artillery, etc.).
   - Keep the datasets stable between runs via seeds.
 
 - **Incident reproduction**
@@ -318,6 +342,22 @@ foundrydata generate --schema ./examples/user.schema.json --n 1000 --seed 42
 # Print metrics (timings, validations/row, etc.) to stderr
 foundrydata generate --schema ./examples/user.schema.json --n 1000 --print-metrics
 ```
+
+Run contract-focused tests with coverage and a simple gate:
+
+```bash
+foundrydata contracts \
+  --schema ./examples/payment.json \
+  --n 200 \
+  --seed 424242 \
+  --coverage=measure \
+  --coverage-profile=balanced \
+  --coverage-dimensions=structure,branches,enum \
+  --coverage-min 0.8 \
+  --coverage-report ./coverage/payment.coverage.json
+```
+
+This profile executes the contract in strict mode, emits deterministic fixtures, records which parts of the schema are exercised (structure / branches / enums), and fails CI if overall coverage drops below `0.8`.
 
 Work with OpenAPI 3.1 responses:
 
@@ -412,7 +452,7 @@ Because generation is deterministic, you can:
 
 ### Recommended contract-testing profile
 
-For contract tests and integration tests, a good default profile is:
+For contract tests and integration tests, a reasonable starting profile is:
 
 **CLI (fixtures + coverage gate + summary)**
 
@@ -431,7 +471,7 @@ foundrydata generate \
   --summary
 ```
 
-This command generates deterministic NDJSON fixtures for the payment schema, validates all items with AJV in strict mode, emits a `coverage-report/v1` JSON for coverage=measure with a balanced profile, enforces a global `coverage.overall >= 0.8` threshold, and prints a compact JSON summary to stderr for CI consumption.
+This command generates deterministic NDJSON fixtures for the payment schema, validates all items with AJV in strict mode, emits a `coverage-report/v1` JSON for coverage=measure with a balanced profile, enforces a global `coverage.overall >= 0.8` threshold, and prints a compact JSON summary to stderr for CI consumption. Contract coverage is a complement to your usual test coverage, not a replacement; tune thresholds like `coverage-min` to your project and schema size.
 
 As a shorter CLI entry point, you can use the dedicated `contracts` command, which defaults to `coverage=measure` and `coverage-profile=balanced`:
 

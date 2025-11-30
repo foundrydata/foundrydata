@@ -36,7 +36,7 @@ npx foundrydata generate \
   --schema ./path/to/your-schema.json \
   --n 100 \
   --seed 42 \
-  > ./tmp/foundrydata.sample.ndjson
+  > ./tmp/foundrydata.sample.json
 
 # OpenAPI case (operation responses) — also redirect if you prefer
 npx foundrydata openapi \
@@ -44,10 +44,10 @@ npx foundrydata openapi \
   --operation-id getUser \
   --n 100 \
   --seed 42 \
-  > ./tmp/foundrydata.openapi.sample.ndjson
+  > ./tmp/foundrydata.openapi.sample.json
 ```
 
-We will inspect the generated sample file(s) in the next step.
+We will inspect the generated sample file(s) in the next step. If you also want to get a feel for the cost of the contract, you can add `--print-metrics` to these commands and glance at `validationsPerRow` / `generateMs` in stderr.
 
 ---
 
@@ -60,9 +60,11 @@ When looking at the 100 generated items:
   - **Do not treat this as a failure of FoundryData.** It is telling you that, according to JSON Schema, an empty object is a valid instance for this contract.
   - Ask yourself: “Is this consistent with what the API really accepts in production?”
   - This is often the first useful insight: your schema behaves as a very permissive *acceptance* contract, not as an *expressive* model of typical payloads.
-- If the shape **looks like your real payloads** (expected fields present, plausible lengths, non-empty lists, etc.):
+- If the shape is **structurally close to your real payloads** (expected fields present, non-empty lists where you set `minItems`, strings with `minLength` > 0, etc.):
   - Your schema already captures a good portion of your domain constraints.
   - Check whether surprising cases appear (edge values, rarely-tested optional fields, unusual combinations).
+
+FoundryData does not try to mimic production distributions or generate “realistic” fake data; it focuses on respecting the structural and scalar constraints expressed in your schemas.
 
 Spend 5–10 minutes comparing this with a few production payloads or existing fixtures.
 
@@ -92,6 +94,8 @@ Observe the difference:
 - Are the generated objects closer to what you really expect?
 - Do some constraints feel too strict (legitimate cases disappear) or, on the contrary, necessary (you discover gaps in your current tests)?
 
+You do not have to commit these schema changes; treat this as a “what if” exercise to see how sensitive your payload space is to small tightenings.
+
 ---
 
 ## Step 5 — Plug it quickly into an existing test
@@ -100,23 +104,31 @@ Goal: see whether FoundryData surfaces cases that your static fixtures don’t c
 
 A minimal approach:
 
-1. Add a script to your `package.json` (in **your** project) that generates fixtures:
+1. Add a script to your `package.json` (in **your** project) that generates fixtures. You can either:
 
-   Assuming you have `foundrydata` installed as a dev dependency so it is available in `node_modules/.bin`, for example:
+   - use **`npx` only** (no install):
 
-   ```bash
-   npm install --save-dev foundrydata
-   ```
-
-   ```jsonc
-   {
-     "scripts": {
-       "gen:test-data": "foundrydata generate --schema ./schemas/user.schema.json --n 200 --seed 424242 > ./test-fixtures/users.generated.json"
+     ```jsonc
+     {
+       "scripts": {
+         "gen:test-data": "npx foundrydata generate --schema ./schemas/user.schema.json --n 200 --seed 424242 > ./test-fixtures/users.generated.json"
+       }
      }
-   }
-   ```
+     ```
 
-   If you prefer not to install it yet, you can replace `foundrydata` with `npx foundrydata` in that script.
+   - or install the CLI as a dev dependency and call it directly:
+
+     ```bash
+     npm install --save-dev foundrydata
+     ```
+
+     ```jsonc
+     {
+       "scripts": {
+         "gen:test-data": "foundrydata generate --schema ./schemas/user.schema.json --n 200 --seed 424242 > ./test-fixtures/users.generated.json"
+       }
+     }
+     ```
 
 2. In an existing test (Jest / Vitest, etc.):
    - Load `users.generated.json`.
@@ -133,6 +145,7 @@ Questions to ask yourself:
 
 - Do **new kinds of cases** appear (edge values, rare combinations, optional fields)?
 - Do some tests fail because the schema and the code are not aligned?
+- When tests fail, is it because the code is stricter than the schema (schema too permissive), or because the schema is looser than the real service (schema not updated)? In other words, did FoundryData surface a **contract/code drift** you had not noticed?
 - Does the perceived integration cost feel acceptable for the benefits?
 
 If you only have ~30 minutes, you can stop after Step 4 and still get a solid initial feel for the value. Step 5 (and the optional coverage step below) is optional but recommended if you want to see FoundryData in a real test run.
@@ -151,7 +164,8 @@ npx foundrydata generate \
   --seed 42 \
   --coverage=measure \
   --coverage-dimensions=structure,branches,enum \
-  --coverage-report=./tmp/foundrydata.coverage.json
+  --coverage-report=./tmp/foundrydata.coverage.json \
+  --summary
 
 # OpenAPI case — measure coverage for a specific operation
 npx foundrydata openapi \
@@ -161,22 +175,26 @@ npx foundrydata openapi \
   --seed 42 \
   --coverage=measure \
   --coverage-dimensions=structure,branches,enum,operations \
-  --coverage-report=./tmp/foundrydata.openapi.coverage.json
+  --coverage-report=./tmp/foundrydata.openapi.coverage.json \
+  --summary
 ```
 
 In `coverage=measure` mode, the sequence of generated instances is the same as in `coverage=off` for a fixed `(schema, options, seed, ajv posture)` tuple; the coverage layer only tracks which targets are hit. Two things to look at:
 
 1. **CLI summary on stderr**  
-   Each run prints a one-line coverage summary to stderr (per-dimension, per-operation and overall coverage, plus target status counts and planner caps/unsatisfied hints when relevant). This gives you a quick feel for whether, for example, branch/enum coverage is healthy or very low.
+   With `--summary`, each run prints a compact coverage summary to stderr (per-dimension, per-operation and overall coverage, plus target status counts and planner caps/unsatisfied hints when relevant). This gives you a quick feel for whether, for example, branch/enum coverage is healthy or very low.
 
 2. **JSON coverage report (coverage-report/v1)**  
    The `--coverage-report` file contains a structured coverage report (versioned `coverage-report/v1`) with:
    - `metrics.overall`, `metrics.byDimension`, and `metrics.byOperation` (when OpenAPI is in play),
-   - `metrics.targetsByStatus` (how many targets are active vs unreachable),
-   - `targets` / `uncoveredTargets` arrays and planner diagnostics.  
-   You can inspect this JSON directly, pipe it into your own tooling, or use it as input to `foundrydata coverage diff` later if you want to compare coverage across branches or versions.
+   - `metrics.targetsByStatus` (how many targets are active vs unreachable).  
+   Start by looking at these metrics to understand whether coverage is very low (e.g. a handful of branches hit) or reasonably high for your schema.
 
-This step is deliberately **optional** in the evaluation: it should help you judge whether coverage-aware features are relevant for your use case, without being required to assess the core “schema‑true, deterministic data” promise.
+   If you want to go deeper, you can inspect `uncoveredTargets` and planner diagnostics in the same JSON, or use this file as input to `foundrydata coverage diff` to compare coverage across branches or versions. For a more complete description of the `coverage-report/v1` format and diff tooling, see `packages/reporter/README.md`.
+
+If you prefer a higher-level entry point for contract tests, you can also try `foundrydata contracts ...`, which defaults to `coverage=measure` and a balanced coverage profile (see the “Recommended contract-testing profile” section in `README.md` for an example).
+
+This step is deliberately **optional** in the evaluation: it should help you judge whether coverage-aware features are relevant for your use case, without being required to assess the core “schema‑true, deterministic data” promise. Coverage here is a contract-level signal that complements your usual business-level and code coverage metrics; it is not meant to replace them.
 
 ---
 
