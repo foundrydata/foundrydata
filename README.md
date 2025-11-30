@@ -536,11 +536,12 @@ foundrydata openapi --spec <openapi.json> [selection] [options]
 | `-n, --n <n>`                    | Alias for `--count`; short form used in examples.                                                                                                                                                |
 | `-r, --rows <n>`                 | Legacy alias for `--count`; still accepted for backwards compatibility.                                                                                                                          |
 | `--seed <n>`                     | Deterministic seed (default: `424242`).                                                                                                                                                          |
-| `--out <format>`                 | Output format: `json` | `ndjson` (default: `json`).                                                                                                                                              |
+| `--out <format>`                 | Output format: `json` \| `ndjson` (default: `json`).                                                                                                                                             |
 | `--print-metrics`                | Print structured metrics to **stderr**.                                                                                                                                                          |
 | `--no-metrics`                   | Disable metrics collection in the pipeline.                                                                                                                                                      |
-| `--mode <mode>`                  | Execution mode: `strict` | `lax`. Takes precedence over `--compat` when both are provided.                                                                                                       |
-| `--compat <mode>`                | Compatibility surface: `strict` | `lax`. Defaults to `strict` when neither `--mode` nor `--compat` is provided.                                                                                  |
+| `--summary` / `--manifest`       | Print a compact JSON summary (counts, metrics, coverage aggregates when enabled) to **stderr**, without changing the fixtures written to **stdout**.                                             |
+| `--mode <mode>`                  | Execution mode: `strict` \| `lax`. Takes precedence over `--compat` when both are provided.                                                                                                      |
+| `--compat <mode>`                | Compatibility surface: `strict` \| `lax`. Defaults to `strict` when neither `--mode` nor `--compat` is provided.                                                                                 |
 | `--prefer-examples`              | Prefer schema/OpenAPI examples when present, falling back to generated data.                                                                                                                     |
 | `--external-ref-strict <policy>` | Policy for external `$ref`: `error` (default) or `warn`. Controls handling of unresolved externals; network resolution is governed separately by resolver options such as `--resolve`. |
 | `--resolve <strategies>`         | Resolver strategies for external `$ref`: comma-separated list of `local`, `remote`, `schemastore`. Default is `local` (offline-friendly; no network).                                            |
@@ -584,7 +585,8 @@ foundrydata openapi \
   --coverage-profile balanced \
   --coverage-dimensions structure,branches,enum \
   --coverage-min 0.8 \
-  --coverage-report ./coverage/getUsers.coverage.json
+  --coverage-report ./coverage/getUsers.coverage.json \
+  --summary
 ```
 
 For the full set of options:

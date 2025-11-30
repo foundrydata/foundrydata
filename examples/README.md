@@ -44,6 +44,14 @@ npx foundrydata generate --schema examples/api-transaction-schema.json --n 200 -
 
 # Write output to a file (stdout -> redirect)
 npx foundrydata generate --schema examples/quick-test-schema.json --n 5 > out.json
+
+# CI-friendly summary for contract-style fixtures
+npx foundrydata generate \
+  --schema examples/payment.json \
+  --n 50 \
+  --seed 424242 \
+  --out ndjson \
+  --summary
 ```
 
 Streams: generated data goes to `stdout`; metrics/errors go to `stderr`. This makes piping in CI straightforward.
@@ -148,7 +156,8 @@ npx foundrydata generate \
   --coverage-min=0.8 \
   --coverage-report=coverage-payment.json \
   --coverage-exclude-unreachable true \
-  --out ndjson
+  --out ndjson \
+  --summary
 ```
 
 Both commands print a human-readable coverage summary to stderr (per-dimension, per-operation and overall coverage, plus target status counts and planner caps/unsatisfied hints). The second one also enforces `minCoverage`: if `coverage.overall` for the enabled dimensions drops below `0.8`, the CLI exits with a dedicated non-zero code while still emitting fixtures.
