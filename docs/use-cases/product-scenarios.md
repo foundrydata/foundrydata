@@ -1,6 +1,6 @@
 # FoundryData product scenarios
 
-This document describes a few realistic ways a developer might use FoundryData today and captures where the current CLI and Node API feel smooth, confusing, or incomplete.
+This document describes a few realistic ways a developer might use FoundryData today and captures where the current CLI and Node API feel smooth, confusing, or incomplete. It is primarily an internal product/design aid; for a general introduction see `README.md`, for a “try it in under 1 hour” walkthrough see `EVALUATION.md`, and for a capability overview see `docs/Features.md`.
 
 ## Scenario 1 — API mocks / MSW-style fixtures
 
@@ -53,13 +53,13 @@ foundrydata openapi \
   --seed 42 \
   --out ndjson \
   --coverage=measure \
-  --coverage-dimensions=structure,branches,enum \
+  --coverage-dimensions=structure,branches,enum,operations \
   --coverage-profile=balanced \
   --coverage-report=coverage-users.json \
   --coverage-exclude-unreachable true
 ```
 
-The CLI prints a one-line coverage summary to stderr (per-dimension, per-operation and overall coverage, plus planner caps and unsatisfied hints) and writes a `coverage-report/v1` JSON file to `coverage-users.json` for deeper inspection in CI or local analysis. For more CLI options and profiles, see the “Coverage-aware generation” section in `examples/README.md`.
+The CLI prints a one-line coverage summary to stderr (per-dimension, per-operation and overall coverage, plus planner caps and unsatisfied hints when the operations dimension is enabled) and writes a `coverage-report/v1` JSON file to `coverage-users.json` for deeper inspection in CI or local analysis. For more CLI options and profiles, see the “Coverage-aware generation” section in `examples/README.md`.
 
 **Friction / gaps**
 
@@ -73,7 +73,7 @@ The CLI prints a one-line coverage summary to stderr (per-dimension, per-operati
 
 **Potential next steps**
 
-- Add a higher-level helper (CLI or Node) that outputs MSW/Prism handlers for a given operation.
+- Add a higher-level helper (CLI or Node) in `packages/cli` (with thin wrappers in `packages/core` as needed) that outputs MSW/Prism handlers for a given operation.
 - Provide presets or shortcuts for “simple mocks” that hide most advanced flags.
 - Make it easier to request multiple response kinds at once (e.g. 2×200, 2×4xx) while still preserving determinism.
 
@@ -165,9 +165,9 @@ If the resulting `coverage-report/v1` shows `coverage.overall < minCoverage` for
 
 **Potential next steps**
 
-- Add a simple `--summary` or `--manifest` option that prints a small JSON document describing counts, schema metadata, and diagnostics, tailored for CI integration.
+- Add a simple `--summary` or `--manifest` option in `packages/cli` that prints a small JSON document describing counts, schema metadata, and diagnostics, tailored for CI integration and optionally consumed by `packages/reporter`.
 - Document a recommended “contract testing profile” (e.g. which flags to use or avoid) in the main README.
-- Provide an example test harness that reads NDJSON fixtures and runs `Validate` in a loop, to make the pattern copy-pasteable.
+- Provide an example test harness (for example under `examples/` or `test/`) that reads NDJSON fixtures and runs `Validate` in a loop, to make the pattern copy-pasteable.
 
 ## Scenario 3 — LLM structured output testing
 
@@ -231,7 +231,7 @@ foundrydata generate \
   --coverage-exclude-unreachable true
 ```
 
-Both commands emit AJV-valid instances; the main differences are the enabled dimensions, implied budgets and the amount of structure the planner tries to cover. Inspecting the JSON reports (or the CLI summary) makes it easier to decide whether a given LLM schema is “well covered enough” for your tests. For a more exhaustive tour of coverage flags and profiles, see the “Coverage-aware generation” section in `examples/README.md`.
+Both commands emit AJV-valid instances; the main differences are the enabled dimensions, implied budgets and the amount of structure the planner tries to cover. When the `boundaries` dimension is enabled, target counts can grow significantly on large or heavily constrained schemas and deterministic caps described in `docs/Known-Limits.md` apply, so boundaries metrics should be interpreted as best-effort on those inputs. Inspecting the JSON reports (or the CLI summary) makes it easier to decide whether a given LLM schema is “well covered enough” for your tests. For a more exhaustive tour of coverage flags and profiles, see the “Coverage-aware generation” section in `examples/README.md`.
 
 **Friction / gaps**
 
@@ -245,9 +245,9 @@ Both commands emit AJV-valid instances; the main differences are the enabled dim
 
 **Potential next steps**
 
-- Add documentation or examples that show how to pair FoundryData with common LLM toolchains (e.g. JSON mode, function calling, tool schemas).
-- Provide a helper script or library function that generates fixtures for two schema variants and reports structural differences to aid design discussions.
-- Explore a lightweight “LLM testing profile” that tunes generation options for more human-like strings where appropriate while staying within the existing engine.
+- Add documentation or examples (for example under `docs/` and `examples/`) that show how to pair FoundryData with common LLM toolchains (e.g. JSON mode, function calling, tool schemas).
+- Provide a helper script or library function in `packages/core` or `packages/cli` that generates fixtures for two schema variants and reports structural differences to aid design discussions.
+- Explore a lightweight “LLM testing profile” implemented as an additional coverage/profile mapping in the CLI that tunes generation options for more human-like strings where appropriate while staying within the existing engine.
 
 ## Product fit summary
 
