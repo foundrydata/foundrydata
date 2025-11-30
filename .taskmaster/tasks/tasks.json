@@ -949,7 +949,7 @@
           "9309",
           "9310"
         ],
-        "status": "in-progress",
+        "status": "done",
         "complexityScore": 3,
         "details": "[Context]\nCOMPREHENSIVE_FEATURE_SUPPORT.md and Features.md focus on JSON Schema feature support, while Known-Limits.md documents complexity caps and AP:false coverage constraints. None of them currently describe coverage dimensions, coverage metrics or diagnostic-only targets as defined by coverage-aware-v1.\n\n[Key requirements]\n- Extend COMPREHENSIVE_FEATURE_SUPPORT.md with a short subsection summarizing which JSON Schema features have coverage-aware behavior (AP:false must-cover, contains, conditionals, boundaries, OpenAPI operations) and how they contribute to coverage metrics.\n- Add one or more rows to Features.md that track coverage support by dimension and phase (structure/branches/enum M0, guided coverage M1, boundaries and per-operation coverage M2), with the same ✓ / ~ / ⚠️ legend.\n- Expand Known-Limits.md with coverage-specific limits: caps on target counts where applicable, AP:false coverage nuances, boundaries dimension constraints, and how excludeUnreachable and dimensionsEnabled affect denominators while leaving IDs/statuses stable.\n- Explicitly document that diagnostic-only targets such as SCHEMA_REUSED_COVERED are emitted with status:'deprecated' so they never contribute to metrics or thresholds even when present in targets/uncoveredTargets.\n\n[Deliverables]\n- Updated COMPREHENSIVE_FEATURE_SUPPORT.md, Features.md and Known-Limits.md that mention coverage-aware behavior where relevant and link back to the coverage spec for full definitions.\n\n[Definition of Done]\n- Feature tables and narrative docs no longer contradict the coverage-aware-v1 spec or the implementation status of tasks 9302–9304/9309/9310.\n- Known-Limits.md has an explicit subsection for coverage-aware constraints, not just composition-time limits.",
         "testStrategy": "Doc review against the coverage-aware-v1 spec plus a quick check that all added rows in Features.md remain accurate when scanning the implementation status of coverage tasks.",
@@ -978,13 +978,14 @@
             "id": 9321003,
             "title": "Expand Known-Limits.md with coverage-aware limits",
             "description": "Update Known-Limits.md with explicit coverage-aware constraints (AP:false coverage semantics, boundary target limits, streaming instrumentation overhead assumptions, operationsScope/selectedOperations semantics for byOperation).",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "Known-Limits.md",
-            "parentId": "9321"
+            "parentId": "9321",
+            "updatedAt": "2025-11-30T13:42:48.847Z"
           }
         ],
-        "updatedAt": "2025-11-30T13:36:04.824Z"
+        "updatedAt": "2025-11-30T13:42:48.847Z"
       },
       {
         "id": "9322",
@@ -1178,9 +1179,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-30T13:36:04.825Z",
+      "lastModified": "2025-11-30T13:42:48.848Z",
       "taskCount": 21,
-      "completedCount": 20,
+      "completedCount": 21,
       "tags": [
         "coverage-aware-v1"
       ]

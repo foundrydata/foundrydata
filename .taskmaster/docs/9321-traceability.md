@@ -37,4 +37,4 @@ This document maps the parent task 9321 bullets from Implementation Details, Del
   Covers: [KR2], [DEL2], [DOD2], [TS2]. Status: covered (Features.md now includes coverage rows that summarise measurement/guided/boundaries/operations support per dimension and phase using the ✓ / ~ / ⚠️ legend).
 
 - **9321.9321003 – Expand Known-Limits.md with coverage-aware limits**  
-  Covers: [KR3], [KR4], [DEL3], [DOD3], [TS1]. Status: pending.
+  Covers: [KR3], [KR4], [DEL3], [DOD3], [TS1]. Status: covered (Known-Limits.md now documents coverage-specific caps, AP:false coverage nuances, boundaries dimension constraints and operations scope semantics in line with the coverage-aware spec).
