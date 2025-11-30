@@ -410,6 +410,51 @@ Because generation is deterministic, you can:
 * reuse the same seeds locally to reproduce failures,
 * compare metrics across runs (e.g. p95 latency, validations/row) if you log them.
 
+### Recommended contract-testing profile
+
+For contract tests and integration tests, a good default profile is:
+
+**CLI (fixtures + coverage gate + summary)**
+
+```bash
+foundrydata generate \
+  --schema ./examples/payment.json \
+  --n 200 \
+  --seed 424242 \
+  --mode strict \
+  --out ndjson \
+  --coverage=measure \
+  --coverage-profile=balanced \
+  --coverage-dimensions=structure,branches,enum \
+  --coverage-min 0.8 \
+  --coverage-report ./coverage/payment.coverage.json \
+  --summary
+```
+
+This command generates deterministic NDJSON fixtures for the payment schema, validates all items with AJV in strict mode, emits a `coverage-report/v1` JSON for coverage=measure with a balanced profile, enforces a global `coverage.overall >= 0.8` threshold, and prints a compact JSON summary to stderr for CI consumption.
+
+**Node.js harness (same profile, programmatic use)**
+
+```ts
+import { runContractTestsExample } from './scripts/examples/contract-tests';
+
+const report = await runContractTestsExample({
+  schemaPath: 'examples/payment.json',
+  count: 200,
+  seed: 424242,
+  mode: 'strict',
+  coverageMode: 'measure',
+  coverageDimensions: ['structure', 'branches', 'enum'],
+  coverageMin: 0.8,
+});
+
+// report.items        -> validated fixtures (array)
+// report.meta         -> { count, seed, schemaPath, mode, coverageMode }
+// report.coverage     -> { overall, byDimension, coverageStatus } | undefined
+```
+
+The harness is used in the repo’s own e2e tests (`packages/core/test/e2e/examples.integration.spec.ts`) and can be called directly from Jest/Vitest suites or via `npx tsx scripts/examples/contract-tests.ts ...` in CI.
+
 ---
 
 ## Core invariants

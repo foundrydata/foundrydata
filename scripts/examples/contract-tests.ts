@@ -1,17 +1,25 @@
 /* eslint-disable max-lines-per-function */
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
 
+import type { PipelineOptions, PipelineResult } from '@foundrydata/core';
 import { Generate, Validate } from '@foundrydata/core';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-async function loadJson(relativePath: string): Promise<unknown> {
-  const abs = path.resolve(__dirname, relativePath);
+async function loadJsonFromCwd(schemaPath: string): Promise<unknown> {
+  const abs = path.resolve(process.cwd(), schemaPath);
   const raw = await fs.readFile(abs, 'utf8');
   return JSON.parse(raw) as unknown;
+}
+
+export interface ContractTestsHarnessOptions {
+  schemaPath?: string;
+  count?: number;
+  seed?: number;
+  mode?: 'strict' | 'lax';
+  coverageMode?: 'off' | 'measure' | 'guided';
+  coverageDimensions?: string[];
+  coverageMin?: number;
 }
 
 export interface ContractTestsExampleResult {
@@ -19,33 +27,110 @@ export interface ContractTestsExampleResult {
   meta: {
     count: number;
     seed: number;
+    schemaPath: string;
+    mode: 'strict' | 'lax';
+    coverageMode: 'off' | 'measure' | 'guided';
+  };
+  coverage?: {
+    overall: number;
+    byDimension: Record<string, number>;
+    coverageStatus: string;
   };
 }
 
-export async function runContractTestsExample(): Promise<ContractTestsExampleResult> {
-  const schema = await loadJson('../../examples/payment.json');
+export async function runContractTestsExample(
+  options: ContractTestsHarnessOptions = {}
+): Promise<ContractTestsExampleResult> {
+  const schemaPath = options.schemaPath ?? 'examples/payment.json';
+  const schema = await loadJsonFromCwd(schemaPath);
 
-  const count = 10;
-  const seed = 123;
+  const count = options.count ?? 10;
+  const seed = options.seed ?? 123;
+  const mode: 'strict' | 'lax' = options.mode ?? 'strict';
+  const coverageMode: 'off' | 'measure' | 'guided' =
+    options.coverageMode ?? 'off';
+
+  const coverageOptions = buildCoverageOptions(options);
 
   const stream = Generate(count, seed, schema as object, {
-    mode: 'strict',
+    mode,
     validateFormats: true,
+    coverage: coverageOptions,
   });
 
   const pipelineResult = await stream.result;
-  if (pipelineResult.status !== 'completed') {
-    const stageError = pipelineResult.errors[0];
-    if (stageError) throw stageError;
-    throw new Error('Contract tests pipeline did not complete');
+  ensurePipelineCompleted(pipelineResult);
+
+  const items = extractItemsFromResult(pipelineResult);
+  const coverageReport = pipelineResult.artifacts.coverageReport;
+
+  const validCount = validateAllItems(items, schema);
+
+  logContractSummary(items, validCount, {
+    seed,
+    mode,
+    coverageMode,
+  });
+
+  const coverageSummary = summarizeCoverage(coverageReport);
+
+  return {
+    items,
+    meta: {
+      count,
+      seed,
+      schemaPath,
+      mode,
+      coverageMode,
+    },
+    coverage: coverageSummary,
+  };
+}
+
+const entryHref =
+  typeof process.argv[1] === 'string'
+    ? pathToFileURL(process.argv[1]).href
+    : '';
+
+function buildCoverageOptions(
+  options: ContractTestsHarnessOptions
+): PipelineOptions['coverage'] | undefined {
+  const coverageMode: 'off' | 'measure' | 'guided' =
+    options.coverageMode ?? 'off';
+  if (coverageMode === 'off') return undefined;
+
+  const dimensions = options.coverageDimensions ?? [
+    'structure',
+    'branches',
+    'enum',
+  ];
+
+  return {
+    mode: coverageMode,
+    dimensionsEnabled:
+      dimensions as PipelineOptions['coverage']['dimensionsEnabled'],
+    excludeUnreachable: true,
+    minCoverage: options.coverageMin,
+  };
+}
+
+function ensurePipelineCompleted(result: PipelineResult): void {
+  if (result.status === 'completed') return;
+  const stageError = result.errors[0];
+  if (stageError) throw stageError;
+  throw new Error('Contract tests pipeline did not complete');
+}
+
+function extractItemsFromResult(result: PipelineResult): unknown[] {
+  const generatedStage = result.stages.generate.output;
+  const repairedItems = result.artifacts.repaired;
+  if (Array.isArray(repairedItems)) {
+    return repairedItems as unknown[];
   }
+  return (generatedStage?.items ?? []) as unknown[];
+}
 
-  const generatedStage = pipelineResult.stages.generate.output;
-  const repairedItems = pipelineResult.artifacts.repaired;
-  const items = Array.isArray(repairedItems)
-    ? (repairedItems as unknown[])
-    : (generatedStage?.items ?? []);
-
+function validateAllItems(items: unknown[], schema: unknown): number {
   let validCount = 0;
   for (const item of items) {
     const res = Validate(item, schema);
@@ -56,10 +141,17 @@ export async function runContractTestsExample(): Promise<ContractTestsExampleRes
     }
     validCount += 1;
   }
+  return validCount;
+}
 
+function logContractSummary(
+  items: unknown[],
+  validCount: number,
+  meta: { seed: number; mode: 'strict' | 'lax'; coverageMode: string }
+): void {
   // eslint-disable-next-line no-console
   console.log(
-    `[contract-tests] generated ${items.length} payments (valid=${validCount}, seed=${seed})`
+    `[contract-tests] generated ${items.length} items (valid=${validCount}, seed=${meta.seed}, mode=${meta.mode}, coverage=${meta.coverageMode})`
   );
   if (items[0]) {
     // eslint-disable-next-line no-console
@@ -68,23 +160,111 @@ export async function runContractTestsExample(): Promise<ContractTestsExampleRes
       JSON.stringify(items[0], null, 2)
     );
   }
+}
+
+function summarizeCoverage(
+  coverageReport: PipelineResult['artifacts']['coverageReport']
+):
+  | {
+      overall: number;
+      byDimension: Record<string, number>;
+      coverageStatus: string;
+    }
+  | undefined {
+  if (!coverageReport) return undefined;
+  const overall = coverageReport.metrics.overall;
+  const byDimension = coverageReport.metrics.byDimension;
+  const coverageStatus = coverageReport.metrics.coverageStatus;
+
+  // eslint-disable-next-line no-console
+  console.log(
+    '[contract-tests] coverage summary:',
+    JSON.stringify(
+      {
+        overall,
+        byDimension,
+        coverageStatus,
+      },
+      null,
+      2
+    )
+  );
 
   return {
-    items,
-    meta: {
-      count,
-      seed,
-    },
+    overall,
+    byDimension,
+    coverageStatus,
   };
 }
 
-const entryHref =
-  typeof process.argv[1] === 'string'
-    ? pathToFileURL(process.argv[1]).href
-    : '';
+function parseCliArgs(argv: string[]): ContractTestsHarnessOptions {
+  const opts: ContractTestsHarnessOptions = {};
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (!arg) continue;
+    i = handleCliArg(opts, argv, i);
+  }
+  return opts;
+}
+
+// eslint-disable-next-line complexity
+function handleCliArg(
+  opts: ContractTestsHarnessOptions,
+  argv: string[],
+  index: number
+): number {
+  const arg = argv[index];
+  const next = argv[index + 1];
+
+  switch (arg) {
+    case '--schema':
+    case '--schema-path':
+      if (next !== undefined) {
+        opts.schemaPath = next;
+      }
+      return index + 1;
+    case '--n':
+    case '--count':
+      if (next !== undefined) {
+        opts.count = Number(next);
+      }
+      return index + 1;
+    case '--seed':
+      if (next !== undefined) {
+        opts.seed = Number(next);
+      }
+      return index + 1;
+    case '--mode':
+      if (next === 'strict' || next === 'lax') {
+        opts.mode = next;
+      }
+      return index + 1;
+    case '--coverage':
+      if (next === 'off' || next === 'measure' || next === 'guided') {
+        opts.coverageMode = next;
+      }
+      return index + 1;
+    case '--coverage-dimensions':
+      if (next !== undefined) {
+        opts.coverageDimensions = next
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+      return index + 1;
+    case '--coverage-min':
+      if (next !== undefined) {
+        opts.coverageMin = Number(next);
+      }
+      return index + 1;
+    default:
+      return index;
+  }
+}
 
 if (import.meta.url === entryHref) {
-  runContractTestsExample().catch((error) => {
+  const cliOptions = parseCliArgs(process.argv.slice(2));
+  runContractTestsExample(cliOptions).catch((error) => {
     console.error(error);
     process.exitCode = 1;
   });

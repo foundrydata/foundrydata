@@ -63,7 +63,7 @@ Streams: generated data goes to `stdout`; metrics/errors go to `stderr`. This ma
 The following schemas are used in higher‑level product examples:
 
 - `examples/users-api.json` — with `foundrydata openapi` for API mocks / MSW‑style fixtures.
-- `examples/payment.json` — for contract‑testing flows (request/event payloads).
+- `examples/payment.json` — for contract‑testing flows (request/event payloads), with a reusable Node harness in `scripts/examples/contract-tests.ts`.
 - `examples/llm-output.json` — for LLM structured output testing.
 
 See `docs/use-cases/product-scenarios.md` and the scripts under `scripts/examples/`:
@@ -71,6 +71,18 @@ See `docs/use-cases/product-scenarios.md` and the scripts under `scripts/example
 - `scripts/examples/api-mocks.ts`
 - `scripts/examples/contract-tests.ts`
 - `scripts/examples/llm-output.ts`
+
+You can run the contract-testing harness directly with `tsx` and optional overrides for schema, count, seed and coverage:
+
+```bash
+npx tsx scripts/examples/contract-tests.ts \
+  --schema examples/payment.json \
+  --n 50 \
+  --seed 424242 \
+  --coverage measure \
+  --coverage-dimensions structure,branches,enum \
+  --coverage-min 0.8
+```
 
 Each script calls the public `Generate` / `Validate` APIs with fixed seeds and validates that emitted items are AJV‑valid for the corresponding schema.
 
@@ -150,6 +162,8 @@ npx foundrydata generate \
 # Guided run with a balanced profile and global coverage threshold
 npx foundrydata generate \
   --schema examples/payment.json \
+  --n 200 \
+  --seed 424242 \
   --coverage=guided \
   --coverage-profile=balanced \
   --coverage-dimensions=structure,branches,enum \

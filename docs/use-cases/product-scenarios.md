@@ -110,10 +110,13 @@ foundrydata generate \
 **Node API example**
 
 ```bash
-npx tsx scripts/examples/contract-tests.ts
+npx tsx scripts/examples/contract-tests.ts \
+  --schema examples/payment.json \
+  --n 10 \
+  --seed 123
 ```
 
-This script loads `examples/payment.json`, runs `Generate` with a fixed seed to produce a small list of payments, validates them with `Validate`, and prints a summary that can be asserted from an integration test (e.g. “10 items, all AJV-valid, deterministic for seed 123”).
+This script loads `examples/payment.json`, runs `Generate` with a fixed seed to produce a small list of payments, validates them with `Validate`, and prints a summary that can be asserted from an integration test (e.g. “10 items, all AJV-valid, deterministic for seed 123”). It also accepts optional flags (`--schema`, `--n`/`--count`, `--seed`, `--mode`, `--coverage`, `--coverage-dimensions`, `--coverage-min`) so it can act as a reusable contract-testing harness in CI or local runs.
 
 **Coverage-aware extension**
 
@@ -149,10 +152,11 @@ If the resulting `coverage-report/v1` shows `coverage.overall < minCoverage` for
 >   --coverage-profile=balanced \
 >   --coverage-dimensions=structure,branches,enum \
 >   --coverage-min=0.8 \
->   --coverage-report=coverage-payments-measure.json
+>   --coverage-report=coverage-payments-measure.json \
+>   --summary
 > ```
 >
-> In this mode the instance stream is still identical to `coverage=off` for a fixed seed; coverage-report/v1 and the `[foundrydata] coverage: …` summary are used purely as a CI gate and observability layer. Adding `--summary` (or its alias `--manifest`) on the CLI prints a compact JSON summary to stderr (counts, metrics, coverage aggregates when enabled) without changing the NDJSON fixtures on stdout, which is convenient for CI dashboards or post-processing.
+> In this mode the instance stream is still identical to `coverage=off` for a fixed seed; coverage-report/v1 and the `[foundrydata] coverage: …` summary are used purely as a CI gate and observability layer. Adding `--summary` (or its alias `--manifest`) on the CLI prints a compact JSON summary to stderr (counts, metrics, coverage aggregates when enabled) without changing the NDJSON fixtures on stdout, which is convenient for CI dashboards or post-processing. This configuration matches the “Recommended contract-testing profile” described in the main README (strict mode, coverage=measure, balanced profile, `structure,branches,enum` dimensions, global coverage-min).
 
 **Friction / gaps**
 
@@ -162,13 +166,12 @@ If the resulting `coverage-report/v1` shows `coverage.overall < minCoverage` for
 
 **Current status**
 
-- ✅ Good enough as-is for users comfortable with JSON Schema and CLI tools; the public `Generate` and `Validate` APIs already support deterministic, AJV-true contract fixtures.
+- ✅ Good enough as-is for users comfortable with JSON Schema and CLI tools; the public `Generate` and `Validate` APIs already support deterministic, AJV-true contract fixtures, and `scripts/examples/contract-tests.ts` offers a concrete, reusable harness on top of the Node API.
 
 **Potential next steps**
 
-- Extend `packages/reporter` and the docs to show how to consume the `--summary` / `--manifest` JSON in CI (for example to drive dashboards or GitHub checks) rather than relying only on coverage-report/v1.
-- Document a recommended “contract testing profile” (e.g. which flags to use or avoid, including `--summary`) in the main README.
-- Provide an example test harness (for example under `examples/` or `test/`) that reads NDJSON fixtures and runs `Validate` in a loop, to make the pattern copy-pasteable.
+- Extend `packages/reporter` and the docs to show how to consume both the `--summary` / `--manifest` JSON and the harness output in CI (for example to drive dashboards or GitHub checks) rather than relying only on coverage-report/v1.
+- Document a recommended “contract testing profile” (e.g. which flags to use or avoid, including `--summary`) in the main README, with pointers to the harness as a reference implementation.
 
 ## Scenario 3 — LLM structured output testing
 
