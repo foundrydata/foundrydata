@@ -1,19 +1,25 @@
-Task: 9334   Title: Define coverage-report/v1 JSON schema and compatibility guards — subtask 9334.9334003
-Anchors: [cov://§3#coverage-model, cov://§7#json-coverage-report, cov://§10#acceptance-criteria-v1]
+Task: 9331   Title: Extract a dedicated coverage runtime from the pipeline orchestrator — subtask 9331.9331002
+Anchors: [cov://§3#coverage-model, cov://§4#architecture-components, cov://§4#coverage-planner]
 Touched files:
-- packages/core/src/coverage/__tests__/coverage-diff.spec.ts
-- packages/reporter/src/coverage/__tests__/coverage-diff.spec.ts
-- .taskmaster/docs/9334-traceability.md
+- packages/core/src/pipeline/orchestrator.ts
+- packages/core/src/coverage/runtime.ts
+- packages/core/src/pipeline/__tests__/pipeline-orchestrator.test.ts
+- .taskmaster/docs/9331-traceability.md
 
 Approach:
-Pour la sous-tâche 9334.9334003, je vais étendre les tests de compatibilité diff afin de garantir que les évolutions du contrat coverage-report/v1 restent rétro-compatibles et que les incompatibilités sont signalées explicitement, en cohérence avec la spec (cov://§3#coverage-model, cov://§7#json-coverage-report, cov://§10#acceptance-criteria-v1). Concrètement, je vais : (1) ajouter des fixtures/constructeurs de rapports « anciens » vs « nouveaux » dans les tests core `coverage-diff.spec.ts` pour couvrir des scénarios où des champs optionnels sont absents d’un côté (par exemple `operationsScope`, `selectedOperations`, nouveaux champs de diagnostics) et vérifier que `checkCoverageDiffCompatibility` considère ces cas comme compatibles; (2) compléter les tests reporter `coverage-diff.spec.ts` pour couvrir les chemins où la commande de diff consomme des rapports acceptables mais non strictement identiques (dimensions activées, champs additionnels) et s’assurer que les résumés et les issues de compatibilité restent stables et déterministes. L’objectif est que toute divergence réellement incompatible (version, engine major, opérationsScope réellement incompatibles) soit détectée, tandis que les ajouts non critiques restent transparents pour les consommateurs.
+Pour la sous-tâche 9331.9331002, je vais refactoriser `executePipeline` pour déléguer la planification et l’évaluation coverage au module `coverage/runtime.ts`, tout en conservant strictement la séquence des phases et la forme des artefacts existants (cov://§3#coverage-model, cov://§4#architecture-components, cov://§4#coverage-planner). Concrètement : (1) remplacer le bloc inline de la phase Compose qui appelle `analyzeCoverage`, applique les caps du planner et prépare `coverageTargets` par un appel à `planCoverageForPipeline`, en réutilisant les mêmes entrées (canonical schema, `ptrMap`, `coverageIndex`, `planDiag`, options coverage/generate, extra hints de tests) et en réinjectant `coverageGraph`, `coverageTargets`, `plannerCapsHit` et `unsatisfiedHints` dans les artefacts du pipeline; (2) conserver le câblage existant des hooks coverage (`coverageHookOptions`, accumulateur streaming, trace des hints) mais les alimenter à partir du résultat du runtime (targets planifiés + hints agrégés) de façon à préserver les invariants `coverage=off` ⇒ aucune instrumentation et `coverage=measure` ⇒ flux d’instances identique à coverage=off; (3) remplacer le bloc post-Validate qui appelle `evaluateCoverage` et construit coverage-report/v1 par un appel à `evaluateCoverageAndBuildReport`, en passant explicitement les targets finalisés, les options coverage, les informations de run (seed, maxInstances, actualInstances, timestamps) et en vérifiant via les tests orchestrateur que `coverageMetrics` et `coverageReport` restent byte-identiques.
 
 Risks/Unknowns:
-- Il faudra veiller à ne pas sur-contraindre `checkCoverageDiffCompatibility` : certains deltas attendus (par exemple changements de dimensionsEnabled ou ajout de cibles dans de nouvelles dimensions) doivent rester compatibles tout en étant reflétés dans le diff.
-- Les tests devront rester indépendants du détail complet du schéma JSON (déjà couvert par 9334.9334001/002) et se concentrer sur le comportement de compatibilité/diff, au risque sinon de dédoubler la responsabilité.
-- Il faudra couvrir suffisamment de cas pour refléter les scénarios décrits dans la spec (versions identiques vs différentes, operationsScope, ajouts de champs), sans alourdir excessivement la suite de tests.
+- Toute divergence dans les artefacts coverage (graph, targets, metrics, report) entre l’implémentation inline actuelle et la version orchestrée via `coverage/runtime.ts` serait un écart par rapport à la spec et au contrat de 9331; il faudra surveiller particulièrement les cas coverage=off, coverage=measure et coverage=guided.
+- Le refactor augmente le risque de cycles ou de couplage accidentel entre `pipeline/orchestrator.ts` et le module coverage; il faudra s’assurer que `coverage/runtime.ts` ne dépend que de types stables (options, Compose/Normalize, types coverage) et reste isolé des détails d’exécution du pipeline.
+- Les tests orchestrateur et les snapshots coverage-report existants doivent rester valides sans mise à jour; si une différence apparaît, il faudra vérifier qu’elle ne vient pas d’un changement comportemental involontaire dans les options coverage (dimensionsEnabled, excludeUnreachable, minCoverage, reportMode).
 
-Parent bullets couverts: [KR3, DEL3, DOD3, TS3]
+DoD:
+- [ ] `executePipeline` délègue la planification coverage (graph, targets, plannerCapsHit, unsatisfiedHints) à `planCoverageForPipeline` et la construction de coverage-report/v1 à `evaluateCoverageAndBuildReport`, avec un comportement observable inchangé pour coverage=off/measure/guided.
+- [ ] Les tests orchestrateur (dont ceux autour de coverage, metrics et coverage-report) passent sans modifications de snapshots et démontrent que les artefacts coverage restent identiques à l’implémentation précédente.
+- [ ] build/typecheck/lint/test/bench OK.
+
+Parent bullets couverts: [KR3, DEL2]
 
 Checks:
 - build: npm run build

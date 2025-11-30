@@ -1237,7 +1237,7 @@
           "9303",
           "9330"
         ],
-        "status": "pending",
+        "status": "done",
         "complexityScore": 4,
         "details": "[Context]\nThe current pipeline orchestrator wires coverage logic inline (Analyzer, Planner, streaming accumulator, unsatisfied hints, coverageReport), increasing complexity and coupling. The spec treats coverage as a layer on top of Normalize→Compose→Generate→Repair→Validate. Isolating a coverage runtime improves maintainability and makes future evolution safer.\n\n[Key requirements]\n- Introduce a small internal API (coverage runtime) that takes canonical schema, Compose artifacts, resolved coverage options and generator outcomes, then returns coverageTargets, coverageMetrics, coverageReport and any planner diagnostics.\n- Move Analyzer + Planner + accumulator + Evaluator wiring into this runtime, preserving existing options semantics (mode, dimensionsEnabled, excludeUnreachable, minCoverage, reportMode) and determinism guarantees.\n- Keep executePipeline responsible for phase sequencing and diagnostics envelope enforcement, but make coverage a clearly separated phase after Validate.\n\n[Deliverables]\n- New module encapsulating coverage orchestration and hooks.\n- executePipeline updated to call this module when coverage is enabled, with no behavior change visible to existing tests or CLI.\n\n[Definition of Done]\n- All existing tests involving coverage (core, e2e, CLI) pass unchanged.\n- New tests validate that the coverage runtime API is stable and enforces the same invariants as before (gating, determinism, thresholds, reportMode).",
         "testStrategy": "Add unit tests for the new coverage runtime module with synthetic inputs (CoverageTargets, generator items, coverage options) to assert metrics, report arrays and unsatisfiedHints wiring. Extend pipeline-orchestrator tests to confirm that executePipeline status, stages and artifacts (including coverageReport and coverageMetrics) remain identical before/after refactor. Run existing coverage e2e and CLI tests to ensure no regressions.",
@@ -1246,30 +1246,34 @@
             "id": 9331001,
             "title": "Introduce coverage runtime helper module",
             "description": "Create a new internal module that encapsulates calling analyzeCoverage, resolveCoveragePlannerConfig, planTestUnits, accumulate coverage events, evaluateCoverage and building coverage-report/v1.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 5,
             "file": "packages/core/src/coverage/runtime.ts",
-            "parentId": "9331"
+            "parentId": "9331",
+            "updatedAt": "2025-11-30T17:25:30.727Z"
           },
           {
             "id": 9331002,
             "title": "Refactor executePipeline to use coverage runtime",
             "description": "Replace inline coverage wiring in orchestrator.ts with a call to the coverage runtime, maintaining gating, hooks and artifacts shape.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/pipeline/orchestrator.ts",
-            "parentId": "9331"
+            "parentId": "9331",
+            "updatedAt": "2025-11-30T17:25:33.835Z"
           },
           {
             "id": 9331003,
             "title": "Add tests for coverage runtime wiring",
             "description": "Add focused tests that drive executePipeline with coverage on/off and assert that coverageTargets, coverageMetrics and coverageReport match snapshot expectations and prior behavior.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/pipeline/tests/pipeline-orchestrator.test.ts",
-            "parentId": "9331"
+            "parentId": "9331",
+            "updatedAt": "2025-11-30T17:25:36.499Z"
           }
-        ]
+        ],
+        "updatedAt": "2025-11-30T17:25:36.499Z"
       },
       {
         "id": "9332",
@@ -1419,9 +1423,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-30T16:54:43.779Z",
+      "lastModified": "2025-11-30T17:25:36.500Z",
       "taskCount": 26,
-      "completedCount": 24,
+      "completedCount": 25,
       "tags": [
         "coverage-aware-v1"
       ]
