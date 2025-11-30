@@ -801,18 +801,22 @@ Three modes are expected:
 
 2. `coverage=measure`
 
-  * Same generation pipeline and data as `coverage=off`.
-  * Coverage targets are computed and marked passively.
-  * A coverage report is produced at the end of the run.
-   * For a fixed `(schema, options, seed)`, the sequence of generated instances in `coverage=measure` mode MUST be byte‑for‑byte identical to `coverage=off`. Any divergence between `coverage=off` and `coverage=measure` on the emitted instances is considered a violation of this specification.
-   * The coverage layer MUST NOT introduce any new source of randomness into the pipeline. In particular, `coverage=measure` MUST NOT change the pattern or order of RNG calls used by the existing generator (for example by adding ad‑hoc random probes or alternative generation branches); all randomness remains governed by the existing generator and its seeded, deterministic RNG. Coverage MAY consume randomness only through the same seeded RNG interfaces that the generator already uses, and only in ways that are proven not to perturb existing RNG sequences.
+* Same generation pipeline and data as `coverage=off`.
+* Coverage targets are computed and marked passively.
+* A coverage report is produced at the end of the run.
+* For a fixed `(schema, options, seed)`, the sequence of generated instances in `coverage=measure` mode MUST be byte‑for‑byte identical to `coverage=off`. Any divergence between `coverage=off` and `coverage=measure` on the emitted instances is considered a violation of this specification.
+* The coverage layer MUST NOT introduce any new source of randomness into the pipeline. In particular, `coverage=measure` MUST NOT change the pattern or order of RNG calls used by the existing generator (for example by adding ad‑hoc random probes or alternative generation branches); all randomness remains governed by the existing generator and its seeded, deterministic RNG. Coverage MAY consume randomness only through the same seeded RNG interfaces that the generator already uses, and only in ways that are proven not to perturb existing RNG sequences.
 
 3. `coverage=guided`
 
    * Planner produces TestUnits and hints within the provided budget.
    * Generator applies hints, subject to validity and constraints.
    * Coverage is optimized but still deterministic.
-   * As in `coverage=measure`, the coverage layer MUST NOT introduce any additional RNG source or perturb the generator’s RNG call pattern. All randomness used to derive TestUnit seeds and hint decisions MUST be drawn from the same seeded RNG model already used by the generator (or from pure functions of `(masterSeed, canonPath, target id, TestUnit id, …)`), in a way that remains deterministic for a fixed `(canonical schema, OpenAPI spec, coverage options, seed, AJV.major, registryFingerprint)`.
+* As in `coverage=measure`, the coverage layer MUST NOT introduce any additional RNG source or perturb the generator’s RNG call pattern. All randomness used to derive TestUnit seeds and hint decisions MUST be drawn from the same seeded RNG model already used by the generator (or from pure functions of `(masterSeed, canonPath, target id, TestUnit id, …)`), in a way that remains deterministic for a fixed `(canonical schema, OpenAPI spec, coverage options, seed, AJV.major, registryFingerprint)`.
+
+**Defaults for unreachable targets**
+
+In V1, the JSON coverage report exposes `run.excludeUnreachable` to make denominator semantics explicit. The core CLI defaults to `excludeUnreachable:true` when `coverage` is enabled, so that unreachable targets remain visible in `targets[]` / `uncoveredTargets[]` but are ignored in coverage ratios. The Node.js API leaves `excludeUnreachable` undefined unless the caller opts in explicitly; when omitted, evaluators behave as if `excludeUnreachable:false` and include `status:'unreachable'` targets in denominators. Both entry points MUST agree on the underlying coverage model and on how `excludeUnreachable` is reflected in the report.
 
 **Non-regression of guided vs measure (branches & enum)**
 

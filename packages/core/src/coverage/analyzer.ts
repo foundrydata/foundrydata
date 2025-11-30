@@ -12,6 +12,7 @@ import {
   computeCoverageTargetId,
   createCoverageTargetIdContext,
   type CoverageTargetIdContext,
+  COVERAGE_ID_ENGINE_VERSION,
 } from './id-generator.js';
 import { applyUnreachableStatusToTargets } from './coverage-analyzer-unreachable.js';
 import { attachOpenApiOperationNodes } from './coverage-analyzer-openapi.js';
@@ -603,8 +604,15 @@ export function analyzeCoverage(
     'branches',
     'enum',
   ];
+  // CoverageTarget IDs are scoped to a logical engine major version
+  // and coverage-report format major version. For V1 we deliberately
+  // pin the engine major via COVERAGE_ID_ENGINE_VERSION so that ID
+  // stability is decoupled from minor/patch bumps of the core package
+  // version; any future breaking change in the coverage ID scheme must
+  // update this constant in tandem with the compatibility rules in the
+  // diff tooling.
   const idContext = createCoverageTargetIdContext({
-    engineVersion: '0.0.0',
+    engineVersion: COVERAGE_ID_ENGINE_VERSION,
   });
 
   const enabledSet = new Set(enabledDimensions);

@@ -211,6 +211,12 @@ export function diffCoverageReports(
   reportA: CoverageReport,
   reportB: CoverageReport
 ): CoverageReportsDiff {
+  // NOTE: CoverageTarget IDs are scoped by a logical engine major version
+  // and coverage-report format major version. diffCoverageTargets assumes
+  // that both reports were produced under a compatible ID scheme; if we
+  // ever bump COVERAGE_ID_ENGINE_VERSION in the analyzer, the compatibility
+  // checks here must be updated to reject diffs across incompatible ID
+  // versions instead of attempting a partial diff.
   const targetsDiff = diffCoverageTargets(reportA, reportB);
 
   const commonTargetsA: CoverageTargetReport[] = [];

@@ -49,7 +49,7 @@ The coverage-aware layer is an opt-in projection on top of the existing `Normali
   For a fixed tuple `(canonical schema, OpenAPI spec?, coverage options incl. dimensionsEnabled/excludeUnreachable, seed, ajvMajor, registryFingerprint)`, the CoverageGraph, TestUnits, generated instances and coverage report (excluding timestamps and other explicitly non-deterministic metadata) are identical across runs. In particular, `CoverageTarget.id` is stable under toggling dimensions or `excludeUnreachable` and under switching between `coverage=measure` and `coverage=guided` for a given configuration.
 
 - **Dimensions as projections**
-  Coverage dimensions (`structure`, `branches`, `enum`, `boundaries`, `operations`, …) describe how targets are grouped and reported (`coverage.byDimension`, `coverage.byOperation`), not a different target universe. `dimensionsEnabled` selects which dimensions are materialised in metrics and reports, but MUST NOT change the set of targets or their IDs; disabling a dimension hides its metrics but does not remove its targets from the analyzer/evaluator’s model.
+  Coverage dimensions (`structure`, `branches`, `enum`, `boundaries`, `operations`, …) describe how targets are grouped and reported (`coverage.byDimension`, `coverage.byOperation`) over the conceptual target universe induced by the canonical schema and OpenAPI mapping. In the implementation, `dimensionsEnabled` selects which dimensions are materialised as `CoverageTarget` entries for a given run and which dimensions participate in metrics, but it never changes the identity of existing targets: when a dimension is enabled, all of its targets are present with stable IDs; when it is disabled, its targets are omitted from `targets[]` / `uncoveredTargets[]` but reappear with the same IDs when the dimension is enabled again.
 
 - **Target status semantics**
   Each target has a `status` in the coverage report. At minimum:
@@ -59,8 +59,8 @@ The coverage-aware layer is an opt-in projection on top of the existing `Normali
   Status values are part of the stable identifier shape for targets and are reflected in `metrics.targetsByStatus`.
 
 - **Metrics and denominators**
-  Aggregated metrics are always computed over the same underlying target universe:
-  - `metrics.overall`, `metrics.byDimension` and `metrics.byOperation` are ratios over targets that are in scope for the run and in enabled dimensions.
+  Aggregated metrics are always computed over the same underlying logical target universe, restricted to the dimensions that are enabled for the run:
+  - `metrics.overall`, `metrics.byDimension` and `metrics.byOperation` are ratios over targets that are in scope for the run *and* whose dimension is listed in `run.dimensionsEnabled`.
   - `excludeUnreachable` controls only denominators: when enabled, `status:'unreachable'` targets are excluded from coverage denominators but remain present in `targets` / `uncoveredTargets` and keep their IDs and status.
   - Diagnostic-only targets (such as reuse or debug-only insights) are included in the report for observability, but are excluded from all coverage denominators and thresholds; they never improve or worsen coverage scores.
 

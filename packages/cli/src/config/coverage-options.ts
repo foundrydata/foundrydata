@@ -217,7 +217,35 @@ function resolveDimensionsEnabled(
   return preset?.dimensions ?? [...DEFAULT_PLANNER_DIMENSIONS_ENABLED];
 }
 
-// eslint-disable-next-line complexity, max-lines-per-function
+function computeIgnoredReason(
+  mode: CoverageMode,
+  minCoverage: number | undefined,
+  reportPath: string | undefined
+): string | undefined {
+  if (mode !== 'off') {
+    return undefined;
+  }
+  if (minCoverage === undefined && !reportPath) {
+    return undefined;
+  }
+  return 'Coverage options coverage-min/coverage-report are ignored when coverage=off.';
+}
+
+function computePlannerAndBudget(
+  mode: CoverageMode,
+  profile: 'quick' | 'balanced' | 'thorough' | undefined,
+  preset: CoverageProfilePreset | undefined
+): { planner?: CoveragePlannerUserOptions; recommendedMaxInstances?: number } {
+  const planner =
+    mode === 'guided' && profile
+      ? resolvePlannerFromProfile(profile)
+      : undefined;
+  const recommendedMaxInstances =
+    mode === 'guided' ? preset?.recommendedMaxInstances : undefined;
+
+  return { planner, recommendedMaxInstances };
+}
+
 export function resolveCliCoverageOptions(
   cliOptions: CliOptions
 ): ResolvedCliCoverage {
@@ -240,21 +268,12 @@ export function resolveCliCoverageOptions(
     parsedDimensions,
     preset
   );
-
-  let ignoredReason: string | undefined;
-  if (mode === 'off') {
-    if (minCoverage !== undefined || reportPath) {
-      ignoredReason =
-        'Coverage options coverage-min/coverage-report are ignored when coverage=off.';
-    }
-  }
-
-  const planner =
-    mode === 'guided' && profile
-      ? resolvePlannerFromProfile(profile)
-      : undefined;
-  const recommendedMaxInstances =
-    mode === 'guided' ? preset?.recommendedMaxInstances : undefined;
+  const ignoredReason = computeIgnoredReason(mode, minCoverage, reportPath);
+  const { planner, recommendedMaxInstances } = computePlannerAndBudget(
+    mode,
+    profile,
+    preset
+  );
 
   return {
     coverage: {

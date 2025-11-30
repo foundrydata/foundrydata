@@ -233,6 +233,26 @@ export function Generate(
   const discriminator = options.discriminator ?? false;
   const repairAttempts = Math.max(1, Math.min(3, options.repairAttempts ?? 1));
 
+  const coverageOptions = options.coverage;
+  if (coverageOptions && Array.isArray(coverageOptions.dimensionsEnabled)) {
+    const allowed = new Set([
+      'structure',
+      'branches',
+      'enum',
+      'boundaries',
+      'operations',
+    ]);
+    for (const dim of coverageOptions.dimensionsEnabled) {
+      if (typeof dim !== 'string' || !allowed.has(dim)) {
+        throw new Error(
+          `Invalid coverage dimension "${String(
+            dim
+          )}". Expected one of: structure, branches, enum, boundaries, operations.`
+        );
+      }
+    }
+  }
+
   const pipelinePromise = executePipeline(schema, {
     mode,
     metrics: { enabled: options.metricsEnabled ?? true },
@@ -248,7 +268,7 @@ export function Generate(
       validateFormats,
       discriminator,
     },
-    coverage: options.coverage,
+    coverage: coverageOptions,
   });
 
   async function* iterator(): AsyncIterableIterator<unknown> {
