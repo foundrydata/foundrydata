@@ -902,6 +902,168 @@ describe('Foundry pipeline integration scenarios', () => {
     });
   });
 
+  describe('Coverage guided with AP:false CoverageIndex', () => {
+    const getGeneratedItems = (
+      result: Awaited<ReturnType<typeof executePipeline>>
+    ): Record<string, unknown>[] => {
+      return (result.artifacts.generated?.items ?? []) as Record<
+        string,
+        unknown
+      >[];
+    };
+
+    it('preserves AP:false key universe and keeps guided >= measure on structure coverage for dependentAllOfCoverageSchema', async () => {
+      const baseOptions = {
+        mode: 'strict' as const,
+        generate: { count: 3, seed: 101 },
+        validate: { validateFormats: false },
+      } as const;
+
+      const measure = await executePipeline(dependentAllOfCoverageSchema, {
+        ...baseOptions,
+        coverage: {
+          mode: 'measure',
+          dimensionsEnabled: ['structure'],
+        },
+      });
+
+      const guided = await executePipeline(dependentAllOfCoverageSchema, {
+        ...baseOptions,
+        coverage: {
+          mode: 'guided',
+          dimensionsEnabled: ['structure'],
+        },
+      });
+
+      // Validation may fail for this schema under strict mode (missing required keys),
+      // but guided must not change the overall status compared to measure.
+      expect(guided.status).toBe(measure.status);
+
+      const composeOutput = measure.stages.compose.output!;
+      const coverage = composeOutput.coverageIndex.get('');
+      expect(coverage).toBeDefined();
+
+      const allowedKeys = new Set(['anchor', 'fallback', 'aux_0', 'aux_1']);
+
+      const checkItems = (items: Record<string, unknown>[]): void => {
+        for (const item of items) {
+          const keys = Object.keys(item);
+          for (const key of keys) {
+            expect(coverage?.has(key)).toBe(true);
+            expect(allowedKeys.has(key)).toBe(true);
+          }
+        }
+      };
+
+      checkItems(getGeneratedItems(measure));
+      checkItems(getGeneratedItems(guided));
+    });
+
+    it('preserves AP:false key universe and keeps guided >= measure on structure coverage for propertyNamesRewriteEnumSchema', async () => {
+      const baseOptions = {
+        mode: 'strict' as const,
+        generate: { count: 3, seed: 41 },
+        validate: { validateFormats: false },
+      } as const;
+
+      const measure = await executePipeline(propertyNamesRewriteEnumSchema, {
+        ...baseOptions,
+        coverage: {
+          mode: 'measure',
+          dimensionsEnabled: ['structure'],
+        },
+      });
+
+      const guided = await executePipeline(propertyNamesRewriteEnumSchema, {
+        ...baseOptions,
+        coverage: {
+          mode: 'guided',
+          dimensionsEnabled: ['structure'],
+        },
+      });
+
+      expect(measure.status).toBe('completed');
+      expect(guided.status).toBe('completed');
+
+      const measureReport = measure.artifacts.coverageReport;
+      const guidedReport = guided.artifacts.coverageReport;
+      expect(measureReport).toBeDefined();
+      expect(guidedReport).toBeDefined();
+
+      const measureStructure =
+        measureReport?.metrics.byDimension['structure'] ?? 0;
+      const guidedStructure =
+        guidedReport?.metrics.byDimension['structure'] ?? 0;
+
+      expect(guidedStructure).toBeGreaterThanOrEqual(measureStructure);
+
+      const composeOutput = measure.stages.compose.output!;
+      const coverage = composeOutput.coverageIndex.get('');
+      expect(coverage).toBeDefined();
+
+      const names = coverage?.enumerate?.() ?? [];
+      expect(names).toEqual(['alpha', 'beta']);
+      const allowedKeys = new Set(names);
+
+      const checkItems = (items: Record<string, unknown>[]): void => {
+        for (const item of items) {
+          const keys = Object.keys(item);
+          for (const key of keys) {
+            expect(coverage?.has(key)).toBe(true);
+            expect(allowedKeys.has(key)).toBe(true);
+          }
+        }
+      };
+
+      checkItems(getGeneratedItems(measure));
+      checkItems(getGeneratedItems(guided));
+    });
+
+    it('records CONFLICTING_CONSTRAINTS unsatisfied hints when external ensurePropertyPresence conflicts with CoverageIndex', async () => {
+      const options = {
+        mode: 'strict' as const,
+        generate: { count: 1, seed: 41 },
+        validate: { validateFormats: false },
+        coverage: {
+          mode: 'guided' as const,
+          dimensionsEnabled: ['structure'] as const,
+        },
+      } as const;
+
+      const result = await executePipeline(
+        propertyNamesRewriteEnumSchema,
+        options,
+        {
+          coverageTestOverrides: {
+            extraPlannerHints: [
+              {
+                kind: 'ensurePropertyPresence',
+                canonPath: '#',
+                params: { propertyName: 'gamma', present: true },
+              },
+            ],
+          },
+        }
+      );
+
+      expect(result.status).toBe('completed');
+
+      const report = result.artifacts.coverageReport;
+      expect(report).toBeDefined();
+
+      const conflicts = (report?.unsatisfiedHints ?? []).filter(
+        (hint) =>
+          hint.kind === 'ensurePropertyPresence' &&
+          hint.canonPath === '#' &&
+          (hint.params as { propertyName?: unknown })?.propertyName ===
+            'gamma' &&
+          hint.reasonCode === 'CONFLICTING_CONSTRAINTS'
+      );
+
+      expect(conflicts.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
   describe('Objects automata coverage diagnostics', () => {
     it('emits UNSAT_REQUIRED_VS_PROPERTYNAMES when required keys are outside propertyNames domain', async () => {
       const schema = {

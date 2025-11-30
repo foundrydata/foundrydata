@@ -910,6 +910,8 @@ export async function executePipeline(
               canonSchema: canonicalSchema,
               coverageIndex: composeResult.coverageIndex,
               planDiag: composeResult.diag,
+              extraHints:
+                overrides.coverageTestOverrides?.extraPlannerHints ?? [],
             });
             const units = plannerResult.testUnits;
             const { conflictingHints } = plannerResult;

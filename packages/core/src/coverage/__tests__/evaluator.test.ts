@@ -204,24 +204,24 @@ describe('evaluateCoverage', () => {
 
     // Overall and per-dimension metrics must be unchanged by diagnostic-only targets.
     expect(withDiag.metrics.overall).toBeCloseTo(baseline.metrics.overall, 6);
-    expect(withDiag.metrics.byDimension.structure).toBeCloseTo(
-      baseline.metrics.byDimension.structure,
-      6
-    );
-    expect(withDiag.metrics.byDimension.operations).toBeCloseTo(
-      baseline.metrics.byDimension.operations ?? 0,
-      6
-    );
+
+    const baselineStructure = baseline.metrics.byDimension.structure ?? 0;
+    const withDiagStructure = withDiag.metrics.byDimension.structure ?? 0;
+    expect(withDiagStructure).toBeCloseTo(baselineStructure, 6);
+
+    const baselineOperations = baseline.metrics.byDimension.operations ?? 0;
+    const withDiagOperations = withDiag.metrics.byDimension.operations ?? 0;
+    expect(withDiagOperations).toBeCloseTo(baselineOperations, 6);
 
     // Per-operation metrics must also be unchanged.
-    expect(withDiag.metrics.byOperation['getUsers']).toBeCloseTo(
-      baseline.metrics.byOperation['getUsers'],
-      6
-    );
+    const baselineByOpGet = baseline.metrics.byOperation['getUsers'] ?? 0;
+    const withDiagByOpGet = withDiag.metrics.byOperation['getUsers'] ?? 0;
+    expect(withDiagByOpGet).toBeCloseTo(baselineByOpGet, 6);
 
     // The diagnostic target is counted only as deprecated and appears in uncoveredTargets.
+    const baselineDeprecated = baseline.metrics.targetsByStatus.deprecated ?? 0;
     expect(withDiag.metrics.targetsByStatus.deprecated).toBe(
-      baseline.metrics.targetsByStatus.deprecated + 1
+      baselineDeprecated + 1
     );
     const uncoveredIds = withDiag.uncoveredTargets.map((t) => t.id);
     expect(uncoveredIds).toContain('reused');

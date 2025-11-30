@@ -27,6 +27,7 @@ import type {
   CoverageGraph,
   CoverageMetrics,
   CoveragePlannerUserOptions,
+  CoverageHint,
 } from '../coverage/index.js';
 
 export type PipelineStageName =
@@ -155,6 +156,15 @@ export interface PipelineStageOverrides {
     schema: unknown,
     options?: PipelineOptions['validate']
   ) => ValidateStageResult | Promise<ValidateStageResult>;
+  /**
+   * Test-only hooks for coverage-aware planning. These overrides are
+   * not part of the public Node API and MUST NOT be used in
+   * production flows. They exist solely to exercise conflict
+   * detection and unsatisfied hint paths end-to-end in tests.
+   */
+  coverageTestOverrides?: {
+    extraPlannerHints?: CoverageHint[];
+  };
 }
 
 export interface PipelineOptions {

@@ -255,6 +255,14 @@ export interface CoveragePlannerInput {
   canonSchema: unknown;
   coverageIndex: CoverageIndex;
   planDiag?: ComposeDiagnostics;
+  /**
+   * Test-only hook for injecting additional hints into the
+   * structural feasibility checker. This is not used in
+   * production flows and exists solely to exercise conflict
+   * detection paths (e.g. CoverageIndex forbidding a property)
+   * end-to-end in tests.
+   */
+  extraHints?: CoverageHint[];
 }
 
 export interface CoveragePlannerResult {
@@ -603,6 +611,37 @@ export function planTestUnits(
   const units: TestUnit[] = [];
   const conflictingHints: UnsatisfiedHint[] = [];
   const unsatPaths = buildUnsatPathSet(planDiag);
+
+  // Test-only: allow callers to inject additional hints that are
+  // checked for structural feasibility (e.g. CoverageIndex- or
+  // diagnostics-driven conflicts) without being attached to
+  // TestUnits. This is used exclusively in tests to exercise
+  // CONFLICTING_CONSTRAINTS / UNREACHABLE_BRANCH paths end-to-end.
+  const extraHints = input.extraHints ?? [];
+  if (extraHints.length > 0) {
+    const feasibilityContext: HintFeasibilityContext = {
+      target: undefined,
+      canonSchema,
+      coverageIndex,
+      planDiag,
+      unsatPaths,
+    };
+    for (const hint of extraHints) {
+      const conflict = validateHintStructuralFeasibility(
+        hint,
+        feasibilityContext
+      );
+      if (conflict.isConflicting) {
+        conflictingHints.push({
+          kind: hint.kind,
+          canonPath: hint.canonPath ?? '',
+          params: hint.params,
+          reasonCode: conflict.reasonCode ?? 'CONFLICTING_CONSTRAINTS',
+          reasonDetail: conflict.reasonDetail,
+        });
+      }
+    }
+  }
 
   let remaining = Math.floor(maxInstances);
   let nextUnitId = 0;
