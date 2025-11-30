@@ -37,7 +37,7 @@
 7. Ajouter/mettre à jour les tests pour viser **cov ≥80 % sur chaque fichier touché** (ou isoler la logique dans un nouveau module bien couvert).
 8. Lancer au minimum `npm run build`, puis `npm run typecheck`, ensuite `npm run lint`, puis `npm run test`, et enfin `npm run bench` depuis la racine ; **Codex doit s’assurer que `typecheck` et `lint` précèdent `test`.**
 9. Vérifier que les diagnostics respectent `diagnosticsEnvelope.schema.json` (diag-schema) et que les bench gates passent.
-10. Créer un commit avec le template fourni (scope = sous-tâche), incluant un trailer `REFONLY::{"anchors":[...],"summary":"..."}` valide, marquer la sous-tâche comme `done` puis consigner l’opération dans `agent-log.jsonl`. La tâche parente ne peut être terminée que lorsque toutes ses sous-tâches sont `done`.  
+10. Créer un commit avec le template fourni (scope **conceptuel** = sous-tâche, champ `scope` du message conforme à `commitlint.config.cjs`, ex. `core`/`coverage`), incluant un trailer `REFONLY::{"anchors":[...],"summary":"..."}` valide, marquer la sous-tâche comme `done` puis consigner l’opération dans `agent-log.jsonl`. La tâche parente ne peut être terminée que lorsque toutes ses sous-tâches sont `done`.  
    *Remarque : si l’environnement d’exécution ne permet pas à l’agent de créer un commit (ex. restrictions Codex CLI), l’agent doit laisser explicitement ces actions au·à la humain·e dans sa réponse finale.*
 
 **Traçabilité tâche parente 93xx ↔ sous-tâches**
