@@ -716,7 +716,7 @@
           "9303",
           "9305"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 4,
         "details": "[Context]\nExtend coverage-aware behavior to OpenAPI operations for M2, per §3.3 (Inter-schema / API coverage), §3.5 (Metrics & semantics) and §9 (M2 – Boundaries, OpenAPI & diff). The system must compute per-operation coverage metrics and define OP_REQUEST_COVERED, OP_RESPONSE_COVERED and SCHEMA_REUSED_COVERED targets based on deterministic schema selection rules.\n\n[Key requirements]\n- Extend CoverageAnalyzer with an OpenAPI-aware layer to build OperationNode entries and attach schema nodes for request and response payloads, with operationKey defined as operationId or <METHOD> <path> when operationId is absent. This layer builds on the schema-level CoverageGraph produced by task 9301 without changing existing target IDs.\n- Treat operation-level targets (OP_REQUEST_COVERED, OP_RESPONSE_COVERED, SCHEMA_REUSED_COVERED) as belonging to the 'operations' coverage dimension and only materialize them when 'operations' is present in run.dimensionsEnabled; when 'operations' is absent, the analyzer may still build internal operation mappings but MUST NOT emit operation-level CoverageTargets in targets[] for standard modes.\n- Implement OP_REQUEST_COVERED and OP_RESPONSE_COVERED targets per operationKey in the 'operations' coverage dimension and map schema-level targets (structure, branches, enum, boundaries) reachable from each operation to that operation for coverage.byOperation computation.\n- Implement SCHEMA_REUSED_COVERED as a diagnostic-only target kind for canonical schemas reused across multiple operations; these targets must be emitted and visible in targets/uncoveredTargets and diagnostics with status:'deprecated' but excluded from metrics.overall, metrics.byDimension, metrics.byOperation and minCoverage.\n- Implement deterministic request/response schema selection for JSON media types in line with the spec (lexicographic media type order, preference for 200 and 2xx JSON responses).\n- Populate run.operationsScope and run.selectedOperations in the coverage report when only a subset of operations is targeted, and ensure only in-scope operations contribute to coverage.byOperation and activeTargetsTotal; metrics.byOperation and selectedOperations must always be interpreted within the declared operationsScope.\n- Integrate coverage.byOperation into CLI summary output (task 9304), highlighting least-covered operations in a deterministic order.\n\n[Deliverables]\n- Operation-aware target generation in CoverageAnalyzer under packages/core/src/coverage/coverage-analyzer-openapi.ts.\n- Mapping logic from schema targets to operations for coverage.byOperation metrics in CoverageEvaluator.\n- CLI support for operation selection flags (if not already present) that set operationsScope and selectedOperations in the report.\n\n[Definition of Done]\n- For an OpenAPI fixture with multiple operations (with and without operationId), coverage reports include coverage.byOperation[operationKey] entries with expected ratios.\n- OP_REQUEST_COVERED and OP_RESPONSE_COVERED targets behave as specified, and schema-level targets reachable from each operation are correctly attributed without changing schema-level IDs defined by 9301.\n- SCHEMA_REUSED_COVERED targets are emitted for schemas used in more than one operation, are hit when those schemas are instantiated at least once, and are clearly diagnostic-only so that metrics and thresholds are unaffected via status:'deprecated' in the 'operations' dimension.\n- operationsScope and selectedOperations fields behave as specified when running against a subset of operations, and toggling operationsScope or selectedOperations never changes schema-level CoverageTarget.id values.\n- CLI summary shows per-operation coverage and highlights the least-covered operations in a deterministic order.",
         "testStrategy": "Unit tests for operation selection and target construction using small OpenAPI specs with multiple operations and content types; evaluator tests for coverage.byOperation mapping and ratios honoring dimensionsEnabled; tests confirming SCHEMA_REUSED_COVERED targets are emitted with status:'deprecated', remain visible in targets/uncoveredTargets and do not affect metrics.overall, metrics.byDimension or metrics.byOperation; tests that run coverage on an OpenAPI fixture with 'operations' present and absent in dimensionsEnabled and assert that schema-level CoverageTarget.id values remain unchanged while OP_* targets are only present and counted when 'operations' is enabled; CLI integration tests that generate coverage for selected operations and assert operationsScope, selectedOperations and byOperation metrics in the JSON report and summary output.",
@@ -725,10 +725,11 @@
             "id": 9310001,
             "title": "Build OperationNode mapping and operationKey derivation",
             "description": "Extend CoverageAnalyzer with OpenAPI-specific logic to create OperationNodes and derive operationKey from operationId or HTTP method and path.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/coverage/coverage-analyzer-openapi.ts",
-            "parentId": "9310"
+            "parentId": "9310",
+            "updatedAt": "2025-11-30T01:04:11.633Z"
           },
           {
             "id": 9310002,
@@ -757,7 +758,8 @@
             "file": "packages/core/src/coverage/__tests__/openapi-coverage.spec.ts",
             "parentId": "9310"
           }
-        ]
+        ],
+        "updatedAt": "2025-11-30T01:04:11.633Z"
       },
       {
         "id": "9311",
@@ -1140,7 +1142,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-29T18:47:46.271Z",
+      "lastModified": "2025-11-30T01:04:11.633Z",
       "taskCount": 21,
       "completedCount": 14,
       "tags": [

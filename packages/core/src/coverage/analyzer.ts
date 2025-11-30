@@ -14,6 +14,7 @@ import {
   type CoverageTargetIdContext,
 } from './id-generator.js';
 import { applyUnreachableStatusToTargets } from './coverage-analyzer-unreachable.js';
+import { attachOpenApiOperationNodes } from './coverage-analyzer-openapi.js';
 
 export interface CoverageAnalyzerInput {
   /**
@@ -618,6 +619,11 @@ export function analyzeCoverage(
 
   // Root schema node at the canonical root.
   visitSchemaNode(input.canonSchema, '', undefined, state);
+
+  attachOpenApiOperationNodes({
+    rootSchema: input.canonSchema,
+    graph: { nodes: state.nodes, edges: state.edges },
+  });
 
   const updatedTargets = applyUnreachableStatusToTargets(
     state.targets,
