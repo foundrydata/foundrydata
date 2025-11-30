@@ -40,3 +40,41 @@ This note captures the cross-phase guarantees implemented inside `packages/core`
 - Every diagnostic is validated against `packages/core/src/diag/schemas.ts` before leaving a stage. Forbidden keys (`canonPath`, `canonPtr`) cannot leak into `details`, ensuring a consistent envelope shape for docs/error.md.
 - Seed, pattern witness attempts, and metrics (`validationsPerRow`, `repairPassesPerRow`, `p95LatencyMs`, `memoryPeakMB`) are carried through the pipeline; `p95LatencyMs` and `memoryPeakMB` are populated by the bench harness, while regular pipeline snapshots expose the fields but leave them at zero.
 - Decision logs (e.g., property source traces via `EVALTRACE_PROP_SOURCE`) are only recorded when metrics collection is enabled, keeping normal runs lightweight while leaving a precise breadcrumb trail during audits.
+
+## Coverage invariants
+
+The coverage-aware layer is an opt-in projection on top of the existing `Normalize → Compose → Generate → Repair → Validate` pipeline. It reuses the same AJV oracle and determinism guarantees as the core engine and adds the following invariants (see coverage-aware spec sections on the coverage model, reports and technical constraints for the full contract).
+
+- **Stable CoverageTarget IDs**
+  For a fixed tuple `(canonical schema, OpenAPI spec?, coverage options incl. dimensionsEnabled/excludeUnreachable, seed, ajvMajor, registryFingerprint)`, the CoverageGraph, TestUnits, generated instances and coverage report (excluding timestamps and other explicitly non-deterministic metadata) are identical across runs. In particular, `CoverageTarget.id` is stable under toggling dimensions or `excludeUnreachable` and under switching between `coverage=measure` and `coverage=guided` for a given configuration.
+
+- **Dimensions as projections**
+  Coverage dimensions (`structure`, `branches`, `enum`, `boundaries`, `operations`, …) describe how targets are grouped and reported (`coverage.byDimension`, `coverage.byOperation`), not a different target universe. `dimensionsEnabled` selects which dimensions are materialised in metrics and reports, but MUST NOT change the set of targets or their IDs; disabling a dimension hides its metrics but does not remove its targets from the analyzer/evaluator’s model.
+
+- **Target status semantics**
+  Each target has a `status` in the coverage report. At minimum:
+  - `active` — a target that is in scope for the run and may be hit or remain uncovered.
+  - `unreachable` — a target that is provably unsatisfiable under existing diagnostics (e.g., UNSAT compose/plan diagnostics, empty CoverageIndex entries), and therefore cannot be hit.
+  - `deprecated` — a target kept for diagnostic or backwards-compatibility reasons (for example, schema reuse insights) that MUST NOT contribute to coverage denominators.
+  Status values are part of the stable identifier shape for targets and are reflected in `metrics.targetsByStatus`.
+
+- **Metrics and denominators**
+  Aggregated metrics are always computed over the same underlying target universe:
+  - `metrics.overall`, `metrics.byDimension` and `metrics.byOperation` are ratios over targets that are in scope for the run and in enabled dimensions.
+  - `excludeUnreachable` controls only denominators: when enabled, `status:'unreachable'` targets are excluded from coverage denominators but remain present in `targets` / `uncoveredTargets` and keep their IDs and status.
+  - Diagnostic-only targets (such as reuse or debug-only insights) are included in the report for observability, but are excluded from all coverage denominators and thresholds; they never improve or worsen coverage scores.
+
+- **MinCoverage and coverageStatus**
+  In V1, `minCoverage` applies only to `metrics.overall` and is surfaced as `metrics.thresholds.overall` in `coverage-report/v1`. The evaluator sets `metrics.coverageStatus` to:
+  - `'ok'` when `coverage.overall >= thresholds.overall` (or when no threshold is configured),
+  - `'minCoverageNotMet'` when a threshold is configured and overall coverage falls below it.
+  Per-dimension and per-operation thresholds may be present in the JSON for forward-compatibility but are purely descriptive in V1 and must not affect exit codes or evaluator status.
+
+- **Streaming instrumentation & AJV parity**
+  Coverage instrumentation is attached to the existing pipeline and respects core invariants:
+  - It observes instances as they pass through Generate/Repair/Validate and updates coverage state per instance; it does not perform a second JSON parse or bypass the original AJV.
+  - Final hit/miss decisions for targets that depend on validity (for example, property presence under AP:false) are made after validation, using the same Source AJV and CoverageIndex that the core pipeline uses.
+  - Coverage-aware stages do not introduce additional network I/O; all network access remains confined to the resolver/preload phases defined by the core architecture.
+
+- **AP:false & CoverageIndex**
+  Under `additionalProperties:false`, the coverage layer treats `CoverageIndex` as the single source of truth for property-name coverage. Any `PROPERTY_PRESENT` target for undeclared names under AP:false MUST be backed by `CoverageIndex.has` / `CoverageIndex.enumerate`; coverage MUST NOT build a parallel name automaton with different semantics or extend coverage beyond what CoverageIndex proves. When CoverageIndex is empty or undecidable, the corresponding coverage targets remain `unreachable` or uncovered rather than being guessed as covered.
