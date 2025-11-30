@@ -330,4 +330,58 @@ describe('coverage analyzer OpenAPI integration', () => {
     const operationKeys = (reused.meta?.operationKeys as string[]) ?? [];
     expect(operationKeys.sort()).toEqual(['GET /admins', 'GET /users']);
   });
+
+  it('keeps non-operations target IDs stable when toggling operations dimension', () => {
+    const schema = {
+      openapi: '3.1.0',
+      paths: {
+        '/users': {
+          get: {
+            responses: {
+              '200': {
+                description: 'ok',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    } as const;
+
+    const baseInput = {
+      canonSchema: schema,
+      ptrMap: new Map<string, string>([['', '#']]),
+      coverageIndex: new Map(),
+      planDiag: undefined,
+    };
+
+    const structureOnly = analyzeCoverage({
+      ...baseInput,
+      dimensionsEnabled: ['structure'],
+    });
+    const withOps = analyzeCoverage({
+      ...baseInput,
+      dimensionsEnabled: ['structure', 'operations'],
+    });
+
+    const nonOpsIdsStructureOnly = structureOnly.targets
+      .filter((t) => t.dimension !== 'operations')
+      .map((t) => t.id)
+      .sort();
+    const nonOpsIdsWithOps = withOps.targets
+      .filter((t) => t.dimension !== 'operations')
+      .map((t) => t.id)
+      .sort();
+
+    expect(nonOpsIdsWithOps).toEqual(nonOpsIdsStructureOnly);
+  });
 });

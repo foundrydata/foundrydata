@@ -114,4 +114,35 @@ describe('coverage summary formatter', () => {
       expect(current).toBeGreaterThan(previous);
     }
   });
+
+  it('orders operations in coverage by operation from least to most covered', () => {
+    const report = createReport({
+      metrics: {
+        coverageStatus: 'ok',
+        overall: 0.5,
+        byDimension: {},
+        byOperation: {
+          'GET /users': 0.8,
+          'POST /users': 0.4,
+          'DELETE /users': 0.6,
+        },
+        targetsByStatus: {},
+      },
+    });
+
+    const summary = formatCoverageSummary(report);
+    const marker = 'coverage by operation:';
+    const start = summary.indexOf(marker);
+    expect(start).toBeGreaterThanOrEqual(0);
+
+    const line = summary.slice(start);
+    const order = ['POST /users', 'DELETE /users', 'GET /users'];
+    const indices = order.map((op) => line.indexOf(op));
+
+    for (let i = 1; i < indices.length; i += 1) {
+      const current = indices[i]!;
+      const previous = indices[i - 1]!;
+      expect(current).toBeGreaterThan(previous);
+    }
+  });
 });
