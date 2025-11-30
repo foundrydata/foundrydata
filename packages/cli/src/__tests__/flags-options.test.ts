@@ -3,6 +3,7 @@ import {
   resolveRowCount,
   resolveCompatMode,
   resolveOutputFormat,
+  parsePlanOptions,
   type CliOptions,
 } from '../flags';
 
@@ -79,6 +80,22 @@ describe('CLI flag helpers', () => {
 
     it('throws on invalid formats', () => {
       expect(() => resolveOutputFormat('csv')).toThrow(/Invalid --out value/);
+    });
+  });
+
+  describe('parsePlanOptions', () => {
+    it('accepts coverage-related flags without throwing (they are ignored)', () => {
+      const options: CliOptions = {
+        coverage: 'off',
+        coverageDimensions: 'structure,branches',
+        coverageMin: '0.8',
+        coverageReport: 'coverage.json',
+        coverageProfile: 'quick',
+        coverageExcludeUnreachable: 'true',
+      };
+
+      const plan = parsePlanOptions(options);
+      expect(plan).toBeDefined();
     });
   });
 });

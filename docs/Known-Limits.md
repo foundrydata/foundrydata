@@ -14,6 +14,7 @@ This document lists deliberate constraints that keep the pipeline deterministic,
 - **Presence pressure**: When `minProperties`, `required`, or `dependentRequired` demand coverage but no safe sources exist, Compose halts with `UNSAT_AP_FALSE_EMPTY_COVERAGE`. Under presence pressure, approximations are recorded so downstream tooling knows coverage became conservative.
 - **`contains` needs**: The bag is trimmed to `complexity.maxContainsNeeds` (default `16`). When more independent needs exist, low-priority entries are dropped and `CONTAINS_BAG_COMBINED` is emitted to document the approximation.
 - **Pattern overlap analysis**: The `complexity.maxPatternProps` option defaults to `64`, but the current overlap analysis does not apply this cap; all patterns are considered.
+- **Coverage target caps**: Coverage-aware planning applies caps to the number of targets per dimension/schema/operation to avoid combinatorial explosion. When caps are hit, some low-priority targets may not be materialised, and planner diagnostics capture the limitation (for example via `plannerCapsHit` and unsatisfied hints). Metrics and `coverage-report/v1` remain deterministic but may reflect a truncated target universe for capped dimensions.
 
 ## Generation
 
@@ -27,6 +28,14 @@ This document lists deliberate constraints that keep the pipeline deterministic,
 - **Rename guards**: Under `AP:false`, repair refuses to introduce property names that are not provably covered. Removal or renaming emits `REPAIR_PNAMES_PATTERN_ENUM` and respects the `mustCoverGuard` option (default `true`).
 - **Budget caps**: Repair loops obey `failFast` budgets surfaced through `budget.tried/limit/reason` and escalate to `UNSAT_BUDGET_EXHAUSTED` when convergence is impossible.
 - **AJV parity**: Both planning and validation AJV instances must enable `unicodeRegExp`, share the same `validateFormats` posture, and align on `multipleOfPrecision`. `AJV_FLAGS_MISMATCH` is fatal and prevents generation so the pipeline never emits artifacts validated under mismatched rules.
+
+## Coverage-aware limits
+
+- **Dimensions & denominators**: Coverage dimensions (`structure`, `branches`, `enum`, `boundaries`, `operations`, …) are projections over the same conceptual target universe. `dimensionsEnabled` selects which dimensions are active for a run: only enabled dimensions materialise `CoverageTarget` entries and appear in metrics and the JSON report for that run, without renumbering targets in other dimensions. `excludeUnreachable` affects only coverage denominators by removing `status:'unreachable'` targets from ratio calculations; unreachable targets remain present in `targets` / `uncoveredTargets` with stable IDs and statuses.
+- **Diagnostic-only targets**: Targets used purely for diagnostics (for example `SCHEMA_REUSED_COVERED` with `status:'deprecated'`) are never counted in coverage denominators or thresholds (`minCoverage`), even when included in `targets` / `uncoveredTargets`. They exist solely to surface insights in reports and CLI summaries.
+- **Boundaries dimension**: Boundaries coverage (min/max constraints for numbers, strings and arrays) can significantly increase target counts on large or heavily constrained schemas. Implementations apply deterministic caps and may leave some boundary targets unmaterialised; when this happens, coverage metrics for `boundaries` should be interpreted as best-effort, and the JSON report/diagnostics are the source of truth for which boundaries were actually tracked.
+- **AP:false semantics**: Under `additionalProperties:false`, coverage for property presence is limited by the information available in `CoverageIndex`. When CoverageIndex proves emptiness or undecidability for certain names, the corresponding `PROPERTY_PRESENT` targets are treated as unreachable or left uncovered; the engine does not invent additional coverage based on unchecked `propertyNames` patterns. In cases where must-cover cannot be satisfied safely, diagnostics (such as `UNSAT_AP_FALSE_EMPTY_COVERAGE` or `AP_FALSE_UNSAFE_PATTERN`) take precedence over optimistic coverage.
+- **Operations scope for byOperation**: Per-operation coverage and coverage diffs are only meaningful when the operations scope is compatible. Reports that differ in `run.operationsScope` or `run.selectedOperations` cannot be diffs of one another; attempting to compare them is treated as an incompatibility and rejected by the diff tooling rather than silently producing misleading `coverage.byOperation` deltas.
 
 ## Performance gates
 

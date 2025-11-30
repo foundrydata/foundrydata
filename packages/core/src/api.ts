@@ -11,7 +11,8 @@ import {
   type CoverageIndex,
 } from './transform/composition-engine.js';
 import { executePipeline } from './pipeline/orchestrator.js';
-import type { PipelineResult } from './pipeline/types.js';
+import type { PipelineOptions, PipelineResult } from './pipeline/types.js';
+import type { CoverageReport } from '@foundrydata/shared';
 import type { PlanOptions } from './types/options.js';
 import {
   createSourceAjv,
@@ -119,6 +120,11 @@ export interface GenerateOptions {
    * Defaults to true.
    */
   metricsEnabled?: boolean;
+  /**
+   * Coverage configuration forwarded to the core pipeline.
+   * When omitted, coverage mode defaults to 'off'.
+   */
+  coverage?: PipelineOptions['coverage'];
 }
 
 /**
@@ -128,6 +134,7 @@ export interface GenerateOptions {
  */
 export interface GenerateIterable extends AsyncIterable<unknown> {
   readonly result: Promise<PipelineResult>;
+  readonly coverage?: Promise<CoverageReport | undefined>;
 }
 
 export interface ValidateOptions {
@@ -226,6 +233,26 @@ export function Generate(
   const discriminator = options.discriminator ?? false;
   const repairAttempts = Math.max(1, Math.min(3, options.repairAttempts ?? 1));
 
+  const coverageOptions = options.coverage;
+  if (coverageOptions && Array.isArray(coverageOptions.dimensionsEnabled)) {
+    const allowed = new Set([
+      'structure',
+      'branches',
+      'enum',
+      'boundaries',
+      'operations',
+    ]);
+    for (const dim of coverageOptions.dimensionsEnabled) {
+      if (typeof dim !== 'string' || !allowed.has(dim)) {
+        throw new Error(
+          `Invalid coverage dimension "${String(
+            dim
+          )}". Expected one of: structure, branches, enum, boundaries, operations.`
+        );
+      }
+    }
+  }
+
   const pipelinePromise = executePipeline(schema, {
     mode,
     metrics: { enabled: options.metricsEnabled ?? true },
@@ -241,6 +268,7 @@ export function Generate(
       validateFormats,
       discriminator,
     },
+    coverage: coverageOptions,
   });
 
   async function* iterator(): AsyncIterableIterator<unknown> {
@@ -264,6 +292,14 @@ export function Generate(
   const asyncIterator = iterator() as unknown as GenerateIterable;
   Object.defineProperty(asyncIterator, 'result', {
     value: pipelinePromise,
+    enumerable: false,
+    writable: false,
+  });
+
+  Object.defineProperty(asyncIterator, 'coverage', {
+    value: pipelinePromise.then(
+      (result) => result.artifacts.coverageReport as CoverageReport | undefined
+    ),
     enumerable: false,
     writable: false,
   });

@@ -66,6 +66,36 @@ These features have **configurable behavior** rather than hard blocks:
 - `$dynamicRef/$dynamicAnchor` handled conservatively with bounded in-document binding; validation relies on AJV.
 - External deref beyond the resolver extension stays disabled by default.
 
+### Coverage-aware behavior (V1)
+
+Coverage-aware features build on top of the same JSON Schema support and invariants described above. They reuse the existing pipeline and AJV as oracle, and introduce a coverage model with dimensions and targets:
+
+- **Dimensions & targets**
+  - Coverage is organised by dimensions such as `structure`, `branches`, `enum`, `boundaries` and `operations`. These dimensions project over existing behavior:
+    - `structure` reuses object/array composition (allOf, additionalProperties, prefixItems/items/contains),
+    - `branches` builds targets for `anyOf`/`oneOf` decisions,
+    - `enum` tracks which enum values are exercised,
+    - `boundaries` (M2) focuses on min/max constraints for numbers, strings and arrays,
+    - `operations` (OpenAPI) projects targets onto operation keys.
+  - `dimensionsEnabled` selects which coverage dimensions are active for a given run: only the listed dimensions materialise `CoverageTarget` entries and participate in metrics for that run. Turning a dimension on or off does not renumber existing targets in other dimensions; for a given dimension, IDs remain stable as long as `(canonical schema, options, seed, AJV posture, registryFingerprint)` stays the same.
+
+- **AP:false & must-cover**
+  - Under `additionalProperties:false`, the coverage layer consumes the existing must-cover/CoverageIndex semantics: `PROPERTY_PRESENT` targets for undeclared names are only considered under AP:false when backed by `CoverageIndex.has`/`CoverageIndex.enumerate`.
+  - When presence pressure holds but CoverageIndex proves emptiness, targets are treated as unreachable or remain uncovered rather than being “guessed” as covered.
+
+- **Arrays, contains and conditionals**
+  - Coverage for `contains`/`minContains`/`maxContains` builds on bag semantics across `allOf`; targets reflect bagged needs and unsat diagnostics (`CONTAINS_UNSAT_BY_SUM`) rather than redefining array semantics.
+  - Conditionals (`if`/`then`/`else`) contribute to branch and property presence targets but still follow the same if-aware-lite strategy and safe rewrite rules as described above.
+
+- **Boundaries and operations**
+  - Boundaries coverage (M2) adds targets around documented min/max-style constraints without changing validation behavior; when disabled, those targets remain absent from metrics but the underlying constraints still apply.
+  - Operations coverage for OpenAPI projects existing schema-level targets and dedicated `OP_REQUEST_COVERED` / `OP_RESPONSE_COVERED` entries onto operation keys; it reuses the same schemas and AJV posture as the core engine.
+
+- **Diagnostic-only targets**
+  - Some coverage targets, such as `SCHEMA_REUSED_COVERED`, are emitted purely for diagnostics/insight and use `status:'deprecated'`. These targets never contribute to coverage denominators or thresholds (`minCoverage`) even when present in `targets` / `uncoveredTargets`.
+
+For full details of the coverage model, dimensions and reports, see the coverage-aware V1 specification and the dedicated coverage sections in `Invariants.md`, `ARCHITECTURE.md` and the coverage docs.
+
 ## 5-Stage Pipeline Architecture
 
 **Core Flow**: `Normalize → Compose → Generate → Repair → Validate`

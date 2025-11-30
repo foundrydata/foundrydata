@@ -43,8 +43,13 @@ import {
   resolveCompatMode,
   resolveOutputFormat,
   type OutputFormat,
+  type CliOptions,
 } from './flags.js';
 import { printComposeDebug } from './debug.js';
+import { resolveCliCoverageOptions } from './config/coverage-options.js';
+import { formatCoverageSummary } from './coverage/coverage-summary.js';
+import { enforceCoverageThreshold } from './coverage/coverage-exit-codes.js';
+import { registerCoverageDiffCommand } from './commands/coverage-diff.js';
 
 const program = new Command();
 
@@ -117,7 +122,40 @@ program
     'Set false to enable Lax planning stubs (maps to resolver.stubUnresolved=emptySchema)',
     (v) => String(v)
   )
+  .option('--coverage <mode>', 'Coverage mode: off|measure|guided', 'off')
+  .option(
+    '--coverage-dimensions <list>',
+    'Coverage dimensions (comma-separated, e.g., structure,branches,enum,operations)'
+  )
+  .option(
+    '--coverage-min <number>',
+    'Minimum overall coverage threshold (0..1)'
+  )
+  .option('--coverage-report <file>', 'Path to write coverage-report/v1 JSON')
+  .option(
+    '--coverage-report-mode <mode>',
+    'Coverage report mode: full|summary',
+    'full'
+  )
+  .option(
+    '--coverage-profile <profile>',
+    'Coverage profile: quick|balanced|thorough (quick: structure+branches, ~75 instances; balanced: structure+branches+enum, ~350 instances; thorough: adds boundaries+operations, >=1000 instances, no caps)'
+  )
+  .option(
+    '--coverage-exclude-unreachable <bool>',
+    'Exclude unreachable targets from coverage denominators (true|false)'
+  )
   .option('--out <format>', 'Output format: json|ndjson', 'json')
+  .option(
+    '--summary',
+    'Print a compact JSON summary suitable for CI to stderr',
+    false
+  )
+  .option(
+    '--manifest',
+    'Alias for --summary (prints the same compact JSON summary to stderr)',
+    false
+  )
   .option(
     '--prefer-examples',
     'Prefer OpenAPI examples over generated data when available'
@@ -173,11 +211,15 @@ program
       }
 
       const schemaForGen = input;
-      const count = resolveRowCount({
+      const requestedCount = resolveRowCount({
         rows: options.rows,
         count: options.count,
         n: options.n,
       });
+      const hasExplicitCount =
+        options.rows !== undefined ||
+        options.count !== undefined ||
+        options.n !== undefined;
       const seed = Number(options.seed ?? 424242);
       const repairAttempts = Number(options.repairAttempts ?? 1);
       const outFormat: OutputFormat = resolveOutputFormat(options.out);
@@ -194,6 +236,12 @@ program
       const planOptions = parsePlanOptions(cliPlanOptions);
       const resolvedOptions = resolveOptions(planOptions);
 
+      const { coverage, ignoredReason, recommendedMaxInstances } =
+        resolveCliCoverageOptions(options as unknown as CliOptions);
+      if (ignoredReason) {
+        process.stderr.write(`[foundrydata] note: ${ignoredReason}\n`);
+      }
+
       // Print effective configuration if requested
       if (options.debugPasses) {
         process.stderr.write(
@@ -201,13 +249,25 @@ program
         );
       }
 
-      const stream = Generate(count, seed, schemaForGen as object, {
+      const instanceCount = hasExplicitCount
+        ? requestedCount
+        : (recommendedMaxInstances ?? requestedCount);
+
+      const stream = Generate(instanceCount, seed, schemaForGen as object, {
         mode: compat,
         metricsEnabled: options.metrics !== false,
         planOptions,
         preferExamples,
         repairAttempts,
         validateFormats: true,
+        coverage: {
+          mode: coverage.mode,
+          dimensionsEnabled: coverage.dimensionsEnabled,
+          excludeUnreachable: coverage.excludeUnreachable,
+          minCoverage: coverage.minCoverage,
+          planner: coverage.planner,
+          reportMode: coverage.reportMode,
+        },
       });
       const pipelineResult = await stream.result;
 
@@ -220,6 +280,75 @@ program
         options.printMetrics === true,
         outFormat
       );
+
+      const coverageReport = pipelineResult.artifacts.coverageReport;
+      if (coverageReport) {
+        const summary = formatCoverageSummary(coverageReport);
+        process.stderr.write(`[foundrydata] coverage: ${summary}\n`);
+
+        if (coverage.reportPath) {
+          // eslint-disable-next-line max-depth
+          try {
+            const outputPath = path.isAbsolute(coverage.reportPath)
+              ? coverage.reportPath
+              : path.resolve(process.cwd(), coverage.reportPath);
+            fs.writeFileSync(
+              outputPath,
+              JSON.stringify(coverageReport, null, 2),
+              'utf8'
+            );
+          } catch (error) {
+            const message =
+              error instanceof Error ? error.message : String(error);
+            process.stderr.write(
+              `[foundrydata] warning: failed to write coverage report to ${coverage.reportPath}: ${message}\n`
+            );
+          }
+        }
+      }
+
+      if (options.summary || options.manifest) {
+        const generatedStage = pipelineResult.stages.generate.output;
+        const repairedItems = pipelineResult.artifacts.repaired;
+        const items = Array.isArray(repairedItems)
+          ? repairedItems
+          : (generatedStage?.items ?? []);
+
+        const summaryPayload = {
+          version: 'foundrydata-cli-summary/v1',
+          command: 'generate' as const,
+          status: pipelineResult.status,
+          mode: compat,
+          schemaPath: abs,
+          seed,
+          count: instanceCount,
+          outFormat,
+          items: {
+            total: Array.isArray(items) ? items.length : 0,
+          },
+          metrics: pipelineResult.metrics,
+          coverage: coverageReport
+            ? {
+                mode: coverageReport.engine.coverageMode,
+                dimensionsEnabled: coverageReport.run.dimensionsEnabled,
+                excludeUnreachable: coverageReport.run.excludeUnreachable,
+                overall: coverageReport.metrics.overall,
+                byDimension: coverageReport.metrics.byDimension,
+                byOperation: coverageReport.metrics.byOperation,
+                coverageStatus: coverageReport.metrics.coverageStatus,
+                minCoverage:
+                  coverageReport.metrics.thresholds?.overall ?? undefined,
+                targetsByStatus: coverageReport.metrics.targetsByStatus,
+              }
+            : undefined,
+        };
+
+        process.stderr.write(
+          `[foundrydata] summary: ${JSON.stringify(summaryPayload)}\n`
+        );
+      }
+
+      enforceCoverageThreshold(coverageReport);
     } catch (err: unknown) {
       await handleCliError(err);
     }
@@ -301,10 +430,43 @@ program
     'Set false to enable Lax planning stubs (maps to resolver.stubUnresolved=emptySchema)',
     (v) => String(v)
   )
+  .option('--coverage <mode>', 'Coverage mode: off|measure|guided', 'off')
+  .option(
+    '--coverage-dimensions <list>',
+    'Coverage dimensions (comma-separated, e.g., structure,branches,enum,operations)'
+  )
+  .option(
+    '--coverage-min <number>',
+    'Minimum overall coverage threshold (0..1)'
+  )
+  .option('--coverage-report <file>', 'Path to write coverage-report/v1 JSON')
+  .option(
+    '--coverage-report-mode <mode>',
+    'Coverage report mode: full|summary',
+    'full'
+  )
+  .option(
+    '--coverage-profile <profile>',
+    'Coverage profile: quick|balanced|thorough (quick: structure+branches, ~75 instances; balanced: structure+branches+enum, ~350 instances; thorough: adds boundaries+operations, >=1000 instances, no caps)'
+  )
+  .option(
+    '--coverage-exclude-unreachable <bool>',
+    'Exclude unreachable targets from coverage denominators (true|false)'
+  )
   .option('--out <format>', 'Output format: json|ndjson', 'json')
   .option(
     '--prefer-examples',
     'Prefer OpenAPI examples over generated data when available'
+  )
+  .option(
+    '--summary',
+    'Print a compact JSON summary suitable for CI to stderr',
+    false
+  )
+  .option(
+    '--manifest',
+    'Alias for --summary (prints the same compact JSON summary to stderr)',
+    false
   )
   .option(
     '--status <code>',
@@ -330,11 +492,15 @@ program
       });
       const outFormat: OutputFormat = resolveOutputFormat(options.out);
       const preferExamples = options.preferExamples === true;
-      const count = resolveRowCount({
+      const requestedCount = resolveRowCount({
         rows: options.rows,
         count: options.count,
         n: options.n,
       });
+      const hasExplicitCount =
+        options.rows !== undefined ||
+        options.count !== undefined ||
+        options.n !== undefined;
       const seed = Number(options.seed ?? 424242);
       const repairAttempts = Number(options.repairAttempts ?? 1);
 
@@ -404,19 +570,37 @@ program
       const planOptions = parsePlanOptions(cliPlanOptions);
       const resolvedOptions = resolveOptions(planOptions);
 
+      const { coverage, ignoredReason, recommendedMaxInstances } =
+        resolveCliCoverageOptions(options as unknown as CliOptions);
+      if (ignoredReason) {
+        process.stderr.write(`[foundrydata] note: ${ignoredReason}\n`);
+      }
+
       if (options.debugPasses) {
         process.stderr.write(
           `[foundrydata] effective config: ${JSON.stringify(resolvedOptions, null, 2)}\n`
         );
       }
 
-      const stream = Generate(count, seed, schemaForGen as object, {
+      const instanceCount = hasExplicitCount
+        ? requestedCount
+        : (recommendedMaxInstances ?? requestedCount);
+
+      const stream = Generate(instanceCount, seed, schemaForGen as object, {
         mode: compat,
         metricsEnabled: options.metrics !== false,
         planOptions,
         preferExamples,
         repairAttempts,
         validateFormats: true,
+        coverage: {
+          mode: coverage.mode,
+          dimensionsEnabled: coverage.dimensionsEnabled,
+          excludeUnreachable: coverage.excludeUnreachable,
+          minCoverage: coverage.minCoverage,
+          planner: coverage.planner,
+          reportMode: coverage.reportMode,
+        },
       });
       const pipelineResult = await stream.result;
 
@@ -429,10 +613,82 @@ program
         options.printMetrics === true,
         outFormat
       );
+
+      const coverageReport = pipelineResult.artifacts.coverageReport;
+      if (coverageReport) {
+        const summary = formatCoverageSummary(coverageReport);
+        process.stderr.write(`[foundrydata] coverage: ${summary}\n`);
+
+        if (coverage.reportPath) {
+          // eslint-disable-next-line max-depth
+          try {
+            const outputPath = path.isAbsolute(coverage.reportPath)
+              ? coverage.reportPath
+              : path.resolve(process.cwd(), coverage.reportPath);
+            fs.writeFileSync(
+              outputPath,
+              JSON.stringify(coverageReport, null, 2),
+              'utf8'
+            );
+          } catch (error) {
+            const message =
+              error instanceof Error ? error.message : String(error);
+            process.stderr.write(
+              `[foundrydata] warning: failed to write coverage report to ${coverage.reportPath}: ${message}\n`
+            );
+          }
+        }
+      }
+      if (options.summary || options.manifest) {
+        const generatedStage = pipelineResult.stages.generate.output;
+        const repairedItems = pipelineResult.artifacts.repaired;
+        const items = Array.isArray(repairedItems)
+          ? repairedItems
+          : (generatedStage?.items ?? []);
+
+        const summaryPayload = {
+          version: 'foundrydata-cli-summary/v1',
+          command: 'openapi' as const,
+          status: pipelineResult.status,
+          mode: compat,
+          specPath: abs,
+          operationId: options.operationId,
+          path: options.path,
+          method: options.method,
+          seed,
+          count: instanceCount,
+          outFormat,
+          items: {
+            total: Array.isArray(items) ? items.length : 0,
+          },
+          metrics: pipelineResult.metrics,
+          coverage: coverageReport
+            ? {
+                mode: coverageReport.engine.coverageMode,
+                dimensionsEnabled: coverageReport.run.dimensionsEnabled,
+                excludeUnreachable: coverageReport.run.excludeUnreachable,
+                overall: coverageReport.metrics.overall,
+                byDimension: coverageReport.metrics.byDimension,
+                byOperation: coverageReport.metrics.byOperation,
+                coverageStatus: coverageReport.metrics.coverageStatus,
+                minCoverage:
+                  coverageReport.metrics.thresholds?.overall ?? undefined,
+                targetsByStatus: coverageReport.metrics.targetsByStatus,
+              }
+            : undefined,
+        };
+
+        process.stderr.write(
+          `[foundrydata] summary: ${JSON.stringify(summaryPayload)}\n`
+        );
+      }
+      enforceCoverageThreshold(coverageReport);
     } catch (err: unknown) {
       await handleCliError(err);
     }
   });
+
+registerCoverageDiffCommand(program);
 
 function handlePipelineOutput(
   result: PipelineResult,

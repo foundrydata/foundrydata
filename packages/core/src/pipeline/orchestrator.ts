@@ -69,6 +69,30 @@ import {
   hydrateSourceAjvFromRegistry,
   type RegistryDoc,
 } from '../resolver/hydrateSourceAjvFromRegistry.js';
+import {
+  getCachedValidator,
+  setCachedValidator,
+} from '../util/validator-cache.js';
+import {
+  type CoverageAccumulator,
+  createStreamingCoverageAccumulator,
+  type StreamingCoverageAccumulator,
+  type InstanceCoverageState,
+  type CoverageEvent,
+  type CoverageHint,
+} from '../coverage/index.js';
+import {
+  shouldRunCoverageAnalyzer,
+  resolveCoverageDimensions,
+  planCoverageForPipeline,
+  evaluateCoverageAndBuildReport,
+} from '../coverage/runtime.js';
+import {
+  type CoverageMode,
+  type PlannerCapHit,
+  type UnsatisfiedHint,
+} from '@foundrydata/shared';
+import corePackageJson from '../../package.json' with { type: 'json' };
 
 const STAGE_SEQUENCE: PipelineStageName[] = [
   'normalize',
@@ -101,7 +125,8 @@ interface StageRunners {
   compose: ComposeRunner;
   generate: (
     effective: ReturnType<typeof compose>,
-    options?: PipelineOptions['generate']
+    options?: PipelineOptions['generate'],
+    coverage?: CoverageHookOptions
   ) => Promise<GeneratorStageOutput> | GeneratorStageOutput;
   repair: (
     items: unknown[],
@@ -123,6 +148,32 @@ type AjvKeywordError = ErrorObject<string, Record<string, unknown>, unknown>;
 
 type AjvMarker = {
   __fd_ajvClass?: 'Ajv' | 'Ajv2019' | 'Ajv2020' | 'ajv-draft-04';
+};
+
+type HintApplication = {
+  hint: {
+    kind: string;
+    canonPath: string;
+    params?: Record<string, unknown>;
+  };
+  canonPath: string;
+  instancePath: string;
+  itemIndex: number;
+};
+
+type HintTrace = {
+  recordApplication(entry: HintApplication): void;
+  getApplicationsForItem(itemIndex: number): HintApplication[];
+  getAllApplications(): HintApplication[];
+};
+
+type CoverageHookOptions = {
+  mode: CoverageMode;
+  emit: (event: CoverageEvent) => void;
+  emitForItem?: (itemIndex: number, event: CoverageEvent) => void;
+  hints?: CoverageHint[];
+  recordUnsatisfiedHint?: (hint: UnsatisfiedHint) => void;
+  hintTrace?: HintTrace;
 };
 
 class ExternalRefValidationError extends Error {
@@ -207,6 +258,8 @@ export async function executePipeline(
   options: PipelineOptions = {},
   overrides: PipelineStageOverrides = {}
 ): Promise<PipelineResult> {
+  const runStartTimeMs = Date.now();
+  const runStartedAtIso = new Date(runStartTimeMs).toISOString();
   const metrics =
     options.collector ?? new MetricsCollector(options.metrics ?? {});
   const sourceDialect = detectDialectFromSchema(schema);
@@ -222,6 +275,8 @@ export async function executePipeline(
   let registryFingerprint: string | undefined;
   let registryDocs: RegistryDoc[] | undefined;
   let pendingAjvMismatch: AjvFlagsMismatchError | undefined;
+  let sourceAjvForRun: Ajv | undefined;
+  let planningAjvForRun: Ajv | undefined;
   // Track seen $id across AJV hydration to avoid duplicate-id conflicts
   const seenSchemaIds = new Map<string, string>();
   // Seed seenSchemaIds with any $id present in the root schema so that in-document definitions
@@ -272,6 +327,8 @@ export async function executePipeline(
       },
       planOptions
     );
+    sourceAjvForRun = sourceAjv;
+    planningAjvForRun = planningAjv;
     const sourceClass =
       (sourceAjv as unknown as AjvMarker).__fd_ajvClass ?? 'Ajv';
 
@@ -348,19 +405,96 @@ export async function executePipeline(
     resolvedPlanOptions.failFast.externalRefStrict;
   let externalRefState: ExternalRefState | undefined;
   let canonicalSchema: unknown = schema;
+  let coverageAccumulator: CoverageAccumulator | undefined;
+  let streamingCoverageAccumulator: StreamingCoverageAccumulator | undefined;
+  let perInstanceCoverageStates: InstanceCoverageState[] | undefined;
+  let coverageHookOptions: CoverageHookOptions | undefined;
+  let plannerCapsHit: PlannerCapHit[] = [];
+  let hintTrace: HintTrace | undefined;
+  const unsatisfiedHints: UnsatisfiedHint[] = [];
+  if (shouldRunCoverageAnalyzer(options.coverage)) {
+    const coverageMode = options.coverage?.mode ?? 'off';
+    if (coverageMode === 'measure' || coverageMode === 'guided') {
+      const ensureInstanceCoverageState = (
+        itemIndex: number
+      ): InstanceCoverageState | undefined => {
+        if (!streamingCoverageAccumulator) return undefined;
+        if (!perInstanceCoverageStates) {
+          perInstanceCoverageStates = [];
+        }
+        let state = perInstanceCoverageStates[itemIndex];
+        if (!state) {
+          state = streamingCoverageAccumulator.createInstanceState();
+          perInstanceCoverageStates[itemIndex] = state;
+        }
+        return state;
+      };
+      const emit: (event: CoverageEvent) => void = (event) => {
+        if (streamingCoverageAccumulator) {
+          streamingCoverageAccumulator.record(event);
+          return;
+        }
+        if (!coverageAccumulator) return;
+        coverageAccumulator.record(event);
+      };
+      const emitForItem = (itemIndex: number, event: CoverageEvent): void => {
+        const state = ensureInstanceCoverageState(itemIndex);
+        if (state) {
+          state.record(event);
+          return;
+        }
+        emit(event);
+      };
+      const recordUnsatisfiedHint =
+        coverageMode === 'guided'
+          ? (hint: UnsatisfiedHint): void => {
+              unsatisfiedHints.push(hint);
+            }
+          : undefined;
+      if (coverageMode === 'guided') {
+        const applications: HintApplication[] = [];
+        hintTrace = {
+          recordApplication(entry: HintApplication): void {
+            applications.push(entry);
+          },
+          getApplicationsForItem(itemIndex: number): HintApplication[] {
+            return applications.filter((app) => app.itemIndex === itemIndex);
+          },
+          getAllApplications(): HintApplication[] {
+            return applications.slice();
+          },
+        };
+      }
+      coverageHookOptions = {
+        mode: coverageMode,
+        emit,
+        emitForItem,
+        recordUnsatisfiedHint,
+        ...(hintTrace ? { hintTrace } : {}),
+      };
+    }
+  }
   const runners: StageRunners = {
     normalize: overrides.normalize ?? normalize,
     compose: overrides.compose ?? compose,
     generate:
       overrides.generate ??
-      createDefaultGenerate(metrics, schema, options, {
-        registryDocs,
-        resolverHydrateFinalAjv: resolvedPlanOptions.resolver.hydrateFinalAjv,
-        resolverNotes: resolverRunDiags,
-        resolverSeenSchemaIds: seenSchemaIds,
-        sourceDialect,
-      }),
-    repair: overrides.repair ?? createDefaultRepair(options, metrics),
+      createDefaultGenerate(
+        metrics,
+        schema,
+        options,
+        {
+          registryDocs,
+          resolverHydrateFinalAjv: resolvedPlanOptions.resolver.hydrateFinalAjv,
+          resolverNotes: resolverRunDiags,
+          resolverSeenSchemaIds: seenSchemaIds,
+          sourceDialect,
+        },
+        coverageHookOptions
+      ),
+    repair:
+      overrides.repair ??
+      createDefaultRepair(options, metrics, coverageHookOptions),
     validate:
       overrides.validate ??
       createDefaultValidate(
@@ -373,7 +507,24 @@ export async function executePipeline(
         resolverRunDiags,
         seenSchemaIds,
         registryDocs,
-        () => pendingAjvMismatch
+        registryFingerprint,
+        () => sourceAjvForRun,
+        () => planningAjvForRun,
+        () => pendingAjvMismatch,
+        (index, itemValid) => {
+          if (!streamingCoverageAccumulator || !perInstanceCoverageStates) {
+            return;
+          }
+          const state = perInstanceCoverageStates[index];
+          if (!state) {
+            return;
+          }
+          if (itemValid) {
+            streamingCoverageAccumulator.commitInstance(state);
+          } else {
+            state.reset();
+          }
+        }
       ),
   };
 
@@ -504,7 +655,7 @@ export async function executePipeline(
         return ajv;
       };
       try {
-        const sourceAjv = sourceAjvFactory();
+        const sourceAjv = sourceAjvForRun ?? sourceAjvFactory();
         sourceAjv.compile(schemaForSourceAjv as object);
       } catch (error) {
         const classification = classifyExternalRefFailure({
@@ -566,14 +717,16 @@ export async function executePipeline(
         }
       }
     }
-    const planningForCompose = createPlanningAjv(
-      {
-        validateFormats,
-        discriminator,
-        multipleOfPrecision: expectedMoP,
-      },
-      planOptions
-    );
+    const planningForCompose =
+      planningAjvForRun ??
+      createPlanningAjv(
+        {
+          validateFormats,
+          discriminator,
+          multipleOfPrecision: expectedMoP,
+        },
+        planOptions
+      );
     // Hydrate planning Ajv with resolver registry for in-planning compiles
     if (registryDocs && resolverRegistry) {
       hydrateSourceAjvFromRegistry(planningForCompose, registryDocs, {
@@ -682,6 +835,45 @@ export async function executePipeline(
         status: 'completed',
         output: composeResult,
       };
+
+      const coveragePlan = planCoverageForPipeline({
+        canonicalSchema,
+        normalizeResult,
+        composeResult,
+        coverageOptions: options.coverage,
+        generateOptions: options.generate,
+        testOverrides: overrides.coverageTestOverrides,
+      });
+
+      if (coveragePlan) {
+        artifacts.coverageGraph = coveragePlan.graph;
+        artifacts.coverageTargets = coveragePlan.plannedTargets;
+        plannerCapsHit = coveragePlan.plannerCapsHit;
+        if (coveragePlan.unsatisfiedHints.length > 0) {
+          unsatisfiedHints.push(...coveragePlan.unsatisfiedHints);
+        }
+
+        streamingCoverageAccumulator = createStreamingCoverageAccumulator(
+          coveragePlan.plannedTargets
+        );
+        coverageAccumulator = streamingCoverageAccumulator;
+
+        if (
+          coveragePlan.mode === 'guided' &&
+          coveragePlan.plannedTestUnits.length > 0 &&
+          coverageHookOptions
+        ) {
+          const aggregatedHints: CoverageHint[] = [];
+          for (const unit of coveragePlan.plannedTestUnits) {
+            if (Array.isArray(unit.hints) && unit.hints.length > 0) {
+              aggregatedHints.push(...unit.hints);
+            }
+          }
+          if (aggregatedHints.length > 0) {
+            coverageHookOptions.hints = aggregatedHints;
+          }
+        }
+      }
     }
 
     // Runtime self-check: diagnostics emitted during compose must conform to phase rules
@@ -786,7 +978,9 @@ export async function executePipeline(
   metrics.begin(METRIC_PHASE_BY_STAGE.generate);
   try {
     const eff = stages.compose.output!;
-    generated = await Promise.resolve(runners.generate(eff, options.generate));
+    generated = await Promise.resolve(
+      runners.generate(eff, options.generate, coverageHookOptions)
+    );
     stages.generate = { status: 'completed', output: generated };
     artifacts.generated = generated;
 
@@ -1039,6 +1233,62 @@ export async function executePipeline(
     timeline.push('validate');
   }
 
+  if (
+    coverageAccumulator &&
+    shouldRunCoverageAnalyzer(options.coverage) &&
+    Array.isArray(artifacts.coverageTargets) &&
+    status === 'completed'
+  ) {
+    const coverageDimensions = resolveCoverageDimensions(
+      options.coverage?.dimensionsEnabled
+    );
+
+    const reportTargets = coverageAccumulator.toReport(
+      artifacts.coverageTargets
+    );
+    artifacts.coverageTargets = reportTargets;
+
+    const generateOutput = stages.generate.output;
+    const seed =
+      (generateOutput && typeof generateOutput.seed === 'number'
+        ? generateOutput.seed
+        : options.generate?.seed) ?? 0;
+    const maxInstances =
+      options.generate?.count ??
+      (Array.isArray(generateOutput?.items) ? generateOutput.items.length : 0);
+    const actualInstances = Array.isArray(artifacts.repaired)
+      ? artifacts.repaired.length
+      : Array.isArray(generateOutput?.items)
+        ? generateOutput.items.length
+        : 0;
+
+    const coverageMode = options.coverage?.mode ?? 'off';
+
+    const evaluation = evaluateCoverageAndBuildReport({
+      mode: coverageMode,
+      dimensionsEnabled: coverageDimensions,
+      coverageOptions: options.coverage,
+      targets: reportTargets,
+      plannerCapsHit,
+      unsatisfiedHints,
+      runInfo: {
+        seed,
+        maxInstances,
+        actualInstances,
+        startedAtIso: runStartedAtIso,
+        durationMs: Date.now() - runStartTimeMs,
+      },
+      engineInfo: {
+        foundryVersion:
+          (corePackageJson as { version?: string }).version ?? '0.0.0',
+        ajvMajor: 8,
+      },
+    });
+
+    artifacts.coverageMetrics = evaluation.metrics;
+    artifacts.coverageReport = evaluation.report;
+  }
+
   return {
     status,
     schema,
@@ -1062,9 +1312,10 @@ function createDefaultGenerate(
     resolverNotes?: ResolverDiagnosticNote[];
     resolverSeenSchemaIds?: Map<string, string>;
     sourceDialect?: JsonSchemaDialect;
-  }
+  },
+  coverage?: CoverageHookOptions
 ): StageRunners['generate'] {
-  return (effective, options) => {
+  return (effective, options, _coverageHooks) => {
     const generatorOptions: FoundryGeneratorOptions = {
       count: options?.count,
       seed: options?.seed,
@@ -1079,6 +1330,7 @@ function createDefaultGenerate(
       resolverNotes: opts?.resolverNotes,
       resolverSeenSchemaIds: opts?.resolverSeenSchemaIds,
       sourceDialect: opts?.sourceDialect,
+      coverage: coverage && coverage.mode !== 'off' ? coverage : undefined,
     };
     return generateFromCompose(effective, generatorOptions);
   };
@@ -1086,7 +1338,8 @@ function createDefaultGenerate(
 
 function createDefaultRepair(
   pipelineOptions: PipelineOptions,
-  metrics: MetricsCollector
+  metrics: MetricsCollector,
+  coverage?: CoverageHookOptions
 ): (
   items: unknown[],
   _args: { schema: unknown; effective: ReturnType<typeof compose> },
@@ -1101,7 +1354,11 @@ function createDefaultRepair(
       return repairItemsAjvDriven(
         items,
         { schema, effective, planOptions },
-        { attempts: _options?.attempts, metrics }
+        {
+          attempts: _options?.attempts,
+          metrics,
+          coverage: coverage && coverage.mode !== 'off' ? coverage : undefined,
+        }
       );
     } catch {
       // Conservative: on any unexpected error, fall back to pass-through
@@ -1120,7 +1377,11 @@ function createDefaultValidate(
   resolverRunDiags?: ResolverDiagnosticNote[],
   seenSchemaIds?: Map<string, string>,
   registryDocs?: RegistryDoc[],
-  getPendingAjvMismatch?: () => AjvFlagsMismatchError | undefined
+  registryFingerprint?: string,
+  getSourceAjvForRun?: () => Ajv | undefined,
+  getPlanningAjvForRun?: () => Ajv | undefined,
+  getPendingAjvMismatch?: () => AjvFlagsMismatchError | undefined,
+  onInstanceValidated?: (index: number, valid: boolean) => void
 ): StageRunners['validate'] {
   return async (items, schema, options) => {
     const planOptions = pipelineOptions.generate?.planOptions;
@@ -1147,6 +1408,19 @@ function createDefaultValidate(
     const invalidPatternDiagnostics: DiagnosticEnvelope[] = [];
 
     const sourceAjvFactory = (): Ajv => {
+      const canReuseSourceAjv =
+        getSourceAjvForRun &&
+        // For draft-06 in lax mode we must keep tolerant pattern diagnostics,
+        // so prefer a fresh instance with onInvalidPatternDraft06 hook.
+        !(dialect === 'draft-06' && mode === 'lax');
+
+      if (canReuseSourceAjv) {
+        const shared = getSourceAjvForRun();
+        if (shared) {
+          return shared;
+        }
+      }
+
       const ajv = createSourceAjv(
         {
           dialect,
@@ -1184,10 +1458,12 @@ function createDefaultValidate(
       return ajv;
     };
     const sourceAjv = sourceAjvFactory();
-    const planningAjv = createPlanningAjv(
-      { validateFormats, discriminator, multipleOfPrecision: expectedMoP },
-      planOptions
-    );
+    const planningAjv =
+      getPlanningAjvForRun?.() ??
+      createPlanningAjv(
+        { validateFormats, discriminator, multipleOfPrecision: expectedMoP },
+        planOptions
+      );
     const flags = {
       source: extractAjvFlags(sourceAjv) as unknown as Record<string, unknown>,
       planning: extractAjvFlags(planningAjv) as unknown as Record<
@@ -1209,7 +1485,25 @@ function createDefaultValidate(
     const compileTarget = schemaForSourceAjvOverride ?? schema;
     let validateFn: ValidateFunction;
     try {
-      validateFn = sourceAjv.compile(compileTarget as object);
+      const cached =
+        getCachedValidator<ValidateFunction>({
+          ajv: sourceAjv,
+          schema: compileTarget,
+          planOptions: planOptions,
+          registryFingerprint,
+        }) ?? undefined;
+      if (cached) {
+        validateFn = cached;
+      } else {
+        validateFn = sourceAjv.compile(compileTarget as object);
+        setCachedValidator<ValidateFunction>({
+          ajv: sourceAjv,
+          schema: compileTarget,
+          planOptions: planOptions,
+          registryFingerprint,
+          validateFn,
+        });
+      }
     } catch (error) {
       const classification = classifyExternalRefFailure({
         schema,
@@ -1274,7 +1568,8 @@ function createDefaultValidate(
     const errors: unknown[] = [];
     const validationDiagnostics: DiagnosticEnvelope[] = [];
     let allValid = true;
-    for (const it of items) {
+    for (let index = 0; index < items.length; index += 1) {
+      const it = items[index];
       const ok = validateFn(it);
       if (!ok) {
         allValid = false;
@@ -1284,6 +1579,13 @@ function createDefaultValidate(
         errors.push(failureErrors);
         if (failureErrors.length > 0) {
           validationDiagnostics.push(...ajvErrorsToDiagnostics(failureErrors));
+        }
+      }
+      if (onInstanceValidated) {
+        try {
+          onInstanceValidated(index, ok);
+        } catch {
+          // Coverage callbacks must never affect validation behavior.
         }
       }
     }

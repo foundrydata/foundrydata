@@ -16,6 +16,19 @@ import type {
 } from '../util/metrics.js';
 import type { PlanOptions } from '../types/options.js';
 import type { DiagnosticEnvelope } from '../diag/validate.js';
+import type {
+  CoverageDimension,
+  CoverageMode,
+  CoverageTarget,
+  CoverageReport,
+  CoverageReportMode,
+} from '@foundrydata/shared';
+import type {
+  CoverageGraph,
+  CoverageMetrics,
+  CoveragePlannerUserOptions,
+  CoverageHint,
+} from '../coverage/index.js';
 
 export type PipelineStageName =
   | 'normalize'
@@ -93,6 +106,10 @@ export interface PipelineArtifacts {
     instancePath?: string;
     details?: Record<string, unknown>;
   }>;
+  coverageGraph?: CoverageGraph;
+  coverageTargets?: CoverageTarget[];
+  coverageMetrics?: CoverageMetrics;
+  coverageReport?: CoverageReport;
 }
 
 export interface PipelineStageOverrides {
@@ -100,7 +117,8 @@ export interface PipelineStageOverrides {
   compose?: (input: ComposeInput, options?: ComposeOptions) => ComposeResult;
   generate?: (
     effective: ComposeResult,
-    options?: PipelineOptions['generate']
+    options?: PipelineOptions['generate'],
+    coverage?: unknown
   ) => GeneratorStageOutput | Promise<GeneratorStageOutput>;
   repair?: (
     items: unknown[],
@@ -138,6 +156,15 @@ export interface PipelineStageOverrides {
     schema: unknown,
     options?: PipelineOptions['validate']
   ) => ValidateStageResult | Promise<ValidateStageResult>;
+  /**
+   * Test-only hooks for coverage-aware planning. These overrides are
+   * not part of the public Node API and MUST NOT be used in
+   * production flows. They exist solely to exercise conflict
+   * detection and unsatisfied hint paths end-to-end in tests.
+   */
+  coverageTestOverrides?: {
+    extraPlannerHints?: CoverageHint[];
+  };
 }
 
 export interface PipelineOptions {
@@ -147,6 +174,28 @@ export interface PipelineOptions {
   collector?: MetricsCollector;
   snapshotVerbosity?: MetricsVerbosity;
   mode?: 'strict' | 'lax';
+  coverage?: {
+    mode?: CoverageMode;
+    dimensionsEnabled?: CoverageDimension[];
+    excludeUnreachable?: boolean;
+    /**
+     * Global coverage threshold applied to metrics.overall only.
+     * When set, the CoverageEvaluator will populate
+     * metrics.thresholds.overall and set coverageStatus to
+     * 'minCoverageNotMet' when metrics.overall < minCoverage.
+     */
+    minCoverage?: number;
+    /**
+     * Optional planner configuration for coverage=guided.
+     * When present, it refines how the planner uses the
+     * global maxInstances budget and dimension priorities.
+     */
+    planner?: CoveragePlannerUserOptions;
+    /**
+     * Report mode for the coverage-report/v1 output.
+     */
+    reportMode?: CoverageReportMode;
+  };
   generate?: {
     count?: number;
     seed?: number;

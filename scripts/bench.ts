@@ -8,6 +8,7 @@ import {
   computeGateSummary,
   formatGateSummary,
   formatProfileSummary,
+  formatProfilePhaseSummary,
   profiles,
   resolveIterationOverridesFromEnv,
   runProfile,
@@ -34,6 +35,13 @@ async function main(): Promise<void> {
     const summary = await runProfile(profile, { iterations });
     summaries.push(summary);
     writeLine(formatProfileSummary(summary));
+
+    if (process.env.FOUNDRY_BENCH_TRACE === '1') {
+      const phaseSummary = formatProfilePhaseSummary(summary);
+      if (phaseSummary) {
+        writeLine(`  ${phaseSummary}`);
+      }
+    }
   }
 
   const gate = computeGateSummary(summaries);

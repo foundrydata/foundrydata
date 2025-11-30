@@ -22,9 +22,10 @@ A preparatory step (not part of the normative pipeline): draft detection, basic 
 
 ---
 
-## 5‑Stage Generation Pipeline
+## 5‑Stage Generation Pipeline (with coverage-aware layer)
 
-**Core flow:** `Normalize → Compose → Generate → Repair → Validate`
+**Core flow:** `Normalize → Compose → Generate → Repair → Validate`  
+The coverage-aware layer attaches to this pipeline without changing its guarantees: AJV remains the oracle, determinism and AP:false invariants are preserved, and no additional network I/O is introduced in coverage-specific stages.
 
 ### Stage 1 — Normalize
 
@@ -36,6 +37,38 @@ A preparatory step (not part of the normative pipeline): draft detection, basic 
 * **Guards:** cap nested `not` via `guards.maxGeneratedNotNesting`.
 
 **Module:** `packages/core/src/transform/schema-normalizer.ts` (non‑destructive; notes for risky rewrites).
+
+---
+
+### Coverage-aware components (Analyzer, Planner, Evaluator, instrumentation)
+
+Coverage-aware features are layered on top of the 5‑stage pipeline in a way that preserves the core architecture:
+
+- **CoverageAnalyzer (between Compose and Generate)**  
+  Operates on the canonical + composed schema view to build a `CoverageGraph` and a set of `CoverageTarget` entries across dimensions (structure, branches, enum, boundaries, operations). It consumes existing artifacts such as `coverageIndex` and OpenAPI-aware graph metadata and never redefines AP:false behavior; under AP:false, it relies on `CoverageIndex` as the single source of truth for property-name coverage. No network calls are performed in this stage.
+
+- **CoveragePlanner & hints (guided mode)**  
+  When `coverage=guided`, a planner takes the analyzer output and produces `TestUnit`s plus hints (e.g. `preferBranch`, `ensurePropertyPresence`, `coverEnumValue`) within a deterministic budget. It uses the same seeded RNG model as the generator and respects the determinism tuple `(canonical schema, OpenAPI spec?, coverage options, seed, ajvMajor, registryFingerprint)`. Planner diagnostics (caps, unsatisfied hints) are fed into the final coverage report and CLI summary.
+
+- **Streaming instrumentation (attached to Generate/Repair/Validate)**  
+  Coverage instrumentation observes instances as they flow through Generate/Repair/Validate using the same JSON values and AJV validations as the core pipeline:
+  - no second JSON parse,
+  - commit of coverage state after validation (commit-after-validate),
+  - no additional network I/O,
+  - AJV is always the oracle for validity-sensitive targets.  
+  Instrumentation maintains per-instance coverage state and updates hit/miss status for targets in a streaming fashion; it does not require re-running the pipeline.
+
+- **CoverageEvaluator & coverage-report/v1 (after Validate)**  
+  Once a run completes, the evaluator projects target hits into aggregated metrics:
+  - `coverage.overall`, `coverage.byDimension`, `coverage.byOperation`,
+  - `metrics.targetsByStatus`,
+  - optional `metrics.thresholds.overall` and `metrics.coverageStatus` when `minCoverage` is configured.  
+  It also assembles the `coverage-report/v1` JSON (versioned CoverageReport) which includes `targets`, `uncoveredTargets`, `unsatisfiedHints` and `diagnostics.plannerCapsHit`. Diagnostic-only targets never contribute to denominators, and `excludeUnreachable` only affects denominators, not target IDs or statuses.
+
+- **Coverage runtime (orchestration helper)**  
+  To keep the pipeline orchestrator focused on phase sequencing and diagnostics envelopes, the wiring between Analyzer, Planner and Evaluator is encapsulated in an internal runtime helper (`packages/core/src/coverage/runtime.ts`). `executePipeline` calls this runtime once after Compose to derive the `CoverageGraph`, plan coverage targets/TestUnits (guided mode) and expose planner diagnostics, then once après Validate to project final target hits into metrics and a `coverage-report/v1` instance. The streaming accumulator and coverage hooks remain wired in the orchestrator but are driven by the targets and hints produced by the runtime. The runtime is not part of the public Node/CLI API and does not change coverage semantics or options behavior; it centralises coverage-specific orchestration so profiles, CLI and reporter all rely on the same behavior.
+
+Coverage-aware configuration is passed through `PipelineOptions.coverage` and surfaced in the CLI/Node.js API; with `coverage=off`, CoverageAnalyzer, Planner and instrumentation are disabled and the pipeline behaves exactly as described in the core stages below.
 
 ---
 
@@ -170,6 +203,17 @@ Repository‑level bench harnesses (`npm run bench`, `npm run bench:real-world`)
 
 ```
 foundrydata/
+├── apps/                         # Workbench and auxiliary apps
+├── assets/                       # Logos, favicons, social images
+├── bench/                        # Bench gate configs (p95 / memory)
+├── bench-reports/                # Bench run outputs (CI artifacts)
+├── coverage/                     # Aggregate coverage reports (HTML + lcov)
+├── docs/                         # Specs, invariants, feature docs
+├── examples/                     # Example configs / usage snippets
+├── profiles/                     # Bench profiles + real‑world schemas corpus
+├── reports/                      # Corpus / scenario summary reports
+├── scripts/                      # Dev / CI helper scripts
+├── test/                         # Cross‑package acceptance + scripts harness
 ├── packages/
 │   ├── core/
 │   │   ├── src/
@@ -191,6 +235,17 @@ This structure is unchanged; descriptions now reflect the clarified contracts ab
 
 ---
 
+## Packages & boundaries
+
+* **Core public API:** `packages/core/src/api.ts` exposes the supported Node.js facades (Normalize/Compose/Generate/Validate). The package entrypoint (`packages/core/src/index.ts`) re‑exports these along with lower‑level building blocks such as `executePipeline`; other `packages/core/src/**` modules are internal implementation details behind this surface.
+* **CLI integration:** `packages/cli` maps commands and profiles (quick/balanced/thorough) onto the core API and coverage options, without adding new pipeline logic or bypassing AJV/coverage invariants.
+* **Reporting layer:** `packages/reporter` consumes coverage reports and bench outputs produced by `core`/CLI and renders JSON/Markdown/HTML; it never mutates pipeline semantics, only presentation and summaries.
+* **Shared contracts:** `packages/shared/src/{types,coverage}` contains the shared types and schemas (coverage-report, diagnostics, bench gates) used by `core`, `cli` et `reporter` pour rester alignés sur les mêmes formats.
+* **Workbench app:** `apps/workbench` est une UI d’exploration et de debug branchée sur l’API publique; elle ne définit pas de logique de pipeline supplémentaire et n’est pas la source de vérité sur les contrats.
+* **Resolver extension boundary:** les modules `packages/core/src/resolver/**` implémentent l’extension de résolution HTTP(S) pré‑pipeline; les cinq stages `Normalize → Compose → Generate → Repair → Validate` restent eux‑mêmes I/O‑free.
+
+---
+
 ## Key Design Decisions (recap)
 
 * **Result\<T,E>** across stages; no exceptions for expected failures.
@@ -204,6 +259,7 @@ This structure is unchanged; descriptions now reflect the clarified contracts ab
 * **Unit per stage:** `packages/core/src/transform/__tests__` for normalizer + composer, `packages/core/src/generator/__tests__` for generator determinism/precedence/coverage, `packages/core/src/repair/__tests__` for repair idempotence and error reduction, plus `diag`/`util` unit tests (e.g. draft detection, dynamic refs).
 * **Pipeline & policy integration:** `packages/core/src/pipeline/__tests__` and `packages/core/test/e2e/pipeline.integration.spec.ts` cover end‑to‑end `executePipeline` behavior, AJV parity, external `$ref`/`$dynamicRef` policies, skip‑flow modes, exclusivity diagnostics, and final validation against the original schema.
 * **Reporter & bench harness:** `packages/reporter/test/reporter.snapshot.test.ts` fixes stable JSON/Markdown/HTML reports, and `packages/reporter/test/bench.runner.test.ts` exercises the bench runner + summary output used by the repo‑level bench/CI workflows (including p50/p95 and caps behavior at the reporting layer).
+* **Cross‑package acceptance & scripts:** `test/acceptance` and `test/scripts` drive end‑to‑end flows (CLI, coverage README smoke, bench invocation) across packages on top of the core pipeline.
 
 ---
 

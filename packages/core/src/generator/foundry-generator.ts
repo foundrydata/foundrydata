@@ -3,6 +3,8 @@
 /* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
 /* eslint-disable max-lines */
+import { performance } from 'node:perf_hooks';
+import process from 'node:process';
 import {
   DIAGNOSTIC_CODES,
   DIAGNOSTIC_PHASES,
@@ -13,6 +15,7 @@ import type {
   CoverageEntry,
   NodeDiagnostics,
 } from '../transform/composition-engine.js';
+import type { CoverageMode, UnsatisfiedHint } from '@foundrydata/shared';
 import {
   computeEffectiveMaxItems,
   type ContainsNeed,
@@ -45,6 +48,8 @@ import {
 import type { ResolverDiagnosticNote } from '../resolver/options.js';
 import type Ajv from 'ajv';
 import type { ValidateFunction } from 'ajv';
+import type { CoverageEvent, CoverageHint } from '../coverage/index.js';
+import { resolveCoverageHintConflicts } from '../coverage/index.js';
 
 type JsonPointer = string;
 
@@ -80,6 +85,10 @@ interface InstanceTweakTarget {
   get(): string | number;
   set(value: string | number): void;
 }
+
+type ResolvedCoverageHintsForPath = ReturnType<
+  typeof resolveCoverageHintConflicts
+>;
 
 export interface GeneratorDiagnostic {
   code: DiagnosticCode;
@@ -118,6 +127,31 @@ export interface GeneratorStageOutput {
   seed: number;
 }
 
+interface GeneratorCoverageOptions {
+  mode: CoverageMode;
+  emit: (event: CoverageEvent) => void;
+  emitForItem?: (itemIndex: number, event: CoverageEvent) => void;
+  /**
+   * Optional coverage hints attached to the current TestUnit when
+   * running in coverage=guided mode. When provided, the generator
+   * may use these hints to steer branch selection, property presence
+   * and enum values without violating AJV validity.
+   */
+  hints?: CoverageHint[];
+  /**
+   * Optional callback for recording unsatisfied hints in guided mode.
+   * When provided, the generator may report hints that could not be
+   * honored under the current constraints or were otherwise invalid.
+   */
+  recordUnsatisfiedHint?: (hint: UnsatisfiedHint) => void;
+  /**
+   * Optional hint trace shared with Repair for diagnostic-only
+   * unsatisfiedHints reporting. Representation is implementation-
+   * defined and must not affect RNG or output shape.
+   */
+  hintTrace?: unknown;
+}
+
 export interface FoundryGeneratorOptions {
   count?: number;
   seed?: number;
@@ -140,6 +174,12 @@ export interface FoundryGeneratorOptions {
    * when no example is present.
    */
   preferExamples?: boolean;
+  /**
+   * Optional passive coverage hook for generator instrumentation.
+   * When provided with mode 'measure' or 'guided', the generator
+   * will emit CoverageEvent entries for branches and enums.
+   */
+  coverage?: GeneratorCoverageOptions;
 }
 
 export function generateFromCompose(
@@ -186,12 +226,175 @@ class GeneratorEngine {
   private readonly stringTweakOrder: ReadonlyArray<'\u0000' | 'a'>;
   private readonly multipleOfEpsilon: number;
   private readonly preferExamples: boolean;
+  private readonly coverage?: GeneratorCoverageOptions;
+  private readonly coverageHintsByPath?:
+    | Map<JsonPointer, ResolvedCoverageHintsForPath>
+    | undefined;
+  private currentItemIndex: number | null = null;
+  private readonly instancePathStack: string[] = [];
   // E-Trace cache: per-candidate object instance → per-name proof (or null for negative).
   // Ephemeral per GeneratorEngine; keys are not retained strongly (WeakMap).
   private eTraceCache: WeakMap<
     Record<string, unknown>,
     Map<string, EvaluationProof | null>
   > = new WeakMap();
+
+  private readonly debugTrace?:
+    | {
+        validateCalls: number;
+        validateMs: number;
+      }
+    | undefined;
+
+  private readonly hintTrace?:
+    | {
+        recordApplication?: (entry: {
+          hint: CoverageHint;
+          canonPath: JsonPointer;
+          instancePath: string;
+          itemIndex: number;
+        }) => void;
+      }
+    | undefined;
+
+  private recordUnsatisfiedHint(hint: UnsatisfiedHint): void {
+    if (
+      !this.coverage ||
+      this.coverage.mode !== 'guided' ||
+      typeof this.coverage.recordUnsatisfiedHint !== 'function'
+    ) {
+      return;
+    }
+    try {
+      this.coverage.recordUnsatisfiedHint(hint);
+    } catch {
+      // Unsatisfied hint reporting must not affect generation behavior.
+    }
+  }
+
+  private recordEnsurePropertyPresenceHintApplication(
+    canonPath: JsonPointer,
+    propertyName: string
+  ): void {
+    if (
+      !this.coverage ||
+      this.coverage.mode !== 'guided' ||
+      !this.coverageHintsByPath
+    ) {
+      return;
+    }
+    const key = canonicalizeCoveragePath(canonPath);
+    const resolved = this.coverageHintsByPath.get(key);
+    if (!resolved) return;
+    for (const hint of resolved.effective) {
+      if (
+        hint.kind === 'ensurePropertyPresence' &&
+        hint.params.present === true &&
+        hint.params.propertyName === propertyName
+      ) {
+        this.recordHintApplication(hint, key, this.currentInstancePath);
+      }
+    }
+  }
+
+  private canonPathToInstancePath(canonPath: JsonPointer): string {
+    if (!canonPath) return '';
+    const raw = canonPath.startsWith('#') ? canonPath.slice(1) : canonPath;
+    if (!raw || raw === '/') return '';
+    const segments = raw
+      .split('/')
+      .filter((segment) => segment.length > 0)
+      .map((segment) => segment.replace(/~1/g, '/').replace(/~0/g, '~'));
+    const instanceSegments: string[] = [];
+    for (let i = 0; i < segments.length; i += 1) {
+      const seg = segments[i]!;
+      if (seg === 'properties' && i + 1 < segments.length) {
+        instanceSegments.push(segments[i + 1]!);
+        i += 1;
+        continue;
+      }
+      if (/^(items|prefixItems|contains|unevaluatedItems)$/.test(seg)) {
+        if (i + 1 < segments.length) {
+          instanceSegments.push(segments[i + 1]!);
+          i += 1;
+        }
+        continue;
+      }
+      // Structural keywords (oneOf, anyOf, allOf, if/then/else, etc.)
+      // do not contribute directly to instancePath.
+    }
+    if (instanceSegments.length === 0) return '';
+    return instanceSegments.reduce(
+      (ptr, token) =>
+        `${ptr}/${token.replace(/~/g, '~0').replace(/\//g, '~1')}`,
+      ''
+    );
+  }
+
+  private recordHintApplication(
+    hint: CoverageHint,
+    canonPath: JsonPointer,
+    instancePathOverride?: string
+  ): void {
+    if (
+      !this.coverage ||
+      this.coverage.mode !== 'guided' ||
+      !this.hintTrace ||
+      typeof this.hintTrace.recordApplication !== 'function'
+    ) {
+      return;
+    }
+    const instancePath =
+      typeof instancePathOverride === 'string'
+        ? instancePathOverride
+        : this.canonPathToInstancePath(canonPath);
+    const itemIndex =
+      this.currentItemIndex !== null ? this.currentItemIndex : 0;
+    this.hintTrace.recordApplication({
+      hint,
+      canonPath,
+      instancePath,
+      itemIndex,
+    });
+  }
+
+  private withInstancePath<T>(path: string, callback: () => T): T {
+    this.instancePathStack.push(path);
+    try {
+      return callback();
+    } finally {
+      this.instancePathStack.pop();
+    }
+  }
+
+  private get currentInstancePath(): string {
+    const { instancePathStack } = this;
+    if (instancePathStack.length === 0) {
+      return '';
+    }
+    return instancePathStack[instancePathStack.length - 1]!;
+  }
+
+  private buildCoverageHintsIndex(
+    hints: CoverageHint[]
+  ): Map<JsonPointer, ResolvedCoverageHintsForPath> {
+    const byPath = new Map<JsonPointer, CoverageHint[]>();
+    for (const hint of hints) {
+      if (!hint || typeof hint.canonPath !== 'string') continue;
+      const path = canonicalizeCoveragePath(hint.canonPath as JsonPointer);
+      const existing = byPath.get(path);
+      if (existing) {
+        existing.push(hint);
+      } else {
+        byPath.set(path, [hint]);
+      }
+    }
+    const resolved = new Map<JsonPointer, ResolvedCoverageHintsForPath>();
+    for (const [path, bucket] of byPath) {
+      resolved.set(path, resolveCoverageHintConflicts(bucket));
+    }
+    return resolved;
+  }
 
   constructor(effective: ComposeResult, options: FoundryGeneratorOptions) {
     this.options = options;
@@ -228,6 +431,22 @@ class GeneratorEngine {
       `1e-${this.resolved.rational.decimalPrecision}`
     );
     this.preferExamples = options.preferExamples === true;
+    this.coverage = options.coverage;
+    this.coverageHintsByPath =
+      this.coverage &&
+      this.coverage.mode === 'guided' &&
+      Array.isArray(this.coverage.hints) &&
+      this.coverage.hints.length > 0
+        ? this.buildCoverageHintsIndex(this.coverage.hints)
+        : undefined;
+    this.hintTrace =
+      (this.coverage as { hintTrace?: GeneratorEngine['hintTrace'] })
+        ?.hintTrace ?? undefined;
+    const traceEnv = process.env.FOUNDRY_GEN_TRACE;
+    this.debugTrace =
+      traceEnv === '1' || traceEnv?.toLowerCase() === 'true'
+        ? { validateCalls: 0, validateMs: 0 }
+        : undefined;
   }
 
   private readonly rootSchema: Schema | unknown;
@@ -240,7 +459,12 @@ class GeneratorEngine {
     }
     const items: unknown[] = [];
     for (let index = 0; index < count; index += 1) {
-      items.push(this.generateValue(this.rootSchema, '', index));
+      this.currentItemIndex = index;
+      items.push(
+        this.withInstancePath('', () =>
+          this.generateValue(this.rootSchema, '', index)
+        )
+      );
     }
 
     const metrics: GeneratorStageOutput['metrics'] = {};
@@ -248,12 +472,63 @@ class GeneratorEngine {
       metrics.patternWitnessTried = this.patternWitnessTrials;
     }
 
-    return {
+    const result: GeneratorStageOutput = {
       items,
       diagnostics: this.diagnostics,
       metrics,
       seed: this.baseSeed,
     };
+
+    if (this.debugTrace && this.debugTrace.validateCalls > 0) {
+      const title =
+        this.rootSchema &&
+        typeof (this.rootSchema as { title?: unknown }).title === 'string'
+          ? String((this.rootSchema as { title?: unknown }).title ?? 'unknown')
+          : 'unknown';
+      const totalMs = this.debugTrace.validateMs.toFixed(2);
+      const calls = this.debugTrace.validateCalls;
+      process.stderr.write(
+        `[foundrygen-trace] schema="${title}" validateAgainstOriginalAt calls=${calls} total=${totalMs}ms\n`
+      );
+    }
+
+    return result;
+  }
+
+  private getEnumHintIndex(
+    canonPath: JsonPointer,
+    values: unknown[]
+  ): number | undefined {
+    if (!this.coverage || this.coverage.mode !== 'guided') return undefined;
+    if (!this.coverageHintsByPath || !Array.isArray(values)) {
+      return undefined;
+    }
+    const key = canonicalizeCoveragePath(canonPath);
+    const resolved = this.coverageHintsByPath.get(key);
+    if (!resolved) return undefined;
+    const enumHint = resolved.effective.find(
+      (hint) => hint.kind === 'coverEnumValue'
+    ) as CoverageHint | undefined;
+    if (!enumHint || enumHint.kind !== 'coverEnumValue') return undefined;
+    const index = enumHint.params.valueIndex;
+    if (
+      typeof index === 'number' &&
+      Number.isInteger(index) &&
+      index >= 0 &&
+      index < values.length
+    ) {
+      this.recordHintApplication(enumHint, key);
+      return index;
+    }
+    // Index outside enum bounds or invalid type: treat as conflicting constraints.
+    this.recordUnsatisfiedHint({
+      kind: 'coverEnumValue',
+      canonPath: key,
+      params: { valueIndex: index },
+      reasonCode: 'CONFLICTING_CONSTRAINTS',
+      reasonDetail: 'coverEnumValue index out of range for enum',
+    });
+    return undefined;
   }
 
   private generateValue(
@@ -275,6 +550,8 @@ class GeneratorEngine {
     const obj = resolvedSchema;
     const effectiveCanonPath = resolvedPointer;
 
+    this.recordSchemaNodeHit(effectiveCanonPath);
+
     // CLI/JSG-P1: when preferExamples is enabled, honor root-level
     // schema examples when present, falling back to generation when not.
     if (this.preferExamples && canonPath === '') {
@@ -288,7 +565,14 @@ class GeneratorEngine {
       return obj.const;
     }
     if (Array.isArray(obj.enum) && obj.enum.length > 0) {
-      return obj.enum[0];
+      const enumValues = obj.enum as unknown[];
+      const hintedIndex = this.getEnumHintIndex(effectiveCanonPath, enumValues);
+      const chosen =
+        hintedIndex !== undefined && enumValues[hintedIndex] !== undefined
+          ? enumValues[hintedIndex]
+          : enumValues[0];
+      this.recordEnumValueHit(obj, effectiveCanonPath, chosen);
+      return chosen;
     }
 
     const type = determineType(obj);
@@ -503,13 +787,13 @@ class GeneratorEngine {
         patternProperties,
         additionalProperties
       );
-      const value = this.generateValue(
-        resolved.schema,
-        resolved.pointer,
-        itemIndex
+      const childPath = appendPointer(this.currentInstancePath, name);
+      const value = this.withInstancePath(childPath, () =>
+        this.generateValue(resolved.schema, resolved.pointer, itemIndex)
       );
       result[name] = value;
       usedNames.add(name);
+      this.recordPropertyPresent(resolved.pointer, name);
       this.recordEvaluationTrace(canonPath, name, evaluationProof);
       if (eTraceGuard) {
         this.invalidateEvaluationCacheForObject(result);
@@ -537,9 +821,13 @@ class GeneratorEngine {
 
     // Add optional properties from explicit definitions first
     if (usedNames.size < minProperties) {
-      const candidates = Object.keys(properties)
-        .filter((name) => !usedNames.has(name))
-        .sort();
+      const baseCandidates = Object.keys(properties).filter(
+        (name) => !usedNames.has(name)
+      );
+      const candidates = this.orderOptionalPropertyCandidates(
+        canonPath,
+        baseCandidates.sort()
+      );
       for (const name of candidates) {
         if (usedNames.size >= minProperties) break;
         if (this.isConditionallyBlocked(canonPath, name)) continue;
@@ -559,13 +847,14 @@ class GeneratorEngine {
           patternProperties,
           additionalProperties
         );
-        const value = this.generateValue(
-          resolved.schema,
-          resolved.pointer,
-          itemIndex
+        const childPath = appendPointer(this.currentInstancePath, name);
+        const value = this.withInstancePath(childPath, () =>
+          this.generateValue(resolved.schema, resolved.pointer, itemIndex)
         );
         result[name] = value;
         usedNames.add(name);
+        this.recordPropertyPresent(resolved.pointer, name);
+        this.recordEnsurePropertyPresenceHintApplication(canonPath, name);
         this.recordEvaluationTrace(canonPath, name, evaluationProof);
         if (eTraceGuard) {
           this.invalidateEvaluationCacheForObject(result);
@@ -606,14 +895,14 @@ class GeneratorEngine {
             patternProperties,
             additionalProperties
           );
-          const value = this.generateValue(
-            resolved.schema,
-            resolved.pointer,
-            itemIndex
+          const childPath = appendPointer(this.currentInstancePath, candidate);
+          const value = this.withInstancePath(childPath, () =>
+            this.generateValue(resolved.schema, resolved.pointer, itemIndex)
           );
           result[candidate] = value;
           usedNames.add(candidate);
           namesFromPatterns.add(candidate);
+          this.recordPropertyPresent(resolved.pointer, candidate);
           this.recordEvaluationTrace(
             canonPath,
             candidate,
@@ -657,13 +946,16 @@ class GeneratorEngine {
         (!apFalse || rewriteApplied)
       ) {
         const seen = new Set<string>();
-        const sortedCandidates = propertyNamesEnum
-          .filter((value) => {
-            if (seen.has(value)) return false;
-            seen.add(value);
-            return true;
-          })
-          .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+        const sortedCandidates = this.orderOptionalPropertyCandidates(
+          canonPath,
+          propertyNamesEnum
+            .filter((value) => {
+              if (seen.has(value)) return false;
+              seen.add(value);
+              return true;
+            })
+            .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+        );
         for (const candidate of sortedCandidates) {
           if (usedNames.size >= minProperties) break;
           if (usedNames.has(candidate)) continue;
@@ -691,13 +983,17 @@ class GeneratorEngine {
             patternProperties,
             additionalProperties
           );
-          const value = this.generateValue(
-            resolved.schema,
-            resolved.pointer,
-            itemIndex
+          const childPath = appendPointer(this.currentInstancePath, candidate);
+          const value = this.withInstancePath(childPath, () =>
+            this.generateValue(resolved.schema, resolved.pointer, itemIndex)
           );
           result[candidate] = value;
           usedNames.add(candidate);
+          this.recordPropertyPresent(resolved.pointer, candidate);
+          this.recordEnsurePropertyPresenceHintApplication(
+            canonPath,
+            candidate
+          );
           this.recordEvaluationTrace(canonPath, candidate, evaluationProof);
           if (eTraceGuard) {
             this.invalidateEvaluationCacheForObject(result);
@@ -717,6 +1013,8 @@ class GeneratorEngine {
     for (const name of optionalNames) {
       orderedResult[name] = result[name];
     }
+
+    this.recordUnsatisfiedPropertyHints(canonPath, orderedResult);
 
     return orderedResult;
   }
@@ -776,6 +1074,79 @@ class GeneratorEngine {
     const result = fallbackProof;
     cacheForObject.set(name, result ?? null);
     return result;
+  }
+
+  private orderOptionalPropertyCandidates(
+    canonPath: JsonPointer,
+    candidates: string[]
+  ): string[] {
+    if (
+      !this.coverage ||
+      this.coverage.mode !== 'guided' ||
+      !this.coverageHintsByPath ||
+      candidates.length === 0
+    ) {
+      return candidates;
+    }
+    const key = canonicalizeCoveragePath(canonPath);
+    const resolved = this.coverageHintsByPath.get(key);
+    if (!resolved || resolved.effective.length === 0) {
+      return candidates;
+    }
+    const preferredNames = new Set<string>();
+    for (const hint of resolved.effective) {
+      if (
+        hint.kind === 'ensurePropertyPresence' &&
+        hint.params.present === true
+      ) {
+        preferredNames.add(hint.params.propertyName);
+      }
+    }
+    if (preferredNames.size === 0) return candidates;
+    const hinted: string[] = [];
+    const others: string[] = [];
+    for (const name of candidates) {
+      if (preferredNames.has(name)) {
+        hinted.push(name);
+      } else {
+        others.push(name);
+      }
+    }
+    if (hinted.length === 0) return candidates;
+    return [...hinted, ...others];
+  }
+
+  private recordUnsatisfiedPropertyHints(
+    canonPath: JsonPointer,
+    objectValue: Record<string, unknown>
+  ): void {
+    if (
+      !this.coverage ||
+      this.coverage.mode !== 'guided' ||
+      !this.coverageHintsByPath
+    ) {
+      return;
+    }
+    const key = canonicalizeCoveragePath(canonPath);
+    const resolved = this.coverageHintsByPath.get(key);
+    if (!resolved) return;
+    for (const hint of resolved.effective) {
+      if (
+        hint.kind === 'ensurePropertyPresence' &&
+        hint.params.present === true
+      ) {
+        const name = hint.params.propertyName;
+        if (!Object.prototype.hasOwnProperty.call(objectValue, name)) {
+          this.recordUnsatisfiedHint({
+            kind: hint.kind,
+            canonPath: key,
+            params: { propertyName: name, present: true },
+            reasonCode: 'CONFLICTING_CONSTRAINTS',
+            reasonDetail: 'property not present in generated instance',
+          });
+        }
+      }
+    }
   }
 
   private isNameWithinCoverage(
@@ -1010,6 +1381,44 @@ class GeneratorEngine {
     return typeof idx === 'number' ? idx : undefined;
   }
 
+  private getPreferredBranchIndex(
+    canonPath: JsonPointer,
+    branchCount: number
+  ): number | undefined {
+    if (
+      !this.coverage ||
+      this.coverage.mode !== 'guided' ||
+      !this.coverageHintsByPath
+    ) {
+      return undefined;
+    }
+    const key = canonicalizeCoveragePath(canonPath);
+    const resolved = this.coverageHintsByPath.get(key);
+    if (!resolved) return undefined;
+    const hint = resolved.effective.find(
+      (entry) => entry.kind === 'preferBranch'
+    ) as CoverageHint | undefined;
+    if (!hint || hint.kind !== 'preferBranch') return undefined;
+    const index = hint.params.branchIndex;
+    if (
+      typeof index === 'number' &&
+      Number.isInteger(index) &&
+      index >= 0 &&
+      index < branchCount
+    ) {
+      this.recordHintApplication(hint, key);
+      return index;
+    }
+    this.recordUnsatisfiedHint({
+      kind: 'preferBranch',
+      canonPath: key,
+      params: { branchIndex: index },
+      reasonCode: 'CONFLICTING_CONSTRAINTS',
+      reasonDetail: 'preferBranch index out of range for branch count',
+    });
+    return undefined;
+  }
+
   private hasPnamesRewrite(canonPath: JsonPointer): boolean {
     return this.pnamesRewrite.has(canonPath);
   }
@@ -1033,9 +1442,16 @@ class GeneratorEngine {
     canonPtr: JsonPointer,
     data: unknown
   ): boolean {
+    const trace = this.debugTrace;
+    const startedAt = trace ? performance.now() : 0;
     const originalPtr = this.ptrMap.get(canonPtr);
     const sub = this.getOriginalSubschema(originalPtr);
-    if (!sub) return false;
+    if (!sub) {
+      if (trace) {
+        trace.validateCalls += 1;
+      }
+      return false;
+    }
 
     const refInfo = this.buildSourceRef(originalPtr);
     const cacheKey = refInfo?.cacheKey ?? originalPtr ?? `#canon:${canonPtr}`;
@@ -1054,13 +1470,29 @@ class GeneratorEngine {
         }
         this.branchValidatorCache.set(cacheKey, validate);
       } catch {
+        if (trace) {
+          const elapsed = performance.now() - startedAt;
+          trace.validateCalls += 1;
+          trace.validateMs += elapsed;
+        }
         return false;
       }
     }
 
     try {
-      return !!validate(data);
+      const ok = !!validate(data);
+      if (trace) {
+        const elapsed = performance.now() - startedAt;
+        trace.validateCalls += 1;
+        trace.validateMs += elapsed;
+      }
+      return ok;
     } catch {
+      if (trace) {
+        const elapsed = performance.now() - startedAt;
+        trace.validateCalls += 1;
+        trace.validateMs += elapsed;
+      }
       return false;
     }
   }
@@ -1287,13 +1719,13 @@ class GeneratorEngine {
           patternProperties,
           additionalProperties
         );
-        const value = this.generateValue(
-          resolved.schema,
-          resolved.pointer,
-          itemIndex
+        const childPath = appendPointer(this.currentInstancePath, dep);
+        const value = this.withInstancePath(childPath, () =>
+          this.generateValue(resolved.schema, resolved.pointer, itemIndex)
         );
         target[dep] = value;
         used.add(dep);
+        this.recordPropertyPresent(resolved.pointer, dep);
         this.recordEvaluationTrace(canonPath, dep, evaluationProof);
         if (eTraceGuard) {
           this.invalidateEvaluationCacheForObject(target);
@@ -1337,6 +1769,7 @@ class GeneratorEngine {
         used,
         evaluation.discriminants
       );
+      this.recordConditionalPathHit(canonPath, 'if+then');
       this.diagnostics.push({
         code: DIAGNOSTIC_CODES.IF_AWARE_HINT_APPLIED,
         phase: DIAGNOSTIC_PHASES.GENERATE,
@@ -1352,6 +1785,9 @@ class GeneratorEngine {
 
     if (evaluation.discriminants.size > 0) {
       this.blockConditionalNames(canonPath, evaluation.discriminants);
+    }
+    if (schema.else && typeof schema.else === 'object') {
+      this.recordConditionalPathHit(canonPath, 'if+else');
     }
     this.diagnostics.push({
       code: DIAGNOSTIC_CODES.IF_AWARE_HINT_APPLIED,
@@ -1484,7 +1920,12 @@ class GeneratorEngine {
 
     for (let idx = 0; idx < prefixItems.length; idx += 1) {
       const childCanon = appendPointer(canonPath, `prefixItems/${idx}`);
-      result.push(this.generateValue(prefixItems[idx], childCanon, itemIndex));
+      const childPath = appendPointer(this.currentInstancePath, String(idx));
+      result.push(
+        this.withInstancePath(childPath, () =>
+          this.generateValue(prefixItems[idx], childCanon, itemIndex)
+        )
+      );
     }
 
     const minItems =
@@ -1541,7 +1982,14 @@ class GeneratorEngine {
         (hardCap === undefined || result.length < hardCap)
       ) {
         const childCanon = appendPointer(canonPath, 'items');
-        const value = this.generateValue(itemsSchema, childCanon, itemIndex);
+        const nextIndex = result.length;
+        const childPath = appendPointer(
+          this.currentInstancePath,
+          String(nextIndex)
+        );
+        const value = this.withInstancePath(childPath, () =>
+          this.generateValue(itemsSchema, childCanon, itemIndex)
+        );
         result.push(value);
       }
     }
@@ -1581,6 +2029,7 @@ class GeneratorEngine {
       }
     }
 
+    this.recordArrayBoundaryHits(schema, canonPath, result.length);
     return result;
   }
 
@@ -1617,7 +2066,14 @@ class GeneratorEngine {
         if (maxLength !== undefined && result.length >= maxLength) {
           break;
         }
-        const value = this.generateValue(need.schema, childCanon, itemIndex);
+        const childIndex = result.length;
+        const childPath = appendPointer(
+          this.currentInstancePath,
+          String(childIndex)
+        );
+        const value = this.withInstancePath(childPath, () =>
+          this.generateValue(need.schema, childCanon, itemIndex)
+        );
         result.push(value);
         satisfied += 1;
       }
@@ -1969,13 +2425,13 @@ class GeneratorEngine {
         mergedPatterns,
         schema.additionalProperties
       );
-      const value = this.generateValue(
-        resolved.schema,
-        resolved.pointer,
-        itemIndex
+      const childPath = appendPointer(this.currentInstancePath, name);
+      const value = this.withInstancePath(childPath, () =>
+        this.generateValue(resolved.schema, resolved.pointer, itemIndex)
       );
       target[name] = value;
       used.add(name);
+      this.recordPropertyPresent(resolved.pointer, name);
       this.recordEvaluationTrace(canonPath, name, evaluationProof);
       if (eTraceGuard) {
         this.invalidateEvaluationCacheForObject(target);
@@ -1986,13 +2442,19 @@ class GeneratorEngine {
   private generateString(schema: Record<string, unknown>): string {
     // const/enum outrank type
     if (schema.const !== undefined && typeof schema.const === 'string') {
-      return schema.const as string;
+      const value = schema.const as string;
+      this.recordStringBoundaryHits(schema, value);
+      return value;
     }
     if (Array.isArray(schema.enum)) {
       const first = (schema.enum as unknown[]).find(
         (v) => typeof v === 'string'
       );
-      if (typeof first === 'string') return first;
+      if (typeof first === 'string') {
+        const value = first;
+        this.recordStringBoundaryHits(schema, value);
+        return value;
+      }
     }
 
     const minLength =
@@ -2013,7 +2475,9 @@ class GeneratorEngine {
           patternLength >= minLength &&
           (maxLength === undefined || patternLength <= maxLength)
         ) {
-          return patternValue;
+          const value = patternValue;
+          this.recordStringBoundaryHits(schema, value);
+          return value;
         }
       }
     }
@@ -2029,6 +2493,7 @@ class GeneratorEngine {
         if (maxLength !== undefined && codePointLength(value) > maxLength) {
           value = truncateToCodePoints(value, maxLength);
         }
+        this.recordStringBoundaryHits(schema, value);
         return value;
       }
     }
@@ -2037,6 +2502,7 @@ class GeneratorEngine {
     if (maxLength !== undefined && codePointLength(candidate) > maxLength) {
       candidate = truncateToCodePoints(candidate, maxLength);
     }
+    this.recordStringBoundaryHits(schema, candidate);
     return candidate;
   }
 
@@ -2045,11 +2511,17 @@ class GeneratorEngine {
       schema.const !== undefined &&
       (typeof schema.const === 'number' || typeof schema.const === 'bigint')
     ) {
-      return Number(schema.const);
+      const value = Number(schema.const);
+      this.recordNumericBoundaryHits(schema, value);
+      return value;
     }
     if (Array.isArray(schema.enum)) {
       const first = (schema.enum as unknown[]).find((v) => Number.isInteger(v));
-      if (typeof first === 'number') return first;
+      if (typeof first === 'number') {
+        const value = first;
+        this.recordNumericBoundaryHits(schema, value);
+        return value;
+      }
     }
     let value = 0;
     if (typeof schema.minimum === 'number') {
@@ -2077,18 +2549,25 @@ class GeneratorEngine {
         value = Math.min(value, Math.floor(schema.maximum));
       }
     }
+    this.recordNumericBoundaryHits(schema, value);
     return value;
   }
 
   private generateNumber(schema: Record<string, unknown>): number {
     if (typeof schema.const === 'number') {
-      return schema.const as number;
+      const value = schema.const as number;
+      this.recordNumericBoundaryHits(schema, value);
+      return value;
     }
     if (Array.isArray(schema.enum)) {
       const first = (schema.enum as unknown[]).find(
         (v) => typeof v === 'number'
       );
-      if (typeof first === 'number') return first;
+      if (typeof first === 'number') {
+        const value = first;
+        this.recordNumericBoundaryHits(schema, value);
+        return value;
+      }
     }
     const multiple =
       typeof schema.multipleOf === 'number' && schema.multipleOf !== 0
@@ -2097,6 +2576,7 @@ class GeneratorEngine {
     if (multiple) {
       const aligned = this.generateMultipleAlignedNumber(schema, multiple);
       if (typeof aligned === 'number' && Number.isFinite(aligned)) {
+        this.recordNumericBoundaryHits(schema, aligned);
         return aligned;
       }
     }
@@ -2144,6 +2624,7 @@ class GeneratorEngine {
         value = rescue;
       }
     }
+    this.recordNumericBoundaryHits(schema, value);
     return value;
   }
 
@@ -2292,6 +2773,7 @@ class GeneratorEngine {
         (value) => typeof value === 'boolean'
       );
       if (typeof firstBool === 'boolean') {
+        this.recordEnumValueHit(schema, undefined, firstBool);
         return firstBool;
       }
     }
@@ -2320,14 +2802,37 @@ class GeneratorEngine {
     const branches = Array.isArray(schema.oneOf)
       ? (schema.oneOf as unknown[])
       : [];
-    const record = this.diagNodes?.[canonPath];
-    const selectedIndex =
-      typeof record?.chosenBranch?.index === 'number'
-        ? record.chosenBranch.index
-        : 0;
-    const chosen =
-      selectedIndex >= 0 && selectedIndex < branches.length ? selectedIndex : 0;
+    const fallbackIndex = 0;
+    const unionPointer = appendPointer(canonPath, 'oneOf');
+    const hintedIndex = this.getPreferredBranchIndex(
+      unionPointer,
+      branches.length
+    );
+    let chosen =
+      hintedIndex !== undefined && branches[hintedIndex] !== undefined
+        ? hintedIndex
+        : fallbackIndex;
+    if (hintedIndex === undefined) {
+      const record = this.diagNodes?.[canonPath];
+      const selectedIndex =
+        typeof record?.chosenBranch?.index === 'number'
+          ? record.chosenBranch.index
+          : fallbackIndex;
+      if (
+        selectedIndex >= 0 &&
+        selectedIndex < branches.length &&
+        branches[selectedIndex] !== undefined
+      ) {
+        chosen = selectedIndex;
+      }
+    }
     const branchPath = this.buildOneOfBranchPointer(canonPath, chosen);
+    this.recordBranchSelection(
+      'ONEOF_BRANCH',
+      branches[chosen],
+      branchPath,
+      chosen
+    );
     const generated = this.generateValue(
       branches[chosen],
       branchPath,
@@ -2955,13 +3460,25 @@ class GeneratorEngine {
       : [];
     if (branches.length === 0) return {};
     const unionPointer = appendPointer(canonPath, 'anyOf');
-    const chosen = this.getChosenBranchIndex(unionPointer);
+    const hintedIndex = this.getPreferredBranchIndex(
+      unionPointer,
+      branches.length
+    );
+    const chosenFromDiag = this.getChosenBranchIndex(unionPointer);
     const fallbackIndex = 0;
     const index =
-      chosen !== undefined && branches[chosen] !== undefined
-        ? chosen
-        : fallbackIndex;
+      hintedIndex !== undefined && branches[hintedIndex] !== undefined
+        ? hintedIndex
+        : chosenFromDiag !== undefined && branches[chosenFromDiag] !== undefined
+          ? chosenFromDiag
+          : fallbackIndex;
     const branchPointer = appendPointer(unionPointer, String(index));
+    this.recordBranchSelection(
+      'ANYOF_BRANCH',
+      branches[index],
+      branchPointer,
+      index
+    );
     return this.generateValue(branches[index]!, branchPointer, itemIndex);
   }
 
@@ -2997,6 +3514,264 @@ class GeneratorEngine {
         tiebreakRand: 0,
       },
     });
+  }
+
+  private emitCoverageEvent(event: CoverageEvent): void {
+    if (!this.coverage) return;
+    const mode = this.coverage.mode;
+    if (mode !== 'measure' && mode !== 'guided') return;
+    try {
+      if (typeof this.coverage.emitForItem === 'function') {
+        const index = this.currentItemIndex ?? 0;
+        this.coverage.emitForItem(index, event);
+      } else {
+        this.coverage.emit(event);
+      }
+    } catch {
+      // Coverage hooks must never affect generation behavior.
+    }
+  }
+
+  private recordSchemaNodeHit(canonPath: JsonPointer): void {
+    const coveragePath = canonicalizeCoveragePath(canonPath);
+    this.emitCoverageEvent({
+      dimension: 'structure',
+      kind: 'SCHEMA_NODE',
+      canonPath: coveragePath,
+    });
+  }
+
+  private recordBranchSelection(
+    kind: 'ONEOF_BRANCH' | 'ANYOF_BRANCH',
+    branchSchema: unknown,
+    branchPointer: JsonPointer,
+    index: number
+  ): void {
+    const pointerFromIndex =
+      branchSchema && typeof branchSchema === 'object'
+        ? getPointerFromIndex(this.pointerIndex, branchSchema)
+        : undefined;
+    const canonPtr = pointerFromIndex ?? branchPointer;
+    const canonPath = canonicalizeCoveragePath(canonPtr);
+    this.emitCoverageEvent({
+      dimension: 'branches',
+      kind,
+      canonPath,
+      params: { index },
+    });
+  }
+
+  private recordConditionalPathHit(
+    canonPath: JsonPointer,
+    pathKind: 'if+then' | 'if+else'
+  ): void {
+    const coveragePath = canonicalizeCoveragePath(canonPath);
+    this.emitCoverageEvent({
+      dimension: 'branches',
+      kind: 'CONDITIONAL_PATH',
+      canonPath: coveragePath,
+      params: { pathKind },
+    });
+  }
+
+  private recordEnumValueHit(
+    schema: Record<string, unknown>,
+    fallbackPointer: JsonPointer | undefined,
+    value: unknown
+  ): void {
+    const raw = (schema as { enum?: unknown[] }).enum;
+    if (!Array.isArray(raw) || raw.length === 0) return;
+    const idx = enumIndexOf(raw, value);
+    if (idx < 0) return;
+    const pointerFromIndex = getPointerFromIndex(this.pointerIndex, schema);
+    const canonPtr = pointerFromIndex ?? fallbackPointer ?? '';
+    const canonPath = canonicalizeCoveragePath(canonPtr);
+    this.emitCoverageEvent({
+      dimension: 'enum',
+      kind: 'ENUM_VALUE_HIT',
+      canonPath,
+      params: { enumIndex: idx, value },
+    });
+  }
+
+  private recordPropertyPresent(
+    propertyPointer: JsonPointer,
+    propertyName: string
+  ): void {
+    const canonPath = canonicalizeCoveragePath(propertyPointer);
+    this.emitCoverageEvent({
+      dimension: 'structure',
+      kind: 'PROPERTY_PRESENT',
+      canonPath,
+      params: { propertyName },
+    });
+  }
+
+  private recordNumericBoundaryHits(
+    schema: Record<string, unknown>,
+    value: number
+  ): void {
+    if (!this.coverage) return;
+    const pointerFromIndex = getPointerFromIndex(this.pointerIndex, schema);
+    if (!pointerFromIndex) return;
+    const canonPath = canonicalizeCoveragePath(pointerFromIndex);
+
+    if (
+      typeof schema.minimum === 'number' &&
+      Object.is(value, schema.minimum)
+    ) {
+      this.emitCoverageEvent({
+        dimension: 'boundaries',
+        kind: 'NUMERIC_MIN_HIT',
+        canonPath,
+        params: {
+          boundaryKind: 'minimum',
+          boundaryValue: value,
+        },
+      });
+    }
+
+    if (
+      typeof schema.maximum === 'number' &&
+      Object.is(value, schema.maximum)
+    ) {
+      this.emitCoverageEvent({
+        dimension: 'boundaries',
+        kind: 'NUMERIC_MAX_HIT',
+        canonPath,
+        params: {
+          boundaryKind: 'maximum',
+          boundaryValue: value,
+        },
+      });
+    }
+
+    if (
+      typeof schema.exclusiveMinimum === 'number' &&
+      value > schema.exclusiveMinimum
+    ) {
+      this.emitCoverageEvent({
+        dimension: 'boundaries',
+        kind: 'NUMERIC_MIN_HIT',
+        canonPath,
+        params: {
+          boundaryKind: 'exclusiveMinimum',
+          boundaryValue: value,
+        },
+      });
+    }
+
+    if (
+      typeof schema.exclusiveMaximum === 'number' &&
+      value < schema.exclusiveMaximum
+    ) {
+      this.emitCoverageEvent({
+        dimension: 'boundaries',
+        kind: 'NUMERIC_MAX_HIT',
+        canonPath,
+        params: {
+          boundaryKind: 'exclusiveMaximum',
+          boundaryValue: value,
+        },
+      });
+    }
+  }
+
+  private recordStringBoundaryHits(
+    schema: Record<string, unknown>,
+    value: string
+  ): void {
+    if (!this.coverage) return;
+    const pointerFromIndex = getPointerFromIndex(this.pointerIndex, schema);
+    if (!pointerFromIndex) return;
+    const canonPath = canonicalizeCoveragePath(pointerFromIndex);
+
+    const minLengthRaw =
+      typeof schema.minLength === 'number' ? schema.minLength : undefined;
+    const maxLengthRaw =
+      typeof schema.maxLength === 'number' ? schema.maxLength : undefined;
+
+    const minLength =
+      minLengthRaw !== undefined
+        ? Math.max(0, Math.floor(minLengthRaw))
+        : undefined;
+    const maxLength =
+      maxLengthRaw !== undefined
+        ? Math.max(minLength ?? 0, Math.floor(maxLengthRaw))
+        : undefined;
+
+    const length = codePointLength(value);
+
+    if (minLength !== undefined && length === minLength) {
+      this.emitCoverageEvent({
+        dimension: 'boundaries',
+        kind: 'STRING_MIN_LENGTH_HIT',
+        canonPath,
+        params: {
+          boundaryKind: 'minLength',
+          boundaryValue: length,
+        },
+      });
+    }
+
+    if (maxLength !== undefined && length === maxLength) {
+      this.emitCoverageEvent({
+        dimension: 'boundaries',
+        kind: 'STRING_MAX_LENGTH_HIT',
+        canonPath,
+        params: {
+          boundaryKind: 'maxLength',
+          boundaryValue: length,
+        },
+      });
+    }
+  }
+
+  private recordArrayBoundaryHits(
+    schema: Record<string, unknown>,
+    canonPath: JsonPointer,
+    actualLength: number
+  ): void {
+    if (!this.coverage) return;
+    const coveragePath = canonicalizeCoveragePath(canonPath);
+
+    const minItemsRaw =
+      typeof schema.minItems === 'number' ? schema.minItems : undefined;
+    const maxItemsRaw =
+      typeof schema.maxItems === 'number' ? schema.maxItems : undefined;
+
+    const minItems =
+      minItemsRaw !== undefined
+        ? Math.max(0, Math.floor(minItemsRaw))
+        : undefined;
+    const maxItems =
+      maxItemsRaw !== undefined
+        ? Math.max(minItems ?? 0, Math.floor(maxItemsRaw))
+        : undefined;
+
+    if (minItems !== undefined && actualLength === minItems) {
+      this.emitCoverageEvent({
+        dimension: 'boundaries',
+        kind: 'ARRAY_MIN_ITEMS_HIT',
+        canonPath: coveragePath,
+        params: {
+          boundaryKind: 'minItems',
+          boundaryValue: actualLength,
+        },
+      });
+    }
+
+    if (maxItems !== undefined && actualLength === maxItems) {
+      this.emitCoverageEvent({
+        dimension: 'boundaries',
+        kind: 'ARRAY_MAX_ITEMS_HIT',
+        canonPath: coveragePath,
+        params: {
+          boundaryKind: 'maxItems',
+          boundaryValue: actualLength,
+        },
+      });
+    }
   }
 }
 
@@ -3661,6 +4436,22 @@ function appendPointer(base: string, segment: string): string {
     return `/${encoded}`;
   }
   return `${base}/${encoded}`;
+}
+
+function canonicalizeCoveragePath(pointer: JsonPointer): string {
+  if (!pointer) return '#';
+  if (pointer.startsWith('#')) return pointer;
+  if (pointer.startsWith('/')) return `#${pointer}`;
+  return `#/${pointer}`;
+}
+
+function enumIndexOf(values: unknown[], needle: unknown): number {
+  for (let index = 0; index < values.length; index += 1) {
+    if (Object.is(values[index], needle)) {
+      return index;
+    }
+  }
+  return -1;
 }
 
 function buildPointerIndex(schema: unknown): WeakMap<object, JsonPointer> {

@@ -11,6 +11,7 @@ import {
   computeGateSummary,
   formatGateSummary,
   formatProfileSummary,
+  formatProfilePhaseSummary,
   resolveIterationOverridesFromEnv,
   runProfile,
 } from './bench-core.js';
@@ -57,6 +58,14 @@ async function main(): Promise<void> {
       });
       summaries.push(summary);
       writeLine(formatProfileSummary(summary));
+
+      if (process.env.FOUNDRY_BENCH_TRACE === '1') {
+        const phaseSummary = formatProfilePhaseSummary(summary);
+        // eslint-disable-next-line max-depth
+        if (phaseSummary) {
+          writeLine(`  ${phaseSummary}`);
+        }
+      }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : JSON.stringify(error);

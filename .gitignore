@@ -19,7 +19,8 @@ pids
 lib-cov
 
 # Coverage directory used by tools like istanbul
-coverage
+/coverage
+packages/core/coverage
 *.lcov
 
 # nyc test coverage
@@ -171,3 +172,4 @@ test/performance/baseline.json
 bench/bench-gate.json
 bench/bench-gate.real-world.json
 bench-reports*/
+cpu-profiles
