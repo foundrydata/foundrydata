@@ -1,12 +1,13 @@
 Task: 9334   Title: Define coverage-report/v1 JSON schema and compatibility guards — subtask 9334.9334002
 Anchors: [cov://§3#coverage-model, cov://§7#json-coverage-report, cov://§10#acceptance-criteria-v1]
 Touched files:
-- packages/core/src/coverage/__tests__/coverage-report-json.test.ts
-- packages/reporter/src/coverage/engine.ts
+- packages/reporter/src/schemas/coverage-report-v1.schema.json
+- packages/reporter/test/coverage-report-schema.test.ts
+- packages/reporter/test/fixtures/coverage-report.v1.sample.json
 - .taskmaster/docs/9334-traceability.md
 
 Approach:
-Pour la sous-tâche 9334.9334002, je vais brancher le schéma JSON coverage-report/v1 dans les tests existants afin de valider les rapports réellement produits, en cohérence avec le contrat formalisé par la spec (cov://§3#coverage-model, cov://§7#json-coverage-report, cov://§10#acceptance-criteria-v1). Concrètement, je vais : (1) enrichir `coverage-report-json.test.ts` côté core pour charger le schéma `coverage-report-v1.schema.json` via AJV et valider les snapshots JSON déjà produits par les tests, de manière à couvrir au moins un rapport measure/guided; (2) si nécessaire, exposer une petite helper côté reporter (par ex. dans `coverage/engine.ts`) pour faciliter la validation des rapports générés par la CLI ou le reporter, sans introduire de dépendance inverse core → reporter. L’objectif est que tout changement incompatible de structure report soit détecté immédiatement par une validation de schéma dans les tests, tout en gardant les tests alignés sur les critères d’acceptance V1 (dimensionsEnabled, thresholds, coverageStatus, targets/uncoveredTargets cohérents).
+Pour la sous-tâche 9334.9334002, je branche le schéma JSON coverage-report/v1 dans la couche reporter afin de valider des rapports réels contre le contrat formalisé par la spec (cov://§3#coverage-model, cov://§7#json-coverage-report, cov://§10#acceptance-criteria-v1). Concrètement, j’ai : (1) introduit un test dédié `packages/reporter/test/coverage-report-schema.test.ts` qui charge `coverage-report-v1.schema.json` via Ajv 2020-12 et applique `ajv-formats`, puis valide une fixture stable `coverage-report.v1.sample.json` représentant un rapport minimal mais complet; (2) aligné la fixture sur les types `CoverageReport` partagés (`@foundrydata/shared`) pour couvrir version/reportMode, en-têtes engine/run, métriques, cibles, hints et diagnostics, en respectant les invariants coverage-aware sans coupler les tests core ↔ reporter. L’objectif est que tout changement incompatible dans la forme du rapport soit détecté immédiatement par ce test AJV, tout en laissant le schéma suffisamment extensible pour les diagnostics additionnels.
 
 Risks/Unknowns:
 - Introduire AJV dans les tests coverage (via reporter ou directement) ajoute un point de défaillance supplémentaire; il faudra veiller à ne pas rendre les tests trop couplés à la version précise du schéma en laissant une marge d’extension dans celui-ci.

@@ -1401,7 +1401,7 @@
             "estimatedHours": 4,
             "file": "packages/core/src/coverage/tests/coverage-report-json.test.ts",
             "parentId": "9334",
-            "updatedAt": "2025-11-30T16:12:09.334Z"
+            "updatedAt": "2025-11-30T16:43:43.810Z"
           },
           {
             "id": 9334003,
@@ -1413,12 +1413,12 @@
             "parentId": "9334"
           }
         ],
-        "updatedAt": "2025-11-30T16:12:09.334Z"
+        "updatedAt": "2025-11-30T16:43:43.810Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-30T16:12:09.336Z",
+      "lastModified": "2025-11-30T16:43:43.811Z",
       "taskCount": 26,
       "completedCount": 23,
       "tags": [

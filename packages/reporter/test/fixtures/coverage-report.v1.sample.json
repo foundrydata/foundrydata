@@ -1,0 +1,52 @@
+{
+  "version": "coverage-report/v1",
+  "reportMode": "full",
+  "engine": {
+    "foundryVersion": "0.1.1",
+    "coverageMode": "measure",
+    "ajvMajor": 8
+  },
+  "run": {
+    "seed": 37,
+    "masterSeed": 37,
+    "maxInstances": 3,
+    "actualInstances": 3,
+    "dimensionsEnabled": ["structure", "branches"],
+    "excludeUnreachable": false,
+    "startedAt": "2025-01-01T12:00:00Z",
+    "durationMs": 0
+  },
+  "metrics": {
+    "coverageStatus": "ok",
+    "overall": 1,
+    "byDimension": {
+      "structure": 1,
+      "branches": 1
+    },
+    "byOperation": {},
+    "targetsByStatus": {
+      "active": 1,
+      "unreachable": 0,
+      "deprecated": 0
+    },
+    "thresholds": {
+      "overall": 0.8
+    }
+  },
+  "targets": [
+    {
+      "id": "T1",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#",
+      "status": "active",
+      "hit": true
+    }
+  ],
+  "uncoveredTargets": [],
+  "unsatisfiedHints": [],
+  "diagnostics": {
+    "plannerCapsHit": [],
+    "notes": []
+  }
+}
