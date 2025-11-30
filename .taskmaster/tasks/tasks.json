@@ -1082,14 +1082,27 @@
         "description": "Update docs/use-cases/product-scenarios.md and examples/README.md to demonstrate coverage-aware modes (measure/guided), profiles (quick/balanced/thorough), and CI integration patterns with practical examples.",
         "details": "[Context]\nExtend user-facing documentation to showcase coverage-aware capabilities introduced in M0/M1, per spec §6 (Execution modes & UX) and §7 (Reporting & observability). The examples and use cases should help developers understand when and how to use coverage modes, profiles, and thresholds in CI/CD workflows.\n\n[Key requirements]\n- Update `docs/use-cases/product-scenarios.md` to add new scenarios or extend existing ones (API mocks, contract tests, LLM testing) with coverage-aware examples showing:\n  - `coverage=measure` for passive coverage tracking without changing output\n  - `coverage=guided` for coverage-oriented generation with hints\n  - Profile selection (`--coverage-profile quick|balanced|thorough`) and their trade-offs\n  - Threshold enforcement (`--coverage-min 0.8`) for CI gates\n  - Coverage report generation (`--coverage-report coverage.json`) and inspection\n  \n- Update `examples/README.md` to include practical CLI examples demonstrating:\n  - Basic coverage measurement with existing example schemas (e.g., `ecommerce-schema.json`, `payment.json`)\n  - Guided coverage runs with dimension selection (`--coverage-dimensions structure,branches,enum`)\n  - Profile usage showing different instance budgets and coverage depth\n  - CI integration pattern with exit code handling for failed thresholds\n  - Reading and interpreting coverage-report/v1 JSON output\n  \n- Add a dedicated subsection to `examples/README.md` titled \"Coverage-aware generation\" that includes:\n  - Quick examples of `coverage=off|measure|guided` modes\n  - Dimension flags (`--coverage-dimensions`)\n  - Profile flags (`--coverage-profile`)\n  - Threshold and report path flags\n  - Sample CI snippet showing coverage threshold enforcement in GitHub Actions or similar\n  \n- Ensure all examples align with implemented CLI flags from task 9304 (coverage-options.ts: mode, dimensionsEnabled, excludeUnreachable, minCoverage, reportPath, profile)\n\n- Reference spec anchors for deeper reading but keep examples practical and copy-paste ready\n\n[Implementation notes]\n- Use existing example schemas (ecommerce-schema.json, payment.json, users-api.json) as test subjects\n- Show realistic instance counts and thresholds (e.g., `--n 100 --coverage-min 0.75`)\n- Demonstrate `--print-metrics` and `--debug-passes` for observability\n- Include a simple CI script example (bash/yaml) that runs coverage and fails the build if coverage < threshold\n- Keep examples concise and focused on one coverage feature at a time\n- Add cross-references between use-cases and examples for discoverability",
         "testStrategy": "Doc review checklist:\n- Verify all CLI flags referenced in examples match coverage-options.ts implementation (mode, dimensions, profile, minCoverage, reportPath, excludeUnreachable)\n- Run each CLI example command manually to confirm it executes without error and produces expected coverage output\n- Validate that coverage JSON report examples reference the correct coverage-report/v1 schema from spec §7.1\n- Check that CI integration examples are syntactically valid for target platforms (GitHub Actions, GitLab CI, or generic bash)\n- Confirm that product-scenarios.md examples align with existing scenario structure (User context, Goal, Success criteria, CLI example, Node API example, Friction/gaps, Current status)\n- Ensure cross-references between docs/use-cases and examples/README.md are correct and navigable\n- Snapshot test one or two coverage examples in CI to ensure they remain valid as coverage implementation evolves",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "9302",
           "9303",
           "9304"
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement coverage-aware CLI examples and docs",
+            "description": "Update docs/use-cases/product-scenarios.md and examples/README.md with coverage-aware CLI usage, profiles (quick/balanced/thorough), coverage modes (off/measure/guided), thresholds and CI patterns, aligned with coverage-options.ts and coverage-report/v1 spec.",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9324,
+            "updatedAt": "2025-11-30T12:26:02.263Z",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-11-30T12:26:02.263Z"
       },
       {
         "id": "9325",
@@ -1154,9 +1167,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-30T02:59:21.336Z",
+      "lastModified": "2025-11-30T12:26:02.264Z",
       "taskCount": 21,
-      "completedCount": 17,
+      "completedCount": 18,
       "tags": [
         "coverage-aware-v1"
       ]

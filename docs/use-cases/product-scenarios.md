@@ -40,6 +40,27 @@ npx tsx scripts/examples/api-mocks.ts
 
 This script loads `examples/users-api.json`, selects the `getUsers` 200 JSON response, calls `Generate` with a fixed seed, validates a sample of responses with `Validate`, and prints both a short summary and a handful of example payloads.
 
+**Coverage-aware extension**
+
+When you want to understand how well a given OpenAPI operation is exercised without changing the payloads you feed into your mock layer, you can rerun the same command in `coverage=measure` mode. In this mode the stream of instances is the same as `coverage=off` for a fixed seed; the coverage layer only computes targets and metrics on top.
+
+```bash
+# Measure structural/branch coverage for GET /users without changing payloads
+foundrydata openapi \
+  --spec examples/users-api.json \
+  --operation-id getUsers \
+  --n 50 \
+  --seed 42 \
+  --out ndjson \
+  --coverage=measure \
+  --coverage-dimensions=structure,branches,enum \
+  --coverage-profile=balanced \
+  --coverage-report=coverage-users.json \
+  --coverage-exclude-unreachable true
+```
+
+The CLI prints a one-line coverage summary to stderr (per-dimension, per-operation and overall coverage, plus planner caps and unsatisfied hints) and writes a `coverage-report/v1` JSON file to `coverage-users.json` for deeper inspection in CI or local analysis. For more CLI options and profiles, see the “Coverage-aware generation” section in `examples/README.md`.
+
 **Friction / gaps**
 
 - What feels easy / obvious: once you know about `foundrydata openapi` and `--operation-id`, getting NDJSON fixtures for a single operation is straightforward, and the parity between CLI and Node API (same `Generate`/AJV pipeline) is reassuring.
@@ -93,6 +114,27 @@ npx tsx scripts/examples/contract-tests.ts
 
 This script loads `examples/payment.json`, runs `Generate` with a fixed seed to produce a small list of payments, validates them with `Validate`, and prints a summary that can be asserted from an integration test (e.g. “10 items, all AJV-valid, deterministic for seed 123”).
 
+**Coverage-aware extension**
+
+For CI-style contract tests you can ask FoundryData to both generate fixtures and enforce a minimum overall coverage threshold in a single guided run:
+
+```bash
+# Guided contract fixtures with a global coverage threshold
+foundrydata generate \
+  --schema examples/payment.json \
+  --n 200 \
+  --seed 123 \
+  --out ndjson \
+  --coverage=guided \
+  --coverage-profile=balanced \
+  --coverage-dimensions=structure,branches,enum \
+  --coverage-min=0.8 \
+  --coverage-report=coverage-payments.json \
+  --coverage-exclude-unreachable true
+```
+
+If the resulting `coverage-report/v1` shows `coverage.overall < minCoverage` for the enabled dimensions, the CLI exits with a dedicated non-zero code while still emitting fixtures, making it easy to fail the job but keep artifacts for debugging. The stderr summary mirrors the structure described in the coverage-aware spec (per-dimension, per-operation, overall coverage plus caps and unsatisfied hints). See `examples/README.md` for a minimal CI snippet wiring this pattern into a job.
+
 **Friction / gaps**
 
 - What feels easy / obvious: calling `foundrydata generate --schema … --n … --seed … --out ndjson` matches expectations, and piping NDJSON into other tools (or reading it from a Node test) is straightforward.
@@ -145,6 +187,33 @@ npx tsx scripts/examples/llm-output.ts
 ```
 
 This script loads `examples/llm-output.json`, calls `Generate` with a fixed seed to produce a few structured outputs, validates them via `Validate`, and prints both a small sample and a summary that could be asserted from unit tests or used to eyeball how “realistic” the generated shapes feel.
+
+**Coverage-aware extension**
+
+When iterating on LLM output schemas, coverage-aware runs can help you see which branches and enums are actually exercised by your fixtures. A common pattern is to use a cheaper “quick” profile locally and a deeper “thorough” profile in nightly jobs:
+
+```bash
+# Quick, cheap guided coverage run during local schema iteration
+foundrydata generate \
+  --schema examples/llm-output.json \
+  --n 75 \
+  --seed 99 \
+  --coverage=guided \
+  --coverage-profile=quick \
+  --coverage-dimensions=structure,branches \
+  --coverage-report=coverage-llm-quick.json
+
+# Thorough profile (adds enum/boundaries) for deeper coverage in CI
+foundrydata generate \
+  --schema examples/llm-output.json \
+  --coverage=guided \
+  --coverage-profile=thorough \
+  --coverage-dimensions=structure,branches,enum,boundaries \
+  --coverage-report=coverage-llm-thorough.json \
+  --coverage-exclude-unreachable true
+```
+
+Both commands emit AJV-valid instances; the main differences are the enabled dimensions, implied budgets and the amount of structure the planner tries to cover. Inspecting the JSON reports (or the CLI summary) makes it easier to decide whether a given LLM schema is “well covered enough” for your tests. For a more exhaustive tour of coverage flags and profiles, see the “Coverage-aware generation” section in `examples/README.md`.
 
 **Friction / gaps**
 

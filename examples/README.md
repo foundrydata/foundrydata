@@ -66,6 +66,8 @@ See `docs/use-cases/product-scenarios.md` and the scripts under `scripts/example
 
 Each script calls the public `Generate` / `Validate` APIs with fixed seeds and validates that emitted items are AJV‑valid for the corresponding schema.
 
+For coverage-aware variants of these scenarios (measure/guided runs, thresholds and profiles), see the “Coverage-aware extension” blocks in `docs/use-cases/product-scenarios.md` and the “Coverage-aware generation” section below.
+
 ---
 
 ## CLI Options & Configuration
@@ -110,6 +112,65 @@ foundrydata generate --schema examples/api-transaction-schema.json --n 100 \
   --max-branches-to-try 15 \
   --skip-trials-if-branches-gt 60
 ```
+
+### Coverage-aware generation
+
+Coverage is opt-in and off by default (`--coverage=off`). When you pass `--coverage=measure` or `--coverage=guided`, the CLI still uses the same seeded pipeline as above; AJV remains the oracle for validity, and coverage logic computes targets and metrics on top. In `measure` mode the stream of instances stays identical to `coverage=off` for a fixed seed; in `guided` mode the planner uses coverage targets and hints to steer generation while keeping runs deterministic.
+
+The main coverage flags are:
+
+- `--coverage=off|measure|guided` – choose the coverage mode.
+- `--coverage-dimensions=structure,branches,enum,…` – select which dimensions to track.
+- `--coverage-profile=quick|balanced|thorough` – preset dimensions, planner caps and recommended budgets.
+- `--coverage-min=<number>` – global minimum for `coverage.overall` (0–1).
+- `--coverage-report=<file>` / `--coverage-report-mode=full|summary` – write a `coverage-report/v1` JSON and optionally truncate details.
+- `--coverage-exclude-unreachable=<bool>` – control whether `status:'unreachable'` targets contribute to denominators.
+
+```bash
+# Passive coverage audit for a JSON Schema (same instances as coverage=off)
+npx foundrydata generate \
+  --schema examples/ecommerce-schema.json \
+  --n 100 \
+  --seed 4242 \
+  --out ndjson \
+  --coverage=measure \
+  --coverage-dimensions=structure,branches \
+  --coverage-profile=quick \
+  --coverage-report=coverage-ecommerce.json \
+  --coverage-exclude-unreachable true
+
+# Guided run with a balanced profile and global coverage threshold
+npx foundrydata generate \
+  --schema examples/payment.json \
+  --coverage=guided \
+  --coverage-profile=balanced \
+  --coverage-dimensions=structure,branches,enum \
+  --coverage-min=0.8 \
+  --coverage-report=coverage-payment.json \
+  --coverage-exclude-unreachable true \
+  --out ndjson
+```
+
+Both commands print a human-readable coverage summary to stderr (per-dimension, per-operation and overall coverage, plus target status counts and planner caps/unsatisfied hints). The second one also enforces `minCoverage`: if `coverage.overall` for the enabled dimensions drops below `0.8`, the CLI exits with a dedicated non-zero code while still emitting fixtures.
+
+You can wire this directly into CI. For example, in GitHub Actions:
+
+```yaml
+# .github/workflows/coverage.yml (excerpt)
+- name: Coverage-guided fixtures for payment schema
+  run: |
+    npx foundrydata generate \
+      --schema examples/payment.json \
+      --coverage=guided \
+      --coverage-profile=balanced \
+      --coverage-dimensions=structure,branches,enum \
+      --coverage-min=0.8 \
+      --coverage-report=coverage-payment.json \
+      --coverage-exclude-unreachable true \
+      --out ndjson
+```
+
+The job fails automatically when the coverage threshold is not met, thanks to the dedicated exit code used for `minCoverage` failures, while the JSON report and stderr summary remain available for debugging.
 
 ---
 
