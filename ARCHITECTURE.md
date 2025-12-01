@@ -206,12 +206,13 @@ foundrydata/
 ├── apps/                         # Workbench and auxiliary apps
 ├── assets/                       # Logos, favicons, social images
 ├── bench/                        # Bench gate configs (p95 / memory)
-├── bench-reports/                # Bench run outputs (CI artifacts)
 ├── coverage/                     # Aggregate coverage reports (HTML + lcov)
 ├── docs/                         # Specs, invariants, feature docs
 ├── examples/                     # Example configs / usage snippets
 ├── profiles/                     # Bench profiles + real‑world schemas corpus
-├── reports/                      # Corpus / scenario summary reports
+├── reports/                      # Coverage + reporter outputs (CI artifacts)
+│   ├── coverage/                 # coverage-report/v1 JSON from core CLI
+│   └── reporter/                 # json-schema-reporter outputs (run/bench/corpus)
 ├── scripts/                      # Dev / CI helper scripts
 ├── test/                         # Cross‑package acceptance + scripts harness
 ├── packages/

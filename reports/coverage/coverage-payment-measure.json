@@ -1,0 +1,246 @@
+{
+  "version": "coverage-report/v1",
+  "reportMode": "full",
+  "engine": {
+    "foundryVersion": "0.1.1",
+    "coverageMode": "measure",
+    "ajvMajor": 8
+  },
+  "run": {
+    "seed": 424242,
+    "masterSeed": 424242,
+    "maxInstances": 400,
+    "actualInstances": 400,
+    "dimensionsEnabled": [
+      "structure",
+      "branches",
+      "enum"
+    ],
+    "excludeUnreachable": true,
+    "startedAt": "2025-12-01T21:39:14.627Z",
+    "durationMs": 49
+  },
+  "metrics": {
+    "coverageStatus": "ok",
+    "overall": 0.5333333333333333,
+    "byDimension": {
+      "structure": 0.6666666666666666,
+      "enum": 0.3333333333333333
+    },
+    "byOperation": {},
+    "targetsByStatus": {
+      "active": 15,
+      "unreachable": 0,
+      "deprecated": 0
+    }
+  },
+  "targets": [
+    {
+      "id": "cov:0:1:9e73c18e5401e129cf4a72ef1cb07c8bb18a443393869828a04f126f17ec4df4",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:c15a7d84ed9e31db33568531871d32bffcb69aecaa499425427ba33556767a17",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/id",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:9acfe02f7aed6014bcb9d2475ebfe5ab9bc01f5db9763996bb2e50f8228813fa",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/amount",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:3b2fc4739754746736ba9bb6e1fe94d413f656908b23a4b08a5b8ab43f48140c",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/currency",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:6be7fed3bebd8c367ba444d5af05097ce3201806ca5a4b3d4add01413000a7c6",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/currency",
+      "params": {
+        "enumIndex": 0,
+        "value": "USD"
+      },
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:5c2c127ca55de2747bd5ecb615a67d0ef1823d76a33fac3a619d6a1912f03065",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/currency",
+      "params": {
+        "enumIndex": 1,
+        "value": "EUR"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:58d059281b12cfce6979008bd4fde847179d647a0cbf286e4279ab354a359f37",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/currency",
+      "params": {
+        "enumIndex": 2,
+        "value": "GBP"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:e8ea6ab48721ad3b321d19b46871c3e7c64a6f0e6425b57ce04ea144b9292022",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/status",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:877dfc3e3e50387ef2154982684cc471bca0944ed606369d2516cf65e277b4ef",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 0,
+        "value": "pending"
+      },
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:1c5f7b0dfb37d0d0d77ec6933ef6fc9066d775f388da75f2c20d0d2b2017ef6c",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 1,
+        "value": "succeeded"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:3dae5dc9360bf1e269cb23ddb61cbbfd76ccd7e57478e497bc363b708fd70074",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 2,
+        "value": "failed"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:42b86da4457769375cd7648e22c5d1ed1f1f554faee61c999845b529b4e291a6",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/createdAt",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:9d37d1be3f4a2491b7fe4e409548a9e9ea7e97543b70e02c13ba4e5923aba050",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/metadata",
+      "params": {
+        "propertyName": "metadata"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:415f4b9304c93260dbeed7098c61a87e9472d97cf8a02374c4c2e9c7b92bdddf",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/metadata",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:d574dcab81042af97b4194acfce90b5a4dadd6a29166f25d6eea2f2b1a1bcf1b",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/metadata/additionalProperties",
+      "hit": false
+    }
+  ],
+  "uncoveredTargets": [
+    {
+      "id": "cov:0:1:58d059281b12cfce6979008bd4fde847179d647a0cbf286e4279ab354a359f37",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/currency",
+      "params": {
+        "enumIndex": 2,
+        "value": "GBP"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:5c2c127ca55de2747bd5ecb615a67d0ef1823d76a33fac3a619d6a1912f03065",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/currency",
+      "params": {
+        "enumIndex": 1,
+        "value": "EUR"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:1c5f7b0dfb37d0d0d77ec6933ef6fc9066d775f388da75f2c20d0d2b2017ef6c",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 1,
+        "value": "succeeded"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:3dae5dc9360bf1e269cb23ddb61cbbfd76ccd7e57478e497bc363b708fd70074",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 2,
+        "value": "failed"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:9d37d1be3f4a2491b7fe4e409548a9e9ea7e97543b70e02c13ba4e5923aba050",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/metadata",
+      "params": {
+        "propertyName": "metadata"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:415f4b9304c93260dbeed7098c61a87e9472d97cf8a02374c4c2e9c7b92bdddf",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/metadata",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:d574dcab81042af97b4194acfce90b5a4dadd6a29166f25d6eea2f2b1a1bcf1b",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/metadata/additionalProperties",
+      "hit": false
+    }
+  ],
+  "unsatisfiedHints": [],
+  "diagnostics": {
+    "plannerCapsHit": [],
+    "notes": []
+  }
+}

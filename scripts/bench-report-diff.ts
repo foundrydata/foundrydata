@@ -195,13 +195,13 @@ async function main(): Promise<void> {
         '',
         'Examples:',
         '  # Diff two bench-summary.json files (all schemas)',
-        '  npx tsx scripts/bench-report-diff.ts bench-reports-20251116/bench-summary.json bench-reports-with-resolver/bench-summary.json',
+        '  npx tsx scripts/bench-report-diff.ts reports/reporter/bench/bench-reports-20251116/bench-summary.json reports/reporter/bench/bench-reports-with-resolver/bench-summary.json',
         '',
         '  # Diff a specific schema entry inside bench summaries',
-        '  npx tsx scripts/bench-report-diff.ts bench-reports-20251116/bench-summary.json bench-reports-with-resolver/bench-summary.json real-world-npm-package-schema',
+        '  npx tsx scripts/bench-report-diff.ts reports/reporter/bench/bench-reports-20251116/bench-summary.json reports/reporter/bench/bench-reports-with-resolver/bench-summary.json real-world-npm-package-schema',
         '',
         '  # Diff two single schema *.report.json files',
-        '  npx tsx scripts/bench-report-diff.ts bench-reports-20251116/real-world-npm-package-schema.report.json bench-reports-with-resolver/real-world-npm-package-schema.report.json',
+        '  npx tsx scripts/bench-report-diff.ts reports/reporter/bench/bench-reports-20251116/real-world-npm-package-schema.report.json reports/reporter/bench/bench-reports-with-resolver/real-world-npm-package-schema.report.json',
         '',
       ].join('\n')
     );

@@ -1,0 +1,257 @@
+{
+  "schemaId": "examples/payment.json",
+  "schemaPath": "examples/payment.json",
+  "schemaHash": "634a736588129bf8757be550144209966015578827bfc6caedaf0ed32463a916",
+  "planOptions": {},
+  "meta": {
+    "toolName": "json-schema-reporter",
+    "toolVersion": "0.1.0",
+    "engineVersion": "0.1.1",
+    "timestamp": "2025-11-30T23:17:22.710Z",
+    "seed": 424242
+  },
+  "normalize": {
+    "result": {
+      "schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Payment",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "USD",
+              "EUR",
+              "GBP"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "succeeded",
+              "failed"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "amount",
+          "currency",
+          "status",
+          "createdAt"
+        ]
+      },
+      "ptrMap": {},
+      "revPtrMap": {},
+      "notes": []
+    }
+  },
+  "compose": {
+    "result": {
+      "canonical": {
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Payment",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "amount": {
+              "type": "number",
+              "minimum": 0
+            },
+            "currency": {
+              "type": "string",
+              "enum": [
+                "USD",
+                "EUR",
+                "GBP"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "succeeded",
+                "failed"
+              ]
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "metadata": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "id",
+            "amount",
+            "currency",
+            "status",
+            "createdAt"
+          ]
+        },
+        "ptrMap": {},
+        "revPtrMap": {},
+        "notes": []
+      },
+      "containsBag": {},
+      "coverageIndex": {},
+      "nameDfaSummary": {
+        "states": 39,
+        "finite": true
+      },
+      "diag": {
+        "run": [
+          {
+            "code": "RESOLVER_STRATEGIES_APPLIED",
+            "canonPath": "#",
+            "details": {
+              "strategies": [
+                "local"
+              ],
+              "requested": [
+                "local"
+              ],
+              "cacheDir": "~/.foundrydata/cache"
+            }
+          }
+        ]
+      }
+    },
+    "coverageIndexSnapshot": [
+      {
+        "canonPath": "#",
+        "enumeratedKeys": [
+          "amount",
+          "createdAt",
+          "currency",
+          "id",
+          "metadata",
+          "status"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/properties/metadata",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      }
+    ]
+  },
+  "repair": {
+    "actions": []
+  },
+  "validate": {
+    "errors": []
+  },
+  "instances": [
+    {
+      "index": 0,
+      "data": {
+        "amount": 0,
+        "createdAt": "2024-04-27T10:55:46.000Z",
+        "currency": "USD",
+        "id": "15682b96-a105-4f9e-b444-c8ab372f94cb",
+        "status": "pending"
+      },
+      "outcome": "valid-unchanged"
+    },
+    {
+      "index": 1,
+      "data": {
+        "amount": 0,
+        "createdAt": "2024-09-23T18:32:48.000Z",
+        "currency": "USD",
+        "id": "e3230563-bf2b-4d28-aa28-7b28f194bfe3",
+        "status": "pending"
+      },
+      "outcome": "valid-unchanged"
+    },
+    {
+      "index": 2,
+      "data": {
+        "amount": 0,
+        "createdAt": "2024-05-27T10:44:43.000Z",
+        "currency": "USD",
+        "id": "c9afef45-822f-4cb2-9cf7-b2d03c276746",
+        "status": "pending"
+      },
+      "outcome": "valid-unchanged"
+    }
+  ],
+  "metrics": {
+    "normalizeMs": 1.2771669999999915,
+    "composeMs": 6.190624999999983,
+    "generateMs": 1.6806669999999997,
+    "repairMs": 21.276916,
+    "validateMs": 14.308917000000008,
+    "validationsPerRow": 3,
+    "repairPassesPerRow": 0,
+    "memoryPeakMB": 0,
+    "p50LatencyMs": 0,
+    "p95LatencyMs": 0,
+    "evalTraceChecks": 0,
+    "evalTraceProved": 0,
+    "nameBfsNodesExpanded": 0,
+    "nameBfsQueuePeak": 0,
+    "nameBeamWidthPeak": 0,
+    "nameEnumResults": 0,
+    "nameEnumElapsedMs": 0,
+    "patternPropsHit": 0,
+    "presencePressureResolved": 1,
+    "repairActionsPerRow": 0
+  },
+  "summary": {
+    "totalInstances": 3,
+    "validUnchanged": 3,
+    "validRepaired": 0,
+    "invalid": 0,
+    "timings": {
+      "normalizeMs": 1.2771669999999915,
+      "composeMs": 6.190624999999983,
+      "generateMs": 1.6806669999999997,
+      "repairMs": 21.276916,
+      "validateMs": 14.308917000000008
+    },
+    "diagnosticsCount": {
+      "normalizeNotes": 0,
+      "composeFatal": 0,
+      "composeWarn": 0,
+      "composeUnsatHints": 0,
+      "composeRunLevel": 1,
+      "repairBudgetExhausted": 0,
+      "validateErrors": 0
+    }
+  }
+}
