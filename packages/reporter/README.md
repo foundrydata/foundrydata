@@ -1,6 +1,6 @@
 # json-schema-reporter
 
-Reporting layer for the FoundryData JSON Schema engine. It runs the Normalize → Compose → Generate → Repair → Validate pipeline, captures the structured results, and renders them as JSON, Markdown, or HTML reports.
+FoundryData’s reporting layer for JSON Schema / OpenAPI contracts. It runs the Normalize → Compose → Generate → Repair → Validate pipeline, captures the structured results, and renders them as JSON, Markdown, or HTML reports.
 
 ## Quick start
 
@@ -12,6 +12,8 @@ npx tsx packages/reporter/src/cli.ts run \
   --out-dir ./reports \
   --seed 123456789
 ```
+
+From the repo root, use `npx tsx packages/reporter/src/cli.ts …` as shown above. From a project that depends on `json-schema-reporter`, use the published CLI (`npx json-schema-reporter …`) instead.
 
 By default the CLI emits three artefacts per schema:
 
@@ -103,6 +105,8 @@ The output file is a `CorpusRunReport` (see `src/corpus/types.ts`) containing:
 
 You can load this `corpus-summary*.json` into the **Workbench** UI (`apps/workbench`) via the “corpus-summary.json” upload panel to inspect corpus-level behavior alongside individual reports and bench summaries.
 
+Use `bench` to track performance SLO/SLI (p50/p95 and memory) on a fixed set of schemas, and `corpus` to understand correctness, UNSAT/fail-fast behavior, and caps over a broader corpus.
+
 ## Report contract
 
 The `Report` interface defined in [`src/model/report.ts`](./src/model/report.ts) is the reporter’s public contract. Key fields:
@@ -119,6 +123,8 @@ Raw Normalize/Compose/Generate artefacts are marked `@internal` in the type and 
 ### Coverage-report/v1 overview
 
 When coverage is enabled in the core engine (CLI or Node API), each run in `coverage=measure` or `coverage=guided` mode produces a JSON coverage report with a stable, versioned contract (`coverage-report/v1`). The shared `CoverageReport` type, defined in `@foundrydata/shared` and specified in the coverage-aware spec (cov://§7#json-coverage-report, cov://§7#thresholds-mincoverage), is the reference for this format.
+
+Coverage reports provide a contract-level signal: they tell you which parts of a schema or spec are exercised, and complement (without replacing) code coverage or business-level tests.
 
 At a high level, a coverage report contains:
 
