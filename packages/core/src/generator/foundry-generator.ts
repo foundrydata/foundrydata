@@ -1962,7 +1962,8 @@ class GeneratorEngine {
           result,
           canonPath,
           itemIndex,
-          hardCap
+          hardCap,
+          itemsSchema
         )
       : computeContainsBaseline(containsNeeds, result.length, hardCap);
 
@@ -2038,7 +2039,8 @@ class GeneratorEngine {
     result: unknown[],
     canonPath: JsonPointer,
     itemIndex: number,
-    maxLength?: number
+    maxLength?: number,
+    itemsSchema?: unknown
   ): number {
     let maxContribution = result.length;
     if (!needs || needs.length === 0) {
@@ -2071,9 +2073,40 @@ class GeneratorEngine {
           this.currentInstancePath,
           String(childIndex)
         );
-        const value = this.withInstancePath(childPath, () =>
-          this.generateValue(need.schema, childCanon, itemIndex)
-        );
+        const value = this.withInstancePath(childPath, () => {
+          // Prefer generating from the items schema when available,
+          // then overlay the contains schema so that witnesses satisfy
+          // both item constraints and the contains filter. This keeps
+          // array elements closer to their nominal item shape under
+          // items+contains.
+          const base =
+            itemsSchema !== undefined
+              ? this.generateValue(
+                  itemsSchema,
+                  appendPointer(canonPath, 'items'),
+                  itemIndex
+                )
+              : undefined;
+          const witness = this.generateValue(
+            need.schema,
+            childCanon,
+            itemIndex
+          );
+          if (
+            base &&
+            typeof base === 'object' &&
+            !Array.isArray(base) &&
+            witness &&
+            typeof witness === 'object' &&
+            !Array.isArray(witness)
+          ) {
+            return {
+              ...(base as Record<string, unknown>),
+              ...(witness as Record<string, unknown>),
+            };
+          }
+          return base !== undefined ? base : witness;
+        });
         result.push(value);
         satisfied += 1;
       }
