@@ -224,13 +224,3 @@ Open questions to address before turning this brief into SPEC text:
   planning nodes, or purely inferred in metrics)?
 - What is the acceptable baseline for Repair usage in `G_valid` (strictly 0,
   or “0 for structure, small non‑zero for numeric details”)?
-
-Proposed next steps:
-
-1. Review and agree on this brief at a high level.
-2. Add a short section to `docs/testing-strategy.md` and
-   `docs/tests-traceability.md` referencing the “Generator‑valid zone”
-   concept and the initial motifs in scope.
-3. Implement minimal metrics for Repair usage by motif.
-4. Refactor array + contains generation for the first `G_valid` motif and
-   add corresponding e2e tests.
