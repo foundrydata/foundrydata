@@ -1149,13 +1149,40 @@ export function repairItemsAjvDriven(
           // SPEC §10 mapping: if no default, synthesize a minimal value for the sub-schema
           const synth = (s: any): unknown => {
             if (!s || typeof s !== 'object') return null;
-            if (Array.isArray(s.enum) && s.enum.length > 0) return s.enum[0];
-            if ('const' in s) return s.const;
+
+            // Follow local $ref chains into the root schema so that
+            // required properties whose schema is expressed via $ref
+            // (for example { $ref: '#/$defs/uuid' }) can still benefit
+            // from their true type/enum/const metadata instead of
+            // falling back to a null placeholder.
+            const resolveRef = (node: any): any => {
+              let cur: any = node;
+              const seen = new Set<any>();
+              while (cur && typeof cur === 'object' && !seen.has(cur)) {
+                seen.add(cur);
+                const ref = (cur as any).$ref;
+                if (typeof ref === 'string') {
+                  const target = getByPointer(schema, ref);
+                  if (!target || typeof target !== 'object') break;
+                  cur = target as any;
+                  continue;
+                }
+                break;
+              }
+              return cur;
+            };
+
+            const node = resolveRef(s);
+
+            if (Array.isArray(node.enum) && node.enum.length > 0) {
+              return node.enum[0];
+            }
+            if ('const' in node) return (node as any).const;
             const t =
-              typeof s.type === 'string'
-                ? s.type
-                : Array.isArray(s.type)
-                  ? s.type[0]
+              typeof node.type === 'string'
+                ? node.type
+                : Array.isArray(node.type)
+                  ? node.type[0]
                   : undefined;
             switch (t) {
               case 'string':
