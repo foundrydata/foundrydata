@@ -2,7 +2,7 @@
 
 - Tool: json-schema-reporter 0.1.0
 - Engine: 0.1.1
-- Timestamp: 2025-12-01T23:48:14.677Z
+- Timestamp: 2025-12-02T21:54:41.040Z
 - Seed: 424242
 - Instances: 3
   - valid (unchanged): 3
@@ -13,18 +13,18 @@
 
 | Step | Duration (ms) |
 |---|---|
-| normalize | 5.721749999999986 |
-| compose | 23.603874999999988 |
-| generate | 57.542416 |
-| repair | 33.88495900000001 |
-| validate | 32.681332999999995 |
+| normalize | 5.603082999999998 |
+| compose | 24.133375 |
+| generate | 58.453958 |
+| repair | 36.104667000000006 |
+| validate | 30.65170900000001 |
 
 ## Diagnostics
 
 ### Summary
-- Normalize notes: 0
+- Normalize notes: 1
 - Compose fatal: 0
-- Compose warn: 0
+- Compose warn: 2
 - Compose unsat hints: 0
 - Compose run-level: 1
 - Repair budget exhausted: 0
@@ -32,7 +32,9 @@
 
 ### Compose diagnostics
 - fatal: none
-- warn: none
+- warn: 2
+  - CONTAINS_BAG_COMBINED @ /properties/items ({"bagSize":1,"sumMin":1,"maxItems":100})
+  - NAME_AUTOMATON_BFS_APPLIED @ /properties/customAttributes ({"budget":{"maxMillis":40,"maxStates":8000,"maxQueue":16000,"maxDepth":12,"maxResults":32,"beamWidth":128},"nodesExpa…)
 - unsatHints: none
 - run: 1
   - RESOLVER_STRATEGIES_APPLIED @ # ({"strategies":["local"],"requested":["local"],"cacheDir":"~/.foundrydata/cache"})
@@ -41,7 +43,7 @@
 
 | canonPath | hasUniverse | enumeratedKeys | provenance |
 |---|---|---|---|
-| # | finite | billingAddress, cancellation, completedAt, createdAt (+17 more) | properties |
+| # | finite | auditTrail, billingAddress, cancellation, completedAt (+21 more) | properties |
 | /allOf/0/if | unknown | — |  |
 | /allOf/0/then | unknown | — |  |
 | /allOf/1/if | unknown | — |  |
@@ -51,12 +53,21 @@
 | /allOf/2/then | unknown | — |  |
 | /allOf/3/if | unknown | — |  |
 | /allOf/3/then | unknown | — |  |
+| /allOf/4/not | unknown | — |  |
 | /properties/customer | finite | email, firstName, id, isGuest (+5 more) | properties |
+| /properties/customer/allOf/0/anyOf/0/not | unknown | — |  |
+| /properties/customer/allOf/0/anyOf/1 | unknown | — |  |
+| /properties/items/contains | unknown | — |  |
 | /properties/notes | finite | customer, internal | properties |
 | /properties/notes/properties/internal/items | finite | author, createdAt, text | properties |
 | /properties/metadata | unknown | — |  |
+| /properties/customAttributes | finite | x-0, x-00, x-000, x-00A (+28 more) | patternProperties |
 | /properties/source | finite | campaign, channel, deviceId, ip (+3 more) | properties |
 | /properties/source/properties/campaign | finite | content, medium, name, source (+1 more) | properties |
+| /properties/extensions | unknown | — |  |
+| /properties/extensions/properties/core | finite | source | properties |
+| /properties/extensions/unevaluatedProperties | finite | notes, value | properties |
+| /properties/auditTrail/unevaluatedItems | finite | field, newValue, oldValue, reason | properties |
 | /$defs/money | finite | amount, currency | properties |
 | /$defs/address | finite | city, coordinates, country, postalCode (+3 more) | properties |
 | /$defs/address/properties/coordinates | finite | lat, lng | properties |
@@ -91,6 +102,8 @@
 | /$defs/shippingMethod/properties/insurance | finite | enabled, provider, value | properties |
 | /$defs/shippingMethod/properties/pickupPoint | finite | address, id, name, openingHours | properties |
 | /$defs/shippingMethod/properties/pickupPoint/properties/openingHours | finite | friday, monday, saturday, sunday (+3 more) | properties |
+| /$defs/shippingMethod/dependentSchemas/carrier/if | unknown | — |  |
+| /$defs/shippingMethod/dependentSchemas/carrier/then | unknown | — |  |
 | /$defs/dayHours/anyOf/1 | finite | close, open | properties |
 | /$defs/orderTimeline/items | finite | actor, event, metadata, note (+1 more) | properties |
 | /$defs/orderTimeline/items/properties/actor | finite | id, name, type | properties |
@@ -116,14 +129,16 @@
   "customer": {
     "email": "user.1lctcj5@example.test",
     "firstName": "-",
-    "lastName": "-"
+    "lastName": "-",
+    "loyaltyPoints": 0,
+    "loyaltyTier": "bronze"
   },
   "id": "15682b96-a105-4f9e-b444-c8ab372f94cb",
   "items": [
     {
       "giftMessage": "",
       "id": "e3230563-bf2b-4d28-aa28-7b28f194bfe3",
-      "isGift": false,
+      "isGift": true,
       "product": {
         "name": "-",
         "sku": "AA-0000"
@@ -223,14 +238,16 @@
   "customer": {
     "email": "user.15tpt65@example.test",
     "firstName": "-",
-    "lastName": "-"
+    "lastName": "-",
+    "loyaltyPoints": 0,
+    "loyaltyTier": "bronze"
   },
   "id": "f327713c-343d-4609-9490-db163474e5fc",
   "items": [
     {
       "giftMessage": "",
       "id": "26ea8538-0670-4c3d-b0d7-71ce571b7a65",
-      "isGift": false,
+      "isGift": true,
       "product": {
         "name": "-",
         "sku": "AA-0000"
@@ -330,14 +347,16 @@
   "customer": {
     "email": "user.3pqtbd@example.test",
     "firstName": "-",
-    "lastName": "-"
+    "lastName": "-",
+    "loyaltyPoints": 0,
+    "loyaltyTier": "bronze"
   },
   "id": "613a16e1-cc20-4bed-ad6d-5ea91c0c9cf8",
   "items": [
     {
       "giftMessage": "",
       "id": "1b3e0888-3e26-4876-a93e-943f210279b2",
-      "isGift": false,
+      "isGift": true,
       "product": {
         "name": "-",
         "sku": "AA-0000"

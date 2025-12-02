@@ -1,13 +1,13 @@
 {
   "schemaId": "examples/ecommerce-complex-schema.json",
   "schemaPath": "examples/ecommerce-complex-schema.json",
-  "schemaHash": "308834491be2db2c2488f318dc18fa2fd731280187cc5f8ee133b5126baf2143",
+  "schemaHash": "8f48c9e4a59492b02b8b0c91f4a3e0231ea4eb0c38466c855870b7b69353cc0d",
   "planOptions": {},
   "meta": {
     "toolName": "json-schema-reporter",
     "toolVersion": "0.1.0",
     "engineVersion": "0.1.1",
-    "timestamp": "2025-12-01T23:48:14.677Z",
+    "timestamp": "2025-12-02T21:54:41.040Z",
     "seed": 424242
   },
   "normalize": {
@@ -799,6 +799,25 @@
               "estimatedDelivery"
             ],
             "additionalProperties": false,
+            "dependentSchemas": {
+              "carrier": {
+                "if": {
+                  "properties": {
+                    "carrier": {
+                      "const": "pickup"
+                    }
+                  },
+                  "required": [
+                    "carrier"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "pickupPoint"
+                  ]
+                }
+              }
+            },
             "if": {
               "properties": {
                 "carrier": {
@@ -1010,6 +1029,33 @@
               "requestedAt"
             ],
             "additionalProperties": false
+          },
+          "statusHistoryTuple": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "draft",
+                  "pending_payment",
+                  "payment_failed",
+                  "confirmed",
+                  "processing",
+                  "shipped",
+                  "delivered",
+                  "cancelled",
+                  "refunded"
+                ]
+              }
+            ],
+            "items": false,
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "Tuple [timestamp, status] sans éléments supplémentaires."
           }
         },
         "type": "object",
@@ -1089,7 +1135,31 @@
               "lastName",
               "email"
             ],
-            "additionalProperties": false
+            "additionalProperties": false,
+            "dependentRequired": {
+              "loyaltyTier": [
+                "loyaltyPoints"
+              ]
+            },
+            "allOf": [
+              {
+                "anyOf": [
+                  {
+                    "not": {
+                      "required": [
+                        "loyaltyTier"
+                      ]
+                    }
+                  },
+                  {
+                    "required": [
+                      "loyaltyTier",
+                      "loyaltyPoints"
+                    ]
+                  }
+                ]
+              }
+            ]
           },
           "billingAddress": {
             "$ref": "#/$defs/address"
@@ -1107,7 +1177,20 @@
               "$ref": "#/$defs/orderItem"
             },
             "minItems": 1,
-            "maxItems": 100
+            "maxItems": 100,
+            "contains": {
+              "type": "object",
+              "properties": {
+                "isGift": {
+                  "const": true
+                }
+              },
+              "required": [
+                "isGift"
+              ]
+            },
+            "minContains": 1,
+            "maxContains": 100
           },
           "payments": {
             "type": "array",
@@ -1192,6 +1275,17 @@
             },
             "description": "Champs personnalisés pour intégrations tierces"
           },
+          "customAttributes": {
+            "type": "object",
+            "patternProperties": {
+              "^x-[A-Za-z0-9_]+$": {
+                "type": "string",
+                "maxLength": 100
+              }
+            },
+            "additionalProperties": false,
+            "description": "Attributs personnalisés dont les clés doivent commencer par 'x-'."
+          },
           "source": {
             "type": "object",
             "properties": {
@@ -1247,6 +1341,84 @@
               "channel"
             ],
             "additionalProperties": false
+          },
+          "extensions": {
+            "type": "object",
+            "properties": {
+              "core": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "unevaluatedProperties": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "notes": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Extensions structurées : toute propriété non listée doit suivre le schéma extension."
+          },
+          "auditTrail": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "string",
+                "minLength": 1
+              }
+            ],
+            "unevaluatedItems": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "oldValue": {},
+                "newValue": {},
+                "reason": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "field"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 2,
+            "description": "Historique de modifications sous forme de tuple [timestamp, actor] suivi d’objets détaillés."
+          },
+          "statusHistory": {
+            "$ref": "#/$defs/statusHistoryTuple"
           },
           "createdAt": {
             "type": "string",
@@ -1366,12 +1538,38 @@
                 "cancellation"
               ]
             }
+          },
+          {
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "cancelled"
+                },
+                "completedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "status",
+                "completedAt"
+              ]
+            },
+            "description": "Interdit une commande annulée avec completedAt défini."
           }
         ]
       },
       "ptrMap": {},
       "revPtrMap": {},
-      "notes": []
+      "notes": [
+        {
+          "canonPath": "/properties/extensions/unevaluatedProperties/properties/value/anyOf",
+          "code": "ANYOF_SIMPLIFICATION_SKIPPED_UNEVALUATED",
+          "details": {
+            "reason": "unevaluatedInScope"
+          }
+        }
+      ]
     }
   },
   "compose": {
@@ -2164,6 +2362,25 @@
                 "estimatedDelivery"
               ],
               "additionalProperties": false,
+              "dependentSchemas": {
+                "carrier": {
+                  "if": {
+                    "properties": {
+                      "carrier": {
+                        "const": "pickup"
+                      }
+                    },
+                    "required": [
+                      "carrier"
+                    ]
+                  },
+                  "then": {
+                    "required": [
+                      "pickupPoint"
+                    ]
+                  }
+                }
+              },
               "if": {
                 "properties": {
                   "carrier": {
@@ -2375,6 +2592,33 @@
                 "requestedAt"
               ],
               "additionalProperties": false
+            },
+            "statusHistoryTuple": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "draft",
+                    "pending_payment",
+                    "payment_failed",
+                    "confirmed",
+                    "processing",
+                    "shipped",
+                    "delivered",
+                    "cancelled",
+                    "refunded"
+                  ]
+                }
+              ],
+              "items": false,
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Tuple [timestamp, status] sans éléments supplémentaires."
             }
           },
           "type": "object",
@@ -2454,7 +2698,31 @@
                 "lastName",
                 "email"
               ],
-              "additionalProperties": false
+              "additionalProperties": false,
+              "dependentRequired": {
+                "loyaltyTier": [
+                  "loyaltyPoints"
+                ]
+              },
+              "allOf": [
+                {
+                  "anyOf": [
+                    {
+                      "not": {
+                        "required": [
+                          "loyaltyTier"
+                        ]
+                      }
+                    },
+                    {
+                      "required": [
+                        "loyaltyTier",
+                        "loyaltyPoints"
+                      ]
+                    }
+                  ]
+                }
+              ]
             },
             "billingAddress": {
               "$ref": "#/$defs/address"
@@ -2472,7 +2740,20 @@
                 "$ref": "#/$defs/orderItem"
               },
               "minItems": 1,
-              "maxItems": 100
+              "maxItems": 100,
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "isGift": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "isGift"
+                ]
+              },
+              "minContains": 1,
+              "maxContains": 100
             },
             "payments": {
               "type": "array",
@@ -2557,6 +2838,17 @@
               },
               "description": "Champs personnalisés pour intégrations tierces"
             },
+            "customAttributes": {
+              "type": "object",
+              "patternProperties": {
+                "^x-[A-Za-z0-9_]+$": {
+                  "type": "string",
+                  "maxLength": 100
+                }
+              },
+              "additionalProperties": false,
+              "description": "Attributs personnalisés dont les clés doivent commencer par 'x-'."
+            },
             "source": {
               "type": "object",
               "properties": {
@@ -2612,6 +2904,84 @@
                 "channel"
               ],
               "additionalProperties": false
+            },
+            "extensions": {
+              "type": "object",
+              "properties": {
+                "core": {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "unevaluatedProperties": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "value"
+                ],
+                "additionalProperties": false
+              },
+              "description": "Extensions structurées : toute propriété non listée doit suivre le schéma extension."
+            },
+            "auditTrail": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "string",
+                  "minLength": 1
+                }
+              ],
+              "unevaluatedItems": {
+                "type": "object",
+                "properties": {
+                  "field": {
+                    "type": "string"
+                  },
+                  "oldValue": {},
+                  "newValue": {},
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "field"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 2,
+              "description": "Historique de modifications sous forme de tuple [timestamp, actor] suivi d’objets détaillés."
+            },
+            "statusHistory": {
+              "$ref": "#/$defs/statusHistoryTuple"
             },
             "createdAt": {
               "type": "string",
@@ -2731,20 +3101,75 @@
                   "cancellation"
                 ]
               }
+            },
+            {
+              "not": {
+                "properties": {
+                  "status": {
+                    "const": "cancelled"
+                  },
+                  "completedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "status",
+                  "completedAt"
+                ]
+              },
+              "description": "Interdit une commande annulée avec completedAt défini."
             }
           ]
         },
         "ptrMap": {},
         "revPtrMap": {},
-        "notes": []
+        "notes": [
+          {
+            "canonPath": "/properties/extensions/unevaluatedProperties/properties/value/anyOf",
+            "code": "ANYOF_SIMPLIFICATION_SKIPPED_UNEVALUATED",
+            "details": {
+              "reason": "unevaluatedInScope"
+            }
+          }
+        ]
       },
       "containsBag": {},
       "coverageIndex": {},
       "nameDfaSummary": {
-        "states": 165,
+        "states": 202,
         "finite": true
       },
       "diag": {
+        "warn": [
+          {
+            "code": "CONTAINS_BAG_COMBINED",
+            "canonPath": "/properties/items",
+            "details": {
+              "bagSize": 1,
+              "sumMin": 1,
+              "maxItems": 100
+            }
+          },
+          {
+            "code": "NAME_AUTOMATON_BFS_APPLIED",
+            "canonPath": "/properties/customAttributes",
+            "details": {
+              "budget": {
+                "maxMillis": 40,
+                "maxStates": 8000,
+                "maxQueue": 16000,
+                "maxDepth": 12,
+                "maxResults": 32,
+                "beamWidth": 128
+              },
+              "nodesExpanded": 35,
+              "queuePeak": 97,
+              "resultsEmitted": 32,
+              "elapsedMs": 0
+            }
+          }
+        ],
         "branchDecisions": [
           {
             "canonPath": "/$defs/dayHours/anyOf",
@@ -2775,7 +3200,7 @@
               "limit": 4,
               "skipped": false
             },
-            "memoKey": "{\"ajvClass\":\"Ajv2020\",\"ajvFlags\":{\"allErrors\":false,\"allowUnionTypes\":true,\"coerceTypes\":false,\"discriminator\":false,\"multipleOfPrecision\":12,\"strictSchema\":true,\"strictTypes\":true,\"unicodeRegExp\":true,\"validateFormats\":true},\"ajvMajor\":0,\"canonPath\":\"/$defs/dayHours/anyOf\",\"planOptionsSubKey\":\"{\\\"complexity.maxAnyOfBranches\\\":500,\\\"complexity.maxContainsNeeds\\\":16,\\\"complexity.maxOneOfBranches\\\":200,\\\"complexity.maxPatternProps\\\":64,\\\"conditionals.exclusivityStringTweak\\\":\\\"preferNul\\\",\\\"conditionals.minThenSatisfaction\\\":\\\"required-only\\\",\\\"conditionals.strategy\\\":\\\"if-aware-lite\\\",\\\"guards.maxDynamicScopeHops\\\":2,\\\"guards.maxGeneratedNotNesting\\\":2,\\\"nameEnum.beamWidth\\\":128,\\\"nameEnum.maxDepth\\\":64,\\\"nameEnum.maxMillis\\\":40,\\\"nameEnum.maxQueue\\\":16000,\\\"nameEnum.maxResults\\\":32,\\\"nameEnum.maxStates\\\":8000,\\\"patternWitness.alphabet\\\":\\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\\",\\\"patternWitness.maxCandidates\\\":32768,\\\"patternWitness.maxLength\\\":12,\\\"rational.decimalPrecision\\\":12,\\\"rational.fallback\\\":\\\"decimal\\\",\\\"rational.maxLcmBits\\\":128,\\\"rational.maxRatBits\\\":128,\\\"repair.mustCoverGuard\\\":true,\\\"resolver.stubUnresolved\\\":\\\"none\\\",\\\"trials.maxBranchesToTry\\\":12,\\\"trials.perBranch\\\":2,\\\"trials.skipTrials\\\":false,\\\"trials.skipTrialsIfBranchesGt\\\":50}\",\"schemaHash\":\"47c225d8578437ec921e4ae6769ce70bfa05822cc1ff9d36d5dce6e684757ef5\",\"seed\":123456789,\"userKey\":\"0\"}"
+            "memoKey": "{\"ajvClass\":\"Ajv2020\",\"ajvFlags\":{\"allErrors\":false,\"allowUnionTypes\":true,\"coerceTypes\":false,\"discriminator\":false,\"multipleOfPrecision\":12,\"strictSchema\":true,\"strictTypes\":true,\"unicodeRegExp\":true,\"validateFormats\":true},\"ajvMajor\":0,\"canonPath\":\"/$defs/dayHours/anyOf\",\"planOptionsSubKey\":\"{\\\"complexity.maxAnyOfBranches\\\":500,\\\"complexity.maxContainsNeeds\\\":16,\\\"complexity.maxOneOfBranches\\\":200,\\\"complexity.maxPatternProps\\\":64,\\\"conditionals.exclusivityStringTweak\\\":\\\"preferNul\\\",\\\"conditionals.minThenSatisfaction\\\":\\\"required-only\\\",\\\"conditionals.strategy\\\":\\\"if-aware-lite\\\",\\\"guards.maxDynamicScopeHops\\\":2,\\\"guards.maxGeneratedNotNesting\\\":2,\\\"nameEnum.beamWidth\\\":128,\\\"nameEnum.maxDepth\\\":64,\\\"nameEnum.maxMillis\\\":40,\\\"nameEnum.maxQueue\\\":16000,\\\"nameEnum.maxResults\\\":32,\\\"nameEnum.maxStates\\\":8000,\\\"patternWitness.alphabet\\\":\\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\\",\\\"patternWitness.maxCandidates\\\":32768,\\\"patternWitness.maxLength\\\":12,\\\"rational.decimalPrecision\\\":12,\\\"rational.fallback\\\":\\\"decimal\\\",\\\"rational.maxLcmBits\\\":128,\\\"rational.maxRatBits\\\":128,\\\"repair.mustCoverGuard\\\":true,\\\"resolver.stubUnresolved\\\":\\\"none\\\",\\\"trials.maxBranchesToTry\\\":12,\\\"trials.perBranch\\\":2,\\\"trials.skipTrials\\\":false,\\\"trials.skipTrialsIfBranchesGt\\\":50}\",\"schemaHash\":\"711086b77f0f2e5db8f5088ed64c72d6f98c5d8c6d20ea4c5fa438b4150c9ab3\",\"seed\":123456789,\"userKey\":\"0\"}"
           },
           {
             "canonPath": "/$defs/orderItem/allOf/0/anyOf",
@@ -2806,7 +3231,7 @@
               "limit": 4,
               "skipped": false
             },
-            "memoKey": "{\"ajvClass\":\"Ajv2020\",\"ajvFlags\":{\"allErrors\":false,\"allowUnionTypes\":true,\"coerceTypes\":false,\"discriminator\":false,\"multipleOfPrecision\":12,\"strictSchema\":true,\"strictTypes\":true,\"unicodeRegExp\":true,\"validateFormats\":true},\"ajvMajor\":0,\"canonPath\":\"/$defs/orderItem/allOf/0/anyOf\",\"planOptionsSubKey\":\"{\\\"complexity.maxAnyOfBranches\\\":500,\\\"complexity.maxContainsNeeds\\\":16,\\\"complexity.maxOneOfBranches\\\":200,\\\"complexity.maxPatternProps\\\":64,\\\"conditionals.exclusivityStringTweak\\\":\\\"preferNul\\\",\\\"conditionals.minThenSatisfaction\\\":\\\"required-only\\\",\\\"conditionals.strategy\\\":\\\"if-aware-lite\\\",\\\"guards.maxDynamicScopeHops\\\":2,\\\"guards.maxGeneratedNotNesting\\\":2,\\\"nameEnum.beamWidth\\\":128,\\\"nameEnum.maxDepth\\\":64,\\\"nameEnum.maxMillis\\\":40,\\\"nameEnum.maxQueue\\\":16000,\\\"nameEnum.maxResults\\\":32,\\\"nameEnum.maxStates\\\":8000,\\\"patternWitness.alphabet\\\":\\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\\",\\\"patternWitness.maxCandidates\\\":32768,\\\"patternWitness.maxLength\\\":12,\\\"rational.decimalPrecision\\\":12,\\\"rational.fallback\\\":\\\"decimal\\\",\\\"rational.maxLcmBits\\\":128,\\\"rational.maxRatBits\\\":128,\\\"repair.mustCoverGuard\\\":true,\\\"resolver.stubUnresolved\\\":\\\"none\\\",\\\"trials.maxBranchesToTry\\\":12,\\\"trials.perBranch\\\":2,\\\"trials.skipTrials\\\":false,\\\"trials.skipTrialsIfBranchesGt\\\":50}\",\"schemaHash\":\"47c225d8578437ec921e4ae6769ce70bfa05822cc1ff9d36d5dce6e684757ef5\",\"seed\":123456789,\"userKey\":\"0\"}"
+            "memoKey": "{\"ajvClass\":\"Ajv2020\",\"ajvFlags\":{\"allErrors\":false,\"allowUnionTypes\":true,\"coerceTypes\":false,\"discriminator\":false,\"multipleOfPrecision\":12,\"strictSchema\":true,\"strictTypes\":true,\"unicodeRegExp\":true,\"validateFormats\":true},\"ajvMajor\":0,\"canonPath\":\"/$defs/orderItem/allOf/0/anyOf\",\"planOptionsSubKey\":\"{\\\"complexity.maxAnyOfBranches\\\":500,\\\"complexity.maxContainsNeeds\\\":16,\\\"complexity.maxOneOfBranches\\\":200,\\\"complexity.maxPatternProps\\\":64,\\\"conditionals.exclusivityStringTweak\\\":\\\"preferNul\\\",\\\"conditionals.minThenSatisfaction\\\":\\\"required-only\\\",\\\"conditionals.strategy\\\":\\\"if-aware-lite\\\",\\\"guards.maxDynamicScopeHops\\\":2,\\\"guards.maxGeneratedNotNesting\\\":2,\\\"nameEnum.beamWidth\\\":128,\\\"nameEnum.maxDepth\\\":64,\\\"nameEnum.maxMillis\\\":40,\\\"nameEnum.maxQueue\\\":16000,\\\"nameEnum.maxResults\\\":32,\\\"nameEnum.maxStates\\\":8000,\\\"patternWitness.alphabet\\\":\\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\\",\\\"patternWitness.maxCandidates\\\":32768,\\\"patternWitness.maxLength\\\":12,\\\"rational.decimalPrecision\\\":12,\\\"rational.fallback\\\":\\\"decimal\\\",\\\"rational.maxLcmBits\\\":128,\\\"rational.maxRatBits\\\":128,\\\"repair.mustCoverGuard\\\":true,\\\"resolver.stubUnresolved\\\":\\\"none\\\",\\\"trials.maxBranchesToTry\\\":12,\\\"trials.perBranch\\\":2,\\\"trials.skipTrials\\\":false,\\\"trials.skipTrialsIfBranchesGt\\\":50}\",\"schemaHash\":\"711086b77f0f2e5db8f5088ed64c72d6f98c5d8c6d20ea4c5fa438b4150c9ab3\",\"seed\":123456789,\"userKey\":\"0\"}"
           },
           {
             "canonPath": "/$defs/payment/oneOf",
@@ -2847,7 +3272,7 @@
               "limit": 8,
               "skipped": false
             },
-            "memoKey": "{\"ajvClass\":\"Ajv2020\",\"ajvFlags\":{\"allErrors\":false,\"allowUnionTypes\":true,\"coerceTypes\":false,\"discriminator\":false,\"multipleOfPrecision\":12,\"strictSchema\":true,\"strictTypes\":true,\"unicodeRegExp\":true,\"validateFormats\":true},\"ajvMajor\":0,\"canonPath\":\"/$defs/payment/oneOf\",\"planOptionsSubKey\":\"{\\\"complexity.maxAnyOfBranches\\\":500,\\\"complexity.maxContainsNeeds\\\":16,\\\"complexity.maxOneOfBranches\\\":200,\\\"complexity.maxPatternProps\\\":64,\\\"conditionals.exclusivityStringTweak\\\":\\\"preferNul\\\",\\\"conditionals.minThenSatisfaction\\\":\\\"required-only\\\",\\\"conditionals.strategy\\\":\\\"if-aware-lite\\\",\\\"guards.maxDynamicScopeHops\\\":2,\\\"guards.maxGeneratedNotNesting\\\":2,\\\"nameEnum.beamWidth\\\":128,\\\"nameEnum.maxDepth\\\":64,\\\"nameEnum.maxMillis\\\":40,\\\"nameEnum.maxQueue\\\":16000,\\\"nameEnum.maxResults\\\":32,\\\"nameEnum.maxStates\\\":8000,\\\"patternWitness.alphabet\\\":\\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\\",\\\"patternWitness.maxCandidates\\\":32768,\\\"patternWitness.maxLength\\\":12,\\\"rational.decimalPrecision\\\":12,\\\"rational.fallback\\\":\\\"decimal\\\",\\\"rational.maxLcmBits\\\":128,\\\"rational.maxRatBits\\\":128,\\\"repair.mustCoverGuard\\\":true,\\\"resolver.stubUnresolved\\\":\\\"none\\\",\\\"trials.maxBranchesToTry\\\":12,\\\"trials.perBranch\\\":2,\\\"trials.skipTrials\\\":false,\\\"trials.skipTrialsIfBranchesGt\\\":50}\",\"schemaHash\":\"47c225d8578437ec921e4ae6769ce70bfa05822cc1ff9d36d5dce6e684757ef5\",\"seed\":123456789,\"userKey\":\"0\"}"
+            "memoKey": "{\"ajvClass\":\"Ajv2020\",\"ajvFlags\":{\"allErrors\":false,\"allowUnionTypes\":true,\"coerceTypes\":false,\"discriminator\":false,\"multipleOfPrecision\":12,\"strictSchema\":true,\"strictTypes\":true,\"unicodeRegExp\":true,\"validateFormats\":true},\"ajvMajor\":0,\"canonPath\":\"/$defs/payment/oneOf\",\"planOptionsSubKey\":\"{\\\"complexity.maxAnyOfBranches\\\":500,\\\"complexity.maxContainsNeeds\\\":16,\\\"complexity.maxOneOfBranches\\\":200,\\\"complexity.maxPatternProps\\\":64,\\\"conditionals.exclusivityStringTweak\\\":\\\"preferNul\\\",\\\"conditionals.minThenSatisfaction\\\":\\\"required-only\\\",\\\"conditionals.strategy\\\":\\\"if-aware-lite\\\",\\\"guards.maxDynamicScopeHops\\\":2,\\\"guards.maxGeneratedNotNesting\\\":2,\\\"nameEnum.beamWidth\\\":128,\\\"nameEnum.maxDepth\\\":64,\\\"nameEnum.maxMillis\\\":40,\\\"nameEnum.maxQueue\\\":16000,\\\"nameEnum.maxResults\\\":32,\\\"nameEnum.maxStates\\\":8000,\\\"patternWitness.alphabet\\\":\\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\\",\\\"patternWitness.maxCandidates\\\":32768,\\\"patternWitness.maxLength\\\":12,\\\"rational.decimalPrecision\\\":12,\\\"rational.fallback\\\":\\\"decimal\\\",\\\"rational.maxLcmBits\\\":128,\\\"rational.maxRatBits\\\":128,\\\"repair.mustCoverGuard\\\":true,\\\"resolver.stubUnresolved\\\":\\\"none\\\",\\\"trials.maxBranchesToTry\\\":12,\\\"trials.perBranch\\\":2,\\\"trials.skipTrials\\\":false,\\\"trials.skipTrialsIfBranchesGt\\\":50}\",\"schemaHash\":\"711086b77f0f2e5db8f5088ed64c72d6f98c5d8c6d20ea4c5fa438b4150c9ab3\",\"seed\":123456789,\"userKey\":\"0\"}"
           },
           {
             "canonPath": "/$defs/productVariant/properties/attributes/additionalProperties/anyOf",
@@ -2888,7 +3313,79 @@
               "limit": 8,
               "skipped": false
             },
-            "memoKey": "{\"ajvClass\":\"Ajv2020\",\"ajvFlags\":{\"allErrors\":false,\"allowUnionTypes\":true,\"coerceTypes\":false,\"discriminator\":false,\"multipleOfPrecision\":12,\"strictSchema\":true,\"strictTypes\":true,\"unicodeRegExp\":true,\"validateFormats\":true},\"ajvMajor\":0,\"canonPath\":\"/$defs/productVariant/properties/attributes/additionalProperties/anyOf\",\"planOptionsSubKey\":\"{\\\"complexity.maxAnyOfBranches\\\":500,\\\"complexity.maxContainsNeeds\\\":16,\\\"complexity.maxOneOfBranches\\\":200,\\\"complexity.maxPatternProps\\\":64,\\\"conditionals.exclusivityStringTweak\\\":\\\"preferNul\\\",\\\"conditionals.minThenSatisfaction\\\":\\\"required-only\\\",\\\"conditionals.strategy\\\":\\\"if-aware-lite\\\",\\\"guards.maxDynamicScopeHops\\\":2,\\\"guards.maxGeneratedNotNesting\\\":2,\\\"nameEnum.beamWidth\\\":128,\\\"nameEnum.maxDepth\\\":64,\\\"nameEnum.maxMillis\\\":40,\\\"nameEnum.maxQueue\\\":16000,\\\"nameEnum.maxResults\\\":32,\\\"nameEnum.maxStates\\\":8000,\\\"patternWitness.alphabet\\\":\\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\\",\\\"patternWitness.maxCandidates\\\":32768,\\\"patternWitness.maxLength\\\":12,\\\"rational.decimalPrecision\\\":12,\\\"rational.fallback\\\":\\\"decimal\\\",\\\"rational.maxLcmBits\\\":128,\\\"rational.maxRatBits\\\":128,\\\"repair.mustCoverGuard\\\":true,\\\"resolver.stubUnresolved\\\":\\\"none\\\",\\\"trials.maxBranchesToTry\\\":12,\\\"trials.perBranch\\\":2,\\\"trials.skipTrials\\\":false,\\\"trials.skipTrialsIfBranchesGt\\\":50}\",\"schemaHash\":\"47c225d8578437ec921e4ae6769ce70bfa05822cc1ff9d36d5dce6e684757ef5\",\"seed\":123456789,\"userKey\":\"0\"}"
+            "memoKey": "{\"ajvClass\":\"Ajv2020\",\"ajvFlags\":{\"allErrors\":false,\"allowUnionTypes\":true,\"coerceTypes\":false,\"discriminator\":false,\"multipleOfPrecision\":12,\"strictSchema\":true,\"strictTypes\":true,\"unicodeRegExp\":true,\"validateFormats\":true},\"ajvMajor\":0,\"canonPath\":\"/$defs/productVariant/properties/attributes/additionalProperties/anyOf\",\"planOptionsSubKey\":\"{\\\"complexity.maxAnyOfBranches\\\":500,\\\"complexity.maxContainsNeeds\\\":16,\\\"complexity.maxOneOfBranches\\\":200,\\\"complexity.maxPatternProps\\\":64,\\\"conditionals.exclusivityStringTweak\\\":\\\"preferNul\\\",\\\"conditionals.minThenSatisfaction\\\":\\\"required-only\\\",\\\"conditionals.strategy\\\":\\\"if-aware-lite\\\",\\\"guards.maxDynamicScopeHops\\\":2,\\\"guards.maxGeneratedNotNesting\\\":2,\\\"nameEnum.beamWidth\\\":128,\\\"nameEnum.maxDepth\\\":64,\\\"nameEnum.maxMillis\\\":40,\\\"nameEnum.maxQueue\\\":16000,\\\"nameEnum.maxResults\\\":32,\\\"nameEnum.maxStates\\\":8000,\\\"patternWitness.alphabet\\\":\\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\\",\\\"patternWitness.maxCandidates\\\":32768,\\\"patternWitness.maxLength\\\":12,\\\"rational.decimalPrecision\\\":12,\\\"rational.fallback\\\":\\\"decimal\\\",\\\"rational.maxLcmBits\\\":128,\\\"rational.maxRatBits\\\":128,\\\"repair.mustCoverGuard\\\":true,\\\"resolver.stubUnresolved\\\":\\\"none\\\",\\\"trials.maxBranchesToTry\\\":12,\\\"trials.perBranch\\\":2,\\\"trials.skipTrials\\\":false,\\\"trials.skipTrialsIfBranchesGt\\\":50}\",\"schemaHash\":\"711086b77f0f2e5db8f5088ed64c72d6f98c5d8c6d20ea4c5fa438b4150c9ab3\",\"seed\":123456789,\"userKey\":\"0\"}"
+          },
+          {
+            "canonPath": "/properties/customer/allOf/0/anyOf",
+            "kind": "anyOf",
+            "chosenBranch": {
+              "index": 1,
+              "score": 240
+            },
+            "scoreDetails": {
+              "orderedIndices": [
+                1,
+                0
+              ],
+              "topScoreIndices": [
+                1
+              ],
+              "topKIndices": [
+                1,
+                0
+              ],
+              "scoresByIndex": {
+                "0": 0,
+                "1": 240
+              }
+            },
+            "budget": {
+              "tried": 4,
+              "limit": 4,
+              "skipped": false
+            },
+            "memoKey": "{\"ajvClass\":\"Ajv2020\",\"ajvFlags\":{\"allErrors\":false,\"allowUnionTypes\":true,\"coerceTypes\":false,\"discriminator\":false,\"multipleOfPrecision\":12,\"strictSchema\":true,\"strictTypes\":true,\"unicodeRegExp\":true,\"validateFormats\":true},\"ajvMajor\":0,\"canonPath\":\"/properties/customer/allOf/0/anyOf\",\"planOptionsSubKey\":\"{\\\"complexity.maxAnyOfBranches\\\":500,\\\"complexity.maxContainsNeeds\\\":16,\\\"complexity.maxOneOfBranches\\\":200,\\\"complexity.maxPatternProps\\\":64,\\\"conditionals.exclusivityStringTweak\\\":\\\"preferNul\\\",\\\"conditionals.minThenSatisfaction\\\":\\\"required-only\\\",\\\"conditionals.strategy\\\":\\\"if-aware-lite\\\",\\\"guards.maxDynamicScopeHops\\\":2,\\\"guards.maxGeneratedNotNesting\\\":2,\\\"nameEnum.beamWidth\\\":128,\\\"nameEnum.maxDepth\\\":64,\\\"nameEnum.maxMillis\\\":40,\\\"nameEnum.maxQueue\\\":16000,\\\"nameEnum.maxResults\\\":32,\\\"nameEnum.maxStates\\\":8000,\\\"patternWitness.alphabet\\\":\\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\\",\\\"patternWitness.maxCandidates\\\":32768,\\\"patternWitness.maxLength\\\":12,\\\"rational.decimalPrecision\\\":12,\\\"rational.fallback\\\":\\\"decimal\\\",\\\"rational.maxLcmBits\\\":128,\\\"rational.maxRatBits\\\":128,\\\"repair.mustCoverGuard\\\":true,\\\"resolver.stubUnresolved\\\":\\\"none\\\",\\\"trials.maxBranchesToTry\\\":12,\\\"trials.perBranch\\\":2,\\\"trials.skipTrials\\\":false,\\\"trials.skipTrialsIfBranchesGt\\\":50}\",\"schemaHash\":\"711086b77f0f2e5db8f5088ed64c72d6f98c5d8c6d20ea4c5fa438b4150c9ab3\",\"seed\":123456789,\"userKey\":\"0\"}"
+          },
+          {
+            "canonPath": "/properties/extensions/unevaluatedProperties/properties/value/anyOf",
+            "kind": "anyOf",
+            "chosenBranch": {
+              "index": 0,
+              "score": 10
+            },
+            "scoreDetails": {
+              "orderedIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "topScoreIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "topKIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "tiebreakRand": 0.10021317633800209,
+              "scoresByIndex": {
+                "0": 10,
+                "1": 10,
+                "2": 10,
+                "3": 10
+              }
+            },
+            "budget": {
+              "tried": 8,
+              "limit": 8,
+              "skipped": false
+            },
+            "memoKey": "{\"ajvClass\":\"Ajv2020\",\"ajvFlags\":{\"allErrors\":false,\"allowUnionTypes\":true,\"coerceTypes\":false,\"discriminator\":false,\"multipleOfPrecision\":12,\"strictSchema\":true,\"strictTypes\":true,\"unicodeRegExp\":true,\"validateFormats\":true},\"ajvMajor\":0,\"canonPath\":\"/properties/extensions/unevaluatedProperties/properties/value/anyOf\",\"planOptionsSubKey\":\"{\\\"complexity.maxAnyOfBranches\\\":500,\\\"complexity.maxContainsNeeds\\\":16,\\\"complexity.maxOneOfBranches\\\":200,\\\"complexity.maxPatternProps\\\":64,\\\"conditionals.exclusivityStringTweak\\\":\\\"preferNul\\\",\\\"conditionals.minThenSatisfaction\\\":\\\"required-only\\\",\\\"conditionals.strategy\\\":\\\"if-aware-lite\\\",\\\"guards.maxDynamicScopeHops\\\":2,\\\"guards.maxGeneratedNotNesting\\\":2,\\\"nameEnum.beamWidth\\\":128,\\\"nameEnum.maxDepth\\\":64,\\\"nameEnum.maxMillis\\\":40,\\\"nameEnum.maxQueue\\\":16000,\\\"nameEnum.maxResults\\\":32,\\\"nameEnum.maxStates\\\":8000,\\\"patternWitness.alphabet\\\":\\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\\",\\\"patternWitness.maxCandidates\\\":32768,\\\"patternWitness.maxLength\\\":12,\\\"rational.decimalPrecision\\\":12,\\\"rational.fallback\\\":\\\"decimal\\\",\\\"rational.maxLcmBits\\\":128,\\\"rational.maxRatBits\\\":128,\\\"repair.mustCoverGuard\\\":true,\\\"resolver.stubUnresolved\\\":\\\"none\\\",\\\"trials.maxBranchesToTry\\\":12,\\\"trials.perBranch\\\":2,\\\"trials.skipTrials\\\":false,\\\"trials.skipTrialsIfBranchesGt\\\":50}\",\"schemaHash\":\"711086b77f0f2e5db8f5088ed64c72d6f98c5d8c6d20ea4c5fa438b4150c9ab3\",\"seed\":123456789,\"userKey\":\"0\"}"
           },
           {
             "canonPath": "/properties/metadata/additionalProperties/anyOf",
@@ -2929,7 +3426,7 @@
               "limit": 8,
               "skipped": false
             },
-            "memoKey": "{\"ajvClass\":\"Ajv2020\",\"ajvFlags\":{\"allErrors\":false,\"allowUnionTypes\":true,\"coerceTypes\":false,\"discriminator\":false,\"multipleOfPrecision\":12,\"strictSchema\":true,\"strictTypes\":true,\"unicodeRegExp\":true,\"validateFormats\":true},\"ajvMajor\":0,\"canonPath\":\"/properties/metadata/additionalProperties/anyOf\",\"planOptionsSubKey\":\"{\\\"complexity.maxAnyOfBranches\\\":500,\\\"complexity.maxContainsNeeds\\\":16,\\\"complexity.maxOneOfBranches\\\":200,\\\"complexity.maxPatternProps\\\":64,\\\"conditionals.exclusivityStringTweak\\\":\\\"preferNul\\\",\\\"conditionals.minThenSatisfaction\\\":\\\"required-only\\\",\\\"conditionals.strategy\\\":\\\"if-aware-lite\\\",\\\"guards.maxDynamicScopeHops\\\":2,\\\"guards.maxGeneratedNotNesting\\\":2,\\\"nameEnum.beamWidth\\\":128,\\\"nameEnum.maxDepth\\\":64,\\\"nameEnum.maxMillis\\\":40,\\\"nameEnum.maxQueue\\\":16000,\\\"nameEnum.maxResults\\\":32,\\\"nameEnum.maxStates\\\":8000,\\\"patternWitness.alphabet\\\":\\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\\",\\\"patternWitness.maxCandidates\\\":32768,\\\"patternWitness.maxLength\\\":12,\\\"rational.decimalPrecision\\\":12,\\\"rational.fallback\\\":\\\"decimal\\\",\\\"rational.maxLcmBits\\\":128,\\\"rational.maxRatBits\\\":128,\\\"repair.mustCoverGuard\\\":true,\\\"resolver.stubUnresolved\\\":\\\"none\\\",\\\"trials.maxBranchesToTry\\\":12,\\\"trials.perBranch\\\":2,\\\"trials.skipTrials\\\":false,\\\"trials.skipTrialsIfBranchesGt\\\":50}\",\"schemaHash\":\"47c225d8578437ec921e4ae6769ce70bfa05822cc1ff9d36d5dce6e684757ef5\",\"seed\":123456789,\"userKey\":\"0\"}"
+            "memoKey": "{\"ajvClass\":\"Ajv2020\",\"ajvFlags\":{\"allErrors\":false,\"allowUnionTypes\":true,\"coerceTypes\":false,\"discriminator\":false,\"multipleOfPrecision\":12,\"strictSchema\":true,\"strictTypes\":true,\"unicodeRegExp\":true,\"validateFormats\":true},\"ajvMajor\":0,\"canonPath\":\"/properties/metadata/additionalProperties/anyOf\",\"planOptionsSubKey\":\"{\\\"complexity.maxAnyOfBranches\\\":500,\\\"complexity.maxContainsNeeds\\\":16,\\\"complexity.maxOneOfBranches\\\":200,\\\"complexity.maxPatternProps\\\":64,\\\"conditionals.exclusivityStringTweak\\\":\\\"preferNul\\\",\\\"conditionals.minThenSatisfaction\\\":\\\"required-only\\\",\\\"conditionals.strategy\\\":\\\"if-aware-lite\\\",\\\"guards.maxDynamicScopeHops\\\":2,\\\"guards.maxGeneratedNotNesting\\\":2,\\\"nameEnum.beamWidth\\\":128,\\\"nameEnum.maxDepth\\\":64,\\\"nameEnum.maxMillis\\\":40,\\\"nameEnum.maxQueue\\\":16000,\\\"nameEnum.maxResults\\\":32,\\\"nameEnum.maxStates\\\":8000,\\\"patternWitness.alphabet\\\":\\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\\",\\\"patternWitness.maxCandidates\\\":32768,\\\"patternWitness.maxLength\\\":12,\\\"rational.decimalPrecision\\\":12,\\\"rational.fallback\\\":\\\"decimal\\\",\\\"rational.maxLcmBits\\\":128,\\\"rational.maxRatBits\\\":128,\\\"repair.mustCoverGuard\\\":true,\\\"resolver.stubUnresolved\\\":\\\"none\\\",\\\"trials.maxBranchesToTry\\\":12,\\\"trials.perBranch\\\":2,\\\"trials.skipTrials\\\":false,\\\"trials.skipTrialsIfBranchesGt\\\":50}\",\"schemaHash\":\"711086b77f0f2e5db8f5088ed64c72d6f98c5d8c6d20ea4c5fa438b4150c9ab3\",\"seed\":123456789,\"userKey\":\"0\"}"
           }
         ],
         "nodes": {
@@ -3065,6 +3562,72 @@
               "skipped": false
             }
           },
+          "/properties/customer/allOf/0/anyOf": {
+            "chosenBranch": {
+              "index": 1,
+              "score": 240
+            },
+            "scoreDetails": {
+              "orderedIndices": [
+                1,
+                0
+              ],
+              "topScoreIndices": [
+                1
+              ],
+              "topKIndices": [
+                1,
+                0
+              ],
+              "scoresByIndex": {
+                "0": 0,
+                "1": 240
+              }
+            },
+            "budget": {
+              "tried": 4,
+              "limit": 4,
+              "skipped": false
+            }
+          },
+          "/properties/extensions/unevaluatedProperties/properties/value/anyOf": {
+            "chosenBranch": {
+              "index": 0,
+              "score": 10
+            },
+            "scoreDetails": {
+              "orderedIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "topScoreIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "topKIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "tiebreakRand": 0.10021317633800209,
+              "scoresByIndex": {
+                "0": 10,
+                "1": 10,
+                "2": 10,
+                "3": 10
+              }
+            },
+            "budget": {
+              "tried": 8,
+              "limit": 8,
+              "skipped": false
+            }
+          },
           "/properties/metadata/additionalProperties/anyOf": {
             "chosenBranch": {
               "index": 1,
@@ -3105,7 +3668,7 @@
           }
         },
         "metrics": {
-          "memoKeys": 5
+          "memoKeys": 7
         },
         "run": [
           {
@@ -3128,11 +3691,14 @@
       {
         "canonPath": "#",
         "enumeratedKeys": [
+          "auditTrail",
           "billingAddress",
           "cancellation",
           "completedAt",
           "createdAt",
+          "customAttributes",
           "customer",
+          "extensions",
           "id",
           "items",
           "metadata",
@@ -3145,6 +3711,7 @@
           "shippingAddress",
           "source",
           "status",
+          "statusHistory",
           "timeline",
           "totals",
           "updatedAt",
@@ -3201,6 +3768,11 @@
         "hasUniverse": "unknown"
       },
       {
+        "canonPath": "/allOf/4/not",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
         "canonPath": "/properties/customer",
         "enumeratedKeys": [
           "email",
@@ -3217,6 +3789,21 @@
           "properties"
         ],
         "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/properties/customer/allOf/0/anyOf/0/not",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/properties/customer/allOf/0/anyOf/1",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/properties/items/contains",
+        "provenance": [],
+        "hasUniverse": "unknown"
       },
       {
         "canonPath": "/properties/notes",
@@ -3247,6 +3834,47 @@
         "hasUniverse": "unknown"
       },
       {
+        "canonPath": "/properties/customAttributes",
+        "enumeratedKeys": [
+          "x-0",
+          "x-00",
+          "x-000",
+          "x-00A",
+          "x-00_",
+          "x-00a",
+          "x-0A",
+          "x-0A0",
+          "x-0AA",
+          "x-0A_",
+          "x-0Aa",
+          "x-0_",
+          "x-0_0",
+          "x-0_A",
+          "x-0__",
+          "x-0_a",
+          "x-0a",
+          "x-A",
+          "x-A0",
+          "x-AA",
+          "x-A_",
+          "x-Aa",
+          "x-_",
+          "x-_0",
+          "x-_A",
+          "x-__",
+          "x-_a",
+          "x-a",
+          "x-a0",
+          "x-aA",
+          "x-a_",
+          "x-aa"
+        ],
+        "provenance": [
+          "patternProperties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
         "canonPath": "/properties/source",
         "enumeratedKeys": [
           "campaign",
@@ -3270,6 +3898,45 @@
           "name",
           "source",
           "term"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/properties/extensions",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/properties/extensions/properties/core",
+        "enumeratedKeys": [
+          "source"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/properties/extensions/unevaluatedProperties",
+        "enumeratedKeys": [
+          "notes",
+          "value"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/properties/auditTrail/unevaluatedItems",
+        "enumeratedKeys": [
+          "field",
+          "newValue",
+          "oldValue",
+          "reason"
         ],
         "provenance": [
           "properties"
@@ -3610,6 +4277,16 @@
         "hasUniverse": "finite"
       },
       {
+        "canonPath": "/$defs/shippingMethod/dependentSchemas/carrier/if",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/$defs/shippingMethod/dependentSchemas/carrier/then",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
         "canonPath": "/$defs/dayHours/anyOf/1",
         "enumeratedKeys": [
           "close",
@@ -3756,14 +4433,16 @@
         "customer": {
           "email": "user.1lctcj5@example.test",
           "firstName": "-",
-          "lastName": "-"
+          "lastName": "-",
+          "loyaltyPoints": 0,
+          "loyaltyTier": "bronze"
         },
         "id": "15682b96-a105-4f9e-b444-c8ab372f94cb",
         "items": [
           {
             "giftMessage": "",
             "id": "e3230563-bf2b-4d28-aa28-7b28f194bfe3",
-            "isGift": false,
+            "isGift": true,
             "product": {
               "name": "-",
               "sku": "AA-0000"
@@ -3861,14 +4540,16 @@
         "customer": {
           "email": "user.15tpt65@example.test",
           "firstName": "-",
-          "lastName": "-"
+          "lastName": "-",
+          "loyaltyPoints": 0,
+          "loyaltyTier": "bronze"
         },
         "id": "f327713c-343d-4609-9490-db163474e5fc",
         "items": [
           {
             "giftMessage": "",
             "id": "26ea8538-0670-4c3d-b0d7-71ce571b7a65",
-            "isGift": false,
+            "isGift": true,
             "product": {
               "name": "-",
               "sku": "AA-0000"
@@ -3966,14 +4647,16 @@
         "customer": {
           "email": "user.3pqtbd@example.test",
           "firstName": "-",
-          "lastName": "-"
+          "lastName": "-",
+          "loyaltyPoints": 0,
+          "loyaltyTier": "bronze"
         },
         "id": "613a16e1-cc20-4bed-ad6d-5ea91c0c9cf8",
         "items": [
           {
             "giftMessage": "",
             "id": "1b3e0888-3e26-4876-a93e-943f210279b2",
-            "isGift": false,
+            "isGift": true,
             "product": {
               "name": "-",
               "sku": "AA-0000"
@@ -4060,11 +4743,11 @@
     }
   ],
   "metrics": {
-    "normalizeMs": 5.721749999999986,
-    "composeMs": 23.603874999999988,
-    "generateMs": 57.542416,
-    "repairMs": 33.88495900000001,
-    "validateMs": 32.681332999999995,
+    "normalizeMs": 5.603082999999998,
+    "composeMs": 24.133375,
+    "generateMs": 58.453958,
+    "repairMs": 36.104667000000006,
+    "validateMs": 30.65170900000001,
     "validationsPerRow": 3,
     "repairPassesPerRow": 0,
     "memoryPeakMB": 0,
@@ -4072,13 +4755,13 @@
     "p95LatencyMs": 0,
     "evalTraceChecks": 0,
     "evalTraceProved": 0,
-    "nameBfsNodesExpanded": 0,
-    "nameBfsQueuePeak": 0,
-    "nameBeamWidthPeak": 0,
-    "nameEnumResults": 0,
+    "nameBfsNodesExpanded": 35,
+    "nameBfsQueuePeak": 97,
+    "nameBeamWidthPeak": 128,
+    "nameEnumResults": 32,
     "nameEnumElapsedMs": 0,
-    "patternPropsHit": 0,
-    "presencePressureResolved": 26,
+    "patternPropsHit": 1,
+    "presencePressureResolved": 28,
     "repairActionsPerRow": 0
   },
   "summary": {
@@ -4087,16 +4770,16 @@
     "validRepaired": 0,
     "invalid": 0,
     "timings": {
-      "normalizeMs": 5.721749999999986,
-      "composeMs": 23.603874999999988,
-      "generateMs": 57.542416,
-      "repairMs": 33.88495900000001,
-      "validateMs": 32.681332999999995
+      "normalizeMs": 5.603082999999998,
+      "composeMs": 24.133375,
+      "generateMs": 58.453958,
+      "repairMs": 36.104667000000006,
+      "validateMs": 30.65170900000001
     },
     "diagnosticsCount": {
-      "normalizeNotes": 0,
+      "normalizeNotes": 1,
       "composeFatal": 0,
-      "composeWarn": 0,
+      "composeWarn": 2,
       "composeUnsatHints": 0,
       "composeRunLevel": 1,
       "repairBudgetExhausted": 0,

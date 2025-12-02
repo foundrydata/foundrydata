@@ -28,7 +28,7 @@ ul{padding-left:1.25rem}
   <header class="hero">
     <h1>JSON Schema Report – examples/ecommerce-complex-schema.json</h1>
     <p>Tool json-schema-reporter 0.1.0 · Engine 0.1.1</p>
-    <p>Timestamp 2025-12-01T23:48:14.677Z · Seed 424242</p>
+    <p>Timestamp 2025-12-02T21:54:41.040Z · Seed 424242</p>
     <p>3 instances · 3 unchanged · 0 repaired · 0 invalid</p>
   </header>
 
@@ -36,16 +36,16 @@ ul{padding-left:1.25rem}
     <h2>Timings</h2>
     <table>
       <thead><tr><th>Step</th><th>Duration (ms)</th></tr></thead>
-      <tbody><tr><td>normalize</td><td>5.721749999999986</td></tr><tr><td>compose</td><td>23.603874999999988</td></tr><tr><td>generate</td><td>57.542416</td></tr><tr><td>repair</td><td>33.88495900000001</td></tr><tr><td>validate</td><td>32.681332999999995</td></tr></tbody>
+      <tbody><tr><td>normalize</td><td>5.603082999999998</td></tr><tr><td>compose</td><td>24.133375</td></tr><tr><td>generate</td><td>58.453958</td></tr><tr><td>repair</td><td>36.104667000000006</td></tr><tr><td>validate</td><td>30.65170900000001</td></tr></tbody>
     </table>
   </section>
 
   <section>
     <h2>Diagnostics Summary</h2>
     <ul>
-      <li>Normalize notes: 0</li>
+      <li>Normalize notes: 1</li>
       <li>Compose fatal: 0</li>
-      <li>Compose warn: 0</li>
+      <li>Compose warn: 2</li>
       <li>Compose unsat hints: 0</li>
       <li>Compose run-level: 1</li>
       <li>Repair budget exhausted: 0</li>
@@ -53,7 +53,24 @@ ul{padding-left:1.25rem}
     </ul>
     <div class="diag-grid">
       <div class="diag-group"><h4>fatal</h4><p class="empty">No entries</p></div>
-      <div class="diag-group"><h4>warn</h4><p class="empty">No entries</p></div>
+      <div class="diag-group"><h4>warn</h4><ul><li><span class="code">CONTAINS_BAG_COMBINED</span> @ /properties/items<pre>{
+  &quot;bagSize&quot;: 1,
+  &quot;sumMin&quot;: 1,
+  &quot;maxItems&quot;: 100
+}</pre></li><li><span class="code">NAME_AUTOMATON_BFS_APPLIED</span> @ /properties/customAttributes<pre>{
+  &quot;budget&quot;: {
+    &quot;maxMillis&quot;: 40,
+    &quot;maxStates&quot;: 8000,
+    &quot;maxQueue&quot;: 16000,
+    &quot;maxDepth&quot;: 12,
+    &quot;maxResults&quot;: 32,
+    &quot;beamWidth&quot;: 128
+  },
+  &quot;nodesExpanded&quot;: 35,
+  &quot;queuePeak&quot;: 97,
+  &quot;resultsEmitted&quot;: 32,
+  &quot;elapsedMs&quot;: 0
+}</pre></li></ul></div>
       <div class="diag-group"><h4>unsatHints</h4><p class="empty">No entries</p></div>
       <div class="diag-group"><h4>run</h4><ul><li><span class="code">RESOLVER_STRATEGIES_APPLIED</span> @ #<pre>{
   &quot;strategies&quot;: [
@@ -69,7 +86,7 @@ ul{padding-left:1.25rem}
 
   <section>
     <h2>Coverage Index Snapshot</h2>
-    <table><thead><tr><th>canonPath</th><th>hasUniverse</th><th>enumeratedKeys</th><th>provenance</th></tr></thead><tbody><tr><td>#</td><td>finite</td><td>billingAddress, cancellation, completedAt, createdAt, customer, id, items, metadata, notes, orderNumber, payments, promotions, sameAsBilling, shipping, shippingAddress, source, status, timeline, totals, updatedAt, version</td><td>properties</td></tr><tr><td>/allOf/0/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/0/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/1/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/1/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/1/then/properties/shipping</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/2/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/2/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/3/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/3/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/properties/customer</td><td>finite</td><td>email, firstName, id, isGuest, lastName, loyaltyPoints, loyaltyTier, phone, preferredLanguage</td><td>properties</td></tr><tr><td>/properties/notes</td><td>finite</td><td>customer, internal</td><td>properties</td></tr><tr><td>/properties/notes/properties/internal/items</td><td>finite</td><td>author, createdAt, text</td><td>properties</td></tr><tr><td>/properties/metadata</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/properties/source</td><td>finite</td><td>campaign, channel, deviceId, ip, platform, referrer, userAgent</td><td>properties</td></tr><tr><td>/properties/source/properties/campaign</td><td>finite</td><td>content, medium, name, source, term</td><td>properties</td></tr><tr><td>/$defs/money</td><td>finite</td><td>amount, currency</td><td>properties</td></tr><tr><td>/$defs/address</td><td>finite</td><td>city, coordinates, country, postalCode, state, street, street2</td><td>properties</td></tr><tr><td>/$defs/address/properties/coordinates</td><td>finite</td><td>lat, lng</td><td>properties</td></tr><tr><td>/$defs/contact</td><td>finite</td><td>email, firstName, lastName, phone, preferredLanguage</td><td>properties</td></tr><tr><td>/$defs/basePayment</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/cardPayment/allOf/1</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/cardPayment/allOf/1/properties/card</td><td>finite</td><td>brand, expiryMonth, expiryYear, fingerprint, holderName, is3DSecure, last4</td><td>properties</td></tr><tr><td>/$defs/paypalPayment/allOf/1</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/paypalPayment/allOf/1/properties/paypal</td><td>finite</td><td>payerEmail, payerId, transactionId</td><td>properties</td></tr><tr><td>/$defs/bankTransferPayment/allOf/1</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/bankTransferPayment/allOf/1/properties/bankTransfer</td><td>finite</td><td>bic, dueDate, iban, reference</td><td>properties</td></tr><tr><td>/$defs/giftCardPayment/allOf/1</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/giftCardPayment/allOf/1/properties/giftCard</td><td>finite</td><td>code, originalBalance, pin, usedAmount</td><td>properties</td></tr><tr><td>/$defs/productVariant</td><td>finite</td><td>attributes, name, sku</td><td>properties</td></tr><tr><td>/$defs/productVariant/properties/attributes</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/orderItem</td><td>finite</td><td>customization, discount, giftMessage, id, isGift, product, quantity, totalPrice, unitPrice</td><td>properties</td></tr><tr><td>/$defs/orderItem/allOf/0/anyOf/0/not</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/orderItem/allOf/0/anyOf/1</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/orderItem/properties/discount</td><td>finite</td><td>reason, type, value</td><td>properties</td></tr><tr><td>/$defs/orderItem/properties/customization</td><td>finite</td><td>engraving, notes, wrapping</td><td>properties</td></tr><tr><td>/$defs/promotion</td><td>finite</td><td>applicableCategories, buyQuantity, code, getQuantity, maxDiscount, minOrderAmount, type, usageCount, usageLimit, validFrom, validUntil, value</td><td>properties</td></tr><tr><td>/$defs/promotion/allOf/0/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/promotion/allOf/0/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/promotion/allOf/1/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/promotion/allOf/1/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/promotion/allOf/2/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/promotion/allOf/2/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/shippingMethod</td><td>finite</td><td>carrier, deliveryInstructions, estimatedDelivery, insurance, pickupPoint, price, service, signature, trackingNumber, trackingUrl</td><td>properties</td></tr><tr><td>/$defs/shippingMethod/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/shippingMethod/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/shippingMethod/properties/estimatedDelivery</td><td>finite</td><td>estimatedDate, maxDays, minDays</td><td>properties</td></tr><tr><td>/$defs/shippingMethod/properties/insurance</td><td>finite</td><td>enabled, provider, value</td><td>properties</td></tr><tr><td>/$defs/shippingMethod/properties/pickupPoint</td><td>finite</td><td>address, id, name, openingHours</td><td>properties</td></tr><tr><td>/$defs/shippingMethod/properties/pickupPoint/properties/openingHours</td><td>finite</td><td>friday, monday, saturday, sunday, thursday, tuesday, wednesday</td><td>properties</td></tr><tr><td>/$defs/dayHours/anyOf/1</td><td>finite</td><td>close, open</td><td>properties</td></tr><tr><td>/$defs/orderTimeline/items</td><td>finite</td><td>actor, event, metadata, note, timestamp</td><td>properties</td></tr><tr><td>/$defs/orderTimeline/items/properties/actor</td><td>finite</td><td>id, name, type</td><td>properties</td></tr><tr><td>/$defs/orderTimeline/items/properties/metadata</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/orderTotals</td><td>finite</td><td>discounts, shipping, subtotal, tax, total</td><td>properties</td></tr><tr><td>/$defs/orderTotals/properties/tax</td><td>finite</td><td>amount, breakdown, rate</td><td>properties</td></tr><tr><td>/$defs/orderTotals/properties/tax/properties/breakdown/items</td><td>finite</td><td>amount, name, rate</td><td>properties</td></tr><tr><td>/$defs/cancellation</td><td>finite</td><td>details, processedAt, reason, requestedAt, requestedBy</td><td>properties</td></tr></tbody></table>
+    <table><thead><tr><th>canonPath</th><th>hasUniverse</th><th>enumeratedKeys</th><th>provenance</th></tr></thead><tbody><tr><td>#</td><td>finite</td><td>auditTrail, billingAddress, cancellation, completedAt, createdAt, customAttributes, customer, extensions, id, items, metadata, notes, orderNumber, payments, promotions, sameAsBilling, shipping, shippingAddress, source, status, statusHistory, timeline, totals, updatedAt, version</td><td>properties</td></tr><tr><td>/allOf/0/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/0/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/1/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/1/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/1/then/properties/shipping</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/2/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/2/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/3/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/3/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/4/not</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/properties/customer</td><td>finite</td><td>email, firstName, id, isGuest, lastName, loyaltyPoints, loyaltyTier, phone, preferredLanguage</td><td>properties</td></tr><tr><td>/properties/customer/allOf/0/anyOf/0/not</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/properties/customer/allOf/0/anyOf/1</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/properties/items/contains</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/properties/notes</td><td>finite</td><td>customer, internal</td><td>properties</td></tr><tr><td>/properties/notes/properties/internal/items</td><td>finite</td><td>author, createdAt, text</td><td>properties</td></tr><tr><td>/properties/metadata</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/properties/customAttributes</td><td>finite</td><td>x-0, x-00, x-000, x-00A, x-00_, x-00a, x-0A, x-0A0, x-0AA, x-0A_, x-0Aa, x-0_, x-0_0, x-0_A, x-0__, x-0_a, x-0a, x-A, x-A0, x-AA, x-A_, x-Aa, x-_, x-_0, x-_A, x-__, x-_a, x-a, x-a0, x-aA, x-a_, x-aa</td><td>patternProperties</td></tr><tr><td>/properties/source</td><td>finite</td><td>campaign, channel, deviceId, ip, platform, referrer, userAgent</td><td>properties</td></tr><tr><td>/properties/source/properties/campaign</td><td>finite</td><td>content, medium, name, source, term</td><td>properties</td></tr><tr><td>/properties/extensions</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/properties/extensions/properties/core</td><td>finite</td><td>source</td><td>properties</td></tr><tr><td>/properties/extensions/unevaluatedProperties</td><td>finite</td><td>notes, value</td><td>properties</td></tr><tr><td>/properties/auditTrail/unevaluatedItems</td><td>finite</td><td>field, newValue, oldValue, reason</td><td>properties</td></tr><tr><td>/$defs/money</td><td>finite</td><td>amount, currency</td><td>properties</td></tr><tr><td>/$defs/address</td><td>finite</td><td>city, coordinates, country, postalCode, state, street, street2</td><td>properties</td></tr><tr><td>/$defs/address/properties/coordinates</td><td>finite</td><td>lat, lng</td><td>properties</td></tr><tr><td>/$defs/contact</td><td>finite</td><td>email, firstName, lastName, phone, preferredLanguage</td><td>properties</td></tr><tr><td>/$defs/basePayment</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/cardPayment/allOf/1</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/cardPayment/allOf/1/properties/card</td><td>finite</td><td>brand, expiryMonth, expiryYear, fingerprint, holderName, is3DSecure, last4</td><td>properties</td></tr><tr><td>/$defs/paypalPayment/allOf/1</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/paypalPayment/allOf/1/properties/paypal</td><td>finite</td><td>payerEmail, payerId, transactionId</td><td>properties</td></tr><tr><td>/$defs/bankTransferPayment/allOf/1</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/bankTransferPayment/allOf/1/properties/bankTransfer</td><td>finite</td><td>bic, dueDate, iban, reference</td><td>properties</td></tr><tr><td>/$defs/giftCardPayment/allOf/1</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/giftCardPayment/allOf/1/properties/giftCard</td><td>finite</td><td>code, originalBalance, pin, usedAmount</td><td>properties</td></tr><tr><td>/$defs/productVariant</td><td>finite</td><td>attributes, name, sku</td><td>properties</td></tr><tr><td>/$defs/productVariant/properties/attributes</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/orderItem</td><td>finite</td><td>customization, discount, giftMessage, id, isGift, product, quantity, totalPrice, unitPrice</td><td>properties</td></tr><tr><td>/$defs/orderItem/allOf/0/anyOf/0/not</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/orderItem/allOf/0/anyOf/1</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/orderItem/properties/discount</td><td>finite</td><td>reason, type, value</td><td>properties</td></tr><tr><td>/$defs/orderItem/properties/customization</td><td>finite</td><td>engraving, notes, wrapping</td><td>properties</td></tr><tr><td>/$defs/promotion</td><td>finite</td><td>applicableCategories, buyQuantity, code, getQuantity, maxDiscount, minOrderAmount, type, usageCount, usageLimit, validFrom, validUntil, value</td><td>properties</td></tr><tr><td>/$defs/promotion/allOf/0/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/promotion/allOf/0/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/promotion/allOf/1/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/promotion/allOf/1/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/promotion/allOf/2/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/promotion/allOf/2/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/shippingMethod</td><td>finite</td><td>carrier, deliveryInstructions, estimatedDelivery, insurance, pickupPoint, price, service, signature, trackingNumber, trackingUrl</td><td>properties</td></tr><tr><td>/$defs/shippingMethod/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/shippingMethod/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/shippingMethod/properties/estimatedDelivery</td><td>finite</td><td>estimatedDate, maxDays, minDays</td><td>properties</td></tr><tr><td>/$defs/shippingMethod/properties/insurance</td><td>finite</td><td>enabled, provider, value</td><td>properties</td></tr><tr><td>/$defs/shippingMethod/properties/pickupPoint</td><td>finite</td><td>address, id, name, openingHours</td><td>properties</td></tr><tr><td>/$defs/shippingMethod/properties/pickupPoint/properties/openingHours</td><td>finite</td><td>friday, monday, saturday, sunday, thursday, tuesday, wednesday</td><td>properties</td></tr><tr><td>/$defs/shippingMethod/dependentSchemas/carrier/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/shippingMethod/dependentSchemas/carrier/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/dayHours/anyOf/1</td><td>finite</td><td>close, open</td><td>properties</td></tr><tr><td>/$defs/orderTimeline/items</td><td>finite</td><td>actor, event, metadata, note, timestamp</td><td>properties</td></tr><tr><td>/$defs/orderTimeline/items/properties/actor</td><td>finite</td><td>id, name, type</td><td>properties</td></tr><tr><td>/$defs/orderTimeline/items/properties/metadata</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/orderTotals</td><td>finite</td><td>discounts, shipping, subtotal, tax, total</td><td>properties</td></tr><tr><td>/$defs/orderTotals/properties/tax</td><td>finite</td><td>amount, breakdown, rate</td><td>properties</td></tr><tr><td>/$defs/orderTotals/properties/tax/properties/breakdown/items</td><td>finite</td><td>amount, name, rate</td><td>properties</td></tr><tr><td>/$defs/cancellation</td><td>finite</td><td>details, processedAt, reason, requestedAt, requestedBy</td><td>properties</td></tr></tbody></table>
   </section>
 
   <section>
@@ -91,14 +108,16 @@ ul{padding-left:1.25rem}
   &quot;customer&quot;: {
     &quot;email&quot;: &quot;user.1lctcj5@example.test&quot;,
     &quot;firstName&quot;: &quot;-&quot;,
-    &quot;lastName&quot;: &quot;-&quot;
+    &quot;lastName&quot;: &quot;-&quot;,
+    &quot;loyaltyPoints&quot;: 0,
+    &quot;loyaltyTier&quot;: &quot;bronze&quot;
   },
   &quot;id&quot;: &quot;15682b96-a105-4f9e-b444-c8ab372f94cb&quot;,
   &quot;items&quot;: [
     {
       &quot;giftMessage&quot;: &quot;&quot;,
       &quot;id&quot;: &quot;e3230563-bf2b-4d28-aa28-7b28f194bfe3&quot;,
-      &quot;isGift&quot;: false,
+      &quot;isGift&quot;: true,
       &quot;product&quot;: {
         &quot;name&quot;: &quot;-&quot;,
         &quot;sku&quot;: &quot;AA-0000&quot;
@@ -200,14 +219,16 @@ ul{padding-left:1.25rem}
   &quot;customer&quot;: {
     &quot;email&quot;: &quot;user.15tpt65@example.test&quot;,
     &quot;firstName&quot;: &quot;-&quot;,
-    &quot;lastName&quot;: &quot;-&quot;
+    &quot;lastName&quot;: &quot;-&quot;,
+    &quot;loyaltyPoints&quot;: 0,
+    &quot;loyaltyTier&quot;: &quot;bronze&quot;
   },
   &quot;id&quot;: &quot;f327713c-343d-4609-9490-db163474e5fc&quot;,
   &quot;items&quot;: [
     {
       &quot;giftMessage&quot;: &quot;&quot;,
       &quot;id&quot;: &quot;26ea8538-0670-4c3d-b0d7-71ce571b7a65&quot;,
-      &quot;isGift&quot;: false,
+      &quot;isGift&quot;: true,
       &quot;product&quot;: {
         &quot;name&quot;: &quot;-&quot;,
         &quot;sku&quot;: &quot;AA-0000&quot;
@@ -309,14 +330,16 @@ ul{padding-left:1.25rem}
   &quot;customer&quot;: {
     &quot;email&quot;: &quot;user.3pqtbd@example.test&quot;,
     &quot;firstName&quot;: &quot;-&quot;,
-    &quot;lastName&quot;: &quot;-&quot;
+    &quot;lastName&quot;: &quot;-&quot;,
+    &quot;loyaltyPoints&quot;: 0,
+    &quot;loyaltyTier&quot;: &quot;bronze&quot;
   },
   &quot;id&quot;: &quot;613a16e1-cc20-4bed-ad6d-5ea91c0c9cf8&quot;,
   &quot;items&quot;: [
     {
       &quot;giftMessage&quot;: &quot;&quot;,
       &quot;id&quot;: &quot;1b3e0888-3e26-4876-a93e-943f210279b2&quot;,
-      &quot;isGift&quot;: false,
+      &quot;isGift&quot;: true,
       &quot;product&quot;: {
         &quot;name&quot;: &quot;-&quot;,
         &quot;sku&quot;: &quot;AA-0000&quot;

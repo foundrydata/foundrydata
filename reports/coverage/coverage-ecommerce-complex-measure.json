@@ -3,7 +3,7 @@
   "reportMode": "full",
   "engine": {
     "foundryVersion": "0.1.1",
-    "coverageMode": "guided",
+    "coverageMode": "measure",
     "ajvMajor": 8
   },
   "run": {
@@ -17,8 +17,8 @@
       "enum"
     ],
     "excludeUnreachable": true,
-    "startedAt": "2025-12-02T21:55:10.588Z",
-    "durationMs": 166
+    "startedAt": "2025-12-02T21:35:34.967Z",
+    "durationMs": 177
   },
   "metrics": {
     "coverageStatus": "ok",
@@ -285,7 +285,7 @@
         "enumIndex": 0,
         "value": "bronze"
       },
-      "hit": false
+      "hit": true
     },
     {
       "id": "cov:0:1:03b47d7816bf97a1c6a9d039eaeb03136fae811b18b85cdca04b5a00cae9387d",
@@ -296,7 +296,7 @@
         "enumIndex": 1,
         "value": "silver"
       },
-      "hit": true
+      "hit": false
     },
     {
       "id": "cov:0:1:51d432fb52f025341f3be07bbb6ffff9e216fda9b1a311d291ade5c91c0ca2fa",
@@ -1641,13 +1641,13 @@
       "hit": false
     },
     {
-      "id": "cov:0:1:2537f3d97b9c98edb4d3a3750e3243df0095a709c833149293521756ea86ce9a",
+      "id": "cov:0:1:03b47d7816bf97a1c6a9d039eaeb03136fae811b18b85cdca04b5a00cae9387d",
       "dimension": "enum",
       "kind": "ENUM_VALUE_HIT",
       "canonPath": "#/properties/customer/properties/loyaltyTier",
       "params": {
-        "enumIndex": 0,
-        "value": "bronze"
+        "enumIndex": 1,
+        "value": "silver"
       },
       "hit": false
     },
