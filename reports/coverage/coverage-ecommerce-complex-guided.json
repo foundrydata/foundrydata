@@ -1,0 +1,1743 @@
+{
+  "version": "coverage-report/v1",
+  "reportMode": "full",
+  "engine": {
+    "foundryVersion": "0.1.1",
+    "coverageMode": "guided",
+    "ajvMajor": 8
+  },
+  "run": {
+    "seed": 424242,
+    "masterSeed": 424242,
+    "maxInstances": 10,
+    "actualInstances": 10,
+    "dimensionsEnabled": [
+      "structure",
+      "branches",
+      "enum"
+    ],
+    "excludeUnreachable": true,
+    "startedAt": "2025-12-01T23:45:53.907Z",
+    "durationMs": 162
+  },
+  "metrics": {
+    "coverageStatus": "ok",
+    "overall": 0.1509433962264151,
+    "byDimension": {
+      "structure": 0.1686746987951807,
+      "branches": 0,
+      "enum": 0.10526315789473684
+    },
+    "byOperation": {},
+    "targetsByStatus": {
+      "active": 106,
+      "unreachable": 0,
+      "deprecated": 0
+    }
+  },
+  "targets": [
+    {
+      "id": "cov:0:1:9e73c18e5401e129cf4a72ef1cb07c8bb18a443393869828a04f126f17ec4df4",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:c15a7d84ed9e31db33568531871d32bffcb69aecaa499425427ba33556767a17",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/id",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:c894c41bf563ff639af00109dd7a85d4df1858bc4a1b7f76452e700a35d17d42",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/orderNumber",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:e8ea6ab48721ad3b321d19b46871c3e7c64a6f0e6425b57ce04ea144b9292022",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/status",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:39e511caf0c8ae981a252619f59a4a02efb1524333b6a1b7ec2406a84bc1cef0",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 0,
+        "value": "draft"
+      },
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:fcf103248d587cff0ca102e3ef06b50efbccfb4413de49dba4f155be2ef753c5",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 1,
+        "value": "pending_payment"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:af7c3e7f57750726c47f131c48f82bc00427c3bd20d7a4b57b9ad9b113c3b560",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 2,
+        "value": "payment_failed"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:a08cfd3b3ed9e372baf735ae228a979310e28f3e5b257a754481c468b17d8a60",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 3,
+        "value": "confirmed"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:91fc9ebfc38968c096879f3c7836d38d5ec3cec268621744f50f099fa3ccffe0",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 4,
+        "value": "processing"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:108236bb46be8bad08522de2037a135e7286cadb8eff4842bb103598aaf97058",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 5,
+        "value": "shipped"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:33da7eb20decd98137721caa1348b1d234f6a4dcaeca0e2ad0c8231826dc1ab2",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 6,
+        "value": "delivered"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:39128516d4476301e4a371b1728955422a1335309a85d2715ee077fc266f6410",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 7,
+        "value": "cancelled"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:683ec1691870cd786845a458f95194e570a79fdebe8049d3d24947cf2775a1d1",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 8,
+        "value": "refunded"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:192f0cd6a27a0b36c359d000e6261d35d2d75209c9f77df377389c3fec827197",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/customer",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:1a84726034be09d17cb6e16669a8df472f25e3dbf4941cac709b9e944fe69b37",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/customer/properties/id",
+      "params": {
+        "propertyName": "id"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:a30e74b5248489d0e9425d1de00b950ab1cf7391d14bf917fada391a9db00f66",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/customer/properties/id",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:96e5f883f11feec1eff6278a483a14050e18e03e935b66b82d63e9a7daef3011",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/customer/properties/firstName",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:a794d1b34f0281cd9bf8bfb7007a2d8f1f062304a022afe165d153143eba111f",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/customer/properties/lastName",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:cd84167ec11dc58d4abc8d9f67f99cbe2288657502a6d931f7f8d11f6efbe323",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/customer/properties/email",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:b948ad4e2d9d4e77672467faa6e1c3a04a14fb8838a155c2dc47b994e8881d9e",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/customer/properties/phone",
+      "params": {
+        "propertyName": "phone"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:1aae8df877a2bf4ca0691a2a1f40e551fcd1b096498d28e5036e086f9fb57b17",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/customer/properties/phone",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:471dd1deff0fbaf65ab1df6d1fe3635d72d50c744713fe73bbf4e943ae4eef34",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/customer/properties/preferredLanguage",
+      "params": {
+        "propertyName": "preferredLanguage"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:1cf89526ee2deae38d6db6713c345c091b1282d328956ee58d68850c954e2e2b",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/customer/properties/preferredLanguage",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:442951b50427b153455c1bdd2d095e22ae37eb62f5904b89fccb1d18eb02a406",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/customer/properties/isGuest",
+      "params": {
+        "propertyName": "isGuest"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:fd645c009bc752b8ceb89ce73f00388df7446dab5ac3b536fba2848bf8423bc6",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/customer/properties/isGuest",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:9ed90d7149f42b1461d09876fcda91ba21ca2e4435ea860d1b188b63df69b87c",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/customer/properties/loyaltyTier",
+      "params": {
+        "propertyName": "loyaltyTier"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:06f1a089bdc5472f0ef60f1b3e97c2d3f5b362244860e2425b62c8e4b30ba2f9",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/customer/properties/loyaltyTier",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:2537f3d97b9c98edb4d3a3750e3243df0095a709c833149293521756ea86ce9a",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/customer/properties/loyaltyTier",
+      "params": {
+        "enumIndex": 0,
+        "value": "bronze"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:03b47d7816bf97a1c6a9d039eaeb03136fae811b18b85cdca04b5a00cae9387d",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/customer/properties/loyaltyTier",
+      "params": {
+        "enumIndex": 1,
+        "value": "silver"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:51d432fb52f025341f3be07bbb6ffff9e216fda9b1a311d291ade5c91c0ca2fa",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/customer/properties/loyaltyTier",
+      "params": {
+        "enumIndex": 2,
+        "value": "gold"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:472ac1e6178683cdf82e5d93f479c638cb00344800da7d011e09bf602dc7e60f",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/customer/properties/loyaltyTier",
+      "params": {
+        "enumIndex": 3,
+        "value": "platinum"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:af582040e823055ffa08f2bcd69bdd2316bac345f2ea8ff7841515266f64e739",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/customer/properties/loyaltyPoints",
+      "params": {
+        "propertyName": "loyaltyPoints"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:3840416c56dcc18ee95e738dc31f984775d60c504e548dd98684a1de30ab4cc9",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/customer/properties/loyaltyPoints",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:c98aa0c700502d4ced4d5464be33862a25c3f4b913e8f61c656bb65393d2ba0f",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/billingAddress",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:d91b8fa484a850d5720f1748f4164fbe79262a0927706923cbc0f13eb584c35e",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/shippingAddress",
+      "params": {
+        "propertyName": "shippingAddress"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:21f372a3e3e1646b94985e29cc5d991cee1839f17c67c00a195511b21e997211",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/shippingAddress",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:07b18eab7ca6b6e1306faa9f267e1af15e47b2bfd0dc1eb215ed36889b395ee7",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/sameAsBilling",
+      "params": {
+        "propertyName": "sameAsBilling"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:a2357f457c97adaebc157f0dea8774fc0067e85a31b8bca3f67883a00143c6ab",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/sameAsBilling",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:5c5baf0ca4676f23b39614b2feba8933f282689b9637bfeb79b2dfb7c3d52544",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/items",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:ea4f41c693ef90624b587c80298e4a9e0a2dd427569d5f84c209cdf09bd781d2",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/items/items",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:43920f52ed3d94717b64344dc2d09247a529897e92f26d14f2fc6301305a8fd3",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/payments",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:6842e10b81c2da7ae342c7b82dee731bfabcda10b5db3b327ec24a3b5f9cd369",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/payments/items",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:2aae72b42f35926e5268dcd97cfe6dc0bbc6038dffa1ca3cf016005d9de2b124",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/shipping",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:658883859f7ed167fdb1bb0e3e5bb9aa70ad5fd25ea4dc0a11f3e05b9d83015f",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/promotions",
+      "params": {
+        "propertyName": "promotions"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:b515961971052336d51de761746bb612e8f78a08da2bfd80e8e3c16befcc73cf",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/promotions",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:f47f676ab893a0dd2670c801db741efb11029b930428bb01d3238da1b0fd9872",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/promotions/items",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:1ad1e26fc90fbba38382fbd5a9a9d34e339ea2dc4482b53735ff4d1613d73dd1",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/totals",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:18b04d10e52b361fe965e9c4b9e5a81b3d07c6c8c97e972d8b757098b4756460",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/timeline",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:6052b1d75650942c8bf0ca523c5f0a6adc3dd00480ba822321071f6c822e8ce5",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/cancellation",
+      "params": {
+        "propertyName": "cancellation"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:14862a6ef68fa8557d50a3185d28e6312dba4b4a44edc8c36f46c372ed724cdb",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/cancellation",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:344495ff17452f7f7207805aaec2cabe1dbaf7f7f7551f1a3ffc171dcf422f3c",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/notes",
+      "params": {
+        "propertyName": "notes"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:5bfb116df1c2e008923e1e7c41eab18d051f10e1ae63741022ea8e24d490f9d0",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/notes",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:29e522dc56663fd8afdaab14707836a4e85bfeedc8c00c2e6dae9d2d1dedc1a5",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/notes/properties/customer",
+      "params": {
+        "propertyName": "customer"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:7f5f4c074ed1ce74dd9e2158552c875a2b1e6c7876304f8713e73800ed3c8603",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/notes/properties/customer",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:06fd888291c86e47e44bf01e4b0aa329c0f207005308a9bcf07f5dc3474204c9",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/notes/properties/internal",
+      "params": {
+        "propertyName": "internal"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:b4ee3447d707abeb8eb9d480d488419c118d2b2c3435d3a14b920a5df6935fca",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/notes/properties/internal",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:6ab0bdd7c352ca3e35be05b7dd6d79851e51a09260363dd5f0d5d79281230bc4",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/notes/properties/internal/items",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:a94107122bc8a64809b4ddf5cfa3359ce9b966af346c9e6c5754f89c147ab857",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/notes/properties/internal/items/properties/text",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:dbe31bfa0895327065ebde99eafe66f429d1678b001df7041ddf1519ca9a281b",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/notes/properties/internal/items/properties/author",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:178db1f8f24d83c47f032e9a4f6b0a848f2d3244466def3a2196617869fa9aa7",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/notes/properties/internal/items/properties/createdAt",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:9d37d1be3f4a2491b7fe4e409548a9e9ea7e97543b70e02c13ba4e5923aba050",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/metadata",
+      "params": {
+        "propertyName": "metadata"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:415f4b9304c93260dbeed7098c61a87e9472d97cf8a02374c4c2e9c7b92bdddf",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/metadata",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:d574dcab81042af97b4194acfce90b5a4dadd6a29166f25d6eea2f2b1a1bcf1b",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/metadata/additionalProperties",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:7abc8225fe16552d78514f2f61d5fe891035efd76107d45797579a920851a927",
+      "dimension": "branches",
+      "kind": "ANYOF_BRANCH",
+      "canonPath": "#/properties/metadata/additionalProperties/anyOf/0",
+      "params": {
+        "index": 0
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:7dfeb81a4615b23765fb98f8ce389025002a0d256b66334aab9743a768f5a577",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/metadata/additionalProperties/anyOf/0",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:1ecd36bdceb54cc414a1375c2238707d9fcebf25316c3dfda66fdb65b94bb5e4",
+      "dimension": "branches",
+      "kind": "ANYOF_BRANCH",
+      "canonPath": "#/properties/metadata/additionalProperties/anyOf/1",
+      "params": {
+        "index": 1
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:dea2e9d9ec943e54d3b813cda55f18bdfcf9187a3d58d9fe418dd6fc47b669bc",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/metadata/additionalProperties/anyOf/1",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:3d5cf3dfbe68c00f6cb1d5237a591372dbd3ae4493370fc819013412bd904eb3",
+      "dimension": "branches",
+      "kind": "ANYOF_BRANCH",
+      "canonPath": "#/properties/metadata/additionalProperties/anyOf/2",
+      "params": {
+        "index": 2
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:6a4cccbed20220852c1c62c44880c62d9402032daa926567a4cf6342380a62fb",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/metadata/additionalProperties/anyOf/2",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:ead0aa5544724d2b4033991c4be10e40d7ebd0bfac176ef97ba55d3333fabd13",
+      "dimension": "branches",
+      "kind": "ANYOF_BRANCH",
+      "canonPath": "#/properties/metadata/additionalProperties/anyOf/3",
+      "params": {
+        "index": 3
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:3f8e9f53a2df66a6d9649e8dcccad4f2f13ba6bd3480065c02a6956a719735e5",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/metadata/additionalProperties/anyOf/3",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:8d0a29bdbd1ee83f78d70130a583eabb17881b857e4cf2996aa66fbdd0c3b418",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:92508f0df183de82dd2e0a38a016c5823050e942f6bf80a458cac817bbaa2b20",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/channel",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:7d708ccd0976880a526a799af711adfeeda09904d7aa5967ce49622a1c38dd4d",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/source/properties/channel",
+      "params": {
+        "enumIndex": 0,
+        "value": "web"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:c7cb791743ea103469dd810c0707140a96827d66dfc85a1272b59f4840c342b2",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/source/properties/channel",
+      "params": {
+        "enumIndex": 1,
+        "value": "mobile_app"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:4f8fa5d7520dc2dc7c45e8999a9bd57a6f55e2971bdadc17591c7d1940ff51a4",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/source/properties/channel",
+      "params": {
+        "enumIndex": 2,
+        "value": "pos"
+      },
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:daa806bc1748cf7aa2b81e4e3930f8e59db9ee9eaaa87badd318c50cb0f65875",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/source/properties/channel",
+      "params": {
+        "enumIndex": 3,
+        "value": "phone"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:ca48bfcc0efe53a0a87b9c060c266932d9b5225692bda264b3a8ac54c873062c",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/source/properties/channel",
+      "params": {
+        "enumIndex": 4,
+        "value": "marketplace"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:a03b8b1f136f6b7c560dffcda139c63e40ba40bbe46e160ee9e890b1da186fd0",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/source/properties/channel",
+      "params": {
+        "enumIndex": 5,
+        "value": "api"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:84140672f83a48629932bdd435afb7db75ac2da73cb44fe0d3139b150ded596d",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/platform",
+      "params": {
+        "propertyName": "platform"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:391139d9d15c693e998d76eea1fdf12d48d2ab972f92e9cc6e0168378ae2c459",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/platform",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:6100951fabd7f004e9645e14b5e75f2ded92370575c032a58eaa6bf788f7d19e",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/deviceId",
+      "params": {
+        "propertyName": "deviceId"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:9f00b3342bcdbbb9ed64644df6a78bad268b6c08b8772a3641710bfdbae4b865",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/deviceId",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:b62572672d214af8c2f80c9f6bc08c0ebf1de2d7e73e9fa022eb3b686b477e63",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/ip",
+      "params": {
+        "propertyName": "ip"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:e73b0498499e1cccee73fb6bff1e7c1b8336bc41aa70b00b0bfa37f95c31ca94",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/ip",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:6531d7564eef2b8bb91c4e567a05eae1ba8e3285df3f8d92415852c5d28a229b",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/userAgent",
+      "params": {
+        "propertyName": "userAgent"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:d4f2db5d13e1a86499f83b9d5b1f75eebfb73a52d8147a7edceba8db001b5692",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/userAgent",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:bb04e12ef9ef602ede192e1e81469792dba5c72074b468f7b2758b694da9570d",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/referrer",
+      "params": {
+        "propertyName": "referrer"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:1e5c2934ddb0b42696d93c9b47aaa26d9a67bf786918616a3a5454bc117bdd62",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/referrer",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:01b951bbea97144949a888ae06de3f3bfc1ca03ca071e0ae7386f12f20d02c7d",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/campaign",
+      "params": {
+        "propertyName": "campaign"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:3935ba52e58bd3b84f6afe83e113778c64767bc0d9b598db806b92c1eed45c3e",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/campaign",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:4eb19b69ed3fb96d8b016d2bb33a3aa5216b27d994d3f5677aa9fcc655248830",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/campaign/properties/source",
+      "params": {
+        "propertyName": "source"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:b5fa748d68a977d179338e58fc24a9b01a39da444c99d3fbc16a9a9c735aa32e",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/campaign/properties/source",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:c375f0851a8c2e8a6650e77bde5d89b9ec30a5d8d1e764698946dce2222f25fd",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/campaign/properties/medium",
+      "params": {
+        "propertyName": "medium"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:bc86b3dacb0e0af39cf9d56613fd93fcda9e889f5748995ba9e8d6f141ae7ceb",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/campaign/properties/medium",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:883a96841271bc11fa39ec57af5d754ddb1deb70079f47407f88399cfcdb455e",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/campaign/properties/name",
+      "params": {
+        "propertyName": "name"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:322b20bf9fbb5557826e646e653a606ba3962cc68da26744dcd318162fc19351",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/campaign/properties/name",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:fea01d17e568abaadfaf313379dfd0844214d1f5515f712c7515276462703020",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/campaign/properties/term",
+      "params": {
+        "propertyName": "term"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:b0678f20245f000d4c7de96206494b83336600dc3609c02a9c8fdb2e47f3cf4d",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/campaign/properties/term",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:52129d86568ef6220ed14021340ab58dffa6df48d22495dc91ddfa4031eeb52f",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/campaign/properties/content",
+      "params": {
+        "propertyName": "content"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:20f9ac3003425e539c4d83c7fa122850c1e7b277f854886eec5bff099f2d75bb",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/campaign/properties/content",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:42b86da4457769375cd7648e22c5d1ed1f1f554faee61c999845b529b4e291a6",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/createdAt",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:6e901ea2928b32c02922d9ff70eeeafe6832d6065115beed0758dffe64ec2208",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/updatedAt",
+      "hit": true
+    },
+    {
+      "id": "cov:0:1:00e83cfdab704b9ad1601b8f3f52187712e837c67fb7d40e1764581b4396721d",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/completedAt",
+      "params": {
+        "propertyName": "completedAt"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:b28d1a5112eb471ff1d4958be06144bd94f9917a3e166a5df74720389217836a",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/completedAt",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:2671129f7e537bddcddb0299d09dedaff521aee7e7b0da4cdcc3a6b640f08c6d",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/version",
+      "hit": true
+    }
+  ],
+  "uncoveredTargets": [
+    {
+      "id": "cov:0:1:7abc8225fe16552d78514f2f61d5fe891035efd76107d45797579a920851a927",
+      "dimension": "branches",
+      "kind": "ANYOF_BRANCH",
+      "canonPath": "#/properties/metadata/additionalProperties/anyOf/0",
+      "params": {
+        "index": 0
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:1ecd36bdceb54cc414a1375c2238707d9fcebf25316c3dfda66fdb65b94bb5e4",
+      "dimension": "branches",
+      "kind": "ANYOF_BRANCH",
+      "canonPath": "#/properties/metadata/additionalProperties/anyOf/1",
+      "params": {
+        "index": 1
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:3d5cf3dfbe68c00f6cb1d5237a591372dbd3ae4493370fc819013412bd904eb3",
+      "dimension": "branches",
+      "kind": "ANYOF_BRANCH",
+      "canonPath": "#/properties/metadata/additionalProperties/anyOf/2",
+      "params": {
+        "index": 2
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:ead0aa5544724d2b4033991c4be10e40d7ebd0bfac176ef97ba55d3333fabd13",
+      "dimension": "branches",
+      "kind": "ANYOF_BRANCH",
+      "canonPath": "#/properties/metadata/additionalProperties/anyOf/3",
+      "params": {
+        "index": 3
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:03b47d7816bf97a1c6a9d039eaeb03136fae811b18b85cdca04b5a00cae9387d",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/customer/properties/loyaltyTier",
+      "params": {
+        "enumIndex": 1,
+        "value": "silver"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:2537f3d97b9c98edb4d3a3750e3243df0095a709c833149293521756ea86ce9a",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/customer/properties/loyaltyTier",
+      "params": {
+        "enumIndex": 0,
+        "value": "bronze"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:472ac1e6178683cdf82e5d93f479c638cb00344800da7d011e09bf602dc7e60f",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/customer/properties/loyaltyTier",
+      "params": {
+        "enumIndex": 3,
+        "value": "platinum"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:51d432fb52f025341f3be07bbb6ffff9e216fda9b1a311d291ade5c91c0ca2fa",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/customer/properties/loyaltyTier",
+      "params": {
+        "enumIndex": 2,
+        "value": "gold"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:7d708ccd0976880a526a799af711adfeeda09904d7aa5967ce49622a1c38dd4d",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/source/properties/channel",
+      "params": {
+        "enumIndex": 0,
+        "value": "web"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:a03b8b1f136f6b7c560dffcda139c63e40ba40bbe46e160ee9e890b1da186fd0",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/source/properties/channel",
+      "params": {
+        "enumIndex": 5,
+        "value": "api"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:c7cb791743ea103469dd810c0707140a96827d66dfc85a1272b59f4840c342b2",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/source/properties/channel",
+      "params": {
+        "enumIndex": 1,
+        "value": "mobile_app"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:ca48bfcc0efe53a0a87b9c060c266932d9b5225692bda264b3a8ac54c873062c",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/source/properties/channel",
+      "params": {
+        "enumIndex": 4,
+        "value": "marketplace"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:daa806bc1748cf7aa2b81e4e3930f8e59db9ee9eaaa87badd318c50cb0f65875",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/source/properties/channel",
+      "params": {
+        "enumIndex": 3,
+        "value": "phone"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:108236bb46be8bad08522de2037a135e7286cadb8eff4842bb103598aaf97058",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 5,
+        "value": "shipped"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:33da7eb20decd98137721caa1348b1d234f6a4dcaeca0e2ad0c8231826dc1ab2",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 6,
+        "value": "delivered"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:39128516d4476301e4a371b1728955422a1335309a85d2715ee077fc266f6410",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 7,
+        "value": "cancelled"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:683ec1691870cd786845a458f95194e570a79fdebe8049d3d24947cf2775a1d1",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 8,
+        "value": "refunded"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:91fc9ebfc38968c096879f3c7836d38d5ec3cec268621744f50f099fa3ccffe0",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 4,
+        "value": "processing"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:a08cfd3b3ed9e372baf735ae228a979310e28f3e5b257a754481c468b17d8a60",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 3,
+        "value": "confirmed"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:af7c3e7f57750726c47f131c48f82bc00427c3bd20d7a4b57b9ad9b113c3b560",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 2,
+        "value": "payment_failed"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:fcf103248d587cff0ca102e3ef06b50efbccfb4413de49dba4f155be2ef753c5",
+      "dimension": "enum",
+      "kind": "ENUM_VALUE_HIT",
+      "canonPath": "#/properties/status",
+      "params": {
+        "enumIndex": 1,
+        "value": "pending_payment"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:6052b1d75650942c8bf0ca523c5f0a6adc3dd00480ba822321071f6c822e8ce5",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/cancellation",
+      "params": {
+        "propertyName": "cancellation"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:00e83cfdab704b9ad1601b8f3f52187712e837c67fb7d40e1764581b4396721d",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/completedAt",
+      "params": {
+        "propertyName": "completedAt"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:1a84726034be09d17cb6e16669a8df472f25e3dbf4941cac709b9e944fe69b37",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/customer/properties/id",
+      "params": {
+        "propertyName": "id"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:442951b50427b153455c1bdd2d095e22ae37eb62f5904b89fccb1d18eb02a406",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/customer/properties/isGuest",
+      "params": {
+        "propertyName": "isGuest"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:af582040e823055ffa08f2bcd69bdd2316bac345f2ea8ff7841515266f64e739",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/customer/properties/loyaltyPoints",
+      "params": {
+        "propertyName": "loyaltyPoints"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:9ed90d7149f42b1461d09876fcda91ba21ca2e4435ea860d1b188b63df69b87c",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/customer/properties/loyaltyTier",
+      "params": {
+        "propertyName": "loyaltyTier"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:b948ad4e2d9d4e77672467faa6e1c3a04a14fb8838a155c2dc47b994e8881d9e",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/customer/properties/phone",
+      "params": {
+        "propertyName": "phone"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:471dd1deff0fbaf65ab1df6d1fe3635d72d50c744713fe73bbf4e943ae4eef34",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/customer/properties/preferredLanguage",
+      "params": {
+        "propertyName": "preferredLanguage"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:9d37d1be3f4a2491b7fe4e409548a9e9ea7e97543b70e02c13ba4e5923aba050",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/metadata",
+      "params": {
+        "propertyName": "metadata"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:344495ff17452f7f7207805aaec2cabe1dbaf7f7f7551f1a3ffc171dcf422f3c",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/notes",
+      "params": {
+        "propertyName": "notes"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:29e522dc56663fd8afdaab14707836a4e85bfeedc8c00c2e6dae9d2d1dedc1a5",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/notes/properties/customer",
+      "params": {
+        "propertyName": "customer"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:06fd888291c86e47e44bf01e4b0aa329c0f207005308a9bcf07f5dc3474204c9",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/notes/properties/internal",
+      "params": {
+        "propertyName": "internal"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:658883859f7ed167fdb1bb0e3e5bb9aa70ad5fd25ea4dc0a11f3e05b9d83015f",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/promotions",
+      "params": {
+        "propertyName": "promotions"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:07b18eab7ca6b6e1306faa9f267e1af15e47b2bfd0dc1eb215ed36889b395ee7",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/sameAsBilling",
+      "params": {
+        "propertyName": "sameAsBilling"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:d91b8fa484a850d5720f1748f4164fbe79262a0927706923cbc0f13eb584c35e",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/shippingAddress",
+      "params": {
+        "propertyName": "shippingAddress"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:01b951bbea97144949a888ae06de3f3bfc1ca03ca071e0ae7386f12f20d02c7d",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/campaign",
+      "params": {
+        "propertyName": "campaign"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:52129d86568ef6220ed14021340ab58dffa6df48d22495dc91ddfa4031eeb52f",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/campaign/properties/content",
+      "params": {
+        "propertyName": "content"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:c375f0851a8c2e8a6650e77bde5d89b9ec30a5d8d1e764698946dce2222f25fd",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/campaign/properties/medium",
+      "params": {
+        "propertyName": "medium"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:883a96841271bc11fa39ec57af5d754ddb1deb70079f47407f88399cfcdb455e",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/campaign/properties/name",
+      "params": {
+        "propertyName": "name"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:4eb19b69ed3fb96d8b016d2bb33a3aa5216b27d994d3f5677aa9fcc655248830",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/campaign/properties/source",
+      "params": {
+        "propertyName": "source"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:fea01d17e568abaadfaf313379dfd0844214d1f5515f712c7515276462703020",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/campaign/properties/term",
+      "params": {
+        "propertyName": "term"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:6100951fabd7f004e9645e14b5e75f2ded92370575c032a58eaa6bf788f7d19e",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/deviceId",
+      "params": {
+        "propertyName": "deviceId"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:b62572672d214af8c2f80c9f6bc08c0ebf1de2d7e73e9fa022eb3b686b477e63",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/ip",
+      "params": {
+        "propertyName": "ip"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:84140672f83a48629932bdd435afb7db75ac2da73cb44fe0d3139b150ded596d",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/platform",
+      "params": {
+        "propertyName": "platform"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:bb04e12ef9ef602ede192e1e81469792dba5c72074b468f7b2758b694da9570d",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/referrer",
+      "params": {
+        "propertyName": "referrer"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:6531d7564eef2b8bb91c4e567a05eae1ba8e3285df3f8d92415852c5d28a229b",
+      "dimension": "structure",
+      "kind": "PROPERTY_PRESENT",
+      "canonPath": "#/properties/source/properties/userAgent",
+      "params": {
+        "propertyName": "userAgent"
+      },
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:c98aa0c700502d4ced4d5464be33862a25c3f4b913e8f61c656bb65393d2ba0f",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/billingAddress",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:14862a6ef68fa8557d50a3185d28e6312dba4b4a44edc8c36f46c372ed724cdb",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/cancellation",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:b28d1a5112eb471ff1d4958be06144bd94f9917a3e166a5df74720389217836a",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/completedAt",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:a30e74b5248489d0e9425d1de00b950ab1cf7391d14bf917fada391a9db00f66",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/customer/properties/id",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:fd645c009bc752b8ceb89ce73f00388df7446dab5ac3b536fba2848bf8423bc6",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/customer/properties/isGuest",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:3840416c56dcc18ee95e738dc31f984775d60c504e548dd98684a1de30ab4cc9",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/customer/properties/loyaltyPoints",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:06f1a089bdc5472f0ef60f1b3e97c2d3f5b362244860e2425b62c8e4b30ba2f9",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/customer/properties/loyaltyTier",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:1aae8df877a2bf4ca0691a2a1f40e551fcd1b096498d28e5036e086f9fb57b17",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/customer/properties/phone",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:1cf89526ee2deae38d6db6713c345c091b1282d328956ee58d68850c954e2e2b",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/customer/properties/preferredLanguage",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:c15a7d84ed9e31db33568531871d32bffcb69aecaa499425427ba33556767a17",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/id",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:ea4f41c693ef90624b587c80298e4a9e0a2dd427569d5f84c209cdf09bd781d2",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/items/items",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:415f4b9304c93260dbeed7098c61a87e9472d97cf8a02374c4c2e9c7b92bdddf",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/metadata",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:d574dcab81042af97b4194acfce90b5a4dadd6a29166f25d6eea2f2b1a1bcf1b",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/metadata/additionalProperties",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:7dfeb81a4615b23765fb98f8ce389025002a0d256b66334aab9743a768f5a577",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/metadata/additionalProperties/anyOf/0",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:dea2e9d9ec943e54d3b813cda55f18bdfcf9187a3d58d9fe418dd6fc47b669bc",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/metadata/additionalProperties/anyOf/1",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:6a4cccbed20220852c1c62c44880c62d9402032daa926567a4cf6342380a62fb",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/metadata/additionalProperties/anyOf/2",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:3f8e9f53a2df66a6d9649e8dcccad4f2f13ba6bd3480065c02a6956a719735e5",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/metadata/additionalProperties/anyOf/3",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:5bfb116df1c2e008923e1e7c41eab18d051f10e1ae63741022ea8e24d490f9d0",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/notes",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:7f5f4c074ed1ce74dd9e2158552c875a2b1e6c7876304f8713e73800ed3c8603",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/notes/properties/customer",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:b4ee3447d707abeb8eb9d480d488419c118d2b2c3435d3a14b920a5df6935fca",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/notes/properties/internal",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:6ab0bdd7c352ca3e35be05b7dd6d79851e51a09260363dd5f0d5d79281230bc4",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/notes/properties/internal/items",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:dbe31bfa0895327065ebde99eafe66f429d1678b001df7041ddf1519ca9a281b",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/notes/properties/internal/items/properties/author",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:178db1f8f24d83c47f032e9a4f6b0a848f2d3244466def3a2196617869fa9aa7",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/notes/properties/internal/items/properties/createdAt",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:a94107122bc8a64809b4ddf5cfa3359ce9b966af346c9e6c5754f89c147ab857",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/notes/properties/internal/items/properties/text",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:6842e10b81c2da7ae342c7b82dee731bfabcda10b5db3b327ec24a3b5f9cd369",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/payments/items",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:b515961971052336d51de761746bb612e8f78a08da2bfd80e8e3c16befcc73cf",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/promotions",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:f47f676ab893a0dd2670c801db741efb11029b930428bb01d3238da1b0fd9872",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/promotions/items",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:a2357f457c97adaebc157f0dea8774fc0067e85a31b8bca3f67883a00143c6ab",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/sameAsBilling",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:2aae72b42f35926e5268dcd97cfe6dc0bbc6038dffa1ca3cf016005d9de2b124",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/shipping",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:21f372a3e3e1646b94985e29cc5d991cee1839f17c67c00a195511b21e997211",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/shippingAddress",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:3935ba52e58bd3b84f6afe83e113778c64767bc0d9b598db806b92c1eed45c3e",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/campaign",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:20f9ac3003425e539c4d83c7fa122850c1e7b277f854886eec5bff099f2d75bb",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/campaign/properties/content",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:bc86b3dacb0e0af39cf9d56613fd93fcda9e889f5748995ba9e8d6f141ae7ceb",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/campaign/properties/medium",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:322b20bf9fbb5557826e646e653a606ba3962cc68da26744dcd318162fc19351",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/campaign/properties/name",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:b5fa748d68a977d179338e58fc24a9b01a39da444c99d3fbc16a9a9c735aa32e",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/campaign/properties/source",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:b0678f20245f000d4c7de96206494b83336600dc3609c02a9c8fdb2e47f3cf4d",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/campaign/properties/term",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:9f00b3342bcdbbb9ed64644df6a78bad268b6c08b8772a3641710bfdbae4b865",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/deviceId",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:e73b0498499e1cccee73fb6bff1e7c1b8336bc41aa70b00b0bfa37f95c31ca94",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/ip",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:391139d9d15c693e998d76eea1fdf12d48d2ab972f92e9cc6e0168378ae2c459",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/platform",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:1e5c2934ddb0b42696d93c9b47aaa26d9a67bf786918616a3a5454bc117bdd62",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/referrer",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:d4f2db5d13e1a86499f83b9d5b1f75eebfb73a52d8147a7edceba8db001b5692",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/source/properties/userAgent",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:18b04d10e52b361fe965e9c4b9e5a81b3d07c6c8c97e972d8b757098b4756460",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/timeline",
+      "hit": false
+    },
+    {
+      "id": "cov:0:1:1ad1e26fc90fbba38382fbd5a9a9d34e339ea2dc4482b53735ff4d1613d73dd1",
+      "dimension": "structure",
+      "kind": "SCHEMA_NODE",
+      "canonPath": "#/properties/totals",
+      "hit": false
+    }
+  ],
+  "unsatisfiedHints": [],
+  "diagnostics": {
+    "plannerCapsHit": [],
+    "notes": []
+  }
+}

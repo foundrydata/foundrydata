@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>JSON Schema Report – examples/ecommerce-complex-schema.json</title>
+  <style>body{font-family:system-ui,Segoe UI,sans-serif;margin:0;padding:2rem;background:#f7f7f8;color:#111}
+header.hero{margin-bottom:2rem}
+section{background:#fff;border-radius:0.75rem;padding:1.5rem;margin-bottom:1.5rem;box-shadow:0 1px 4px rgba(15,23,42,.08)}
+h1{margin:0 0 .5rem 0;font-size:2rem}
+.badge{display:inline-flex;align-items:center;padding:0.2rem 0.6rem;border-radius:999px;font-size:0.85rem;font-weight:600;text-transform:capitalize}
+.badge-valid-unchanged{background:#d1fae5;color:#047857}
+.badge-valid-repaired{background:#fef3c7;color:#92400e}
+.badge-invalid{background:#fee2e2;color:#b91c1c}
+table{width:100%;border-collapse:collapse;margin-top:0.5rem}
+th,td{border:1px solid #e5e7eb;padding:0.5rem;text-align:left;font-size:0.9rem}
+pre{background:#0f172a;color:#e0e7ff;padding:0.75rem;border-radius:0.5rem;overflow:auto;font-size:0.85rem}
+ul{padding-left:1.25rem}
+.diag-group{margin-bottom:1rem}
+.diag-group ul{padding-left:1rem}
+.diag-group li{margin-bottom:0.5rem}
+.diag-group pre{margin-top:0.35rem}
+.instances{display:grid;gap:1rem}
+@media(min-width:900px){.instances{grid-template-columns:repeat(2,minmax(0,1fr));}}
+.empty{color:#6b7280;font-style:italic}
+</style>
+</head>
+<body>
+  <header class="hero">
+    <h1>JSON Schema Report – examples/ecommerce-complex-schema.json</h1>
+    <p>Tool json-schema-reporter 0.1.0 · Engine 0.1.1</p>
+    <p>Timestamp 2025-12-01T23:48:14.677Z · Seed 424242</p>
+    <p>3 instances · 3 unchanged · 0 repaired · 0 invalid</p>
+  </header>
+
+  <section>
+    <h2>Timings</h2>
+    <table>
+      <thead><tr><th>Step</th><th>Duration (ms)</th></tr></thead>
+      <tbody><tr><td>normalize</td><td>5.721749999999986</td></tr><tr><td>compose</td><td>23.603874999999988</td></tr><tr><td>generate</td><td>57.542416</td></tr><tr><td>repair</td><td>33.88495900000001</td></tr><tr><td>validate</td><td>32.681332999999995</td></tr></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Diagnostics Summary</h2>
+    <ul>
+      <li>Normalize notes: 0</li>
+      <li>Compose fatal: 0</li>
+      <li>Compose warn: 0</li>
+      <li>Compose unsat hints: 0</li>
+      <li>Compose run-level: 1</li>
+      <li>Repair budget exhausted: 0</li>
+      <li>Validate errors: 0</li>
+    </ul>
+    <div class="diag-grid">
+      <div class="diag-group"><h4>fatal</h4><p class="empty">No entries</p></div>
+      <div class="diag-group"><h4>warn</h4><p class="empty">No entries</p></div>
+      <div class="diag-group"><h4>unsatHints</h4><p class="empty">No entries</p></div>
+      <div class="diag-group"><h4>run</h4><ul><li><span class="code">RESOLVER_STRATEGIES_APPLIED</span> @ #<pre>{
+  &quot;strategies&quot;: [
+    &quot;local&quot;
+  ],
+  &quot;requested&quot;: [
+    &quot;local&quot;
+  ],
+  &quot;cacheDir&quot;: &quot;~/.foundrydata/cache&quot;
+}</pre></li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Coverage Index Snapshot</h2>
+    <table><thead><tr><th>canonPath</th><th>hasUniverse</th><th>enumeratedKeys</th><th>provenance</th></tr></thead><tbody><tr><td>#</td><td>finite</td><td>billingAddress, cancellation, completedAt, createdAt, customer, id, items, metadata, notes, orderNumber, payments, promotions, sameAsBilling, shipping, shippingAddress, source, status, timeline, totals, updatedAt, version</td><td>properties</td></tr><tr><td>/allOf/0/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/0/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/1/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/1/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/1/then/properties/shipping</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/2/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/2/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/3/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/allOf/3/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/properties/customer</td><td>finite</td><td>email, firstName, id, isGuest, lastName, loyaltyPoints, loyaltyTier, phone, preferredLanguage</td><td>properties</td></tr><tr><td>/properties/notes</td><td>finite</td><td>customer, internal</td><td>properties</td></tr><tr><td>/properties/notes/properties/internal/items</td><td>finite</td><td>author, createdAt, text</td><td>properties</td></tr><tr><td>/properties/metadata</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/properties/source</td><td>finite</td><td>campaign, channel, deviceId, ip, platform, referrer, userAgent</td><td>properties</td></tr><tr><td>/properties/source/properties/campaign</td><td>finite</td><td>content, medium, name, source, term</td><td>properties</td></tr><tr><td>/$defs/money</td><td>finite</td><td>amount, currency</td><td>properties</td></tr><tr><td>/$defs/address</td><td>finite</td><td>city, coordinates, country, postalCode, state, street, street2</td><td>properties</td></tr><tr><td>/$defs/address/properties/coordinates</td><td>finite</td><td>lat, lng</td><td>properties</td></tr><tr><td>/$defs/contact</td><td>finite</td><td>email, firstName, lastName, phone, preferredLanguage</td><td>properties</td></tr><tr><td>/$defs/basePayment</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/cardPayment/allOf/1</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/cardPayment/allOf/1/properties/card</td><td>finite</td><td>brand, expiryMonth, expiryYear, fingerprint, holderName, is3DSecure, last4</td><td>properties</td></tr><tr><td>/$defs/paypalPayment/allOf/1</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/paypalPayment/allOf/1/properties/paypal</td><td>finite</td><td>payerEmail, payerId, transactionId</td><td>properties</td></tr><tr><td>/$defs/bankTransferPayment/allOf/1</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/bankTransferPayment/allOf/1/properties/bankTransfer</td><td>finite</td><td>bic, dueDate, iban, reference</td><td>properties</td></tr><tr><td>/$defs/giftCardPayment/allOf/1</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/giftCardPayment/allOf/1/properties/giftCard</td><td>finite</td><td>code, originalBalance, pin, usedAmount</td><td>properties</td></tr><tr><td>/$defs/productVariant</td><td>finite</td><td>attributes, name, sku</td><td>properties</td></tr><tr><td>/$defs/productVariant/properties/attributes</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/orderItem</td><td>finite</td><td>customization, discount, giftMessage, id, isGift, product, quantity, totalPrice, unitPrice</td><td>properties</td></tr><tr><td>/$defs/orderItem/allOf/0/anyOf/0/not</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/orderItem/allOf/0/anyOf/1</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/orderItem/properties/discount</td><td>finite</td><td>reason, type, value</td><td>properties</td></tr><tr><td>/$defs/orderItem/properties/customization</td><td>finite</td><td>engraving, notes, wrapping</td><td>properties</td></tr><tr><td>/$defs/promotion</td><td>finite</td><td>applicableCategories, buyQuantity, code, getQuantity, maxDiscount, minOrderAmount, type, usageCount, usageLimit, validFrom, validUntil, value</td><td>properties</td></tr><tr><td>/$defs/promotion/allOf/0/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/promotion/allOf/0/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/promotion/allOf/1/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/promotion/allOf/1/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/promotion/allOf/2/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/promotion/allOf/2/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/shippingMethod</td><td>finite</td><td>carrier, deliveryInstructions, estimatedDelivery, insurance, pickupPoint, price, service, signature, trackingNumber, trackingUrl</td><td>properties</td></tr><tr><td>/$defs/shippingMethod/if</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/shippingMethod/then</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/shippingMethod/properties/estimatedDelivery</td><td>finite</td><td>estimatedDate, maxDays, minDays</td><td>properties</td></tr><tr><td>/$defs/shippingMethod/properties/insurance</td><td>finite</td><td>enabled, provider, value</td><td>properties</td></tr><tr><td>/$defs/shippingMethod/properties/pickupPoint</td><td>finite</td><td>address, id, name, openingHours</td><td>properties</td></tr><tr><td>/$defs/shippingMethod/properties/pickupPoint/properties/openingHours</td><td>finite</td><td>friday, monday, saturday, sunday, thursday, tuesday, wednesday</td><td>properties</td></tr><tr><td>/$defs/dayHours/anyOf/1</td><td>finite</td><td>close, open</td><td>properties</td></tr><tr><td>/$defs/orderTimeline/items</td><td>finite</td><td>actor, event, metadata, note, timestamp</td><td>properties</td></tr><tr><td>/$defs/orderTimeline/items/properties/actor</td><td>finite</td><td>id, name, type</td><td>properties</td></tr><tr><td>/$defs/orderTimeline/items/properties/metadata</td><td>unknown</td><td>—</td><td></td></tr><tr><td>/$defs/orderTotals</td><td>finite</td><td>discounts, shipping, subtotal, tax, total</td><td>properties</td></tr><tr><td>/$defs/orderTotals/properties/tax</td><td>finite</td><td>amount, breakdown, rate</td><td>properties</td></tr><tr><td>/$defs/orderTotals/properties/tax/properties/breakdown/items</td><td>finite</td><td>amount, name, rate</td><td>properties</td></tr><tr><td>/$defs/cancellation</td><td>finite</td><td>details, processedAt, reason, requestedAt, requestedBy</td><td>properties</td></tr></tbody></table>
+  </section>
+
+  <section>
+    <h2>Instances</h2>
+    <div class="instances">
+      <article class="instance">
+    <header>
+      <h3>Instance #0</h3>
+      <span class="badge badge-valid-unchanged">valid-unchanged</span>
+    </header>
+    <pre>{
+  &quot;billingAddress&quot;: {
+    &quot;city&quot;: &quot;-&quot;,
+    &quot;country&quot;: &quot;AA&quot;,
+    &quot;postalCode&quot;: &quot;--&quot;,
+    &quot;street&quot;: &quot;-&quot;
+  },
+  &quot;createdAt&quot;: &quot;2024-04-27T10:55:46.000Z&quot;,
+  &quot;customer&quot;: {
+    &quot;email&quot;: &quot;user.1lctcj5@example.test&quot;,
+    &quot;firstName&quot;: &quot;-&quot;,
+    &quot;lastName&quot;: &quot;-&quot;
+  },
+  &quot;id&quot;: &quot;15682b96-a105-4f9e-b444-c8ab372f94cb&quot;,
+  &quot;items&quot;: [
+    {
+      &quot;giftMessage&quot;: &quot;&quot;,
+      &quot;id&quot;: &quot;e3230563-bf2b-4d28-aa28-7b28f194bfe3&quot;,
+      &quot;isGift&quot;: false,
+      &quot;product&quot;: {
+        &quot;name&quot;: &quot;-&quot;,
+        &quot;sku&quot;: &quot;AA-0000&quot;
+      },
+      &quot;quantity&quot;: 1,
+      &quot;totalPrice&quot;: {
+        &quot;amount&quot;: 0,
+        &quot;currency&quot;: &quot;AAA&quot;
+      },
+      &quot;unitPrice&quot;: {
+        &quot;amount&quot;: 0,
+        &quot;currency&quot;: &quot;AAA&quot;
+      }
+    }
+  ],
+  &quot;orderNumber&quot;: &quot;ORD-0000-AAAAAAAA&quot;,
+  &quot;payments&quot;: [
+    {
+      &quot;amount&quot;: {
+        &quot;amount&quot;: 0,
+        &quot;currency&quot;: &quot;AAA&quot;
+      },
+      &quot;card&quot;: {
+        &quot;brand&quot;: &quot;visa&quot;,
+        &quot;expiryMonth&quot;: 1,
+        &quot;expiryYear&quot;: 2024,
+        &quot;holderName&quot;: &quot;--&quot;,
+        &quot;last4&quot;: &quot;0000&quot;
+      },
+      &quot;id&quot;: &quot;c9afef45-822f-4cb2-9cf7-b2d03c276746&quot;,
+      &quot;method&quot;: &quot;card&quot;,
+      &quot;status&quot;: &quot;pending&quot;
+    }
+  ],
+  &quot;shipping&quot;: {
+    &quot;carrier&quot;: &quot;colissimo&quot;,
+    &quot;estimatedDelivery&quot;: {
+      &quot;maxDays&quot;: 0,
+      &quot;minDays&quot;: 0
+    },
+    &quot;price&quot;: {
+      &quot;amount&quot;: 0,
+      &quot;currency&quot;: &quot;AAA&quot;
+    }
+  },
+  &quot;source&quot;: {
+    &quot;channel&quot;: &quot;web&quot;
+  },
+  &quot;status&quot;: &quot;draft&quot;,
+  &quot;timeline&quot;: [
+    {
+      &quot;actor&quot;: {
+        &quot;type&quot;: &quot;customer&quot;
+      },
+      &quot;event&quot;: &quot;created&quot;,
+      &quot;timestamp&quot;: &quot;2024-09-23T18:32:48.000Z&quot;
+    }
+  ],
+  &quot;totals&quot;: {
+    &quot;shipping&quot;: {
+      &quot;amount&quot;: 0,
+      &quot;currency&quot;: &quot;AAA&quot;
+    },
+    &quot;subtotal&quot;: {
+      &quot;amount&quot;: 0,
+      &quot;currency&quot;: &quot;AAA&quot;
+    },
+    &quot;tax&quot;: {
+      &quot;amount&quot;: {
+        &quot;amount&quot;: 0,
+        &quot;currency&quot;: &quot;AAA&quot;
+      },
+      &quot;rate&quot;: 0
+    },
+    &quot;total&quot;: {
+      &quot;amount&quot;: 0,
+      &quot;currency&quot;: &quot;AAA&quot;
+    }
+  },
+  &quot;updatedAt&quot;: &quot;2024-05-27T10:44:43.000Z&quot;,
+  &quot;version&quot;: 1
+}</pre>
+    <p class="stats">validation errors: 0 · repair actions: 0</p>
+    
+    
+  </article><article class="instance">
+    <header>
+      <h3>Instance #1</h3>
+      <span class="badge badge-valid-unchanged">valid-unchanged</span>
+    </header>
+    <pre>{
+  &quot;billingAddress&quot;: {
+    &quot;city&quot;: &quot;-&quot;,
+    &quot;country&quot;: &quot;AA&quot;,
+    &quot;postalCode&quot;: &quot;--&quot;,
+    &quot;street&quot;: &quot;-&quot;
+  },
+  &quot;createdAt&quot;: &quot;2024-04-19T21:32:37.000Z&quot;,
+  &quot;customer&quot;: {
+    &quot;email&quot;: &quot;user.15tpt65@example.test&quot;,
+    &quot;firstName&quot;: &quot;-&quot;,
+    &quot;lastName&quot;: &quot;-&quot;
+  },
+  &quot;id&quot;: &quot;f327713c-343d-4609-9490-db163474e5fc&quot;,
+  &quot;items&quot;: [
+    {
+      &quot;giftMessage&quot;: &quot;&quot;,
+      &quot;id&quot;: &quot;26ea8538-0670-4c3d-b0d7-71ce571b7a65&quot;,
+      &quot;isGift&quot;: false,
+      &quot;product&quot;: {
+        &quot;name&quot;: &quot;-&quot;,
+        &quot;sku&quot;: &quot;AA-0000&quot;
+      },
+      &quot;quantity&quot;: 1,
+      &quot;totalPrice&quot;: {
+        &quot;amount&quot;: 0,
+        &quot;currency&quot;: &quot;AAA&quot;
+      },
+      &quot;unitPrice&quot;: {
+        &quot;amount&quot;: 0,
+        &quot;currency&quot;: &quot;AAA&quot;
+      }
+    }
+  ],
+  &quot;orderNumber&quot;: &quot;ORD-0000-AAAAAAAA&quot;,
+  &quot;payments&quot;: [
+    {
+      &quot;amount&quot;: {
+        &quot;amount&quot;: 0,
+        &quot;currency&quot;: &quot;AAA&quot;
+      },
+      &quot;card&quot;: {
+        &quot;brand&quot;: &quot;visa&quot;,
+        &quot;expiryMonth&quot;: 1,
+        &quot;expiryYear&quot;: 2024,
+        &quot;holderName&quot;: &quot;--&quot;,
+        &quot;last4&quot;: &quot;0000&quot;
+      },
+      &quot;id&quot;: &quot;8a4d6fd9-45a9-4c2b-bf9d-be785b2f2cca&quot;,
+      &quot;method&quot;: &quot;card&quot;,
+      &quot;status&quot;: &quot;pending&quot;
+    }
+  ],
+  &quot;shipping&quot;: {
+    &quot;carrier&quot;: &quot;colissimo&quot;,
+    &quot;estimatedDelivery&quot;: {
+      &quot;maxDays&quot;: 0,
+      &quot;minDays&quot;: 0
+    },
+    &quot;price&quot;: {
+      &quot;amount&quot;: 0,
+      &quot;currency&quot;: &quot;AAA&quot;
+    }
+  },
+  &quot;source&quot;: {
+    &quot;channel&quot;: &quot;web&quot;
+  },
+  &quot;status&quot;: &quot;draft&quot;,
+  &quot;timeline&quot;: [
+    {
+      &quot;actor&quot;: {
+        &quot;type&quot;: &quot;customer&quot;
+      },
+      &quot;event&quot;: &quot;created&quot;,
+      &quot;timestamp&quot;: &quot;2024-08-16T07:23:01.000Z&quot;
+    }
+  ],
+  &quot;totals&quot;: {
+    &quot;shipping&quot;: {
+      &quot;amount&quot;: 0,
+      &quot;currency&quot;: &quot;AAA&quot;
+    },
+    &quot;subtotal&quot;: {
+      &quot;amount&quot;: 0,
+      &quot;currency&quot;: &quot;AAA&quot;
+    },
+    &quot;tax&quot;: {
+      &quot;amount&quot;: {
+        &quot;amount&quot;: 0,
+        &quot;currency&quot;: &quot;AAA&quot;
+      },
+      &quot;rate&quot;: 0
+    },
+    &quot;total&quot;: {
+      &quot;amount&quot;: 0,
+      &quot;currency&quot;: &quot;AAA&quot;
+    }
+  },
+  &quot;updatedAt&quot;: &quot;2024-09-29T02:27:52.000Z&quot;,
+  &quot;version&quot;: 1
+}</pre>
+    <p class="stats">validation errors: 0 · repair actions: 0</p>
+    
+    
+  </article><article class="instance">
+    <header>
+      <h3>Instance #2</h3>
+      <span class="badge badge-valid-unchanged">valid-unchanged</span>
+    </header>
+    <pre>{
+  &quot;billingAddress&quot;: {
+    &quot;city&quot;: &quot;-&quot;,
+    &quot;country&quot;: &quot;AA&quot;,
+    &quot;postalCode&quot;: &quot;--&quot;,
+    &quot;street&quot;: &quot;-&quot;
+  },
+  &quot;createdAt&quot;: &quot;2024-04-19T08:27:33.000Z&quot;,
+  &quot;customer&quot;: {
+    &quot;email&quot;: &quot;user.3pqtbd@example.test&quot;,
+    &quot;firstName&quot;: &quot;-&quot;,
+    &quot;lastName&quot;: &quot;-&quot;
+  },
+  &quot;id&quot;: &quot;613a16e1-cc20-4bed-ad6d-5ea91c0c9cf8&quot;,
+  &quot;items&quot;: [
+    {
+      &quot;giftMessage&quot;: &quot;&quot;,
+      &quot;id&quot;: &quot;1b3e0888-3e26-4876-a93e-943f210279b2&quot;,
+      &quot;isGift&quot;: false,
+      &quot;product&quot;: {
+        &quot;name&quot;: &quot;-&quot;,
+        &quot;sku&quot;: &quot;AA-0000&quot;
+      },
+      &quot;quantity&quot;: 1,
+      &quot;totalPrice&quot;: {
+        &quot;amount&quot;: 0,
+        &quot;currency&quot;: &quot;AAA&quot;
+      },
+      &quot;unitPrice&quot;: {
+        &quot;amount&quot;: 0,
+        &quot;currency&quot;: &quot;AAA&quot;
+      }
+    }
+  ],
+  &quot;orderNumber&quot;: &quot;ORD-0000-AAAAAAAA&quot;,
+  &quot;payments&quot;: [
+    {
+      &quot;amount&quot;: {
+        &quot;amount&quot;: 0,
+        &quot;currency&quot;: &quot;AAA&quot;
+      },
+      &quot;card&quot;: {
+        &quot;brand&quot;: &quot;visa&quot;,
+        &quot;expiryMonth&quot;: 1,
+        &quot;expiryYear&quot;: 2024,
+        &quot;holderName&quot;: &quot;--&quot;,
+        &quot;last4&quot;: &quot;0000&quot;
+      },
+      &quot;id&quot;: &quot;501be0b3-b521-42a1-af9a-6a5bb0a8d00f&quot;,
+      &quot;method&quot;: &quot;card&quot;,
+      &quot;status&quot;: &quot;pending&quot;
+    }
+  ],
+  &quot;shipping&quot;: {
+    &quot;carrier&quot;: &quot;colissimo&quot;,
+    &quot;estimatedDelivery&quot;: {
+      &quot;maxDays&quot;: 0,
+      &quot;minDays&quot;: 0
+    },
+    &quot;price&quot;: {
+      &quot;amount&quot;: 0,
+      &quot;currency&quot;: &quot;AAA&quot;
+    }
+  },
+  &quot;source&quot;: {
+    &quot;channel&quot;: &quot;web&quot;
+  },
+  &quot;status&quot;: &quot;draft&quot;,
+  &quot;timeline&quot;: [
+    {
+      &quot;actor&quot;: {
+        &quot;type&quot;: &quot;customer&quot;
+      },
+      &quot;event&quot;: &quot;created&quot;,
+      &quot;timestamp&quot;: &quot;2024-04-13T12:02:40.000Z&quot;
+    }
+  ],
+  &quot;totals&quot;: {
+    &quot;shipping&quot;: {
+      &quot;amount&quot;: 0,
+      &quot;currency&quot;: &quot;AAA&quot;
+    },
+    &quot;subtotal&quot;: {
+      &quot;amount&quot;: 0,
+      &quot;currency&quot;: &quot;AAA&quot;
+    },
+    &quot;tax&quot;: {
+      &quot;amount&quot;: {
+        &quot;amount&quot;: 0,
+        &quot;currency&quot;: &quot;AAA&quot;
+      },
+      &quot;rate&quot;: 0
+    },
+    &quot;total&quot;: {
+      &quot;amount&quot;: 0,
+      &quot;currency&quot;: &quot;AAA&quot;
+    }
+  },
+  &quot;updatedAt&quot;: &quot;2024-02-27T23:37:32.000Z&quot;,
+  &quot;version&quot;: 1
+}</pre>
+    <p class="stats">validation errors: 0 · repair actions: 0</p>
+    
+    
+  </article>
+    </div>
+  </section>
+</body>
+</html>

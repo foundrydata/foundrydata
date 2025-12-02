@@ -1,0 +1,4106 @@
+{
+  "schemaId": "examples/ecommerce-complex-schema.json",
+  "schemaPath": "examples/ecommerce-complex-schema.json",
+  "schemaHash": "308834491be2db2c2488f318dc18fa2fd731280187cc5f8ee133b5126baf2143",
+  "planOptions": {},
+  "meta": {
+    "toolName": "json-schema-reporter",
+    "toolVersion": "0.1.0",
+    "engineVersion": "0.1.1",
+    "timestamp": "2025-12-01T23:48:14.677Z",
+    "seed": 424242
+  },
+  "normalize": {
+    "result": {
+      "schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "https://api.myshop.com/schemas/order.json",
+        "title": "E-Commerce Order",
+        "description": "Schéma complet pour une commande e-commerce avec paiement, livraison et promotions",
+        "$defs": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identifiant unique UUID v4"
+          },
+          "money": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "number",
+                "minimum": 0,
+                "multipleOf": 0.01,
+                "description": "Montant avec 2 décimales max"
+              },
+              "currency": {
+                "type": "string",
+                "pattern": "^[A-Z]{3}$",
+                "default": "EUR",
+                "examples": [
+                  "EUR",
+                  "USD",
+                  "GBP"
+                ]
+              }
+            },
+            "required": [
+              "amount",
+              "currency"
+            ],
+            "additionalProperties": false
+          },
+          "address": {
+            "type": "object",
+            "properties": {
+              "street": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "street2": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "city": {
+                "type": "string",
+                "minLength": 1
+              },
+              "state": {
+                "type": "string"
+              },
+              "postalCode": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 20
+              },
+              "country": {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$",
+                "description": "Code pays ISO 3166-1 alpha-2"
+              },
+              "coordinates": {
+                "type": "object",
+                "properties": {
+                  "lat": {
+                    "type": "number",
+                    "minimum": -90,
+                    "maximum": 90
+                  },
+                  "lng": {
+                    "type": "number",
+                    "minimum": -180,
+                    "maximum": 180
+                  }
+                },
+                "required": [
+                  "lat",
+                  "lng"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "street",
+              "city",
+              "postalCode",
+              "country"
+            ],
+            "additionalProperties": false
+          },
+          "contact": {
+            "type": "object",
+            "properties": {
+              "firstName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "lastName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "email": {
+                "type": "string",
+                "format": "email"
+              },
+              "phone": {
+                "type": "string",
+                "pattern": "^\\+[1-9]\\d{6,14}$",
+                "description": "Format E.164 international"
+              },
+              "preferredLanguage": {
+                "type": "string",
+                "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+                "default": "fr-FR",
+                "examples": [
+                  "fr-FR",
+                  "en-US",
+                  "de"
+                ]
+              }
+            },
+            "required": [
+              "firstName",
+              "lastName",
+              "email"
+            ],
+            "additionalProperties": false
+          },
+          "basePayment": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/uuid"
+              },
+              "amount": {
+                "$ref": "#/$defs/money"
+              },
+              "status": {
+                "enum": [
+                  "pending",
+                  "authorized",
+                  "captured",
+                  "failed",
+                  "refunded"
+                ]
+              },
+              "processedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "amount",
+              "status"
+            ]
+          },
+          "cardPayment": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/basePayment"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "method": {
+                    "const": "card"
+                  },
+                  "card": {
+                    "type": "object",
+                    "properties": {
+                      "brand": {
+                        "enum": [
+                          "visa",
+                          "mastercard",
+                          "amex",
+                          "cb"
+                        ]
+                      },
+                      "last4": {
+                        "type": "string",
+                        "pattern": "^\\d{4}$"
+                      },
+                      "expiryMonth": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 12
+                      },
+                      "expiryYear": {
+                        "type": "integer",
+                        "minimum": 2024,
+                        "maximum": 2100
+                      },
+                      "holderName": {
+                        "type": "string",
+                        "minLength": 2
+                      },
+                      "fingerprint": {
+                        "type": "string"
+                      },
+                      "is3DSecure": {
+                        "type": "boolean",
+                        "default": false
+                      }
+                    },
+                    "required": [
+                      "brand",
+                      "last4",
+                      "expiryMonth",
+                      "expiryYear",
+                      "holderName"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "method",
+                  "card"
+                ]
+              }
+            ]
+          },
+          "paypalPayment": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/basePayment"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "method": {
+                    "const": "paypal"
+                  },
+                  "paypal": {
+                    "type": "object",
+                    "properties": {
+                      "payerId": {
+                        "type": "string"
+                      },
+                      "payerEmail": {
+                        "type": "string",
+                        "format": "email"
+                      },
+                      "transactionId": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "payerId",
+                      "payerEmail"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "method",
+                  "paypal"
+                ]
+              }
+            ]
+          },
+          "bankTransferPayment": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/basePayment"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "method": {
+                    "const": "bank_transfer"
+                  },
+                  "bankTransfer": {
+                    "type": "object",
+                    "properties": {
+                      "iban": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{2}\\d{2}[A-Z0-9]{4,30}$"
+                      },
+                      "bic": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$"
+                      },
+                      "reference": {
+                        "type": "string"
+                      },
+                      "dueDate": {
+                        "type": "string",
+                        "format": "date"
+                      }
+                    },
+                    "required": [
+                      "iban",
+                      "reference",
+                      "dueDate"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "method",
+                  "bankTransfer"
+                ]
+              }
+            ]
+          },
+          "giftCardPayment": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/basePayment"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "method": {
+                    "const": "gift_card"
+                  },
+                  "giftCard": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "pattern": "^GC-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$"
+                      },
+                      "pin": {
+                        "type": "string",
+                        "pattern": "^\\d{4}$"
+                      },
+                      "originalBalance": {
+                        "$ref": "#/$defs/money"
+                      },
+                      "usedAmount": {
+                        "$ref": "#/$defs/money"
+                      }
+                    },
+                    "required": [
+                      "code",
+                      "pin",
+                      "usedAmount"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "method",
+                  "giftCard"
+                ]
+              }
+            ]
+          },
+          "payment": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/cardPayment"
+              },
+              {
+                "$ref": "#/$defs/paypalPayment"
+              },
+              {
+                "$ref": "#/$defs/bankTransferPayment"
+              },
+              {
+                "$ref": "#/$defs/giftCardPayment"
+              }
+            ]
+          },
+          "productVariant": {
+            "type": "object",
+            "properties": {
+              "sku": {
+                "type": "string",
+                "pattern": "^[A-Z]{2,4}-\\d{4,8}(-[A-Z0-9]+)?$",
+                "examples": [
+                  "TSHIRT-12345-BLU-M",
+                  "ELEC-98765432"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "attributes": {
+                "type": "object",
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  ]
+                },
+                "examples": [
+                  {
+                    "color": "blue",
+                    "size": "M",
+                    "material": "cotton"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "sku",
+              "name"
+            ],
+            "additionalProperties": false
+          },
+          "orderItem": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/uuid"
+              },
+              "product": {
+                "$ref": "#/$defs/productVariant"
+              },
+              "quantity": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 999,
+                "default": 1
+              },
+              "unitPrice": {
+                "$ref": "#/$defs/money"
+              },
+              "totalPrice": {
+                "$ref": "#/$defs/money"
+              },
+              "discount": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "percentage",
+                      "fixed"
+                    ]
+                  },
+                  "value": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type",
+                  "value"
+                ],
+                "additionalProperties": false
+              },
+              "isGift": {
+                "type": "boolean",
+                "default": false
+              },
+              "giftMessage": {
+                "type": "string",
+                "maxLength": 500
+              },
+              "customization": {
+                "type": "object",
+                "properties": {
+                  "engraving": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "wrapping": {
+                    "enum": [
+                      "none",
+                      "standard",
+                      "premium"
+                    ]
+                  },
+                  "notes": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "id",
+              "product",
+              "quantity",
+              "unitPrice",
+              "totalPrice"
+            ],
+            "additionalProperties": false,
+            "dependentRequired": {
+              "giftMessage": [
+                "isGift"
+              ]
+            },
+            "allOf": [
+              {
+                "anyOf": [
+                  {
+                    "not": {
+                      "required": [
+                        "giftMessage"
+                      ]
+                    }
+                  },
+                  {
+                    "required": [
+                      "giftMessage",
+                      "isGift"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "promotion": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "pattern": "^[A-Z0-9]{4,20}$",
+                "examples": [
+                  "SUMMER2024",
+                  "WELCOME10"
+                ]
+              },
+              "type": {
+                "enum": [
+                  "percentage",
+                  "fixed_amount",
+                  "free_shipping",
+                  "buy_x_get_y",
+                  "bundle"
+                ]
+              },
+              "value": {
+                "type": "number",
+                "minimum": 0
+              },
+              "buyQuantity": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "getQuantity": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "minOrderAmount": {
+                "$ref": "#/$defs/money"
+              },
+              "maxDiscount": {
+                "$ref": "#/$defs/money"
+              },
+              "applicableCategories": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "uniqueItems": true
+              },
+              "validFrom": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "validUntil": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "usageLimit": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "usageCount": {
+                "type": "integer",
+                "minimum": 0,
+                "default": 0
+              }
+            },
+            "required": [
+              "code",
+              "type"
+            ],
+            "additionalProperties": false,
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "percentage",
+                        "fixed_amount"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "value"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "percentage"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "value": {
+                      "maximum": 100
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "buy_x_get_y"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "buyQuantity",
+                    "getQuantity"
+                  ]
+                }
+              }
+            ]
+          },
+          "shippingMethod": {
+            "type": "object",
+            "properties": {
+              "carrier": {
+                "enum": [
+                  "colissimo",
+                  "chronopost",
+                  "mondial_relay",
+                  "dhl",
+                  "ups",
+                  "fedex",
+                  "pickup"
+                ]
+              },
+              "service": {
+                "type": "string"
+              },
+              "price": {
+                "$ref": "#/$defs/money"
+              },
+              "estimatedDelivery": {
+                "type": "object",
+                "properties": {
+                  "minDays": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "maxDays": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "estimatedDate": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                },
+                "required": [
+                  "minDays",
+                  "maxDays"
+                ],
+                "additionalProperties": false
+              },
+              "trackingNumber": {
+                "type": "string"
+              },
+              "trackingUrl": {
+                "type": "string",
+                "format": "uri"
+              },
+              "signature": {
+                "type": "boolean",
+                "default": false
+              },
+              "insurance": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "value": {
+                    "$ref": "#/$defs/money"
+                  },
+                  "provider": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "deliveryInstructions": {
+                "type": "string",
+                "maxLength": 500,
+                "description": "Instructions pour le livreur"
+              },
+              "pickupPoint": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "$ref": "#/$defs/address"
+                  },
+                  "openingHours": {
+                    "type": "object",
+                    "properties": {
+                      "monday": {
+                        "$ref": "#/$defs/dayHours"
+                      },
+                      "tuesday": {
+                        "$ref": "#/$defs/dayHours"
+                      },
+                      "wednesday": {
+                        "$ref": "#/$defs/dayHours"
+                      },
+                      "thursday": {
+                        "$ref": "#/$defs/dayHours"
+                      },
+                      "friday": {
+                        "$ref": "#/$defs/dayHours"
+                      },
+                      "saturday": {
+                        "$ref": "#/$defs/dayHours"
+                      },
+                      "sunday": {
+                        "$ref": "#/$defs/dayHours"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "address"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "carrier",
+              "price",
+              "estimatedDelivery"
+            ],
+            "additionalProperties": false,
+            "if": {
+              "properties": {
+                "carrier": {
+                  "const": "pickup"
+                }
+              },
+              "required": [
+                "carrier"
+              ]
+            },
+            "then": {
+              "required": [
+                "pickupPoint"
+              ]
+            }
+          },
+          "dayHours": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "open": {
+                    "type": "string",
+                    "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                  },
+                  "close": {
+                    "type": "string",
+                    "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                  }
+                },
+                "required": [
+                  "open",
+                  "close"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "orderTimeline": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "timestamp": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "event": {
+                  "enum": [
+                    "created",
+                    "payment_pending",
+                    "payment_authorized",
+                    "payment_captured",
+                    "payment_failed",
+                    "confirmed",
+                    "processing",
+                    "shipped",
+                    "out_for_delivery",
+                    "delivered",
+                    "cancelled",
+                    "refund_requested",
+                    "refunded",
+                    "disputed"
+                  ]
+                },
+                "actor": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "customer",
+                        "system",
+                        "admin",
+                        "carrier"
+                      ]
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                "metadata": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "note": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "timestamp",
+                "event",
+                "actor"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1
+          },
+          "orderTotals": {
+            "type": "object",
+            "properties": {
+              "subtotal": {
+                "$ref": "#/$defs/money"
+              },
+              "shipping": {
+                "$ref": "#/$defs/money"
+              },
+              "tax": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "$ref": "#/$defs/money"
+                  },
+                  "rate": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "breakdown": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "rate": {
+                          "type": "number"
+                        },
+                        "amount": {
+                          "$ref": "#/$defs/money"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "rate",
+                        "amount"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "amount",
+                  "rate"
+                ],
+                "additionalProperties": false
+              },
+              "discounts": {
+                "$ref": "#/$defs/money"
+              },
+              "total": {
+                "$ref": "#/$defs/money"
+              }
+            },
+            "required": [
+              "subtotal",
+              "shipping",
+              "tax",
+              "total"
+            ],
+            "additionalProperties": false
+          },
+          "cancellation": {
+            "type": "object",
+            "properties": {
+              "reason": {
+                "enum": [
+                  "customer_request",
+                  "payment_failed",
+                  "fraud_suspected",
+                  "out_of_stock",
+                  "shipping_issue",
+                  "other"
+                ]
+              },
+              "details": {
+                "type": "string"
+              },
+              "requestedBy": {
+                "enum": [
+                  "customer",
+                  "admin",
+                  "system"
+                ]
+              },
+              "requestedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "processedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "reason",
+              "requestedBy",
+              "requestedAt"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/uuid"
+          },
+          "orderNumber": {
+            "type": "string",
+            "pattern": "^ORD-\\d{4}-[A-Z0-9]{8}$",
+            "examples": [
+              "ORD-2024-A1B2C3D4"
+            ]
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "pending_payment",
+              "payment_failed",
+              "confirmed",
+              "processing",
+              "shipped",
+              "delivered",
+              "cancelled",
+              "refunded"
+            ],
+            "default": "draft"
+          },
+          "customer": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/uuid"
+              },
+              "firstName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "lastName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "email": {
+                "type": "string",
+                "format": "email"
+              },
+              "phone": {
+                "type": "string",
+                "pattern": "^\\+[1-9]\\d{6,14}$"
+              },
+              "preferredLanguage": {
+                "type": "string",
+                "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+                "default": "fr-FR"
+              },
+              "isGuest": {
+                "type": "boolean",
+                "default": false
+              },
+              "loyaltyTier": {
+                "enum": [
+                  "bronze",
+                  "silver",
+                  "gold",
+                  "platinum"
+                ]
+              },
+              "loyaltyPoints": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "firstName",
+              "lastName",
+              "email"
+            ],
+            "additionalProperties": false
+          },
+          "billingAddress": {
+            "$ref": "#/$defs/address"
+          },
+          "shippingAddress": {
+            "$ref": "#/$defs/address"
+          },
+          "sameAsBilling": {
+            "type": "boolean",
+            "default": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/orderItem"
+            },
+            "minItems": 1,
+            "maxItems": 100
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/payment"
+            },
+            "minItems": 1,
+            "description": "Supporte les paiements multiples (split payment, gift card + carte)"
+          },
+          "shipping": {
+            "$ref": "#/$defs/shippingMethod"
+          },
+          "promotions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/promotion"
+            },
+            "uniqueItems": true,
+            "maxItems": 5
+          },
+          "totals": {
+            "$ref": "#/$defs/orderTotals"
+          },
+          "timeline": {
+            "$ref": "#/$defs/orderTimeline"
+          },
+          "cancellation": {
+            "$ref": "#/$defs/cancellation"
+          },
+          "notes": {
+            "type": "object",
+            "properties": {
+              "customer": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "internal": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string"
+                    },
+                    "author": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "author",
+                    "createdAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": "Champs personnalisés pour intégrations tierces"
+          },
+          "source": {
+            "type": "object",
+            "properties": {
+              "channel": {
+                "enum": [
+                  "web",
+                  "mobile_app",
+                  "pos",
+                  "phone",
+                  "marketplace",
+                  "api"
+                ]
+              },
+              "platform": {
+                "type": "string"
+              },
+              "deviceId": {
+                "type": "string"
+              },
+              "ip": {
+                "type": "string"
+              },
+              "userAgent": {
+                "type": "string"
+              },
+              "referrer": {
+                "type": "string",
+                "format": "uri"
+              },
+              "campaign": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string"
+                  },
+                  "medium": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "term": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "channel"
+            ],
+            "additionalProperties": false
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Optimistic locking"
+          }
+        },
+        "required": [
+          "id",
+          "orderNumber",
+          "status",
+          "customer",
+          "billingAddress",
+          "items",
+          "payments",
+          "shipping",
+          "totals",
+          "timeline",
+          "source",
+          "createdAt",
+          "updatedAt",
+          "version"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "sameAsBilling": {
+                  "const": false
+                }
+              },
+              "required": [
+                "sameAsBilling"
+              ]
+            },
+            "then": {
+              "required": [
+                "shippingAddress"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "enum": [
+                    "shipped",
+                    "delivered"
+                  ]
+                }
+              },
+              "required": [
+                "status"
+              ]
+            },
+            "then": {
+              "properties": {
+                "shipping": {
+                  "properties": {
+                    "trackingNumber": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "trackingNumber"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "delivered"
+                }
+              },
+              "required": [
+                "status"
+              ]
+            },
+            "then": {
+              "required": [
+                "completedAt"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "enum": [
+                    "cancelled",
+                    "refunded"
+                  ]
+                }
+              },
+              "required": [
+                "status"
+              ]
+            },
+            "then": {
+              "required": [
+                "cancellation"
+              ]
+            }
+          }
+        ]
+      },
+      "ptrMap": {},
+      "revPtrMap": {},
+      "notes": []
+    }
+  },
+  "compose": {
+    "result": {
+      "canonical": {
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "https://api.myshop.com/schemas/order.json",
+          "title": "E-Commerce Order",
+          "description": "Schéma complet pour une commande e-commerce avec paiement, livraison et promotions",
+          "$defs": {
+            "uuid": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Identifiant unique UUID v4"
+            },
+            "money": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "number",
+                  "minimum": 0,
+                  "multipleOf": 0.01,
+                  "description": "Montant avec 2 décimales max"
+                },
+                "currency": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{3}$",
+                  "default": "EUR",
+                  "examples": [
+                    "EUR",
+                    "USD",
+                    "GBP"
+                  ]
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "address": {
+              "type": "object",
+              "properties": {
+                "street": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "street2": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "city": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "state": {
+                  "type": "string"
+                },
+                "postalCode": {
+                  "type": "string",
+                  "minLength": 2,
+                  "maxLength": 20
+                },
+                "country": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{2}$",
+                  "description": "Code pays ISO 3166-1 alpha-2"
+                },
+                "coordinates": {
+                  "type": "object",
+                  "properties": {
+                    "lat": {
+                      "type": "number",
+                      "minimum": -90,
+                      "maximum": 90
+                    },
+                    "lng": {
+                      "type": "number",
+                      "minimum": -180,
+                      "maximum": 180
+                    }
+                  },
+                  "required": [
+                    "lat",
+                    "lng"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "street",
+                "city",
+                "postalCode",
+                "country"
+              ],
+              "additionalProperties": false
+            },
+            "contact": {
+              "type": "object",
+              "properties": {
+                "firstName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "lastName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "phone": {
+                  "type": "string",
+                  "pattern": "^\\+[1-9]\\d{6,14}$",
+                  "description": "Format E.164 international"
+                },
+                "preferredLanguage": {
+                  "type": "string",
+                  "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+                  "default": "fr-FR",
+                  "examples": [
+                    "fr-FR",
+                    "en-US",
+                    "de"
+                  ]
+                }
+              },
+              "required": [
+                "firstName",
+                "lastName",
+                "email"
+              ],
+              "additionalProperties": false
+            },
+            "basePayment": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "$ref": "#/$defs/uuid"
+                },
+                "amount": {
+                  "$ref": "#/$defs/money"
+                },
+                "status": {
+                  "enum": [
+                    "pending",
+                    "authorized",
+                    "captured",
+                    "failed",
+                    "refunded"
+                  ]
+                },
+                "processedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "id",
+                "amount",
+                "status"
+              ]
+            },
+            "cardPayment": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/basePayment"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "method": {
+                      "const": "card"
+                    },
+                    "card": {
+                      "type": "object",
+                      "properties": {
+                        "brand": {
+                          "enum": [
+                            "visa",
+                            "mastercard",
+                            "amex",
+                            "cb"
+                          ]
+                        },
+                        "last4": {
+                          "type": "string",
+                          "pattern": "^\\d{4}$"
+                        },
+                        "expiryMonth": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 12
+                        },
+                        "expiryYear": {
+                          "type": "integer",
+                          "minimum": 2024,
+                          "maximum": 2100
+                        },
+                        "holderName": {
+                          "type": "string",
+                          "minLength": 2
+                        },
+                        "fingerprint": {
+                          "type": "string"
+                        },
+                        "is3DSecure": {
+                          "type": "boolean",
+                          "default": false
+                        }
+                      },
+                      "required": [
+                        "brand",
+                        "last4",
+                        "expiryMonth",
+                        "expiryYear",
+                        "holderName"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "method",
+                    "card"
+                  ]
+                }
+              ]
+            },
+            "paypalPayment": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/basePayment"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "method": {
+                      "const": "paypal"
+                    },
+                    "paypal": {
+                      "type": "object",
+                      "properties": {
+                        "payerId": {
+                          "type": "string"
+                        },
+                        "payerEmail": {
+                          "type": "string",
+                          "format": "email"
+                        },
+                        "transactionId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "payerId",
+                        "payerEmail"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "method",
+                    "paypal"
+                  ]
+                }
+              ]
+            },
+            "bankTransferPayment": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/basePayment"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "method": {
+                      "const": "bank_transfer"
+                    },
+                    "bankTransfer": {
+                      "type": "object",
+                      "properties": {
+                        "iban": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{2}\\d{2}[A-Z0-9]{4,30}$"
+                        },
+                        "bic": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$"
+                        },
+                        "reference": {
+                          "type": "string"
+                        },
+                        "dueDate": {
+                          "type": "string",
+                          "format": "date"
+                        }
+                      },
+                      "required": [
+                        "iban",
+                        "reference",
+                        "dueDate"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "method",
+                    "bankTransfer"
+                  ]
+                }
+              ]
+            },
+            "giftCardPayment": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/basePayment"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "method": {
+                      "const": "gift_card"
+                    },
+                    "giftCard": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "pattern": "^GC-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$"
+                        },
+                        "pin": {
+                          "type": "string",
+                          "pattern": "^\\d{4}$"
+                        },
+                        "originalBalance": {
+                          "$ref": "#/$defs/money"
+                        },
+                        "usedAmount": {
+                          "$ref": "#/$defs/money"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "pin",
+                        "usedAmount"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "method",
+                    "giftCard"
+                  ]
+                }
+              ]
+            },
+            "payment": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/cardPayment"
+                },
+                {
+                  "$ref": "#/$defs/paypalPayment"
+                },
+                {
+                  "$ref": "#/$defs/bankTransferPayment"
+                },
+                {
+                  "$ref": "#/$defs/giftCardPayment"
+                }
+              ]
+            },
+            "productVariant": {
+              "type": "object",
+              "properties": {
+                "sku": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{2,4}-\\d{4,8}(-[A-Z0-9]+)?$",
+                  "examples": [
+                    "TSHIRT-12345-BLU-M",
+                    "ELEC-98765432"
+                  ]
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "attributes": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    ]
+                  },
+                  "examples": [
+                    {
+                      "color": "blue",
+                      "size": "M",
+                      "material": "cotton"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "sku",
+                "name"
+              ],
+              "additionalProperties": false
+            },
+            "orderItem": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "$ref": "#/$defs/uuid"
+                },
+                "product": {
+                  "$ref": "#/$defs/productVariant"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 999,
+                  "default": 1
+                },
+                "unitPrice": {
+                  "$ref": "#/$defs/money"
+                },
+                "totalPrice": {
+                  "$ref": "#/$defs/money"
+                },
+                "discount": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "percentage",
+                        "fixed"
+                      ]
+                    },
+                    "value": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "reason": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                "isGift": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "giftMessage": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "customization": {
+                  "type": "object",
+                  "properties": {
+                    "engraving": {
+                      "type": "string",
+                      "maxLength": 50
+                    },
+                    "wrapping": {
+                      "enum": [
+                        "none",
+                        "standard",
+                        "premium"
+                      ]
+                    },
+                    "notes": {
+                      "type": "string",
+                      "maxLength": 200
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "id",
+                "product",
+                "quantity",
+                "unitPrice",
+                "totalPrice"
+              ],
+              "additionalProperties": false,
+              "dependentRequired": {
+                "giftMessage": [
+                  "isGift"
+                ]
+              },
+              "allOf": [
+                {
+                  "anyOf": [
+                    {
+                      "not": {
+                        "required": [
+                          "giftMessage"
+                        ]
+                      }
+                    },
+                    {
+                      "required": [
+                        "giftMessage",
+                        "isGift"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "promotion": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "pattern": "^[A-Z0-9]{4,20}$",
+                  "examples": [
+                    "SUMMER2024",
+                    "WELCOME10"
+                  ]
+                },
+                "type": {
+                  "enum": [
+                    "percentage",
+                    "fixed_amount",
+                    "free_shipping",
+                    "buy_x_get_y",
+                    "bundle"
+                  ]
+                },
+                "value": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "buyQuantity": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "getQuantity": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "minOrderAmount": {
+                  "$ref": "#/$defs/money"
+                },
+                "maxDiscount": {
+                  "$ref": "#/$defs/money"
+                },
+                "applicableCategories": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true
+                },
+                "validFrom": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "validUntil": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "usageLimit": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "usageCount": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "default": 0
+                }
+              },
+              "required": [
+                "code",
+                "type"
+              ],
+              "additionalProperties": false,
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "percentage",
+                          "fixed_amount"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ]
+                  },
+                  "then": {
+                    "required": [
+                      "value"
+                    ]
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "const": "percentage"
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "value": {
+                        "maximum": 100
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "const": "buy_x_get_y"
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ]
+                  },
+                  "then": {
+                    "required": [
+                      "buyQuantity",
+                      "getQuantity"
+                    ]
+                  }
+                }
+              ]
+            },
+            "shippingMethod": {
+              "type": "object",
+              "properties": {
+                "carrier": {
+                  "enum": [
+                    "colissimo",
+                    "chronopost",
+                    "mondial_relay",
+                    "dhl",
+                    "ups",
+                    "fedex",
+                    "pickup"
+                  ]
+                },
+                "service": {
+                  "type": "string"
+                },
+                "price": {
+                  "$ref": "#/$defs/money"
+                },
+                "estimatedDelivery": {
+                  "type": "object",
+                  "properties": {
+                    "minDays": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "maxDays": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "estimatedDate": {
+                      "type": "string",
+                      "format": "date"
+                    }
+                  },
+                  "required": [
+                    "minDays",
+                    "maxDays"
+                  ],
+                  "additionalProperties": false
+                },
+                "trackingNumber": {
+                  "type": "string"
+                },
+                "trackingUrl": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "signature": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "insurance": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "value": {
+                      "$ref": "#/$defs/money"
+                    },
+                    "provider": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "deliveryInstructions": {
+                  "type": "string",
+                  "maxLength": 500,
+                  "description": "Instructions pour le livreur"
+                },
+                "pickupPoint": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "address": {
+                      "$ref": "#/$defs/address"
+                    },
+                    "openingHours": {
+                      "type": "object",
+                      "properties": {
+                        "monday": {
+                          "$ref": "#/$defs/dayHours"
+                        },
+                        "tuesday": {
+                          "$ref": "#/$defs/dayHours"
+                        },
+                        "wednesday": {
+                          "$ref": "#/$defs/dayHours"
+                        },
+                        "thursday": {
+                          "$ref": "#/$defs/dayHours"
+                        },
+                        "friday": {
+                          "$ref": "#/$defs/dayHours"
+                        },
+                        "saturday": {
+                          "$ref": "#/$defs/dayHours"
+                        },
+                        "sunday": {
+                          "$ref": "#/$defs/dayHours"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "address"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "carrier",
+                "price",
+                "estimatedDelivery"
+              ],
+              "additionalProperties": false,
+              "if": {
+                "properties": {
+                  "carrier": {
+                    "const": "pickup"
+                  }
+                },
+                "required": [
+                  "carrier"
+                ]
+              },
+              "then": {
+                "required": [
+                  "pickupPoint"
+                ]
+              }
+            },
+            "dayHours": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "open": {
+                      "type": "string",
+                      "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                    },
+                    "close": {
+                      "type": "string",
+                      "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                    }
+                  },
+                  "required": [
+                    "open",
+                    "close"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "orderTimeline": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "timestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "event": {
+                    "enum": [
+                      "created",
+                      "payment_pending",
+                      "payment_authorized",
+                      "payment_captured",
+                      "payment_failed",
+                      "confirmed",
+                      "processing",
+                      "shipped",
+                      "out_for_delivery",
+                      "delivered",
+                      "cancelled",
+                      "refund_requested",
+                      "refunded",
+                      "disputed"
+                    ]
+                  },
+                  "actor": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "customer",
+                          "system",
+                          "admin",
+                          "carrier"
+                        ]
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "timestamp",
+                  "event",
+                  "actor"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1
+            },
+            "orderTotals": {
+              "type": "object",
+              "properties": {
+                "subtotal": {
+                  "$ref": "#/$defs/money"
+                },
+                "shipping": {
+                  "$ref": "#/$defs/money"
+                },
+                "tax": {
+                  "type": "object",
+                  "properties": {
+                    "amount": {
+                      "$ref": "#/$defs/money"
+                    },
+                    "rate": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "breakdown": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "rate": {
+                            "type": "number"
+                          },
+                          "amount": {
+                            "$ref": "#/$defs/money"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "rate",
+                          "amount"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "amount",
+                    "rate"
+                  ],
+                  "additionalProperties": false
+                },
+                "discounts": {
+                  "$ref": "#/$defs/money"
+                },
+                "total": {
+                  "$ref": "#/$defs/money"
+                }
+              },
+              "required": [
+                "subtotal",
+                "shipping",
+                "tax",
+                "total"
+              ],
+              "additionalProperties": false
+            },
+            "cancellation": {
+              "type": "object",
+              "properties": {
+                "reason": {
+                  "enum": [
+                    "customer_request",
+                    "payment_failed",
+                    "fraud_suspected",
+                    "out_of_stock",
+                    "shipping_issue",
+                    "other"
+                  ]
+                },
+                "details": {
+                  "type": "string"
+                },
+                "requestedBy": {
+                  "enum": [
+                    "customer",
+                    "admin",
+                    "system"
+                  ]
+                },
+                "requestedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "processedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "reason",
+                "requestedBy",
+                "requestedAt"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "orderNumber": {
+              "type": "string",
+              "pattern": "^ORD-\\d{4}-[A-Z0-9]{8}$",
+              "examples": [
+                "ORD-2024-A1B2C3D4"
+              ]
+            },
+            "status": {
+              "enum": [
+                "draft",
+                "pending_payment",
+                "payment_failed",
+                "confirmed",
+                "processing",
+                "shipped",
+                "delivered",
+                "cancelled",
+                "refunded"
+              ],
+              "default": "draft"
+            },
+            "customer": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "$ref": "#/$defs/uuid"
+                },
+                "firstName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "lastName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "phone": {
+                  "type": "string",
+                  "pattern": "^\\+[1-9]\\d{6,14}$"
+                },
+                "preferredLanguage": {
+                  "type": "string",
+                  "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+                  "default": "fr-FR"
+                },
+                "isGuest": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "loyaltyTier": {
+                  "enum": [
+                    "bronze",
+                    "silver",
+                    "gold",
+                    "platinum"
+                  ]
+                },
+                "loyaltyPoints": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "firstName",
+                "lastName",
+                "email"
+              ],
+              "additionalProperties": false
+            },
+            "billingAddress": {
+              "$ref": "#/$defs/address"
+            },
+            "shippingAddress": {
+              "$ref": "#/$defs/address"
+            },
+            "sameAsBilling": {
+              "type": "boolean",
+              "default": true
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/orderItem"
+              },
+              "minItems": 1,
+              "maxItems": 100
+            },
+            "payments": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/payment"
+              },
+              "minItems": 1,
+              "description": "Supporte les paiements multiples (split payment, gift card + carte)"
+            },
+            "shipping": {
+              "$ref": "#/$defs/shippingMethod"
+            },
+            "promotions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/promotion"
+              },
+              "uniqueItems": true,
+              "maxItems": 5
+            },
+            "totals": {
+              "$ref": "#/$defs/orderTotals"
+            },
+            "timeline": {
+              "$ref": "#/$defs/orderTimeline"
+            },
+            "cancellation": {
+              "$ref": "#/$defs/cancellation"
+            },
+            "notes": {
+              "type": "object",
+              "properties": {
+                "customer": {
+                  "type": "string",
+                  "maxLength": 1000
+                },
+                "internal": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "text": {
+                        "type": "string"
+                      },
+                      "author": {
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "text",
+                      "author",
+                      "createdAt"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "additionalProperties": false
+            },
+            "metadata": {
+              "type": "object",
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "description": "Champs personnalisés pour intégrations tierces"
+            },
+            "source": {
+              "type": "object",
+              "properties": {
+                "channel": {
+                  "enum": [
+                    "web",
+                    "mobile_app",
+                    "pos",
+                    "phone",
+                    "marketplace",
+                    "api"
+                  ]
+                },
+                "platform": {
+                  "type": "string"
+                },
+                "deviceId": {
+                  "type": "string"
+                },
+                "ip": {
+                  "type": "string"
+                },
+                "userAgent": {
+                  "type": "string"
+                },
+                "referrer": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "campaign": {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string"
+                    },
+                    "medium": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "term": {
+                      "type": "string"
+                    },
+                    "content": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "channel"
+              ],
+              "additionalProperties": false
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updatedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "completedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Optimistic locking"
+            }
+          },
+          "required": [
+            "id",
+            "orderNumber",
+            "status",
+            "customer",
+            "billingAddress",
+            "items",
+            "payments",
+            "shipping",
+            "totals",
+            "timeline",
+            "source",
+            "createdAt",
+            "updatedAt",
+            "version"
+          ],
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "sameAsBilling": {
+                    "const": false
+                  }
+                },
+                "required": [
+                  "sameAsBilling"
+                ]
+              },
+              "then": {
+                "required": [
+                  "shippingAddress"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "enum": [
+                      "shipped",
+                      "delivered"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "shipping": {
+                    "properties": {
+                      "trackingNumber": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "trackingNumber"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "delivered"
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              "then": {
+                "required": [
+                  "completedAt"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "enum": [
+                      "cancelled",
+                      "refunded"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              "then": {
+                "required": [
+                  "cancellation"
+                ]
+              }
+            }
+          ]
+        },
+        "ptrMap": {},
+        "revPtrMap": {},
+        "notes": []
+      },
+      "containsBag": {},
+      "coverageIndex": {},
+      "nameDfaSummary": {
+        "states": 165,
+        "finite": true
+      },
+      "diag": {
+        "branchDecisions": [
+          {
+            "canonPath": "/$defs/dayHours/anyOf",
+            "kind": "anyOf",
+            "chosenBranch": {
+              "index": 1,
+              "score": 250
+            },
+            "scoreDetails": {
+              "orderedIndices": [
+                1,
+                0
+              ],
+              "topScoreIndices": [
+                1
+              ],
+              "topKIndices": [
+                1,
+                0
+              ],
+              "scoresByIndex": {
+                "0": 10,
+                "1": 250
+              }
+            },
+            "budget": {
+              "tried": 4,
+              "limit": 4,
+              "skipped": false
+            },
+            "memoKey": "{\"ajvClass\":\"Ajv2020\",\"ajvFlags\":{\"allErrors\":false,\"allowUnionTypes\":true,\"coerceTypes\":false,\"discriminator\":false,\"multipleOfPrecision\":12,\"strictSchema\":true,\"strictTypes\":true,\"unicodeRegExp\":true,\"validateFormats\":true},\"ajvMajor\":0,\"canonPath\":\"/$defs/dayHours/anyOf\",\"planOptionsSubKey\":\"{\\\"complexity.maxAnyOfBranches\\\":500,\\\"complexity.maxContainsNeeds\\\":16,\\\"complexity.maxOneOfBranches\\\":200,\\\"complexity.maxPatternProps\\\":64,\\\"conditionals.exclusivityStringTweak\\\":\\\"preferNul\\\",\\\"conditionals.minThenSatisfaction\\\":\\\"required-only\\\",\\\"conditionals.strategy\\\":\\\"if-aware-lite\\\",\\\"guards.maxDynamicScopeHops\\\":2,\\\"guards.maxGeneratedNotNesting\\\":2,\\\"nameEnum.beamWidth\\\":128,\\\"nameEnum.maxDepth\\\":64,\\\"nameEnum.maxMillis\\\":40,\\\"nameEnum.maxQueue\\\":16000,\\\"nameEnum.maxResults\\\":32,\\\"nameEnum.maxStates\\\":8000,\\\"patternWitness.alphabet\\\":\\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\\",\\\"patternWitness.maxCandidates\\\":32768,\\\"patternWitness.maxLength\\\":12,\\\"rational.decimalPrecision\\\":12,\\\"rational.fallback\\\":\\\"decimal\\\",\\\"rational.maxLcmBits\\\":128,\\\"rational.maxRatBits\\\":128,\\\"repair.mustCoverGuard\\\":true,\\\"resolver.stubUnresolved\\\":\\\"none\\\",\\\"trials.maxBranchesToTry\\\":12,\\\"trials.perBranch\\\":2,\\\"trials.skipTrials\\\":false,\\\"trials.skipTrialsIfBranchesGt\\\":50}\",\"schemaHash\":\"47c225d8578437ec921e4ae6769ce70bfa05822cc1ff9d36d5dce6e684757ef5\",\"seed\":123456789,\"userKey\":\"0\"}"
+          },
+          {
+            "canonPath": "/$defs/orderItem/allOf/0/anyOf",
+            "kind": "anyOf",
+            "chosenBranch": {
+              "index": 1,
+              "score": 240
+            },
+            "scoreDetails": {
+              "orderedIndices": [
+                1,
+                0
+              ],
+              "topScoreIndices": [
+                1
+              ],
+              "topKIndices": [
+                1,
+                0
+              ],
+              "scoresByIndex": {
+                "0": 0,
+                "1": 240
+              }
+            },
+            "budget": {
+              "tried": 4,
+              "limit": 4,
+              "skipped": false
+            },
+            "memoKey": "{\"ajvClass\":\"Ajv2020\",\"ajvFlags\":{\"allErrors\":false,\"allowUnionTypes\":true,\"coerceTypes\":false,\"discriminator\":false,\"multipleOfPrecision\":12,\"strictSchema\":true,\"strictTypes\":true,\"unicodeRegExp\":true,\"validateFormats\":true},\"ajvMajor\":0,\"canonPath\":\"/$defs/orderItem/allOf/0/anyOf\",\"planOptionsSubKey\":\"{\\\"complexity.maxAnyOfBranches\\\":500,\\\"complexity.maxContainsNeeds\\\":16,\\\"complexity.maxOneOfBranches\\\":200,\\\"complexity.maxPatternProps\\\":64,\\\"conditionals.exclusivityStringTweak\\\":\\\"preferNul\\\",\\\"conditionals.minThenSatisfaction\\\":\\\"required-only\\\",\\\"conditionals.strategy\\\":\\\"if-aware-lite\\\",\\\"guards.maxDynamicScopeHops\\\":2,\\\"guards.maxGeneratedNotNesting\\\":2,\\\"nameEnum.beamWidth\\\":128,\\\"nameEnum.maxDepth\\\":64,\\\"nameEnum.maxMillis\\\":40,\\\"nameEnum.maxQueue\\\":16000,\\\"nameEnum.maxResults\\\":32,\\\"nameEnum.maxStates\\\":8000,\\\"patternWitness.alphabet\\\":\\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\\",\\\"patternWitness.maxCandidates\\\":32768,\\\"patternWitness.maxLength\\\":12,\\\"rational.decimalPrecision\\\":12,\\\"rational.fallback\\\":\\\"decimal\\\",\\\"rational.maxLcmBits\\\":128,\\\"rational.maxRatBits\\\":128,\\\"repair.mustCoverGuard\\\":true,\\\"resolver.stubUnresolved\\\":\\\"none\\\",\\\"trials.maxBranchesToTry\\\":12,\\\"trials.perBranch\\\":2,\\\"trials.skipTrials\\\":false,\\\"trials.skipTrialsIfBranchesGt\\\":50}\",\"schemaHash\":\"47c225d8578437ec921e4ae6769ce70bfa05822cc1ff9d36d5dce6e684757ef5\",\"seed\":123456789,\"userKey\":\"0\"}"
+          },
+          {
+            "canonPath": "/$defs/payment/oneOf",
+            "kind": "oneOf",
+            "chosenBranch": {
+              "index": 0,
+              "score": 0
+            },
+            "scoreDetails": {
+              "orderedIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "topScoreIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "topKIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "tiebreakRand": 0.19100594171322882,
+              "scoresByIndex": {
+                "0": 0,
+                "1": 0,
+                "2": 0,
+                "3": 0
+              }
+            },
+            "budget": {
+              "tried": 8,
+              "limit": 8,
+              "skipped": false
+            },
+            "memoKey": "{\"ajvClass\":\"Ajv2020\",\"ajvFlags\":{\"allErrors\":false,\"allowUnionTypes\":true,\"coerceTypes\":false,\"discriminator\":false,\"multipleOfPrecision\":12,\"strictSchema\":true,\"strictTypes\":true,\"unicodeRegExp\":true,\"validateFormats\":true},\"ajvMajor\":0,\"canonPath\":\"/$defs/payment/oneOf\",\"planOptionsSubKey\":\"{\\\"complexity.maxAnyOfBranches\\\":500,\\\"complexity.maxContainsNeeds\\\":16,\\\"complexity.maxOneOfBranches\\\":200,\\\"complexity.maxPatternProps\\\":64,\\\"conditionals.exclusivityStringTweak\\\":\\\"preferNul\\\",\\\"conditionals.minThenSatisfaction\\\":\\\"required-only\\\",\\\"conditionals.strategy\\\":\\\"if-aware-lite\\\",\\\"guards.maxDynamicScopeHops\\\":2,\\\"guards.maxGeneratedNotNesting\\\":2,\\\"nameEnum.beamWidth\\\":128,\\\"nameEnum.maxDepth\\\":64,\\\"nameEnum.maxMillis\\\":40,\\\"nameEnum.maxQueue\\\":16000,\\\"nameEnum.maxResults\\\":32,\\\"nameEnum.maxStates\\\":8000,\\\"patternWitness.alphabet\\\":\\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\\",\\\"patternWitness.maxCandidates\\\":32768,\\\"patternWitness.maxLength\\\":12,\\\"rational.decimalPrecision\\\":12,\\\"rational.fallback\\\":\\\"decimal\\\",\\\"rational.maxLcmBits\\\":128,\\\"rational.maxRatBits\\\":128,\\\"repair.mustCoverGuard\\\":true,\\\"resolver.stubUnresolved\\\":\\\"none\\\",\\\"trials.maxBranchesToTry\\\":12,\\\"trials.perBranch\\\":2,\\\"trials.skipTrials\\\":false,\\\"trials.skipTrialsIfBranchesGt\\\":50}\",\"schemaHash\":\"47c225d8578437ec921e4ae6769ce70bfa05822cc1ff9d36d5dce6e684757ef5\",\"seed\":123456789,\"userKey\":\"0\"}"
+          },
+          {
+            "canonPath": "/$defs/productVariant/properties/attributes/additionalProperties/anyOf",
+            "kind": "anyOf",
+            "chosenBranch": {
+              "index": 3,
+              "score": 10
+            },
+            "scoreDetails": {
+              "orderedIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "topScoreIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "topKIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "tiebreakRand": 0.9634980645496398,
+              "scoresByIndex": {
+                "0": 10,
+                "1": 10,
+                "2": 10,
+                "3": 10
+              }
+            },
+            "budget": {
+              "tried": 8,
+              "limit": 8,
+              "skipped": false
+            },
+            "memoKey": "{\"ajvClass\":\"Ajv2020\",\"ajvFlags\":{\"allErrors\":false,\"allowUnionTypes\":true,\"coerceTypes\":false,\"discriminator\":false,\"multipleOfPrecision\":12,\"strictSchema\":true,\"strictTypes\":true,\"unicodeRegExp\":true,\"validateFormats\":true},\"ajvMajor\":0,\"canonPath\":\"/$defs/productVariant/properties/attributes/additionalProperties/anyOf\",\"planOptionsSubKey\":\"{\\\"complexity.maxAnyOfBranches\\\":500,\\\"complexity.maxContainsNeeds\\\":16,\\\"complexity.maxOneOfBranches\\\":200,\\\"complexity.maxPatternProps\\\":64,\\\"conditionals.exclusivityStringTweak\\\":\\\"preferNul\\\",\\\"conditionals.minThenSatisfaction\\\":\\\"required-only\\\",\\\"conditionals.strategy\\\":\\\"if-aware-lite\\\",\\\"guards.maxDynamicScopeHops\\\":2,\\\"guards.maxGeneratedNotNesting\\\":2,\\\"nameEnum.beamWidth\\\":128,\\\"nameEnum.maxDepth\\\":64,\\\"nameEnum.maxMillis\\\":40,\\\"nameEnum.maxQueue\\\":16000,\\\"nameEnum.maxResults\\\":32,\\\"nameEnum.maxStates\\\":8000,\\\"patternWitness.alphabet\\\":\\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\\",\\\"patternWitness.maxCandidates\\\":32768,\\\"patternWitness.maxLength\\\":12,\\\"rational.decimalPrecision\\\":12,\\\"rational.fallback\\\":\\\"decimal\\\",\\\"rational.maxLcmBits\\\":128,\\\"rational.maxRatBits\\\":128,\\\"repair.mustCoverGuard\\\":true,\\\"resolver.stubUnresolved\\\":\\\"none\\\",\\\"trials.maxBranchesToTry\\\":12,\\\"trials.perBranch\\\":2,\\\"trials.skipTrials\\\":false,\\\"trials.skipTrialsIfBranchesGt\\\":50}\",\"schemaHash\":\"47c225d8578437ec921e4ae6769ce70bfa05822cc1ff9d36d5dce6e684757ef5\",\"seed\":123456789,\"userKey\":\"0\"}"
+          },
+          {
+            "canonPath": "/properties/metadata/additionalProperties/anyOf",
+            "kind": "anyOf",
+            "chosenBranch": {
+              "index": 1,
+              "score": 10
+            },
+            "scoreDetails": {
+              "orderedIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "topScoreIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "topKIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "tiebreakRand": 0.3930164435878396,
+              "scoresByIndex": {
+                "0": 10,
+                "1": 10,
+                "2": 10,
+                "3": 10
+              }
+            },
+            "budget": {
+              "tried": 8,
+              "limit": 8,
+              "skipped": false
+            },
+            "memoKey": "{\"ajvClass\":\"Ajv2020\",\"ajvFlags\":{\"allErrors\":false,\"allowUnionTypes\":true,\"coerceTypes\":false,\"discriminator\":false,\"multipleOfPrecision\":12,\"strictSchema\":true,\"strictTypes\":true,\"unicodeRegExp\":true,\"validateFormats\":true},\"ajvMajor\":0,\"canonPath\":\"/properties/metadata/additionalProperties/anyOf\",\"planOptionsSubKey\":\"{\\\"complexity.maxAnyOfBranches\\\":500,\\\"complexity.maxContainsNeeds\\\":16,\\\"complexity.maxOneOfBranches\\\":200,\\\"complexity.maxPatternProps\\\":64,\\\"conditionals.exclusivityStringTweak\\\":\\\"preferNul\\\",\\\"conditionals.minThenSatisfaction\\\":\\\"required-only\\\",\\\"conditionals.strategy\\\":\\\"if-aware-lite\\\",\\\"guards.maxDynamicScopeHops\\\":2,\\\"guards.maxGeneratedNotNesting\\\":2,\\\"nameEnum.beamWidth\\\":128,\\\"nameEnum.maxDepth\\\":64,\\\"nameEnum.maxMillis\\\":40,\\\"nameEnum.maxQueue\\\":16000,\\\"nameEnum.maxResults\\\":32,\\\"nameEnum.maxStates\\\":8000,\\\"patternWitness.alphabet\\\":\\\"abcdefghijklmnopqrstuvwxyz0123456789_-\\\",\\\"patternWitness.maxCandidates\\\":32768,\\\"patternWitness.maxLength\\\":12,\\\"rational.decimalPrecision\\\":12,\\\"rational.fallback\\\":\\\"decimal\\\",\\\"rational.maxLcmBits\\\":128,\\\"rational.maxRatBits\\\":128,\\\"repair.mustCoverGuard\\\":true,\\\"resolver.stubUnresolved\\\":\\\"none\\\",\\\"trials.maxBranchesToTry\\\":12,\\\"trials.perBranch\\\":2,\\\"trials.skipTrials\\\":false,\\\"trials.skipTrialsIfBranchesGt\\\":50}\",\"schemaHash\":\"47c225d8578437ec921e4ae6769ce70bfa05822cc1ff9d36d5dce6e684757ef5\",\"seed\":123456789,\"userKey\":\"0\"}"
+          }
+        ],
+        "nodes": {
+          "/$defs/dayHours/anyOf": {
+            "chosenBranch": {
+              "index": 1,
+              "score": 250
+            },
+            "scoreDetails": {
+              "orderedIndices": [
+                1,
+                0
+              ],
+              "topScoreIndices": [
+                1
+              ],
+              "topKIndices": [
+                1,
+                0
+              ],
+              "scoresByIndex": {
+                "0": 10,
+                "1": 250
+              }
+            },
+            "budget": {
+              "tried": 4,
+              "limit": 4,
+              "skipped": false
+            }
+          },
+          "/$defs/orderItem/allOf/0/anyOf": {
+            "chosenBranch": {
+              "index": 1,
+              "score": 240
+            },
+            "scoreDetails": {
+              "orderedIndices": [
+                1,
+                0
+              ],
+              "topScoreIndices": [
+                1
+              ],
+              "topKIndices": [
+                1,
+                0
+              ],
+              "scoresByIndex": {
+                "0": 0,
+                "1": 240
+              }
+            },
+            "budget": {
+              "tried": 4,
+              "limit": 4,
+              "skipped": false
+            }
+          },
+          "/$defs/payment/oneOf": {
+            "chosenBranch": {
+              "index": 0,
+              "score": 0
+            },
+            "scoreDetails": {
+              "orderedIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "topScoreIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "topKIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "tiebreakRand": 0.19100594171322882,
+              "scoresByIndex": {
+                "0": 0,
+                "1": 0,
+                "2": 0,
+                "3": 0
+              }
+            },
+            "budget": {
+              "tried": 8,
+              "limit": 8,
+              "skipped": false
+            }
+          },
+          "/$defs/productVariant/properties/attributes/additionalProperties/anyOf": {
+            "chosenBranch": {
+              "index": 3,
+              "score": 10
+            },
+            "scoreDetails": {
+              "orderedIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "topScoreIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "topKIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "tiebreakRand": 0.9634980645496398,
+              "scoresByIndex": {
+                "0": 10,
+                "1": 10,
+                "2": 10,
+                "3": 10
+              }
+            },
+            "budget": {
+              "tried": 8,
+              "limit": 8,
+              "skipped": false
+            }
+          },
+          "/properties/metadata/additionalProperties/anyOf": {
+            "chosenBranch": {
+              "index": 1,
+              "score": 10
+            },
+            "scoreDetails": {
+              "orderedIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "topScoreIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "topKIndices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "tiebreakRand": 0.3930164435878396,
+              "scoresByIndex": {
+                "0": 10,
+                "1": 10,
+                "2": 10,
+                "3": 10
+              }
+            },
+            "budget": {
+              "tried": 8,
+              "limit": 8,
+              "skipped": false
+            }
+          }
+        },
+        "metrics": {
+          "memoKeys": 5
+        },
+        "run": [
+          {
+            "code": "RESOLVER_STRATEGIES_APPLIED",
+            "canonPath": "#",
+            "details": {
+              "strategies": [
+                "local"
+              ],
+              "requested": [
+                "local"
+              ],
+              "cacheDir": "~/.foundrydata/cache"
+            }
+          }
+        ]
+      }
+    },
+    "coverageIndexSnapshot": [
+      {
+        "canonPath": "#",
+        "enumeratedKeys": [
+          "billingAddress",
+          "cancellation",
+          "completedAt",
+          "createdAt",
+          "customer",
+          "id",
+          "items",
+          "metadata",
+          "notes",
+          "orderNumber",
+          "payments",
+          "promotions",
+          "sameAsBilling",
+          "shipping",
+          "shippingAddress",
+          "source",
+          "status",
+          "timeline",
+          "totals",
+          "updatedAt",
+          "version"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/allOf/0/if",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/allOf/0/then",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/allOf/1/if",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/allOf/1/then",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/allOf/1/then/properties/shipping",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/allOf/2/if",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/allOf/2/then",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/allOf/3/if",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/allOf/3/then",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/properties/customer",
+        "enumeratedKeys": [
+          "email",
+          "firstName",
+          "id",
+          "isGuest",
+          "lastName",
+          "loyaltyPoints",
+          "loyaltyTier",
+          "phone",
+          "preferredLanguage"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/properties/notes",
+        "enumeratedKeys": [
+          "customer",
+          "internal"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/properties/notes/properties/internal/items",
+        "enumeratedKeys": [
+          "author",
+          "createdAt",
+          "text"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/properties/metadata",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/properties/source",
+        "enumeratedKeys": [
+          "campaign",
+          "channel",
+          "deviceId",
+          "ip",
+          "platform",
+          "referrer",
+          "userAgent"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/properties/source/properties/campaign",
+        "enumeratedKeys": [
+          "content",
+          "medium",
+          "name",
+          "source",
+          "term"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/money",
+        "enumeratedKeys": [
+          "amount",
+          "currency"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/address",
+        "enumeratedKeys": [
+          "city",
+          "coordinates",
+          "country",
+          "postalCode",
+          "state",
+          "street",
+          "street2"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/address/properties/coordinates",
+        "enumeratedKeys": [
+          "lat",
+          "lng"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/contact",
+        "enumeratedKeys": [
+          "email",
+          "firstName",
+          "lastName",
+          "phone",
+          "preferredLanguage"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/basePayment",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/$defs/cardPayment/allOf/1",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/$defs/cardPayment/allOf/1/properties/card",
+        "enumeratedKeys": [
+          "brand",
+          "expiryMonth",
+          "expiryYear",
+          "fingerprint",
+          "holderName",
+          "is3DSecure",
+          "last4"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/paypalPayment/allOf/1",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/$defs/paypalPayment/allOf/1/properties/paypal",
+        "enumeratedKeys": [
+          "payerEmail",
+          "payerId",
+          "transactionId"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/bankTransferPayment/allOf/1",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/$defs/bankTransferPayment/allOf/1/properties/bankTransfer",
+        "enumeratedKeys": [
+          "bic",
+          "dueDate",
+          "iban",
+          "reference"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/giftCardPayment/allOf/1",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/$defs/giftCardPayment/allOf/1/properties/giftCard",
+        "enumeratedKeys": [
+          "code",
+          "originalBalance",
+          "pin",
+          "usedAmount"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/productVariant",
+        "enumeratedKeys": [
+          "attributes",
+          "name",
+          "sku"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/productVariant/properties/attributes",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/$defs/orderItem",
+        "enumeratedKeys": [
+          "customization",
+          "discount",
+          "giftMessage",
+          "id",
+          "isGift",
+          "product",
+          "quantity",
+          "totalPrice",
+          "unitPrice"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/orderItem/allOf/0/anyOf/0/not",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/$defs/orderItem/allOf/0/anyOf/1",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/$defs/orderItem/properties/discount",
+        "enumeratedKeys": [
+          "reason",
+          "type",
+          "value"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/orderItem/properties/customization",
+        "enumeratedKeys": [
+          "engraving",
+          "notes",
+          "wrapping"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/promotion",
+        "enumeratedKeys": [
+          "applicableCategories",
+          "buyQuantity",
+          "code",
+          "getQuantity",
+          "maxDiscount",
+          "minOrderAmount",
+          "type",
+          "usageCount",
+          "usageLimit",
+          "validFrom",
+          "validUntil",
+          "value"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/promotion/allOf/0/if",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/$defs/promotion/allOf/0/then",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/$defs/promotion/allOf/1/if",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/$defs/promotion/allOf/1/then",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/$defs/promotion/allOf/2/if",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/$defs/promotion/allOf/2/then",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/$defs/shippingMethod",
+        "enumeratedKeys": [
+          "carrier",
+          "deliveryInstructions",
+          "estimatedDelivery",
+          "insurance",
+          "pickupPoint",
+          "price",
+          "service",
+          "signature",
+          "trackingNumber",
+          "trackingUrl"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/shippingMethod/if",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/$defs/shippingMethod/then",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/$defs/shippingMethod/properties/estimatedDelivery",
+        "enumeratedKeys": [
+          "estimatedDate",
+          "maxDays",
+          "minDays"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/shippingMethod/properties/insurance",
+        "enumeratedKeys": [
+          "enabled",
+          "provider",
+          "value"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/shippingMethod/properties/pickupPoint",
+        "enumeratedKeys": [
+          "address",
+          "id",
+          "name",
+          "openingHours"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/shippingMethod/properties/pickupPoint/properties/openingHours",
+        "enumeratedKeys": [
+          "friday",
+          "monday",
+          "saturday",
+          "sunday",
+          "thursday",
+          "tuesday",
+          "wednesday"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/dayHours/anyOf/1",
+        "enumeratedKeys": [
+          "close",
+          "open"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/orderTimeline/items",
+        "enumeratedKeys": [
+          "actor",
+          "event",
+          "metadata",
+          "note",
+          "timestamp"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/orderTimeline/items/properties/actor",
+        "enumeratedKeys": [
+          "id",
+          "name",
+          "type"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/orderTimeline/items/properties/metadata",
+        "provenance": [],
+        "hasUniverse": "unknown"
+      },
+      {
+        "canonPath": "/$defs/orderTotals",
+        "enumeratedKeys": [
+          "discounts",
+          "shipping",
+          "subtotal",
+          "tax",
+          "total"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/orderTotals/properties/tax",
+        "enumeratedKeys": [
+          "amount",
+          "breakdown",
+          "rate"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/orderTotals/properties/tax/properties/breakdown/items",
+        "enumeratedKeys": [
+          "amount",
+          "name",
+          "rate"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      },
+      {
+        "canonPath": "/$defs/cancellation",
+        "enumeratedKeys": [
+          "details",
+          "processedAt",
+          "reason",
+          "requestedAt",
+          "requestedBy"
+        ],
+        "provenance": [
+          "properties"
+        ],
+        "hasUniverse": "finite"
+      }
+    ]
+  },
+  "generate": {
+    "diagnostics": [
+      {
+        "code": "IF_AWARE_HINT_APPLIED",
+        "canonPath": "/$defs/shippingMethod",
+        "phase": "generate",
+        "details": {
+          "strategy": "if-aware-lite",
+          "minThenSatisfaction": "required-only"
+        }
+      },
+      {
+        "code": "IF_AWARE_HINT_APPLIED",
+        "canonPath": "/$defs/shippingMethod",
+        "phase": "generate",
+        "details": {
+          "strategy": "if-aware-lite",
+          "minThenSatisfaction": "required-only"
+        }
+      },
+      {
+        "code": "IF_AWARE_HINT_APPLIED",
+        "canonPath": "/$defs/shippingMethod",
+        "phase": "generate",
+        "details": {
+          "strategy": "if-aware-lite",
+          "minThenSatisfaction": "required-only"
+        }
+      }
+    ]
+  },
+  "repair": {
+    "actions": []
+  },
+  "validate": {
+    "errors": []
+  },
+  "instances": [
+    {
+      "index": 0,
+      "data": {
+        "billingAddress": {
+          "city": "-",
+          "country": "AA",
+          "postalCode": "--",
+          "street": "-"
+        },
+        "createdAt": "2024-04-27T10:55:46.000Z",
+        "customer": {
+          "email": "user.1lctcj5@example.test",
+          "firstName": "-",
+          "lastName": "-"
+        },
+        "id": "15682b96-a105-4f9e-b444-c8ab372f94cb",
+        "items": [
+          {
+            "giftMessage": "",
+            "id": "e3230563-bf2b-4d28-aa28-7b28f194bfe3",
+            "isGift": false,
+            "product": {
+              "name": "-",
+              "sku": "AA-0000"
+            },
+            "quantity": 1,
+            "totalPrice": {
+              "amount": 0,
+              "currency": "AAA"
+            },
+            "unitPrice": {
+              "amount": 0,
+              "currency": "AAA"
+            }
+          }
+        ],
+        "orderNumber": "ORD-0000-AAAAAAAA",
+        "payments": [
+          {
+            "amount": {
+              "amount": 0,
+              "currency": "AAA"
+            },
+            "card": {
+              "brand": "visa",
+              "expiryMonth": 1,
+              "expiryYear": 2024,
+              "holderName": "--",
+              "last4": "0000"
+            },
+            "id": "c9afef45-822f-4cb2-9cf7-b2d03c276746",
+            "method": "card",
+            "status": "pending"
+          }
+        ],
+        "shipping": {
+          "carrier": "colissimo",
+          "estimatedDelivery": {
+            "maxDays": 0,
+            "minDays": 0
+          },
+          "price": {
+            "amount": 0,
+            "currency": "AAA"
+          }
+        },
+        "source": {
+          "channel": "web"
+        },
+        "status": "draft",
+        "timeline": [
+          {
+            "actor": {
+              "type": "customer"
+            },
+            "event": "created",
+            "timestamp": "2024-09-23T18:32:48.000Z"
+          }
+        ],
+        "totals": {
+          "shipping": {
+            "amount": 0,
+            "currency": "AAA"
+          },
+          "subtotal": {
+            "amount": 0,
+            "currency": "AAA"
+          },
+          "tax": {
+            "amount": {
+              "amount": 0,
+              "currency": "AAA"
+            },
+            "rate": 0
+          },
+          "total": {
+            "amount": 0,
+            "currency": "AAA"
+          }
+        },
+        "updatedAt": "2024-05-27T10:44:43.000Z",
+        "version": 1
+      },
+      "outcome": "valid-unchanged"
+    },
+    {
+      "index": 1,
+      "data": {
+        "billingAddress": {
+          "city": "-",
+          "country": "AA",
+          "postalCode": "--",
+          "street": "-"
+        },
+        "createdAt": "2024-04-19T21:32:37.000Z",
+        "customer": {
+          "email": "user.15tpt65@example.test",
+          "firstName": "-",
+          "lastName": "-"
+        },
+        "id": "f327713c-343d-4609-9490-db163474e5fc",
+        "items": [
+          {
+            "giftMessage": "",
+            "id": "26ea8538-0670-4c3d-b0d7-71ce571b7a65",
+            "isGift": false,
+            "product": {
+              "name": "-",
+              "sku": "AA-0000"
+            },
+            "quantity": 1,
+            "totalPrice": {
+              "amount": 0,
+              "currency": "AAA"
+            },
+            "unitPrice": {
+              "amount": 0,
+              "currency": "AAA"
+            }
+          }
+        ],
+        "orderNumber": "ORD-0000-AAAAAAAA",
+        "payments": [
+          {
+            "amount": {
+              "amount": 0,
+              "currency": "AAA"
+            },
+            "card": {
+              "brand": "visa",
+              "expiryMonth": 1,
+              "expiryYear": 2024,
+              "holderName": "--",
+              "last4": "0000"
+            },
+            "id": "8a4d6fd9-45a9-4c2b-bf9d-be785b2f2cca",
+            "method": "card",
+            "status": "pending"
+          }
+        ],
+        "shipping": {
+          "carrier": "colissimo",
+          "estimatedDelivery": {
+            "maxDays": 0,
+            "minDays": 0
+          },
+          "price": {
+            "amount": 0,
+            "currency": "AAA"
+          }
+        },
+        "source": {
+          "channel": "web"
+        },
+        "status": "draft",
+        "timeline": [
+          {
+            "actor": {
+              "type": "customer"
+            },
+            "event": "created",
+            "timestamp": "2024-08-16T07:23:01.000Z"
+          }
+        ],
+        "totals": {
+          "shipping": {
+            "amount": 0,
+            "currency": "AAA"
+          },
+          "subtotal": {
+            "amount": 0,
+            "currency": "AAA"
+          },
+          "tax": {
+            "amount": {
+              "amount": 0,
+              "currency": "AAA"
+            },
+            "rate": 0
+          },
+          "total": {
+            "amount": 0,
+            "currency": "AAA"
+          }
+        },
+        "updatedAt": "2024-09-29T02:27:52.000Z",
+        "version": 1
+      },
+      "outcome": "valid-unchanged"
+    },
+    {
+      "index": 2,
+      "data": {
+        "billingAddress": {
+          "city": "-",
+          "country": "AA",
+          "postalCode": "--",
+          "street": "-"
+        },
+        "createdAt": "2024-04-19T08:27:33.000Z",
+        "customer": {
+          "email": "user.3pqtbd@example.test",
+          "firstName": "-",
+          "lastName": "-"
+        },
+        "id": "613a16e1-cc20-4bed-ad6d-5ea91c0c9cf8",
+        "items": [
+          {
+            "giftMessage": "",
+            "id": "1b3e0888-3e26-4876-a93e-943f210279b2",
+            "isGift": false,
+            "product": {
+              "name": "-",
+              "sku": "AA-0000"
+            },
+            "quantity": 1,
+            "totalPrice": {
+              "amount": 0,
+              "currency": "AAA"
+            },
+            "unitPrice": {
+              "amount": 0,
+              "currency": "AAA"
+            }
+          }
+        ],
+        "orderNumber": "ORD-0000-AAAAAAAA",
+        "payments": [
+          {
+            "amount": {
+              "amount": 0,
+              "currency": "AAA"
+            },
+            "card": {
+              "brand": "visa",
+              "expiryMonth": 1,
+              "expiryYear": 2024,
+              "holderName": "--",
+              "last4": "0000"
+            },
+            "id": "501be0b3-b521-42a1-af9a-6a5bb0a8d00f",
+            "method": "card",
+            "status": "pending"
+          }
+        ],
+        "shipping": {
+          "carrier": "colissimo",
+          "estimatedDelivery": {
+            "maxDays": 0,
+            "minDays": 0
+          },
+          "price": {
+            "amount": 0,
+            "currency": "AAA"
+          }
+        },
+        "source": {
+          "channel": "web"
+        },
+        "status": "draft",
+        "timeline": [
+          {
+            "actor": {
+              "type": "customer"
+            },
+            "event": "created",
+            "timestamp": "2024-04-13T12:02:40.000Z"
+          }
+        ],
+        "totals": {
+          "shipping": {
+            "amount": 0,
+            "currency": "AAA"
+          },
+          "subtotal": {
+            "amount": 0,
+            "currency": "AAA"
+          },
+          "tax": {
+            "amount": {
+              "amount": 0,
+              "currency": "AAA"
+            },
+            "rate": 0
+          },
+          "total": {
+            "amount": 0,
+            "currency": "AAA"
+          }
+        },
+        "updatedAt": "2024-02-27T23:37:32.000Z",
+        "version": 1
+      },
+      "outcome": "valid-unchanged"
+    }
+  ],
+  "metrics": {
+    "normalizeMs": 5.721749999999986,
+    "composeMs": 23.603874999999988,
+    "generateMs": 57.542416,
+    "repairMs": 33.88495900000001,
+    "validateMs": 32.681332999999995,
+    "validationsPerRow": 3,
+    "repairPassesPerRow": 0,
+    "memoryPeakMB": 0,
+    "p50LatencyMs": 0,
+    "p95LatencyMs": 0,
+    "evalTraceChecks": 0,
+    "evalTraceProved": 0,
+    "nameBfsNodesExpanded": 0,
+    "nameBfsQueuePeak": 0,
+    "nameBeamWidthPeak": 0,
+    "nameEnumResults": 0,
+    "nameEnumElapsedMs": 0,
+    "patternPropsHit": 0,
+    "presencePressureResolved": 26,
+    "repairActionsPerRow": 0
+  },
+  "summary": {
+    "totalInstances": 3,
+    "validUnchanged": 3,
+    "validRepaired": 0,
+    "invalid": 0,
+    "timings": {
+      "normalizeMs": 5.721749999999986,
+      "composeMs": 23.603874999999988,
+      "generateMs": 57.542416,
+      "repairMs": 33.88495900000001,
+      "validateMs": 32.681332999999995
+    },
+    "diagnosticsCount": {
+      "normalizeNotes": 0,
+      "composeFatal": 0,
+      "composeWarn": 0,
+      "composeUnsatHints": 0,
+      "composeRunLevel": 1,
+      "repairBudgetExhausted": 0,
+      "validateErrors": 0
+    }
+  }
+}
