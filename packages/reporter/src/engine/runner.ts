@@ -48,7 +48,7 @@ function buildPipelineOptions(options: EngineRunOptions): PipelineOptions {
     validate: {
       // Reporter default: annotate-only formats (profil minimal/realistic).
       // Strict Data Compliance / format-valid profiles will opt in explicitly.
-      validateFormats: false,
+      validateFormats: true,
     },
     metrics: { enabled: true },
   } satisfies PipelineOptions;
