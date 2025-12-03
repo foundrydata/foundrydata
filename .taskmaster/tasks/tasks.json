@@ -1717,7 +1717,7 @@
           "9403",
           "9404"
         ],
-        "status": "in-progress",
+        "status": "done",
         "complexityScore": 4,
         "details": "[Context]\nThe brief requires that the Generator/Repair boundary be observable. G_valid zones should exhibit little or no structural Repair, and any drift must be visible in metrics and tests.\nAligns with spec §6.6 (Metrics and testing for G_valid) and with existing metrics sections (§15/§20) for integration into the current metrics model.\n\n[Key requirements]\n- Define a metrics model for repair usage per motif (motif id, items, itemsWithRepair, actions, G_valid flag) and integrate it into existing metrics.\n- Tag Repair actions with canonPath + motif + G_valid and aggregate them at run end.\n- Surface aggregated metrics through existing metrics snapshots and optionally diagnostics/logs.\n- Add e2e tests for micro-schemas explicitly labeled as G_valid that assert structural Repair counts are zero (or within a small numeric-only allowance).\n- Update tests-traceability docs with a new \"Generator-valid zone\" motif family and its invariants, referencing spec §6.6.",
         "testStrategy": "- Unit tests for metrics aggregation ensuring per-motif counters are incremented and grouped correctly by G_valid flag.\n- Integration tests running the full pipeline on pure G_valid and mixed schemas, verifying that structural Repair counts for G_valid motifs are zero in nominal cases.\n- Golden tests on metrics snapshots to detect regressions in Repair usage over time.\n- Documentation/tests-traceability checks confirming that the new motif family and invariants are documented.",
@@ -1756,14 +1756,14 @@
             "id": 9405004,
             "title": "Add G_valid no-repair e2e tests and traceability entries",
             "description": "Create end-to-end tests and update tests-traceability documentation for G_valid micro-schemas asserting that structural Repair is unused, per spec §6.6–§6.7.",
-            "status": "in-progress",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/test/e2e/g-valid-no-repair.spec.ts",
             "parentId": "9405",
-            "updatedAt": "2025-12-03T23:00:03.124Z"
+            "updatedAt": "2025-12-03T23:06:56.483Z"
           }
         ],
-        "updatedAt": "2025-12-03T23:00:03.124Z"
+        "updatedAt": "2025-12-03T23:06:56.483Z"
       },
       {
         "id": "9406",
@@ -1779,7 +1779,7 @@
           "9404",
           "9405"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 3,
         "details": "[Context]\nOnce implemented, G_valid and the tightened Generator vs Repair contract must be discoverable and controllable through configuration and docs.\nAligns with spec §6.7 (Interaction with other sections / public behavior) and the general configuration sections that describe PlanOptions and CLI flags.\n\n[Key requirements]\n- Add PlanOptions knobs (and Node API mapping) for enabling/disabling G_valid classification/enforcement and controlling strictness of Repair inside G_valid zones.\n- Wire these options through CLI flags and profiles, with defaults that preserve current behavior when G_valid is off.\n- Update COMPREHENSIVE_FEATURE_SUPPORT/Features/docs to explain the contract, G_valid scope, and how to interpret repair usage metrics.",
         "testStrategy": "- Unit tests for PlanOptions parsing and CLI flags, asserting correct mapping and backward-compatible defaults.\n- Integration tests running CLI/Node API with different G_valid configurations and checking that Generator/Repair/metrics behavior matches expectations.\n- Documentation checks confirming that new options and the contract are mentioned consistently in feature docs and examples.",
@@ -1788,11 +1788,11 @@
             "id": 9406001,
             "title": "Add G_valid-related options to PlanOptions and core API",
             "description": "Extend PlanOptions and core API types with fields controlling G_valid classification/enforcement and map them into pipeline context, consistent with spec §6.7.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 4,
             "file": "packages/core/src/api.ts",
             "parentId": "9406",
-            "updatedAt": "2025-12-02T23:00:00.000Z"
+            "updatedAt": "2025-12-03T23:10:12.972Z"
           },
           {
             "id": 9406002,
@@ -1815,14 +1815,14 @@
             "updatedAt": "2025-12-02T23:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-02T23:00:00.000Z"
+        "updatedAt": "2025-12-03T23:10:12.972Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-03T23:00:03.126Z",
+      "lastModified": "2025-12-03T23:10:12.974Z",
       "taskCount": 7,
-      "completedCount": 5,
+      "completedCount": 6,
       "tags": [
         "generator-vs-repair-contract"
       ]

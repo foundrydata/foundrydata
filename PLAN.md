@@ -1,22 +1,24 @@
-Task: 9405   Title: Add G_valid no-repair e2e tests and traceability entries — subtask 9405.9405004
-Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§10#repair-engine, spec://§15#metrics-model, spec://§20#bench-gates]
+Task: 9406   Title: Add G_valid-related options to PlanOptions and core API — subtask 9406.9406001
+Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§10#repair-engine, spec://§15#metrics-model]
 Touched files:
 - PLAN.md
-- .taskmaster/docs/9405-traceability.md
+- .taskmaster/docs/9406-traceability.md
 - .taskmaster/tasks/tasks.json
--,test/e2e/gvalid-no-repair.acceptance.spec.ts
-- docs/tests-traceability.md
+-,packages/core/src/types/options.ts
+- packages/core/src/pipeline/types.ts
+- packages/core/src/pipeline/orchestrator.ts
+- packages/core/src/index.ts
 
 Approach:
-Pour la sous-tâche 9405.9405004, je vais ajouter des tests end-to-end et la traçabilité associée pour des micro‑schémas explicitement classés G_valid, en vérifiant que le contrat “no‑repair zone” est respecté et rendu observable via les métriques et la matrice de tests (spec://§6#phases, spec://§6#generator-repair-contract, spec://§10#repair-engine, spec://§15#metrics-model, spec://§20#bench-gates). Concrètement : (1) définir ou réutiliser 1–2 micro‑schémas G_valid représentatifs (simple objet requis, array `items`+`contains`) et écrire un fichier `test/e2e/gvalid-no-repair.acceptance.spec.ts` qui exécute la pipeline avec `gValid: true`, collecte `PipelineResult.metrics.repairUsageByMotif` et `artifacts.repairActions`, puis affirme que les compteurs structuraux en zone G_valid restent à zéro (ou à une petite tolérance numérique) en régime nominal ; (2) ajouter les mêmes scénarios avec G_valid désactivé ou des motifs non‑G_valid afin de montrer que les métriques distinguent clairement les zones G_valid et non‑G_valid, sans casser la stabilité du générateur ; (3) mettre à jour `docs/tests-traceability.md` pour introduire une famille de motifs “Generator‑valid zone” liée à ces micro‑schémas et tests, en listant les invariants exacts (absence de Repair structurel, métriques G_valid cohérentes, diagnostic éventuel en cas de dérive) ; (4) relancer build/typecheck/lint/test/bench pour garantir que ces e2e et la documentation n’introduisent ni régression de performance ni divergence avec le modèle de métriques global.
+Pour la sous-tâche 9406.9406001, je vais étendre `PlanOptions` et les types de l’API core pour exposer explicitement les options G_valid et le contrôle de la sévérité du Repair en zone G_valid, puis les injecter dans le contexte du pipeline de manière rétrocompatible (spec://§6#phases, spec://§6#generator-repair-contract, spec://§10#repair-engine, spec://§15#metrics-model). Concrètement : (1) compléter `PlanOptions` dans `packages/core/src/types/options.ts` avec des champs G_valid clairement typés (activation de la classification, strictness du Repair en zone G_valid) et s’assurer que `resolveOptions` fournit des valeurs par défaut qui reproduisent le comportement actuel quand G_valid est désactivé ; (2) propager ces options dans les types de pipeline (`PipelineOptions`, éventuels wrappers CLI) et dans l’orchestrateur (`executePipeline`) pour que les instances de `MetricsCollector`, du moteur de Repair et du générateur puissent les consommer sans changement de signature invasif ; (3) mettre à jour l’API publique dans `packages/core/src/index.ts` pour documenter ces options G_valid côté Node API, en gardant l’API existante intacte (options optionnelles, champs additionnels seulement) ; (4) ajouter des tests unitaires ciblés (par exemple dans les tests de `options` et, si nécessaire, un test d’orchestrateur minimal) pour vérifier la résolution des defaults, le passage des flags et l’absence de régression sur les scénarios sans G_valid, avant de valider la suite build/typecheck/lint/test/bench.
 
 DoD:
-- [ ] Des tests e2e spécifiques G_valid démontrent que, sur les micro‑schémas ciblés, le pipeline complète avec succès sans Repair structurel en zone G_valid (actions et métriques correspondantes à zéro ou à la tolérance attendue).
-- [ ] Des variantes non‑G_valid ou G_valid désactivé montrent que les métriques d’usage du Repair distinguent bien les zones, tout en restant compatibles avec le comportement existant du générateur/Repair.
-- [ ] `docs/tests-traceability.md` contient une entrée claire pour la famille de motifs “Generator‑valid zone” (G_valid), reliant micro‑schémas, tests e2e et invariants sur les métriques/Repair.
-- [ ] La suite build/typecheck/lint/test/bench reste verte après l’ajout de ces e2e et de la traçabilité, confirmant que le contrat G_valid/no‑repair est vérifié sans régression.
+- [ ] `PlanOptions` expose des champs G_valid et Repair strictness avec des valeurs par défaut rétrocompatibles et une résolution claire via `resolveOptions`.
+- [ ] Les types de pipeline et l’orchestrateur reçoivent et transmettent ces options G_valid sans casser les signatures existantes ni les comportements quand G_valid est désactivé.
+- [ ] L’API publique Node (index core) documente et exporte ces options G_valid, et des tests unitaires vérifient la bonne résolution et le passage des flags.
+- [ ] La suite build/typecheck/lint/test/bench reste verte après l’ajout de ces options et tests, confirmant que la configuration G_valid est opérationnelle sans régression.
 
-Parent bullets couverts: [KR4, DEL4, DOD3, TS2, TS3]
+Parent bullets couverts: [KR1, DEL1, DOD1, TS1]
 
 Checks:
 - build: npm run build
