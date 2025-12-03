@@ -29,6 +29,7 @@ import type {
   CoveragePlannerUserOptions,
   CoverageHint,
 } from '../coverage/index.js';
+import type { GValidClassificationIndex } from '../transform/g-valid-classifier.js';
 
 export type PipelineStageName =
   | 'normalize'
@@ -110,6 +111,11 @@ export interface PipelineArtifacts {
   coverageTargets?: CoverageTarget[];
   coverageMetrics?: CoverageMetrics;
   coverageReport?: CoverageReport;
+  /**
+   * Optional per-path G_valid classification index computed from the
+   * canonical/Compose view when the G_valid feature flag is enabled.
+   */
+  gValidIndex?: GValidClassificationIndex;
 }
 
 export interface PipelineStageOverrides {
@@ -118,11 +124,16 @@ export interface PipelineStageOverrides {
   generate?: (
     effective: ComposeResult,
     options?: PipelineOptions['generate'],
-    coverage?: unknown
+    coverage?: unknown,
+    gValidIndex?: GValidClassificationIndex
   ) => GeneratorStageOutput | Promise<GeneratorStageOutput>;
   repair?: (
     items: unknown[],
-    args: { schema: unknown; effective: ComposeResult },
+    args: {
+      schema: unknown;
+      effective: ComposeResult;
+      gValidIndex?: GValidClassificationIndex;
+    },
     options?: PipelineOptions['repair']
   ) =>
     | unknown[]

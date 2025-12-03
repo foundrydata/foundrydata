@@ -1,5 +1,5 @@
-Task: 9401   Title: Implement classifier over Compose artifacts — subtask 9401.9401002
-Anchors: [spec://§6#generator-repair-contract, spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#generator, spec://§8#compose]
+Task: 9401   Title: Add tests for motif classification — subtask 9401.9401004
+Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§8#compose, spec://§9#generator]
 Touched files:
 - PLAN.md
 - .taskmaster/docs/9401-traceability.md
@@ -8,14 +8,15 @@ Touched files:
 - packages/core/src/transform/__tests__/g-valid-classifier.spec.ts
 
 Approach:
-Pour la sous-tâche 9401.9401002, je vais implémenter un premier classifieur G_valid dans `g-valid-classifier.ts` qui s’appuie sur le schéma canonique et les artefacts de Compose (CoverageIndex, diagnostics) pour marquer certains `canonPath` comme G_valid v1 ou non, en respectant strictement les conditions de la SPEC (spec://§6#generator-repair-contract, spec://§6#phases, spec://§8#compose, spec://§9#generator). Concrètement : (1) ajouter une fonction `classifyGValid` qui accepte le schéma canonique, un `CoverageIndex` et (optionnellement) les diagnostics de Compose, et qui parcourt la structure canonique pour identifier les motifs de base G_valid v1 (objets simples avec `required`/`minProperties` sans AP:false/unevaluated*, arrays simples `items`+`contains` sans `uniqueItems` ni bags complexes) en marquant tous les autres chemins comme non-G_valid; (2) utiliser `CoverageIndex` et, le cas échéant, les diagnostics de Compose pour détecter les cas explicitement exclus par la SPEC (AP:false must-cover, `CONTAINS_UNSAT_BY_SUM` et motifs complexes) afin de ne jamais les classer G_valid; (3) écrire un fichier de test dédié `g-valid-classifier.spec.ts` qui alimente le classifieur avec quelques micro-schémas canoniques et des CoverageIndex synthétiques et vérifie que les chemins attendus sont marqués G_valid ou non conformément aux motifs de §6.3, sans encore câbler l’API dans Generate/Repair; (4) garder l’algorithme conservateur (préférer ne pas classer un chemin en G_valid plutôt que de le sur-classer) pour rester compatible avec le contrat et laisser 9401.9401003/9401.9401004 enrichir et durcir la couverture de tests.
+Pour la sous-tâche 9401.9401004, je vais renforcer les tests autour de `classifyGValid` afin de couvrir plus complètement les motifs G_valid v1 et les cas d’exclusion décrits dans la SPEC (spec://§6#phases, spec://§6#generator-repair-contract, spec://§8#compose, spec://§9#generator), sans modifier le comportement du classifieur au-delà de ce qui est déjà implémenté. Concrètement : (1) ajouter des cas AP:false combinés avec `patternProperties`/`propertyNames` en injectant un `CoverageIndex` synthétique pour vérifier que ces objets restent non-G_valid et sont marqués avec le motif attendu (actuellement `ApFalseMustCover`), ce qui renforce la couverture des exclusions AP:false/CoverageIndex ; (2) ajouter des cas d’arrays avec sacs de `contains` plus complexes (plusieurs `contains` via `allOf`, présence de `unevaluatedItems`/`uniqueItems`) pour vérifier que le classifieur n’upgrade jamais ces formes en `ArrayItemsContainsSimple` et les garde hors de la zone G_valid ; (3) ajouter des cas avec `unevaluatedProperties`/`unevaluatedItems` à différents niveaux (racine, branches `allOf`) afin de garantir que le flag de garde est bien propagé et bloque la classification G_valid là où des guards unevaluated* s’appliquent ; (4) enfin, ajouter un test de stabilité/déterminisme qui exécute `classifyGValid` sur des variantes de schémas canoniques équivalents (par exemple en permutant l’ordre de branches `allOf`) et qui vérifie au minimum que la classification au niveau racine (`#/`) reste identique et que la fonction est pure pour des entrées fixées. Je resterai strictement REFONLY vis-à-vis de la SPEC, en n’introduisant pas de nouveaux motifs ni de diagnostics dans cette sous-tâche.
 
 DoD:
-- [x] `classifyGValid` produit un index de classification par `canonPath` avec au moins les motifs v1 de base (simple object required, array items+contains simple) marqués G_valid lorsque les conditions de la SPEC sont clairement satisfaites.
-- [x] Les tests unitaires couvrent des cas positifs et négatifs pour ces motifs, ainsi que des exclusions simples (AP:false/unevaluated*/contains complexes) à partir de schémas de micro-fixtures.
+- [x] Les tests couvrent les cas AP:false + CoverageIndex, y compris en présence de patternProperties/propertyNames, et confirment que ces motifs restent non-G_valid.
+- [x] Les tests couvrent des arrays avec sacs de contains et des guards unevaluated* (unevaluatedProperties/unevaluatedItems), en vérifiant que le classifieur reste conservatif (pas de faux positifs G_valid).
+- [x] Un test de stabilité/déterminisme démontre que la classification est déterministe pour un schéma canonique fixé (y compris sous permutations allOf contrôlées).
 - [x] build/typecheck/lint/test/bench OK.
 
-Parent bullets couverts: [KR1, KR2, KR3, DEL1, DEL3, DOD1, DOD2, TS1, TS2, TS3]
+Parent bullets couverts: [KR1, KR2, KR3, DEL3, DOD2, DOD3, TS1, TS2, TS3, TS4]
 
 Checks:
 - build: npm run build

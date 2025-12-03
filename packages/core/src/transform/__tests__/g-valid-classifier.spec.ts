@@ -47,6 +47,32 @@ describe('classifyGValid', () => {
     expect(root?.motif).toBe(GValidMotif.ApFalseMustCover);
   });
 
+  it('treats AP:false objects with patternProperties as non-G_valid via CoverageIndex', () => {
+    const schema = {
+      type: 'object',
+      patternProperties: {
+        '^x_': { type: 'string' },
+      },
+      additionalProperties: false,
+    };
+
+    const coverageIndex: CoverageIndex = new Map([
+      [
+        '#',
+        {
+          has: () => true,
+        },
+      ],
+    ]);
+
+    const index = classifyGValid(schema, coverageIndex);
+    const root = index.get('#');
+
+    expect(root).toBeDefined();
+    expect(root?.isGValid).toBe(false);
+    expect(root?.motif).toBe(GValidMotif.ApFalseMustCover);
+  });
+
   it('classifies a simple items+contains array as G_valid v1', () => {
     const schema = {
       type: 'array',
@@ -93,6 +119,21 @@ describe('classifyGValid', () => {
     expect(root?.motif).toBe(GValidMotif.None);
   });
 
+  it('excludes arrays with contains bags spread across allOf from baseline G_valid v1', () => {
+    const schema = {
+      type: 'array',
+      items: { type: 'integer' },
+      allOf: [{ contains: { const: 1 } }, { contains: { const: 2 } }],
+    };
+
+    const index = classifyGValid(schema, undefined);
+    const root = index.get('#');
+
+    expect(root).toBeDefined();
+    expect(root?.isGValid).toBe(false);
+    expect(root?.motif).toBe(GValidMotif.None);
+  });
+
   it('propagates unevaluated* guards and keeps nested locations non-G_valid', () => {
     const schema = {
       allOf: [
@@ -125,5 +166,50 @@ describe('classifyGValid', () => {
     expect(child).toBeDefined();
     expect(child?.isGValid).toBe(false);
     expect(child?.motif).toBe(GValidMotif.None);
+  });
+
+  it('excludes arrays with unevaluatedItems guards from baseline G_valid v1', () => {
+    const schema = {
+      type: 'array',
+      items: { type: 'string' },
+      contains: { const: 'x' },
+      unevaluatedItems: false,
+    };
+
+    const index = classifyGValid(schema, undefined);
+    const root = index.get('#');
+
+    expect(root).toBeDefined();
+    expect(root?.isGValid).toBe(false);
+    expect(root?.motif).toBe(GValidMotif.None);
+  });
+
+  it('is deterministic for fixed canonical schemas and insensitive to simple allOf ordering at root', () => {
+    const baseObject = {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+      },
+      required: ['id'],
+    } as const;
+
+    const schemaA = {
+      allOf: [{}, baseObject],
+    };
+
+    const schemaB = {
+      allOf: [baseObject, {}],
+    };
+
+    const indexA = classifyGValid(schemaA, undefined);
+    const indexB = classifyGValid(schemaB, undefined);
+
+    const rootA = indexA.get('#');
+    const rootB = indexB.get('#');
+
+    expect(rootA).toBeDefined();
+    expect(rootB).toBeDefined();
+    expect(rootA?.motif).toBe(rootB?.motif);
+    expect(rootA?.isGValid).toBe(rootB?.isGValid);
   });
 });

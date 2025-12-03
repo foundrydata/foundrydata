@@ -36,11 +36,10 @@ This document maps the parent task 9401 bullets from Implementation Details, Del
   Covers: [KR1, DEL1, TS1] (status: done).
 
 - **9401.9401002 – Implement classifier over Compose artifacts**  
-  Covers: [KR1, KR2, KR3, DEL1, DEL3, DOD1, DOD2, TS1, TS2, TS3] (status: in-progress).
+  Covers: [KR1, KR2, KR3, DEL1, DEL3, DOD1, DOD2, TS1, TS2, TS3] (status: done).
 
 - **9401.9401003 – Wire classifier into generator and repair planning**  
-  Covers: [KR1, KR2, KR4, DEL2, DOD1, TS4] (status: pending).
+  Covers: [KR1, KR2, KR4, DEL2, DOD1, TS4] (status: done).
 
 - **9401.9401004 – Add tests for motif classification**  
-  Covers: [KR1, KR2, KR3, DEL3, DOD2, DOD3, TS1, TS2, TS3, TS4] (status: pending).
-
+  Covers: [KR1, KR2, KR3, DEL3, DOD2, DOD3, TS1, TS2, TS3, TS4] (status: done).

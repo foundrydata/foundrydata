@@ -46,6 +46,7 @@ import {
   type RegistryDoc,
 } from '../resolver/hydrateSourceAjvFromRegistry.js';
 import type { ResolverDiagnosticNote } from '../resolver/options.js';
+import type { GValidClassificationIndex } from '../transform/g-valid-classifier.js';
 import type Ajv from 'ajv';
 import type { ValidateFunction } from 'ajv';
 import type { CoverageEvent, CoverageHint } from '../coverage/index.js';
@@ -180,6 +181,12 @@ export interface FoundryGeneratorOptions {
    * will emit CoverageEvent entries for branches and enums.
    */
   coverage?: GeneratorCoverageOptions;
+  /**
+   * Optional per-path G_valid classification index computed from the
+   * canonical/Compose view when the G_valid feature flag is enabled.
+   * Wiring only in 9401.9401003; behavior remains unchanged.
+   */
+  gValidIndex?: GValidClassificationIndex;
 }
 
 export function generateFromCompose(

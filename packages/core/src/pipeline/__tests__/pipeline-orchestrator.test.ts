@@ -157,6 +157,53 @@ describe('executePipeline', () => {
     expect(result.metrics.validationsPerRow).toBeGreaterThanOrEqual(1);
   });
 
+  it('wires G_valid classification via planOptions.gValid without changing final items', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        id: { type: 'integer', minimum: 0 },
+        title: { type: 'string', minLength: 1 },
+      },
+      required: ['id', 'title'],
+    } as const;
+
+    const baseGenerate = { count: 3, seed: 37 } as const;
+
+    const off = await executePipeline(schema, {
+      generate: {
+        ...baseGenerate,
+        planOptions: { gValid: false },
+      },
+      validate: { validateFormats: false },
+    });
+
+    const on = await executePipeline(schema, {
+      generate: {
+        ...baseGenerate,
+        planOptions: { gValid: true },
+      },
+      validate: { validateFormats: false },
+    });
+
+    expect(off.status).toBe('completed');
+    expect(on.status).toBe('completed');
+
+    const finalOff =
+      off.artifacts.repaired ?? off.artifacts.generated?.items ?? [];
+    const finalOn =
+      on.artifacts.repaired ?? on.artifacts.generated?.items ?? [];
+
+    expect(finalOn).toEqual(finalOff);
+
+    expect(off.artifacts.gValidIndex).toBeUndefined();
+    const index = on.artifacts.gValidIndex;
+    expect(index).toBeDefined();
+    const root = index?.get('#');
+    expect(root).toBeDefined();
+    expect(root?.isGValid).toBe(true);
+  });
+
   it('supports overrides for generate/repair/validate stages', async () => {
     const schema = { type: 'string' };
     const seen: string[] = [];

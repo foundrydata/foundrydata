@@ -29,6 +29,7 @@ import {
   getCachedValidator,
   setCachedValidator,
 } from '../util/validator-cache.js';
+import type { GValidClassificationIndex } from '../transform/g-valid-classifier.js';
 
 export interface AjvErr {
   instancePath: string;
@@ -697,6 +698,7 @@ export function repairItemsAjvDriven(
     schema: unknown;
     effective: ComposeResult;
     planOptions?: Partial<PlanOptions>;
+    gValidIndex?: GValidClassificationIndex;
   },
   options?: {
     attempts?: number;

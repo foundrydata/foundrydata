@@ -12,6 +12,10 @@ import {
   type ComposeOptions,
   type ComposeInput,
 } from '../transform/composition-engine.js';
+import {
+  classifyGValid,
+  type GValidClassificationIndex,
+} from '../transform/g-valid-classifier.js';
 import { createPlanningAjv } from '../util/ajv-planning.js';
 import {
   createSourceAjv,
@@ -126,11 +130,16 @@ interface StageRunners {
   generate: (
     effective: ReturnType<typeof compose>,
     options?: PipelineOptions['generate'],
-    coverage?: CoverageHookOptions
+    coverage?: CoverageHookOptions,
+    gValidIndex?: GValidClassificationIndex
   ) => Promise<GeneratorStageOutput> | GeneratorStageOutput;
   repair: (
     items: unknown[],
-    args: { schema: unknown; effective: ReturnType<typeof compose> },
+    args: {
+      schema: unknown;
+      effective: ReturnType<typeof compose>;
+      gValidIndex?: GValidClassificationIndex;
+    },
     options?: PipelineOptions['repair']
   ) =>
     | Promise<
@@ -405,6 +414,7 @@ export async function executePipeline(
     resolvedPlanOptions.failFast.externalRefStrict;
   let externalRefState: ExternalRefState | undefined;
   let canonicalSchema: unknown = schema;
+  let gValidIndex: GValidClassificationIndex | undefined;
   let coverageAccumulator: CoverageAccumulator | undefined;
   let streamingCoverageAccumulator: StreamingCoverageAccumulator | undefined;
   let perInstanceCoverageStates: InstanceCoverageState[] | undefined;
@@ -836,6 +846,16 @@ export async function executePipeline(
         output: composeResult,
       };
 
+      if (resolvedPlanOptions.gValid === true) {
+        const index = classifyGValid(
+          canonicalSchema,
+          composeResult.coverageIndex,
+          composeResult.diag
+        );
+        gValidIndex = index;
+        artifacts.gValidIndex = index;
+      }
+
       const coveragePlan = planCoverageForPipeline({
         canonicalSchema,
         normalizeResult,
@@ -979,7 +999,7 @@ export async function executePipeline(
   try {
     const eff = stages.compose.output!;
     generated = await Promise.resolve(
-      runners.generate(eff, options.generate, coverageHookOptions)
+      runners.generate(eff, options.generate, coverageHookOptions, gValidIndex)
     );
     stages.generate = { status: 'completed', output: generated };
     artifacts.generated = generated;
@@ -1050,7 +1070,11 @@ export async function executePipeline(
       ? generatedOutput.items
       : [];
     const out = await Promise.resolve(
-      runners.repair(items, { schema, effective: eff }, options.repair)
+      runners.repair(
+        items,
+        { schema, effective: eff, gValidIndex },
+        options.repair
+      )
     );
     type RepairActions = {
       action: string;
@@ -1315,7 +1339,7 @@ function createDefaultGenerate(
   },
   coverage?: CoverageHookOptions
 ): StageRunners['generate'] {
-  return (effective, options, _coverageHooks) => {
+  return (effective, options, _coverageHooks, gValidIndex) => {
     const generatorOptions: FoundryGeneratorOptions = {
       count: options?.count,
       seed: options?.seed,
@@ -1331,6 +1355,7 @@ function createDefaultGenerate(
       resolverSeenSchemaIds: opts?.resolverSeenSchemaIds,
       sourceDialect: opts?.sourceDialect,
       coverage: coverage && coverage.mode !== 'off' ? coverage : undefined,
+      gValidIndex,
     };
     return generateFromCompose(effective, generatorOptions);
   };
@@ -1342,18 +1367,22 @@ function createDefaultRepair(
   coverage?: CoverageHookOptions
 ): (
   items: unknown[],
-  _args: { schema: unknown; effective: ReturnType<typeof compose> },
+  _args: {
+    schema: unknown;
+    effective: ReturnType<typeof compose>;
+    gValidIndex?: GValidClassificationIndex;
+  },
   _options?: PipelineOptions['repair']
 ) => Promise<
   unknown[] | { items: unknown[]; diagnostics: DiagnosticEnvelope[] }
 > {
   return async (items, _args, _options) => {
-    const { schema, effective } = _args;
+    const { schema, effective, gValidIndex } = _args;
     const planOptions = pipelineOptions.generate?.planOptions;
     try {
       return repairItemsAjvDriven(
         items,
-        { schema, effective, planOptions },
+        { schema, effective, planOptions, gValidIndex },
         {
           attempts: _options?.attempts,
           metrics,

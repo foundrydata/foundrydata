@@ -248,6 +248,15 @@ export interface PlanOptions {
   /** Repair-stage configuration */
   repair?: RepairPlanOptions;
 
+  /**
+   * Enable G_valid classification and enforcement.
+   *
+   * When true, the pipeline computes motif classification over the
+   * canonical/Compose view and exposes a lookup index to downstream
+   * stages (generator, repair, metrics). Default: false.
+   */
+  gValid?: boolean;
+
   /** External $ref resolver (Extension R1) */
   resolver?: {
     /** Resolution strategies. Default: ['local'] */
@@ -297,6 +306,7 @@ export interface ResolvedOptions {
   cache: Required<CacheOptions>;
 
   metrics: boolean;
+  gValid: boolean;
   enableLocalSMT: boolean;
   solverTimeoutMs: number;
   disablePatternOverlapAnalysis: boolean;
@@ -354,6 +364,7 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
   },
 
   metrics: true,
+  gValid: false,
   enableLocalSMT: false,
   solverTimeoutMs: 25,
   disablePatternOverlapAnalysis: false,
@@ -573,6 +584,10 @@ function validateOptions(options: ResolvedOptions): void {
   }
   if (options.complexity.bailOnUnsatAfter <= 0) {
     throw new Error('complexity.bailOnUnsatAfter must be positive');
+  }
+
+  if (typeof options.gValid !== 'boolean') {
+    throw new Error('gValid must be boolean');
   }
 
   if (typeof options.enableLocalSMT !== 'boolean') {

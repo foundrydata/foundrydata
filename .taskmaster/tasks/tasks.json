@@ -1533,24 +1533,24 @@
             "id": 9401003,
             "title": "Wire classifier into generator and repair planning",
             "description": "Expose G_valid motif lookup to generator and repair (e.g. via plan context or per-path metadata) so they can adjust behavior inside G_valid zones, per spec §6.4–§6.5.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 3,
             "file": "packages/core/src/pipeline/orchestrator.ts",
             "parentId": "9401",
-            "updatedAt": "2025-12-02T23:00:00.000Z"
+            "updatedAt": "2025-12-03T19:42:52.598Z"
           },
           {
             "id": 9401004,
             "title": "Add tests for motif classification",
             "description": "Create tests that exercise classification for simple objects, arrays with items+contains, AP:false + CoverageIndex cases and unevaluatedProperties/unevaluatedItems, asserting expected G_valid flags according to spec §6.3.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 3,
             "file": "packages/core/src/transform/**tests**/g-valid-classifier.spec.ts",
             "parentId": "9401",
-            "updatedAt": "2025-12-02T23:00:00.000Z"
+            "updatedAt": "2025-12-03T19:55:55.910Z"
           }
         ],
-        "updatedAt": "2025-12-03T19:41:24.073Z"
+        "updatedAt": "2025-12-03T19:55:55.910Z"
       },
       {
         "id": "9402",
@@ -1820,7 +1820,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-03T19:41:24.074Z",
+      "lastModified": "2025-12-03T19:55:55.911Z",
       "taskCount": 7,
       "completedCount": 1,
       "tags": [
