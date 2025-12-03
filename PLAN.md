@@ -1,4 +1,4 @@
-Task: 9402   Title: Plumb G_valid hints into array generation paths — subtask 9402.9402001
+Task: 9402   Title: Implement combined items + contains generation for G_valid arrays — subtask 9402.9402002
 Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#generator, spec://§10#repair-engine]
 Touched files:
 - PLAN.md
@@ -8,15 +8,15 @@ Touched files:
 - packages/core/src/pipeline/orchestrator.ts
 
 Approach:
-Pour la sous-tâche 9402.9402001, je vais injecter les informations de motifs G_valid déjà calculées (index `canonPath -> GValidInfo` fourni par le pipeline) dans les chemins de génération d’arrays du générateur, de façon purement “plumbing” et derrière le flag existant `planOptions.gValid`, sans modifier encore la logique de construction des items/contains. Concrètement : (1) étendre la signature et/ou le contexte interne de `GeneratorEngine` dans `foundry-generator.ts` pour accepter l’index G_valid transmis par l’orchestrateur et l’exposer via un helper interne dédié aux chemins array (par exemple une méthode privée qui renvoie les métadonnées G_valid pour un `canonPath` donné) ; (2) faire remonter l’index jusqu’aux points de décision structurants pour les arrays (chemins où sont déjà gérés `containsBag`, `minItems`, `uniqueItems`, etc.), sans conditionner encore les décisions sur ces motifs mais en préparant le terrain pour la sous-tâche suivante qui sélectionnera la stratégie G_valid vs legacy ; (3) s’assurer que ce passage d’index ne change rien lorsque `planOptions.gValid` est false (aucun accès à l’index, aucun coût supplémentaire significatif) et que les seeds et sorties restent strictement déterministes pour des tuples d’options donnés ; (4) ajouter ou ajuster des tests ciblés (par exemple dans les tests du pipeline ou du générateur) pour vérifier que le plumbing n’affecte pas les sorties existantes et que l’index G_valid est bien disponible aux emplacements attendus lorsque le flag est activé. Je resterai strictement dans le scope “plumbing” : pas de changement de comportement métier, pas de nouveaux diagnostics, uniquement la mise à disposition de l’information G_valid aux chemins arrays.
+Pour la sous-tâche 9402.9402002, je vais implémenter, uniquement dans les zones marquées G_valid pour les arrays items+contains (spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#generator, spec://§10#repair-engine), une stratégie de génération combinée qui garantit que les éléments produits satisfont simultanément le schéma `items` effectif et les sous-schémas `contains`, tout en préservant le comportement legacy ailleurs. Concrètement : (1) identifier, dans `generateArray` et `satisfyContainsNeeds`, les chemins où les besoins de `contains` sont planifiés via `containsBag` et conditionner une nouvelle stratégie “G_valid array” à la présence d’un motif G_valid adapté dans l’index (par exemple un motif array simple items+contains) et au flag `planOptions.gValid`; (2) pour ces arrays G_valid, générer en priorité des “witness” d’éléments en partant de la forme `items` (notamment les objets avec `required`) puis en appliquant les contraintes de `contains` (const, enum, etc.), de façon à obtenir une instance AJV-valide sans nécessiter de réparation structurelle sur les propriétés requises ; (3) conserver la logique actuelle (y compris diagnostics CONTAINS_UNSAT_BY_SUM, caps et uniqueItems) lorsqu’aucun motif G_valid ne s’applique, en évitant toute divergence RNG pour les arrays non-G_valid ; (4) ajouter des tests ciblés (unitaires sur le générateur ou via le pipeline) qui comparent, pour un schéma simple items+contains compatible G_valid, le comportement avant/après : en mode G_valid, les éléments satisfont `items`+`contains` d’emblée et la Repair ne touche plus à la structure, tandis que pour des arrays hors G_valid le comportement et les diagnostics restent inchangés. Tout changement restera strictement aligné avec la SPEC (REFONLY) et déterministe pour un tuple (schéma, options, seed) donné.
 
 DoD:
- - [x] L’index G_valid est accessible depuis les chemins de génération d’arrays (au moins là où les sacs de contains sont gérés), sans modifier la génération existante.
- - [x] Le flag `planOptions.gValid` contrôle entièrement l’activation du plumbing (aucune différence de sortie ni de diagnostics lorsqu’il est à false).
- - [x] Les tests de pipeline/générateur restent verts et confirment l’absence de régression observable (comportement inchangé hors inspection interne de l’index).
+ - [x] En mode G_valid et pour les motifs items+contains simples, le générateur produit des éléments qui satisfont `items` et `contains` sans nécessiter de Repair structurelle.
+ - [x] Pour les arrays non-G_valid (AP:false, sacs de contains complexes, uniqueItems lourds), le comportement et les diagnostics restent identiques à la baseline.
+ - [x] Des tests (générateur/pipeline) démontrent que la Repair n’a plus à compléter les propriétés requises dans les arrays G_valid, tout en conservant la déterminisme pour un seed donné.
  - [x] build/typecheck/lint/test/bench OK.
 
-Parent bullets couverts: [KR1, KR2, KR4, DEL1, DOD1, TS4]
+Parent bullets couverts: [KR1, KR2, KR3, KR4, DEL2, DOD1, DOD2, TS1, TS2, TS4]
 
 Checks:
 - build: npm run build

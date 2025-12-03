@@ -157,6 +157,60 @@ describe('executePipeline', () => {
     expect(result.metrics.validationsPerRow).toBeGreaterThanOrEqual(1);
   });
 
+  it('generates G_valid items+contains arrays with required fields and no repair actions', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          isGift: { type: 'boolean' },
+        },
+        required: ['id', 'isGift'],
+      },
+      minItems: 1,
+      contains: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          isGift: { const: true },
+        },
+        required: ['id', 'isGift'],
+      },
+    } as const;
+
+    const result = await executePipeline(schema, {
+      generate: {
+        count: 3,
+        seed: 37,
+        planOptions: { gValid: true },
+      },
+      validate: { validateFormats: false },
+    });
+
+    expect(result.status).toBe('completed');
+
+    const finalItems =
+      result.artifacts.repaired ?? result.artifacts.generated?.items ?? [];
+
+    expect(Array.isArray(finalItems)).toBe(true);
+    expect(finalItems.length).toBeGreaterThan(0);
+
+    for (const arr of finalItems as unknown[]) {
+      expect(Array.isArray(arr)).toBe(true);
+      for (const elem of arr as any[]) {
+        expect(elem).toBeTruthy();
+        expect(typeof elem).toBe('object');
+        expect(typeof elem.id).toBe('string');
+        expect(typeof elem.isGift).toBe('boolean');
+      }
+    }
+
+    const actions = result.artifacts.repairActions ?? [];
+    expect(actions.length).toBe(0);
+  });
+
   it('wires G_valid classification via planOptions.gValid without changing final items', async () => {
     const schema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
@@ -202,6 +256,51 @@ describe('executePipeline', () => {
     const root = index?.get('#');
     expect(root).toBeDefined();
     expect(root?.isGValid).toBe(true);
+  });
+
+  it('keeps non-G_valid arrays stable when toggling G_valid flag', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'array',
+      uniqueItems: true,
+      items: { type: 'string' },
+      contains: { const: 'x' },
+    } as const;
+
+    const baseGenerate = { count: 4, seed: 17 } as const;
+
+    const off = await executePipeline(schema, {
+      generate: {
+        ...baseGenerate,
+        planOptions: { gValid: false },
+      },
+      validate: { validateFormats: false },
+    });
+
+    const on = await executePipeline(schema, {
+      generate: {
+        ...baseGenerate,
+        planOptions: { gValid: true },
+      },
+      validate: { validateFormats: false },
+    });
+
+    expect(off.status).toBe('completed');
+    expect(on.status).toBe('completed');
+
+    const finalOff =
+      off.artifacts.repaired ?? off.artifacts.generated?.items ?? [];
+    const finalOn =
+      on.artifacts.repaired ?? on.artifacts.generated?.items ?? [];
+
+    expect(finalOn).toEqual(finalOff);
+
+    expect(off.artifacts.gValidIndex).toBeUndefined();
+    const index = on.artifacts.gValidIndex;
+    expect(index).toBeDefined();
+    const root = index?.get('#');
+    expect(root).toBeDefined();
+    expect(root?.isGValid).toBe(false);
   });
 
   it('supports overrides for generate/repair/validate stages', async () => {
