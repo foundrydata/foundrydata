@@ -1,77 +1,77 @@
-# AGENT Runbook — Operating Mode (GPT-5 Codex, coverage-aware-v1)
+# AGENT Runbook — Operating Mode (GPT-5 Codex, generator-vs-repair-contract)
 
-**Purpose.** Discipline d’exécution et garde-fous pour implémenter **FoundryData – couche coverage-aware V1** à partir des **SPEC** (générateur canonique + spec coverage-aware).
+**Purpose.** Discipline d’exécution et garde-fous pour implémenter le **contrat Generator vs Repair / G_valid v1** à partir de la **SPEC canonique** du générateur JSON Schema.
 
-**Audience.** Agent GPT-5 Codex (VS Code) opérant sur les tâches **9300..9334** (tag `coverage-aware-v1`).
+**Audience.** Agent GPT-5 Codex (VS Code) opérant sur les tâches **9400..9406** (tag `generator-vs-repair-contract`).
 
-**Status.** Actif — à appliquer systématiquement pour ce tag.
+**Status.** Actif — à appliquer systématiquement pour ces tags.
 
 ---
 
 ## Mode d’emploi (cheat-sheet agent)
 
-**Pré-hook obligatoire (TOUJOURS avant toute implémentation sur 9300..9334)**
+**Pré-hook obligatoire (TOUJOURS avant toute implémentation sur 9400..9406)**
 
-1. Identifier la sous-tâche visée (ex. via `npx task-master next` → `9301.9301001`).
+1. Identifier la sous-tâche visée (ex. via `npx task-master next` → `9400.1`).
 2. Lancer, depuis la racine du repo :  
-   `./scripts/tm-start-coverage-subtask.sh 9301.9301001`  
+   `./scripts/tm-start-coverage-subtask.sh 9400.1`  
    Ce script exécute, dans l’ordre:  
-   - `npx task-master show 9301` (tâche parente)  
-   - `npx task-master show 9301.9301001` (sous-tâche)  
-   - `npx task-master set-status --id=9301.9301001 --status=in-progress`
-3. Ne jamais appeler `npx task-master set-status --status=in-progress` directement pour une sous-tâche 9300..9334 sans être passé par ce script ou par la séquence manuelle `show parent` → `show subtask`.
+   - `npx task-master show 9400` (tâche parente)  
+   - `npx task-master show 9400.1` (sous-tâche)  
+   - `npx task-master set-status --id=9400.1 --status=in-progress`
+3. Ne jamais appeler `npx task-master set-status --status=in-progress` directement pour une sous-tâche 9400..9406 sans être passé par ce script ou par la séquence manuelle `show parent` → `show subtask`.
 
 **Boucle principale**
 
-1. Vérifier que le tag actif est `coverage-aware-v1` et qu’une **tâche parente** 9300..9334 est disponible (`/tm:next` ou `npx task-master next`).
+1. Vérifier que le tag actif est `generator-vs-repair-contract` et qu’une **tâche parente** 9400..9406 est disponible (`/tm:next` ou `npx task-master next`).
 2. Afficher la tâche parente (`/tm:show <id>` ou `npx task-master show <id>`) et lire sa description globale + la liste de ses sous-tâches (ne pas tenter de “tout faire” en une seule passe).  
    (Si vous utilisez le script `tm-start-coverage-subtask.sh`, cette étape est incluse pour la sous-tâche choisie.)
-3. Choisir une sous-tâche active (ex. `9300.1`) en respectant l’ordre / les dépendances, puis la marquer `in-progress` via le script `./scripts/tm-start-coverage-subtask.sh 9300.1` ou, à défaut, en exécutant manuellement dans cet ordre :  
-   a) `npx task-master show 9300`  
-   b) `npx task-master show 9300.1`  
-   c) `npx task-master set-status --id=9300.1 --status=in-progress`
-   **Anti-biais de scope :** avant de proposer ou de commencer un travail qui touche une autre phase ou un autre artefact du pipeline (par ex. brancher un nouvel accumulateur dans `executePipeline`), vérifier explicitement via `npx task-master show <id>` si une sous-tâche dédiée existe déjà (ex. “Integrate coverage accumulators into pipeline orchestrator”). Si c’est le cas, considérer ce travail comme **hors périmètre** de la sous-tâche courante : ne pas l’implémenter ni le décrire comme “prochaine étape” dans la même itération. Se limiter au scope décrit par le titre/description de la sous-tâche en cours.
-4. Sélectionner 1–5 anchors SPEC pertinents pour cette sous-tâche (`spec://...`, `cov://...`, REFONLY, quotas respectés).
+3. Choisir une sous-tâche active (ex. `9400.1`) en respectant l’ordre / les dépendances, puis la marquer `in-progress` via le script `./scripts/tm-start-coverage-subtask.sh 9400.1` ou, à défaut, en exécutant manuellement dans cet ordre :  
+   a) `npx task-master show 9400`  
+   b) `npx task-master show 9400.1`  
+   c) `npx task-master set-status --id=9400.1 --status=in-progress`
+   **Anti-biais de scope :** avant de proposer ou de commencer un travail qui touche une autre phase ou un autre artefact du pipeline (par ex. brancher un nouvel accumulateur dans `executePipeline`), vérifier explicitement via `npx task-master show <id>` si une sous-tâche dédiée existe déjà (ex. “Integrate repair diagnostics accumulators into pipeline orchestrator”). Si c’est le cas, considérer ce travail comme **hors périmètre** de la sous-tâche courante : ne pas l’implémenter ni le décrire comme “prochaine étape” dans la même itération. Se limiter au scope décrit par le titre/description de la sous-tâche en cours.
+4. Sélectionner 1–5 anchors SPEC pertinents pour cette sous-tâche (`spec://...`, REFONLY, quotas respectés).
 5. Rédiger `PLAN.md` (200–400 mots) centré sur la sous-tâche en cours, avec `taskId`, `anchors`, `touchedFiles`, approche, risques et checks standard.
-6. Implémenter les changements pour cette sous-tâche dans les fichiers listés, en respectant les invariants coverage-aware et AP:false.
+6. Implémenter les changements pour cette sous-tâche dans les fichiers listés, en respectant les invariants AP:false et le contrat Generator/Repair.
 7. Ajouter/mettre à jour les tests pour viser **cov ≥80 % sur chaque fichier touché** (ou isoler la logique dans un nouveau module bien couvert).
 8. Lancer au minimum `npm run build`, puis `npm run typecheck`, ensuite `npm run lint`, puis `npm run test`, et enfin `npm run bench` depuis la racine ; **Codex doit s’assurer que `typecheck` et `lint` précèdent `test`.**
 9. Vérifier que les diagnostics respectent `diagnosticsEnvelope.schema.json` (diag-schema) et que les bench gates passent.
 10. Créer un commit avec le template fourni (scope **conceptuel** = sous-tâche, champ `scope` du message conforme à `commitlint.config.cjs`, ex. `core`/`coverage`), incluant un trailer `REFONLY::{"anchors":[...],"summary":"..."}` valide, marquer la sous-tâche comme `done` puis consigner l’opération dans `agent-log.jsonl`. La tâche parente ne peut être terminée que lorsque toutes ses sous-tâches sont `done`.  
    *Remarque : si l’environnement d’exécution ne permet pas à l’agent de créer un commit (ex. restrictions Codex CLI), l’agent doit laisser explicitement ces actions au·à la humain·e dans sa réponse finale.*
 
-**Traçabilité tâche parente 93xx ↔ sous-tâches**
+**Traçabilité tâche parente 94xx ↔ sous-tâches**
 
-- Pour chaque tâche parente 93xx, considérer la section Taskmaster `Implementation Details` (incluant `[Context]`, `[Key requirements]`, `[Deliverables]`, `[Definition of Done]`) ainsi que la section `Test Strategy` comme le **contrat global** de la tâche.
-- Lors du premier travail sur une tâche parente 93xx, créer (ou mettre à jour) un fichier dédié `.taskmaster/docs/93xx-traceability.md` (ex. `9303-traceability.md`) listant :  
+- Pour chaque tâche parente 94xx, considérer la section Taskmaster `Implementation Details` (incluant `[Context]`, `[Key requirements]`, `[Deliverables]`, `[Definition of Done]`) ainsi que la section `Test Strategy` comme le **contrat global** de la tâche.
+- Lors du premier travail sur une tâche parente 94xx, créer (ou mettre à jour) un fichier dédié `.taskmaster/docs/94xx-traceability.md` (ex. `9403-traceability.md`) listant :  
   • les bullets clés de ces sections avec des identifiants stables (`[KR1]`, `[DOD2]`, `[TS5]`, etc.) ;  
-  • un tableau “Mapping 93xx.y → parent bullets” indiquant pour chaque sous-tâche les IDs de bullets couverts et, optionnellement, un statut (`pending`, `in-progress`, `covered`).  
+  • un tableau “Mapping 94xx.y → parent bullets” indiquant pour chaque sous-tâche les IDs de bullets couverts et, optionnellement, un statut (`pending`, `in-progress`, `covered`).  
   Aucun bullet critique ne doit rester sans sous-tâche associée ; si c’est le cas, créer une sous-tâche ou ouvrir une `SPEC-QUESTION`.
-- Chaque sous-tâche 93xx.y dérive un **sous-contrat** : dans le `PLAN.md` de la sous-tâche (fichier unique à la racine, toujours dédié à la sous-tâche coverage-aware en cours), ajouter une ligne simple du type `Parent bullets couverts: [KR1, DOD2, TS5]` en fin de bloc `Risks/Unknowns:`. Les identifiants utilisés doivent correspondre à ceux du fichier `93xx-traceability.md`. Le reste des bullets du parent est traité comme **hors scope** de cette sous-tâche.
-- À la clôture d’une sous-tâche, mettre à jour le fichier `93xx-traceability.md` pour marquer les bullets correspondants comme “covered”. Avant de marquer le parent 93xx en `done`, vérifier que tous les bullets du contrat global sont mappés à ≥1 sous-tâche et marqués `covered`.  
-  *Remarque : ne pas créer de `PLAN-93xx.md` spécifique au parent ; `PLAN.md` reste focalisé sur la sous-tâche active et la traçabilité détaillée vit dans `93xx-traceability.md`. Le format de `PLAN.md` doit rester conforme au template fourni dans ce runbook ; la ligne `Parent bullets couverts: [...]` est explicitement autorisée.*
+- Chaque sous-tâche 94xx.y dérive un **sous-contrat** : dans le `PLAN.md` de la sous-tâche (fichier unique à la racine, toujours dédié à la sous-tâche en cours), ajouter une ligne simple du type `Parent bullets couverts: [KR1, DOD2, TS5]` en fin de bloc `Risks/Unknowns:`. Les identifiants utilisés doivent correspondre à ceux du fichier `94xx-traceability.md`. Le reste des bullets du parent est traité comme **hors scope** de cette sous-tâche.
+- À la clôture d’une sous-tâche, mettre à jour le fichier `94xx-traceability.md` pour marquer les bullets correspondants comme “covered”. Avant de marquer le parent 94xx en `done`, vérifier que tous les bullets du contrat global sont mappés à ≥1 sous-tâche et marqués `covered`.  
+  *Remarque : ne pas créer de `PLAN-94xx.md` spécifique au parent ; `PLAN.md` reste focalisé sur la sous-tâche active et la traçabilité détaillée vit dans `94xx-traceability.md`. Le format de `PLAN.md` doit rester conforme au template fourni dans ce runbook ; la ligne `Parent bullets couverts: [...]` est explicitement autorisée.*
 
 ---
 
-## Gardes-fous “Definition of Done” (9300..9334)
+## Gardes-fous “Definition of Done” (9400..9406)
 
 > Objectif : éviter qu’une sous-tâche soit marquée `done` ou qu’un commit soit créé tant que le contrat Taskmaster (Implementation Details / Deliverables / Definition of Done / Test Strategy) n’est pas effectivement respecté.
 
 **R1 — Lien explicite avec Deliverables et Test Strategy**
 
-- Une sous-tâche 93xx.y ne doit être marquée `done` que si :
-  - tous les Deliverables qui la concernent dans `93xx-traceability.md` sont effectivement implémentés (fichiers créés/modifiés), et
+- Une sous-tâche 94xx.y ne doit être marquée `done` que si :
+  - tous les Deliverables qui la concernent dans `94xx-traceability.md` sont effectivement implémentés (fichiers créés/modifiés), et
   - les tests mentionnés dans `Test Strategy` pour ces bullets existent et ont été exécutés (`npm run build`, `npm run typecheck`, `npm run lint`, `npm run test`, `npm run bench`).
 - Si un Deliverable ou un test reste manifestement non traité, laisser la sous-tâche en `in-progress` et expliquer dans `agent-log.jsonl` pourquoi.
 
 **R2 — Checklist DoD dans PLAN.md**
 
-- Pour chaque sous-tâche active, PLAN.md doit contenir une mini-checklist de Definition of Done (DoD) dérivée de `93xx-traceability.md`, par exemple :
+- Pour chaque sous-tâche active, PLAN.md doit contenir une mini-checklist de Definition of Done (DoD) dérivée de `94xx-traceability.md`, par exemple :
 
   ```text
   DoD:
-  - [ ] Schéma coverage-report/v1 défini
-  - [ ] Tests AJV reporter ajoutés
+  - [ ] Contrat Generator vs Repair implémenté
+  - [ ] Tests G_valid / Repair ajoutés
   - [ ] build/typecheck/lint/test/bench OK
   ```
 
@@ -95,11 +95,11 @@
 **R5 — Discipline Taskmaster**
 
 - Ne jamais :
-  - marquer une sous-tâche 93xx.y `done` **avant** le commit correspondant,
+  - marquer une sous-tâche 94xx.y `done` **avant** le commit correspondant,
   - marquer une sous-tâche `done` sur la seule base d’une “préparation” (ajout de schéma, refactor partiel) sans les tests associés.
-- Avant de marquer la tâche parente 93xx `done`, vérifier :
+- Avant de marquer la tâche parente 94xx `done`, vérifier :
   - que toutes les sous-tâches sont `done`,
-  - que `93xx-traceability.md` ne contient plus de bullets `[KR*]`, `[DEL*]`, `[DOD*]`, `[TS*]` non couverts,
+  - que `94xx-traceability.md` ne contient plus de bullets `[KR*]`, `[DEL*]`, `[DOD*]`, `[TS*]` non couverts,
   - et que `agent-log.jsonl` contient au moins une entrée `complete-subtask` par sous-tâche.
 
 ---
@@ -107,24 +107,14 @@
 ## TL;DR opératoire
 
 1. **Sources de vérité** :
-   **SPEC canoniques + SPEC coverage-aware** > AGENTS.md > notes Tasks.
-2. **RefOnly** : référencer les SPEC uniquement via des **anchors** (`spec://...`, `cov://...`), aucune prose copiée.
+   **SPEC canoniques** > AGENTS.md > notes Tasks.
+2. **RefOnly** : référencer les SPEC uniquement via des **anchors** (`spec://...`), aucune prose copiée.
 3. **Boucle** :
-   `get_task` → `set_status(in-progress)` → anchors (≤5, spec+cov cumulés) → **PLAN.md** → **PATCH+TESTS** (cov ≥80% sur fichiers touchés) → **build/test/bench** → **diag-schema** → **commit** (template) → `set_status(done)`.
-4. **Coverage gating** :
-   `coverage=off` ⇒ pas de CoverageAnalyzer, pas de CoverageGraph, pas d’instrumentation.
-5. **Dimensions** :
-   `dimensionsEnabled` = **projection** sur l’univers de cibles, pas un input dans les IDs. Toggles sur `excludeUnreachable` ne touchent pas aux IDs ni aux statuts.
-6. **AP:false** :
-   Sous AP:false, **CoverageIndex** est la seule source pour `PROPERTY_PRESENT` sur noms non déclarés. Aucune automaton parallèle.
-7. **SCHEMA_REUSED_COVERED** :
-   Cible **diagnostique** uniquement : jamais dans `coverage.overall`, `coverage.byDimension`, `coverage.byOperation`, ni dans `minCoverage`.
-8. **Séparation des phases** : Normalize → Compose → CoverageAnalyzer → CoveragePlanner → Generate → Repair → Validate → CoverageEvaluator.
-9. **Déterminisme** : RNG seedée, pas d’état global caché, même `(canonical schema, OpenAPI spec, coverage options incl. dimensionsEnabled/excludeUnreachable, seed, ajvMajor, registryFingerprint)` ⇒ même CoverageGraph, targets, TestUnits, instances et rapport (hors timestamps).
-10. **Diagnostics** : enveloppe `{code, canonPath, phase, details}`, phase correcte, champs obligatoires (`tiebreakRand`, `exclusivityRand`, `budget`).
-11. **CLI profiles** :
-    `quick` (petit budget, structure+branches), `balanced` (branches+enum) et `thorough` (toutes dimensions dispo, peu ou pas de caps) **doivent** être cohérents avec la SPEC.
-12. **Escalade** : SPEC ambiguë/contradictoire → bloquer, produire `SPEC-QUESTION.md`.
+   `get_task` → `set_status(in-progress)` → anchors (≤5) → **PLAN.md** → **PATCH+TESTS** (cov ≥80% sur fichiers touchés) → **build/test/bench** → **diag-schema** → **commit** (template) → `set_status(done)`.
+4. **Séparation des phases** : Normalize → Compose → Generate → Repair → Validate.
+5. **Déterminisme** : RNG seedée, pas d’état global caché pour un tuple fixé `(canonical schema, OpenAPI spec, options, seed, ajvMajor, registryFingerprint)` ⇒ mêmes instances générées et même comportement de Repair (hors timestamps).
+6. **Diagnostics** : enveloppe `{code, canonPath, phase, details}`, phase correcte, champs obligatoires (`tiebreakRand`, `exclusivityRand`, `budget`).
+7. **Escalade** : SPEC ambiguë/contradictoire → bloquer, produire `SPEC-QUESTION.md`.
 
 ---
 
@@ -139,73 +129,28 @@
 
 ---
 
-## Invariants coverage-aware (suppléments)
-
-À respecter en plus des invariants du pipeline canonique.
-
-* **Gating strict**
-
-  * `coverage=off` ⇒ **pas** de `CoverageAnalyzer`, pas de `CoverageGraph`, pas d’accumulateur de coverage, instrumentation désactivée.
-  * `coverage=measure|guided` ⇒ Analyzer + instrumentation activés.
-
-* **Univers de targets vs dimensionsEnabled**
-
-  * L’univers de cibles est défini par le schéma canonique + OpenAPI + version Foundry/rapport.
-  * En modes standard, `dimensionsEnabled` décide quelles dimensions sont matérialisées dans `targets[]` et utilisées dans les métriques. Un mode debug/introspection pourra matérialiser plus de dimensions, mais les métriques resteront toujours filtrées par `dimensionsEnabled`.
-  * Ne jamais faire dépendre `CoverageTarget.id` ou l’ordre des cibles de `dimensionsEnabled` ou `excludeUnreachable`.
-
-* **Unreachable / excludeUnreachable**
-
-  * `status:'unreachable'` découle des diagnostics existants (`planDiag`, `CoverageIndex` vide, UNSAT connus), jamais d’heuristiques agressives.
-  * En cas de doute sur la satisfiabilité, laisser la cible `status:'active'` avec `hit:false` plutôt que la marquer `unreachable`.
-  * `excludeUnreachable` agit uniquement sur les dénominateurs dans l’Evaluator, **pas** sur les IDs ni sur les statuts.
-
-* **AP:false & CoverageIndex**
-
-  * Sous `additionalProperties:false`, toute cible `PROPERTY_PRESENT` sur nom non déclaré doit être adossée à `CoverageIndex.has` / `CoverageIndex.enumerate`.
-  * Pas d’automate parallèle basé sur `propertyNames`/`patternProperties`. Si la couverture est incertaine, la cible reste uncovered plutôt que “devinée”.
-
-* **SCHEMA_REUSED_COVERED (diagnostic)**
-
-  * Cible présente dans `targets[]` et diagnostics **uniquement pour l’insight**.
-  * Ne contribue **jamais** à `coverage.overall` ni à `coverage.byDimension`/`byOperation` ni à `minCoverage`.
-
-* **Hints impossibles / `CONFLICTING_CONSTRAINTS`**
-
-  * Les hints qui sont structurellement impossibles (AP:false qui interdit le nom, schéma booléen `false`, chemins marqués UNSAT par Compose, index enum ou branche hors bornes) doivent être filtrés dès le CoveragePlanner via le `ConflictDetector` et remontés comme `UnsatisfiedHint` avec `reasonCode:'CONFLICTING_CONSTRAINTS'` (cov://§3#coverage-model, cov://§4#coverage-planner, spec://§8#early-unsat-checks).
-  * Le générateur ne fait qu’un fallback défensif pour les hints invalides injectés à la main (par exemple un `coverEnumValue` avec index hors intervalle ou un `preferBranch` au‑delà du nombre de branches) et utilise aussi `CONFLICTING_CONSTRAINTS` dans ces cas, sans changer le flux d’instances ni les seeds.
-  * `INTERNAL_ERROR` reste réservé aux échecs internes non structurels ; une hint impossible au sens du modèle de contraintes doit toujours être classée en `CONFLICTING_CONSTRAINTS`, et les entrées correspondantes dans `coverageReport.unsatisfiedHints` restent purement diagnostiques (cov://§5#unsatisfied-hints-repair, cov://§7#json-coverage-report).
-
-* **Profils CLI**
-
-  * `quick` : petite `maxInstances` (~50–100), `dimensionsEnabled=['structure','branches']`, caps agressifs.
-  * `balanced` : `['structure','branches','enum']`, budget moyen (~200–500), caps modérés.
-  * `thorough` : toutes dimensions V1 (incl. boundaries quand dispo), `maxInstances` élevé (≥1000), caps désactivées sauf garde-fous globaux.
-
 ---
 
 ## Règles d’or
 
-1. **SPEC seules font foi.** Pas d’élargissement de périmètre au-delà des deux documents de SPEC (canonique + coverage-aware).
+1. **SPEC seules font foi.** Pas d’élargissement de périmètre au-delà de la SPEC canonique.
 1bis. **Conformité SPEC non optionnelle.** Ne jamais présenter l’alignement à la SPEC comme un “plus” facultatif ou formulé en conditionnel (ex. “si tu veux coller à la spec”, “si tu veux pousser au niveau SPEC”). Toute formulation doit considérer la conformité intégrale à la SPEC comme obligatoire et non comme une optimisation ou un niveau “premium”.
-2. **REFONLY par anchors.** Pas de prose SPEC recopiée; référencer par `spec://...` ou `cov://...`.
-3. **Séparation des phases** (Normalize → Compose → CoverageAnalyzer → CoveragePlanner → Generate → Repair → Validate → CoverageEvaluator).
+2. **REFONLY par anchors.** Pas de prose SPEC recopiée; référencer par `spec://...`.
+3. **Séparation des phases** (Normalize → Compose → Generate → Repair → Validate).
 4. **Determinism** : RNG seedée, pas d’état global, journaux de décision.
 5. **Vérifiabilité** : diagnostics conformes §19.1, schémas de sortie ci-dessous.
-6. **Pas de réseau** dans Analyzer/Planner/Generator/Repair/Validate/CoverageEvaluator.
+6. **Pas de réseau** dans Normalize/Compose/Generate/Repair/Validate.
 7. **Parité AJV** : flags alignés entre AJV de génération/planning et AJV de validation (voir section AJV plus bas).
 8. **AP:false** : respecter strictement les invariants CoverageIndex (pas d’expansion sauvage).
-9. **Coverage=measure** : flux d’instances **identique** à coverage=off pour un tuple fixé `(canonical schema, OpenAPI spec, options, seed, ajvMajor, registryFingerprint)`.
-10. **Coverage=guided** : améliore la couverture par hints mais ne viole jamais la validité AJV ni le déterminisme.
 
 ---
 
-## Boucle d'exécution (Run Loop) pour le tag coverage-aware-v1
+## Boucle d'exécution (Run Loop) pour le tag generator-vs-repair-contract
 
 ```text
 Step 0  Sanity:
         - tâches Taskmaster disponibles ?
-        - tag coverage-aware-v1 actif ?
+        - tag generator-vs-repair-contract actif ?
 
 Step 1  Obtenir la tâche parente (contexte global) :
         → /tm:show:show-task <id> ou /tm:next:next-task
@@ -215,7 +160,7 @@ Step 1bis Choisir une sous-tâche active et la marquer comme en cours :
         → /tm:set-status:to-in-progress <id>.<subid>
 
 Step 2  REFONLY:
-        - identifier ≤5 anchors pertinents (spec://... et/ou cov://...)
+        - identifier ≤5 anchors pertinents (spec://...)
         - ≤2 sections SPEC complètes (tous docs confondus) par itération
         - utiliser Grep bornes + Read calculé
 
@@ -231,7 +176,7 @@ Step 7  Commit (template), trailer REFONLY valide.
 
 Step 8  Marquer la sous-tâche comme terminée :
         → /tm:set-status:to-done <id>.<subid> ou /complete-task <id>.<subid>
-        (la tâche parente 93xx ne passe à `done` que lorsque toutes ses sous-tâches sont terminées)
+        (la tâche parente 94xx ne passe à `done` que lorsque toutes ses sous-tâches sont terminées)
 
 ---
 
@@ -239,9 +184,9 @@ Step 8  Marquer la sous-tâche comme terminée :
 
 Après implémentation + tests d’une sous-tâche (avant le commit), l’agent effectue une courte revue ciblée “SPEC-check” :
 
-* Re-lire la liste des anchors de la sous-tâche (PLAN.md: `Anchors: [...]`) et vérifier que chaque changement de code a un lien clair avec au moins un anchor (spec://... ou cov://...), sans extrapoler hors SPEC.
-* Vérifier que les invariants coverage-aware et AP:false sont bien respectés pour les fichiers touchés (gating strict coverage=off, `dimensionsEnabled` comme projection uniquement, SCHEMA_REUSED_COVERED uniquement diagnostique, invariants CoverageIndex sous AP:false, etc.).
-* Confirmer qu’aucun comportement ajouté ne contredit la SPEC (par exemple instrumentation active alors que coverage=off, IDs de coverage dépendant de `dimensionsEnabled`, diagnostics émis dans une phase interdite).
+* Re-lire la liste des anchors de la sous-tâche (PLAN.md: `Anchors: [...]`) et vérifier que chaque changement de code a un lien clair avec au moins un anchor (spec://...), sans extrapoler hors SPEC.
+* Vérifier que les invariants AP:false et le contrat Generator/Repair sont bien respectés pour les fichiers touchés.
+* Confirmer qu’aucun comportement ajouté ne contredit la SPEC (par exemple phases utilisées hors contrat, diagnostics émis dans une phase interdite).
 * En cas de doute réel ou d’ambiguïté non triviale : geler la sous-tâche, produire un `SPEC-QUESTION.md` avec 1–2 anchors représentatifs, puis reprendre la mise en œuvre après clarification.
 * Optionnel mais recommandé : noter en une phrase dans `PLAN.md` (ou dans `agent-log.jsonl`) l’issue de la revue, par exemple `SPEC-check: conforme aux anchors listés, aucun écart identifié.`
 ```
@@ -329,7 +274,7 @@ import { executePipeline } from './packages/core/dist/pipeline/orchestrator.js';
 }
 ```
 
-**Encapsulation REFONLY (tâches 9300..9334 et trailer de commit)**
+**Encapsulation REFONLY (tâches 9300..9334 et 9400..9406, et trailer de commit)**
 
 Chaîne stockée :
 
@@ -456,16 +401,23 @@ Règles :
 
 ---
 
-## Politique REFONLY — Anchors SPEC & coverage
+## Politique REFONLY — Anchors SPEC
 
 ### Mapping d'anchor
 
 ```text
 spec://§<n>#<slug> → docs/spec-canonical-json-schema-generator.md#s<n>-<slug>
-cov://§<n>#<slug>  → docs/spec-coverage-aware-v1.x.md#s<n>-<slug>
 ```
 
-*(remplacer `.x` par la version en cours dans le repo)*
+### Anchors clés — Generator vs Repair / G_valid
+
+Pour les tâches tagguées `generator-vs-repair-contract` (9400..9406), garder en tête en priorité :
+
+- `spec://§6#phases` — pipeline Normalize → Compose → Generate → Repair → Validate.
+- `spec://§6#generator-repair-contract` — contrat Generator / Repair et définition de `G_valid`.
+- `spec://§9#generator` — responsabilités du générateur (minimal witness, déterminisme).
+- `spec://§9#arrays-contains` — génération d’arrays avec `contains` (motifs G_valid).
+- `spec://§10#repair-engine` — moteur de Repair, registre `(keyword → action)` et contraintes d’idempotence.
 
 ### Procédure de lecture SPEC (canonique)
 1. **Grep Section Bounds**
@@ -494,47 +446,10 @@ cov://§<n>#<slug>  → docs/spec-coverage-aware-v1.x.md#s<n>-<slug>
    })
    ```
 
-### Procédure de lecture SPEC coverage-aware
-
-Pour `cov://...` :
-
-* même principe, mais sur le fichier `docs/spec-coverage-aware-v1.x.md` ;
-* utiliser les mêmes anchors HTML (`<a id="sN-...">`) s’ils sont présents, sinon s’appuyer sur les titres `## N.` ;
-* garder la même discipline : ≤2 sections complètes par itération.
-
-Pseudo-code :
-
-```ts
-function readCoverageSection(n: number) {
-  const startLine = grep(`^<a id="s${n}-`, extract_first_line);
-  const endLine = grep(`^<a id="s${n+1}-`, extract_first_line) || EOF;
-  return Read({
-    file_path: 'docs/spec-coverage-aware-v1.x.md',
-    offset: startLine,
-    limit: endLine - startLine
-  });
-}
-```
-
-Cas sans `<a id>` (fallback pratique) :
-
-```bash
-# 1) trouver le début de la section 3
-rg "^##\s*3\." docs/spec-coverage-aware-v1.x.md -n
-
-# 2) trouver le début de la section suivante (4)
-rg "^##\s*4\." docs/spec-coverage-aware-v1.x.md -n
-
-# 3) lire uniquement ce bloc (remplacer START3/START4 par les lignes)
-sed -n 'START3,START4-1p' docs/spec-coverage-aware-v1.x.md
-```
-
-L’anchor correspondante reste `cov://§3#<slug>` où `<slug>` est dérivé du titre après `## 3.` (minuscule, espaces → `-`, ponctuation retirée), par exemple `cov://§3#coverage-model`.
-
 ### Quotas REFONLY (inchangés, mais cumulés spec+cov)
 
-* Max **5 anchors** (`spec://` + `cov://` confondus) par itération.
-* Max **2 sections complètes** (canonique + coverage) par itération.
+* Max **5 anchors** (`spec://` uniquement pour ce runbook) par itération.
+* Max **2 sections complètes** (canonique) par itération.
 * Si >5 anchors requis → produire une **Context Expansion Request**.
 
 Exemple :
@@ -544,9 +459,9 @@ Exemple :
   "type": "context-expansion",
   "reason": "anchors>5 ou sections>2",
   "proposedAnchors": [
-    "spec://§8#branch-selection-algorithm",
-    "cov://§3#coverage-model",
-    "cov://§4#architecture-components"
+    "spec://§6#generator-repair-contract",
+    "spec://§9#generator",
+    "spec://§10#repair-engine"
   ]
 }
 ```
@@ -561,15 +476,10 @@ Exemple :
 
 ---
 
-## AP:false — Rappels (compatibles coverage-aware)
+## AP:false — Rappels
 
 * Ne jamais étendre la couverture AP:false depuis `propertyNames.enum` **sans** `PNAMES_REWRITE_APPLIED`.
 * Fail-fast `AP_FALSE_UNSAFE_PATTERN` uniquement sous **presence pressure** (`effectiveMinProperties > 0` ou `required` non vide ou `dependentRequired` effectif).
-* Sous coverage-aware :
-
-  * Analyzer/Instrumentation **consomment** CoverageIndex, ne le redéfinissent pas.
-  * Si CoverageIndex est vide, considérer les cibles correspondantes comme `unreachable` ou non matérialisées, pas comme couvertes.
-
 Cas minimal positif :
 
 ```json
@@ -608,23 +518,23 @@ Deux instances AJV : **source** (schéma original) et **planning/génération** 
 
 ---
 
-## Playbooks (tag coverage-aware-v1)
+## Playbooks (tag generator-vs-repair-contract)
 
-### A) No Task Available (aucune tâche 9300..9334 disponible)
+### A) No Task Available (aucune tâche 9400..9406 disponible)
 
-1. **Renforcer les tests d’acceptance coverage**
+1. **Renforcer les tests Generator vs Repair**
 
-   * Étendre les fixtures simples (oneOf, enums, AP:false, OpenAPI) en suivant la SPEC coverage-aware.
-   * Cible : améliorer la lisibilité des rapports coverage-report/v1.
+   * Étendre les fixtures simples (oneOf, arrays/contains, AP:false, OpenAPI) en suivant la SPEC canonique.
+   * Cible : renforcer la validation du contrat `G_valid` (générateur vs moteur de Repair).
 
-2. **Bench & overhead coverage**
+2. **Bench Generator/Repair**
 
-   * Utiliser les profils CLI `quick` / `balanced` / `thorough` sur des specs représentatives.
+   * Utiliser les profils CLI existants sur des specs représentatives.
    * Vérifier respect des gates `benchGate.schema.json`.
 
 3. **Docs**
 
-   * Compléter les sections docs `spec-coverage-aware-v1.x` (exemples, limites connues, FAQ coverage).
+   * Compléter les sections docs liées au contrat Generator/Repair (exemples, invariants, FAQ G_valid).
 
 ### B) SPEC ambiguë/contradictoire
 
@@ -632,20 +542,10 @@ Geler la tâche, produire `SPEC-QUESTION.md` :
 
 ```md
 # SPEC Question
-Anchor(s): ["spec://§...", "cov://§..."]
+Anchor(s): ["spec://§..."]
 Symptôme: ...
 Impact: ...
 Proposition: ...
-```
-
-Exemple concret (coverage-aware) :
-
-```md
-# SPEC Question
-Anchor(s): ["spec://§8#branch-selection-algorithm", "cov://§3#coverage-model"]
-Symptôme: Sur un schéma avec `anyOf` profond, la SPEC coverage-aware semble exiger à la fois une materialisation de toutes les branches dans `targets[]` et un budget de composition qui coupe à K=8. Le runbook coverage-aware ne précise pas si les branches non matérialisées doivent être considérées comme `unreachable` ou simplement absentes de l’univers de cibles.
-Impact: Ambiguïté sur l’univers de targets et sur le calcul de `coverage.overall` / `coverage.byOperation` lorsqu’un profil CLI `quick` est utilisé sur des specs complexes; risque de divergence entre deux implémentations conformes.
-Proposition: Clarifier si, sous caps de Compose, les branches non visitées appartiennent encore à l’univers mais restent `status:'active', hit:false` (avec impact sur les métriques), ou si elles doivent être exclues de l’univers de cibles pour ce run (avec un diagnostic dédié).
 ```
 
 ### C) Décider des problèmes hors-scope
@@ -671,20 +571,20 @@ feat(core): task <ID> — <titre court>
 - <3–4 points factuels de changement>
 - tests: <pkg>/<file>.spec.ts (cov >=80% touched)
 
-REFONLY::{"anchors":["cov://§3#coverage-model","spec://§8#branch-selection-algorithm"],"summary":"<résumé 1 ligne>"}
+REFONLY::{"anchors":["spec://§6#generator-repair-contract","spec://§10#repair-engine"],"summary":"<résumé 1 ligne>"}
 ```
 
 ### PLAN.md (200–400 mots)
 
 ```text
 Task: <id>   Title: <title>
-Anchors: [spec://§<n>#<slug>, cov://§<m>#<slug>, ...]  (≤5)
+Anchors: [spec://§<n>#<slug>, ...]  (≤5)
 Touched files:
 - packages/<pkg>/src/...
 - packages/<pkg>/test/...
 
 Approach:
-<description concise de l’implémentation alignée SPEC (canonique + coverage), décisions clés, invariants, points d’intégration>
+<description concise de l’implémentation alignée SPEC canonique, décisions clés, invariants, points d’intégration>
 
 Risks/Unknowns:
 <liste brève>
@@ -721,7 +621,7 @@ Checks:
 
 ## Intégration Task Master — Slash Commands & CLI
 
-*(inchangé, mais contextualisé pour les tâches 9300..9334)*
+*(inchangé, mais contextualisé pour les tâches 9400..9406)*
 
 * `/tm:list:list-tasks`
 * `/tm:show:show-task <id>`
@@ -768,15 +668,14 @@ Les outils MCP Task Master (`mcp__task-master-ai__*`) restent indisponibles; uti
 
 ---
 
-## Définition de Fini (DoD) — coverage-aware-v1
+## Définition de Fini (DoD) — generator-vs-repair-contract
 
-* Fichiers livrés selon le plan Taskmaster 9300..9334.
+* Fichiers livrés selon le plan Taskmaster 9400..9406.
 * Tests verts, **cov ≥80%** sur fichiers touchés.
 * Diagnostics conformes au schéma `diagnosticsEnvelope.schema.json`.
 * Validation finale AJV sur le **schéma original**.
 * REFONLY correct (schéma + trailer).
 * Bench gates respectés.
-* Rapport coverage-report/v1 stable, deterministe, et cohérent avec `dimensionsEnabled` / `excludeUnreachable`.
 * Pas de texte SPEC copié; uniquement des anchors.
 
 ---
@@ -788,12 +687,11 @@ Les outils MCP Task Master (`mcp__task-master-ai__*`) restent indisponibles; uti
 * Oublier `tiebreakRand` quand `|T|=1`.
 * Étendre AP:false via `propertyNames.enum` sans flag.
 * Diverger les flags AJV entre instances.
-* Utiliser `dimensionsEnabled` comme input dans la génération des IDs de coverage.
 
 ---
 
 ## Maintenance
 
-* En cas de doute, commencer par les SPEC (canonique + coverage-aware).
+* En cas de doute, commencer par la SPEC canonique.
 * En cas de conflit SPEC vs AGENTS.md, **SPEC gagne**.
 * Toute mise à jour de ce runbook ne doit pas casser les contrats (schémas/quotas/templates) sans justification explicite.
