@@ -211,10 +211,57 @@ describe('executePipeline', () => {
     expect(actions.length).toBe(0);
   });
 
-  it('wires G_valid classification via planOptions.gValid without changing final items', async () => {
+  it('generates G_valid simple objects with required fields and no repair actions', async () => {
     const schema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
       type: 'object',
+      properties: {
+        id: { type: 'integer', minimum: 0 },
+        title: { type: 'string', minLength: 1 },
+      },
+      required: ['id', 'title'],
+    } as const;
+
+    const result = await executePipeline(schema, {
+      generate: {
+        count: 3,
+        seed: 37,
+        planOptions: { gValid: true },
+      },
+      validate: { validateFormats: false },
+    });
+
+    expect(result.status).toBe('completed');
+
+    const finalItems =
+      result.artifacts.repaired ?? result.artifacts.generated?.items ?? [];
+
+    expect(Array.isArray(finalItems)).toBe(true);
+    expect(finalItems.length).toBeGreaterThan(0);
+
+    for (const row of finalItems as unknown[]) {
+      expect(row).toBeTruthy();
+      expect(typeof row).toBe('object');
+      const obj = row as Record<string, unknown>;
+      expect(typeof obj.id).toBe('number');
+      expect(typeof obj.title).toBe('string');
+    }
+
+    const actions = result.artifacts.repairActions ?? [];
+    expect(actions.length).toBe(0);
+
+    const index = result.artifacts.gValidIndex;
+    expect(index).toBeDefined();
+    const root = index?.get('#');
+    expect(root).toBeDefined();
+    expect(root?.isGValid).toBe(true);
+  });
+
+  it('keeps non-G_valid objects stable when toggling G_valid flag', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      additionalProperties: false,
       properties: {
         id: { type: 'integer', minimum: 0 },
         title: { type: 'string', minLength: 1 },
@@ -255,7 +302,7 @@ describe('executePipeline', () => {
     expect(index).toBeDefined();
     const root = index?.get('#');
     expect(root).toBeDefined();
-    expect(root?.isGValid).toBe(true);
+    expect(root?.isGValid).toBe(false);
   });
 
   it('keeps non-G_valid arrays stable when toggling G_valid flag', async () => {

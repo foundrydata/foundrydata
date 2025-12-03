@@ -1637,11 +1637,11 @@
             "id": 9403002,
             "title": "Implement minimal-but-valid object construction for G_valid motifs",
             "description": "Implement logic ensuring all required properties and basic constraints are satisfied for G_valid objects, reusing existing rational/enum helpers, consistent with spec §6.3.1 and §9.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 8,
             "file": "packages/core/src/generator/foundry-generator.ts",
             "parentId": "9403",
-            "updatedAt": "2025-12-02T23:00:00.000Z"
+            "updatedAt": "2025-12-03T20:54:26.918Z"
           },
           {
             "id": 9403003,
@@ -1654,7 +1654,7 @@
             "updatedAt": "2025-12-02T23:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-03T20:48:00.794Z"
+        "updatedAt": "2025-12-03T20:54:26.918Z"
       },
       {
         "id": "9404",
@@ -1820,7 +1820,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-03T20:48:00.795Z",
+      "lastModified": "2025-12-03T20:54:26.920Z",
       "taskCount": 7,
       "completedCount": 3,
       "tags": [

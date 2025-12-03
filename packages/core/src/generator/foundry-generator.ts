@@ -46,7 +46,10 @@ import {
   type RegistryDoc,
 } from '../resolver/hydrateSourceAjvFromRegistry.js';
 import type { ResolverDiagnosticNote } from '../resolver/options.js';
-import type { GValidClassificationIndex } from '../transform/g-valid-classifier.js';
+import {
+  GValidMotif,
+  type GValidClassificationIndex,
+} from '../transform/g-valid-classifier.js';
 import type Ajv from 'ajv';
 import type { ValidateFunction } from 'ajv';
 import type { CoverageEvent, CoverageHint } from '../coverage/index.js';
@@ -634,8 +637,10 @@ class GeneratorEngine {
     canonPath: JsonPointer,
     itemIndex: number
   ): Record<string, unknown> {
-    const _gValidInfo = this.getGValidInfoForObject(canonPath);
-    void _gValidInfo;
+    const gValidInfo = this.getGValidInfoForObject(canonPath);
+    const isSimpleObjectGValid =
+      gValidInfo?.isGValid === true &&
+      gValidInfo.motif === GValidMotif.SimpleObjectRequired;
 
     const coverage = this.coverageIndex.get(canonPath);
     const result: Record<string, unknown> = {};
@@ -800,6 +805,7 @@ class GeneratorEngine {
         ? this.findEvaluationProof(schema, canonPath, result, name)
         : undefined;
       if (
+        !isSimpleObjectGValid &&
         !this.isNameWithinCoverage(name, canonPath, coverage, evaluationProof)
       ) {
         continue;
@@ -1722,6 +1728,10 @@ class GeneratorEngine {
     eTraceGuard: boolean
   ): void {
     if (!dependencyMap) return;
+    const gValidInfo = this.getGValidInfoForObject(canonPath);
+    const isSimpleObjectGValid =
+      gValidInfo?.isGValid === true &&
+      gValidInfo.motif === GValidMotif.SimpleObjectRequired;
     const coverage = this.coverageIndex.get(canonPath);
     for (const [name, requirements] of Object.entries(dependencyMap)) {
       if (!Object.prototype.hasOwnProperty.call(target, name)) continue;
@@ -1732,6 +1742,7 @@ class GeneratorEngine {
           ? this.findEvaluationProof(objectSchema, canonPath, target, dep)
           : undefined;
         if (
+          !isSimpleObjectGValid &&
           !this.isNameWithinCoverage(dep, canonPath, coverage, evaluationProof)
         ) {
           continue;
