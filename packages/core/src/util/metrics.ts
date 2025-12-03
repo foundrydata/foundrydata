@@ -44,6 +44,20 @@ export interface MetricsSnapshot {
   nameEnumElapsedMs?: number;
   patternPropsHit?: number;
   presencePressureResolved?: number;
+  /**
+   * Optional aggregated repair usage metrics by motif and G_valid flag.
+   * Populated by future G_valid-aware Repair instrumentation; omitted
+   * when not enabled or not relevant for a given run.
+   */
+  repairUsageByMotif?: RepairUsageByMotif[];
+}
+
+export interface RepairUsageByMotif {
+  motifId: string;
+  gValid: boolean;
+  items: number;
+  itemsWithRepair: number;
+  actions: number;
 }
 
 type MetricsPhaseKey = (typeof METRIC_PHASES)[MetricPhase];
@@ -252,6 +266,38 @@ export class MetricsCollector {
     }
     this.snapshot.presencePressureResolved =
       (this.snapshot.presencePressureResolved ?? 0) + 1;
+  }
+
+  public recordRepairUsageEvent(event: {
+    motifId: string;
+    gValid: boolean;
+    actions: number;
+  }): void {
+    if (!this.enabled) {
+      return;
+    }
+    if (!this.snapshot.repairUsageByMotif) {
+      this.snapshot.repairUsageByMotif = [];
+    }
+    const bucket = this.snapshot.repairUsageByMotif.find(
+      (entry) =>
+        entry.motifId === event.motifId && entry.gValid === event.gValid
+    );
+    if (!bucket) {
+      this.snapshot.repairUsageByMotif.push({
+        motifId: event.motifId,
+        gValid: event.gValid,
+        items: 1,
+        itemsWithRepair: event.actions > 0 ? 1 : 0,
+        actions: event.actions,
+      });
+      return;
+    }
+    bucket.items += 1;
+    if (event.actions > 0) {
+      bucket.itemsWithRepair += 1;
+      bucket.actions += event.actions;
+    }
   }
 
   public setCompileMs(durationMs: number): void {
