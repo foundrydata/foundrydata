@@ -37,4 +37,4 @@ This document maps the parent task 9406 bullets from Implementation Details, Del
   Covers: [KR2, DEL2, DOD2, TS2] (status: done).
 
 - **9406.9406003 – Update feature and usage docs with G_valid guidance**  
-  Covers: [KR3, DEL3, DOD3, TS3] (status: pending).
+  Covers: [KR3, DEL3, DOD3, TS3] (status: done).

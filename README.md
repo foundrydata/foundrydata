@@ -84,6 +84,7 @@ Implementation Status
 - [Core invariants](#core-invariants)
 - [Pre-flight & 5-stage pipeline](#pre-flight--5-stage-pipeline)
 - [Coverage-aware generation](#coverage-aware-generation)
+- [G_valid zones & Generator/Repair contract](#g_valid-zones--generatorrepair-contract)
 - [Feature support (summary)](#feature-support-summary)
 - [CLI](#cli)
 - [Node.js API](#nodejs-api)
@@ -591,6 +592,24 @@ Coverage-aware runs emit a versioned JSON coverage report (coverage-report/v1) t
 For a more detailed description of the `coverage-report/v1` JSON structure and the `foundrydata coverage diff` CLI to compare two reports (baseline vs comparison) in CI, see:
 
 - `packages/reporter/README.md` — coverage-report/v1 overview and coverage diff CLI usage.
+
+---
+
+## G_valid zones & Generator/Repair contract
+
+FoundryData’s generator and repair engine follow an explicit contract for locations that the canonical spec classifies as belonging to a generator‑valid zone (`G_valid`):
+
+- In `G_valid` zones, **Generate** is responsible for structural correctness: it aims to produce minimal instances that already satisfy the structural parts of the schema (required properties, simple `items`+`contains` arrays, etc.). Structural Repair is treated as an exception, not a normal path.
+- **Repair** remains an AJV‑driven corrector with budgets and stagnation guards; inside `G_valid`, it is constrained to low‑impact tweaks (numeric/format nudges, `uniqueItems` deduplication) and should not be relied on to invent missing required objects or whole branches.
+- Outside `G_valid`, the engine keeps the “minimal witness + bounded Repair” regime: Generate may produce candidates that need structural fixes, and Repair is allowed to apply structural changes within configured budgets.
+
+You can control how much of this behavior is enabled via `PlanOptions` (Node API) and the CLI:
+
+- `PlanOptions.gValid` toggles G_valid classification/enforcement.
+- `PlanOptions.repair.allowStructuralInGValid` controls whether structural Repair is allowed inside G_valid zones.
+- The CLI exposes the same knobs through `--gvalid`, `--gvalid-relax-repair` and `--gvalid-profile` (`compat`/`strict`/`relaxed`); see `docs/COMPREHENSIVE_FEATURE_SUPPORT.md` for a full description.
+
+Existing commands keep their historical behavior when these options are not provided, so you can adopt G_valid and the stricter Generator/Repair contract incrementally.
 
 ---
 
