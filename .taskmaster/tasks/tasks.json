@@ -1447,7 +1447,7 @@
         "priority": "high",
         "estimatedHours": 10,
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "complexityScore": 3,
         "details": "[Context]\nThe canonical spec and architecture describe the 5-stage pipeline but leave the Generator vs Repair boundary implicit.\nAligns with spec §6 (High-Level Architecture), §9 (Generator) and §10 (Repair Engine), and introduces a new subsection under §6 for the Generator / Repair contract and generator-valid zone (G_valid).\n\n[Key requirements]\n- Add a normative \"Generator vs Repair contract\" subsection to the generator/repair sections.\n- Define G_valid v1 scope (simple objects, simple arrays with items+contains, no AP:false/unevaluated* interplay) and the meaning of \"AJV-valid by construction\" (structural validity with only numeric/format nudges left to Repair).\n- State explicitly that outside G_valid the existing \"minimal witness + bounded Repair\" regime remains in force.\n- Document the UUID + contains example as a reference motif.\n\n[Deliverables]\n- Updated docs/spec-canonical-json-schema-generator.md (spec §6/§9/§10), ARCHITECTURE.md and Invariants/Known-Limits with the new contract.",
         "testStrategy": "- Spec review checklist covering: presence of the new section, correct G_valid v1 scope, explicit description of allowed/forbidden Repair actions.\n- Consistency pass between canonical spec, ARCHITECTURE.md, COMPREHENSIVE_FEATURE_SUPPORT.md and Invariants.md.\n- Internal review with generator/repair owners to confirm the wording matches what can be implemented without breaking existing invariants.",
@@ -1456,44 +1456,44 @@
             "id": 9400001,
             "title": "Add Generator vs Repair contract and G_valid section to canonical spec",
             "description": "Draft the new section in docs/spec-canonical-json-schema-generator.md and link it from the Generator (spec §9) and Repair (spec §10) chapters.",
-            "status": "in-progress",
+            "status": "done",
             "estimatedHours": 4,
             "file": "docs/spec-canonical-json-schema-generator.md",
             "parentId": "9400",
-            "updatedAt": "2025-12-03T19:23:12.985Z"
+            "updatedAt": "2025-12-03T19:27:40.375Z"
           },
           {
             "id": 9400002,
             "title": "Align ARCHITECTURE.md with the new contract",
             "description": "Update ARCHITECTURE.md so that the Generate and Repair stage descriptions explicitly reference the Generator vs Repair contract and G_valid zones (spec §6 overview, §6.x new subsection).",
-            "status": "in-progress",
+            "status": "done",
             "estimatedHours": 2,
             "file": "ARCHITECTURE.md",
             "parentId": "9400",
-            "updatedAt": "2025-12-03T19:17:49.888Z"
+            "updatedAt": "2025-12-03T19:27:46.409Z"
           },
           {
             "id": 9400003,
             "title": "Extend invariants and known limits with G_valid guarantees",
             "description": "Add a short list of G_valid invariants and non-goals to Invariants.md and Known-Limits.md, including what Repair is allowed to do inside G_valid zones, referencing spec §6.4–§6.6.",
-            "status": "in-progress",
+            "status": "done",
             "estimatedHours": 2,
             "file": "Invariants.md",
             "parentId": "9400",
-            "updatedAt": "2025-12-03T19:09:07.694Z"
+            "updatedAt": "2025-12-03T19:27:53.949Z"
           },
           {
             "id": 9400004,
             "title": "Document UUID + contains pattern as reference example",
             "description": "Write a self-contained example for the UUID + contains pattern that illustrates the change from minimal-witness generation with Repair filling required fields to G_valid generation where the Generator produces a fully valid item, aligned with spec §6.3.2.",
-            "status": "in-progress",
+            "status": "done",
             "estimatedHours": 2,
             "file": "docs/examples/g-valid-uuid-contains.md",
             "parentId": "9400",
-            "updatedAt": "2025-12-03T19:20:22.597Z"
+            "updatedAt": "2025-12-03T19:27:59.172Z"
           }
         ],
-        "updatedAt": "2025-12-03T19:23:12.985Z"
+        "updatedAt": "2025-12-03T19:27:59.172Z"
       },
       {
         "id": "9401",
@@ -1504,7 +1504,7 @@
         "dependencies": [
           "9400"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 4,
         "details": "[Context]\nTo enforce the contract only where safe, the engine must classify schema locations into G_valid vs non-G_valid motifs using the Compose effective view.\nAligns with spec §6.3–§6.5 (Generator / Repair contract and G_valid v1) and §8 (Compose / effective view) as sources of truth for classification inputs.\n\n[Key requirements]\n- Define an internal motif enum/tag (e.g. \"simple-object-required\", \"array-items-contains-simple\", \"ap-false-must-cover\", \"complex-contains\", etc.) plus a boolean G_valid flag.\n- Implement a classifier over canonical/Compose artifacts that marks each canonPath with motif + G_valid, without re-parsing the original schema.\n- Respect v1 exclusions (AP:false + CoverageIndex, unevaluated*, complex contains bags, deep conditionals) per spec §6.3.\n- Expose motif info to generator, repair and metrics via a cheap lookup in the execution context.\n- Add a planOptions/feature flag to disable G_valid classification/enforcement for compatibility.",
         "testStrategy": "- Unit tests that feed canonical schemas + Compose outputs and assert motif + G_valid classification per canonPath.\n- Edge-case tests for AP:false + propertyNames/patternProperties, unevaluatedProperties/unevaluatedItems and multi-contains bags.\n- Stability tests showing classification is deterministic for fixed inputs and insensitive to allOf branch ordering.\n- Smoke tests proving that when the feature flag is off, pipeline behavior matches the current baseline.",
@@ -1513,11 +1513,11 @@
             "id": 9401001,
             "title": "Design G_valid motif types and internal API",
             "description": "Define motif and G_valid state types plus helpers (e.g. isGValidSimpleObject, isGValidArrayContains) to be used by generator, repair and metrics, consistent with spec §6.3.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/transform/g-valid-classifier.ts",
             "parentId": "9401",
-            "updatedAt": "2025-12-02T23:00:00.000Z"
+            "updatedAt": "2025-12-03T19:32:28.229Z"
           },
           {
             "id": 9401002,
@@ -1550,7 +1550,7 @@
             "updatedAt": "2025-12-02T23:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-02T23:00:00.000Z"
+        "updatedAt": "2025-12-03T19:32:28.229Z"
       },
       {
         "id": "9402",
@@ -1820,9 +1820,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-03T19:23:12.987Z",
+      "lastModified": "2025-12-03T19:32:28.231Z",
       "taskCount": 7,
-      "completedCount": 0,
+      "completedCount": 1,
       "tags": [
         "generator-vs-repair-contract"
       ]

@@ -1,20 +1,21 @@
-Task: 9400   Title: Canonical SPEC — Generator vs Repair contract and G_valid v1 — subtask 9400.9400001
-Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#generator, spec://§10#repair-engine]
+Task: 9401   Title: Design G_valid motif types and internal API — subtask 9401.9401001
+Anchors: [spec://§6#generator-repair-contract, spec://§6#phases, spec://§9#generator]
 Touched files:
 - PLAN.md
-- .taskmaster/docs/9400-traceability.md
+- .taskmaster/docs/9401-traceability.md
 - .taskmaster/tasks/tasks.json
-- docs/spec-canonical-json-schema-generator.md
+- packages/core/src/transform/g-valid-classifier.ts
+- packages/core/src/transform/__tests__/g-valid-motifs.spec.ts
 
 Approach:
-Pour la sous-tâche 9400.9400001, je vais relire et ajuster la section canonique “Generator / Repair contract and generator-valid zone (G_valid)” dans `docs/spec-canonical-json-schema-generator.md` afin qu’elle reflète précisément le contrat défini pour G_valid v1, en cohérence avec les sections pipeline (spec://§6#phases), Generator (spec://§9#generator) et Repair Engine (spec://§10#repair-engine), sans recopier de prose dans d’autres documents. Concrètement : (1) vérifier que les définitions des mots-clés structurels, de la zone G_valid et de la notion “valid by construction” couvrent bien les motifs v1 (objets simples, arrays simples items+contains sans interplay AP:false/unevaluated*) et qu’elles distinguent clairement l’intérieur de G_valid du régime minimal witness + bounded Repair; (2) renforcer les liens croisés en veillant à ce que §9 (Generator) et §10 (Repair Engine) référencent explicitement le contrat et les invariants G_valid là où ils décrivent les responsabilités des deux moteurs, sans contredire ARCHITECTURE.md, Invariants.md et Known-Limits.md; (3) aligner la description des compteurs/métriques G_valid avec les guardrails déjà évoqués (usage de Repair dans la zone G_valid vu comme une régression observable, pas comme un chemin normal), en restant dans le cadre des anchors listés; (4) relire la section pour éviter les ambiguïtés ou doublons et mettre à jour `.taskmaster/docs/9400-traceability.md` pour signaler que KR1–KR3/DEL1/DOD1/TS1/TS3 sont bien couverts par cette sous-tâche côté SPEC canonique.
+Pour la sous-tâche 9401.9401001, je vais introduire une représentation interne des motifs et de l’état G_valid qui servira de socle au classifieur et au wiring ultérieurs, en m’alignant sur la SPEC canonique (spec://§6#generator-repair-contract, spec://§6#phases, spec://§9#generator) sans implémenter encore la logique de classification complète. Concrètement : (1) définir dans `g-valid-classifier.ts` un enum ou union discriminée de motifs (par exemple `simpleObjectRequired`, `arrayItemsContainsSimple`, `apFalseMustCover`, `complexContains`, etc.) associé à un type de résultat `GValidInfo` incluant un booléen `isGValid` et le motif éventuel; (2) exposer une API interne minimale (par exemple `classifyGValidPlaceholder` ou des helpers de forme `makeGValidInfoNone/motif`) qui pourra être remplie par la sous-tâche 9401.9401002 sans changer les signatures utilisées par Generate/Repair/metrics; (3) ajouter un fichier de test `g-valid-motifs.spec.ts` qui valide au moins la stabilité des types (création explicite de quelques valeurs `GValidInfo` et vérification de leur forme) et prépare le terrain pour les tests de classification réels à venir, tout en respectant la séparation de périmètre (pas de logique de Compose/coverage ici); (4) mettre à jour la traçabilité 9401 pour relier cette sous-tâche aux bullets KR1 (motif enum/API), DEL1 et à la partie type/contrat de TS1, en considérant l’implémentation du classifieur et les tests de bout en bout comme hors scope.
 
 DoD:
-- [x] La section canonique “Generator / Repair contract and G_valid” définit clairement G_valid v1 et le contrat Generator/Repair, sans ambiguïté ni contradiction avec ARCHITECTURE/Invariants/Known-Limits.
-- [x] §9 (Generator) et §10 (Repair Engine) référencent explicitement le contrat G_valid v1 et les responsabilités associées.
-- [x] build/typecheck/lint/test/bench OK.
+- [ ] Un type Motif/G_valid interne est défini et stable (enum/union + structure GValidInfo) dans `g-valid-classifier.ts`, cohérent avec les motifs G_valid v1 décrits par la SPEC.
+- [ ] Une API interne simple (helpers ou factory) est disponible pour consommer/produire des `GValidInfo` sans implémenter encore la classification sur Compose.
+- [ ] build/typecheck/lint/test/bench OK.
 
-Parent bullets couverts: [KR1, KR2, KR3, KR4, DEL1, DOD1, TS1, TS3]
+Parent bullets couverts: [KR1, DEL1, TS1]
 
 Checks:
 - build: npm run build
