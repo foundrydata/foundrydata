@@ -1736,11 +1736,11 @@
             "id": 9405002,
             "title": "Instrument Repair to emit motif-tagged usage events",
             "description": "Emit lightweight events or counters from Repair whenever an action is applied, tagged with canonPath, motif and G_valid flag, and feed them into the new metrics model per spec §6.6.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 7,
             "file": "packages/core/src/repair/repair-engine.ts",
             "parentId": "9405",
-            "updatedAt": "2025-12-02T23:00:00.000Z"
+            "updatedAt": "2025-12-03T22:38:22.620Z"
           },
           {
             "id": 9405003,
@@ -1763,7 +1763,7 @@
             "updatedAt": "2025-12-02T23:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-03T22:26:21.021Z"
+        "updatedAt": "2025-12-03T22:38:22.620Z"
       },
       {
         "id": "9406",
@@ -1820,7 +1820,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-03T22:26:21.023Z",
+      "lastModified": "2025-12-03T22:38:22.622Z",
       "taskCount": 7,
       "completedCount": 5,
       "tags": [

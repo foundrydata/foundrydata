@@ -3,6 +3,7 @@ import { repairItemsAjvDriven } from '../../repair/repair-engine';
 import { classifyGValid } from '../../transform/g-valid-classifier';
 import type { ComposeResult } from '../../transform/composition-engine';
 import { createSourceAjv } from '../../util/ajv-source';
+import { MetricsCollector } from '../../util/metrics';
 
 function eff(): ComposeResult {
   const canonical = {
@@ -212,5 +213,62 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
 
     const diagCodes = (out.diagnostics ?? []).map((d) => d.code);
     expect(diagCodes).not.toContain('REPAIR_GVALID_STRUCTURAL_ACTION');
+  });
+
+  it('records motif-tagged repair usage metrics for G_valid and non-G_valid motifs on the same run', () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        id: { type: 'integer', minimum: 0 },
+        title: { type: 'string', minLength: 1 },
+      },
+      required: ['id', 'title'],
+    } as const;
+    const canonical = {
+      schema,
+      ptrMap: new Map<string, string>(),
+      revPtrMap: new Map<string, string[]>(),
+      notes: [],
+    };
+    const coverageIndex = new Map();
+    const gValidIndex = classifyGValid(schema, coverageIndex, undefined);
+    const effective = {
+      canonical,
+      containsBag: new Map(),
+      coverageIndex,
+    } as unknown as ComposeResult;
+
+    const metrics = new MetricsCollector({ now: () => 0 });
+
+    const out = repairItemsAjvDriven(
+      [
+        // Item in a G_valid simple object motif; missing required "title"
+        // and invalid "id" to trigger both structural and numeric repairs.
+        { id: -1 },
+      ],
+      {
+        schema,
+        effective,
+        planOptions: {
+          gValid: true,
+          repair: { allowStructuralInGValid: true },
+        },
+        gValidIndex,
+      },
+      { attempts: 2, metrics }
+    );
+
+    expect(out.items.length).toBe(1);
+
+    const snapshot = metrics.snapshotMetrics({ verbosity: 'ci' });
+    const usage = snapshot.repairUsageByMotif ?? [];
+    expect(usage.length).toBeGreaterThan(0);
+
+    const hasGValidBucket = usage.some((entry) => entry.gValid === true);
+    const hasNonGValidBucket = usage.some((entry) => entry.gValid === false);
+
+    expect(hasGValidBucket).toBe(true);
+    expect(hasNonGValidBucket).toBe(true);
   });
 });

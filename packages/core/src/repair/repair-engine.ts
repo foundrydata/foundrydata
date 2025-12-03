@@ -779,6 +779,7 @@ export function repairItemsAjvDriven(
     schema,
     effective.canonical
   );
+  let actionsCursor = 0;
   let itemIndex = 0;
   for (const original of items) {
     // Fast-path: validate original without cloning to minimize overhead
@@ -2060,6 +2061,45 @@ export function repairItemsAjvDriven(
 
     if (metrics && cycles > 0) {
       metrics.addRepairPasses(cycles);
+    }
+
+    if (metrics) {
+      const motifCounts = new Map<
+        string,
+        { motifId: string; gValid: boolean; actions: number }
+      >();
+      const itemActions = actions.slice(actionsCursor);
+      for (const act of itemActions) {
+        const canonPath = act.canonPath || '#';
+        const normalizedCanon =
+          !canonPath || canonPath === '#'
+            ? '#'
+            : canonPath.startsWith('#')
+              ? canonPath
+              : canonPath.startsWith('/')
+                ? `#${canonPath}`
+                : `#/${canonPath}`;
+        const info = getGValidInfo(normalizedCanon);
+        const motifId = info && info.motif ? String(info.motif) : 'none';
+        const gValid = info?.isGValid === true;
+        const key = `${motifId}::${gValid ? '1' : '0'}`;
+        const increment =
+          typeof act.details?.actions === 'number' ? act.details.actions : 1;
+        const existing = motifCounts.get(key);
+        if (!existing) {
+          motifCounts.set(key, { motifId, gValid, actions: increment });
+        } else {
+          existing.actions += increment;
+        }
+      }
+      actionsCursor = actions.length;
+      for (const bucket of motifCounts.values()) {
+        metrics.recordRepairUsageEvent({
+          motifId: bucket.motifId,
+          gValid: bucket.gValid,
+          actions: bucket.actions,
+        });
+      }
     }
 
     if (!pass && lastErrorCount > 0 && cycles >= maxCycles) {

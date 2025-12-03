@@ -1,22 +1,23 @@
-Task: 9405   Title: Define repair usage metrics model by motif and G_valid flag — subtask 9405.9405001
+Task: 9405   Title: Instrument Repair to emit motif-tagged usage events — subtask 9405.9405002
 Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§10#repair-engine, spec://§15#metrics-model, spec://§20#bench-gates]
 Touched files:
 - PLAN.md
 - .taskmaster/docs/9405-traceability.md
 - .taskmaster/tasks/tasks.json
+- packages/core/src/repair/repair-engine.ts
+- packages/core/src/repair/__tests__/mapping-repair.test.ts
 - packages/core/src/util/metrics.ts
-- packages/core/src/pipeline/types.ts
 
 Approach:
-Pour la sous-tâche 9405.9405001, je vais définir le modèle de métriques pour l’usage du Repair par motif et indicateur G_valid, et l’intégrer dans les types de métriques existants sans encore instrumenter le moteur de Repair (spec://§6#phases, spec://§6#generator-repair-contract, spec://§10#repair-engine, spec://§15#metrics-model, spec://§20#bench-gates). Concrètement : (1) introduire dans `util/metrics.ts` un type dédié au suivi de l’usage du Repair par motif (par exemple motif id, drapeau G_valid, nombre d’items, nombre d’items ayant au moins une action de Repair, nombre total d’actions) et le raccrocher à la structure de snapshot existante via un champ optionnel clairement documenté ; (2) ajouter, côté `MetricsCollector`, les compteurs internes et les helpers nécessaires pour enregistrer ultérieurement des événements par motif, sans encore modifier le code de Repair ; (3) étendre les types de métriques exposés par le pipeline dans `pipeline/types.ts` pour inclure ces nouvelles métriques, en veillant à ce que les call sites et tests existants (notamment ceux qui valident la forme de `coverageMetrics` ou de `metrics.overall`) restent compatibles ; (4) revalider la suite build/typecheck/lint/test/bench pour s’assurer que l’ajout de ces types n’introduit pas de régression et que le modèle est prêt à être alimenté par 9405.9405002/9405.9405003.
+Pour la sous-tâche 9405.9405002, je vais instrumenter le moteur de Repair afin d’émettre des événements d’usage par motif vers le modèle de métriques défini en 9405.9405001, sans encore modifier l’orchestrateur ni les reporters (spec://§6#phases, spec://§6#generator-repair-contract, spec://§10#repair-engine, spec://§15#metrics-model, spec://§20#bench-gates). Concrètement : (1) exploiter l’index de classification G_valid déjà disponible dans `repairItemsAjvDriven` pour dériver, à partir des `canonPath` utilisés par les actions de Repair, un couple stable `(motifId, gValid)` qui respecte le contrat Generator/Repair ; (2) à la fin du traitement de chaque item, calculer de manière déterministe le nombre d’actions appliquées par motif et G_valid, puis appeler une fois `metrics.recordRepairUsageEvent` pour chaque couple, en s’appuyant sur la logique d’agrégation existante côté `MetricsCollector` ; (3) veiller à ce que l’instrumentation reste strictement passive lorsque les métriques sont désactivées, qu’elle ne modifie jamais le comportement de Repair (aucun impact sur les diagnostics ni sur les décisions de Repair), et qu’elle n’introduise pas de dépendance nouvelle avec l’orchestrateur, qui sera traité en 9405.9405003 ; (4) étendre les tests de Repair déjà présents (schémas G_valid vs non-G_valid) pour vérifier que des snapshots de métriques contiennent bien des entrées cohérentes dans `repairUsageByMotif` lorsque le collector est activé, tout en gardant les reporters et benchs verts.
 
 DoD:
-- [ ] Un type de métriques structuré pour l’usage du Repair par motif (incluant l’indicateur G_valid) est défini et relié au snapshot de métriques existant.
-- [ ] `MetricsCollector` expose les hooks nécessaires pour incrémenter ces métriques par motif sans que le reste du code soit affecté.
-- [ ] Les types de métriques exposés par le pipeline intègrent le nouveau modèle sans casser les tests existants ni les consommateurs.
-- [ ] La suite build/typecheck/lint/test/bench reste verte après l’ajout de ces types, confirmant que le modèle est prêt pour l’instrumentation.
+- [x] Le moteur de Repair appelle `recordRepairUsageEvent` avec des couples `(motifId, gValid, actions)` dérivés de l’index G_valid et des actions effectivement appliquées, sans modifier le comportement fonctionnel de Repair.
+- [x] Les métriques restent inactives lorsque le collector est désactivé, et l’instrumentation ne crée pas de dépendance nouvelle avec l’orchestrateur ou les reporters (traités dans 9405.9405003/9405.9405004).
+- [x] Des tests ciblés vérifient que, pour des schémas G_valid et non-G_valid, les snapshots de métriques contiennent des entrées cohérentes dans `repairUsageByMotif` (items, itemsWithRepair, actions) lorsqu’un collector est fourni.
+- [x] La suite build/typecheck/lint/test/bench reste verte après l’ajout de l’instrumentation et des tests, confirmant que le modèle de métriques est alimenté correctement sans régression.
 
-Parent bullets couverts: [KR1, DEL1, DOD1, TS1]
+Parent bullets couverts: [KR1, KR2, DEL2, DOD1, DOD2, TS1, TS2]
 
 Checks:
 - build: npm run build
