@@ -305,6 +305,68 @@ describe('executePipeline', () => {
     expect(root?.isGValid).toBe(false);
   });
 
+  it('exposes repairUsageByMotif metrics in pipeline result when repair emits motif-tagged events', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        id: { type: 'integer', minimum: 0 },
+      },
+      required: ['id'],
+    } as const;
+
+    const collector = new MetricsCollector({
+      now: () => 0,
+      verbosity: 'ci',
+    });
+
+    const options: PipelineOptions = {
+      collector,
+      snapshotVerbosity: 'ci',
+      generate: { count: 1, seed: 1 },
+      validate: { validateFormats: false },
+    };
+
+    const result = await executePipeline(schema, options, {
+      repair(
+        items: unknown[],
+        _args: { schema: unknown; effective: ComposeResult },
+        _options?: PipelineOptions['repair']
+      ) {
+        collector.recordRepairUsageEvent({
+          motifId: 'test-motif',
+          gValid: false,
+          actions: 3,
+        });
+        return {
+          items,
+          diagnostics: [],
+          actions: [
+            { action: 'fake', canonPath: '#', instancePath: '' },
+            { action: 'fake', canonPath: '#', instancePath: '' },
+            { action: 'fake', canonPath: '#', instancePath: '' },
+          ],
+        };
+      },
+    });
+
+    expect(result.status).toBe('completed');
+
+    const snapshot = collector.snapshotMetrics({ verbosity: 'ci' });
+    const usage = snapshot.repairUsageByMotif ?? [];
+    expect(usage.length).toBeGreaterThan(0);
+
+    const bucket = usage.find((entry) => entry.motifId === 'test-motif');
+    expect(bucket).toBeDefined();
+    expect(bucket?.items).toBeGreaterThanOrEqual(1);
+    expect(bucket?.itemsWithRepair).toBeGreaterThanOrEqual(1);
+    expect(bucket?.actions).toBe(3);
+
+    expect(result.metrics.repairUsageByMotif).toEqual(
+      snapshot.repairUsageByMotif
+    );
+  });
+
   it('keeps non-G_valid arrays stable when toggling G_valid flag', async () => {
     const schema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
