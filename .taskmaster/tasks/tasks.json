@@ -1736,21 +1736,21 @@
             "id": 9405002,
             "title": "Instrument Repair to emit motif-tagged usage events",
             "description": "Emit lightweight events or counters from Repair whenever an action is applied, tagged with canonPath, motif and G_valid flag, and feed them into the new metrics model per spec §6.6.",
-            "status": "in-progress",
+            "status": "done",
             "estimatedHours": 7,
             "file": "packages/core/src/repair/repair-engine.ts",
             "parentId": "9405",
-            "updatedAt": "2025-12-03T22:38:22.620Z"
+            "updatedAt": "2025-12-03T22:48:33.767Z"
           },
           {
             "id": 9405003,
             "title": "Aggregate and expose repair usage metrics in pipeline orchestrator",
             "description": "Wire repair usage metrics into the pipeline orchestrator so they are aggregated per run and exposed with existing timing/validation metrics, consistent with spec §15/§20.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 4,
             "file": "packages/core/src/pipeline/orchestrator.ts",
             "parentId": "9405",
-            "updatedAt": "2025-12-02T23:00:00.000Z"
+            "updatedAt": "2025-12-03T22:49:08.753Z"
           },
           {
             "id": 9405004,
@@ -1763,7 +1763,7 @@
             "updatedAt": "2025-12-02T23:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-03T22:38:22.620Z"
+        "updatedAt": "2025-12-03T22:49:08.753Z"
       },
       {
         "id": "9406",
@@ -1820,7 +1820,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-03T22:38:22.622Z",
+      "lastModified": "2025-12-03T22:49:08.754Z",
       "taskCount": 7,
       "completedCount": 5,
       "tags": [

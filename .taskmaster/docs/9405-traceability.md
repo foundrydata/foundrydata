@@ -39,7 +39,7 @@ This document maps the parent task 9405 bullets from Implementation Details, Del
   Covers: [KR1, KR2, DEL2, DOD1, DOD2, TS1, TS2] (status: done).
 
 - **9405.9405003 – Aggregate and expose repair usage metrics in pipeline orchestrator**  
-  Covers: [KR2, KR3, DEL3, DOD2, TS2, TS3] (status: pending).
+  Covers: [KR2, KR3, DEL3, DOD2, TS2, TS3] (status: in-progress).
 
 - **9405.9405004 – Add G_valid no-repair e2e tests and traceability entries**  
   Covers: [KR4, DEL4, DOD3, TS2, TS3] (status: pending).
