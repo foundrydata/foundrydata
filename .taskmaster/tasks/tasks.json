@@ -1618,7 +1618,7 @@
         "dependencies": [
           "9401"
         ],
-        "status": "in-progress",
+        "status": "done",
         "complexityScore": 4,
         "details": "[Context]\nFor simple objects without AP:false/unevaluated* and with clear properties/required constraints, the Generator should produce AJV-valid instances on its own, leaving only numeric/format tweaks to Repair.\nAligns with spec §6.3.1 (objects without hard evaluation guards) and §9 (Generator obligations).\n\n[Key requirements]\n- For objects marked G_valid:\n  - always emit all required properties from the effective schema,\n  - respect basic type/enum/const bounds using existing helpers,\n  - avoid depending on Repair to create whole sub-objects or required scalars.\n- Leave behavior unchanged for AP:false, unevaluated* or complex conditional motifs.\n- Preserve determinism for non-G_valid objects as mandated by spec §3 and §9.",
         "testStrategy": "- Unit tests on simple object fixtures asserting that G_valid objects contain all required properties with non-empty values before Repair.\n- Integration tests mixing G_valid and non-G_valid objects to verify that only G_valid ones change behavior and still pass AJV, while others keep baseline behavior.\n- Negative tests with intentionally unsatisfiable schemas to confirm diagnostics remain clear and consistent.",
@@ -1647,14 +1647,14 @@
             "id": 9403003,
             "title": "Add fixtures and tests for G_valid objects",
             "description": "Create schemas and tests that verify G_valid object behavior (including nested required properties) while AP:false/unevaluated* cases remain unchanged, per spec §6.3.1.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/generator/**tests**/g-valid-objects.spec.ts",
             "parentId": "9403",
-            "updatedAt": "2025-12-02T23:00:00.000Z"
+            "updatedAt": "2025-12-03T21:23:30.718Z"
           }
         ],
-        "updatedAt": "2025-12-03T20:54:26.918Z"
+        "updatedAt": "2025-12-03T21:23:30.718Z"
       },
       {
         "id": "9404",
@@ -1820,9 +1820,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-03T20:54:26.920Z",
+      "lastModified": "2025-12-03T21:23:30.720Z",
       "taskCount": 7,
-      "completedCount": 3,
+      "completedCount": 4,
       "tags": [
         "generator-vs-repair-contract"
       ]

@@ -38,4 +38,4 @@ This document maps the parent task 9403 bullets from Implementation Details, Del
   Covers: [KR1, KR2, KR4, DEL2, DOD1, TS1, TS2] (status: done).
 
 - **9403.9403003 – Add fixtures and tests for G_valid objects**  
-  Covers: [KR2, KR3, DEL3, DOD2, DOD3, TS2, TS3] (status: pending).
+  Covers: [KR2, KR3, DEL3, DOD2, DOD3, TS2, TS3] (status: done).

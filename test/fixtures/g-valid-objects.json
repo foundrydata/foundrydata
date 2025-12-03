@@ -1,0 +1,51 @@
+{
+  "gvalid_nested_customer_profile": {
+    "description": "G_valid simple object with nested required profile, no AP:false/unevaluated* so that Generator can satisfy required properties without structural Repair.",
+    "schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "profile": {
+          "type": "object",
+          "properties": {
+            "email": {
+              "type": "string",
+              "format": "email"
+            },
+            "age": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": ["email", "age"]
+        }
+      },
+      "required": ["id", "profile"]
+    }
+  },
+  "nongvalid_ap_false_unevaluated_object": {
+    "description": "Non-G_valid object with AP:false and unevaluatedProperties:false used to verify that AP:false/unevaluated* motifs stay outside the G_valid zone and keep legacy behaviour.",
+    "schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["id"]
+    }
+  }
+}
+

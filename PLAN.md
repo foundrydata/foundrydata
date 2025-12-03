@@ -1,22 +1,22 @@
-Task: 9403   Title: Implement minimal-but-valid object construction for G_valid motifs — subtask 9403.9403002
+Task: 9403   Title: Add fixtures and tests for G_valid objects — subtask 9403.9403003
 Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#generator]
 Touched files:
 - PLAN.md
 - .taskmaster/docs/9403-traceability.md
 - .taskmaster/tasks/tasks.json
-- packages/core/src/generator/foundry-generator.ts
-- packages/core/src/pipeline/__tests__/pipeline-orchestrator.test.ts
+- test/fixtures/g-valid-objects.json
+- test/acceptance/objects/g-valid-objects.spec.ts
 
 Approach:
-Pour la sous-tâche 9403.9403002, je vais implémenter la construction minimal-but-valid pour les objets G_valid en s’appuyant sur l’index de classification déjà câblé et sur les helpers de génération existants (spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#generator). Concrètement : (1) détecter, via `getGValidInfoForObject(canonPath)`, les motifs d’objets considérés G_valid (schema simple, properties/required clairs, pas d’AP:false/unevaluated* agressifs) et, dans ces zones, garantir que tous les champs `required` du schéma effectif sont toujours émis par le générateur, en réutilisant les mêmes chemins `generateValue` que pour le reste du pipeline ; (2) veiller à ce que les valeurs produites respectent les contraintes de base (type, enum/const, bornes simples) de manière déterministe et sans déléguer la création de propriétés obligatoires à Repair, tout en continuant à laisser à Repair les ajustements fins (formats, multiples, etc.) ; (3) préserver strictement le comportement actuel pour les objets non-G_valid (présence d’AP:false, unevaluated* ou conditionnels complexes), en conditionnant toute nouvelle logique à la fois au flag `planOptions.gValid` et à la classification, afin que les scénarios legacy restent inchangés ; (4) ajouter des tests ciblés au niveau du pipeline pour au moins un schéma G_valid simple (objet avec `properties` + `required`) et un schéma non-G_valid contrastif, de façon à démontrer que les objets G_valid sortent déjà AJV-valid avant Repair tandis que les autres conservent leur comportement et leurs diagnostics actuels, puis valider l’ensemble via build/typecheck/lint/test/bench.
+Pour la sous-tâche 9403.9403003, je vais ajouter des fixtures et des tests dédiés pour documenter le comportement des objets G_valid vs non-G_valid, en capitalisant sur la logique déjà implémentée pour 9403.9403001/9403.9403002 (spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#generator). Concrètement : (1) créer un petit fichier de fixtures `test/fixtures/g-valid-objects.json` qui encode au moins un schéma d’objet G_valid simple avec propriétés imbriquées (nested required, sans AP:false/unevaluated*) et un schéma d’objet non-G_valid (AP:false et/ou unevaluatedProperties:false) servant de contraste ; (2) ajouter un test d’acceptance dans `test/acceptance/objects/g-valid-objects.spec.ts` qui exécute le pipeline sur le schéma G_valid avec `planOptions.gValid: true` et vérifie que chaque instance générée contient tous les champs requis (y compris imbriqués) et qu’aucune action de Repair structurelle n’est enregistrée ; (3) ajouter un second test d’acceptance qui exécute le pipeline sur le schéma non-G_valid en faisant varier le flag G_valid et qui confirme que les items finaux restent identiques, de façon à montrer que les objets AP:false/unevaluated* sont hors de la zone G_valid et conservent le comportement legacy ; (4) garder les assertions centrées sur la structure (présence/typenage des champs, stabilité des items) pour préserver le déterminisme et éviter des snapshots lourds, puis valider l’ensemble via build/typecheck/lint/test/bench.
 
 DoD:
- - [x] Les objets G_valid simples (properties/required sans AP:false/unevaluated* durs) sont générés avec tous leurs champs requis présents et AJV-valid avant toute intervention de Repair.
- - [x] Les objets non-G_valid conservent exactement le comportement legacy (génération + diagnostics), l’activation de G_valid étant strictement conditionnée au flag et à la classification.
- - [x] Des tests pipeline ciblés couvrent au moins un motif G_valid et un motif non-G_valid, démontrant le respect du contrat Generator/Repair sur ces cas.
- - [x] La suite build/typecheck/lint/test/bench reste verte après la modification, montrant l’absence de régression globale.
+- [x] Un fichier de fixtures dédié regroupe au moins un schéma d’objet G_valid (avec required imbriqués) et un schéma d’objet non-G_valid (AP:false/unevaluated*), réutilisables par plusieurs tests.
+- [x] Des tests d’acceptance valident que les objets G_valid sortent du pipeline avec tous les champs requis présents (y compris imbriqués) et sans Repair structurelle.
+- [x] Des tests d’acceptance démontrent que les objets non-G_valid (AP:false/unevaluated*) restent strictement stables lorsque le flag G_valid est activé ou désactivé.
+- [x] La suite build/typecheck/lint/test/bench reste verte après l’ajout des fixtures et tests, montrant l’absence de régression globale.
 
-Parent bullets couverts: [KR1, KR2, KR4, DEL2, DOD1, TS1, TS2]
+Parent bullets couverts: [KR2, KR3, DEL3, DOD2, DOD3, TS2, TS3]
 
 Checks:
 - build: npm run build
