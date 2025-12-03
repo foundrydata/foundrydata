@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { repairItemsAjvDriven } from '../../repair/repair-engine';
+import { classifyGValid } from '../../transform/g-valid-classifier';
 import type { ComposeResult } from '../../transform/composition-engine';
 import { createSourceAjv } from '../../util/ajv-source';
 
@@ -121,5 +122,95 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
     const arr = out.items[0] as number[];
     expect(arr.length).toBe(3);
     expect(valid(schema, arr)).toBe(true);
+  });
+
+  it('emits G_valid structural diagnostics and skips addRequired in G_valid objects by default', () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        id: { type: 'integer', minimum: 0 },
+        title: { type: 'string', minLength: 1 },
+      },
+      required: ['id', 'title'],
+    } as const;
+    const canonical = {
+      schema,
+      ptrMap: new Map<string, string>(),
+      revPtrMap: new Map<string, string[]>(),
+      notes: [],
+    };
+    const coverageIndex = new Map();
+    const gValidIndex = classifyGValid(schema, coverageIndex, undefined);
+    const effective = {
+      canonical,
+      containsBag: new Map(),
+      coverageIndex,
+    } as unknown as ComposeResult;
+
+    const out = repairItemsAjvDriven(
+      // Missing required "title"
+      [{ id: -1 }],
+      {
+        schema,
+        effective,
+        planOptions: { gValid: true },
+        gValidIndex,
+      },
+      { attempts: 2 }
+    );
+
+    expect(Array.isArray(out.items)).toBe(true);
+    const repairedItem = out.items[0] as Record<string, unknown>;
+    // id may still be nudged for minimum, but title should not be synthesized.
+    expect(repairedItem).not.toHaveProperty('title');
+
+    const diagCodes = (out.diagnostics ?? []).map((d) => d.code);
+    expect(diagCodes).toContain('REPAIR_GVALID_STRUCTURAL_ACTION');
+  });
+
+  it('allows structural repairs when allowStructuralInGValid is true', () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        id: { type: 'integer', minimum: 0 },
+        title: { type: 'string', minLength: 1 },
+      },
+      required: ['id', 'title'],
+    } as const;
+    const canonical = {
+      schema,
+      ptrMap: new Map<string, string>(),
+      revPtrMap: new Map<string, string[]>(),
+      notes: [],
+    };
+    const coverageIndex = new Map();
+    const gValidIndex = classifyGValid(schema, coverageIndex, undefined);
+    const effective = {
+      canonical,
+      containsBag: new Map(),
+      coverageIndex,
+    } as unknown as ComposeResult;
+
+    const out = repairItemsAjvDriven(
+      [{ id: -1 }],
+      {
+        schema,
+        effective,
+        planOptions: {
+          gValid: true,
+          repair: { allowStructuralInGValid: true },
+        },
+        gValidIndex,
+      },
+      { attempts: 2 }
+    );
+
+    const repairedItem = out.items[0] as Record<string, unknown>;
+    expect(repairedItem).toHaveProperty('title');
+
+    const diagCodes = (out.diagnostics ?? []).map((d) => d.code);
+    expect(diagCodes).not.toContain('REPAIR_GVALID_STRUCTURAL_ACTION');
   });
 });

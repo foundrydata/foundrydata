@@ -1,20 +1,20 @@
-Task: 9403   Title: Add fixtures and tests for G_valid objects — subtask 9403.9403003
-Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#generator]
+Task: 9404   Title: Add tests and diagnostics for G_valid Repair violations — subtask 9404.9404003
+Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§10#repair-engine]
 Touched files:
 - PLAN.md
-- .taskmaster/docs/9403-traceability.md
+- .taskmaster/docs/9404-traceability.md
 - .taskmaster/tasks/tasks.json
-- test/fixtures/g-valid-objects.json
-- test/acceptance/objects/g-valid-objects.spec.ts
+- packages/core/src/repair/repair-engine.ts
+- packages/core/src/repair/__tests__/mapping-repair.test.ts
 
 Approach:
-Pour la sous-tâche 9403.9403003, je vais ajouter des fixtures et des tests dédiés pour documenter le comportement des objets G_valid vs non-G_valid, en capitalisant sur la logique déjà implémentée pour 9403.9403001/9403.9403002 (spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#generator). Concrètement : (1) créer un petit fichier de fixtures `test/fixtures/g-valid-objects.json` qui encode au moins un schéma d’objet G_valid simple avec propriétés imbriquées (nested required, sans AP:false/unevaluated*) et un schéma d’objet non-G_valid (AP:false et/ou unevaluatedProperties:false) servant de contraste ; (2) ajouter un test d’acceptance dans `test/acceptance/objects/g-valid-objects.spec.ts` qui exécute le pipeline sur le schéma G_valid avec `planOptions.gValid: true` et vérifie que chaque instance générée contient tous les champs requis (y compris imbriqués) et qu’aucune action de Repair structurelle n’est enregistrée ; (3) ajouter un second test d’acceptance qui exécute le pipeline sur le schéma non-G_valid en faisant varier le flag G_valid et qui confirme que les items finaux restent identiques, de façon à montrer que les objets AP:false/unevaluated* sont hors de la zone G_valid et conservent le comportement legacy ; (4) garder les assertions centrées sur la structure (présence/typenage des champs, stabilité des items) pour préserver le déterminisme et éviter des snapshots lourds, puis valider l’ensemble via build/typecheck/lint/test/bench.
+Pour la sous-tâche 9404.9404003, je vais ajouter des tests ciblés et valider les diagnostics pour les violations du contrat G_valid côté Repair, en m’appuyant sur le garde structurel introduit précédemment (spec://§6#phases, spec://§6#generator-repair-contract, spec://§10#repair-engine). Concrètement : (1) étendre `mapping-repair.test.ts` avec un petit schéma d’objet G_valid (SimpleObjectRequired) et/ou d’array G_valid (ArrayItemsContainsSimple) pour lequel je force une instance manuellement invalide (champ required manquant, minItems non satisfaites) et exécute `repairItemsAjvDriven` avec `planOptions.gValid: true`, en vérifiant que les actions `addRequired*`/`minItemsGrow` ne sont plus appliquées et qu’au moins un diagnostic `REPAIR_GVALID_STRUCTURAL_ACTION` est émis ; (2) ajouter un test miroir pour un schéma non-G_valid (AP:false/unevaluated* ou array avec uniqueItems) montrant que les mêmes erreurs AJV continuent de déclencher des Repair structurels et qu’aucun diagnostic G_valid n’est émis, prouvant que le garde reste localisé ; (3) ajouter un test qui active explicitement `repair.allowStructuralInGValid: true` pour un schéma G_valid et démontre que les Repair structurels redeviennent actifs (actions présentes, pas de diagnostic `REPAIR_GVALID_STRUCTURAL_ACTION`), pour valider le feature flag de compatibilité ; (4) revalider build/typecheck/lint/test/bench et mettre à jour la traçabilité 9404 pour marquer les KR/DEL/DOD/TS liés aux violations Repair comme couverts.
 
 DoD:
-- [x] Un fichier de fixtures dédié regroupe au moins un schéma d’objet G_valid (avec required imbriqués) et un schéma d’objet non-G_valid (AP:false/unevaluated*), réutilisables par plusieurs tests.
-- [x] Des tests d’acceptance valident que les objets G_valid sortent du pipeline avec tous les champs requis présents (y compris imbriqués) et sans Repair structurelle.
-- [x] Des tests d’acceptance démontrent que les objets non-G_valid (AP:false/unevaluated*) restent strictement stables lorsque le flag G_valid est activé ou désactivé.
-- [x] La suite build/typecheck/lint/test/bench reste verte après l’ajout des fixtures et tests, montrant l’absence de régression globale.
+- [x] Des tests unitaires démontrent qu’en zone G_valid, des erreurs AJV qui déclencheraient normalement des Repair structurels produisent désormais des diagnostics `REPAIR_GVALID_STRUCTURAL_ACTION` sans actions structurelles associées.
+- [x] Des tests unitaires démontrent qu’en zone non-G_valid, les Repair structurels et diagnostics existants restent inchangés (pas de régressions).
+- [x] Un test valide que `repair.allowStructuralInGValid: true` rétablit le comportement structural précédent en G_valid, sans diagnostics `REPAIR_GVALID_STRUCTURAL_ACTION`.
+- [x] La suite build/typecheck/lint/test/bench reste verte après l’ajout des tests, confirmant l’intégration correcte des diagnostics.
 
 Parent bullets couverts: [KR2, KR3, DEL3, DOD2, DOD3, TS2, TS3]
 

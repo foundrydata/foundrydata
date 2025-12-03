@@ -178,6 +178,14 @@ export interface NameEnumOptions {
 export interface RepairPlanOptions {
   /** Enforce must-cover-based rename guard under AP:false (default: true) */
   mustCoverGuard?: boolean;
+  /**
+   * Relax G_valid structural constraints in Repair (default: false).
+   *
+   * When true, structural Repair actions such as adding required properties
+   * or growing arrays for minItems MAY still run inside G_valid zones instead
+   * of being treated as contract violations.
+   */
+  allowStructuralInGValid?: boolean;
 }
 
 /**
@@ -409,6 +417,7 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
   },
   repair: {
     mustCoverGuard: true,
+    allowStructuralInGValid: false,
   },
   resolver: {
     strategies: ['local'],
@@ -678,6 +687,9 @@ function validateOptions(options: ResolvedOptions): void {
 
   if (typeof options.repair.mustCoverGuard !== 'boolean') {
     throw new Error('repair.mustCoverGuard must be boolean');
+  }
+  if (typeof options.repair.allowStructuralInGValid !== 'boolean') {
+    throw new Error('repair.allowStructuralInGValid must be boolean');
   }
 
   // Validate resolver options

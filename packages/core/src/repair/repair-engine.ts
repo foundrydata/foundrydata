@@ -29,7 +29,10 @@ import {
   getCachedValidator,
   setCachedValidator,
 } from '../util/validator-cache.js';
-import type { GValidClassificationIndex } from '../transform/g-valid-classifier.js';
+import {
+  GValidMotif,
+  type GValidClassificationIndex,
+} from '../transform/g-valid-classifier.js';
 
 export interface AjvErr {
   instancePath: string;
@@ -707,6 +710,11 @@ export function repairItemsAjvDriven(
   }
 ): RepairItemsResult {
   const { schema, effective } = args;
+  const gValidIndex = args.gValidIndex;
+  const getGValidInfo = (
+    canonPath: string
+  ): ReturnType<NonNullable<GValidClassificationIndex>['get']> | undefined =>
+    gValidIndex ? gValidIndex.get(canonPath) : undefined;
   const resolvedOptions = resolveOptions(args.planOptions);
   const bailLimit = Math.max(
     1,
@@ -744,6 +752,25 @@ export function repairItemsAjvDriven(
   const decimalPrecision = ajvFlags.multipleOfPrecision ?? 12;
   const repairPlanOptions = resolvedOptions.repair;
   const mustCoverGuardEnabled = repairPlanOptions.mustCoverGuard !== false;
+  const allowStructuralInGValid =
+    repairPlanOptions.allowStructuralInGValid === true;
+  const isGValidStructuralGuardEnabled = (canonPath: string): boolean => {
+    if (!resolvedOptions.gValid || allowStructuralInGValid) return false;
+    const normalizedCanon =
+      !canonPath || canonPath === '#'
+        ? '#'
+        : canonPath.startsWith('#')
+          ? canonPath
+          : canonPath.startsWith('/')
+            ? `#${canonPath}`
+            : `#/${canonPath}`;
+    const info = getGValidInfo(normalizedCanon);
+    if (!info || info.isGValid !== true) return false;
+    return (
+      info.motif === GValidMotif.SimpleObjectRequired ||
+      info.motif === GValidMotif.ArrayItemsContainsSimple
+    );
+  };
 
   const repaired: unknown[] = [];
   const diagnostics: DiagnosticEnvelope[] = [];
@@ -1148,6 +1175,19 @@ export function repairItemsAjvDriven(
         const sub = props?.[missing];
         const hasDefault = sub && typeof sub === 'object' && 'default' in sub;
         if (!hasDefault) {
+          if (isGValidStructuralGuardEnabled(canonPathReq)) {
+            diagnostics.push({
+              code: DIAGNOSTIC_CODES.REPAIR_GVALID_STRUCTURAL_ACTION,
+              canonPath: canonPathReq,
+              phase: DIAGNOSTIC_PHASES.REPAIR,
+              details: {
+                kind: 'required',
+                missing,
+                strategy: 'synth',
+              },
+            });
+            continue;
+          }
           // SPEC §10 mapping: if no default, synthesize a minimal value for the sub-schema
           const synth = (s: any): unknown => {
             if (!s || typeof s !== 'object') return null;
@@ -1253,6 +1293,19 @@ export function repairItemsAjvDriven(
         }
 
         if (!(missing in (obj as Record<string, unknown>))) {
+          if (isGValidStructuralGuardEnabled(canonPathReq)) {
+            diagnostics.push({
+              code: DIAGNOSTIC_CODES.REPAIR_GVALID_STRUCTURAL_ACTION,
+              canonPath: canonPathReq,
+              phase: DIAGNOSTIC_PHASES.REPAIR,
+              details: {
+                kind: 'required',
+                missing,
+                strategy: 'default',
+              },
+            });
+            continue;
+          }
           (obj as Record<string, unknown>)[missing] = (sub as any).default;
           // E-Trace refresh for object O after add
           /* istanbul ignore next */
@@ -1394,6 +1447,20 @@ export function repairItemsAjvDriven(
           ) {
             const sp = normalizeSchemaPointerFromError(minItemsErr.schemaPath);
             const parentPtr = sp.replace(/\/(?:minItems)(?:\/.*)?$/, '');
+            const canonMinItems = parentPtr;
+            if (isGValidStructuralGuardEnabled(canonMinItems)) {
+              diagnostics.push({
+                code: DIAGNOSTIC_CODES.REPAIR_GVALID_STRUCTURAL_ACTION,
+                canonPath: canonMinItems,
+                phase: DIAGNOSTIC_PHASES.REPAIR,
+                details: {
+                  kind: 'minItems',
+                  strategy: 'grow',
+                  deficit: limit - arr.length,
+                },
+              });
+              continue;
+            }
             const resolvedParent = resolveSchemaPointer(parentPtr);
             const nodeSchema = getByPointer(
               schema,
