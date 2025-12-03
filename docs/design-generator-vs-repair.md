@@ -118,8 +118,10 @@ The following principles should guide concrete changes:
    AJV‑driven rectifier.
 
 2. **Determinism is preserved**  
-   Any changes to generation must keep the determinism guarantees:
-   same schema + options + seed ⇒ same instances and diagnostics.
+   Any changes to generation must keep the shared determinism guarantees:
+   for a fixed input instance and determinism tuple (as defined in the
+   Repair Philosophy brief, §1.1), Generator and Repair produce the same
+   instances, Repair actions and diagnostics.
 
 3. **Minimality is relative to `G_valid`**  
    Within `G_valid`, “minimal instances” must still be **AJV‑valid**.
@@ -173,7 +175,9 @@ For all other locations (AP:false + CoverageIndex, `unevaluated*`, complex
 - The current “Generator minimal + Repair bounded” strategy remains valid:
   - Generator may emit minimal witnesses that trigger AJV errors;
   - Repair attempts to fix them within its configured budget;
-  - if errors cannot be reduced, the pipeline fails with diagnostics.
+  - if errors cannot be reduced according to the shared progress metric
+    used by Repair (see §6.1 “Budgets & Stagnation Guard” in the Repair
+    Philosophy brief), the pipeline fails with diagnostics.
 
 We still benefit from better metrics and tests in these areas, but we do not
 promise AJV‑validity by construction there.
