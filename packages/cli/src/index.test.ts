@@ -92,6 +92,42 @@ async function createCoverageReportFixture(reports: {
   return { dir, baselinePath, comparisonPath };
 }
 
+function extractEffectiveConfigFromStderr(stderr: string): unknown {
+  const marker = '[foundrydata] effective config: ';
+  const idx = stderr.indexOf(marker);
+  if (idx === -1) {
+    throw new Error('Effective config marker not found in stderr');
+  }
+  const afterMarker = stderr.slice(idx + marker.length);
+  const firstBraceIdx = afterMarker.indexOf('{');
+  if (firstBraceIdx === -1) {
+    throw new Error('No opening brace found after effective config marker');
+  }
+
+  let depth = 0;
+  let endIdx = -1;
+  for (let i = firstBraceIdx; i < afterMarker.length; i += 1) {
+    const ch = afterMarker[i];
+    if (ch === '{') depth += 1;
+    if (ch === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        endIdx = i + 1;
+        break;
+      }
+    }
+  }
+
+  if (endIdx === -1) {
+    throw new Error(
+      'Could not find matching closing brace for effective config JSON'
+    );
+  }
+
+  const jsonText = afterMarker.slice(firstBraceIdx, endIdx);
+  return JSON.parse(jsonText);
+}
+
 describe('CLI generate command', () => {
   it('emits NDJSON with AJV-valid instances for a basic schema', async () => {
     const { dir, schemaPath, schema } = await createSchemaFixture();
@@ -138,6 +174,101 @@ describe('CLI generate command', () => {
     // No error output on the happy path
     const stderr = stderrChunks.join('');
     expect(stderr).toBe('');
+  });
+
+  it('wires --gvalid flag into PlanOptions.gValid via debug output', async () => {
+    const { dir, schemaPath } = await createSchemaFixture();
+
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      await program.parseAsync(
+        [
+          'generate',
+          '--schema',
+          schemaPath,
+          '--n',
+          '1',
+          '--out',
+          'ndjson',
+          '--gvalid',
+          '--debug-passes',
+        ],
+        { from: 'user' }
+      );
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+
+    const stderr = stderrChunks.join('');
+    const config = extractEffectiveConfigFromStderr(stderr) as {
+      gValid?: boolean;
+    };
+    expect(config.gValid).toBe(true);
+  });
+
+  it('wires --gvalid-profile relaxed into PlanOptions.gValid and repair.allowStructuralInGValid', async () => {
+    const { dir, schemaPath } = await createSchemaFixture();
+
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      await program.parseAsync(
+        [
+          'generate',
+          '--schema',
+          schemaPath,
+          '--n',
+          '1',
+          '--out',
+          'ndjson',
+          '--gvalid-profile',
+          'relaxed',
+          '--debug-passes',
+        ],
+        { from: 'user' }
+      );
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+
+    const stderr = stderrChunks.join('');
+    const config = extractEffectiveConfigFromStderr(stderr) as {
+      gValid?: boolean;
+      repair?: { allowStructuralInGValid?: boolean };
+    };
+    expect(config.gValid).toBe(true);
+    expect(config.repair?.allowStructuralInGValid).toBe(true);
   });
 
   it('accepts coverage-related flags without changing basic behavior (and warns when coverage=off)', async () => {

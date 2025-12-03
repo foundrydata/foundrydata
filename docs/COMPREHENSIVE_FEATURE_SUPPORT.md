@@ -153,6 +153,19 @@ Default mapping between `rewriteConditionals` and `conditionals.strategy`:
 - **CI / Contract & Coverage**: strict AJV posture and stable seeds, `coverage=measure` or `coverage=guided` with balanced profiles, metrics enabled for tracking `validationsPerRow` and `repairPassesPerRow`.
 - **Production-like / Performance-sensitive**: `rewriteConditionals: 'safe'` where allowed by policy, resolver and complexity caps tuned for throughput, conservative diagnostics.
 
+### G_valid & Repair Strictness (CLI)
+
+G_valid-related behavior is exposed at the CLI level via a small set of flags that map directly to `PlanOptions.gValid` and `PlanOptions.repair.allowStructuralInGValid`:
+
+- `--gvalid` on `generate` / `openapi` enables classification/enforcement for locations that the planner deems G_valid, wiring `PlanOptions.gValid = true` while keeping defaults unchanged when the flag is omitted.
+- `--gvalid-profile <profile>` provides coarse presets for common workflows:
+  - `compat` (default) keeps G_valid disabled and preserves the historical behavior.
+  - `strict` enables G_valid but keeps structural Repair disabled in G_valid zones.
+  - `relaxed` enables G_valid and allows structural Repair in G_valid zones by setting `repair.allowStructuralInGValid = true`.
+- `--gvalid-relax-repair` can be used explicitly to request the relaxed behavior regardless of the selected profile; explicit flags take precedence over profile defaults.
+
+These flags do not affect coverage or resolver behavior and are designed so that existing invocations without G_valid options remain stable while making the Generator vs Repair contract and G_valid zones configurable for advanced users.
+
 ## Migration from Previous Versions
 
 ### v0.1 → Current

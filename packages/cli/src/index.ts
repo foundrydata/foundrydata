@@ -50,6 +50,7 @@ import { resolveCliCoverageOptions } from './config/coverage-options.js';
 import { formatCoverageSummary } from './coverage/coverage-summary.js';
 import { enforceCoverageThreshold } from './coverage/coverage-exit-codes.js';
 import { registerCoverageDiffCommand } from './commands/coverage-diff.js';
+import { applyGValidProfileToCliOptions } from './profiles.js';
 
 const program = new Command();
 
@@ -109,6 +110,19 @@ program
     '--encoding-bigint-json <mode>',
     'BigInt JSON encoding: string|number|error',
     'string'
+  )
+  .option(
+    '--gvalid',
+    'Enable G_valid classification/enforcement for eligible zones'
+  )
+  .option(
+    '--gvalid-relax-repair',
+    'Allow structural Repair inside zones classified as G_valid'
+  )
+  .option(
+    '--gvalid-profile <profile>',
+    'G_valid profile: compat|strict|relaxed',
+    'compat'
   )
   .option('--no-metrics', 'Disable metrics collection')
   .option(
@@ -227,9 +241,10 @@ program
 
       // Parse CLI options into PlanOptions
       const command = this;
-      const cliPlanOptions = { ...options } as Parameters<
-        typeof parsePlanOptions
-      >[0];
+      const cliPlanOptions = applyGValidProfileToCliOptions(
+        { ...options } as CliOptions,
+        options.gvalidProfile
+      );
       if (command.getOptionValueSource('rewriteConditionals') === 'default') {
         delete cliPlanOptions.rewriteConditionals;
       }
@@ -418,6 +433,19 @@ program
     'BigInt JSON encoding: string|number|error',
     'string'
   )
+  .option(
+    '--gvalid',
+    'Enable G_valid classification/enforcement for eligible zones'
+  )
+  .option(
+    '--gvalid-relax-repair',
+    'Allow structural Repair inside zones classified as G_valid'
+  )
+  .option(
+    '--gvalid-profile <profile>',
+    'G_valid profile: compat|strict|relaxed',
+    'compat'
+  )
   .option('--no-metrics', 'Disable metrics collection')
   .option(
     '--resolve <strategies>',
@@ -561,9 +589,10 @@ program
       }
 
       const command = this;
-      const cliPlanOptions = { ...options } as Parameters<
-        typeof parsePlanOptions
-      >[0];
+      const cliPlanOptions = applyGValidProfileToCliOptions(
+        { ...options } as CliOptions,
+        options.gvalidProfile
+      );
       if (command.getOptionValueSource('rewriteConditionals') === 'default') {
         delete cliPlanOptions.rewriteConditionals;
       }

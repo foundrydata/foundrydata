@@ -1798,11 +1798,11 @@
             "id": 9406002,
             "title": "Wire G_valid options through CLI flags and profiles",
             "description": "Map new G_valid options into CLI flags and profiles, defining which profiles enable G_valid by default and how to turn it off for compatibility.",
-            "status": "in-progress",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/cli/src/commands/generate.ts",
             "parentId": "9406",
-            "updatedAt": "2025-12-03T23:28:21.648Z"
+            "updatedAt": "2025-12-03T23:45:05.919Z"
           },
           {
             "id": 9406003,
@@ -1815,12 +1815,12 @@
             "updatedAt": "2025-12-02T23:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-03T23:28:21.648Z"
+        "updatedAt": "2025-12-03T23:45:05.919Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-03T23:28:21.650Z",
+      "lastModified": "2025-12-03T23:45:05.920Z",
       "taskCount": 7,
       "completedCount": 6,
       "tags": [

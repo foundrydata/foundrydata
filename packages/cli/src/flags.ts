@@ -18,6 +18,10 @@ export interface CliOptions {
   dynamicRefStrict?: 'warn' | 'note';
   encodingBigintJson?: 'string' | 'number' | 'error';
   metrics?: boolean;
+  // G_valid / Generator vs Repair contract
+  gvalid?: boolean;
+  gvalidRelaxRepair?: boolean;
+  gvalidProfile?: 'compat' | 'strict' | 'relaxed' | string;
   // Generation/runtime flags (parsed in CLI)
   count?: string | number;
   rows?: string | number;
@@ -107,6 +111,18 @@ export function parsePlanOptions(options: CliOptions): Partial<PlanOptions> {
   // Metrics toggle (Commander sets metrics=false when --no-metrics is used)
   if (typeof options.metrics === 'boolean') {
     planOptions.metrics = options.metrics;
+  }
+
+  // G_valid configuration
+  if (typeof options.gvalid === 'boolean') {
+    planOptions.gValid = options.gvalid;
+  }
+
+  if (options.gvalidRelaxRepair === true) {
+    planOptions.repair = {
+      ...(planOptions.repair ?? {}),
+      allowStructuralInGValid: true,
+    };
   }
 
   // Resolver (Extension R1) — map CLI flags when provided

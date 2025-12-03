@@ -97,5 +97,23 @@ describe('CLI flag helpers', () => {
       const plan = parsePlanOptions(options);
       expect(plan).toBeDefined();
     });
+
+    it('maps gvalid flag to PlanOptions.gValid', () => {
+      const options: CliOptions = {
+        gvalid: true,
+      };
+
+      const plan = parsePlanOptions(options);
+      expect(plan.gValid).toBe(true);
+    });
+
+    it('maps gvalidRelaxRepair flag to PlanOptions.repair.allowStructuralInGValid', () => {
+      const options: CliOptions = {
+        gvalidRelaxRepair: true,
+      };
+
+      const plan = parsePlanOptions(options);
+      expect(plan.repair?.allowStructuralInGValid).toBe(true);
+    });
   });
 });
