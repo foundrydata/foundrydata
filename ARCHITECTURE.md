@@ -10,7 +10,8 @@
 2. **100% schema compliance (scope‑bound)** — The compliance guarantee applies to the **full 5‑stage pipeline**; stage‑only usage has stage‑level contracts, not end‑to‑end compliance.
 3. **Deterministic generation** — Same seed ⇒ same data; bounded attempts; no global RNG.
 4. **Pipeline simplicity** — Narrow, testable responsibilities: `Normalize → Compose → Generate → Repair → Validate`.
-5. **Performance & observability** — Meet documented SLO/SLI targets with budgets and graceful degradation; capture metrics by phase.
+5. **Generator / Repair contract** — Generate and Repair have a documented division of responsibilities: Generate produces seeded, minimal candidates from the effective view and, for locations classified as belonging to a generator‑valid zone (`G_valid`) in the canonical spec, takes ownership of structural validity; Repair remains an AJV‑driven corrector that is budgeted, idempotent and constrained to low‑impact tweaks inside `G_valid` while handling structural fixes outside this zone.
+6. **Performance & observability** — Meet documented SLO/SLI targets with budgets and graceful degradation; capture metrics by phase.
 
 > This document replaces the older architecture description while retaining repository structure and intent.
 
@@ -90,13 +91,14 @@ Coverage-aware configuration is passed through `PipelineOptions.coverage` and su
 
 ### Stage 3 — Generate
 
-**Purpose:** Deterministic, seeded candidate generation from the effective view.
+**Purpose:** Deterministic, seeded candidate generation from the effective view, with explicit responsibilities under the Generator / Repair contract.
 
 * `enum/const` outrank broad `type`.
 * **Conditionals (no‑rewrite mode):** `if‑aware‑lite` hints; bias toward minimal `then` satisfaction per `minThenSatisfaction`.
 * Strings measured in Unicode code points; regex in Unicode mode.
 * **Arrays:** satisfy bagged `contains`; then apply `uniqueItems` if present.
 * **Numbers:** exact rational `multipleOf` with caps and fallbacks (decimal/float) controlled by plan options.
+* **Generator‑valid zone (`G_valid`):** for schema locations that the canonical spec classifies as belonging to `G_valid v1` (for example certain simple objects and simple `items`+`contains` arrays without AP:false / `unevaluated*` interplay), Generate treats structural keywords as its own obligations and aims to emit AJV‑valid instances by construction. Outside `G_valid`, Generate may still produce minimal witnesses that require structural repair, and the existing “minimal witness + bounded Repair” behaviour remains the baseline.
 
 **Module:** `packages/core/src/generator/foundry-generator.ts`.
 
@@ -104,9 +106,11 @@ Coverage-aware configuration is passed through `PipelineOptions.coverage` and su
 
 ### Stage 4 — Repair
 
-**Purpose:** AJV‑driven corrections using a `(keyword → action)` registry; idempotent; budgeted.
+**Purpose:** AJV‑driven corrections using a `(keyword → action)` registry; idempotent; budgeted; constrained by the Generator / Repair contract and `G_valid`.
 
 * Typical actions: clamp bounds, rational snap for `multipleOf`, add required props, de‑dupe via structural hashing for `uniqueItems`, remove extras for `additionalProperties:false`, etc.
+* **Generator‑valid zone (`G_valid`):** inside `G_valid`, Repair is expected to perform only low‑impact adjustments (such as numeric/format nudges or `uniqueItems` deduplication) and is not relied upon to introduce missing required properties or whole sub‑objects; any structural repair that still occurs in this zone is treated as a contract violation and is surfaced via dedicated G_valid metrics rather than as a normal optimisation path.
+* **Outside `G_valid`:** the engine continues to implement the “minimal witness + bounded Repair” regime, attempting to fix structural errors produced by Generate within configured budgets, and reporting unsatisfied cases through diagnostics and budget fields.
 * **Stagnation guard:** cap gen→repair→validate cycles at `min(PlanOptions.complexity.bailOnUnsatAfter, repair.attempts)` (defaults to a single cycle unless callers raise `repair.attempts`), and emit `UNSAT_BUDGET_EXHAUSTED` when errors stop decreasing.
 
 **Module:** `packages/core/src/repair/repair-engine.ts`.

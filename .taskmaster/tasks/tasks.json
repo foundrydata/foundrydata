@@ -1441,13 +1441,13 @@
   "generator-vs-repair-contract": {
     "tasks": [
       {
-        "id": 9400,
+        "id": "9400",
         "title": "Formalize Generator vs Repair contract and G_valid v1 in canonical spec",
         "description": "Introduce the Generator vs Repair contract and the G_valid (Generator-valid) zone into the canonical SPEC.",
         "priority": "high",
         "estimatedHours": 10,
         "dependencies": [],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 3,
         "details": "[Context]\nThe canonical spec and architecture describe the 5-stage pipeline but leave the Generator vs Repair boundary implicit.\nAligns with spec §6 (High-Level Architecture), §9 (Generator) and §10 (Repair Engine), and introduces a new subsection under §6 for the Generator / Repair contract and generator-valid zone (G_valid).\n\n[Key requirements]\n- Add a normative \"Generator vs Repair contract\" subsection to the generator/repair sections.\n- Define G_valid v1 scope (simple objects, simple arrays with items+contains, no AP:false/unevaluated* interplay) and the meaning of \"AJV-valid by construction\" (structural validity with only numeric/format nudges left to Repair).\n- State explicitly that outside G_valid the existing \"minimal witness + bounded Repair\" regime remains in force.\n- Document the UUID + contains example as a reference motif.\n\n[Deliverables]\n- Updated docs/spec-canonical-json-schema-generator.md (spec §6/§9/§10), ARCHITECTURE.md and Invariants/Known-Limits with the new contract.",
         "testStrategy": "- Spec review checklist covering: presence of the new section, correct G_valid v1 scope, explicit description of allowed/forbidden Repair actions.\n- Consistency pass between canonical spec, ARCHITECTURE.md, COMPREHENSIVE_FEATURE_SUPPORT.md and Invariants.md.\n- Internal review with generator/repair owners to confirm the wording matches what can be implemented without breaking existing invariants.",
@@ -1456,47 +1456,47 @@
             "id": 9400001,
             "title": "Add Generator vs Repair contract and G_valid section to canonical spec",
             "description": "Draft the new section in docs/spec-canonical-json-schema-generator.md and link it from the Generator (spec §9) and Repair (spec §10) chapters.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 4,
             "file": "docs/spec-canonical-json-schema-generator.md",
             "parentId": "9400",
-            "updatedAt": "2025-12-02T23:00:00.000Z"
+            "updatedAt": "2025-12-03T19:23:12.985Z"
           },
           {
             "id": 9400002,
             "title": "Align ARCHITECTURE.md with the new contract",
             "description": "Update ARCHITECTURE.md so that the Generate and Repair stage descriptions explicitly reference the Generator vs Repair contract and G_valid zones (spec §6 overview, §6.x new subsection).",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 2,
             "file": "ARCHITECTURE.md",
             "parentId": "9400",
-            "updatedAt": "2025-12-02T23:00:00.000Z"
+            "updatedAt": "2025-12-03T19:17:49.888Z"
           },
           {
             "id": 9400003,
             "title": "Extend invariants and known limits with G_valid guarantees",
             "description": "Add a short list of G_valid invariants and non-goals to Invariants.md and Known-Limits.md, including what Repair is allowed to do inside G_valid zones, referencing spec §6.4–§6.6.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 2,
             "file": "Invariants.md",
             "parentId": "9400",
-            "updatedAt": "2025-12-02T23:00:00.000Z"
+            "updatedAt": "2025-12-03T19:09:07.694Z"
           },
           {
             "id": 9400004,
             "title": "Document UUID + contains pattern as reference example",
             "description": "Write a self-contained example for the UUID + contains pattern that illustrates the change from minimal-witness generation with Repair filling required fields to G_valid generation where the Generator produces a fully valid item, aligned with spec §6.3.2.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 2,
             "file": "docs/examples/g-valid-uuid-contains.md",
             "parentId": "9400",
-            "updatedAt": "2025-12-02T23:00:00.000Z"
+            "updatedAt": "2025-12-03T19:20:22.597Z"
           }
         ],
-        "updatedAt": "2025-12-02T23:00:00.000Z"
+        "updatedAt": "2025-12-03T19:23:12.985Z"
       },
       {
-        "id": 9401,
+        "id": "9401",
         "title": "Implement motif classification and G_valid zoning in core pipeline",
         "description": "Introduce a motif classification layer that marks schema locations as G_valid or non-G_valid based on the effective schema shape.",
         "priority": "high",
@@ -1553,7 +1553,7 @@
         "updatedAt": "2025-12-02T23:00:00.000Z"
       },
       {
-        "id": 9402,
+        "id": "9402",
         "title": "Make array generation G_valid-aware for items + contains motifs",
         "description": "Update array generation so that, in G_valid zones, items satisfying contains also respect the effective items schema and are AJV-valid by construction.",
         "priority": "high",
@@ -1610,7 +1610,7 @@
         "updatedAt": "2025-12-02T23:00:00.000Z"
       },
       {
-        "id": 9403,
+        "id": "9403",
         "title": "Make object generation G_valid-aware for simple required/properties motifs",
         "description": "Adjust object generation so that, in G_valid zones, the Generator satisfies required properties and basic bounds without relying on Repair to synthesize placeholder values.",
         "priority": "high",
@@ -1657,7 +1657,7 @@
         "updatedAt": "2025-12-02T23:00:00.000Z"
       },
       {
-        "id": 9404,
+        "id": "9404",
         "title": "Constrain Repair behavior inside G_valid zones and surface violations",
         "description": "Update the Repair engine so that structural fixes in G_valid zones are treated as contract violations and surfaced via diagnostics/metrics instead of normal behavior.",
         "priority": "high",
@@ -1706,7 +1706,7 @@
         "updatedAt": "2025-12-02T23:00:00.000Z"
       },
       {
-        "id": 9405,
+        "id": "9405",
         "title": "Add repair usage metrics and G_valid motif observability",
         "description": "Instrument the pipeline with motif-level metrics so that repair usage inside and outside G_valid zones is observable and testable.",
         "priority": "high",
@@ -1766,7 +1766,7 @@
         "updatedAt": "2025-12-02T23:00:00.000Z"
       },
       {
-        "id": 9406,
+        "id": "9406",
         "title": "Expose G_valid behavior and Generator vs Repair contract in CLI, profiles and docs",
         "description": "Surface the Generator vs Repair contract and G_valid behavior through PlanOptions, CLI profiles and developer documentation.",
         "priority": "medium",
@@ -1820,15 +1820,12 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-02T23:00:00.000Z",
+      "lastModified": "2025-12-03T19:23:12.987Z",
       "taskCount": 7,
       "completedCount": 0,
       "tags": [
         "generator-vs-repair-contract"
-      ],
-      "created": "2025-12-02T23:00:00.000Z",
-      "updated": "2025-12-02T23:00:00.000Z",
-      "description": "Tasks for implementing the Generator vs Repair contract and G_valid v1 behavior in FoundryData."
+      ]
     }
   }
 }

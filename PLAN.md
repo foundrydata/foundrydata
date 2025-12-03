@@ -1,19 +1,20 @@
-Task: 9333   Title: Harden CLI coverage profiles and coverage-report UX — subtask 9333.9333003
-Anchors: [cov://§3#coverage-model, cov://§6#budget-profiles, cov://§7#json-coverage-report, cov://§7#cli-summary]
+Task: 9400   Title: Canonical SPEC — Generator vs Repair contract and G_valid v1 — subtask 9400.9400001
+Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#generator, spec://§10#repair-engine]
 Touched files:
 - PLAN.md
-- .taskmaster/docs/9333-traceability.md
-- docs/Features.md
+- .taskmaster/docs/9400-traceability.md
+- .taskmaster/tasks/tasks.json
+- docs/spec-canonical-json-schema-generator.md
 
 Approach:
-Pour la sous-tâche 9333.9333003, je vais documenter une configuration CI recommandée qui s’appuie sur la sémantique des profils coverage (cov://§6#budget-profiles) et sur la forme de coverage-report/v1 et du résumé CLI (cov://§3#coverage-model, cov://§7#json-coverage-report, cov://§7#cli-summary), en capitalisant sur les tests ajoutés dans 9333.9333001/9333.9333002. Concrètement : (1) ajouter dans `docs/Features.md` une section “Coverage en CI” qui décrit un scénario type `coverage=measure` avec un profil (par exemple `balanced`) et un `coverage-min` explicite, en précisant comment cela se traduit en `dimensionsEnabled`, budget d’instances et thresholds; (2) illustrer le flux empirique côté CLI (`foundrydata generate` / `openapi`) en montrant comment consommer le fichier coverage-report/v1 (chemins metrics.overall/byDimension/byOperation/targetsByStatus et diagnostics) et le résumé stderr pour les logs CI, sans recopier la SPEC mais en renvoyant conceptuellement vers ces champs; (3) veiller à ce que les exemples textuels restent alignés avec les profils et résumés réellement testés (semantique des profils quick/balanced/thorough, présence des lignes `coverage by dimension`, `coverage overall`, `targets by status`, `planner caps`, `unsatisfied hints`) afin que les docs ne divergent pas des comportements couverts par les tests; (4) garder le ton prescriptif (“profil recommandé”) tout en laissant à la plateforme la liberté d’ajuster les seuils numériques exacts.
+Pour la sous-tâche 9400.9400001, je vais relire et ajuster la section canonique “Generator / Repair contract and generator-valid zone (G_valid)” dans `docs/spec-canonical-json-schema-generator.md` afin qu’elle reflète précisément le contrat défini pour G_valid v1, en cohérence avec les sections pipeline (spec://§6#phases), Generator (spec://§9#generator) et Repair Engine (spec://§10#repair-engine), sans recopier de prose dans d’autres documents. Concrètement : (1) vérifier que les définitions des mots-clés structurels, de la zone G_valid et de la notion “valid by construction” couvrent bien les motifs v1 (objets simples, arrays simples items+contains sans interplay AP:false/unevaluated*) et qu’elles distinguent clairement l’intérieur de G_valid du régime minimal witness + bounded Repair; (2) renforcer les liens croisés en veillant à ce que §9 (Generator) et §10 (Repair Engine) référencent explicitement le contrat et les invariants G_valid là où ils décrivent les responsabilités des deux moteurs, sans contredire ARCHITECTURE.md, Invariants.md et Known-Limits.md; (3) aligner la description des compteurs/métriques G_valid avec les guardrails déjà évoqués (usage de Repair dans la zone G_valid vu comme une régression observable, pas comme un chemin normal), en restant dans le cadre des anchors listés; (4) relire la section pour éviter les ambiguïtés ou doublons et mettre à jour `.taskmaster/docs/9400-traceability.md` pour signaler que KR1–KR3/DEL1/DOD1/TS1/TS3 sont bien couverts par cette sous-tâche côté SPEC canonique.
 
 DoD:
-- [x] Une section dédiée de `docs/Features.md` décrit un profil CI recommandé (coverage mode/profile/minCoverage) cohérent avec les presets et budgets de la spec (cov://§6#budget-profiles).
-- [x] Les docs expliquent comment lire coverage-report/v1 et le résumé CLI dans ce contexte (overall, byDimension/byOperation, targetsByStatus, caps, unsatisfied hints) sans contredire la spec (cov://§3#coverage-model, cov://§7#json-coverage-report, cov://§7#cli-summary).
+- [x] La section canonique “Generator / Repair contract and G_valid” définit clairement G_valid v1 et le contrat Generator/Repair, sans ambiguïté ni contradiction avec ARCHITECTURE/Invariants/Known-Limits.
+- [x] §9 (Generator) et §10 (Repair Engine) référencent explicitement le contrat G_valid v1 et les responsabilités associées.
 - [x] build/typecheck/lint/test/bench OK.
 
-Parent bullets couverts: [KR3, DEL3, DOD3, TS3]
+Parent bullets couverts: [KR1, KR2, KR3, KR4, DEL1, DOD1, TS1, TS3]
 
 Checks:
 - build: npm run build
