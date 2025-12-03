@@ -31,7 +31,7 @@ This document maps the parent task 9406 bullets from Implementation Details, Del
 ## Mapping 9406 subtasks → parent bullets
 
 - **9406.9406001 – Add G_valid-related options to PlanOptions and core API**  
-  Covers: [KR1, DEL1, DOD1, TS1] (status: in-progress).
+  Covers: [KR1, DEL1, DOD1, TS1] (status: done).
 
 - **9406.9406002 – Wire G_valid options through CLI flags and profiles**  
   Covers: [KR2, DEL2, DOD2, TS2] (status: pending).
