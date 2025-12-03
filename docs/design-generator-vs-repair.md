@@ -25,6 +25,13 @@ metrics, now lives in the canonical SPEC under §6 (“Generator / Repair contra
 and generator‑valid zone (`G_valid`)”); this document remains an informative
 companion for background and motivation.
 
+Coverage‑aware behaviour for Generator and Repair (coverage dimensions,
+CoverageTargets, and non‑regression invariants between `coverage=measure` and
+`coverage=guided`) is specified in `docs/spec-coverage-aware-v1.0.md`. This
+brief is layered underneath that coverage‑aware SPEC: it must remain
+compatible with its determinism guarantees and MUST NOT redefine coverage
+semantics or target IDs.
+
 ---
 
 ## 2. Problem Statement

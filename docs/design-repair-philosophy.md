@@ -250,8 +250,8 @@ The Repair philosophy is closely linked to the Generator‑vs‑Repair contract:
 
 This alignment allows us to:
 
-- make the pipeline more predictable where we can (by expanding `G_valid`), and
-- retain flexibility for more complex motifs without over‑promising on Repair.
+  - make the pipeline more predictable where we can (by expanding `G_valid`), and
+  - retain flexibility for more complex motifs without over‑promising on Repair.
 
 Coverage‑aware modes and profiles (`coverage=off|measure|guided`,
 `quick` / `balanced` / `thorough`) **do not change** which Repair tiers are
@@ -267,6 +267,13 @@ generation upstream, but Repair does not consume coverage state as an input:
   diagnostics remain deterministic.
 - `dimensionsEnabled` only changes which coverage targets/metrics are materialised;
   it MUST NOT affect Repair decisions.
+
+These constraints sit underneath the coverage‑aware requirements defined in
+`docs/spec-coverage-aware-v1.0.md`. In particular, nothing in this brief may
+violate the non‑regression guarantees for `branches`/`enum` coverage between
+`coverage=measure` and `coverage=guided`, nor the determinism contract for a
+fixed `(canonical schema, OpenAPI spec?, coverage options, seed, ajvMajor,
+registryFingerprint)` as defined by that SPEC.
 
 ---
 
