@@ -1,22 +1,23 @@
-Task: 9402   Title: Add fixtures for G_valid array motifs — subtask 9402.9402003
+Task: 9402   Title: Write tests for G_valid arrays and golden snapshots — subtask 9402.9402004
 Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#arrays-contains, spec://§10#repair-engine]
 Touched files:
 - PLAN.md
 - .taskmaster/docs/9402-traceability.md
 - .taskmaster/tasks/tasks.json
-- docs/examples/g-valid-uuid-contains.md
 - test/fixtures/g-valid-arrays.json
+- test/acceptance/arrays/contains-vs-maxitems.spec.ts
+- packages/core/src/pipeline/__tests__/pipeline-orchestrator.test.ts
 
 Approach:
-Pour la sous-tâche 9402.9402003, je vais extraire et formaliser des fixtures dédiées aux motifs d’arrays G_valid (spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#arrays-contains, spec://§10#repair-engine), en particulier autour du motif de référence UUID + contains déjà documenté dans `docs/examples/g-valid-uuid-contains.md`, afin de servir de base commune aux tests pipeline/générateur. Concrètement : (1) relire l’exemple UUID + contains et en dériver un ou plusieurs schémas JSON minimaux (arrays d’objets avec `id` UUID et `isGift` booléen, contains sur `isGift: true`) en veillant à rester strictement REFONLY vis-à-vis de la SPEC et de l’exemple (aucun copier-coller de prose) ; (2) regrouper ces schémas (et éventuellement d’autres variantes simples : arrays scalaires avec contains const/enum, arrays d’objets sans uniqueItems ni AP:false) dans un petit fichier de fixtures JSON ou TS typé utilisable par les tests 9402 (générateur/pipeline) ; (3) annoter clairement, via les noms de fixtures ou des commentaires concis, quels motifs sont G_valid (items+contains simples) et quels motifs sont explicitement hors G_valid (par exemple arrays avec uniqueItems ou sacs de contains complexes), sans changer la logique de classification existante ; (4) vérifier que ces fixtures s’intègrent bien dans la stratégie de tests existante (notamment les tests ajoutés en 9402.9402002) sans introduire de dépendances circulaires ni de régression de couverture. Aucun changement de comportement n’est attendu dans cette sous-tâche, uniquement la création de données de référence cohérentes avec la SPEC pour les arrays G_valid.
+Pour la sous-tâche 9402.9402004, je vais ajouter des tests d’intégration centrés sur les arrays G_valid vs non-G_valid en réutilisant les fixtures dédiées (spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#arrays-contains, spec://§10#repair-engine), de façon à prouver que la Repair structurelle est inutile dans la zone G_valid et que le comportement legacy est préservé ailleurs. Concrètement : (1) enrichir les tests pipeline existants pour le motif UUID + contains en s’appuyant sur `test/fixtures/g-valid-arrays.json`, avec un scénario “golden” qui fixe le seed et capture la forme attendue des éléments générés (présence systématique des champs requis `id` et `isGift`, au moins un élément `isGift: true`), tout en vérifiant qu’aucune action de Repair structurelle n’est enregistrée ; (2) ajouter des tests pour un motif explicitement non-G_valid (par exemple l’array `uniqueItems + contains` des fixtures) qui montrent que l’activation du flag G_valid ne modifie ni les items finaux ni les diagnostics, conformément à la séparation de responsabilités décrite dans la SPEC ; (3) optionnellement, intégrer un test d’acceptance léger dans `test/acceptance/arrays/contains-vs-maxitems.spec.ts` ou un nouveau fichier adjacent, qui utilise les mêmes fixtures pour vérifier que les schémas G_valid restent AJV-valid et déterministes sur plusieurs seeds ; (4) garder les snapshots “golden” raisonnables (structure/assertions ciblées plutôt que dumps complets) afin de limiter la fragilité des tests et s’assurer que toute évolution future est intentionnelle. L’ensemble des tests devra rester déterministe pour un tuple (schéma, options, seed) donné et respecter strictement la séparation G_valid / non-G_valid.
 
 DoD:
- - [x] Des fixtures dédiées aux arrays G_valid (dont le motif UUID + contains) sont disponibles dans un emplacement partagé et clairement identifiées comme telles.
- - [x] Les fixtures couvrent au moins un motif G_valid items+contains et au moins un motif explicitement non-G_valid, en cohérence avec la classification existante.
- - [x] Les tests existants peuvent référencer ces fixtures sans modification de comportement observable (les nouveaux fichiers ne servent que de source de vérité partagée).
+ - [x] Des tests pipeline (ou d’acceptance) exploitent les fixtures G_valid pour démontrer que les arrays items+contains génèrent des éléments déjà valides (pas de Repair structurelle) en mode G_valid.
+ - [x] Des tests symétriques pour des arrays non-G_valid montrent que l’activation du flag G_valid ne change pas les items finaux ni les diagnostics, à seed fixé.
+ - [x] Les tests restent déterministes pour un tuple (schéma, options, seed) donné et ne fragilisent pas la suite via des snapshots trop verbeux.
  - [x] build/typecheck/lint/test/bench OK.
 
-Parent bullets couverts: [KR2, KR3, DEL3, DOD2, TS2]
+Parent bullets couverts: [KR2, KR3, KR4, DEL3, DOD1, DOD2, DOD3, TS1, TS2, TS4]
 
 Checks:
 - build: npm run build

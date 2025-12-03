@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { executePipeline } from '../../../packages/core/src/pipeline/orchestrator.js';
+import fixtures from '../../fixtures/g-valid-arrays.json';
 import { DIAGNOSTIC_CODES } from '../../../packages/core/src/diag/codes.js';
 
 describe('Acceptance — arrays: contains vs maxItems', () => {
@@ -101,5 +102,79 @@ it('records unsat hints when overlap is unknown while still failing composition'
   expect(hint?.details).toMatchObject({
     sumMin: 2,
     maxItems: 1,
+  });
+});
+
+describe('Acceptance — arrays: G_valid vs non-G_valid motifs', () => {
+  it('emits G_valid UUID+contains arrays without structural Repair for required fields', async () => {
+    const schema = fixtures.gvalid_uuid_contains_order_items.schema as unknown;
+
+    const result = await executePipeline(schema, {
+      mode: 'strict',
+      generate: {
+        count: 3,
+        seed: 123,
+        planOptions: { gValid: true },
+      },
+      validate: { validateFormats: false },
+    });
+
+    expect(result.status).toBe('completed');
+
+    const finalItems =
+      result.artifacts.repaired ?? result.artifacts.generated?.items ?? [];
+
+    expect(Array.isArray(finalItems)).toBe(true);
+    expect(finalItems.length).toBeGreaterThan(0);
+
+    for (const arr of finalItems as unknown[]) {
+      expect(Array.isArray(arr)).toBe(true);
+      for (const elem of arr as any[]) {
+        expect(elem).toBeTruthy();
+        expect(typeof elem).toBe('object');
+        expect(typeof elem.id).toBe('string');
+        expect(typeof elem.isGift).toBe('boolean');
+      }
+    }
+
+    const actions = result.artifacts.repairActions ?? [];
+    expect(actions.length).toBe(0);
+  });
+
+  it('keeps non-G_valid uniqueItems+contains arrays stable when toggling G_valid flag', async () => {
+    const schema = fixtures.nongvalid_unique_items_contains_strings
+      .schema as unknown;
+
+    const baseOptions = {
+      mode: 'strict',
+      generate: { count: 4, seed: 37 },
+      validate: { validateFormats: false },
+    } as const;
+
+    const off = await executePipeline(schema, {
+      ...baseOptions,
+      generate: {
+        ...baseOptions.generate,
+        planOptions: { gValid: false },
+      },
+    });
+
+    const on = await executePipeline(schema, {
+      ...baseOptions,
+      generate: {
+        ...baseOptions.generate,
+        planOptions: { gValid: true },
+      },
+    });
+
+    expect(off.status).toBe('completed');
+    expect(on.status).toBe('completed');
+
+    const finalOff =
+      off.artifacts.repaired ?? off.artifacts.generated?.items ?? [];
+    const finalOn =
+      on.artifacts.repaired ?? on.artifacts.generated?.items ?? [];
+
+    expect(finalOn).toEqual(finalOff);
   });
 });

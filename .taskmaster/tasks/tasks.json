@@ -1561,7 +1561,7 @@
         "dependencies": [
           "9401"
         ],
-        "status": "in-progress",
+        "status": "done",
         "complexityScore": 4,
         "details": "[Context]\nThe current array generator enforces contains bags but may emit minimal witnesses that rely on Repair to fill required fields. In G_valid arrays (simple items + contains, no AP:false/unevaluated*), the Generator must produce elements that satisfy both items and contains subschemas without structural Repair.\nAligns with spec §6.3.2 (arrays with simple items+contains in G_valid) and §9 (Generator obligations in G_valid zones).\n\n[Key requirements]\n- For canonPaths marked G_valid with items + contains:\n  - generate targeted elements against the effective items schema AND the contains subschema,\n  - ensure required properties and referenced shapes in items are satisfied by the Generator.\n- Preserve existing behavior for non-G_valid motifs (AP:false, complex bags, heavy uniqueItems).\n- Keep determinism and existing contains diagnostics/caps (e.g. CONTAINS_BAG_COMBINED, CONTAINS_UNSAT_BY_SUM) as described in spec §8/§9.",
         "testStrategy": "- Unit tests for G_valid array schemas asserting that generated elements already satisfy required properties and refs before Repair.\n- Fixtures including the UUID + contains pattern and golden snapshots comparing pre/post behavior.\n- Integration tests verifying that non-G_valid arrays keep identical behavior and diagnostics to the baseline.\n- Property-style tests comparing AJV validity before/after changes to ensure no regressions and preserved determinism for non-G_valid motifs.",
@@ -1600,14 +1600,14 @@
             "id": 9402004,
             "title": "Write tests for G_valid arrays and golden snapshots",
             "description": "Add tests asserting that structural Repair is unused for G_valid arrays and that non-G_valid arrays preserve previous behavior, per spec §6.4–§6.5.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/generator/**tests**/g-valid-arrays.spec.ts",
             "parentId": "9402",
-            "updatedAt": "2025-12-02T23:00:00.000Z"
+            "updatedAt": "2025-12-03T20:31:15.625Z"
           }
         ],
-        "updatedAt": "2025-12-03T20:24:02.377Z"
+        "updatedAt": "2025-12-03T20:31:15.625Z"
       },
       {
         "id": "9403",
@@ -1820,9 +1820,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-03T20:24:02.378Z",
+      "lastModified": "2025-12-03T20:31:15.627Z",
       "taskCount": 7,
-      "completedCount": 2,
+      "completedCount": 3,
       "tags": [
         "generator-vs-repair-contract"
       ]
