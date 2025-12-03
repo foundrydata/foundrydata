@@ -1523,11 +1523,11 @@
             "id": 9401002,
             "title": "Implement classifier over Compose artifacts",
             "description": "Implement the classifier using canonical schema, CoverageIndex and Compose diagnostics to mark canonPaths as G_valid or non-G_valid without re-parsing the original schema, aligned with spec §8 and §6.3.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 6,
             "file": "packages/core/src/transform/g-valid-classifier.ts",
             "parentId": "9401",
-            "updatedAt": "2025-12-02T23:00:00.000Z"
+            "updatedAt": "2025-12-03T19:41:24.073Z"
           },
           {
             "id": 9401003,
@@ -1550,7 +1550,7 @@
             "updatedAt": "2025-12-02T23:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-03T19:32:28.229Z"
+        "updatedAt": "2025-12-03T19:41:24.073Z"
       },
       {
         "id": "9402",
@@ -1820,7 +1820,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-03T19:32:28.231Z",
+      "lastModified": "2025-12-03T19:41:24.074Z",
       "taskCount": 7,
       "completedCount": 1,
       "tags": [
