@@ -281,23 +281,14 @@ registryFingerprint)` as defined by that SPEC.
 
 ### 6.1 Progress metric (normative for termination and “no guessing”)
 
-Repair is AJV‑driven and evaluates progress using AJV `allErrors:true`. For a
-given instance `x`, define `Errors(x)` as AJV’s error list for `x`.
-
-Define the **error signature** for an AJV error `e` as a stable identifier:
-
-`sig(e) = (keyword, canonPath, instancePath, stableParamsKey)`
-
-where:
-- `canonPath` is the canonical schema location for the failing keyword (using the
-  existing pointer mapping; if unavailable, fall back to `schemaPath`),
-- `stableParamsKey` is a canonical (key‑sorted) JSON encoding of AJV `params`.
-
-Define `Score(x) = |{ sig(e) : e ∈ Errors(x) }|` (count of distinct signatures).
-
-**Acceptance rule:** A candidate mutation from `x → x'` is committed only if it
-strictly improves the score: `Score(x') < Score(x)`. Otherwise Repair MUST revert
-the mutation and may emit a diagnostic such as `REPAIR_REVERTED_NO_PROGRESS`.
+Repair is AJV‑driven and evaluates progress using AJV `allErrors:true`, with the
+progress metric and commit rule defined **normatively** in the canonical SPEC
+§10.P5 (“Progress metric and commit rule”). In short, §10.P5 defines a stable
+error signature `sig(e)` and the score `Score(x)` as the number of distinct
+signatures, with the requirement that a candidate `x → x'` is committed only
+when it strictly improves the score (`Score(x') < Score(x)`); otherwise Repair
+MUST revert the mutation (see §10.P5 for the exact definition, including
+canonicalization of `params` and the use of `canonPath`/`schemaPath`).
 
 This deliberately forbids multi‑step “temporary worsening” strategies in default
 profiles; such strategies, if ever introduced, belong in explicit experimental
@@ -350,16 +341,18 @@ To make Repair behaviour auditable, we rely on:
     detailed logs are capped.
 
 - **Diagnostics**  
-  Codes such as `REPAIR_PNAMES_PATTERN_ENUM`, `REPAIR_RENAME_PREFLIGHT_FAIL`,
-  `MUSTCOVER_INDEX_MISSING`, `UNSAT_BUDGET_EXHAUSTED` highlight when guards
-  or budgets limit Repair. All Repair diagnostics:
-  - MUST use `phase: 'repair'` in the diagnostics envelope,
-  - MUST conform to the shared diagnostics schema (including `code`,
-    `canonPath`, `phase`, `details`),
-  - and SHOULD include budget context in `details` when a budget influenced
-    the decision (e.g. `attemptsTried`, `attemptsLimit`).
-  - SHOULD include policy context when a tier/profile disabled an action
-    (e.g. `tierRequested`, `tierAllowed`, `profile`, `reason:'g_valid'|'policy'`).
+  Repair diagnostics reuse the shared diagnostics envelope and payload contracts
+  defined in the canonical SPEC (§19) and the Repair observability requirements
+  in §10.P7 (including `REPAIR_TIER_DISABLED`, `REPAIR_REVERTED_NO_PROGRESS`,
+  and the requirement to set `phase:'repair'`, `canonPath`, and structured
+  `details`). Briefly, codes such as `REPAIR_PNAMES_PATTERN_ENUM`,
+  `REPAIR_RENAME_PREFLIGHT_FAIL`, `MUSTCOVER_INDEX_MISSING`,
+  `UNSAT_BUDGET_EXHAUSTED`, and the new tier/policy codes highlight when guards,
+  budgets, or tier policies limit Repair. Tests SHOULD assert that:
+  - budget‑influenced decisions attach budget context in `details`
+    (e.g. `attemptsTried`, `attemptsLimit`), and
+  - policy decisions (tier/profile) attach policy context when appropriate
+    (e.g. `requestedTier`, `allowedMaxTier`, `reason:'g_valid'|'default_policy'`).
 
 - **Tests & invariants**  
   - Unit tests for individual Repair actions and guards.
