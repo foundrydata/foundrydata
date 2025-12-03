@@ -179,6 +179,20 @@ Paths are relative to the repository root.
 
 ---
 
+## Generator‑valid zone (`G_valid`) and “no‑repair zone” invariants
+
+| Motif / Feature                                        | SPEC anchors                                                | Micro‑schema location                                               | Tests                                                                                         | Invariants                                                                                                                        |
+|--------------------------------------------------------|-------------------------------------------------------------|----------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| `G_valid` array with simple `items` + `contains`      | spec://§6-generator-repair-contract, spec://§9-generator   | Inline or fixture schema `order + items + contains` (UUID motif)    | `packages/core/src/pipeline/__tests__/generator-repair-gvalid.test.ts` (à introduire)        | Pour ce schéma: (1) le plan marque la localisation array comme appartenant à `G_valid v1`; (2) `diag.metrics.gValid_arrayContainsSimple_itemsWithRepair === 0` en mode nominal; (3) aucun Repair pour un mot‑clé structurel (au sens de §6.2) sous le `canonPath` de cette array. |
+| `G_valid` simple object avec `required` + `minProperties` | spec://§6-generator-repair-contract, spec://§9-generator | Micro‑schema `simple-required-object` dans un nouveau fichier fixture | `generator-repair-gvalid.test.ts` (cas “simple object with required”)                         | Pour ce schéma: (1) la localisation objet est classée `G_valid`; (2) le générateur produit tous les champs `required` en pré‑Repair; (3) aucune action Repair sur `required`/`minProperties` n’est émise sous ce `canonPath` (les compteurs `gValid_*` restent à 0 pour ce motif). |
+| Regression guard “no‑repair zone”                      | spec://§6-generator-repair-contract, spec://§10-repair-engine | Réutilise les micro‑schémas `G_valid` ci‑dessus                      | `generator-repair-gvalid.test.ts` (cas “no‑repair zone regression guard”)                    | Si une évolution introduit un Repair structurel sous un `canonPath` marqué `G_valid` (compteurs `gValid_*_itemsWithRepair` ou `gValid_*_actions` > 0), le test doit échouer et signaler la régression sur le contrat Generator/Repair.                               |
+
+Ces entrées esquissent des tests d’invariants “no‑repair zone” pour `G_valid`:
+
+- les micro‑schémas ciblent explicitement des localisations classées `G_valid` par la SPEC canonique (§6);
+- les tests vérifient à la fois le statut de la pipeline (`status: 'completed'`) et l’absence de Repair structurel via les compteurs `diag.metrics.gValid_*`;
+- toute dérive (Repair structurel ou augmentation non attendue de `itemsWithRepair` / `actions`) doit être traitée comme une régression et rendue visible par ces tests.
+
 ## Notes / TODO
 
 - Certains motifs avancés (notamment `dependentRequired`, `dependentSchemas`, `not/allOf`)
