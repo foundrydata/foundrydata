@@ -39,7 +39,7 @@ This document maps the parent task 9402 bullets from Implementation Details, Del
   Covers: [KR1, KR2, KR3, KR4, DEL2, DOD1, DOD2, TS1, TS2, TS4] (status: done).
 
 - **9402.9402003 – Add fixtures for G_valid array motifs**  
-  Covers: [KR2, KR3, DEL3, DOD2, TS2] (status: pending).
+  Covers: [KR2, KR3, DEL3, DOD2, TS2] (status: done).
 
 - **9402.9402004 – Write tests for G_valid arrays and golden snapshots**  
   Covers: [KR2, KR3, KR4, DEL3, DOD2, DOD3, TS1, TS2, TS3, TS4] (status: pending).

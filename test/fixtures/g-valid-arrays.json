@@ -1,0 +1,51 @@
+{
+  "gvalid_uuid_contains_order_items": {
+    "description": "Array of order items with UUID id and isGift boolean, minItems=1 and contains requiring at least one gift item (isGift: true). Baseline G_valid v1 items+contains motif.",
+    "schema": {
+      "$id": "https://example.com/schemas/order-items-gvalid-uuid-contains.json",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "isGift": {
+            "type": "boolean"
+          }
+        },
+        "required": ["id", "isGift"],
+        "additionalProperties": true
+      },
+      "minItems": 1,
+      "contains": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "isGift": {
+            "const": true
+          }
+        },
+        "required": ["id", "isGift"]
+      }
+    }
+  },
+  "nongvalid_unique_items_contains_strings": {
+    "description": "Array of unique string items with contains const 'x'; not part of G_valid v1 due to uniqueItems.",
+    "schema": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      },
+      "contains": {
+        "const": "x"
+      }
+    }
+  }
+}
+

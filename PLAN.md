@@ -1,22 +1,22 @@
-Task: 9402   Title: Implement combined items + contains generation for G_valid arrays — subtask 9402.9402002
-Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#generator, spec://§10#repair-engine]
+Task: 9402   Title: Add fixtures for G_valid array motifs — subtask 9402.9402003
+Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#arrays-contains, spec://§10#repair-engine]
 Touched files:
 - PLAN.md
 - .taskmaster/docs/9402-traceability.md
 - .taskmaster/tasks/tasks.json
-- packages/core/src/generator/foundry-generator.ts
-- packages/core/src/pipeline/orchestrator.ts
+- docs/examples/g-valid-uuid-contains.md
+- test/fixtures/g-valid-arrays.json
 
 Approach:
-Pour la sous-tâche 9402.9402002, je vais implémenter, uniquement dans les zones marquées G_valid pour les arrays items+contains (spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#generator, spec://§10#repair-engine), une stratégie de génération combinée qui garantit que les éléments produits satisfont simultanément le schéma `items` effectif et les sous-schémas `contains`, tout en préservant le comportement legacy ailleurs. Concrètement : (1) identifier, dans `generateArray` et `satisfyContainsNeeds`, les chemins où les besoins de `contains` sont planifiés via `containsBag` et conditionner une nouvelle stratégie “G_valid array” à la présence d’un motif G_valid adapté dans l’index (par exemple un motif array simple items+contains) et au flag `planOptions.gValid`; (2) pour ces arrays G_valid, générer en priorité des “witness” d’éléments en partant de la forme `items` (notamment les objets avec `required`) puis en appliquant les contraintes de `contains` (const, enum, etc.), de façon à obtenir une instance AJV-valide sans nécessiter de réparation structurelle sur les propriétés requises ; (3) conserver la logique actuelle (y compris diagnostics CONTAINS_UNSAT_BY_SUM, caps et uniqueItems) lorsqu’aucun motif G_valid ne s’applique, en évitant toute divergence RNG pour les arrays non-G_valid ; (4) ajouter des tests ciblés (unitaires sur le générateur ou via le pipeline) qui comparent, pour un schéma simple items+contains compatible G_valid, le comportement avant/après : en mode G_valid, les éléments satisfont `items`+`contains` d’emblée et la Repair ne touche plus à la structure, tandis que pour des arrays hors G_valid le comportement et les diagnostics restent inchangés. Tout changement restera strictement aligné avec la SPEC (REFONLY) et déterministe pour un tuple (schéma, options, seed) donné.
+Pour la sous-tâche 9402.9402003, je vais extraire et formaliser des fixtures dédiées aux motifs d’arrays G_valid (spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#arrays-contains, spec://§10#repair-engine), en particulier autour du motif de référence UUID + contains déjà documenté dans `docs/examples/g-valid-uuid-contains.md`, afin de servir de base commune aux tests pipeline/générateur. Concrètement : (1) relire l’exemple UUID + contains et en dériver un ou plusieurs schémas JSON minimaux (arrays d’objets avec `id` UUID et `isGift` booléen, contains sur `isGift: true`) en veillant à rester strictement REFONLY vis-à-vis de la SPEC et de l’exemple (aucun copier-coller de prose) ; (2) regrouper ces schémas (et éventuellement d’autres variantes simples : arrays scalaires avec contains const/enum, arrays d’objets sans uniqueItems ni AP:false) dans un petit fichier de fixtures JSON ou TS typé utilisable par les tests 9402 (générateur/pipeline) ; (3) annoter clairement, via les noms de fixtures ou des commentaires concis, quels motifs sont G_valid (items+contains simples) et quels motifs sont explicitement hors G_valid (par exemple arrays avec uniqueItems ou sacs de contains complexes), sans changer la logique de classification existante ; (4) vérifier que ces fixtures s’intègrent bien dans la stratégie de tests existante (notamment les tests ajoutés en 9402.9402002) sans introduire de dépendances circulaires ni de régression de couverture. Aucun changement de comportement n’est attendu dans cette sous-tâche, uniquement la création de données de référence cohérentes avec la SPEC pour les arrays G_valid.
 
 DoD:
- - [x] En mode G_valid et pour les motifs items+contains simples, le générateur produit des éléments qui satisfont `items` et `contains` sans nécessiter de Repair structurelle.
- - [x] Pour les arrays non-G_valid (AP:false, sacs de contains complexes, uniqueItems lourds), le comportement et les diagnostics restent identiques à la baseline.
- - [x] Des tests (générateur/pipeline) démontrent que la Repair n’a plus à compléter les propriétés requises dans les arrays G_valid, tout en conservant la déterminisme pour un seed donné.
+ - [x] Des fixtures dédiées aux arrays G_valid (dont le motif UUID + contains) sont disponibles dans un emplacement partagé et clairement identifiées comme telles.
+ - [x] Les fixtures couvrent au moins un motif G_valid items+contains et au moins un motif explicitement non-G_valid, en cohérence avec la classification existante.
+ - [x] Les tests existants peuvent référencer ces fixtures sans modification de comportement observable (les nouveaux fichiers ne servent que de source de vérité partagée).
  - [x] build/typecheck/lint/test/bench OK.
 
-Parent bullets couverts: [KR1, KR2, KR3, KR4, DEL2, DOD1, DOD2, TS1, TS2, TS4]
+Parent bullets couverts: [KR2, KR3, DEL3, DOD2, TS2]
 
 Checks:
 - build: npm run build

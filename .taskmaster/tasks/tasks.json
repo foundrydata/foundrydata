@@ -1590,11 +1590,11 @@
             "id": 9402003,
             "title": "Add fixtures for G_valid array motifs",
             "description": "Create fixtures capturing UUID + contains and other simple array motifs to validate G_valid behavior as defined in spec §6.3.2.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/generator/**tests**/fixtures/g-valid-arrays.json",
             "parentId": "9402",
-            "updatedAt": "2025-12-02T23:00:00.000Z"
+            "updatedAt": "2025-12-03T20:24:02.377Z"
           },
           {
             "id": 9402004,
@@ -1607,7 +1607,7 @@
             "updatedAt": "2025-12-02T23:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-03T20:17:20.073Z"
+        "updatedAt": "2025-12-03T20:24:02.377Z"
       },
       {
         "id": "9403",
@@ -1820,7 +1820,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-03T20:17:20.074Z",
+      "lastModified": "2025-12-03T20:24:02.378Z",
       "taskCount": 7,
       "completedCount": 2,
       "tags": [
