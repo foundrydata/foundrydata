@@ -1,23 +1,21 @@
-Task: 9402   Title: Write tests for G_valid arrays and golden snapshots — subtask 9402.9402004
-Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#arrays-contains, spec://§10#repair-engine]
+Task: 9403   Title: Wire G_valid hints into object generation paths — subtask 9403.9403001
+Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#generator]
 Touched files:
 - PLAN.md
-- .taskmaster/docs/9402-traceability.md
+- .taskmaster/docs/9403-traceability.md
 - .taskmaster/tasks/tasks.json
-- test/fixtures/g-valid-arrays.json
-- test/acceptance/arrays/contains-vs-maxitems.spec.ts
-- packages/core/src/pipeline/__tests__/pipeline-orchestrator.test.ts
+- packages/core/src/generator/foundry-generator.ts
 
 Approach:
-Pour la sous-tâche 9402.9402004, je vais ajouter des tests d’intégration centrés sur les arrays G_valid vs non-G_valid en réutilisant les fixtures dédiées (spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#arrays-contains, spec://§10#repair-engine), de façon à prouver que la Repair structurelle est inutile dans la zone G_valid et que le comportement legacy est préservé ailleurs. Concrètement : (1) enrichir les tests pipeline existants pour le motif UUID + contains en s’appuyant sur `test/fixtures/g-valid-arrays.json`, avec un scénario “golden” qui fixe le seed et capture la forme attendue des éléments générés (présence systématique des champs requis `id` et `isGift`, au moins un élément `isGift: true`), tout en vérifiant qu’aucune action de Repair structurelle n’est enregistrée ; (2) ajouter des tests pour un motif explicitement non-G_valid (par exemple l’array `uniqueItems + contains` des fixtures) qui montrent que l’activation du flag G_valid ne modifie ni les items finaux ni les diagnostics, conformément à la séparation de responsabilités décrite dans la SPEC ; (3) optionnellement, intégrer un test d’acceptance léger dans `test/acceptance/arrays/contains-vs-maxitems.spec.ts` ou un nouveau fichier adjacent, qui utilise les mêmes fixtures pour vérifier que les schémas G_valid restent AJV-valid et déterministes sur plusieurs seeds ; (4) garder les snapshots “golden” raisonnables (structure/assertions ciblées plutôt que dumps complets) afin de limiter la fragilité des tests et s’assurer que toute évolution future est intentionnelle. L’ensemble des tests devra rester déterministe pour un tuple (schéma, options, seed) donné et respecter strictement la séparation G_valid / non-G_valid.
+Pour la sous-tâche 9403.9403001, je vais câbler les hints G_valid déjà disponibles (index `canonPath -> GValidInfo` fourni par le pipeline) dans les chemins de génération d’objets, de manière purement structurelle et sans changer le comportement actuel (spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#generator). Concrètement : (1) réutiliser l’index G_valid déjà injecté dans `GeneratorEngine` pour exposer un helper interne dédié aux objets (par canonPath), similaire à ce qui a été fait pour les arrays, afin que les branches de génération d’objets puissent interroger le motif courant ; (2) raccorder ce helper aux points de décision existants pour les objets (là où la génération inspecte `properties`, `required` et les types) en lisant l’info G_valid mais sans encore conditionner la stratégie de génération (aucun changement de RNG ni de structure) ; (3) vérifier que lorsque le flag `planOptions.gValid` est à `false`, l’index reste absent et le helper n’a aucun effet, garantissant que la génération pour les objets non-G_valid ou en mode legacy reste strictement inchangée ; (4) s’assurer que l’ensemble de la suite (build/typecheck/lint/test/bench) reste verte pour démontrer que ce câblage est neutre sur le comportement observable. L’objectif est de préparer le terrain pour 9403.9403002 (construction minimal-but-valid) en fournissant un accès déterministe aux motifs G_valid côté objets.
 
 DoD:
- - [x] Des tests pipeline (ou d’acceptance) exploitent les fixtures G_valid pour démontrer que les arrays items+contains génèrent des éléments déjà valides (pas de Repair structurelle) en mode G_valid.
- - [x] Des tests symétriques pour des arrays non-G_valid montrent que l’activation du flag G_valid ne change pas les items finaux ni les diagnostics, à seed fixé.
- - [x] Les tests restent déterministes pour un tuple (schéma, options, seed) donné et ne fragilisent pas la suite via des snapshots trop verbeux.
- - [x] build/typecheck/lint/test/bench OK.
+ - [x] Les chemins de génération d’objets peuvent interroger le motif G_valid via un helper interne sans modifier la génération actuelle (RNG, structure).
+ - [x] Le flag `planOptions.gValid` contrôle entièrement l’activation du plumbing (aucune différence observable lorsque le flag est à `false`).
+ - [x] La suite build/typecheck/lint/test/bench reste verte, démontrant l’absence de régression fonctionnelle.
+ - [x] Aucun nouveau diagnostic n’est introduit dans cette sous-tâche (plumbing uniquement).
 
-Parent bullets couverts: [KR2, KR3, KR4, DEL3, DOD1, DOD2, DOD3, TS1, TS2, TS4]
+Parent bullets couverts: [KR1, KR4, DEL1, DOD1, TS1]
 
 Checks:
 - build: npm run build

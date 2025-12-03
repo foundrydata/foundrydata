@@ -288,6 +288,13 @@ class GeneratorEngine {
     return this.gValidIndex.get(canonPath);
   }
 
+  private getGValidInfoForObject(
+    canonPath: JsonPointer
+  ): ReturnType<GValidClassificationIndex['get']> | undefined {
+    if (!this.gValidIndex) return undefined;
+    return this.gValidIndex.get(canonPath);
+  }
+
   private recordEnsurePropertyPresenceHintApplication(
     canonPath: JsonPointer,
     propertyName: string
@@ -627,6 +634,9 @@ class GeneratorEngine {
     canonPath: JsonPointer,
     itemIndex: number
   ): Record<string, unknown> {
+    const _gValidInfo = this.getGValidInfoForObject(canonPath);
+    void _gValidInfo;
+
     const coverage = this.coverageIndex.get(canonPath);
     const result: Record<string, unknown> = {};
     const usedNames = new Set<string>();
