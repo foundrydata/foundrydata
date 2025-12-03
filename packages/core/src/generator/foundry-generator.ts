@@ -264,6 +264,8 @@ class GeneratorEngine {
       }
     | undefined;
 
+  private readonly gValidIndex?: GValidClassificationIndex;
+
   private recordUnsatisfiedHint(hint: UnsatisfiedHint): void {
     if (
       !this.coverage ||
@@ -277,6 +279,13 @@ class GeneratorEngine {
     } catch {
       // Unsatisfied hint reporting must not affect generation behavior.
     }
+  }
+
+  private getGValidInfoForArray(
+    canonPath: JsonPointer
+  ): ReturnType<GValidClassificationIndex['get']> | undefined {
+    if (!this.gValidIndex) return undefined;
+    return this.gValidIndex.get(canonPath);
   }
 
   private recordEnsurePropertyPresenceHintApplication(
@@ -420,6 +429,7 @@ class GeneratorEngine {
         seed: this.baseSeed,
       });
     }
+    this.gValidIndex = options.gValidIndex;
     this.rootSchema = effective.canonical.schema;
     this.ptrMap = effective.canonical.ptrMap;
     this.sourceSchema = options.sourceSchema;
@@ -1920,6 +1930,9 @@ class GeneratorEngine {
     canonPath: JsonPointer,
     itemIndex: number
   ): unknown[] {
+    const _gValidInfo = this.getGValidInfoForArray(canonPath);
+    void _gValidInfo;
+
     const result: unknown[] = [];
     const prefixItems = Array.isArray(schema.prefixItems)
       ? (schema.prefixItems as unknown[])

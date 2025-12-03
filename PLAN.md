@@ -1,22 +1,22 @@
-Task: 9401   Title: Add tests for motif classification — subtask 9401.9401004
-Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§8#compose, spec://§9#generator]
+Task: 9402   Title: Plumb G_valid hints into array generation paths — subtask 9402.9402001
+Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#generator, spec://§10#repair-engine]
 Touched files:
 - PLAN.md
-- .taskmaster/docs/9401-traceability.md
+- .taskmaster/docs/9402-traceability.md
 - .taskmaster/tasks/tasks.json
-- packages/core/src/transform/g-valid-classifier.ts
-- packages/core/src/transform/__tests__/g-valid-classifier.spec.ts
+- packages/core/src/generator/foundry-generator.ts
+- packages/core/src/pipeline/orchestrator.ts
 
 Approach:
-Pour la sous-tâche 9401.9401004, je vais renforcer les tests autour de `classifyGValid` afin de couvrir plus complètement les motifs G_valid v1 et les cas d’exclusion décrits dans la SPEC (spec://§6#phases, spec://§6#generator-repair-contract, spec://§8#compose, spec://§9#generator), sans modifier le comportement du classifieur au-delà de ce qui est déjà implémenté. Concrètement : (1) ajouter des cas AP:false combinés avec `patternProperties`/`propertyNames` en injectant un `CoverageIndex` synthétique pour vérifier que ces objets restent non-G_valid et sont marqués avec le motif attendu (actuellement `ApFalseMustCover`), ce qui renforce la couverture des exclusions AP:false/CoverageIndex ; (2) ajouter des cas d’arrays avec sacs de `contains` plus complexes (plusieurs `contains` via `allOf`, présence de `unevaluatedItems`/`uniqueItems`) pour vérifier que le classifieur n’upgrade jamais ces formes en `ArrayItemsContainsSimple` et les garde hors de la zone G_valid ; (3) ajouter des cas avec `unevaluatedProperties`/`unevaluatedItems` à différents niveaux (racine, branches `allOf`) afin de garantir que le flag de garde est bien propagé et bloque la classification G_valid là où des guards unevaluated* s’appliquent ; (4) enfin, ajouter un test de stabilité/déterminisme qui exécute `classifyGValid` sur des variantes de schémas canoniques équivalents (par exemple en permutant l’ordre de branches `allOf`) et qui vérifie au minimum que la classification au niveau racine (`#/`) reste identique et que la fonction est pure pour des entrées fixées. Je resterai strictement REFONLY vis-à-vis de la SPEC, en n’introduisant pas de nouveaux motifs ni de diagnostics dans cette sous-tâche.
+Pour la sous-tâche 9402.9402001, je vais injecter les informations de motifs G_valid déjà calculées (index `canonPath -> GValidInfo` fourni par le pipeline) dans les chemins de génération d’arrays du générateur, de façon purement “plumbing” et derrière le flag existant `planOptions.gValid`, sans modifier encore la logique de construction des items/contains. Concrètement : (1) étendre la signature et/ou le contexte interne de `GeneratorEngine` dans `foundry-generator.ts` pour accepter l’index G_valid transmis par l’orchestrateur et l’exposer via un helper interne dédié aux chemins array (par exemple une méthode privée qui renvoie les métadonnées G_valid pour un `canonPath` donné) ; (2) faire remonter l’index jusqu’aux points de décision structurants pour les arrays (chemins où sont déjà gérés `containsBag`, `minItems`, `uniqueItems`, etc.), sans conditionner encore les décisions sur ces motifs mais en préparant le terrain pour la sous-tâche suivante qui sélectionnera la stratégie G_valid vs legacy ; (3) s’assurer que ce passage d’index ne change rien lorsque `planOptions.gValid` est false (aucun accès à l’index, aucun coût supplémentaire significatif) et que les seeds et sorties restent strictement déterministes pour des tuples d’options donnés ; (4) ajouter ou ajuster des tests ciblés (par exemple dans les tests du pipeline ou du générateur) pour vérifier que le plumbing n’affecte pas les sorties existantes et que l’index G_valid est bien disponible aux emplacements attendus lorsque le flag est activé. Je resterai strictement dans le scope “plumbing” : pas de changement de comportement métier, pas de nouveaux diagnostics, uniquement la mise à disposition de l’information G_valid aux chemins arrays.
 
 DoD:
-- [x] Les tests couvrent les cas AP:false + CoverageIndex, y compris en présence de patternProperties/propertyNames, et confirment que ces motifs restent non-G_valid.
-- [x] Les tests couvrent des arrays avec sacs de contains et des guards unevaluated* (unevaluatedProperties/unevaluatedItems), en vérifiant que le classifieur reste conservatif (pas de faux positifs G_valid).
-- [x] Un test de stabilité/déterminisme démontre que la classification est déterministe pour un schéma canonique fixé (y compris sous permutations allOf contrôlées).
-- [x] build/typecheck/lint/test/bench OK.
+ - [x] L’index G_valid est accessible depuis les chemins de génération d’arrays (au moins là où les sacs de contains sont gérés), sans modifier la génération existante.
+ - [x] Le flag `planOptions.gValid` contrôle entièrement l’activation du plumbing (aucune différence de sortie ni de diagnostics lorsqu’il est à false).
+ - [x] Les tests de pipeline/générateur restent verts et confirment l’absence de régression observable (comportement inchangé hors inspection interne de l’index).
+ - [x] build/typecheck/lint/test/bench OK.
 
-Parent bullets couverts: [KR1, KR2, KR3, DEL3, DOD2, DOD3, TS1, TS2, TS3, TS4]
+Parent bullets couverts: [KR1, KR2, KR4, DEL1, DOD1, TS4]
 
 Checks:
 - build: npm run build
