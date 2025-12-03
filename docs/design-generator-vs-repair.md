@@ -19,8 +19,11 @@ For a testing/tooling platform, this boundary has a strong impact on:
 - how much work Repair is allowed to perform, and
 - how we design tests, metrics and invariants.
 
-This brief is a **high‑level design document**. A more detailed, normative
-SPEC update can be derived from it once the direction is validated.
+This brief is a **high‑level design document**. The normative version of the
+Generator/Repair contract, including the definition of `G_valid` and associated
+metrics, now lives in the canonical SPEC under §6 (“Generator / Repair contract
+and generator‑valid zone (`G_valid`)”); this document remains an informative
+companion for background and motivation.
 
 ---
 

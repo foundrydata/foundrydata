@@ -278,6 +278,223 @@ Clarification: The build‑time constant `ENUM_CAP` also applies to finite sets 
 * **Repair** — AJV‑driven, budgeted corrections with a `(keyword → action)` registry; idempotent.
 * **Validate** — Final AJV validation against the **original** schema; the pipeline fails on non‑compliance.
 
+<a id="s6-generator-repair-contract"></a>
+### Generator / Repair contract and generator‑valid zone (`G_valid`)
+
+**Status.** This subsection is normative unless explicitly marked as informative.
+
+#### 6.1 Overview
+
+The core pipeline remains `Normalize → Compose → Generate → Repair → Validate` (§6). `Generate` is responsible for producing a deterministic, minimal candidate from the **effective view**; `Repair` is an AJV‑driven, budgeted corrector using a `(keyword → action)` registry (§9–§10). Validation always runs against the **original** schema with the Source AJV (§1, §3, §13).
+
+This section tightens the division of responsibilities between **Generate** and **Repair** for a well‑defined class of schema locations, called the **generator‑valid zone** (`G_valid`):
+
+* inside `G_valid`, structural validity is guaranteed **by construction** (modulo small numeric nudges), and
+* outside `G_valid`, the existing “minimal witness + bounded Repair” regime stays in effect.
+
+#### 6.2 Definitions
+
+**Definition (normative) — structural keywords.**  
+For the purpose of this contract, the set of *structural keywords* is:
+
+```text
+structuralKeywords :=
+  { 'type','enum','const',
+    'required',
+    'minItems','maxItems','minContains','maxContains',
+    'minProperties','maxProperties',
+    'additionalProperties',
+    'unevaluatedProperties','unevaluatedItems'
+  }
+```
+
+**Definition (normative) — pre‑Repair candidate.**
+Given a run of the pipeline on `(schema, PlanOptions, seed)`:
+
+* Let `x_pre` be the JSON instance produced by **Generate**, before any call to **Repair**.
+* Let `V_repair` be the validator used inside Repair (the Source AJV with `allErrors:true`, or an equivalent configuration as allowed by §13).
+* For a canonical schema path `p` and its corresponding instance location, let `Err(p, x_pre)` be the multiset of AJV errors returned by `V_repair(x_pre)` whose `instancePath` lies at `p` or under it.
+
+**Definition (normative) — generator‑valid at a location.**
+A pair `(p, x_pre)` is *generator‑valid* when **no** error in `Err(p, x_pre)` has `keyword ∈ structuralKeywords`.
+
+**Definition (normative) — generator‑valid zone (`G_valid`).**
+For a given schema and PlanOptions, the **generator‑valid zone** `G_valid` is the set of canonical paths `p` such that the implementation **commits** to the following invariant:
+
+> For every successful run on this schema and options, and for every instance produced at this root, the pre‑Repair candidate `x_pre` is generator‑valid at `p`.
+
+Equivalently: for `p ∈ G_valid`, structural validity (with respect to `structuralKeywords`) is guaranteed **by construction** in **Generate**, not delegated to **Repair**.
+
+Implementations **MUST** expose `G_valid` as an internal predicate or classification, and **MAY** include it in diagnostics for debugging or metrics, but it is not required to be part of the public API.
+
+#### 6.3 Baseline `G_valid` v1 classification
+
+This subsection defines a **baseline** class of locations that **MUST** belong to `G_valid` (the *baseline generator‑valid zone v1*). Implementations **MAY** extend `G_valid` to additional locations provided the invariants of §6.4–§6.5 hold for those locations as well.
+
+Let `S_p` be the effective schema at canonical path `p` produced by Compose (§8), after `allOf` merges and bagged `contains` computation.
+
+##### 6.3.1 Objects without hard evaluation guards
+
+A canonical path `p` with effective `type:'object'` **MUST** be included in the baseline `G_valid` v1 when all of the following hold:
+
+1. **No active `unevaluated*` guards.**
+   Neither `unevaluatedProperties` nor `unevaluatedItems` is present
+
+   * at `p` in the canonical view, nor
+   * at any canonical JSON Pointer prefix of `p` that corresponds to an object or array instance location.
+
+2. **No effective `additionalProperties:false` at this object.**
+   In the effective view at `p`, `additionalProperties` is either absent, `true`, or a subschema. The case `additionalProperties:false` (possibly synthesized by propertyNames rewrites or allOf merging) **MUST NOT** be part of the baseline `G_valid` v1.
+
+3. **No AP:false / must‑cover interplay at this instance location.**
+   Coverage‑driven must‑cover constraints under `additionalProperties:false` (e.g. through CoverageIndex) **MUST NOT** apply at `p`. Objects that rely on AP:false must‑cover semantics (even if conservative) are excluded from the baseline `G_valid` v1.
+
+4. **Effective type is a pure object.**
+   The effective `type` at `p` is either exactly `'object'` or a union that, after composition, yields a single object shape (no array/number/string alternatives).
+
+Objects that fail any of the conditions above **MUST NOT** be auto‑classified into the baseline `G_valid` v1. Implementations may still opt‑in such objects into `G_valid` explicitly, but then they must honor the invariants of §6.4–§6.5.
+
+##### 6.3.2 Arrays with simple `items` + `contains`
+
+A canonical path `p` with effective `type:'array'` **MUST** be included in the baseline `G_valid` v1 when all of the following hold:
+
+1. **Simple items.**
+   The effective schema has:
+
+   * either a single `items` subschema, or
+   * a `$ref` to a subschema in the same document,
+     and does not use heterogeneous `prefixItems`.
+
+2. **Simple `contains` bag (0 or 1 need).**
+   Compose’s `containsBag` at `p` is either:
+
+   * absent/empty, or
+   * a bag with exactly **one** need `{ schema, min?, max? }` as exported by §8; multi‑bag `contains` (multiple independent needs) are **excluded** from the baseline `G_valid` v1.
+
+3. **Consistent finite cardinality bounds.**
+   The effective `minItems`, `maxItems`, and (when present) `minContains`/`maxContains` at `p` are finite, mutually consistent with the bag (no obvious `sum(min_i) > maxItems` unsat), and Compose did not emit a `CONTAINS_UNSAT_BY_SUM` diagnostic for this location.
+
+4. **No `uniqueItems:true` edge‑cases.**
+   The effective schema at `p` does **not** include `uniqueItems:true`. Arrays that rely on structural hashing and re‑satisfaction of `contains` after de‑duplication are excluded from the baseline `G_valid` v1.
+
+5. **No `unevaluatedItems:false` on the array path or ancestors.**
+   Neither `unevaluatedItems:false` nor `unevaluatedProperties:false` is present at `p` or any ancestor array/object instance location in the canonical view.
+
+As with objects, arrays that fail any of these conditions **MUST NOT** be auto‑classified into the baseline `G_valid` v1, but implementations **MAY** explicitly extend `G_valid` to them if they honor the invariants below.
+
+#### 6.4 Generator obligations inside `G_valid`
+
+For every canonical path `p ∈ G_valid` and every successful run of the pipeline on a given schema and options:
+
+1. **Structural AJV validity by construction (MUST).**
+   The pre‑Repair candidate `x_pre` **MUST** be generator‑valid at `p`, i.e.:
+
+   > For all errors `e ∈ Err(p, x_pre)`, `e.keyword ∉ structuralKeywords`.
+
+   In particular, **Generate** MUST ensure that there are **no** pre‑Repair AJV errors at `p` or below due to:
+
+   * missing `required` properties on objects,
+   * object or array cardinality (`minItems`, `maxItems`, `minContains`, `maxContains`, `minProperties`, `maxProperties`),
+   * violations of `additionalProperties` / `unevaluatedProperties` / `unevaluatedItems` at locations that were admitted into `G_valid`,
+   * violations of `type`, `enum`, or `const` on the chosen branch of `S_p`.
+
+2. **Required keys are a generator obligation (MUST).**
+   When `S_p` is an object schema:
+
+   * Generate **MUST** treat the effective `required` set and `minProperties` at `p` as its own obligations, not as something to be fixed by Repair.
+   * Missing required properties **MUST NOT** be left to the `required` repair action in the nominal case.
+
+3. **`items` + `contains` conjunction for arrays (MUST).**
+   When `S_p` is an array schema in the baseline `G_valid` v1 (§6.3.2):
+
+   * Generate **MUST** satisfy the bagged `contains` need(s) **and** the `items` schema simultaneously for each targeted index.
+   * For each element chosen to satisfy the `contains` clause, the value **MUST** validate against the **intersection** of:
+
+     * the effective `items` schema at that index (or shared `items` subschema), and
+     * the `contains` subschema selected from the bag.
+
+   It is **not** permitted, in `G_valid`, to generate an array element that satisfies only the `contains` subschema and relies on Repair to add required properties mandated by `items` (for example: `{ isGift:true }` without the required `id` field when `items` enforces `id` and `contains` enforces `isGift:true`).
+
+4. **Determinism preserved (MUST).**
+   Strengthening generator obligations within `G_valid` **MUST NOT** break the existing determinism guarantees for Generate (§3, §9): for a fixed `(schema, PlanOptionsSubKey, AJV.major, AJV.flags, seed)`, the same instances and diagnostics are produced.
+
+5. **Repair budgets unchanged (MUST NOT relax).**
+   `G_valid` does not permit expanding Repair budgets. Implementations **MUST NOT** rely on additional gen→repair→validate cycles (§10) to make `G_valid` locations converge; the existing `complexity.bailOnUnsatAfter` and per‑path budgets remain the upper bounds.
+
+#### 6.5 Repair obligations and limits inside `G_valid`
+
+The Repair Engine mapping (§10) remains available at all locations, but within `G_valid` its role is deliberately constrained.
+
+1. **Structural repairs in `G_valid` SHOULD NOT occur.**
+   For `p ∈ G_valid`, Repair **SHOULD NOT**, in the nominal case, emit any action whose:
+
+   * `keyword ∈ structuralKeywords`, and
+   * `canonPath` is equal to `p` or lies strictly under `p`.
+
+   When such an action nevertheless occurs (e.g. due to an unsatisfiable schema, a bug, or a configuration mismatch), implementations **MUST** record it in metrics as described in §6.6.
+
+2. **Permitted low‑impact repairs (MAY).**
+   Within `G_valid`, Repair **MAY** still apply “last‑mile” fixes for non‑structural keywords, including but not limited to:
+
+   * numeric bounds: `minimum`, `maximum`, `exclusiveMinimum`, `exclusiveMaximum`, `multipleOf`,
+   * string length and shape: `minLength`, `maxLength`, `pattern`,
+   * array uniqueness: `uniqueItems`.
+
+   These corrections remain subject to the existing logging rules in §10 (e.g. epsilon logging for numeric nudges) and budget semantics.
+
+3. **Evaluation guards remain in force (MUST).**
+   When a location is excluded from `G_valid` because of `unevaluatedProperties:false` / `unevaluatedItems:false`, the existing evaluation guards on additions and renames (§9/§10) **continue to apply** unchanged. The introduction of `G_valid` **MUST NOT** weaken these guards.
+
+4. **No hidden generation via Repair (MUST NOT).**
+   For `p ∈ G_valid`, Repair **MUST NOT** be used as a “second generator” to synthesize whole sub‑objects or arrays that could have been generated directly by **Generate** under the effective schema. Any such behavior is a violation of this contract, even if AJV acceptance is preserved.
+
+#### 6.6 Metrics and observability for the Generator / Repair contract
+
+To make the `G_valid` contract testable and to detect regressions, implementations **MUST** expose metrics about Repair activity within `G_valid` when metrics collection is enabled.
+
+1. **Per‑motif counters (MUST).**
+   When `PlanOptions.metrics` (or the equivalent CLI flag) enables metrics, the pipeline **MUST** populate numeric counters under `diag.metrics` for at least the following **baseline motif**:
+
+   *Motif `array-contains-simple`* — arrays that:
+
+   * are in the baseline `G_valid` v1 per §6.3.2, and
+   * actually appear in generated instances for the run.
+
+   The following counters **MUST** be defined:
+
+   ```text
+   diag.metrics.gValid_arrayContainsSimple_items
+     = total number of array elements generated under motif `array-contains-simple`
+       across all instances of the run.
+
+   diag.metrics.gValid_arrayContainsSimple_itemsWithRepair
+     = number of those elements for which Repair emitted at least one action whose
+       canonPath lies at or under the element location.
+
+   diag.metrics.gValid_arrayContainsSimple_actions
+     = total number of Repair actions whose canonPath lies at or under an element
+       location in motif `array-contains-simple`.
+   ```
+
+   Additional motifs **MAY** be added following the same naming pattern (e.g. `gValid_simpleObjectRequired_*`), but the three counters above are required.
+
+2. **“No‑repair zone” invariants for tests (SHOULD).**
+   The reference implementation and CI harness for this repository **SHOULD** include micro‑schemas explicitly tagged as `G_valid` and assert that, for those schemas:
+
+   * pipeline status is `completed`, and
+   * `diag.metrics.gValid_*_itemsWithRepair` is `0` (or within a documented, small exception set for purely numeric nudges).
+
+   These invariants are part of the repository’s quality gates (§15, §20) but do not affect functional conformance of other implementations.
+
+3. **Regression detection (SHOULD).**
+   For critical motifs (e.g. the `order.items.contains` + `$defs.uuid` pattern motivating this contract), the reference harness **SHOULD** fail CI when a change increases `gValid_*_itemsWithRepair` or introduces structural repairs (`keyword ∈ structuralKeywords`) under `G_valid` locations.
+
+#### 6.7 Interaction with other sections (informative)
+
+* This section does **not** change the AJV oracle model (§1, §3, §13) nor the mapping of AJV errors to Repair actions (§10). It only constrains where those actions are expected to be used.
+* `G_valid` is defined in terms of the **effective view** produced by Compose (§8); early‑UNSAT diagnostics and `CONTAINS_UNSAT_BY_SUM` continue to act as the source of truth for “no valid instance exists” at a location.
+* Outside `G_valid`, the existing “Generate minimal witness, then bounded Repair” behavior remains the reference: Generate may emit minimal instances that require structural repair, and convergence is guarded only by budgets and stagnation detection (§10).
+
 <a id="s6-mini-example-apfalse"></a>
 **Mini example (illustrative — AP\:false + conditionals).**
 
@@ -1338,6 +1555,8 @@ Implementations SHOULD populate `details` with small, code‑specific objects:
 
 * **`enum/const` outrank `type`** when both present.
 
+**Generator‑valid zone (normative).** Within the generator‑valid zone `G_valid` (§6.2–§6.4), Generate **MUST** satisfy structural keywords by construction and **MUST** treat the effective `required` set and `minProperties` at those locations as its own obligations, not as work delegated to Repair.
+
 <a id="s9-strings-and-formats"></a>
 * **Strings** — String length is the number of **Unicode code points**; surrogate pairs count as a single character. Grapheme clusters may span multiple code points. Regular expressions are executed with the JavaScript `u` flag (`unicodeRegExp:true`).
   **Normative note.** This definition aligns with Ajv v8 string‑length validation when `unicodeRegExp:true` is enabled per §13.
@@ -1512,6 +1731,8 @@ Implementations SHOULD populate `details` with small, code‑specific objects:
 
 <a id="s10-mapping"></a>
 ### Mapping (keyword → action)
+
+**Generator‑valid zone guard (normative).** Repair **SHOULD NOT** apply actions for structural keywords (§6.2) inside `G_valid` except in exceptional or unsatisfiable cases, and **MUST** surface any such actions via `diag.metrics.gValid_*` counters as described in §6.6.
 
 * `required` → add missing props via `default` if present; else minimal generation for sub‑schema.
 * `type` → regenerate field for target type; for unions, use BranchSelector.

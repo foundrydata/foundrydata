@@ -28,6 +28,7 @@ This note captures the cross-phase guarantees implemented inside `packages/core`
 - `if-aware-lite` honors discriminants and minimum satisfaction levels exactly as resolved plan options dictate. When insufficient information exists, the generator records `IF_AWARE_HINT_SKIPPED_INSUFFICIENT_INFO`.
 - Bag semantics from Compose are enforced item-by-item: each `contains` need contributes independent sampling goals, and failures in generation escalate to `CONTAINS_UNSAT_BY_SUM` when minima/maxima cannot be satisfied; `CONTAINS_BAG_COMBINED` remains the Compose-time signal describing the trimmed bag size.
 - Structural hashing (`util/struct-hash.ts`) supplies stable digests for enforcing `uniqueItems` and for repair-side comparisons; it is not used to gate or limit the number of tweak attempts.
+- For schema locations classified as `G_valid` by the canonical SPEC (§6), the generator is responsible for structural AJV validity by construction: required keys and cardinality constraints are satisfied in Generate, and any structural repairs observed under `G_valid` are treated as regressions and surfaced via `diag.metrics.gValid_*` counters.
 
 ## Repair + Validate invariants
 

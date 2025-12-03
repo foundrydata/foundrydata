@@ -113,6 +113,12 @@ are valuable for operating FoundryData as a platform. Examples:
   - average `repairActionsPerRow` per motif (e.g. “array+contains”,
     “AP:false object”, “simple object with required”),
   - counts of instances where Repair was skipped entirely vs applied.
+  - **G_valid contract metrics**:
+    - baseline motif `array-contains-simple`, with:
+      - `diag.metrics.gValid_arrayContainsSimple_items`,
+      - `diag.metrics.gValid_arrayContainsSimple_itemsWithRepair`,
+      - `diag.metrics.gValid_arrayContainsSimple_actions`,
+    - additional `gValid_*` motifs MAY be added (e.g. simple objects with `required`) but MUST follow the same “items / itemsWithRepair / actions” pattern and remain derived from the canonical SPEC (`G_valid` classification in §6).
 
 - **Guided behaviour**
   - distribution of instances per operation/scope in guided runs,
@@ -216,4 +222,3 @@ Suggested next steps:
    regressions become visible.
 4. Iterate based on real usage, adjusting which metrics are collected by
    default and which are only enabled in dedicated profiles or debug modes.
-
