@@ -1746,24 +1746,24 @@
             "id": 9405003,
             "title": "Aggregate and expose repair usage metrics in pipeline orchestrator",
             "description": "Wire repair usage metrics into the pipeline orchestrator so they are aggregated per run and exposed with existing timing/validation metrics, consistent with spec §15/§20.",
-            "status": "in-progress",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/pipeline/orchestrator.ts",
             "parentId": "9405",
-            "updatedAt": "2025-12-03T22:49:08.753Z"
+            "updatedAt": "2025-12-03T22:58:21.539Z"
           },
           {
             "id": 9405004,
             "title": "Add G_valid no-repair e2e tests and traceability entries",
             "description": "Create end-to-end tests and update tests-traceability documentation for G_valid micro-schemas asserting that structural Repair is unused, per spec §6.6–§6.7.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 4,
             "file": "packages/core/test/e2e/g-valid-no-repair.spec.ts",
             "parentId": "9405",
-            "updatedAt": "2025-12-02T23:00:00.000Z"
+            "updatedAt": "2025-12-03T23:00:03.124Z"
           }
         ],
-        "updatedAt": "2025-12-03T22:49:08.753Z"
+        "updatedAt": "2025-12-03T23:00:03.124Z"
       },
       {
         "id": "9406",
@@ -1820,7 +1820,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-03T22:49:08.754Z",
+      "lastModified": "2025-12-03T23:00:03.126Z",
       "taskCount": 7,
       "completedCount": 5,
       "tags": [

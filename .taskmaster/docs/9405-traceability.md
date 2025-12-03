@@ -42,4 +42,4 @@ This document maps the parent task 9405 bullets from Implementation Details, Del
   Covers: [KR2, KR3, DEL3, DOD2, TS2, TS3] (status: done).
 
 - **9405.9405004 – Add G_valid no-repair e2e tests and traceability entries**  
-  Covers: [KR4, DEL4, DOD3, TS2, TS3] (status: pending).
+  Covers: [KR4, DEL4, DOD3, TS2, TS3] (status: in-progress).
