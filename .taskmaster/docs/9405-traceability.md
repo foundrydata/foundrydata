@@ -36,7 +36,7 @@ This document maps the parent task 9405 bullets from Implementation Details, Del
   Covers: [KR1, DEL1, DOD1, TS1] (status: done).
 
 - **9405.9405002 – Instrument Repair to emit motif-tagged usage events**  
-  Covers: [KR1, KR2, DEL2, DOD1, DOD2, TS1, TS2] (status: in-progress).
+  Covers: [KR1, KR2, DEL2, DOD1, DOD2, TS1, TS2] (status: done).
 
 - **9405.9405003 – Aggregate and expose repair usage metrics in pipeline orchestrator**  
   Covers: [KR2, KR3, DEL3, DOD2, TS2, TS3] (status: pending).
