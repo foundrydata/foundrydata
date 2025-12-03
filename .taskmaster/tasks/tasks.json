@@ -1788,21 +1788,21 @@
             "id": 9406001,
             "title": "Add G_valid-related options to PlanOptions and core API",
             "description": "Extend PlanOptions and core API types with fields controlling G_valid classification/enforcement and map them into pipeline context, consistent with spec §6.7.",
-            "status": "in-progress",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/api.ts",
             "parentId": "9406",
-            "updatedAt": "2025-12-03T23:10:12.972Z"
+            "updatedAt": "2025-12-03T23:16:55.432Z"
           },
           {
             "id": 9406002,
             "title": "Wire G_valid options through CLI flags and profiles",
             "description": "Map new G_valid options into CLI flags and profiles, defining which profiles enable G_valid by default and how to turn it off for compatibility.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 4,
             "file": "packages/cli/src/commands/generate.ts",
             "parentId": "9406",
-            "updatedAt": "2025-12-02T23:00:00.000Z"
+            "updatedAt": "2025-12-03T23:28:21.648Z"
           },
           {
             "id": 9406003,
@@ -1815,12 +1815,12 @@
             "updatedAt": "2025-12-02T23:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-03T23:10:12.972Z"
+        "updatedAt": "2025-12-03T23:28:21.648Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-03T23:10:12.974Z",
+      "lastModified": "2025-12-03T23:28:21.650Z",
       "taskCount": 7,
       "completedCount": 6,
       "tags": [

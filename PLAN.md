@@ -1,27 +1,27 @@
-Task: 9406   Title: Add G_valid-related options to PlanOptions and core API — subtask 9406.9406001
-Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§10#repair-engine, spec://§15#metrics-model]
+Task: 9406   Title: Wire G_valid options through CLI flags and profiles — subtask 9406.9406002
+Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§10#repair-engine]
 Touched files:
 - PLAN.md
 - .taskmaster/docs/9406-traceability.md
 - .taskmaster/tasks/tasks.json
--,packages/core/src/types/options.ts
-- packages/core/src/pipeline/types.ts
-- packages/core/src/pipeline/orchestrator.ts
-- packages/core/src/index.ts
+- packages/cli/src/index.ts
+- packages/cli/src/profiles.ts
+- docs/COMPREHENSIVE_FEATURE_SUPPORT.md
 
 Approach:
-Pour la sous-tâche 9406.9406001, je vais étendre `PlanOptions` et les types de l’API core pour exposer explicitement les options G_valid et le contrôle de la sévérité du Repair en zone G_valid, puis les injecter dans le contexte du pipeline de manière rétrocompatible (spec://§6#phases, spec://§6#generator-repair-contract, spec://§10#repair-engine, spec://§15#metrics-model). Concrètement : (1) compléter `PlanOptions` dans `packages/core/src/types/options.ts` avec des champs G_valid clairement typés (activation de la classification, strictness du Repair en zone G_valid) et s’assurer que `resolveOptions` fournit des valeurs par défaut qui reproduisent le comportement actuel quand G_valid est désactivé ; (2) propager ces options dans les types de pipeline (`PipelineOptions`, éventuels wrappers CLI) et dans l’orchestrateur (`executePipeline`) pour que les instances de `MetricsCollector`, du moteur de Repair et du générateur puissent les consommer sans changement de signature invasif ; (3) mettre à jour l’API publique dans `packages/core/src/index.ts` pour documenter ces options G_valid côté Node API, en gardant l’API existante intacte (options optionnelles, champs additionnels seulement) ; (4) ajouter des tests unitaires ciblés (par exemple dans les tests de `options` et, si nécessaire, un test d’orchestrateur minimal) pour vérifier la résolution des defaults, le passage des flags et l’absence de régression sur les scénarios sans G_valid, avant de valider la suite build/typecheck/lint/test/bench.
+Pour la sous-tâche 9406.9406002, je vais relier les options G_valid définies au niveau `PlanOptions` à la CLI et aux profils prédéfinis, de manière à rendre l’activation/désactivation de G_valid et la sévérité du Repair en zone G_valid contrôlables depuis la ligne de commande sans casser les usages existants (spec://§6#phases, spec://§6#generator-repair-contract, spec://§10#repair-engine). Concrètement : (1) étendre le parsing des options dans `packages/cli/src/index.ts` pour accepter des flags explicites (par exemple `--gvalid` / `--no-gvalid`, voire un flag dédié à la relaxation `allowStructuralInGValid`), en les mappant vers `PlanOptions` en s’appuyant sur `resolveOptions` et en conservant les defaults actuels quand aucun flag n’est fourni ; (2) mettre à jour la définition des profils dans `packages/cli/src/profiles.ts` afin que certains profils avancés puissent activer G_valid par défaut (tout en laissant un profil de compatibilité où G_valid reste désactivé), en documentant clairement les choix de profils ; (3) ajouter des tests d’intégration CLI ciblés qui vérifient que les flags et profils produisent bien les `PlanOptions` attendues (G_valid on/off, Repair strict en zone G_valid) sans perturber les cas existants ; (4) ajuster `docs/COMPREHENSIVE_FEATURE_SUPPORT.md` pour que la matrice de features/flags mentionne ces options G_valid et indique comment les activer/désactiver, puis relancer build/typecheck/lint/test/bench pour garantir l’absence de régression.
 
 DoD:
-- [ ] `PlanOptions` expose des champs G_valid et Repair strictness avec des valeurs par défaut rétrocompatibles et une résolution claire via `resolveOptions`.
-- [ ] Les types de pipeline et l’orchestrateur reçoivent et transmettent ces options G_valid sans casser les signatures existantes ni les comportements quand G_valid est désactivé.
-- [ ] L’API publique Node (index core) documente et exporte ces options G_valid, et des tests unitaires vérifient la bonne résolution et le passage des flags.
-- [ ] La suite build/typecheck/lint/test/bench reste verte après l’ajout de ces options et tests, confirmant que la configuration G_valid est opérationnelle sans régression.
+- [ ] Les flags CLI G_valid (et, le cas échéant, les options de sévérité du Repair en zone G_valid) sont parsés et mappés sur `PlanOptions` de façon explicite, avec des defaults qui préservent le comportement actuel lorsqu’ils ne sont pas fournis.
+- [ ] Les profils CLI sont mis à jour pour refléter des modes d’usage clairs (profil compatibilité sans G_valid, profils avancés avec G_valid activé), et des tests vérifient que les profils produisent les combinaisons d’options attendues.
+- [ ] La documentation de support de features (COMPREHENSIVE_FEATURE_SUPPORT/docs) mentionne ces flags/profils G_valid et explique comment lire leur effet sur le contrat Generator/Repair.
+- [ ] La suite build/typecheck/lint/test/bench reste verte après le câblage CLI/profils, confirmant que les nouveaux flags n’introduisent pas de régression.
 
-Parent bullets couverts: [KR1, DEL1, DOD1, TS1]
+Parent bullets couverts: [KR2, DEL2, DOD2, TS2]
 
 Checks:
 - build: npm run build
 - test: npm run test
 - bench: npm run bench
 - diag-schema: true
+

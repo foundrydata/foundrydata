@@ -1732,7 +1732,7 @@ Implementations SHOULD populate `details` with small, code‑specific objects:
 <a id="s10-mapping"></a>
 ### Mapping (keyword → action)
 
-**Generator‑valid zone guard (normative).** Repair **SHOULD NOT** apply actions for structural keywords (§6.2) inside `G_valid` except in exceptional or unsatisfiable cases, and **MUST** surface any such actions via `diag.metrics.gValid_*` counters as described in §6.6.
+**Generator‑valid zone guard (normative).** Repair **SHOULD NOT** apply actions for structural keywords (§6.2) inside `G_valid` (default policy: disabled; §10.P3) except in exceptional or unsatisfiable cases, and **MUST** surface any such actions via `diag.metrics.gValid_*` counters as described in §6.6.
 
 * `required` → add missing props via `default` if present; else minimal generation for sub‑schema.
 * `type` → regenerate field for target type; for unions, use BranchSelector.
@@ -1814,7 +1814,225 @@ Run the evaluation guard before finalizing the action for the object (and before
        do **not** rename; delete if safe (not `required` / not referenced by `dependent*`);
        otherwise leave for AJV to report; log `{ from:k, reason:'deletedNoSafeName', mustCover:true }`.
   3) If AP:false applies and `repair.mustCoverGuard !== false` but `ctx.isNameInMustCover` is **absent**:
-     **MUST NOT** rename; log `MUSTCOVER_INDEX_MISSING{ guard:true }`.
+      **MUST NOT** rename; log `MUSTCOVER_INDEX_MISSING{ guard:true }`.
+
+<a id="s10-repair-philosophy"></a>
+### Repair philosophy (What we allow Repair to fix)
+
+**Status.** Normative.
+
+This section constrains *when and how* the Repair Engine (§10) is allowed to mutate instances, without changing:
+(a) the AJV-oracle model (§13), or
+(b) the normative (keyword → action) mapping (§10 “Mapping”).
+
+Repair is not a second generator. It is a deterministic, AJV-driven corrector whose primary goal is to
+apply the *smallest set of mutations* needed to make measurable validation progress under bounded budgets.
+
+---
+
+<a id="s10-repair-philosophy-determinism"></a>
+#### 10.P1 Determinism tuple (normative)
+
+For a fixed input instance `x`, Repair MUST be deterministic for the determinism tuple defined by §14/§15:
+
+`(seed, PlanOptionsSubKey, AJV.major, AJV.flags, registryFingerprint)`
+
+Concretely, for that fixed tuple and fixed `x`, Repair MUST produce the same:
+- output instance,
+- action log (`actions[]`),
+- and diagnostics emitted during Repair.
+
+Repair decisions MUST NOT depend on any run-time coverage state (see §10.P4).
+
+---
+
+<a id="s10-repair-philosophy-tiers"></a>
+#### 10.P2 Action tiers (normative)
+
+Every Repair action MUST be classifiable into exactly one tier:
+
+- **Tier 0 — Non-mutating.**
+  Operations that never change the instance (e.g. per-pass AJV validation, `isEvaluated` checks,
+  rename preflight simulation). Tier-0 operations MAY emit diagnostics but MUST NOT emit `actions[]`.
+
+- **Tier 1 — Local adjustments (local, single-step).**
+  Small, deterministic mutations that preserve the overall shape of the instance and follow a direct
+  mapping from a single keyword violation. Tier-1 actions:
+  - MUST NOT introduce new object keys;
+  - MUST NOT delete object keys;
+  - MUST NOT reorder arrays (except removal of duplicates for `uniqueItems`);
+  - MAY change scalar values (number/string/boolean/null);
+  - MAY grow/shrink arrays only when required by array-size semantics (`minItems`/`maxItems`) or by `uniqueItems` de-duplication.
+    Any appends/removals performed *to satisfy* `contains`/`minContains`/`maxContains` MUST be treated as Tier-2 even if triggered during an array-size pass (§10.P8).
+
+- **Tier 2 — Structural completion (guarded).**
+  Mutations that add/remove/rename structure based on schema semantics, such as:
+  - adding missing `required` properties,
+  - adding/removing elements to satisfy `contains`/`minContains`/`maxContains`,
+  - repairing `type`/`enum`/`const` mismatches by replacing the value at the failing instance location,
+  - adding/removing object properties to satisfy `minProperties`/`maxProperties`,
+  - removing/renaming keys under `additionalProperties:false` and/or `unevaluatedProperties:false`,
+  subject to the existing guards in §10 (must-cover, `isEvaluated`, rename preflight).
+
+- **Tier 3 — Aggressive restructuring (discouraged / non-default).**
+  Multi-step or search-like strategies that significantly reshape instances (e.g. repeated rename cycles,
+  deep conditional-driven restructures, “temporary worsening” strategies, broad subtree rebuilding
+  beyond what a single keyword repair implies).
+
+Tier classification MUST be stable and independent from coverage/planner state.
+
+---
+
+<a id="s10-repair-philosophy-policy"></a>
+#### 10.P3 Default tier policy (normative)
+
+The default product policy (applies unless an explicit non-default Repair profile is introduced) is:
+
+1. **Tier 0 is always allowed.**
+
+2. **Tier 1 is allowed, with a `G_valid` restriction.**
+   - Outside `G_valid`, Tier-1 actions are allowed (subject to §10 budgets and §10 logging rules).
+   - For any canonical path `p ∈ G_valid`, Tier-1 actions whose keyword is in `structuralKeywords` (§6.2) MUST be treated as *disabled by policy*.
+     Rationale: structural correctness in `G_valid` is a Generator obligation (§6.4–§6.6).
+   - Within `G_valid`, the only Tier-1 actions allowed by default are the “low-impact” non-structural repairs enumerated in §6.5.2 (e.g. numeric bounds, string shape, `uniqueItems`).
+
+3. **Tier 2 is allowed only outside `G_valid`, and only when guards permit.**
+   - For any canonical path `p ∈ G_valid`, Tier-2 actions MUST be treated as *disabled by policy* (any use is a contract-regression signal per §6.5–§6.6).
+
+4. **Tier 3 is disabled by default everywhere.**
+   If implementations offer an experimental “healing/aggressive” profile, Tier-3 MAY be enabled there,
+   but MUST still preserve determinism (§10.P1) and MUST still validate against the same AJV oracle (§13).
+
+When an action is disabled by policy (Tier-1/2 in `G_valid` for `structuralKeywords`, or Tier-3 in default policy), Repair MUST:
+- leave the instance unchanged for that action attempt, and
+- emit `REPAIR_TIER_DISABLED` as specified in §10.P7.
+
+---
+
+<a id="s10-repair-philosophy-coverage-independence"></a>
+#### 10.P4 Coverage-independence (normative)
+
+Repair MUST be observationally independent from coverage:
+- Repair MUST NOT consult coverage mode (`off|measure|guided`), target sets, hit/miss state,
+  planner hints, or `dimensionsEnabled` to decide *whether* or *how* to mutate an instance.
+- Repair MAY run in coverage-enabled executions, but coverage MUST be observational with respect to Repair.
+
+This requirement exists to preserve the determinism scope (§14/§15) and the coverage-aware
+non-regression guarantees (see the coverage-aware specification).
+
+---
+
+<a id="s10-repair-philosophy-progress"></a>
+#### 10.P5 Progress metric and commit rule (normative)
+
+Repair MUST evaluate progress using AJV `allErrors:true` on the post-mutation candidate.
+
+Let `Errors(x)` be the AJV error list for instance `x` under the Repair validator.
+
+Define a stable error signature:
+`sig(e) = (e.keyword, canonPath(e), e.instancePath, stableParamsKey(e.params))`
+
+Where:
+- `canonPath(e)` is the canonical schema location for the failing keyword when it can be resolved;
+  otherwise it MUST fall back to `e.schemaPath` (deterministically).
+- `stableParamsKey` is the canonical JSON stringification of `e.params` using the same canonicalization as §10’s
+  “Normative hashing” paragraph (§10 “structural hashing”), but without hashing (sorted object keys; arrays in order;
+  apply `jsonSafeReplacer`; normalize `-0` to `0`; no whitespace).
+
+Define:
+`Score(x) = | { sig(e) : e ∈ Errors(x) } |`  (count of distinct signatures)
+
+**Commit rule (MUST).** A candidate mutation `x → x'` MAY be committed only if it strictly improves the score:
+`Score(x') < Score(x)`.
+
+Otherwise Repair MUST revert the mutation (restore `x`) and MUST NOT count it as `changed:true`.
+Implementations SHOULD emit `REPAIR_REVERTED_NO_PROGRESS` to make such reversions observable (§10.P7).
+
+**Consequence (normative).** Under the default policy, Repair MUST NOT perform multi-step strategies that
+require temporary non-improvement (e.g. “worsen then fix later”). Such strategies belong, if at all,
+to explicit non-default Tier-3 profiles.
+
+---
+
+<a id="s10-repair-philosophy-termination"></a>
+#### 10.P6 Termination, budgets, and stagnation (normative)
+
+Repair remains budgeted per §10 (per-node attempt counter and seen-set, plus per-path budgets where applicable)
+and pipeline cycle caps via `complexity.bailOnUnsatAfter`.
+
+Within a single Repair invocation, Repair MUST terminate when:
+- the instance is valid (`Score(x)=0`), OR
+- no enabled action yields a commit-per-§10.P5 improvement, OR
+- the applicable per-action / per-path budgets are exhausted.
+
+Across gen→repair→validate cycles (pipeline-level), if over `complexity.bailOnUnsatAfter` cycles
+the post-Repair `Score(x)` does not strictly decrease (or oscillates over the same signature set),
+the pipeline MUST emit `UNSAT_BUDGET_EXHAUSTED` with cycle/error context in `details` (see §10 Process and §19.1).
+
+---
+
+<a id="s10-repair-philosophy-observability"></a>
+#### 10.P7 Observability requirements (normative)
+
+Repair MUST make tier/policy effects explainable:
+
+1. **Action logs.**
+   Each committed action already logs `{keyword, canonPath, origPath?, details?}` (§10, §23).
+   Implementations SHOULD include `details.tier` (0|1|2|3) when available; if omitted, the tier MUST still be
+   inferable from (`keyword`, context, and the tier rules in §10.P2/§10.P8).
+
+2. **Policy-block diagnostics (new; normative).**
+   Add the following diagnostic codes (allowed phase: Repair), to distinguish “we chose not to” from
+   “we tried and ran out of attempts”:
+
+   - `REPAIR_TIER_DISABLED`
+     - `details: { keyword: string, requestedTier: 1|2|3, allowedMaxTier: 0|1|2, reason: 'g_valid'|'default_policy' }`
+
+   - `REPAIR_REVERTED_NO_PROGRESS` (SHOULD)
+     - `details: { keyword: string, scoreBefore: number, scoreAfter: number }`
+
+   These codes MUST follow the shared diagnostics envelope (§19), and MUST set `canonPath` to the
+   canonical location of the attempted action.
+
+3. **Aggregated counters (SHOULD; MUST when metrics are enabled in the reference implementation).**
+   When metrics collection is enabled (§15), implementations SHOULD expose deterministic counters by tier, e.g.:
+   - `diag.metrics.repair_tier1_actions`
+   - `diag.metrics.repair_tier2_actions`
+   - `diag.metrics.repair_tier3_actions`
+   - `diag.metrics.repair_tierDisabled`
+
+---
+
+<a id="s10-repair-philosophy-tier-classification"></a>
+#### 10.P8 Tier classification by motif (v1; normative baseline)
+
+The following baseline tier classification MUST hold:
+
+- Tier 1 only:
+  - numeric bounds: `minimum`, `maximum`, `exclusiveMinimum`, `exclusiveMaximum`, `multipleOf`
+  - string shape: `minLength`, `maxLength`, `pattern`
+  - `uniqueItems` de-duplication
+  - array sizing: `minItems`, `maxItems` (**size change only**, including filler generation per §9; see also §10.P2)
+
+- Tier 2 (guarded):
+  - `type`, `enum`, `const` (replace value at failing instance location)
+  - `required` (adding missing required properties)
+  - `contains` / `minContains` / `maxContains` (adding/removing minimal witnesses)
+  - `minProperties` / `maxProperties` (adding/removing properties)
+  - `additionalProperties:false` cleanup
+  - `unevaluatedProperties:false` and `unevaluatedItems:false` cleanup
+  - `propertyNames`-driven rename/delete under AP:false (subject to must-cover + preflight + evaluation guard)
+
+- Tier 3 (disabled by default):
+  - repeated rename-delete cycles beyond the bounded attempts already described in §10,
+  - deep conditional-driven restructures (nested `if/then/else`, deep `oneOf/anyOf`) where
+    satisfying constraints would require multi-step search or temporary non-improvement.
+
+**Default rule (normative).** Any Repair action or motif not listed above MUST be treated as Tier 2 unless it is
+explicitly a Tier-0 operation.
+
+When a Tier-1 action causes follow-up structural needs (e.g. `uniqueItems` removes witnesses and requires
+re-satisfying `contains`/`minContains`), those follow-up actions are Tier-2 and therefore follow Tier-2 policy.
 
 <a id="s10-process-order"></a>
 ### Process
@@ -1822,7 +2040,7 @@ Run the evaluation guard before finalizing the action for the object (and before
 <a id="s10-property-order"></a>
 * **Order** — shape (`type`/`required`) → bounds (`min*`/`max*`) → semantics (`pattern`/`multipleOf`/`format`) → **names (`propertyNames`)** → sweep (`additional*`/`unevaluated*`).
 * **Budgets** — per‑node attempt counter (1–3) + seen‑set `(instancePath, keyword, normalizedParams)` to avoid loops.
-* **Stagnation guard** — If over `complexity.bailOnUnsatAfter` gen→repair→validate **cycles** errors don’t decrease or oscillate on the same keys ⇒ `UNSAT_BUDGET_EXHAUSTED`.
+* **Stagnation guard** — If over `complexity.bailOnUnsatAfter` gen→repair→validate **cycles** the post‑Repair `Score(x)` (defined in §10.P5) does not strictly decrease or oscillates over the same signature set ⇒ `UNSAT_BUDGET_EXHAUSTED`.
 <a id="s10-logging-and-idempotence"></a>
 * **Idempotence** — Repeating the same action is a no‑op.
 * **Logging** — `{ item, changed, actions:[...] }` where each action records `keyword`, `canonPath` and `origPath` (derived via `toOriginalByWalk` and `ptrMap`), plus `details` when applicable.
@@ -2364,6 +2582,8 @@ Compose/coverage vs Generator: `REGEX_COMPLEXITY_CAPPED` and `REGEX_COMPILE_ERRO
 | NAME_AUTOMATON_BEAM_APPLIED         | Generate                |
 | TARGET_ENUM_NEGATIVE_LOOKAHEADS     | Generate                |
 | TARGET_ENUM_ROUNDROBIN_PATTERNPROPS | Generate                |
+| REPAIR_TIER_DISABLED                | Repair                  |
+| REPAIR_REVERTED_NO_PROGRESS         | Repair                  |
 | REPAIR_PNAMES_PATTERN_ENUM          | Repair                  |
 | REPAIR_RENAME_PREFLIGHT_FAIL        | Repair                  |
 | VALIDATION_KEYWORD_FAILED           | Validate                |
@@ -2732,6 +2952,23 @@ These shapes define **minimum required fields**; unless stated otherwise, additi
     "from":{"type":"string"},
     "to":{"type":"string"},
     "reason":{"enum":["branch","dependent"]}
+}}
+
+// REPAIR_TIER_DISABLED  (repair action disabled by tier/policy)
+{ "type":"object", "required":["keyword","requestedTier","allowedMaxTier","reason"],
+  "properties":{
+    "keyword":{"type":"string"},
+    "requestedTier":{"enum":[1,2,3]},
+    "allowedMaxTier":{"enum":[0,1,2]},
+    "reason":{"enum":["g_valid","default_policy"]}
+}}
+
+// REPAIR_REVERTED_NO_PROGRESS  (candidate reverted due to Score non-improvement)
+{ "type":"object", "required":["keyword","scoreBefore","scoreAfter"],
+  "properties":{
+    "keyword":{"type":"string"},
+    "scoreBefore":{"type":"number"},
+    "scoreAfter":{"type":"number"}
 }}
 
 // EXCLUSIVITY_TWEAK_STRING  (oneOf exclusivity string tweak used)
