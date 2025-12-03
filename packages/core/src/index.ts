@@ -126,6 +126,7 @@ export {
   type FailFastOptions,
   type ConditionalsOptions,
   type PatternWitnessOptions,
+  type RepairPlanOptions,
 } from './types/options.js';
 
 // Repair Engine (Task 10)

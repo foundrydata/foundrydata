@@ -60,6 +60,8 @@ describe('PlanOptions', () => {
 
       // Repair defaults
       expect(resolved.repair.mustCoverGuard).toBe(true);
+      expect(resolved.repair.allowStructuralInGValid).toBe(false);
+      expect(resolved.gValid).toBe(false);
     });
 
     it('should merge user options with defaults', () => {
@@ -105,6 +107,18 @@ describe('PlanOptions', () => {
       expect(resolved.rational.decimalPrecision).toBe(12); // default
       expect(resolved.trials.maxBranchesToTry).toBe(12); // default
       expect(resolved.encoding.bigintJSON).toBe('string'); // default
+    });
+
+    it('should respect G_valid and Repair strictness flags when provided', () => {
+      const userOptions: Partial<PlanOptions> = {
+        gValid: true,
+        repair: { allowStructuralInGValid: true },
+      };
+
+      const resolved = resolveOptions(userOptions);
+
+      expect(resolved.gValid).toBe(true);
+      expect(resolved.repair.allowStructuralInGValid).toBe(true);
     });
 
     it('should derive conditionals.strategy from rewriteConditionals', () => {
