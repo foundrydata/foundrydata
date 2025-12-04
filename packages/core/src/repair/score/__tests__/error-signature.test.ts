@@ -16,16 +16,16 @@ function makeError(partial: Partial<AjvErrorObject>): AjvErrorObject {
 
 describe('canonPathFromError', () => {
   it('returns schemaPath when no mapping is provided', () => {
-    const err = makeError({ schemaPath: '#/properties/foo/type' });
+    const err = makeError({ schemaPath: '/properties/foo/type' });
     const canon = canonPathFromError(err);
-    expect(canon).toBe('#/properties/foo/type');
+    expect(canon).toBe('/properties/foo/type');
   });
 
   it('uses PtrMapping.revPtrMap when available', () => {
     const mapping: PtrMapping = createPtrMapping([
-      ['/properties/foo/type', '#/properties/foo/type'],
+      ['/properties/foo/type', '/properties/foo/type'],
     ]);
-    const err = makeError({ schemaPath: '#/properties/foo/type' });
+    const err = makeError({ schemaPath: '/properties/foo/type' });
 
     const canon = canonPathFromError(err, mapping);
     expect(canon).toBe('/properties/foo/type');
@@ -33,24 +33,24 @@ describe('canonPathFromError', () => {
 
   it('falls back to schemaPath when no matching canonical path exists', () => {
     const mapping: PtrMapping = createPtrMapping([
-      ['/properties/bar/type', '#/properties/bar/type'],
+      ['/properties/bar/type', '/properties/bar/type'],
     ]);
-    const err = makeError({ schemaPath: '#/properties/foo/type' });
+    const err = makeError({ schemaPath: '/properties/foo/type' });
 
     const canon = canonPathFromError(err, mapping);
-    expect(canon).toBe('#/properties/foo/type');
+    expect(canon).toBe('/properties/foo/type');
   });
 });
 
 describe('buildErrorSignature', () => {
   it('builds signature components using canonPathFromError and stableParamsKey', () => {
     const mapping: PtrMapping = createPtrMapping([
-      ['/properties/foo/type', '#/properties/foo/type'],
+      ['/properties/foo/type', '/properties/foo/type'],
     ]);
     const err = makeError({
       keyword: 'type',
       instancePath: '/foo',
-      schemaPath: '#/properties/foo/type',
+      schemaPath: '/properties/foo/type',
       params: { type: 'string', extra: 1 },
     });
 
@@ -64,7 +64,7 @@ describe('buildErrorSignature', () => {
       makeError({
         keyword: 'type',
         instancePath: '/foo',
-        schemaPath: '#/properties/foo/type',
+        schemaPath: '/properties/foo/type',
         params: { extra: 1, type: 'string' },
       }),
       mapping

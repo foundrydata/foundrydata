@@ -37,4 +37,4 @@ This document maps the parent task 9501 bullets from Implementation Details, Del
   Covers: [KR1, DEL2, DOD1, TS2] (status: done).
 
 - **9501.9501003 – Implement Score(x) from AJV allErrors list**  
-  Covers: [KR2, KR3, DEL3, DOD2, DOD3, TS3] (status: pending).
+  Covers: [KR2, KR3, DEL3, DOD2, DOD3, TS3] (status: done).

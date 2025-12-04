@@ -1,23 +1,23 @@
-Task: 9501   Title: Implement stable AJV error signature and Score(x) utilities — subtask 9501.9501002
+Task: 9501   Title: Implement stable AJV error signature and Score(x) utilities — subtask 9501.9501003
 Anchors: [spec://§10#repair-philosophy, spec://§10#repair-philosophy-progress, spec://§14#planoptionssubkey, spec://§15#metrics]
 Touched files:
 - PLAN.md
 - .taskmaster/docs/9501-traceability.md
 - .taskmaster/tasks/tasks.json
-- packages/core/src/repair/score/error-signature.ts
-- packages/core/src/repair/score/__tests__/error-signature.test.ts
+- packages/core/src/repair/score/score.ts
+- packages/core/src/repair/score/__tests__/score.test.ts
 
 Approach:
-Pour la sous-tâche 9501.9501002, je vais implémenter un helper `canonPathFromError(e, mapping)` et un constructeur de signature `buildErrorSignature(e, mapping)` qui matérialisent la définition de `canonPath(e)` et `sig(e)` donnée par la SPEC. En m’appuyant sur `spec://§10#repair-philosophy` et `spec://§10#repair-philosophy-progress`, ainsi que sur la description de `canonPath` et du fallback `schemaPath`, je vais (1) exploiter `PtrMapping` et sa `revPtrMap` existante pour résoudre `e.schemaPath` vers un ou plusieurs `canonPath` potentiels, en sélectionnant de façon déterministe le chemin le plus spécifique (premier de la liste triée) lorsque plusieurs candidats existent, (2) faire tomber le helper en fallback sur `e.schemaPath` (ou `''` si absent) lorsque le mapping est indisponible ou qu’aucun chemin canonique ne correspond, (3) implémenter `buildErrorSignature(e, mapping)` qui assemble `keyword`, `canonPath(e)`, `instancePath` et `stableParamsKey(e.params)` (helper déjà introduit en 9501.9501001) dans une structure simple que Score pourra consommer, sans encore calculer Score(x), et (4) écrire des tests unitaires qui couvrent les cas sans mapping, avec mapping direct, sans correspondance canonique, ainsi que la stabilité de la composante paramsKey vis‑à‑vis de l’ordre des clés, puis relancer build/typecheck/lint/test/bench pour confirmer que ces helpers restent déterministes et indépendants de la coverage.
+Pour la sous-tâche 9501.9501003, je vais implémenter un helper `computeScore(errors, mapping)` qui calcule `Score(x)` comme la cardinalité de l’ensemble des signatures `sig(e)` définies en §10.P5, en s’appuyant sur les helpers précédents. En m’appuyant sur `spec://§10#repair-philosophy` et `spec://§10#repair-philosophy-progress`, je vais (1) consommer les `AjvErrorObject` issus d’AJV (ou de notre type `AjvErr`) et construire pour chacun une signature structurée via `buildErrorSignature(e, mapping)`, (2) dédupliquer les signatures via une clé de set déterministe (par exemple JSON d’un tuple `[keyword, canonPath, instancePath, paramsKey]`) pour obtenir le nombre de signatures distinctes, en veillant à ce que l’ordre des erreurs n’influence pas le résultat, (3) traiter proprement les listes vides ou nulles et les duplications triviales (mêmes erreurs répétées, variations d’ordre des propriétés `params`) afin que Score(x) reste stable, et (4) écrire des tests unitaires pour `Score(x)` couvrant liste vide, erreurs distinctes, duplications exactes et duplications qui ne diffèrent que par l’ordre des paramètres, puis relancer build/typecheck/lint/test/bench pour confirmer que cette implémentation reste pure, déterministe et indépendante de la coverage.
 
 DoD:
 DoD:
-- [x] Le helper `canonPathFromError(e, mapping)` résout `canonPath(e)` via le mapping canonique quand il existe et retombe de façon déterministe sur `e.schemaPath` sinon, en accord avec la définition de §10.P5.
-- [x] La fonction `buildErrorSignature(e, mapping)` construit la quadruple `(keyword, canonPath(e), instancePath, stableParamsKey(e.params))` et peut être utilisée telle quelle par Score(x) sans recalcul ou duplication de logique.
-- [x] Les tests unitaires pour ces helpers couvrent les scénarios avec et sans mapping, les cas sans correspondance canonique, et vérifient que la composante paramsKey est stable face à des permutations d’objets `params`, avec une couverture ≥80 % sur `error-signature.ts`.
-- [x] La suite build/typecheck/lint/test/bench reste verte après ces changements, confirmant que les helpers sont isolés et ne modifient pas le comportement existant en dehors de la nouvelle surface Score.
+- [x] Le helper `computeScore(errors, mapping)` calcule `Score(x)` comme la cardinalité des signatures `sig(e)` définies par la SPEC, en utilisant `buildErrorSignature` pour construire les signatures et en restant insensible à l’ordre des erreurs.
+- [x] Les tests unitaires pour Score(x) couvrent les cas de liste vide, d’erreurs distinctes, de duplications exactes et de duplications où seules les propriétés `params` sont réordonnées, avec une couverture ≥80 % sur `score.ts`.
+- [x] Aucune dépendance à l’état de coverage ou à des singletons n’est introduite (la fonction ne lit pas `coverage`, `dimensionsEnabled` ou des structures globales) et son comportement reste déterministe pour un tuple de déterminisme donné.
+- [x] La suite build/typecheck/lint/test/bench reste verte après l’introduction de Score(x) et de ses tests, confirmant que l’implémentation est prête à être utilisée par le moteur de Repair pour la règle de commit.
 
-Parent bullets couverts: [KR1, DEL2, DOD1, TS2]
+Parent bullets couverts: [KR2, KR3, DEL3, DOD2, DOD3, TS3]
 
 Checks:
 - build: npm run build
