@@ -2001,11 +2001,11 @@
             "id": 9503002,
             "title": "Implement deterministic revert mechanism for failed commit attempts",
             "description": "Ensure attempted mutations can be reverted deterministically (clone strategy, in-place patching with rollback, or structured copy) without perturbing key order or introducing nondeterminism.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/repair/repair-engine.ts",
             "parentId": "9503",
-            "updatedAt": "2025-12-04T00:00:00.000Z"
+            "updatedAt": "2025-12-04T21:24:35.010Z"
           },
           {
             "id": 9503003,
@@ -2018,7 +2018,7 @@
             "updatedAt": "2025-12-04T00:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-04T21:15:52.389Z"
+        "updatedAt": "2025-12-04T21:24:35.010Z"
       },
       {
         "id": "9504",
@@ -2168,7 +2168,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-04T21:15:52.390Z",
+      "lastModified": "2025-12-04T21:24:35.012Z",
       "taskCount": 7,
       "completedCount": 3,
       "tags": [

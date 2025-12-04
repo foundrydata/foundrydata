@@ -287,4 +287,29 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
     expect(spy).toHaveBeenCalled();
     spy.mockRestore();
   });
+
+  it('reverts deterministically when Score(x) does not improve', () => {
+    const schema = { type: 'string', minLength: 3 } as const;
+    const original = 'x';
+
+    const spy = vi
+      .spyOn(scoreModule, 'computeScore')
+      .mockImplementation((errors: unknown) => {
+        // Force Score(x) to appear unchanged (no improvement), even when
+        // the underlying AJV errors would disappear after Repair.
+        if (!errors || !Array.isArray(errors) || errors.length === 0) {
+          return 1;
+        }
+        return 1;
+      });
+
+    const out = repairItemsAjvDriven(
+      [original],
+      { schema, effective: eff() },
+      { attempts: 2 }
+    );
+
+    expect(out.items[0]).toBe(original);
+    spy.mockRestore();
+  });
 });

@@ -860,7 +860,11 @@ export function repairItemsAjvDriven(
       | AjvErrorObject[]
       | null
       | undefined;
-    computeScore(initialErrorsForScore, ptrMapping);
+    const initialScore = computeScore(initialErrorsForScore, ptrMapping);
+    let lastErrorsForScore = initialErrorsForScore as
+      | AjvErrorObject[]
+      | null
+      | undefined;
 
     let lastErrorCount =
       Array.isArray((validateFn as any).errors) &&
@@ -1082,6 +1086,8 @@ export function repairItemsAjvDriven(
     for (let iter = 0; iter < maxCycles; iter += 1) {
       const errors = (validateFn as any).errors as AjvErr[] | undefined;
       if (!errors || errors.length === 0) break;
+      lastErrorsForScore =
+        (errors as unknown as AjvErrorObject[] | null | undefined) ?? null;
       computeScore(
         errors as unknown as AjvErrorObject[] | null | undefined,
         ptrMapping
@@ -1960,6 +1966,8 @@ export function repairItemsAjvDriven(
       pass = validateFn(current);
       const nextErrors = (validateFn as any).errors as AjvErr[] | undefined;
       const nextErrorCount = Array.isArray(nextErrors) ? nextErrors.length : 0;
+      lastErrorsForScore =
+        (nextErrors as unknown as AjvErrorObject[] | null | undefined) ?? null;
       if (nextErrorCount <= 0) {
         lastErrorCount = 0;
         break;
@@ -1970,6 +1978,11 @@ export function repairItemsAjvDriven(
       }
       lastErrorCount = nextErrorCount;
       if (pass) break;
+    }
+
+    const finalScore = computeScore(lastErrorsForScore, ptrMapping);
+    if (finalScore >= initialScore) {
+      current = original;
     }
 
     // Best-effort unsatisfied hint reporting for Repair side when
