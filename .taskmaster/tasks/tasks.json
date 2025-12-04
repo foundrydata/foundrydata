@@ -1934,7 +1934,7 @@
         "dependencies": [
           "9500"
         ],
-        "status": "in-progress",
+        "status": "done",
         "complexityScore": 4,
         "details": "[Context]\nThe philosophy is only enforceable if policy blocks and reverts are observable. This extends the diagnostics code registry (phase=repair) and adds deterministic aggregated counters, aligned with spec §10 + §15.\n\n[Spec anchors]\n- Canonical spec §10 Repair philosophy: diagnostics for policy-disabled and revert-no-progress; tier counters.\n- Canonical spec §19 (diagnostics envelope/schema) and §15 (metrics snapshot requirements).\n\n[Key requirements]\n- Add new diag codes (names per canonical spec decision):\n  - policy tier disabled (include keyword, requestedTier, allowedTier/maxTier, reason).\n  - reverted no progress (include scoreBefore/scoreAfter, keyword, maybe action id).\n- Add deterministic aggregated counters:\n  - actions per tier, policy-disabled count, reverted-no-progress count.\n- Update diagnostics schemas/types and keep them compatible with existing reporter/CLI consumption.\n\n[Deliverables]\n- Updated diagnostic codes registry + types + schema validation.\n- Metrics collector extended with the new counters (only materialized when metrics.enabled=true).",
         "testStrategy": "- Unit tests validating diagnostic payload shape against schema and that phase='repair' is set.\n- Counter tests: deterministic increments for a fixed input instance and determinism tuple.\n- Snapshot tests for pipeline result JSON containing the new diag codes and metrics fields.",
@@ -1963,14 +1963,14 @@
             "id": 9502003,
             "title": "Update reporter/CLI snapshot expectations for new metrics/diagnostics",
             "description": "Update any golden snapshots and report serializers that assert on diagnostics/metrics so they tolerate and/or present the new fields.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 2,
             "file": "packages/reporter/**",
             "parentId": "9502",
-            "updatedAt": "2025-12-04T00:00:00.000Z"
+            "updatedAt": "2025-12-04T20:53:42.501Z"
           }
         ],
-        "updatedAt": "2025-12-04T20:44:19.070Z"
+        "updatedAt": "2025-12-04T20:53:42.501Z"
       },
       {
         "id": "9503",
@@ -2168,9 +2168,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-04T20:44:19.071Z",
+      "lastModified": "2025-12-04T20:53:42.502Z",
       "taskCount": 7,
-      "completedCount": 2,
+      "completedCount": 3,
       "tags": [
         "repair-philosophy"
       ]

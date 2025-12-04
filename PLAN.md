@@ -1,25 +1,24 @@
-Task: 9502   Title: Add repair-philosophy diagnostics codes and metrics counters — subtask 9502.9502002
+Task: 9502   Title: Add repair-philosophy diagnostics codes and metrics counters — subtask 9502.9502003
 Anchors: [spec://§10#repair-philosophy, spec://§15#metrics, spec://§19#envelope]
 Touched files:
 - PLAN.md
 - .taskmaster/docs/9502-traceability.md
 - .taskmaster/tasks/tasks.json
-- packages/core/src/util/metrics.ts
-- packages/core/src/util/repair-usage-metrics.ts
-- packages/core/src/util/__tests__/metrics.test.ts
+- packages/reporter/src/engine/report-builder.ts
+- packages/reporter/test/reporter.snapshot.test.ts
 - packages/reporter/test/__snapshots__/reporter.snapshot.test.ts.snap
 - agent-log.jsonl
 
 Approach:
-Pour la sous-tâche 9502.9502002, je vais étendre la collecte de métriques pour exposer des compteurs Repair alignés avec la philosophie (actions par tier et blocages/reverts de policy) dans le snapshot metrics. En m’appuyant sur `spec://§10#repair-philosophy` et `spec://§15#metrics`, je vais (1) ajouter, dans `packages/core/src/util/metrics.ts`, des champs explicites pour `repair_tier1_actions`, `repair_tier2_actions`, `repair_tier3_actions` et `repair_tierDisabled` (ainsi que, si pertinent, un compteur pour les reverts Score) dans la structure de metrics collectées, (2) implémenter des helpers pour incrémenter ces compteurs de manière déterministe lorsque le moteur de Repair enregistre des actions ou des diagnostics `REPAIR_TIER_DISABLED`/`REPAIR_REVERTED_NO_PROGRESS`, sans introduire de dépendances à la coverage, (3) compléter ou créer `packages/core/src/util/__tests__/metrics.test.ts` pour vérifier que, pour un set artificiel d’événements Repair, les compteurs sont correctement initialisés à 0, incrémentés de façon stable et inclus dans le snapshot final, puis (4) relancer build/typecheck/lint/test/bench pour garantir que ces nouveaux champs n’affectent pas les reporters/CLIs existants et respectent les contraintes de déterminisme et de budget de §15.
+Pour la sous-tâche 9502.9502003, je vais aligner le reporter JSON/Markdown/HTML (et, indirectement, le CLI) avec les nouveaux diagnostics/métriques Repair sans changer la sémantique du pipeline. En m’appuyant sur `spec://§10#repair-philosophy`, `spec://§15#metrics` et `spec://§19#envelope`, je vais (1) vérifier que `buildReportFromPipeline` propage déjà les diagnostics `REPAIR_TIER_DISABLED` / `REPAIR_REVERTED_NO_PROGRESS` tels que fournis par le pipeline, et que `Report.metrics` reflète bien les nouveaux compteurs `repair_tier{1,2,3}_actions` et `repair_tierDisabled`, (2) ajuster au besoin les sérialiseurs/sanitiseurs côté reporter pour qu’ils tolèrent ces nouveaux champs numériquement (sans les filtrer) et n’introduisent pas de dépendance cachée à la coverage, (3) mettre à jour les snapshots de `packages/reporter/test/reporter.snapshot.test.ts` afin que le JSON Report, le Markdown et le HTML restent stables tout en acceptant la présence des métriques/diagnostics Repair supplémentaires, puis (4) relancer build/typecheck/lint/test/bench pour s’assurer que ces changements restent compatibles avec le CLI existant et que les gates de bench/diag-schema restent verts.
 
 DoD:
-- [x] La structure de metrics inclut des compteurs explicites pour les actions Repair par tier (Tier1/2/3) et pour les cas de tiers désactivés, avec des noms alignés sur la SPEC et des valeurs initiales cohérentes.
-- [x] Les helpers de metrics utilisables depuis Repair incrémentent ces compteurs de manière déterministe pour un tuple de déterminisme donné, sans double comptage ni dépendance à l’ordre des événements.
-- [x] Les tests de metrics vérifient que, pour un scénario synthétique, les compteurs évoluent comme attendu et apparaissent dans le snapshot final, et que l’ajout de ces champs ne casse pas les usages existants.
-- [x] La suite build/typecheck/lint/test/bench reste verte après ces changements, confirmant que les compteurs de metrics Repair sont correctement intégrés.
+- [x] Les rapports JSON/Markdown/HTML produits par le reporter incluent et tolèrent les nouveaux champs de métriques Repair (tiers + policy) et les diagnostics Repair-philosophy, sans casser les consommateurs existants ni exiger leur présence.
+- [x] Les snapshots de tests du reporter sont mis à jour pour refléter la forme étendue de `Report.metrics` et des diagnostics, tout en conservant des valeurs numériques normalisées et stables.
+- [x] Aucun nouveau code de sérialisation n’introduit de dépendance à l’état de coverage ou à un ordre non déterministe; les champs ajoutés restent purement observables.
+- [x] La suite build/typecheck/lint/test/bench reste verte après ces changements, confirmant que reporter/CLI restent compatibles et conformes à l’enveloppe diagnostics/metrics.
 
-Parent bullets couverts: [KR2, DEL2, DOD2, TS2]
+Parent bullets couverts: [KR3, DEL3, DOD3, TS3]
 
 Checks:
 - build: npm run build
