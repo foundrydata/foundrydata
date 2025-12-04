@@ -2146,11 +2146,11 @@
             "id": 9506002,
             "title": "Add E2E tests asserting tier policy outcomes and counters",
             "description": "Write tests that run executePipeline over fixtures and assert tier counters, policy-disabled diagnostics, and action logs match expected behavior.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 6,
             "file": "packages/core/test/e2e/repair.philosophy-policy.spec.ts",
             "parentId": "9506",
-            "updatedAt": "2025-12-04T00:00:00.000Z"
+            "updatedAt": "2025-12-04T23:09:36.107Z"
           },
           {
             "id": 9506003,
@@ -2163,12 +2163,12 @@
             "updatedAt": "2025-12-04T00:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-04T23:05:52.145Z"
+        "updatedAt": "2025-12-04T23:09:36.107Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-04T23:05:52.147Z",
+      "lastModified": "2025-12-04T23:09:36.109Z",
       "taskCount": 7,
       "completedCount": 6,
       "tags": [

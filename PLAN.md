@@ -1,22 +1,22 @@
-Task: 9506   Title: Add micro-schemas + E2E assertions for tier behavior, G_valid regressions, and UNSAT stability — subtask 9506.9506001
-Anchors: [spec://§10#repair-philosophy, spec://§10#mapping, spec://§6#generator-repair-contract, spec://§15#metrics]
+Task: 9506   Title: Add micro-schemas + E2E assertions for tier behavior, G_valid regressions, and UNSAT stability — subtask 9506.9506002
+Anchors: [spec://§10#repair-philosophy, spec://§10#mapping, spec://§6#generator-repair-contract, spec://§19#envelope, spec://§15#metrics]
 Touched files:
 - PLAN.md
 - .taskmaster/docs/9506-traceability.md
 - .taskmaster/tasks/tasks.json
-- packages/core/src/repair/__fixtures__/repair-philosophy-microschemas.ts
+- packages/core/src/pipeline/__tests__/repair-tier-policy.integration.test.ts
 - agent-log.jsonl
 
 Approach:
-Pour la sous-tâche 9506.9506001, je vais concevoir un petit pack de micro-schemas « repair-philosophy » qui servent de base commune aux tests de tiers, de G_valid et d’UNSAT/stagnation sans changer la sémantique de Repair ou de l’orchestrateur. En m’appuyant sur `spec://§10#repair-philosophy`, `spec://§10#mapping`, `spec://§6#generator-repair-contract` et `spec://§15#metrics`, je vais (1) créer un module de fixtures dédié (par exemple `repair-philosophy-microschemas.ts`) qui expose des schémas minimaux pour chaque motif: Tier-1 only (clamp numéraire simple, string minLength, uniqueItems), Tier-2 hors G_valid (required add, contains witness append, AP:false cleanup) et cas structurels en G_valid (minItems/required/AP dans un contexte gValid_*), (2) documenter pour chaque micro-schema le motif visé, le ou les tiers attendus et, si pertinent, un seed recommandé afin que les tests E2E puissent réutiliser ces fixtures sans dépendre du hasard, (3) garder ces fixtures purement déclaratives (pas de logique, pas de dépendance à coverage ou aux options) afin qu’elles puissent être importées aussi bien par des tests Repair unitaires que par des tests pipeline, et (4) mettre à jour la trace 9506 et agent-log au moment du complete-subtask, après avoir vérifié que les fichiers de fixtures sont couverts par des tests dans la sous-tâche suivante et que la CI (build/typecheck/lint/test/bench) reste verte.
+Pour la sous-tâche 9506.9506002, je vais ajouter des tests E2E au niveau pipeline qui consomment les micro-schemas « repair-philosophy » et asservent les compteurs de tiers et les diagnostics associés, sans modifier le comportement existant de Repair. En m’appuyant sur `spec://§10#repair-philosophy`, `spec://§10#mapping`, `spec://§6#generator-repair-contract`, `spec://§19#envelope` et `spec://§15#metrics`, je vais (1) créer un fichier `repair-tier-policy.integration.test.ts` dans les tests pipeline qui exécute `executePipeline` sur des fixtures Tier-1 only, Tier-2 hors G_valid et G_valid structurels avec des options strictes et coverage=off, (2) vérifier pour les motifs Tier-1/Tier-2 hors G_valid que des actions de Repair sont bien présentes et que les métriques agrégées (`repair_tier1_actions`, `repair_tier2_actions`, `repair_tierDisabled`, `repairActionsPerRow`) reflètent des décisions cohérentes avec la policy par défaut, (3) vérifier pour les motifs G_valid structurels que les comportements observés (actions et diagnostics REPAIR_GVALID_STRUCTURAL_ACTION ou similaires) restent compatibles avec les tests existants, sans exiger de nouveau blocage plus strict que ce que l’engine implémente aujourd’hui, et (4) rejouer build/typecheck/lint/test/bench pour valider que ces tests E2E sont stables et ne rendent pas la policy plus stricte que ce qui est déjà spécifié, tout en documentant dans la trace 9506 comment ils couvrent DEL2/DOD2/TS2.
 
 DoD:
-- [x] Un module de fixtures repair-philosophy regroupe des micro-schemas ciblés pour Tier-1 only, Tier-2 hors G_valid et cas structurels en G_valid, chacun documenté par un commentaire concis indiquant le motif et le comportement attendu.
-- [x] Les micro-schemas couvrent au minimum un exemple de clamp numérique, de string minLength, d’uniqueItems, de required add, de contains witness append, d’AP:false cleanup et d’un cas UNSAT/stagnation aligné avec la règle de Score(x).
-- [x] Les fixtures sont purement déclaratives (aucune logique, aucun import de modules de production), et peuvent être importées sans effet de bord depuis des tests Repair unitaires et des tests pipeline.
-- [x] La suite build/typecheck/lint/test/bench reste verte après l’ajout de ces fixtures, et la trace 9506 reflète que KR1/KR2/KR3/DEL1/DOD1/TS1 sont couverts par cette sous-tâche.
+- [x] Au moins un test pipeline par motif (Tier-1 only, Tier-2 hors G_valid, G_valid structurel) consomme les micro-schemas de `repair-philosophy-microschemas` et vérifie les actions Repair et diagnostics clés sans introduire de nouveaux comportements dans l’engine.
+- [x] Les métriques agrégées de tiers (`repair_tier1_actions`, `repair_tier2_actions`, `repair_tier3_actions`, `repair_tierDisabled`, `repairActionsPerRow`) sont observées dans ces tests et restent cohérentes entre runs répétés pour un tuple de paramètres fixé.
+- [x] Les diagnostics Repair utilisés dans ces tests (codes et phases) respectent `diagnosticsEnvelope.schema.json` et restent compatibles avec les invariants existants de la suite (pas de réécriture de code/phase).
+- [x] La suite build/typecheck/lint/test/bench est verte avec ces nouveaux tests E2E, et la trace 9506 documente comment DEL2/DOD2/TS2 sont couverts par cette sous-tâche.
 
-Parent bullets couverts: [KR1, KR2, KR3, DEL1, DOD1, TS1]
+Parent bullets couverts: [DEL2, DOD2, TS2]
 
 Checks:
 - build: npm run build
@@ -25,10 +25,9 @@ Checks:
 - diag-schema: true
 
 DoD:
-- [ ] Les tests E2E et unitaires qui consomment ces micro-schemas (9506.9506002/9506.9506003) sont en mesure de les référencer sans duplication ni logique ad hoc.
-- [ ] La documentation interne (traceability 9506 et commentaires de fixtures) permet de retrouver rapidement quel micro-schema couvre quel motif de tiers/G_valid/UNSAT.
+- [ ] La documentation interne (traceability 9506 et commentaires de fixtures) reste alignée avec les tests E2E ajoutés, de sorte qu’il est facile de relier chaque micro-schema aux assertions de tiers/policy dans la suite.
 
-Parent bullets couverts: [DEL2, DEL3, DOD2, DOD3, TS2, TS3]
+Parent bullets couverts: [DEL3, DOD3, TS3]
 
 Checks:
 - build: npm run build
