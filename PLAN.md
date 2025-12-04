@@ -1,24 +1,36 @@
-Task: 9504   Title: Implement Repair tier classification and default tier policy — subtask 9504.9504003
-Anchors: [spec://§10#repair-philosophy, spec://§10#mapping, spec://§6#generator-repair-contract, spec://§19#envelope]
+Task: 9505   Title: Add coverage-independence and determinism regression tests for Repair — subtask 9505.9505001
+Anchors: [spec://§10#repair-philosophy, spec://§10#repair-philosophy-coverage-independence, spec://§6#phases, cov://§3#coverage-model]
 Touched files:
 - PLAN.md
-- .taskmaster/docs/9504-traceability.md
+- .taskmaster/docs/9505-traceability.md
 - .taskmaster/tasks/tasks.json
-- packages/core/src/repair/tier-classification.ts
-- packages/core/src/repair/__tests__/tier-classification.test.ts
-- packages/core/src/repair/__tests__/mapping-repair.test.ts
+- packages/core/src/pipeline/__tests__/repair-coverage-independence.test.ts
 - agent-log.jsonl
 
 Approach:
-Pour la sous-tâche 9504.9504003, je vais compléter la couverture de tests autour du modèle de tiers et de la policy gate afin de rendre observables (et stables) les décisions de tier/policy sans modifier davantage le comportement de Repair. En m’appuyant sur `spec://§10#repair-philosophy`, `spec://§10#mapping`, `spec://§6#generator-repair-contract` et `spec://§19#envelope`, je vais (1) enrichir `tier-classification.test.ts` avec des cas supplémentaires pour `STRUCTURAL_KEYWORDS` et `isActionAllowed`, couvrant la matrice {G_valid/non-G_valid} × {structural/non-structural} × {tier} et vérifiant la stabilité des décisions pour un tuple de déterminisme fixé, (2) ajouter un ou deux tests ciblés dans `mapping-repair.test.ts` qui exercent la policy gate dans le contexte de `repairItemsAjvDriven` en inspectant les métriques de tiers et en validant, via l’API diagnostics, que les enveloppes `REPAIR_TIER_DISABLED` respectent le schéma commun lorsqu’elles sont émises, sans dépendre de cas d’usage fragiles sur le corpus, (3) veiller à ce que ces tests restent purement observateurs (aucun branchement sur l’état de coverage ou des seeds) et qu’ils n’introduisent pas de flakiness, puis (4) rejouer build/typecheck/lint/test/bench pour verrouiller que la couverture de tests est en place et que l’enveloppe diagnostics reste schema‑compatible (`spec://§19#envelope`).
+Pour la sous-tâche 9505.9505001, je vais ajouter un test d’intégration centré sur la couverture-indépendance de Repair qui compare coverage=off et coverage=measure sur un même schéma/seed/options, en gardant la phase Repair isolée du planning coverage. En m’appuyant sur `spec://§10#repair-philosophy`, `spec://§10#repair-philosophy-coverage-independence`, `spec://§6#phases` et `cov://§3#coverage-model`, je vais (1) introduire un test `repair-coverage-independence.test.ts` dans `packages/core/src/pipeline/__tests__` qui appelle `executePipeline` avec un petit schéma déclenchant des réparations simples (numeric bounds + required) pour un seed fixé, d’abord avec `coverage:{ mode:'off' }`, puis avec `coverage:{ mode:'measure', dimensionsEnabled:['structure','branches','enum'] }`, (2) figer les options (mode strict, même seed, mêmes PlanOptions) et comparer en profondeur `artifacts.repaired`, `artifacts.repairActions` et `artifacts.repairDiagnostics` entre les deux runs, en tolérant uniquement les différences attendues sur les artefacts de coverage (`coverageGraph`, `coverageMetrics`, etc.), (3) vérifier également que les métriques Repair pertinentes (`repairPassesPerRow`, compteurs de tiers) restent identiques entre off et measure, en s’assurant que le test ne dépend ni des cibles coverage ni de `dimensionsEnabled` pour la partie Repair, puis (4) rejouer build/typecheck/lint/test/bench pour verrouiller que ce test démontre bien l’indépendance de Repair vis‑à‑vis des réglages coverage dans le profil nominal.
 
 DoD:
-- [x] La batterie de tests de `tier-classification.test.ts` couvre explicitement la matrice {G_valid/non-G_valid} × {structural/non-structural} × {tier 0/1/2/3}, y compris les cas avec `allowStructuralInGValid:true`, et reste déterministe pour un tuple de paramètres donné.
-- [x] Au moins un test de `mapping-repair.test.ts` vérifie que les décisions de tier/policy sont reflétées dans les métriques (`repair_tier1_actions`, `repair_tier2_actions`, `repair_tierDisabled`) sans modifier les invariants de Score ou la sémantique de commit/revert.
-- [x] Les diagnostics `REPAIR_TIER_DISABLED` produits par la policy gate, lorsqu’ils sont exercés dans les tests, respectent `diagnosticsEnvelope.schema.json` via `assertDiagnosticEnvelope` et ne perturbent pas les autres diagnostics existants.
-- [x] La suite build/typecheck/lint/test/bench reste verte après l’ajout de ces tests, et aucune dépendance à la coverage ou à des seeds non contrôlés n’est introduite dans les nouveaux scénarios.
+- [x] Pour un schéma et un seed donnés, `executePipeline` retourne des `artifacts.repaired`, `artifacts.repairActions` et `artifacts.repairDiagnostics` identiques entre coverage=off et coverage=measure (mêmes options et même tuple de déterminisme), les seules différences admises portant sur les artefacts coverage.
+- [x] Les métriques Repair (au minimum `repairPassesPerRow`, compteurs de tiers s’ils sont présents) restent identiques entre les deux runs, montrant que Repair ne dépend ni de coverageMode ni de dimensionsEnabled pour ses décisions.
+- [x] Le test n’introduit pas de dépendance aux détails internes du CoverageAnalyzer (pas d’assertions sur `coverageGraph` ou `coverageTargets`), et reste stable et déterministe dans le temps.
+- [x] La suite build/typecheck/lint/test/bench est verte après l’ajout de ce test d’équivalence, et le test est documenté dans la trace 9505 comme couvrant la partie off vs measure de la coverage-independence de Repair.
 
-Parent bullets couverts: [KR3, DEL3, DOD3, TS3]
+Parent bullets couverts: [KR1, DEL1, DOD1, TS1]
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
+
+DoD:
+- [x] Pour un schéma et un seed donnés, `executePipeline` retourne des `artifacts.repaired`, `artifacts.repairActions` et `artifacts.repairDiagnostics` identiques entre coverage=off et coverage=measure (mêmes options et même tuple de déterminisme), les seules différences admises portant sur les artefacts coverage.
+- [x] Les métriques Repair (au minimum `repairPassesPerRow`, compteurs de tiers s’ils sont présents) restent identiques entre les deux runs, montrant que Repair ne dépend ni de coverageMode ni de dimensionsEnabled pour ses décisions.
+- [x] Le test n’introduit pas de dépendance aux détails internes du CoverageAnalyzer (pas d’assertions sur `coverageGraph` ou `coverageTargets`), et reste stable et déterministe dans le temps.
+- [x] La suite build/typecheck/lint/test/bench est verte après l’ajout de ce test d’équivalence, et le test est documenté dans la trace 9505 comme couvrant la partie off vs measure de la coverage-independence de Repair.
+
+Parent bullets couverts: [KR1, DEL1, DOD1, TS1]
 
 Checks:
 - build: npm run build

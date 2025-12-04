@@ -2078,7 +2078,7 @@
           "9503",
           "9504"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 3,
         "details": "[Context]\nRepair must be observationally independent from coverage: coverage=measure must not change the instance stream compared to coverage=off for the same schema/options/seed, and dimensionsEnabled must not affect Repair decisions.\n\n[Spec anchors]\n- Canonical spec §10 Repair philosophy: coverage-independence.\n- Coverage spec: docs/spec-coverage-aware-v1.0.md invariants (measure vs off).\n\n[Key requirements]\n- Add tests that compare:\n  - coverage=off vs coverage=measure (same schema/seed/options): identical repaired outputs, identical repair actions and repair-phase diagnostics.\n  - dimensionsEnabled subsets: identical repaired outputs/actions/repair diagnostics.\n- Ensure tests isolate Repair by running the same pre-repair candidate instance when needed (or by freezing generator output via fixtures).\n\n[Deliverables]\n- Regression tests that fail if Repair consults coverage options or coverage runtime state.",
         "testStrategy": "- E2E test in pipeline tests: run executePipeline twice with identical schema/seed/options but different coverage settings and deep-compare outputs and repair logs.\n- Snapshot tests for repair-phase diagnostics and repair metrics counters under both modes.\n- Include at least one schema that triggers Tier-1 fixes and one that triggers Tier-2 (outside G_valid) to ensure policy path is exercised.",
@@ -2087,11 +2087,11 @@
             "id": 9505001,
             "title": "Add coverage=off vs coverage=measure repair equivalence test",
             "description": "Create a deterministic fixture and assert identical repaired outputs + repair actions/diagnostics between coverage modes for the same tuple.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 5,
             "file": "packages/core/test/e2e/repair.coverage-independence.spec.ts",
             "parentId": "9505",
-            "updatedAt": "2025-12-04T00:00:00.000Z"
+            "updatedAt": "2025-12-04T22:34:47.883Z"
           },
           {
             "id": 9505002,
@@ -2114,7 +2114,7 @@
             "updatedAt": "2025-12-04T00:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-04T00:00:00.000Z"
+        "updatedAt": "2025-12-04T22:34:47.883Z"
       },
       {
         "id": "9506",
@@ -2168,7 +2168,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-04T22:17:35.972Z",
+      "lastModified": "2025-12-04T22:34:47.884Z",
       "taskCount": 7,
       "completedCount": 5,
       "tags": [
