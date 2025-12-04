@@ -37,4 +37,4 @@ This document maps the parent task 9505 bullets from Implementation Details, Del
   Covers: [KR2, DEL2, DOD2, TS2] (status: done).
 
 - **9505.9505003 – Add deterministic pre-repair fixture path (optional helper)**  
-  Covers: [KR3, DEL3, DOD3, TS3] (status: pending).
+  Covers: [KR3, DEL3, DOD3, TS3] (status: done).

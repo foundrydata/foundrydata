@@ -1,22 +1,22 @@
-Task: 9505   Title: Add coverage-independence and determinism regression tests for Repair — subtask 9505.9505002
-Anchors: [spec://§10#repair-philosophy, spec://§10#repair-philosophy-coverage-independence, spec://§6#phases, cov://§3#coverage-model]
+Task: 9505   Title: Add coverage-independence and determinism regression tests for Repair — subtask 9505.9505003
+Anchors: [spec://§10#repair-philosophy, spec://§10#repair-philosophy-coverage-independence, spec://§6#phases, spec://§15#rng, spec://§15#metrics]
 Touched files:
 - PLAN.md
 - .taskmaster/docs/9505-traceability.md
 - .taskmaster/tasks/tasks.json
-- packages/core/src/pipeline/__tests__/repair-coverage-independence.test.ts
+- packages/core/src/pipeline/__tests__/repair-determinism-fixture.test.ts
 - agent-log.jsonl
 
 Approach:
-Pour la sous-tâche 9505.9505002, je vais étendre les tests pour démontrer que des profils `dimensionsEnabled` différents en mode coverage=measure n’affectent pas le comportement de Repair pour un même schéma/seed/options. En m’appuyant sur `spec://§10#repair-philosophy`, `spec://§10#repair-philosophy-coverage-independence`, `spec://§6#phases` et `cov://§3#coverage-model`, je vais (1) ajouter un second test dans `repair-coverage-independence.test.ts` qui exécute `executePipeline` avec coverage=measure et deux configurations de `dimensionsEnabled` (par exemple `['structure']` vs `['structure','branches','enum']`) sur le même schéma conditionnel et le même seed, (2) comparer en profondeur `artifacts.repaired`, `artifacts.repairActions` et `artifacts.repairDiagnostics` entre les deux runs, en tolérant uniquement les différences attendues sur les artefacts coverage (`coverageTargets`, `coverageMetrics`, `coverageReport`), (3) vérifier que les métriques Repair pertinentes (`repairPassesPerRow`, `repairActionsPerRow`, compteurs de tiers si présents) restent identiques entre ces profils de dimensions, et (4) rejouer build/typecheck/lint/test/bench pour s’assurer que le test est stable, déterministe et qu’il n’introduit aucune dépendance implicite aux détails internes de CoverageAnalyzer.
+Pour la sous-tâche 9505.9505003, je vais préparer un chemin de fixture pré-Repair déterministe qui permet d’injecter un flux d’instances candidates figé dans Repair afin de tester la stabilité des décisions et du Score sans dépendre du générateur ou de la couverture. En m’appuyant sur `spec://§10#repair-philosophy`, `spec://§10#repair-philosophy-coverage-independence`, `spec://§6#phases`, `spec://§15#rng` et `spec://§15#metrics`, je vais (1) introduire un petit helper de test (ou un wrapper pipeline de test-only) qui, pour un schéma et un tuple de paramètres, exécute `executePipeline` une première fois, capture les instances candidates juste avant Repair et les réutilise comme fixture dans des runs suivants, (2) ajouter un test dédié dans `repair-determinism-fixture.test.ts` qui exécute plusieurs fois la boucle de Repair sur ces mêmes instances pré-Repair, avec les mêmes options (coverage=off/measure fixés), et vérifie que `artifacts.repaired`, `artifacts.repairActions`, `artifacts.repairDiagnostics` et les métriques Repair (Score, `repairPassesPerRow`, `repairActionsPerRow`) restent strictement identiques, (3) s’assurer que le helper est pur côté tests (pas de mutation de global state, pas d’API réseau, pas de dépendance à coverageMode/dimensionsEnabled en dehors de la configuration passée), et (4) rejouer build/typecheck/lint/test/bench pour valider que ces tests de déterminisme n’introduisent ni flakiness ni divergence de Score, tout en documentant le lien avec KR3/DEL3/DOD3/TS3 dans la trace 9505.
 
 DoD:
-- [x] Pour un schéma et un seed donnés, deux runs coverage=measure avec des profils `dimensionsEnabled` différents produisent des `artifacts.repaired`, `artifacts.repairActions` et `artifacts.repairDiagnostics` identiques, les seules différences admises portant sur les artefacts coverage.
-- [x] Les métriques Repair (au minimum `repairPassesPerRow`, `repairActionsPerRow` et, si présents, les compteurs de tiers) restent identiques entre ces profils de dimensions, montrant que Repair ne dépend pas de `dimensionsEnabled` pour ses décisions.
-- [x] Le test reste stable et déterministe pour un tuple de paramètres fixé, sans assertions sur les détails internes de CoverageAnalyzer (graphes ou cibles).
-- [x] La suite build/typecheck/lint/test/bench est verte après l’ajout de ce test d’invariance, et la trace 9505 documente qu’il couvre la partie dimensionsEnabled de la coverage-independence de Repair.
+- [x] Un helper ou wrapper de test permet d’injecter un flux d’instances pré-Repair figé dans la boucle de Repair sans modifier la sémantique du pipeline en production ni dépendre de l’état de coverage.
+- [x] Au moins un test pipeline-level utilise ce helper pour exécuter plusieurs runs de Repair sur les mêmes instances candidates et vérifie que `artifacts.repaired`, `artifacts.repairActions` et `artifacts.repairDiagnostics` restent strictement identiques.
+- [x] Les métriques Repair pertinentes (`repairPassesPerRow`, `repairActionsPerRow` et compteurs de tiers s’ils sont exposés) restent identiques sur ces runs répétés, montrant l’absence de non-déterminisme caché pour un tuple de paramètres donné.
+- [x] La suite build/typecheck/lint/test/bench est verte avec ces nouveaux tests de déterminisme, et la trace 9505 documente qu’ils couvrent la partie KR3/DEL3/DOD3/TS3 de la coverage-independence et de la stabilité de Repair.
 
-Parent bullets couverts: [KR2, DEL2, DOD2, TS2]
+Parent bullets couverts: [KR3, DEL3, DOD3, TS3]
 
 Checks:
 - build: npm run build
