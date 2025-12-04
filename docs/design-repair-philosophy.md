@@ -2,42 +2,52 @@
 
 ## 1. Purpose & Context
 
-This document frames the **philosophy of the Repair engine** in FoundryData:
-what kinds of changes Repair is allowed to perform on generated instances, and
-where it should instead stop and leave failures to AJV.
+This document is an **architecture brief** for the Repair engine in FoundryData.
+It explains how we apply the canonical Repair philosophy in practice:
+what kinds of changes Repair is expected to perform on generated instances,
+and where it should instead stop and leave failures to AJV.
 
-The canonical SPEC defines Repair as:
+> **Normative source of truth.**  
+> All normative rules for Repair (mapping `(keyword → action)`, tiers and
+> default policy, coverage-independence, progress metric/Score, budgets and
+> stagnation, observability) are defined in the canonical specification
+> `docs/spec-canonical-json-schema-generator.md`, primarily in:
+> - §6 Generator/Repair contract and `G_valid`,
+> - §10 Repair Engine and the “Repair philosophy” policy layer
+>   (`spec://§10#repair-philosophy`, `spec://§10#mapping`),
+> - §14/§15 determinism tuple, PlanOptionsSubKey and metrics.
+> This brief is **explanatory only**; it must not introduce new normative
+> behaviour beyond those sections and should be read as design commentary and
+> examples tied back to the SPEC.
 
-- an **AJV‑driven, budgeted** phase (`Normalize → Compose → Generate → Repair → Validate`),
-- with a normative mapping `(keyword → action)` (e.g. `required`, `minItems`,
-  `enum`, `propertyNames`, `unevaluatedProperties:false`, AP:false),
-- protected by guards (`isEvaluated`, must‑cover, budgets, stagnation guard),
-- and with explicit diagnostics and logging requirements.
+Within that envelope, this brief focuses on:
 
-Within that envelope, implementations have latitude to decide (for a fixed
-schema + options + seed):
+- how aggressively we want to “heal” instances vs letting AJV report errors,
+- how we align expectations between Generator and Repair (especially in `G_valid`),
+- which tests and metrics we rely on to keep behaviour predictable.
 
-- how aggressively to “heal” instances vs letting AJV report errors, and
-- how much responsibility remains with Generator vs Repair.
-
-This brief makes those choices explicit for FoundryData without changing SPEC
-semantics.
+Whenever this brief uses words like “must”/“should”, they are shorthand for
+“per the canonical SPEC, Repair is required to…” or for **local design
+recommendations**. In case of doubt or conflict, the canonical SPEC wins.
 
 ### 1.1 Definitions used by this brief
 
-**Determinism tuple**  
-When this brief says “deterministic”, it means: for a fixed input instance and a
-fixed tuple:
-`(canonicalSchemaFingerprint, planOptionsSnapshot, seed, ajvMajor+ajvPosture, registryFingerprint)`,
+**Determinism tuple (recap)**  
+The exact determinism tuple is defined normatively in the SPEC (see §10.P1
+and §14/§15). Informally, when this brief says “deterministic”, it refers to:
+for a fixed input instance and a fixed tuple capturing:
+`(schema view, PlanOptionsSubKey/plan options, seed, AJV major + flags, registryFingerprint)`,
 Repair produces the same output instance, action logs and diagnostics.
 
-**Progress / “errors stop decreasing”**  
-Whenever this brief says “reduces errors” / “errors stop decreasing”, it refers to
-the progress metric defined in §6.1.
+**Progress / “errors stop decreasing” (recap)**  
+The stable error signature, score `Score(x)` and commit rule are defined
+normatively in §10.P5. When this brief says “reduces errors” / “errors stop
+decreasing”, it refers to that metric and commit rule: commits only when
+`Score(x') < Score(x)`, otherwise revert.
 
 ---
 
-## 2. Problem Statement
+## 2. Problem Statement (non-normative)
 
 Today, Repair can:
 
@@ -61,7 +71,7 @@ Repair philosophy that emphasizes predictability and observability.
 
 ---
 
-## 3. Goals
+## 3. Goals (non-normative)
 
 The Repair philosophy should aim for:
 
@@ -87,13 +97,12 @@ The Repair philosophy should aim for:
 
 ---
 
-## 4. Repair Action Tiers
+## 4. Repair Action Tiers (design view)
 
-We group Repair actions into tiers to clarify what is considered “safe”,
-“structural”, or “aggressive”. The tiering is **normative at the motif level**:
-for each `(schema location, motif)` we must be able to say which tiers are
-enabled in which profiles, and tests/metrics should make that classification
-observable.
+The canonical SPEC defines both the determinism tuple and the tiering model
+for Repair actions (see §10.P1–§10.P3 and §10.P8). This brief rephrases that
+model in more operational terms and calls out how we expect to use it in
+profiles and tests.
 
 ### 4.1 Tier 0 — Non‑mutating
 
@@ -104,7 +113,7 @@ observable.
 - These actions do not change instances; they only inform subsequent Repair
   decisions and diagnostics.
 
-### 4.2 Tier 1 — Local adjustments (always allowed)
+### 4.2 Tier 1 — Local adjustments (preferred, low-risk)
 
 “Local” adjustments are small, deterministic changes that:
 
@@ -121,19 +130,10 @@ Examples:
 - `uniqueItems` de‑duplication via structural hashing.
 
 In this tier, Repair is expected to act aggressively but predictably whenever
-budget allows, because the semantic risk is low.
-
-In particular, Tier‑1 actions:
-
-- MUST NOT introduce new object keys or delete existing keys;
-- MUST NOT change the shape of arrays beyond what `minItems`/`maxItems`/
-  `minContains`/`maxContains` already require (no arbitrary reshuffling);
-- MUST be deterministic for a fixed determinism tuple (see §1.1) and a fixed
-  input instance.
-- MUST NOT consult coverage state (targets, planner hints, hit/miss status) or
-  use coverage mode / `dimensionsEnabled` as an input to any decision.
-- MAY be executed in runs where coverage is enabled; in that case, coverage is
-  observational with respect to Repair.
+budget allows, because the semantic risk is low. The detailed constraints
+(`MUST NOT` introduce/delete keys, determinism guarantees, coverage
+independence) are taken directly from §10.P2 and §10.P4 of the SPEC; this
+brief relies on those rules rather than restating them.
 
 ### 4.3 Tier 2 — Structural completion (guarded)
 
@@ -148,31 +148,27 @@ schema semantics, such as:
 - trimming/removing extra fields under `additionalProperties:false` or
   `unevaluatedProperties:false`, subject to evaluation and must‑cover guards.
 
-These actions are more intrusive. Our philosophy:
+These actions are more intrusive. From a design perspective:
 
-- In **simple cases**, Tier 2 is acceptable and expected. Concretely, we treat
-  a location as “simple” when all of the following hold after composition:
-  - no `unevaluatedProperties:false` / `unevaluatedItems:false`,
-  - `additionalProperties` is `true` or a schema (not `false`),
-  - no AP:false + `propertyNames`/`patternProperties` interplay at the same
-    object location,
-  - no deep conditionals or branching (`if`/`then`/`else`, `oneOf`/`anyOf`)
-    beyond a shallow, non‑nested pattern,
-  - no CoverageIndex‑based must‑cover obligations on this exact location.
-- **Priority rule:** `G_valid` classification takes precedence over the “simple”
-  heuristic. If a location is classified as `G_valid`, Tier‑2 structural completion
-  SHOULD be considered disabled by default and any Tier‑2 action there is treated
-  as a contract regression signal (see §5 and §7), not a normal success path.
-- In **complex contexts** (any of the above conditions violated), Tier 2
-  actions should be:
-  - carefully guard‑checked (`isEvaluated`, must‑cover, AJV pre‑flight),
-  - and limited by budgets; if guards fail or complexity is too high,
-    Repair should stop and leave AJV errors rather than guessing.
+- In **simple cases**, Tier 2 is acceptable and expected. A “simple” location
+  typically has no `unevaluated*` keywords, no AP:false + `propertyNames`/
+  `patternProperties` interplay and no deep conditionals or coverage‑driven
+  must‑cover obligations. The precise guards remain those of §10.
+- **Priority rule (design):** `G_valid` classification takes precedence over
+  any informal “simple vs complex” heuristic. If a location is classified as
+  `G_valid` per §6, Tier‑2 structural completion should be considered
+  disabled by default in our default profiles, and any Tier‑2 action there
+  is treated as a contract‑regression signal for tests and metrics, not a
+  normal success path.
+- In **complex contexts** (deep conditionals, AP:false + `propertyNames`,
+  heavy CoverageIndex use), Tier‑2 actions should be guarded and budgeted
+  carefully; when guards fail or complexity is too high, we prefer to stop
+  and surface AJV errors rather than guessing.
 
-Tier 2 is where the `G_valid` zone intersects with Repair: as we move more
-responsibility to Generator for certain motifs, we can deliberately reduce
-reliance on Tier‑2 actions there and treat any Tier‑2 usage in `G_valid`
-locations as a **regression signal** in tests and metrics.
+Tier 2 is therefore where the `G_valid` zone interacts most directly with
+Repair: as we strengthen Generator obligations in §6, we expect Tier‑2 usage
+inside `G_valid` to trend towards zero and to remain visible via metrics
+(`gValid_*` counters and tier usage metrics).
 
 ### 4.4 Tier 3 — Aggressive restructuring (discouraged)
 
@@ -182,27 +178,16 @@ The SPEC makes it *possible* in theory to:
 - introduce new keys to satisfy complex `dependent*`/conditional structures,
 - significantly reshape arrays and objects.
 
-However, our philosophy is to treat such actions as **last resort, not
+However, our design stance is to treat such actions as **last resort, not
 default behaviour**:
 
-- In standard profiles, Repair SHOULD NOT attempt deep, multi‑step structural
-  changes beyond what §10 describes directly; instead, it should:
-  - try one or a few deterministic adjustments,
-  - then stop when errors stop decreasing (per §6.1) or guards fail,
-  - and surface remaining AJV errors + `UNSAT_BUDGET_EXHAUSTED` where
-    applicable.
-- More aggressive behaviours, if implemented, should be tied to explicit
-  profiles or modes (e.g. a “healing” or experimental profile), not the
-  default strict/generative pipeline.
-
-In particular:
-
-- Under default strict/generative profiles, Tier‑3 actions SHOULD be
-  effectively disabled for `G_valid` locations and for complex AP:false /
-  CoverageIndex motifs.
-- Any experimental Tier‑3 profile MUST keep determinism and the same AJV
-  validity contract as other profiles; it explores different mutations, not
-  a different notion of “valid”.
+- In default profiles, we prefer to stay within the Tier‑1/Tier‑2 envelope
+  defined by §10.P2/§10.P3/§10.P8 and to stop when the Score/commit rule or
+  budgets say “no further progress”, surfacing remaining AJV errors and
+  `UNSAT_BUDGET_EXHAUSTED` when applicable.
+- More aggressive behaviours, if ever implemented, should be tied to explicit
+  experimental profiles, with dedicated tests and metrics, and must still
+  satisfy the determinism and AJV‑oracle contracts from the SPEC.
 
 ### 4.5 Motif sketch (v1)
 
@@ -228,179 +213,134 @@ level, we expect:
 
 ---
 
-## 5. Interaction with Generator & `G_valid`
+## 5. Interaction with Generator & `G_valid` (recap + design notes)
 
-The Repair philosophy is closely linked to the Generator‑vs‑Repair contract:
+The Generator‑vs‑Repair contract and the definition of the generator‑valid
+zone `G_valid` are specified normatively in the canonical SPEC (§6). This
+brief assumes that classification as an input and highlights the design
+implications:
 
 - For schema locations in the **Generator‑valid zone** (`G_valid`):
-  - `G_valid` and its initial scope (`G_valid v1`) are defined in
-    `docs/design-generator-vs-repair.md` and in the canonical SPEC; this
-    document assumes that classification as an input.
-  - Generator is expected to produce AJV‑valid instances by construction,
-    except for minor Tier‑1 adjustments.
-  - Tier‑2 structural completion (adding required properties, growing arrays)
-    SHOULD be rare or unnecessary.
-  - Tier‑3 behaviour SHOULD be effectively disabled.
+  - Generator is expected to produce AJV‑valid instances by construction
+    (modulo small Tier‑1 adjustments allowed by §6.5), not to rely on Repair
+    for structural correctness.
+  - Structural Tier‑2 actions in `G_valid` (e.g. adding required properties,
+    growing arrays structurally) are considered exceptional and should be
+    visible via `gValid_*` metrics and diagnostics.
+  - Tier‑3 behaviour is out of scope for default profiles.
 
 - Outside `G_valid`:
-  - Tier‑1 and Tier‑2 actions remain available within budget and guarded by
-    SPEC rules.
-  - Tier‑3 is still discouraged but may be explored in explicit, non‑default
-    profiles if we see strong value in practice.
+  - Tier‑1 and Tier‑2 actions remain available within budgets and the guards
+    defined by §10.
+  - Tier‑3 remains discouraged but could be explored in explicit, non‑default
+    profiles if we ever decide to support them.
 
 This alignment allows us to:
 
-  - make the pipeline more predictable where we can (by expanding `G_valid`), and
-  - retain flexibility for more complex motifs without over‑promising on Repair.
+- make the pipeline more predictable wherever we can expand `G_valid`, and
+- retain flexibility for complex motifs without over‑promising on Repair.
 
-Coverage‑aware modes and profiles (`coverage=off|measure|guided`,
-`quick` / `balanced` / `thorough`) **do not change** which Repair tiers are
-allowed or how budgets are interpreted. They may influence planning and
-generation upstream, but Repair does not consume coverage state as an input:
+Coverage‑aware modes and profiles (`coverage=off|measure|guided`, coverage
+profiles) are defined by the coverage‑aware SPEC; from the Repair point of
+view we treat them as **observational**:
 
-- `coverage=measure` remains observational with respect to the instance stream;
-  therefore Repair behavior is identical to `coverage=off` for the same generated
-  candidates.
-- `coverage=guided` may cause different candidates to be generated (more seeds /
-  batches under a budget), so different instances may enter Repair; however, for a
-  fixed input instance and determinism tuple (§1.1), Repair’s mutations and
-  diagnostics remain deterministic.
-- `dimensionsEnabled` only changes which coverage targets/metrics are materialised;
-  it MUST NOT affect Repair decisions.
-
-These constraints sit underneath the coverage‑aware requirements defined in
-`docs/spec-coverage-aware-v1.0.md`. In particular, nothing in this brief may
-violate the non‑regression guarantees for `branches`/`enum` coverage between
-`coverage=measure` and `coverage=guided`, nor the determinism contract for a
-fixed `(canonical schema, OpenAPI spec?, coverage options, seed, ajvMajor,
-registryFingerprint)` as defined by that SPEC.
+- For a fixed input instance and determinism tuple, Repair’s mutations and
+  diagnostics are the same regardless of coverage mode or `dimensionsEnabled`
+  (see §10.P4).
+- Different coverage modes may cause different instances to reach Repair
+  (because planning/generation behave differently), but Repair does not read
+  coverage state as an input to its decisions.
 
 ---
 
-## 6. Budgets & Stagnation Guard
+## 6. Budgets & Stagnation Guard (design view)
 
-### 6.1 Progress metric (normative for termination and “no guessing”)
+The budget and stagnation rules are defined normatively in §10.P5–§10.P6 and
+the complexity options in the SPEC. This brief focuses on how we intend to
+use those rules in profiles and tests.
 
-Repair is AJV‑driven and evaluates progress using AJV `allErrors:true`, with the
-progress metric and commit rule defined **normatively** in the canonical SPEC
-§10.P5 (“Progress metric and commit rule”). In short, §10.P5 defines a stable
-error signature `sig(e)` and the score `Score(x)` as the number of distinct
-signatures, with the requirement that a candidate `x → x'` is committed only
-when it strictly improves the score (`Score(x') < Score(x)`); otherwise Repair
-MUST revert the mutation (see §10.P5 for the exact definition, including
-canonicalization of `params` and the use of `canonPath`/`schemaPath`).
+At a high level:
 
-This deliberately forbids multi‑step “temporary worsening” strategies in default
-profiles; such strategies, if ever introduced, belong in explicit experimental
-Tier‑3 profiles with separate tests and observability.
+- The progress metric and commit rule (§10.P5) deliberately forbid multi‑step
+  “temporary worsening” strategies in default profiles.
+- Budgets (§10.P6 and related complexity options) provide an explicit upper
+  bound on how long Repair is allowed to keep trying.
 
-Repair is explicitly budgeted:
+Design‑wise, we treat budgets as:
 
 - A maximum number of gen→repair→validate cycles per item
   (`complexity.bailOnUnsatAfter`), and
 - a per‑path attempt budget for certain actions (e.g. renames).
 
-Our philosophy is to:
+In practice, we:
 
 - keep default budgets **small** (1–3 cycles) to avoid unbounded repair loops,
-- treat `UNSAT_BUDGET_EXHAUSTED` as a *signal* to users and tests that a
-  schema/location is too complex for automatic repair,
+- treat `UNSAT_BUDGET_EXHAUSTED` as a *signal* that a schema/location is too
+  complex for automatic repair in the default profile,
 - only raise budgets in targeted scenarios where we have explicit tests and
   metrics to justify it.
 
 When budgets are exhausted and AJV still reports validation errors at a
-location:
+location, we expect:
 
-- Repair MUST stop mutating the instance at that location (no “best effort”
-  guessing beyond the last attempt);
-- the pipeline MUST surface remaining AJV errors together with the relevant
-  diagnostics (including `UNSAT_BUDGET_EXHAUSTED` where applicable);
-- the overall pipeline result MUST NOT be reported as “completed” / success
-  if validation errors remain; callers should observe a failure status and
-  error list, as illustrated in the README examples.
+- Repair to stop mutating the instance at that location (no further guessing
+  beyond the last attempt),
+- the pipeline to surface remaining AJV errors plus diagnostics, including
+  `UNSAT_BUDGET_EXHAUSTED` when applicable,
+- the overall pipeline result to reflect failure rather than silently claiming
+  success.
 
 Separately from budgets, Repair may also stop due to **policy** (tier/profile)
-or **guard** decisions. These are not “budget exhausted” situations and SHOULD
-be surfaced with distinct diagnostics (e.g. `REPAIR_TIER_DISABLED`,
-`REPAIR_GUARD_BLOCKED`) so callers can distinguish “we chose not to” from
-“we tried and ran out of attempts”.
+or **guard** decisions. Those are not “budget exhausted” situations; they are
+surfaced via the dedicated diagnostics defined in §10.P7 (e.g.
+`REPAIR_TIER_DISABLED`, `REPAIR_REVERTED_NO_PROGRESS`).
 
 ---
 
-## 7. Observability & Testing
+## 7. Observability & Testing (design view)
 
-To make Repair behaviour auditable, we rely on:
+The diagnostics envelope, Repair observability requirements and code↔phase
+constraints are defined normatively in the SPEC (§19 and §10.P7). From a
+design perspective, we rely on:
 
 - **Action logs**  
   Each Repair action records `keyword`, `canonPath`, `origPath`, and
-  additional `details` per SPEC. This should be sufficient to reconstruct
-  what happened to a given instance.
-  - For performance, implementations MAY sample or cap per‑item action logs
-    in non‑debug runs, but MUST preserve enough information to explain failures
-    and MUST expose aggregated counters (actions per tier/motif) even when
-    detailed logs are capped.
+  additional `details` per SPEC. For performance, implementations may cap
+  per‑item logs in non‑debug runs, but we rely on aggregated counters
+  (actions per tier/motif, blocked‑by‑policy vs blocked‑by‑guards vs
+  budget‑exhausted) to keep behaviour observable.
 
 - **Diagnostics**  
-  Repair diagnostics reuse the shared diagnostics envelope and payload contracts
-  defined in the canonical SPEC (§19) and the Repair observability requirements
-  in §10.P7 (including `REPAIR_TIER_DISABLED`, `REPAIR_REVERTED_NO_PROGRESS`,
-  and the requirement to set `phase:'repair'`, `canonPath`, and structured
-  `details`). Briefly, codes such as `REPAIR_PNAMES_PATTERN_ENUM`,
-  `REPAIR_RENAME_PREFLIGHT_FAIL`, `MUSTCOVER_INDEX_MISSING`,
-  `UNSAT_BUDGET_EXHAUSTED`, and the new tier/policy codes highlight when guards,
-  budgets, or tier policies limit Repair. Tests SHOULD assert that:
-  - budget‑influenced decisions attach budget context in `details`
-    (e.g. `attemptsTried`, `attemptsLimit`), and
-  - policy decisions (tier/profile) attach policy context when appropriate
-    (e.g. `requestedTier`, `allowedMaxTier`, `reason:'g_valid'|'default_policy'`).
+  We use the Repair diagnostics defined in the SPEC (including
+  `REPAIR_TIER_DISABLED`, `REPAIR_REVERTED_NO_PROGRESS`,
+  `UNSAT_BUDGET_EXHAUSTED` and other Repair‑specific codes) to distinguish:
+  - guard failures vs tier/policy decisions vs budget exhaustion;
+  - behaviour in `G_valid` vs non‑`G_valid` locations (via `gValid_*`
+    metrics and context).
 
 - **Tests & invariants**  
-  - Unit tests for individual Repair actions and guards.
+  We expect:
+  - unit tests for individual Repair actions and guards,
   - E2E tests that assert:
     - Tier‑1 adjustments behave deterministically,
     - Tier‑2 completion happens only where expected,
-    - in `G_valid` motifs, Repair usage is near zero,
-    - Repair does not silently “heal” instances beyond what tests consider
-      acceptable.
+    - in `G_valid` motifs, Repair usage is near zero and structural
+      `structuralKeywords` repairs are treated as regressions,
+    - behaviour under budgets and stagnation is stable (including
+      `UNSAT_BUDGET_EXHAUSTED` cases),
+    - Repair does not vary with `dimensionsEnabled`, and
+      `coverage=measure` produces the same Repair usage as `coverage=off`
+      for the same schema/options/seed.
 
 These tests and metrics should be cross‑referenced in
-`docs/tests-traceability.md` so that Repair decisions are traceable to
-SPEC anchors and invariants. In particular, we expect:
-
-- dedicated micro‑schemas that exercise Tier‑1 vs Tier‑2 vs Tier‑3 motifs;
-- invariants that assert “no Repair actions” (or a very small bounded set)
-  for locations explicitly tagged as `G_valid`;
-- regression tests that pin the behaviour when budgets are exhausted
-  (diagnostics emitted, pipeline status, no hidden Tier‑3 rescues).
-  - (new) tests that assert Repair does not vary with `dimensionsEnabled`, and that
-    `coverage=measure` produces identical Repair usage as `coverage=off` for the same
-    schema/options/seed.
+`docs/tests-traceability.md` so that Repair decisions remain traceable to
+SPEC anchors and invariants.
 
 ---
 
-## 8. Next Steps & Open Questions
+## 8. Next Steps & Open Questions (design only)
 
-Open questions:
-
-- Where exactly do we draw the line between Tier‑2 and Tier‑3 for each motif
-  (e.g. property renames, deep `contains` bags, dependentSchemas)?
-- How should Repair behaviour vary across data profiles (`minimal`,
-  `realistic`, `strict`) and coverage profiles (`quick` / `balanced` /
-  `thorough`)?
-- Do we want an explicit “repair‑aggressive” profile, or do we prefer to
-  keep aggressive restructuring out of the main product surface?
-
-Suggested next steps:
-
-1. Classify existing Repair actions in the Tier 1/2/3 scheme and document
-   them in `docs/tests-traceability.md`.
-2. Add metrics around Repair usage (number of actions per item, per motif)
-   and expose them in internal reports.
-2b. Add explicit counters for “blocked by policy” vs “blocked by guards” vs
-    “exhausted budget”, so regressions in `G_valid` and tier disablements are
-    visible at a glance.
-3. Define concrete expectations for `G_valid` motifs (e.g. maximum allowed
-   Repair actions) and add tests to enforce them.
-4. Revisit budgets and profiles in light of these metrics, tightening Repair
-   where it proves too aggressive and expanding Generator responsibilities
-   where feasible.
+The open questions and suggested next steps below are non‑normative and
+intended for roadmap discussions; any concrete changes derived from them
+must be reflected back into the canonical SPEC before being treated as
+contractual.

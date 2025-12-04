@@ -1859,11 +1859,11 @@
             "id": 9500002,
             "title": "De-duplicate design-repair-philosophy.md (reference canonical spec)",
             "description": "Rewrite design-repair-philosophy.md so that it points to the new canonical spec anchors for Score/tiers/policy instead of maintaining parallel normative text.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 2,
             "file": "docs/design-repair-philosophy.md",
             "parentId": "9500",
-            "updatedAt": "2025-12-04T00:00:00.000Z"
+            "updatedAt": "2025-12-04T20:05:22.323Z"
           },
           {
             "id": 9500003,
@@ -1876,7 +1876,7 @@
             "updatedAt": "2025-12-04T00:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-04T20:00:32.122Z"
+        "updatedAt": "2025-12-04T20:05:22.323Z"
       },
       {
         "id": "9501",
@@ -2168,7 +2168,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-04T20:00:32.124Z",
+      "lastModified": "2025-12-04T20:05:22.325Z",
       "taskCount": 7,
       "completedCount": 0,
       "tags": [
