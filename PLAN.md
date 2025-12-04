@@ -13,7 +13,7 @@ Pour la sous-tâche 9506.9506003, je vais ajouter un test E2E pipeline qui explo
 DoD:
 - [x] Un test pipeline UNSAT/stagnation consomme le micro-schema UNSAT/stagnation des fixtures et démontre qu’aucune séquence de Repair ne permet d’atteindre un état pleinement valide pour un tuple (schema, options, seed) fixé, tout en restant déterministe.
 - [x] Les diagnostics et métriques observés pour ce scénario restent compatibles avec les enveloppes existantes (pas de nouveaux codes introduits), et rendent visibles les informations de type Score/budget ou stagnation prévues par la spec.
-- [x] Les métriques Repair pertinentes (`repairPassesPerRow` au minimum) restent cohérentes entre plusieurs runs identiques, montrant que le traitement UNSAT/stagnation n’introduit pas de non-déterminisme caché.
+- [x] Les métriques Repair pertinentes (`repairPassesPerRow`, `repairActionsPerRow` et compteurs de tiers) restent cohérentes entre plusieurs runs identiques, montrant que le traitement UNSAT/stagnation n’introduit pas de non-déterminisme caché.
 - [x] La suite build/typecheck/lint/test/bench reste verte avec ce test d’UNSAT/stagnation, et la trace 9506 est mise à jour pour refléter la couverture de DEL3/DOD3/TS3.
 
 Parent bullets couverts: [DEL3, DOD3, TS3]

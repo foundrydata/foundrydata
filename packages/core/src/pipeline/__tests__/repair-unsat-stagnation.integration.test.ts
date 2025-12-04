@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 import { describe, it, expect } from 'vitest';
 
 import { executePipeline } from '../orchestrator.js';
@@ -60,7 +61,7 @@ describe('Repair UNSAT/stagnation — pipeline integration', () => {
     expect(second.diags).toEqual(first.diags);
   });
 
-  it('keeps repairPassesPerRow stable for UNSAT-like schema', async () => {
+  it('keeps repair metrics stable for UNSAT-like schema', async () => {
     const schema = repairPhilosophyMicroSchemas.unsat.integerConstVsMultipleOf;
 
     const first = await runUnsatPipeline(schema);
@@ -70,5 +71,10 @@ describe('Repair UNSAT/stagnation — pipeline integration', () => {
     const m2 = second.metrics;
 
     expect(m2.repairPassesPerRow).toBe(m1.repairPassesPerRow);
+    expect(m2.repairActionsPerRow ?? 0).toBe(m1.repairActionsPerRow ?? 0);
+    expect(m2.repair_tier1_actions ?? 0).toBe(m1.repair_tier1_actions ?? 0);
+    expect(m2.repair_tier2_actions ?? 0).toBe(m1.repair_tier2_actions ?? 0);
+    expect(m2.repair_tier3_actions ?? 0).toBe(m1.repair_tier3_actions ?? 0);
+    expect(m2.repair_tierDisabled ?? 0).toBe(m1.repair_tierDisabled ?? 0);
   });
 });
