@@ -37,4 +37,4 @@ This document maps the parent task 9506 bullets from Implementation Details, Del
   Covers: [KR1, KR2, DEL2, DOD2, TS2] (status: done).
 
 - **9506.9506003 – Add UNSAT stagnation/oscillation test using Score signatures**  
-  Covers: [KR3, DEL3, DOD3, TS3] (status: pending).
+  Covers: [KR3, DEL3, DOD3, TS3] (status: done).
