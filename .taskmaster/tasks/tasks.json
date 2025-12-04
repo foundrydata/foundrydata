@@ -2127,7 +2127,7 @@
           "9504",
           "9505"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 4,
         "details": "[Context]\nOnce policies are enforced, we need a stable test corpus to prevent regressions (Repair becoming too magical, or silently compensating for Generator in G_valid).\n\n[Spec anchors]\n- Canonical spec §6: G_valid and structuralKeywords behavior + gValid_* regression metrics.\n- Canonical spec §10 Repair philosophy: tiers, commit rule, budgets/stagnation and UNSAT emission.\n\n[Key requirements]\n- Add a fixture pack of micro-schemas that each targets a single motif:\n  - Tier-1 only: numeric clamp, string minLength, uniqueItems.\n  - Tier-2 outside G_valid: required add, contains witness append, AP:false cleanup.\n  - G_valid structural keyword trigger cases to ensure they are blocked/flagged (minItems/required/AP cleanup inside G_valid should not be “normal success”).\n  - A controlled UNSAT/stagnation case that exhausts bailOnUnsatAfter and asserts diagnostics include cycle/error context.\n- Assert not just output validity, but also repair action logs, tier counters, and presence/absence of policy-disabled diagnostics.\n\n[Deliverables]\n- New fixtures and E2E tests pinning tier policy and UNSAT behavior.",
         "testStrategy": "- Golden snapshots: actions[] and relevant repair diagnostics for each micro-schema.\n- Contract assertions: in G_valid fixtures, structural repair counters stay at 0 (or are confined to explicit regression metrics) and policy-disabled diagnostics appear.\n- UNSAT test: ensure Score signature set does not strictly decrease across cycles and UNSAT_BUDGET_EXHAUSTED is emitted with details.",
@@ -2136,11 +2136,11 @@
             "id": 9506001,
             "title": "Create repair-philosophy micro-schema fixtures",
             "description": "Add a JSON file (or TS fixtures) containing micro-schemas and seed inputs to exercise each tier/motif deterministically.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/test/fixtures/repair-philosophy/repair-philosophy.fixtures.json",
             "parentId": "9506",
-            "updatedAt": "2025-12-04T00:00:00.000Z"
+            "updatedAt": "2025-12-04T23:05:52.145Z"
           },
           {
             "id": 9506002,
@@ -2163,12 +2163,12 @@
             "updatedAt": "2025-12-04T00:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-04T00:00:00.000Z"
+        "updatedAt": "2025-12-04T23:05:52.145Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-04T22:55:28.003Z",
+      "lastModified": "2025-12-04T23:05:52.147Z",
       "taskCount": 7,
       "completedCount": 6,
       "tags": [

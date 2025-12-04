@@ -1,22 +1,22 @@
-Task: 9505   Title: Add coverage-independence and determinism regression tests for Repair — subtask 9505.9505003
-Anchors: [spec://§10#repair-philosophy, spec://§10#repair-philosophy-coverage-independence, spec://§6#phases, spec://§15#rng, spec://§15#metrics]
+Task: 9506   Title: Add micro-schemas + E2E assertions for tier behavior, G_valid regressions, and UNSAT stability — subtask 9506.9506001
+Anchors: [spec://§10#repair-philosophy, spec://§10#mapping, spec://§6#generator-repair-contract, spec://§15#metrics]
 Touched files:
 - PLAN.md
-- .taskmaster/docs/9505-traceability.md
+- .taskmaster/docs/9506-traceability.md
 - .taskmaster/tasks/tasks.json
-- packages/core/src/pipeline/__tests__/repair-determinism-fixture.test.ts
+- packages/core/src/repair/__fixtures__/repair-philosophy-microschemas.ts
 - agent-log.jsonl
 
 Approach:
-Pour la sous-tâche 9505.9505003, je vais préparer un chemin de fixture pré-Repair déterministe qui permet d’injecter un flux d’instances candidates figé dans Repair afin de tester la stabilité des décisions et du Score sans dépendre du générateur ou de la couverture. En m’appuyant sur `spec://§10#repair-philosophy`, `spec://§10#repair-philosophy-coverage-independence`, `spec://§6#phases`, `spec://§15#rng` et `spec://§15#metrics`, je vais (1) introduire un petit helper de test (ou un wrapper pipeline de test-only) qui, pour un schéma et un tuple de paramètres, exécute `executePipeline` une première fois, capture les instances candidates juste avant Repair et les réutilise comme fixture dans des runs suivants, (2) ajouter un test dédié dans `repair-determinism-fixture.test.ts` qui exécute plusieurs fois la boucle de Repair sur ces mêmes instances pré-Repair, avec les mêmes options (coverage=off/measure fixés), et vérifie que `artifacts.repaired`, `artifacts.repairActions`, `artifacts.repairDiagnostics` et les métriques Repair (Score, `repairPassesPerRow`, `repairActionsPerRow`) restent strictement identiques, (3) s’assurer que le helper est pur côté tests (pas de mutation de global state, pas d’API réseau, pas de dépendance à coverageMode/dimensionsEnabled en dehors de la configuration passée), et (4) rejouer build/typecheck/lint/test/bench pour valider que ces tests de déterminisme n’introduisent ni flakiness ni divergence de Score, tout en documentant le lien avec KR3/DEL3/DOD3/TS3 dans la trace 9505.
+Pour la sous-tâche 9506.9506001, je vais concevoir un petit pack de micro-schemas « repair-philosophy » qui servent de base commune aux tests de tiers, de G_valid et d’UNSAT/stagnation sans changer la sémantique de Repair ou de l’orchestrateur. En m’appuyant sur `spec://§10#repair-philosophy`, `spec://§10#mapping`, `spec://§6#generator-repair-contract` et `spec://§15#metrics`, je vais (1) créer un module de fixtures dédié (par exemple `repair-philosophy-microschemas.ts`) qui expose des schémas minimaux pour chaque motif: Tier-1 only (clamp numéraire simple, string minLength, uniqueItems), Tier-2 hors G_valid (required add, contains witness append, AP:false cleanup) et cas structurels en G_valid (minItems/required/AP dans un contexte gValid_*), (2) documenter pour chaque micro-schema le motif visé, le ou les tiers attendus et, si pertinent, un seed recommandé afin que les tests E2E puissent réutiliser ces fixtures sans dépendre du hasard, (3) garder ces fixtures purement déclaratives (pas de logique, pas de dépendance à coverage ou aux options) afin qu’elles puissent être importées aussi bien par des tests Repair unitaires que par des tests pipeline, et (4) mettre à jour la trace 9506 et agent-log au moment du complete-subtask, après avoir vérifié que les fichiers de fixtures sont couverts par des tests dans la sous-tâche suivante et que la CI (build/typecheck/lint/test/bench) reste verte.
 
 DoD:
-- [x] Un helper ou wrapper de test permet d’injecter un flux d’instances pré-Repair figé dans la boucle de Repair sans modifier la sémantique du pipeline en production ni dépendre de l’état de coverage.
-- [x] Au moins un test pipeline-level utilise ce helper pour exécuter plusieurs runs de Repair sur les mêmes instances candidates et vérifie que `artifacts.repaired`, `artifacts.repairActions` et `artifacts.repairDiagnostics` restent strictement identiques.
-- [x] Les métriques Repair pertinentes (`repairPassesPerRow`, `repairActionsPerRow` et compteurs de tiers s’ils sont exposés) restent identiques sur ces runs répétés, montrant l’absence de non-déterminisme caché pour un tuple de paramètres donné.
-- [x] La suite build/typecheck/lint/test/bench est verte avec ces nouveaux tests de déterminisme, et la trace 9505 documente qu’ils couvrent la partie KR3/DEL3/DOD3/TS3 de la coverage-independence et de la stabilité de Repair.
+- [x] Un module de fixtures repair-philosophy regroupe des micro-schemas ciblés pour Tier-1 only, Tier-2 hors G_valid et cas structurels en G_valid, chacun documenté par un commentaire concis indiquant le motif et le comportement attendu.
+- [x] Les micro-schemas couvrent au minimum un exemple de clamp numérique, de string minLength, d’uniqueItems, de required add, de contains witness append, d’AP:false cleanup et d’un cas UNSAT/stagnation aligné avec la règle de Score(x).
+- [x] Les fixtures sont purement déclaratives (aucune logique, aucun import de modules de production), et peuvent être importées sans effet de bord depuis des tests Repair unitaires et des tests pipeline.
+- [x] La suite build/typecheck/lint/test/bench reste verte après l’ajout de ces fixtures, et la trace 9506 reflète que KR1/KR2/KR3/DEL1/DOD1/TS1 sont couverts par cette sous-tâche.
 
-Parent bullets couverts: [KR3, DEL3, DOD3, TS3]
+Parent bullets couverts: [KR1, KR2, KR3, DEL1, DOD1, TS1]
 
 Checks:
 - build: npm run build
@@ -25,12 +25,10 @@ Checks:
 - diag-schema: true
 
 DoD:
-- [x] Pour un schéma et un seed donnés, `executePipeline` retourne des `artifacts.repaired`, `artifacts.repairActions` et `artifacts.repairDiagnostics` identiques entre coverage=off et coverage=measure (mêmes options et même tuple de déterminisme), les seules différences admises portant sur les artefacts coverage.
-- [x] Les métriques Repair (au minimum `repairPassesPerRow`, compteurs de tiers s’ils sont présents) restent identiques entre les deux runs, montrant que Repair ne dépend ni de coverageMode ni de dimensionsEnabled pour ses décisions.
-- [x] Le test n’introduit pas de dépendance aux détails internes du CoverageAnalyzer (pas d’assertions sur `coverageGraph` ou `coverageTargets`), et reste stable et déterministe dans le temps.
-- [x] La suite build/typecheck/lint/test/bench est verte après l’ajout de ce test d’équivalence, et le test est documenté dans la trace 9505 comme couvrant la partie off vs measure de la coverage-independence de Repair.
+- [ ] Les tests E2E et unitaires qui consomment ces micro-schemas (9506.9506002/9506.9506003) sont en mesure de les référencer sans duplication ni logique ad hoc.
+- [ ] La documentation interne (traceability 9506 et commentaires de fixtures) permet de retrouver rapidement quel micro-schema couvre quel motif de tiers/G_valid/UNSAT.
 
-Parent bullets couverts: [KR1, DEL1, DOD1, TS1]
+Parent bullets couverts: [DEL2, DEL3, DOD2, DOD3, TS2, TS3]
 
 Checks:
 - build: npm run build

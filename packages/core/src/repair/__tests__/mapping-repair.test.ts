@@ -5,6 +5,7 @@ import type { ComposeResult } from '../../transform/composition-engine';
 import { createSourceAjv } from '../../util/ajv-source';
 import { MetricsCollector } from '../../util/metrics';
 import * as scoreModule from '../score/score.js';
+import { repairPhilosophyMicroSchemas } from '../__fixtures__/repair-philosophy-microschemas.js';
 
 function eff(): ComposeResult {
   const canonical = {
@@ -29,7 +30,11 @@ function valid(schema: unknown, data: unknown): boolean {
 
 describe('Repair Engine — §10 mapping repairs (basic)', () => {
   it('repairs enum by choosing first member', () => {
-    const schema = { type: 'string', enum: ['A', 'B', 'C'] };
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'string',
+      enum: ['A', 'B', 'C'],
+    } as const;
     const out = repairItemsAjvDriven(
       ['x'],
       { schema, effective: eff() },
@@ -127,15 +132,7 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
   });
 
   it('emits G_valid structural diagnostics and skips addRequired in G_valid objects by default', () => {
-    const schema = {
-      $schema: 'https://json-schema.org/draft/2020-12/schema',
-      type: 'object',
-      properties: {
-        id: { type: 'integer', minimum: 0 },
-        title: { type: 'string', minLength: 1 },
-      },
-      required: ['id', 'title'],
-    } as const;
+    const schema = repairPhilosophyMicroSchemas.gValidStructural.simpleObject;
     const canonical = {
       schema,
       ptrMap: new Map<string, string>(),
@@ -172,15 +169,7 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
   });
 
   it('allows structural repairs when allowStructuralInGValid is true', () => {
-    const schema = {
-      $schema: 'https://json-schema.org/draft/2020-12/schema',
-      type: 'object',
-      properties: {
-        id: { type: 'integer', minimum: 0 },
-        title: { type: 'string', minLength: 1 },
-      },
-      required: ['id', 'title'],
-    } as const;
+    const schema = repairPhilosophyMicroSchemas.gValidStructural.simpleObject;
     const canonical = {
       schema,
       ptrMap: new Map<string, string>(),
@@ -217,15 +206,7 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
   });
 
   it('records motif-tagged repair usage metrics for G_valid and non-G_valid motifs on the same run', () => {
-    const schema = {
-      $schema: 'https://json-schema.org/draft/2020-12/schema',
-      type: 'object',
-      properties: {
-        id: { type: 'integer', minimum: 0 },
-        title: { type: 'string', minLength: 1 },
-      },
-      required: ['id', 'title'],
-    } as const;
+    const schema = repairPhilosophyMicroSchemas.gValidStructural.simpleObject;
     const canonical = {
       schema,
       ptrMap: new Map<string, string>(),
@@ -274,7 +255,7 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
   });
 
   it('wires Score(x) computation into AJV-driven repair attempts', () => {
-    const schema = { type: 'string', minLength: 3 };
+    const schema = repairPhilosophyMicroSchemas.tier1.stringMinLength;
     const spy = vi.spyOn(scoreModule, 'computeScore');
 
     const out = repairItemsAjvDriven(
@@ -289,7 +270,7 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
   });
 
   it('reverts deterministically when Score(x) does not improve', () => {
-    const schema = { type: 'string', minLength: 3 } as const;
+    const schema = repairPhilosophyMicroSchemas.tier1.stringMinLength;
     const original = 'x';
 
     const spy = vi
