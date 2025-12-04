@@ -1,23 +1,23 @@
-Task: 9501   Title: Implement stable AJV error signature and Score(x) utilities — subtask 9501.9501003
-Anchors: [spec://§10#repair-philosophy, spec://§10#repair-philosophy-progress, spec://§14#planoptionssubkey, spec://§15#metrics]
+Task: 9502   Title: Add repair-philosophy diagnostics codes and metrics counters — subtask 9502.9502001
+Anchors: [spec://§10#repair-philosophy, spec://§19#envelope, spec://§19#payloads]
 Touched files:
 - PLAN.md
-- .taskmaster/docs/9501-traceability.md
+- .taskmaster/docs/9502-traceability.md
 - .taskmaster/tasks/tasks.json
-- packages/core/src/repair/score/score.ts
-- packages/core/src/repair/score/__tests__/score.test.ts
+- packages/core/src/diag/codes.ts
+- packages/core/src/diag/schemas.ts
+- packages/core/src/diag/__tests__/diag-codes.test.ts
 
 Approach:
-Pour la sous-tâche 9501.9501003, je vais implémenter un helper `computeScore(errors, mapping)` qui calcule `Score(x)` comme la cardinalité de l’ensemble des signatures `sig(e)` définies en §10.P5, en s’appuyant sur les helpers précédents. En m’appuyant sur `spec://§10#repair-philosophy` et `spec://§10#repair-philosophy-progress`, je vais (1) consommer les `AjvErrorObject` issus d’AJV (ou de notre type `AjvErr`) et construire pour chacun une signature structurée via `buildErrorSignature(e, mapping)`, (2) dédupliquer les signatures via une clé de set déterministe (par exemple JSON d’un tuple `[keyword, canonPath, instancePath, paramsKey]`) pour obtenir le nombre de signatures distinctes, en veillant à ce que l’ordre des erreurs n’influence pas le résultat, (3) traiter proprement les listes vides ou nulles et les duplications triviales (mêmes erreurs répétées, variations d’ordre des propriétés `params`) afin que Score(x) reste stable, et (4) écrire des tests unitaires pour `Score(x)` couvrant liste vide, erreurs distinctes, duplications exactes et duplications qui ne diffèrent que par l’ordre des paramètres, puis relancer build/typecheck/lint/test/bench pour confirmer que cette implémentation reste pure, déterministe et indépendante de la coverage.
+Pour la sous-tâche 9502.9502001, je vais ajouter (ou confirmer) les diagnostics Repair nécessaires à la philosophie dans le registre central et les schémas de payloads, sans toucher encore aux compteurs de métriques. En m’appuyant sur `spec://§10#repair-philosophy` et sur la section diagnostics (§19), je vais (1) vérifier que les codes `REPAIR_TIER_DISABLED` et `REPAIR_REVERTED_NO_PROGRESS` sont bien présents dans `packages/core/src/diag/codes.ts` avec la phase `repair`, et ajuster au besoin les types et le mapping code↔phase, (2) aligner `packages/core/src/diag/schemas.ts` (ou l’équivalent) pour que les shapes `details` de ces codes correspondent exactement aux payloads normatifs (keyword, requestedTier, allowedMaxTier, reason pour le premier; keyword, scoreBefore, scoreAfter pour le second), (3) ajouter ou mettre à jour des tests unitaires dans `packages/core/src/diag/__tests__/diag-codes.test.ts` pour vérifier que ces codes sont déclarés, que la phase est correcte et que les schémas acceptent des payloads valides et rejettent des payloads invalides, puis (4) relancer build/typecheck/lint/test/bench pour garantir que ces modifications restent compatibles avec le reporter/CLI et l’enveloppe diagnostics commune.
 
 DoD:
-DoD:
-- [x] Le helper `computeScore(errors, mapping)` calcule `Score(x)` comme la cardinalité des signatures `sig(e)` définies par la SPEC, en utilisant `buildErrorSignature` pour construire les signatures et en restant insensible à l’ordre des erreurs.
-- [x] Les tests unitaires pour Score(x) couvrent les cas de liste vide, d’erreurs distinctes, de duplications exactes et de duplications où seules les propriétés `params` sont réordonnées, avec une couverture ≥80 % sur `score.ts`.
-- [x] Aucune dépendance à l’état de coverage ou à des singletons n’est introduite (la fonction ne lit pas `coverage`, `dimensionsEnabled` ou des structures globales) et son comportement reste déterministe pour un tuple de déterminisme donné.
-- [x] La suite build/typecheck/lint/test/bench reste verte après l’introduction de Score(x) et de ses tests, confirmant que l’implémentation est prête à être utilisée par le moteur de Repair pour la règle de commit.
+- [x] Les codes `REPAIR_TIER_DISABLED` et `REPAIR_REVERTED_NO_PROGRESS` sont bien déclarés dans le registre diagnostics avec phase `repair`, et leurs payloads sont décrits dans les schémas de détails conformément à la SPEC (champs requis, types, enums).
+- [x] Les tests unitaires de diagnostics valident que ces codes sont présents, que leur phase est correcte et que les payloads conformes passent la validation tandis que des payloads incorrects (champs manquants/mauvais types) échouent.
+- [x] Les changements n’introduisent aucune nouvelle phase ou code hors périmètre de la philosophie Repair (pas de modification des diagnostics Normalize/Compose/Generate/Validate) et restent compatibles avec la forme de l’enveloppe diagnostics.
+- [x] La suite build/typecheck/lint/test/bench reste verte après ces modifications, confirmant la compatibilité avec le reporter/CLI et l’écosystème existant.
 
-Parent bullets couverts: [KR2, KR3, DEL3, DOD2, DOD3, TS3]
+Parent bullets couverts: [KR1, DEL1, DOD1, TS1]
 
 Checks:
 - build: npm run build

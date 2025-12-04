@@ -589,4 +589,21 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
       distinctNames: { kind: 'number' },
     },
   },
+  [DIAGNOSTIC_CODES.REPAIR_TIER_DISABLED]: {
+    kind: 'object',
+    required: {
+      keyword: { kind: 'string' },
+      requestedTier: { kind: 'number' },
+      allowedMaxTier: { kind: 'number' },
+      reason: enumSchema(['g_valid', 'default_policy']),
+    },
+  },
+  [DIAGNOSTIC_CODES.REPAIR_REVERTED_NO_PROGRESS]: {
+    kind: 'object',
+    required: {
+      keyword: { kind: 'string' },
+      scoreBefore: { kind: 'number' },
+      scoreAfter: { kind: 'number' },
+    },
+  },
 };
