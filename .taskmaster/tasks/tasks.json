@@ -1887,7 +1887,7 @@
         "dependencies": [
           "9500"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 3,
         "details": "[Context]\nRepair termination/commit must use a stable progress metric. The canonical spec will define sig(e) and Score(x). Implementation must match spec exactly to preserve determinism (§14/§15) and ensure stagnation guard semantics are consistent.\n\n[Spec anchors]\n- Canonical spec §10 Repair philosophy: sig(e), stableParamsKey encoding, Score(x).\n- Canonical spec §14/§15: determinism scope and required stability of diagnostics and metrics.\n\n[Key requirements]\n- Implement:\n  - canonPath(e): resolve via existing pointer mapping / canonical path mapping; fall back to e.schemaPath deterministically.\n  - stableParamsKey(params): canonical JSON encoding with object keys sorted (and a clearly-defined behavior for arrays, numbers, booleans, null).\n  - sig(e) and Score(x) as “count of distinct signatures”.\n- Avoid accidental nondeterminism:\n  - Use stable iteration orders (sorted key lists).\n  - Ensure encoding does not depend on JS engine insertion quirks.\n\n[Deliverables]\n- New utility module + unit tests that pin stable string outputs and signature sets for representative AJV errors (bounds, required, additionalProperties, contains, etc.).",
         "testStrategy": "- Unit tests: stableParamsKey sorts keys and is stable across runs; canonPath fallback rules are deterministic.\n- Golden tests: given an AJV error list fixture, Score(x) and signature sets match expected outputs.\n- Determinism test: same seed/options yields identical Score signatures and ordering-independent behavior.",
@@ -1896,11 +1896,11 @@
             "id": 9501001,
             "title": "Add stable JSON canonicalization helper for AJV params",
             "description": "Implement stableParamsKey(params) with recursive key sorting and well-defined handling for primitives/arrays; include tests for corner cases.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/repair/score/stable-params-key.ts",
             "parentId": "9501",
-            "updatedAt": "2025-12-04T00:00:00.000Z"
+            "updatedAt": "2025-12-04T20:14:28.301Z"
           },
           {
             "id": 9501002,
@@ -1923,7 +1923,7 @@
             "updatedAt": "2025-12-04T00:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-04T00:00:00.000Z"
+        "updatedAt": "2025-12-04T20:14:28.301Z"
       },
       {
         "id": "9502",
@@ -2168,7 +2168,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-04T20:08:59.881Z",
+      "lastModified": "2025-12-04T20:14:28.302Z",
       "taskCount": 7,
       "completedCount": 1,
       "tags": [

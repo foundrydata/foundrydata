@@ -1,22 +1,23 @@
-Task: 9500   Title: Integrate Repair philosophy into canonical spec and align design docs — subtask 9500.9500003
-Anchors: [spec://§10#repair-philosophy, spec://§19#envelope, spec://§19#payloads, spec://§15#metrics]
+Task: 9501   Title: Implement stable AJV error signature and Score(x) utilities — subtask 9501.9501001
+Anchors: [spec://§10#repair-philosophy, spec://§10#repair-philosophy-progress, spec://§14#planoptionssubkey, spec://§15#metrics]
 Touched files:
 - PLAN.md
-- .taskmaster/docs/9500-traceability.md
+- .taskmaster/docs/9501-traceability.md
 - .taskmaster/tasks/tasks.json
-- docs/spec-canonical-json-schema-generator.md
-- docs/tests-traceability.md
+- packages/core/src/repair/score/stable-params-key.ts
+- packages/core/src/repair/score/__tests__/stable-params-key.test.ts
 
 Approach:
-Pour la sous-tâche 9500.9500003, je vais aligner la couche diagnostics/metrics et la matrice de traçabilité sur la nouvelle “Repair philosophy” canonique. En m’appuyant sur `spec://§10#repair-philosophy`, `spec://§19#envelope`, `spec://§19#payloads` et `spec://§15#metrics`, je vais (1) vérifier que les codes de diagnostics Repair introduits par la philosophie (notamment `REPAIR_TIER_DISABLED` et `REPAIR_REVERTED_NO_PROGRESS`) sont bien présents dans la table code↔phase de §19 et que leurs payloads sont correctement spécifiés, en les ajustant si besoin sans modifier d’autres phases, (2) documenter explicitement dans la section metrics que les compteurs `diag.metrics.repair_tier1_actions`, `repair_tier2_actions`, `repair_tier3_actions` et `repair_tierDisabled` sont les compteurs de référence pour les tiers Repair, alignés avec les invariants de determinism/coverage-indépendance de §10/§15, (3) compléter `docs/tests-traceability.md` avec une entrée “Repair philosophy / tiers & UNSAT” qui relie ces codes et métriques aux tests existants (unitaires/acceptance) qui les exercent, en explicitant les invariants attendus (par exemple, visibilité des blocages de tiers vs budgets, invariants G_valid), et (4) relancer build/typecheck/lint/test/bench pour vérifier que ces mises à jour de docs restent cohérentes avec l’implémentation et les schémas diagnostics existants.
+Pour la sous-tâche 9501.9501001, je vais introduire un helper `stableParamsKey(params)` dédié à la canonicalisation JSON stable des `e.params` AJV, en alignement strict avec la définition de Score/sig(e) dans la SPEC. En m’appuyant sur `spec://§10#repair-philosophy` et le paragraphe Score/commit (`spec://§10#repair-philosophy-progress`), ainsi que sur la définition de la canonicalisation JSON utilisée pour le hashing (§10 “structural hashing”) et `PlanOptionsSubKey` (§14), je vais (1) factoriser ou réutiliser la logique de canonicalisation existante si elle est déjà implémentée pour le hashing afin d’éviter deux encodeurs divergents, ou à défaut créer `packages/core/src/repair/score/stable-params-key.ts` avec une implémentation récursive qui trie les clés d’objets, préserve l’ordre des tableaux, normalise `-0` en `0` et encode les primitives de façon déterministe, (2) écrire des tests unitaires dédiés dans `packages/core/src/repair/score/__tests__/stable-params-key.test.ts` couvrant les cas de base (objets imbriqués, tableaux, nombres, booléens, null, BigInt si applicable), des cas d’égalité structurelle (mêmes données avec des ordres de clés différents) et des cas de non-égalité, (3) viser une couverture ≥80 % sur le nouveau module en instrumentant suffisamment de cas edge (clés spéciales, valeurs undefined non sérialisées le cas échéant) et en vérifiant la stabilité inter-run (mêmes entrées → même string), puis (4) relancer build/typecheck/lint/test/bench pour s’assurer que ce helper reste purement déterministe et n’introduit aucune dépendance à la couverture ou à l’état global.
 
 DoD:
-- [x] La table code↔phase de §19 et la section payloads explicitent les diagnostics Repair ajoutés par la philosophie (tier/policy, Score non-amélioré) avec des phases alignées sur la SPEC (phase `repair`) et des shapes `details` compatibles avec `diagnosticsEnvelope.schema.json`.
-- [x] La section metrics documente les compteurs Repair relatifs aux tiers (`repair_tier1_actions`, `repair_tier2_actions`, `repair_tier3_actions`, `repair_tierDisabled`) comme instruments privilégiés pour observer l’application de la politique Repair, de manière cohérente avec les invariants de déterminisme et de coverage-indépendance.
-- [x] `docs/tests-traceability.md` contient une ou plusieurs lignes dédiées à la “Repair philosophy” qui relient les diagnostics et métriques ci-dessus à des tests concrets (unitaires et/ou e2e) et décrivent les invariants attendus (différencier blocage de tier vs budget, comportement en zone G_valid, UNSAT/stagnation).
-- [x] La suite build/typecheck/lint/test/bench reste verte après ces mises à jour, confirmant que la documentation diagnostics/metrics et la traçabilité restent alignées avec l’implémentation actuelle.
+DoD:
+- [x] Le helper `stableParamsKey(params)` existe, est pur et implémente une canonicalisation JSON stable des paramètres AJV conforme à la SPEC (tri des clés d’objets, ordre stable des tableaux, normalisation de `-0` en `0`, traitement déterministe des primitives).
+- [x] Les tests unitaires pour `stableParamsKey` couvrent au moins objets imbriqués, tableaux, nombres (incluant signes et `-0`), booléens, null et cas d’égalité/non-égalité structurelle, avec une couverture ≥80 % sur `stable-params-key.ts`.
+- [x] La fonction ne dépend pas de l’état de couverture ni d’aucun état global (elle ne lit pas `coverage`, `dimensionsEnabled` ni des singletons) et peut être utilisée telle quelle par Score/sig(e) sans briser les garanties de déterminisme de §14/§15.
+- [x] La suite build/typecheck/lint/test/bench reste verte après l’introduction du helper et de ses tests, confirmant qu’il est correctement isolé et compatible avec le reste de l’implémentation.
 
-Parent bullets couverts: [KR3, DEL3, DOD3, TS3]
+Parent bullets couverts: [KR1, DEL1, DOD1, TS1]
 
 Checks:
 - build: npm run build
