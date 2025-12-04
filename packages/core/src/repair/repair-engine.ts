@@ -33,6 +33,9 @@ import {
   GValidMotif,
   type GValidClassificationIndex,
 } from '../transform/g-valid-classifier.js';
+import type { PtrMapping } from '../util/ptr-map.js';
+import type { AjvErrorObject } from './score/error-signature.js';
+import { computeScore } from './score/score.js';
 
 export interface AjvErr {
   instancePath: string;
@@ -728,6 +731,10 @@ export function repairItemsAjvDriven(
   const maxCycles = Math.min(bailLimit, baseAttempts);
   const metrics = options?.metrics;
   const coverage = options?.coverage;
+  const ptrMapping: PtrMapping = {
+    ptrMap: effective.canonical.ptrMap,
+    revPtrMap: effective.canonical.revPtrMap,
+  };
   const dialect = detectDialect(schema);
   const sourceAjv = createRepairOnlyValidatorAjv({ dialect }, args.planOptions);
   const { schemaForAjv } = prepareSchemaForSourceAjv(schema, dialect);
@@ -848,6 +855,12 @@ export function repairItemsAjvDriven(
       repaired.push(original);
       continue;
     }
+
+    const initialErrorsForScore = (validateFn as any).errors as
+      | AjvErrorObject[]
+      | null
+      | undefined;
+    computeScore(initialErrorsForScore, ptrMapping);
 
     let lastErrorCount =
       Array.isArray((validateFn as any).errors) &&
@@ -1069,6 +1082,10 @@ export function repairItemsAjvDriven(
     for (let iter = 0; iter < maxCycles; iter += 1) {
       const errors = (validateFn as any).errors as AjvErr[] | undefined;
       if (!errors || errors.length === 0) break;
+      computeScore(
+        errors as unknown as AjvErrorObject[] | null | undefined,
+        ptrMapping
+      );
       let changed = false;
       cycles += 1;
       const dependentBaselineKeys = new Set(

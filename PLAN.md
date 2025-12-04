@@ -1,24 +1,24 @@
-Task: 9502   Title: Add repair-philosophy diagnostics codes and metrics counters — subtask 9502.9502003
-Anchors: [spec://§10#repair-philosophy, spec://§15#metrics, spec://§19#envelope]
+Task: 9503   Title: Enforce Score-based commit rule in Repair engine — subtask 9503.9503001
+Anchors: [spec://§10#repair-philosophy, spec://§10#repair-philosophy-progress, spec://§6#generator-repair-contract]
 Touched files:
 - PLAN.md
-- .taskmaster/docs/9502-traceability.md
+- .taskmaster/docs/9503-traceability.md
 - .taskmaster/tasks/tasks.json
-- packages/reporter/src/engine/report-builder.ts
-- packages/reporter/test/reporter.snapshot.test.ts
-- packages/reporter/test/__snapshots__/reporter.snapshot.test.ts.snap
+- packages/core/src/repair/score/score.ts
+- packages/core/src/repair/repair-engine.ts
+- packages/core/src/repair/__tests__/mapping-repair.test.ts
 - agent-log.jsonl
 
 Approach:
-Pour la sous-tâche 9502.9502003, je vais aligner le reporter JSON/Markdown/HTML (et, indirectement, le CLI) avec les nouveaux diagnostics/métriques Repair sans changer la sémantique du pipeline. En m’appuyant sur `spec://§10#repair-philosophy`, `spec://§15#metrics` et `spec://§19#envelope`, je vais (1) vérifier que `buildReportFromPipeline` propage déjà les diagnostics `REPAIR_TIER_DISABLED` / `REPAIR_REVERTED_NO_PROGRESS` tels que fournis par le pipeline, et que `Report.metrics` reflète bien les nouveaux compteurs `repair_tier{1,2,3}_actions` et `repair_tierDisabled`, (2) ajuster au besoin les sérialiseurs/sanitiseurs côté reporter pour qu’ils tolèrent ces nouveaux champs numériquement (sans les filtrer) et n’introduisent pas de dépendance cachée à la coverage, (3) mettre à jour les snapshots de `packages/reporter/test/reporter.snapshot.test.ts` afin que le JSON Report, le Markdown et le HTML restent stables tout en acceptant la présence des métriques/diagnostics Repair supplémentaires, puis (4) relancer build/typecheck/lint/test/bench pour s’assurer que ces changements restent compatibles avec le CLI existant et que les gates de bench/diag-schema restent verts.
+Pour la sous-tâche 9503.9503001, je vais intégrer le calcul de Score(x) dans la boucle de tentative d’actions du moteur de Repair, sans encore modifier la règle de commit/revert (qui appartiendra aux sous-tâches suivantes). En m’appuyant sur `spec://§10#repair-philosophy`, `spec://§10#repair-philosophy-progress` et `spec://§6#generator-repair-contract`, je vais (1) relire les helpers Score déjà implémentés (`canonPathFromError`, `buildErrorSignature`, `computeScore`) et identifier le point unique dans `repair-engine` où AJV allErrors:true est déjà disponible pour évaluer les erreurs d’une instance candidate, (2) introduire un appel déterministe à `computeScore` pour calculer Score(x) pour l’instance courante et pour chaque tentative d’instance réparée, en veillant à ne pas casser le contrat existant Generator/Repair ni à doubler des validations coûteuses, (3) exposer ces scores de manière interne (par exemple via un petit objet de contexte ou une structure de retour enrichie) afin que la sous-tâche suivante puisse brancher la logique de commit/revert sans changer l’ordre des actions ni l’idempotence du moteur, puis (4) mettre à jour les tests `mapping-repair.test.ts` (ou en ajouter de nouveaux) pour vérifier que, pour quelques schémas/instances synthétiques, les scores sont calculés de façon stable et alignés avec la définition de Score(x), avant de relancer build/typecheck/lint/test/bench.
 
 DoD:
-- [x] Les rapports JSON/Markdown/HTML produits par le reporter incluent et tolèrent les nouveaux champs de métriques Repair (tiers + policy) et les diagnostics Repair-philosophy, sans casser les consommateurs existants ni exiger leur présence.
-- [x] Les snapshots de tests du reporter sont mis à jour pour refléter la forme étendue de `Report.metrics` et des diagnostics, tout en conservant des valeurs numériques normalisées et stables.
-- [x] Aucun nouveau code de sérialisation n’introduit de dépendance à l’état de coverage ou à un ordre non déterministe; les champs ajoutés restent purement observables.
-- [x] La suite build/typecheck/lint/test/bench reste verte après ces changements, confirmant que reporter/CLI restent compatibles et conformes à l’enveloppe diagnostics/metrics.
+- [x] Le moteur de Repair appelle de manière déterministe les utilitaires Score pour l’instance courante et pour les candidats réparés aux points prévus par la SPEC, sans changer l’ordre des actions ni introduire de non‑déterminisme.
+- [x] Les tests ciblés montrent que Score(x) observé dans le moteur de Repair correspond à la définition basée sur les signatures d’erreurs (utilisation de `computeScore`) pour des cas simples, sans impacter les invariants G_valid.
+- [x] La structure interne retournée par la boucle de tentative expose suffisamment d’information (scores avant/après) pour permettre à la sous‑tâche suivante d’implémenter la règle de commit/revert sans refactor invasif.
+- [x] La suite build/typecheck/lint/test/bench reste verte après ces changements, confirmant que le wiring de Score(x) est neutre vis‑à‑vis du comportement observable actuel (pas encore de revert forcé).
 
-Parent bullets couverts: [KR3, DEL3, DOD3, TS3]
+Parent bullets couverts: [KR1, DEL1, DOD1, TS1]
 
 Checks:
 - build: npm run build

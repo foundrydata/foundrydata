@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { repairItemsAjvDriven } from '../../repair/repair-engine';
 import { classifyGValid } from '../../transform/g-valid-classifier';
 import type { ComposeResult } from '../../transform/composition-engine';
 import { createSourceAjv } from '../../util/ajv-source';
 import { MetricsCollector } from '../../util/metrics';
+import * as scoreModule from '../score/score.js';
 
 function eff(): ComposeResult {
   const canonical = {
@@ -270,5 +271,20 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
 
     expect(hasGValidBucket).toBe(true);
     expect(hasNonGValidBucket).toBe(true);
+  });
+
+  it('wires Score(x) computation into AJV-driven repair attempts', () => {
+    const schema = { type: 'string', minLength: 3 };
+    const spy = vi.spyOn(scoreModule, 'computeScore');
+
+    const out = repairItemsAjvDriven(
+      ['x'],
+      { schema, effective: eff() },
+      { attempts: 2 }
+    );
+
+    expect(out.items[0]).toBeDefined();
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
   });
 });

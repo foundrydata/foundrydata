@@ -1982,7 +1982,7 @@
           "9501",
           "9502"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 4,
         "details": "[Context]\nRepair currently relies on AJV as oracle but needs a formal progress metric and strict commit rule to prevent guessing/oscillation. This task implements that rule and ensures termination semantics align with stagnation/budgets.\n\n[Spec anchors]\n- Canonical spec §10 Repair philosophy: Score(x), sig(e), commit rule, revert semantics.\n- Canonical spec §10 Process: budgets, attempt caps, UNSAT_BUDGET_EXHAUSTED behavior.\n\n[Key requirements]\n- After each candidate action attempt:\n  - compute Score before and after (AJV allErrors:true),\n  - commit only if strictly decreased,\n  - otherwise revert to the pre-mutation instance and emit REPAIR_* revert diagnostic + counter.\n- Ensure revert logic is safe and deterministic (deep copy strategy must be stable and not reorder keys).\n- Preserve action logging semantics: only committed actions appear in actions[].\n\n[Deliverables]\n- Updated repair-engine apply loop to support attempt→validate→commit/revert.\n- Diagnostics and counters emitted on revert.",
         "testStrategy": "- Unit tests: given a schema+instance where an attempted fix doesn’t reduce distinct signatures, instance remains unchanged and revert diagnostic is present.\n- Property-style determinism tests: fixed tuple ⇒ same final instance and same action/diag sequence.\n- Regression tests ensuring no “temporary worsen then improve” behavior in default policy.",
@@ -1991,11 +1991,11 @@
             "id": 9503001,
             "title": "Wire Score(x) computation into repair action attempts",
             "description": "Integrate Score utilities and AJV allErrors:true validator into the repair action attempt loop; compute per-attempt score deltas.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 5,
             "file": "packages/core/src/repair/repair-engine.ts",
             "parentId": "9503",
-            "updatedAt": "2025-12-04T00:00:00.000Z"
+            "updatedAt": "2025-12-04T21:15:52.389Z"
           },
           {
             "id": 9503002,
@@ -2018,7 +2018,7 @@
             "updatedAt": "2025-12-04T00:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-04T00:00:00.000Z"
+        "updatedAt": "2025-12-04T21:15:52.389Z"
       },
       {
         "id": "9504",
@@ -2168,7 +2168,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-04T20:53:42.502Z",
+      "lastModified": "2025-12-04T21:15:52.390Z",
       "taskCount": 7,
       "completedCount": 3,
       "tags": [
