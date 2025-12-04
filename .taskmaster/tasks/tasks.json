@@ -1906,11 +1906,11 @@
             "id": 9501002,
             "title": "Implement canonPath(e) resolution + sig(e) builder",
             "description": "Implement canonPath resolution using existing pointer mapping; add deterministic fallback to e.schemaPath; build sig(e) = (keyword, canonPath, instancePath, stableParamsKey).",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/repair/score/error-signature.ts",
             "parentId": "9501",
-            "updatedAt": "2025-12-04T00:00:00.000Z"
+            "updatedAt": "2025-12-04T20:18:59.244Z"
           },
           {
             "id": 9501003,
@@ -1923,7 +1923,7 @@
             "updatedAt": "2025-12-04T00:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-04T20:14:28.301Z"
+        "updatedAt": "2025-12-04T20:18:59.244Z"
       },
       {
         "id": "9502",
@@ -2168,7 +2168,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-04T20:14:28.302Z",
+      "lastModified": "2025-12-04T20:18:59.245Z",
       "taskCount": 7,
       "completedCount": 1,
       "tags": [

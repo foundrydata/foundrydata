@@ -1,23 +1,23 @@
-Task: 9501   Title: Implement stable AJV error signature and Score(x) utilities — subtask 9501.9501001
+Task: 9501   Title: Implement stable AJV error signature and Score(x) utilities — subtask 9501.9501002
 Anchors: [spec://§10#repair-philosophy, spec://§10#repair-philosophy-progress, spec://§14#planoptionssubkey, spec://§15#metrics]
 Touched files:
 - PLAN.md
 - .taskmaster/docs/9501-traceability.md
 - .taskmaster/tasks/tasks.json
-- packages/core/src/repair/score/stable-params-key.ts
-- packages/core/src/repair/score/__tests__/stable-params-key.test.ts
+- packages/core/src/repair/score/error-signature.ts
+- packages/core/src/repair/score/__tests__/error-signature.test.ts
 
 Approach:
-Pour la sous-tâche 9501.9501001, je vais introduire un helper `stableParamsKey(params)` dédié à la canonicalisation JSON stable des `e.params` AJV, en alignement strict avec la définition de Score/sig(e) dans la SPEC. En m’appuyant sur `spec://§10#repair-philosophy` et le paragraphe Score/commit (`spec://§10#repair-philosophy-progress`), ainsi que sur la définition de la canonicalisation JSON utilisée pour le hashing (§10 “structural hashing”) et `PlanOptionsSubKey` (§14), je vais (1) factoriser ou réutiliser la logique de canonicalisation existante si elle est déjà implémentée pour le hashing afin d’éviter deux encodeurs divergents, ou à défaut créer `packages/core/src/repair/score/stable-params-key.ts` avec une implémentation récursive qui trie les clés d’objets, préserve l’ordre des tableaux, normalise `-0` en `0` et encode les primitives de façon déterministe, (2) écrire des tests unitaires dédiés dans `packages/core/src/repair/score/__tests__/stable-params-key.test.ts` couvrant les cas de base (objets imbriqués, tableaux, nombres, booléens, null, BigInt si applicable), des cas d’égalité structurelle (mêmes données avec des ordres de clés différents) et des cas de non-égalité, (3) viser une couverture ≥80 % sur le nouveau module en instrumentant suffisamment de cas edge (clés spéciales, valeurs undefined non sérialisées le cas échéant) et en vérifiant la stabilité inter-run (mêmes entrées → même string), puis (4) relancer build/typecheck/lint/test/bench pour s’assurer que ce helper reste purement déterministe et n’introduit aucune dépendance à la couverture ou à l’état global.
+Pour la sous-tâche 9501.9501002, je vais implémenter un helper `canonPathFromError(e, mapping)` et un constructeur de signature `buildErrorSignature(e, mapping)` qui matérialisent la définition de `canonPath(e)` et `sig(e)` donnée par la SPEC. En m’appuyant sur `spec://§10#repair-philosophy` et `spec://§10#repair-philosophy-progress`, ainsi que sur la description de `canonPath` et du fallback `schemaPath`, je vais (1) exploiter `PtrMapping` et sa `revPtrMap` existante pour résoudre `e.schemaPath` vers un ou plusieurs `canonPath` potentiels, en sélectionnant de façon déterministe le chemin le plus spécifique (premier de la liste triée) lorsque plusieurs candidats existent, (2) faire tomber le helper en fallback sur `e.schemaPath` (ou `''` si absent) lorsque le mapping est indisponible ou qu’aucun chemin canonique ne correspond, (3) implémenter `buildErrorSignature(e, mapping)` qui assemble `keyword`, `canonPath(e)`, `instancePath` et `stableParamsKey(e.params)` (helper déjà introduit en 9501.9501001) dans une structure simple que Score pourra consommer, sans encore calculer Score(x), et (4) écrire des tests unitaires qui couvrent les cas sans mapping, avec mapping direct, sans correspondance canonique, ainsi que la stabilité de la composante paramsKey vis‑à‑vis de l’ordre des clés, puis relancer build/typecheck/lint/test/bench pour confirmer que ces helpers restent déterministes et indépendants de la coverage.
 
 DoD:
 DoD:
-- [x] Le helper `stableParamsKey(params)` existe, est pur et implémente une canonicalisation JSON stable des paramètres AJV conforme à la SPEC (tri des clés d’objets, ordre stable des tableaux, normalisation de `-0` en `0`, traitement déterministe des primitives).
-- [x] Les tests unitaires pour `stableParamsKey` couvrent au moins objets imbriqués, tableaux, nombres (incluant signes et `-0`), booléens, null et cas d’égalité/non-égalité structurelle, avec une couverture ≥80 % sur `stable-params-key.ts`.
-- [x] La fonction ne dépend pas de l’état de couverture ni d’aucun état global (elle ne lit pas `coverage`, `dimensionsEnabled` ni des singletons) et peut être utilisée telle quelle par Score/sig(e) sans briser les garanties de déterminisme de §14/§15.
-- [x] La suite build/typecheck/lint/test/bench reste verte après l’introduction du helper et de ses tests, confirmant qu’il est correctement isolé et compatible avec le reste de l’implémentation.
+- [x] Le helper `canonPathFromError(e, mapping)` résout `canonPath(e)` via le mapping canonique quand il existe et retombe de façon déterministe sur `e.schemaPath` sinon, en accord avec la définition de §10.P5.
+- [x] La fonction `buildErrorSignature(e, mapping)` construit la quadruple `(keyword, canonPath(e), instancePath, stableParamsKey(e.params))` et peut être utilisée telle quelle par Score(x) sans recalcul ou duplication de logique.
+- [x] Les tests unitaires pour ces helpers couvrent les scénarios avec et sans mapping, les cas sans correspondance canonique, et vérifient que la composante paramsKey est stable face à des permutations d’objets `params`, avec une couverture ≥80 % sur `error-signature.ts`.
+- [x] La suite build/typecheck/lint/test/bench reste verte après ces changements, confirmant que les helpers sont isolés et ne modifient pas le comportement existant en dehors de la nouvelle surface Score.
 
-Parent bullets couverts: [KR1, DEL1, DOD1, TS1]
+Parent bullets couverts: [KR1, DEL2, DOD1, TS2]
 
 Checks:
 - build: npm run build
