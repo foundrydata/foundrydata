@@ -1840,7 +1840,7 @@
         "priority": "high",
         "estimatedHours": 10,
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "complexityScore": 3,
         "details": "[Context]\nRepair is defined normatively in spec §10 (keyword→action mapping, guards, budgets) and constrained by the Generator/Repair contract + G_valid in spec §6. This task formalizes the missing policy layer (tiers, progress metric, coverage-independence) and ensures it does not contradict the existing structuralKeywords + G_valid regression model.\n\n[Spec anchors]\n- Canonical spec: docs/spec-canonical-json-schema-generator.md §6 (G_valid / structuralKeywords), §10 (Repair Engine), §14/§15 (determinism + metrics).\n- Coverage constraints: docs/spec-coverage-aware-v1.0.md (coverage=measure vs off invariants), but Repair must be testable at “core” level.\n\n[Key requirements]\n- Add §10 “Repair philosophy” with:\n  - Determinism tuple referencing the already-normative tuple (§14/§15).\n  - Tier model (0..3) + default policy.\n  - Explicit G_valid rules consistent with existing “structuralKeywords should not trigger in G_valid” model.\n  - Single normative definition for Score(x)/sig(e)/commit rule used by stagnation and UNSAT.\n  - Explicit coverage-independence constraints for Repair (mode/targets/dimensionsEnabled must not affect decisions).\n  - Diagnostics/metrics naming aligned with the canonical diagnostics table.\n- Remove/avoid duplication: design-repair-philosophy.md should reference canonical spec for Score/tiers instead of restating the normative text.\n\n[Deliverables]\n- Updated docs/spec-canonical-json-schema-generator.md (spec §10) + update the central diagnostics/metrics tables.\n- Updated docs/design-repair-philosophy.md to de-duplicate normative definitions.\n- Update docs/tests-traceability.md to link motifs↔tiers and to the new spec anchors.\n- Confirm alignment with repo-level architecture principles and README invariants.  ",
         "testStrategy": "- Doc-level consistency checks: verify no conflicting normative statements between §6/§10/§14/§15 and design docs.\n- Add a short spec review checklist (anchors exist, cross-refs correct, diagnostics table updated, Score defined once).\n- Confirm G_valid + structuralKeywords wording matches existing gValid_* metrics expectations and does not introduce new generator obligations unintentionally.",
@@ -1869,14 +1869,14 @@
             "id": 9500003,
             "title": "Extend diagnostics/metrics tables and traceability links",
             "description": "Add the new repair-philosophy diagnostics codes and metrics counters to the central diagnostics table and update tests-traceability to reference the new spec anchors.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "docs/spec-canonical-json-schema-generator.md",
             "parentId": "9500",
-            "updatedAt": "2025-12-04T00:00:00.000Z"
+            "updatedAt": "2025-12-04T20:08:59.879Z"
           }
         ],
-        "updatedAt": "2025-12-04T20:05:22.323Z"
+        "updatedAt": "2025-12-04T20:08:59.879Z"
       },
       {
         "id": "9501",
@@ -2168,9 +2168,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-04T20:05:22.325Z",
+      "lastModified": "2025-12-04T20:08:59.881Z",
       "taskCount": 7,
-      "completedCount": 0,
+      "completedCount": 1,
       "tags": [
         "repair-philosophy"
       ]
