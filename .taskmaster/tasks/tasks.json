@@ -1953,11 +1953,11 @@
             "id": 9502002,
             "title": "Add per-tier + policy counters to metrics snapshot",
             "description": "Extend metrics collection with repair_tier{0..3}_actions and counts for policy-disabled and reverted-no-progress; align field names with canonical spec §15.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/util/metrics.ts",
             "parentId": "9502",
-            "updatedAt": "2025-12-04T00:00:00.000Z"
+            "updatedAt": "2025-12-04T20:44:19.070Z"
           },
           {
             "id": 9502003,
@@ -1970,7 +1970,7 @@
             "updatedAt": "2025-12-04T00:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-04T20:32:11.888Z"
+        "updatedAt": "2025-12-04T20:44:19.070Z"
       },
       {
         "id": "9503",
@@ -2168,7 +2168,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-04T20:32:11.889Z",
+      "lastModified": "2025-12-04T20:44:19.071Z",
       "taskCount": 7,
       "completedCount": 2,
       "tags": [

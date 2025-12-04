@@ -34,6 +34,10 @@ describe('MetricsCollector', () => {
     collector.addValidationCount(2);
     collector.addRepairPasses(1);
     collector.addRepairActions(4);
+    collector.addRepairTierAction(1, 2);
+    collector.addRepairTierAction(2, 3);
+    collector.addRepairTierAction(3, 5);
+    collector.addRepairTierDisabled(4);
     collector.addBranchTrial();
     collector.addBranchTrial();
     collector.addPatternWitnessTrial();
@@ -47,6 +51,10 @@ describe('MetricsCollector', () => {
     expect(snapshot.validationsPerRow).toBe(2);
     expect(snapshot.repairPassesPerRow).toBe(1);
     expect(snapshot.repairActionsPerRow).toBe(4);
+    expect(snapshot.repair_tier1_actions).toBe(2);
+    expect(snapshot.repair_tier2_actions).toBe(3);
+    expect(snapshot.repair_tier3_actions).toBe(5);
+    expect(snapshot.repair_tierDisabled).toBe(4);
     expect(snapshot.branchTrialsTried).toBe(2);
     expect(snapshot.patternWitnessTried).toBe(1);
     expect(snapshot.compileMs).toBe(11);
@@ -101,12 +109,16 @@ describe('MetricsCollector', () => {
     now += 10;
     collector.end('NORMALIZE');
     collector.addValidationCount(5);
+    collector.addRepairTierAction(1, 1);
+    collector.addRepairTierDisabled(1);
     collector.trackBranchCoverage('/oneOf/0', [1], 3);
     collector.trackEnumUsage('/properties/name', 'Alice');
 
     const snapshot = collector.snapshotMetrics();
     expect(snapshot.normalizeMs).toBe(0);
     expect(snapshot.validationsPerRow).toBe(0);
+    expect(snapshot.repair_tier1_actions).toBe(0);
+    expect(snapshot.repair_tierDisabled).toBe(0);
     expect(snapshot.branchCoverageOneOf).toBeUndefined();
     expect(snapshot.enumUsage).toBeUndefined();
   });

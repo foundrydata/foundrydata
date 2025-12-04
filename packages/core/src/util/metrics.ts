@@ -1,5 +1,8 @@
 import { performance } from 'node:perf_hooks';
 
+import type { RepairUsageByMotif } from './repair-usage-metrics';
+import { recordRepairUsageEventOnSnapshot } from './repair-usage-metrics';
+
 export const METRIC_PHASES = {
   NORMALIZE: 'normalizeMs',
   COMPOSE: 'composeMs',
@@ -33,10 +36,21 @@ export interface MetricsSnapshot {
   p95LatencyMs: number;
   branchCoverageOneOf?: Record<string, BranchCoverageOneOfEntry>;
   enumUsage?: Record<string, Record<string, number>>;
+  /**
+   * Aggregated Repair metrics by tier and policy, aligned with the
+   * Repair philosophy observability requirements (SPEC §10.P7).
+   *
+   * These counters are deterministic and accumulate the number of
+   * committed Repair actions per tier, plus the number of actions
+   * blocked by policy when metrics collection is enabled.
+   */
+  repair_tier1_actions?: number;
+  repair_tier2_actions?: number;
+  repair_tier3_actions?: number;
+  repair_tierDisabled?: number;
   repairActionsPerRow?: number;
   evalTraceChecks?: number;
   evalTraceProved?: number;
-  // Name automaton / name enumeration metrics (R3)
   nameBfsNodesExpanded?: number;
   nameBfsQueuePeak?: number;
   nameBeamWidthPeak?: number;
@@ -44,20 +58,7 @@ export interface MetricsSnapshot {
   nameEnumElapsedMs?: number;
   patternPropsHit?: number;
   presencePressureResolved?: number;
-  /**
-   * Optional aggregated repair usage metrics by motif and G_valid flag.
-   * Populated by future G_valid-aware Repair instrumentation; omitted
-   * when not enabled or not relevant for a given run.
-   */
   repairUsageByMotif?: RepairUsageByMotif[];
-}
-
-export interface RepairUsageByMotif {
-  motifId: string;
-  gValid: boolean;
-  items: number;
-  itemsWithRepair: number;
-  actions: number;
 }
 
 type MetricsPhaseKey = (typeof METRIC_PHASES)[MetricPhase];
@@ -85,6 +86,10 @@ const DEFAULT_COUNTERS: MetricsSnapshot = {
   memoryPeakMB: 0,
   p50LatencyMs: 0,
   p95LatencyMs: 0,
+  repair_tier1_actions: 0,
+  repair_tier2_actions: 0,
+  repair_tier3_actions: 0,
+  repair_tierDisabled: 0,
   evalTraceChecks: 0,
   evalTraceProved: 0,
   nameBfsNodesExpanded: 0,
@@ -208,6 +213,30 @@ export class MetricsCollector {
       (this.snapshot.branchTrialsTried ?? 0) + 1;
   }
 
+  public addRepairTierAction(tier: 1 | 2 | 3, count: number): void {
+    if (!this.enabled) {
+      return;
+    }
+    if (tier === 1) {
+      this.snapshot.repair_tier1_actions =
+        (this.snapshot.repair_tier1_actions ?? 0) + count;
+    } else if (tier === 2) {
+      this.snapshot.repair_tier2_actions =
+        (this.snapshot.repair_tier2_actions ?? 0) + count;
+    } else {
+      this.snapshot.repair_tier3_actions =
+        (this.snapshot.repair_tier3_actions ?? 0) + count;
+    }
+  }
+
+  public addRepairTierDisabled(count: number): void {
+    if (!this.enabled) {
+      return;
+    }
+    this.snapshot.repair_tierDisabled =
+      (this.snapshot.repair_tierDisabled ?? 0) + count;
+  }
+
   public addPatternWitnessTrial(): void {
     if (!this.enabled) {
       return;
@@ -276,28 +305,7 @@ export class MetricsCollector {
     if (!this.enabled) {
       return;
     }
-    if (!this.snapshot.repairUsageByMotif) {
-      this.snapshot.repairUsageByMotif = [];
-    }
-    const bucket = this.snapshot.repairUsageByMotif.find(
-      (entry) =>
-        entry.motifId === event.motifId && entry.gValid === event.gValid
-    );
-    if (!bucket) {
-      this.snapshot.repairUsageByMotif.push({
-        motifId: event.motifId,
-        gValid: event.gValid,
-        items: 1,
-        itemsWithRepair: event.actions > 0 ? 1 : 0,
-        actions: event.actions,
-      });
-      return;
-    }
-    bucket.items += 1;
-    if (event.actions > 0) {
-      bucket.itemsWithRepair += 1;
-      bucket.actions += event.actions;
-    }
+    recordRepairUsageEventOnSnapshot(this.snapshot, event);
   }
 
   public setCompileMs(durationMs: number): void {

@@ -34,7 +34,7 @@ This document maps the parent task 9502 bullets from Implementation Details, Del
   Covers: [KR1, DEL1, DOD1, TS1] (status: done).
 
 - **9502.9502002 – Add per-tier + policy counters to metrics snapshot**  
-  Covers: [KR2, DEL2, DOD2, TS2] (status: pending).
+  Covers: [KR2, DEL2, DOD2, TS2] (status: done).
 
 - **9502.9502003 – Update reporter/CLI snapshot expectations for new metrics/diagnostics**  
   Covers: [KR3, DEL3, DOD3, TS3] (status: pending).
