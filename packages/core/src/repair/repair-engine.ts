@@ -35,7 +35,13 @@ import {
 } from '../transform/g-valid-classifier.js';
 import type { PtrMapping } from '../util/ptr-map.js';
 import type { AjvErrorObject } from './score/error-signature.js';
+import { canonPathFromError } from './score/error-signature.js';
 import { computeScore } from './score/score.js';
+import {
+  REPAIR_TIER,
+  classifyTierForKeyword,
+  isActionAllowed,
+} from './tier-classification.js';
 
 export interface AjvErr {
   instancePath: string;
@@ -788,6 +794,63 @@ export function repairItemsAjvDriven(
   );
   let actionsCursor = 0;
   let itemIndex = 0;
+
+  const maxTierAllowed = REPAIR_TIER.Tier2;
+
+  const normalizeCanonPath = (canonPath: string): string => {
+    if (!canonPath || canonPath === '#') return '#';
+    if (canonPath.startsWith('#')) return canonPath;
+    if (canonPath.startsWith('/')) return `#${canonPath}`;
+    return `#/${canonPath}`;
+  };
+
+  const applyTierPolicyForAction = (
+    keyword: string,
+    canonPath: string
+  ): { allowed: boolean; tier: number } => {
+    const tier = classifyTierForKeyword(keyword);
+    const normalizedCanon = normalizeCanonPath(canonPath || '#');
+    const info = getGValidInfo(normalizedCanon);
+    const inGValid = info?.isGValid === true;
+    const decision = isActionAllowed({
+      keyword,
+      tier,
+      inGValid,
+      allowStructuralInGValid,
+      maxTier: maxTierAllowed,
+    });
+    if (!decision.allowed) {
+      if (
+        metrics &&
+        (tier === REPAIR_TIER.Tier1 ||
+          tier === REPAIR_TIER.Tier2 ||
+          tier === REPAIR_TIER.Tier3)
+      ) {
+        metrics.addRepairTierDisabled(1);
+      }
+      diagnostics.push({
+        code: DIAGNOSTIC_CODES.REPAIR_TIER_DISABLED,
+        canonPath,
+        phase: DIAGNOSTIC_PHASES.REPAIR,
+        details: {
+          keyword,
+          requestedTier: tier,
+          allowedMaxTier: decision.allowedMaxTier,
+          reason: decision.reason ?? 'default_policy',
+        },
+      });
+      return { allowed: false, tier };
+    }
+    if (
+      metrics &&
+      (tier === REPAIR_TIER.Tier1 ||
+        tier === REPAIR_TIER.Tier2 ||
+        tier === REPAIR_TIER.Tier3)
+    ) {
+      metrics.addRepairTierAction(tier as 1 | 2 | 3, 1);
+    }
+    return { allowed: true, tier };
+  };
   for (const original of items) {
     // Fast-path: validate original without cloning to minimize overhead
     let pass = validateFn(original);
@@ -1281,6 +1344,10 @@ export function repairItemsAjvDriven(
             continue;
           }
           if (!(missing in (obj as Record<string, unknown>))) {
+            const policy = applyTierPolicyForAction('required', canonPathReq);
+            if (!policy.allowed) {
+              continue;
+            }
             (obj as Record<string, unknown>)[missing] = synth(sub);
             /* istanbul ignore next */
             const eTraceUpdate2 = (_: string): void => {};
@@ -1317,6 +1384,10 @@ export function repairItemsAjvDriven(
         }
 
         if (!(missing in (obj as Record<string, unknown>))) {
+          const policy = applyTierPolicyForAction('required', canonPathReq);
+          if (!policy.allowed) {
+            continue;
+          }
           if (isGValidStructuralGuardEnabled(canonPathReq)) {
             diagnostics.push({
               code: DIAGNOSTIC_CODES.REPAIR_GVALID_STRUCTURAL_ACTION,
@@ -1369,11 +1440,15 @@ export function repairItemsAjvDriven(
         }
         const len = codePointLength(curVal as string);
         if (kw === 'minLength' && len < limit) {
+          const canonStr = sp.replace(/\/(?:minLength)(?:\/.*)?$/, '');
+          const policy = applyTierPolicyForAction(kw, canonStr);
+          if (!policy.allowed) {
+            continue;
+          }
           const repairedStr = padToMinCodePoints(curVal as string, limit, 'a');
           if (instPtr === '') current = repairedStr as any;
           else setByPointer(current, instPtr, repairedStr);
           changed = true;
-          const canonStr = sp.replace(/\/(?:minLength)(?:\/.*)?$/, '');
           actions.push({
             action: 'stringPadTruncate',
             canonPath: canonStr,
@@ -1381,11 +1456,15 @@ export function repairItemsAjvDriven(
             details: { kind: 'minLength', limit, delta: limit - len },
           });
         } else if (kw === 'maxLength' && len > limit) {
+          const canonStr = sp.replace(/\/(?:maxLength)(?:\/.*)?$/, '');
+          const policy = applyTierPolicyForAction(kw, canonStr);
+          if (!policy.allowed) {
+            continue;
+          }
           const repairedStr = codePointSlice(curVal as string, limit);
           if (instPtr === '') current = repairedStr as any;
           else setByPointer(current, instPtr, repairedStr);
           changed = true;
-          const canonStr = sp.replace(/\/(?:maxLength)(?:\/.*)?$/, '');
           actions.push({
             action: 'stringPadTruncate',
             canonPath: canonStr,
@@ -1412,12 +1491,16 @@ export function repairItemsAjvDriven(
                 out.push(item);
               }
             }
-            if (arrPtr === '') (current as any) = out as any;
-            else setByPointer(current, arrPtr, out);
             const uniqCanon = (() => {
               const spp = normalizeSchemaPointerFromError(uniqueErr.schemaPath);
               return spp.replace(/\/(?:uniqueItems)(?:\/.*)?$/, '');
             })();
+            const policy = applyTierPolicyForAction('uniqueItems', uniqCanon);
+            if (!policy.allowed) {
+              continue;
+            }
+            if (arrPtr === '') (current as any) = out as any;
+            else setByPointer(current, arrPtr, out);
             actions.push({
               action: 'uniqueItemsDedup',
               canonPath: uniqCanon,
@@ -1441,13 +1524,17 @@ export function repairItemsAjvDriven(
             typeof limit === 'number' &&
             arr.length > limit
           ) {
-            const sliced = arr.slice(0, limit);
-            if (arrPtr === '') (current as any) = sliced as any;
-            else setByPointer(current, arrPtr, sliced);
             const sppMax = normalizeSchemaPointerFromError(
               maxItemsErr.schemaPath
             );
             const canonMax = sppMax.replace(/\/(?:maxItems)(?:\/.*)?$/, '');
+            const policy = applyTierPolicyForAction('maxItems', canonMax);
+            if (!policy.allowed) {
+              continue;
+            }
+            const sliced = arr.slice(0, limit);
+            if (arrPtr === '') (current as any) = sliced as any;
+            else setByPointer(current, arrPtr, sliced);
             actions.push({
               action: 'maxItemsTrim',
               canonPath: canonMax,
@@ -1535,6 +1622,10 @@ export function repairItemsAjvDriven(
               additions.push(synthFrom(schemaForIndex));
             }
             const grown = arr.concat(additions);
+            const policy = applyTierPolicyForAction('minItems', canonMinItems);
+            if (!policy.allowed) {
+              continue;
+            }
             if (arrPtr === '') (current as any) = grown as any;
             else setByPointer(current, arrPtr, grown);
             actions.push({
@@ -1585,6 +1676,10 @@ export function repairItemsAjvDriven(
           if (kw === 'minimum' && val < limit) next = limit;
           if (kw === 'maximum' && val > limit) next = limit;
           if (next !== val) {
+            const policy = applyTierPolicyForAction(kw, canonPath2);
+            if (!policy.allowed) {
+              continue;
+            }
             const replacement = isInt ? Math.trunc(next) : next;
             if (valPtr === '') {
               current = replacement as unknown as typeof current;
@@ -1610,6 +1705,10 @@ export function repairItemsAjvDriven(
             next = isInt ? Math.floor(limit - 1) : limit - eNum;
           }
           if (next !== val) {
+            const policy = applyTierPolicyForAction(kw, canonPath2);
+            if (!policy.allowed) {
+              continue;
+            }
             if (valPtr === '') {
               current = next as unknown as typeof current;
             } else {
@@ -1831,8 +1930,16 @@ export function repairItemsAjvDriven(
           if (Math.abs(snapped - val) < eNum) continue;
           if (isInt) snapped = Math.trunc(snapped);
           if (instPtr === '') {
+            const policy = applyTierPolicyForAction('multipleOf', canonPath2);
+            if (!policy.allowed) {
+              continue;
+            }
             current = snapped as unknown as typeof current;
           } else {
+            const policy = applyTierPolicyForAction('multipleOf', canonPath2);
+            if (!policy.allowed) {
+              continue;
+            }
             setByPointer(current, instPtr, snapped);
           }
           changed = true;
@@ -1928,6 +2035,14 @@ export function repairItemsAjvDriven(
             propName
           )
         ) {
+          const keyword =
+            err.keyword === 'additionalProperties'
+              ? 'additionalProperties'
+              : 'unevaluatedProperties';
+          const policy = applyTierPolicyForAction(keyword, canonObj);
+          if (!policy.allowed) {
+            continue;
+          }
           delete (obj as Record<string, unknown>)[propName];
           actions.push({
             action: 'removeAdditionalProperty',
@@ -1982,6 +2097,40 @@ export function repairItemsAjvDriven(
 
     const finalScore = computeScore(lastErrorsForScore, ptrMapping);
     if (finalScore >= initialScore) {
+      const representativeError =
+        (lastErrorsForScore && lastErrorsForScore[0]) ||
+        (initialErrorsForScore && initialErrorsForScore[0]) ||
+        null;
+      const keywordForDiag =
+        representativeError && typeof representativeError.keyword === 'string'
+          ? representativeError.keyword
+          : '';
+      let canonPathForDiag = '#';
+      if (representativeError) {
+        try {
+          const asAjvError = representativeError as AjvErrorObject;
+          const resolvedCanon = canonPathFromError(asAjvError, ptrMapping);
+          canonPathForDiag =
+            (resolvedCanon && resolvedCanon.length > 0
+              ? resolvedCanon
+              : asAjvError.schemaPath || '#') || '#';
+        } catch {
+          canonPathForDiag =
+            representativeError.schemaPath && representativeError.schemaPath
+              ? representativeError.schemaPath
+              : '#';
+        }
+      }
+      diagnostics.push({
+        code: DIAGNOSTIC_CODES.REPAIR_REVERTED_NO_PROGRESS,
+        canonPath: canonPathForDiag,
+        phase: DIAGNOSTIC_PHASES.REPAIR,
+        details: {
+          keyword: keywordForDiag,
+          scoreBefore: initialScore,
+          scoreAfter: finalScore,
+        },
+      });
       current = original;
     }
 

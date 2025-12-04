@@ -1982,7 +1982,7 @@
           "9501",
           "9502"
         ],
-        "status": "in-progress",
+        "status": "done",
         "complexityScore": 4,
         "details": "[Context]\nRepair currently relies on AJV as oracle but needs a formal progress metric and strict commit rule to prevent guessing/oscillation. This task implements that rule and ensures termination semantics align with stagnation/budgets.\n\n[Spec anchors]\n- Canonical spec §10 Repair philosophy: Score(x), sig(e), commit rule, revert semantics.\n- Canonical spec §10 Process: budgets, attempt caps, UNSAT_BUDGET_EXHAUSTED behavior.\n\n[Key requirements]\n- After each candidate action attempt:\n  - compute Score before and after (AJV allErrors:true),\n  - commit only if strictly decreased,\n  - otherwise revert to the pre-mutation instance and emit REPAIR_* revert diagnostic + counter.\n- Ensure revert logic is safe and deterministic (deep copy strategy must be stable and not reorder keys).\n- Preserve action logging semantics: only committed actions appear in actions[].\n\n[Deliverables]\n- Updated repair-engine apply loop to support attempt→validate→commit/revert.\n- Diagnostics and counters emitted on revert.",
         "testStrategy": "- Unit tests: given a schema+instance where an attempted fix doesn’t reduce distinct signatures, instance remains unchanged and revert diagnostic is present.\n- Property-style determinism tests: fixed tuple ⇒ same final instance and same action/diag sequence.\n- Regression tests ensuring no “temporary worsen then improve” behavior in default policy.",
@@ -2011,14 +2011,14 @@
             "id": 9503003,
             "title": "Emit revert diagnostics and increment counters",
             "description": "On failed commit attempts, emit reverted-no-progress diagnostic (phase=repair) with scoreBefore/scoreAfter and bump counters; verify actions[] does not include reverted attempts.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/repair/repair-engine.ts",
             "parentId": "9503",
-            "updatedAt": "2025-12-04T00:00:00.000Z"
+            "updatedAt": "2025-12-04T21:44:29.406Z"
           }
         ],
-        "updatedAt": "2025-12-04T21:24:35.010Z"
+        "updatedAt": "2025-12-04T21:44:29.406Z"
       },
       {
         "id": "9504",
@@ -2030,7 +2030,7 @@
           "9500",
           "9502"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 5,
         "details": "[Context]\nThe Repair philosophy introduces tiers to constrain what Repair is allowed to do by default and to make policy decisions observable. The implementation must match the canonical spec’s existing G_valid/structuralKeywords contract: structural keyword repairs in G_valid are regression signals, not a normal success path.\n\n[Spec anchors]\n- Canonical spec §6: G_valid and structuralKeywords expectations.\n- Canonical spec §10 Repair philosophy: tiers and default tier policy.\n\n[Key requirements]\n- Add tier metadata to repair actions (or derive tier deterministically from keyword+motif).\n- Enforce default policy:\n  - Tier 0 always allowed.\n  - Tier 1 allowed everywhere EXCEPT: in G_valid, disallow Tier-1 when the triggering keyword is in structuralKeywords (e.g. minItems/maxItems/required/AP cleanup). Allow only non-structural Tier-1 (numeric/string/uniqueItems) per spec.\n  - Tier 2 allowed only outside G_valid and only when existing guards permit.\n  - Tier 3 disabled by default everywhere.\n- Emit policy-disabled diagnostic + counters whenever an action is blocked by policy.\n- Ensure policy decisions do not consult coverage mode/targets/dimensionsEnabled.\n\n[Deliverables]\n- Tier enum/type + mapping.\n- Gate function (allowedTierForPath) using canonPath metadata (G_valid flag + structuralKeywords).\n- Repair engine uses gate before attempting an action and records policy disables in diagnostics/metrics.",
         "testStrategy": "- Unit tests for the policy gate: matrix over {G_valid/non-G_valid} × {structural/non-structural keywords} × {tier}.\n- Integration tests: for G_valid fixtures, confirm structural repairs are blocked (or surfaced as regression per spec metrics policy) and that policy-disabled diagnostics appear.\n- Determinism tests: policy outcomes stable for fixed tuple.",
@@ -2039,21 +2039,21 @@
             "id": 9504001,
             "title": "Define Tier model and tier mapping by keyword/motif",
             "description": "Add Tier enum/types and a deterministic mapping function (keyword/motif → tier) consistent with canonical spec §10.P8 baseline and default fallback rule for unclassified motifs.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/repair/tiers.ts",
             "parentId": "9504",
-            "updatedAt": "2025-12-04T00:00:00.000Z"
+            "updatedAt": "2025-12-04T21:54:49.101Z"
           },
           {
             "id": 9504002,
             "title": "Implement policy gate using G_valid + structuralKeywords metadata",
             "description": "Implement isActionAllowed(canonPath, keyword, tier) using G_valid classification and the structuralKeywords set; emit policy-disabled diagnostics and counters when blocked.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 6,
             "file": "packages/core/src/repair/repair-engine.ts",
             "parentId": "9504",
-            "updatedAt": "2025-12-04T00:00:00.000Z"
+            "updatedAt": "2025-12-04T22:05:40.988Z"
           },
           {
             "id": 9504003,
@@ -2066,7 +2066,7 @@
             "updatedAt": "2025-12-04T00:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-04T00:00:00.000Z"
+        "updatedAt": "2025-12-04T22:05:40.988Z"
       },
       {
         "id": "9505",
@@ -2168,9 +2168,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-04T21:24:35.012Z",
+      "lastModified": "2025-12-04T22:05:40.990Z",
       "taskCount": 7,
-      "completedCount": 3,
+      "completedCount": 4,
       "tags": [
         "repair-philosophy"
       ]

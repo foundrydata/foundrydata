@@ -37,4 +37,4 @@ This document maps the parent task 9503 bullets from Implementation Details, Del
   Covers: [KR2, DEL2, DOD2, TS2] (status: done).
 
 - **9503.9503003 – Emit revert diagnostics and increment counters**  
-  Covers: [KR3, DEL3, DOD3, TS3] (status: pending).
+  Covers: [KR3, DEL3, DOD3, TS3] (status: done).

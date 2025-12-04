@@ -310,6 +310,16 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
     );
 
     expect(out.items[0]).toBe(original);
+    const revertDiag = (out.diagnostics ?? []).find(
+      (d) => d.code === 'REPAIR_REVERTED_NO_PROGRESS'
+    );
+    expect(revertDiag).toBeDefined();
+    expect(revertDiag?.phase).toBe('repair');
+    expect(revertDiag?.details).toMatchObject({
+      keyword: expect.any(String),
+      scoreBefore: 1,
+      scoreAfter: 1,
+    });
     spy.mockRestore();
   });
 });
