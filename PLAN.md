@@ -1,24 +1,22 @@
-Task: 9406   Title: Update feature and usage docs with G_valid guidance — subtask 9406.9406003
-Anchors: [spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#generator, spec://§10#repair-engine]
+Task: 9500   Title: Integrate Repair philosophy into canonical spec and align design docs — subtask 9500.9500001
+Anchors: [spec://§10#mapping, spec://§10#process-order, spec://§6#generator-repair-contract, spec://§14#planoptionssubkey, spec://§15#metrics]
 Touched files:
 - PLAN.md
-- .taskmaster/docs/9406-traceability.md
+- .taskmaster/docs/9500-traceability.md
 - .taskmaster/tasks/tasks.json
-- docs/COMPREHENSIVE_FEATURE_SUPPORT.md
- - README.md
- - docs/tests-traceability.md
- - docs/ARCHITECTURE.md
+- docs/spec-canonical-json-schema-generator.md
+- agent-log.jsonl
 
 Approach:
-Pour la sous-tâche 9406.9406003, je vais compléter la surface documentaire côté features/usage pour rendre le contrat Generator vs Repair et G_valid réellement découvrables, en s’appuyant sur les options déjà exposées au niveau `PlanOptions` et de la CLI (spec://§6#phases, spec://§6#generator-repair-contract, spec://§9#generator, spec://§10#repair-engine). Concrètement : (1) enrichir `docs/COMPREHENSIVE_FEATURE_SUPPORT.md` avec une vue plus structurée du contrat Generator/Repair et des zones G_valid (what/why/how), en rattachant clairement les nouveaux flags/profils CLI à ces invariants ; (2) mettre à jour `README.md` pour introduire une courte section “G_valid & no‑repair zone” dans le récit d’ensemble (pipeline 5 phases + contrat) et pointer vers la doc détaillée, sans surcharger la page principale ; (3) aligner `docs/tests-traceability.md` et éventuellement `docs/ARCHITECTURE.md` pour que les scénarios de tests et la vue architecturelle mentionnent le comportement attendu en zone G_valid (classification, absence de Repair structurel par défaut, rôle de `allowStructuralInGValid`) et comment lire les métriques `repairUsageByMotif` ; (4) vérifier que ces docs restent cohérentes avec les tests existants (unitaires, acceptance et e2e G_valid) sans introduire de promesse non imposée par la SPEC, puis relancer build/typecheck/lint/test/bench pour garantir l’absence de régression.
+Pour la sous-tâche 9500.9500001, je vais concentrer le travail sur la SPEC canonique §10 sans élargir le périmètre aux implémentations ni aux autres docs. En m’appuyant sur le mapping `(keyword → action)` existant et sur le contrat Generator/Repair + G_valid (§6), je vais introduire une sous-section explicite “Repair philosophy” sous §10 qui sert de couche de policy : elle référencera le tuple de déterminisme fixé en §14/§15, rappellera le rôle des tiers (0–3) et de la politique par défaut en zone G_valid, précisera l’exigence de couverture-indépendance et pointera vers les paragraphes normatifs déjà présents (10.P1–10.P8) pour Score/commit rule, budgets/stagnation et observabilité, sans redéfinir leurs détails. Concrètement, je vais (1) ajouter un en-tête et un court paragraphe de synthèse qui encadrent les paragraphes 10.P1–10.P8 comme “Repair philosophy”, (2) vérifier que les formulations restent compatibles avec les invariants de §6 (structuralKeywords bloqués dans G_valid, pas d’extension de budgets) et avec l’ordre de traitement existant (§10 Process), (3) créer ou mettre à jour `.taskmaster/docs/9500-traceability.md` pour introduire des bullets stables qui capturent les KRs/Deliverables liés à la SPEC, et mapper cette sous-tâche à ces bullets, puis (4) relire la SPEC autour de §6/§10/§14/§15 pour détecter toute contradiction ou duplication manifeste avant d’exécuter build/typecheck/lint/test/bench.
 
 DoD:
-- [x] Les pages de features et de support (COMPREHENSIVE_FEATURE_SUPPORT/docs, README, ARCHITECTURE) décrivent explicitement le contrat Generator vs Repair, la notion de zone G_valid et le rôle des options G_valid/Repair, sans divergence avec la SPEC.
-- [x] Les docs indiquent clairement comment activer/désactiver G_valid et ajuster la sévérité du Repair en zone G_valid via l’API Node et la CLI (flags/profils), avec au moins un flow d’usage illustratif.
-- [x] La matrice de traçabilité des tests (docs/tests-traceability.md) référence les tests et fixtures G_valid existants et précise les invariants (no-repair zone par défaut, metrics cohérentes) de façon alignée aux scénarios réels.
-- [x] La suite build/typecheck/lint/test/bench reste verte après ces mises à jour docs, confirmant que la documentation est cohérente avec l’implémentation actuelle.
+- [x] La SPEC canonique §10 contient une sous-section “Repair philosophy” clairement identifiée, qui cadre les paragraphes 10.P1–10.P8 sans modifier les règles normatives existantes (tiers, Score, budgets, coverage-indépendance, G_valid).
+- [x] Les renvois croisés entre §6 (G_valid / structuralKeywords), §10 (mapping et process), §14 (PlanOptionsSubKey) et §15 (métriques/déterminisme) restent cohérents et ne créent pas de nouvelles obligations côté implémentation.
+- [x] Le fichier `.taskmaster/docs/9500-traceability.md` existe, décrit les principaux KR/Deliverables/DoD pour le parent 9500 et mappe explicitement cette sous-tâche 9500.9500001 à au moins un bullet de chaque catégorie pertinente.
+- [x] La suite build/typecheck/lint/test/bench reste verte après la mise à jour de la SPEC, confirmant que la documentation est alignée sur l’implémentation actuelle et n’introduit pas de régression de tooling.
 
-Parent bullets couverts: [KR3, DEL3, DOD3, TS3]
+Parent bullets couverts: [KR1, DEL1, DOD1, TS1]
 
 Checks:
 - build: npm run build

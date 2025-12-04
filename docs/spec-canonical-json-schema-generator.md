@@ -2034,6 +2034,11 @@ explicitly a Tier-0 operation.
 When a Tier-1 action causes follow-up structural needs (e.g. `uniqueItems` removes witnesses and requires
 re-satisfying `contains`/`minContains`), those follow-up actions are Tier-2 and therefore follow Tier-2 policy.
 
+<a id="s10-repair-philosophy"></a>
+### Repair philosophy (policy layer; normative)
+
+This subsection collects the normative policy layer that governs when and how the Repair Engine is allowed to apply the mapping above. For a fixed determinism tuple (§14/§15) and fixed input instance, Repair must behave deterministically (§10.P1), classify every action into exactly one tier (0–3) and respect the default tier policy in and outside `G_valid` (§10.P2–§10.P3). Repair must remain observationally independent from coverage settings (§10.P4), use the stable Score/commit rule as its sole progress metric (§10.P5), terminate under the existing per-action and per-path budgets without expanding `G_valid` obligations (§10.P6), surface policy and progress decisions via diagnostics and metrics (§10.P7), and honor the tier-by-motif classification that ties each schema motif to a concrete tier (§10.P8). Together, these constraints define “what we allow Repair to fix” while preserving the Generator/Repair contract of §6 and the existing `(keyword → action)` mapping.
+
 <a id="s10-process-order"></a>
 ### Process
 

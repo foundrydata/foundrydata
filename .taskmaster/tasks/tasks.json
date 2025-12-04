@@ -1834,13 +1834,13 @@
   "repair-philosophy": {
     "tasks": [
       {
-        "id": 9500,
+        "id": "9500",
         "title": "Integrate Repair philosophy into canonical spec and align design docs",
         "description": "Add the normative “Repair philosophy (What we allow Repair to fix)” section under spec §10 and align adjacent docs so there is a single normative source of truth (tiers, Score/commit rule, coverage-independence, G_valid interaction).",
         "priority": "high",
         "estimatedHours": 10,
         "dependencies": [],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 3,
         "details": "[Context]\nRepair is defined normatively in spec §10 (keyword→action mapping, guards, budgets) and constrained by the Generator/Repair contract + G_valid in spec §6. This task formalizes the missing policy layer (tiers, progress metric, coverage-independence) and ensures it does not contradict the existing structuralKeywords + G_valid regression model.\n\n[Spec anchors]\n- Canonical spec: docs/spec-canonical-json-schema-generator.md §6 (G_valid / structuralKeywords), §10 (Repair Engine), §14/§15 (determinism + metrics).\n- Coverage constraints: docs/spec-coverage-aware-v1.0.md (coverage=measure vs off invariants), but Repair must be testable at “core” level.\n\n[Key requirements]\n- Add §10 “Repair philosophy” with:\n  - Determinism tuple referencing the already-normative tuple (§14/§15).\n  - Tier model (0..3) + default policy.\n  - Explicit G_valid rules consistent with existing “structuralKeywords should not trigger in G_valid” model.\n  - Single normative definition for Score(x)/sig(e)/commit rule used by stagnation and UNSAT.\n  - Explicit coverage-independence constraints for Repair (mode/targets/dimensionsEnabled must not affect decisions).\n  - Diagnostics/metrics naming aligned with the canonical diagnostics table.\n- Remove/avoid duplication: design-repair-philosophy.md should reference canonical spec for Score/tiers instead of restating the normative text.\n\n[Deliverables]\n- Updated docs/spec-canonical-json-schema-generator.md (spec §10) + update the central diagnostics/metrics tables.\n- Updated docs/design-repair-philosophy.md to de-duplicate normative definitions.\n- Update docs/tests-traceability.md to link motifs↔tiers and to the new spec anchors.\n- Confirm alignment with repo-level architecture principles and README invariants.  ",
         "testStrategy": "- Doc-level consistency checks: verify no conflicting normative statements between §6/§10/§14/§15 and design docs.\n- Add a short spec review checklist (anchors exist, cross-refs correct, diagnostics table updated, Score defined once).\n- Confirm G_valid + structuralKeywords wording matches existing gValid_* metrics expectations and does not introduce new generator obligations unintentionally.",
@@ -1849,11 +1849,11 @@
             "id": 9500001,
             "title": "Patch canonical spec §10 with Repair philosophy section",
             "description": "Add the new “Repair philosophy” subsection under §10 with determinism tuple reference, tiers, default tier policy aligned with G_valid/structuralKeywords, coverage-independence, Score/commit rule, and termination semantics.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 5,
             "file": "docs/spec-canonical-json-schema-generator.md",
             "parentId": "9500",
-            "updatedAt": "2025-12-04T00:00:00.000Z"
+            "updatedAt": "2025-12-04T20:00:32.122Z"
           },
           {
             "id": 9500002,
@@ -1876,10 +1876,10 @@
             "updatedAt": "2025-12-04T00:00:00.000Z"
           }
         ],
-        "updatedAt": "2025-12-04T00:00:00.000Z"
+        "updatedAt": "2025-12-04T20:00:32.122Z"
       },
       {
-        "id": 9501,
+        "id": "9501",
         "title": "Implement stable AJV error signature and Score(x) utilities",
         "description": "Create a shared utility that computes sig(e) + Score(x) deterministically: canonPath resolution, stable params canonicalization, and distinct-signature counting.",
         "priority": "high",
@@ -1926,7 +1926,7 @@
         "updatedAt": "2025-12-04T00:00:00.000Z"
       },
       {
-        "id": 9502,
+        "id": "9502",
         "title": "Add repair-philosophy diagnostics codes and metrics counters",
         "description": "Introduce diagnostics and counters required by the Repair philosophy (policy-disabled, reverted-no-progress, per-tier counters) and wire them into the shared diagnostics envelope + metrics collection.",
         "priority": "high",
@@ -1973,7 +1973,7 @@
         "updatedAt": "2025-12-04T00:00:00.000Z"
       },
       {
-        "id": 9503,
+        "id": "9503",
         "title": "Enforce Score-based commit rule in Repair engine (revert on no progress)",
         "description": "Modify Repair execution so candidate mutations are committed only when Score(x') < Score(x); otherwise revert and emit diagnostics/counters.",
         "priority": "high",
@@ -2021,7 +2021,7 @@
         "updatedAt": "2025-12-04T00:00:00.000Z"
       },
       {
-        "id": 9504,
+        "id": "9504",
         "title": "Implement Repair tier classification and default tier policy (G_valid + structuralKeywords-aware)",
         "description": "Classify each repair action into Tier 0..3 and enforce a default policy that respects G_valid and structuralKeywords restrictions while remaining coverage-independent.",
         "priority": "high",
@@ -2069,7 +2069,7 @@
         "updatedAt": "2025-12-04T00:00:00.000Z"
       },
       {
-        "id": 9505,
+        "id": "9505",
         "title": "Add coverage-independence and determinism regression tests for Repair",
         "description": "Prove that Repair decisions and mutations are independent of coverage mode/targets/dimensionsEnabled for a fixed input instance and determinism tuple.",
         "priority": "medium",
@@ -2117,7 +2117,7 @@
         "updatedAt": "2025-12-04T00:00:00.000Z"
       },
       {
-        "id": 9506,
+        "id": "9506",
         "title": "Add micro-schemas + E2E assertions for tier behavior, G_valid regressions, and UNSAT stability",
         "description": "Create dedicated fixtures and E2E tests that pin the intended default behavior: limited Tier-2 in non-G_valid, structural repairs blocked/flagged in G_valid, and UNSAT_BUDGET_EXHAUSTED behavior driven by Score stagnation.",
         "priority": "medium",
@@ -2168,15 +2168,12 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-04T00:00:00.000Z",
+      "lastModified": "2025-12-04T20:00:32.124Z",
       "taskCount": 7,
       "completedCount": 0,
       "tags": [
         "repair-philosophy"
-      ],
-      "created": "2025-12-04T18:14:30.464Z",
-      "description": "Tasks for repair-philosophy context",
-      "updated": "2025-12-04T18:14:30.464Z"
+      ]
     }
   }
 }
