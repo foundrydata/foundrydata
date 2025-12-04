@@ -2030,7 +2030,7 @@
           "9500",
           "9502"
         ],
-        "status": "in-progress",
+        "status": "done",
         "complexityScore": 5,
         "details": "[Context]\nThe Repair philosophy introduces tiers to constrain what Repair is allowed to do by default and to make policy decisions observable. The implementation must match the canonical spec’s existing G_valid/structuralKeywords contract: structural keyword repairs in G_valid are regression signals, not a normal success path.\n\n[Spec anchors]\n- Canonical spec §6: G_valid and structuralKeywords expectations.\n- Canonical spec §10 Repair philosophy: tiers and default tier policy.\n\n[Key requirements]\n- Add tier metadata to repair actions (or derive tier deterministically from keyword+motif).\n- Enforce default policy:\n  - Tier 0 always allowed.\n  - Tier 1 allowed everywhere EXCEPT: in G_valid, disallow Tier-1 when the triggering keyword is in structuralKeywords (e.g. minItems/maxItems/required/AP cleanup). Allow only non-structural Tier-1 (numeric/string/uniqueItems) per spec.\n  - Tier 2 allowed only outside G_valid and only when existing guards permit.\n  - Tier 3 disabled by default everywhere.\n- Emit policy-disabled diagnostic + counters whenever an action is blocked by policy.\n- Ensure policy decisions do not consult coverage mode/targets/dimensionsEnabled.\n\n[Deliverables]\n- Tier enum/type + mapping.\n- Gate function (allowedTierForPath) using canonPath metadata (G_valid flag + structuralKeywords).\n- Repair engine uses gate before attempting an action and records policy disables in diagnostics/metrics.",
         "testStrategy": "- Unit tests for the policy gate: matrix over {G_valid/non-G_valid} × {structural/non-structural keywords} × {tier}.\n- Integration tests: for G_valid fixtures, confirm structural repairs are blocked (or surfaced as regression per spec metrics policy) and that policy-disabled diagnostics appear.\n- Determinism tests: policy outcomes stable for fixed tuple.",
@@ -2059,14 +2059,14 @@
             "id": 9504003,
             "title": "Add tests for tier mapping and policy gating",
             "description": "Add unit tests for tier mapping and gating, plus integration fixtures that exercise structural vs non-structural repairs inside/outside G_valid.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/repair/**tests**/repair-tiers-policy.spec.ts",
             "parentId": "9504",
-            "updatedAt": "2025-12-04T00:00:00.000Z"
+            "updatedAt": "2025-12-04T22:17:35.971Z"
           }
         ],
-        "updatedAt": "2025-12-04T22:05:40.988Z"
+        "updatedAt": "2025-12-04T22:17:35.971Z"
       },
       {
         "id": "9505",
@@ -2168,9 +2168,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-04T22:05:40.990Z",
+      "lastModified": "2025-12-04T22:17:35.972Z",
       "taskCount": 7,
-      "completedCount": 4,
+      "completedCount": 5,
       "tags": [
         "repair-philosophy"
       ]

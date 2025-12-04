@@ -114,4 +114,47 @@ describe('Repair tier classification — §10.P8 baseline', () => {
     });
     expect(requiredOutsideGValid.allowed).toBe(true);
   });
+
+  it('treats Tier 0 as always allowed and Tier 3 as disabled by default', () => {
+    const tier0InGValid = isActionAllowed({
+      keyword: 'minimum',
+      tier: REPAIR_TIER.Tier0,
+      inGValid: true,
+      allowStructuralInGValid: false,
+      maxTier: REPAIR_TIER.Tier2,
+    });
+    expect(tier0InGValid.allowed).toBe(true);
+
+    const tier3Outside = isActionAllowed({
+      keyword: 'minimum',
+      tier: REPAIR_TIER.Tier3,
+      inGValid: false,
+      allowStructuralInGValid: false,
+      maxTier: REPAIR_TIER.Tier3,
+    });
+    expect(tier3Outside.allowed).toBe(false);
+    expect(tier3Outside.reason).toBe('default_policy');
+  });
+
+  it('remains deterministic across G_valid / non-G_valid combinations for a fixed keyword', () => {
+    const keyword = 'minItems';
+    const base = isActionAllowed({
+      keyword,
+      tier: REPAIR_TIER.Tier2,
+      inGValid: true,
+      allowStructuralInGValid: false,
+      maxTier: REPAIR_TIER.Tier2,
+    });
+
+    for (let i = 0; i < 5; i += 1) {
+      const again = isActionAllowed({
+        keyword,
+        tier: REPAIR_TIER.Tier2,
+        inGValid: true,
+        allowStructuralInGValid: false,
+        maxTier: REPAIR_TIER.Tier2,
+      });
+      expect(again).toEqual(base);
+    }
+  });
 });
