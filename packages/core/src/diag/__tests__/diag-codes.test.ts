@@ -30,6 +30,27 @@ describe('Repair philosophy diagnostics', () => {
     ).not.toThrow();
   });
 
+  it('REPAIR_GVALID_STRUCTURAL_ACTION is registered with phase repair and valid payload', () => {
+    const phases = getAllowedDiagnosticPhases(
+      DIAGNOSTIC_CODES.REPAIR_GVALID_STRUCTURAL_ACTION
+    );
+    expect(phases).toBeDefined();
+    expect(phases?.has(DIAGNOSTIC_PHASES.REPAIR)).toBe(true);
+
+    expect(() =>
+      assertDiagnosticEnvelope({
+        code: DIAGNOSTIC_CODES.REPAIR_GVALID_STRUCTURAL_ACTION,
+        canonPath: '/properties/foo/type',
+        phase: DIAGNOSTIC_PHASES.REPAIR,
+        details: {
+          kind: 'required',
+          strategy: 'synth',
+          missing: 'title',
+        },
+      })
+    ).not.toThrow();
+  });
+
   it('REPAIR_REVERTED_NO_PROGRESS is registered with phase repair and valid payload', () => {
     const phases = getAllowedDiagnosticPhases(
       DIAGNOSTIC_CODES.REPAIR_REVERTED_NO_PROGRESS
@@ -74,6 +95,18 @@ describe('Repair philosophy diagnostics', () => {
           keyword: 'type',
           scoreBefore: '3',
           scoreAfter: 2,
+        },
+      })
+    ).toThrow(/expected shape/);
+
+    expect(() =>
+      assertDiagnosticEnvelope({
+        code: DIAGNOSTIC_CODES.REPAIR_GVALID_STRUCTURAL_ACTION,
+        canonPath: '/properties/foo/type',
+        phase: DIAGNOSTIC_PHASES.REPAIR,
+        // missing required fields
+        details: {
+          strategy: 'synth',
         },
       })
     ).toThrow(/expected shape/);

@@ -210,6 +210,30 @@ Checks:
 - test: npm run test
 - bench: npm run bench
 - diag-schema: true
+
+Task: 9602   Title: Harden repair tier counters and diagnostics (subtask 9602.9602002)
+Anchors: [spec://§2#observability-surfaces, spec://§10#repair-philosophy-observability, spec://§15#metrics, spec://§19#envelope]
+Touched files:
+- packages/core/src/diag/schemas.ts
+- packages/core/src/diag/__tests__/diag-codes.test.ts
+- packages/core/src/repair/__tests__/mapping-repair.test.ts
+- .taskmaster/docs/9602-traceability.md
+
+Approach:
+Objectif: rendre robustes les compteurs de tiers et les diagnostics de blocage selon la spec Repair (`spec://§10#repair-philosophy-observability`) sans modifier le flux Repair/coverage (`spec://§2#observability-surfaces`). Plan: (1) durcir le schéma diag pour `REPAIR_GVALID_STRUCTURAL_ACTION`/`REPAIR_TIER_DISABLED` en exigeant les champs observabilité (keyword/kind/strategy, optional missing/deficit) et vérifier via `assertDiagnosticEnvelope` (`spec://§19#envelope`). (2) S’assurer que la collecte de métriques `repair_tier{1,2,3}_actions`/`repair_tierDisabled` reste alignée avec les diagnostics: ajouter un test d’intégration `repair-tier-policy` qui déclenche un blocage de policy (G_valid structural) et vérifie à la fois la présence des diagnostics et l’incrément des compteurs (`spec://§15#metrics`). (3) Harmoniser le runtime pour peupler les diagnostics avec des champs attendus (ex: tier/g_valid reason) sans changer la décision de Repair; la collecte reste passive et indépendante de coverage. (4) Rejouer build → typecheck → lint → test → bench; valider diag-schema. Pas d’I/O ni dépendance wall-clock ajoutées.
+
+Risks/Unknowns:
+- Détails diag actuels pour `REPAIR_GVALID_STRUCTURAL_ACTION` varient selon keyword; la forme du schéma doit accepter les variantes (required/minItems) sans être trop lâche.
+- S’assurer que les tests existants (gValid structural, tier policy) ne deviennent pas fragiles avec des assertions plus strictes sur les payloads.
+- Comptage tierDisabled vs g_valid guard: vérifier que l’incrément reflète bien les policy blocks sans double comptage.
+
+Parent bullets couverts: [KR1, DEL1, DEL2, DOD1, TS2]
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
 Task: 9603   Title: Register resolver diagnostics codes and schema (subtask 9603.9603001)
 Anchors: [spec://§2#observability-surfaces, spec://§6#phases, spec://§15#rng, spec://§19#envelope]
 Touched files:

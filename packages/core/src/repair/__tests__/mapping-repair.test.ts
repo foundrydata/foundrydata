@@ -309,6 +309,63 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
     expect(bucket?.actions).toBe(0);
   });
 
+  it('emits tier-disabled diagnostics and counters for structural actions blocked in G_valid', () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        id: { type: 'integer', minimum: 0, default: 0 },
+        title: { type: 'string', minLength: 1, default: 'ok' },
+      },
+      required: ['id', 'title'],
+    } as const;
+
+    const canonical = {
+      schema,
+      ptrMap: new Map<string, string>(),
+      revPtrMap: new Map<string, string[]>(),
+      notes: [],
+    };
+    const coverageIndex = new Map();
+    const gValidIndex = classifyGValid(schema, coverageIndex, undefined);
+    const effective = {
+      canonical,
+      containsBag: new Map(),
+      coverageIndex,
+    } as unknown as ComposeResult;
+
+    const metrics = new MetricsCollector({ now: () => 0 });
+
+    const out = repairItemsAjvDriven(
+      [
+        // Missing required title; defaults exist but policy should block in G_valid.
+        { id: -1 },
+      ],
+      {
+        schema,
+        effective,
+        planOptions: { gValid: true },
+        gValidIndex,
+      },
+      { attempts: 1, metrics }
+    );
+
+    const tierDisabled = metrics.snapshotMetrics({
+      verbosity: 'ci',
+    }).repair_tierDisabled;
+    expect(tierDisabled).toBeGreaterThan(0);
+
+    const diag = (out.diagnostics ?? []).find(
+      (d) => d.code === 'REPAIR_TIER_DISABLED'
+    );
+    expect(diag).toBeDefined();
+    expect(diag?.phase).toBe('repair');
+    expect(diag?.details).toMatchObject({
+      keyword: 'required',
+      reason: 'g_valid',
+    });
+  });
+
   it('wires Score(x) computation into AJV-driven repair attempts', () => {
     const schema = repairPhilosophyMicroSchemas.tier1.stringMinLength;
     const spy = vi.spyOn(scoreModule, 'computeScore');

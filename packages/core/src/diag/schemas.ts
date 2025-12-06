@@ -635,6 +635,17 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
       reason: enumSchema(['g_valid', 'default_policy']),
     },
   },
+  [DIAGNOSTIC_CODES.REPAIR_GVALID_STRUCTURAL_ACTION]: {
+    kind: 'object',
+    required: {
+      kind: { kind: 'string' },
+      strategy: { kind: 'string' },
+    },
+    optional: {
+      missing: { kind: 'string' },
+      deficit: { kind: 'number' },
+    },
+  },
   [DIAGNOSTIC_CODES.REPAIR_REVERTED_NO_PROGRESS]: {
     kind: 'object',
     required: {

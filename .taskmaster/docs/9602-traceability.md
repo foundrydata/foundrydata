@@ -34,7 +34,7 @@ This document maps parent task 9602 bullets from Implementation Details, Deliver
   Covers: [KR2, DEL1, DOD1, DOD2, TS1] (status: done).
 
 - **9602.9602002 – Harden repair tier counters and diagnostics**  
-  Covers: [KR1, DEL1, DEL2, DOD1, TS2] (status: pending).
+  Covers: [KR1, DEL1, DEL2, DOD1, TS2] (status: done).
 
 - **9602.9602003 – Add observability regression tests for repair/G_valid metrics**  
   Covers: [KR1, KR2, KR3, DEL3, DOD2, DOD3, TS3] (status: pending).
