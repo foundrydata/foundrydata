@@ -2360,10 +2360,11 @@
             "id": 9603002,
             "title": "Emit resolver diagnostics in Compose pipeline",
             "description": "Wire resolver stages to emit run-level diagnostics for cache hit/miss/offline/strategies/unresolved cases.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/compose/resolver.ts",
-            "parentId": "9603"
+            "parentId": "9603",
+            "updatedAt": "2025-12-06T20:05:51.510Z"
           },
           {
             "id": 9603003,
@@ -2375,7 +2376,7 @@
             "parentId": "9603"
           }
         ],
-        "updatedAt": "2025-12-06T19:44:04.542Z"
+        "updatedAt": "2025-12-06T20:05:51.510Z"
       },
       {
         "id": "9604",
@@ -2531,7 +2532,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-06T19:44:04.543Z",
+      "lastModified": "2025-12-06T20:05:51.511Z",
       "taskCount": 7,
       "completedCount": 1,
       "tags": [

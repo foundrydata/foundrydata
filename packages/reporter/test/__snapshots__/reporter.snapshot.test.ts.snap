@@ -69,7 +69,8 @@ ul{padding-left:1.25rem}
   &quot;requested&quot;: [
     &quot;local&quot;
   ],
-  &quot;cacheDir&quot;: &quot;~/.foundrydata/cache&quot;
+  &quot;cacheDir&quot;: &quot;~/.foundrydata/cache&quot;,
+  &quot;registryFingerprint&quot;: &quot;0&quot;
 }</pre></li></ul></div>
     </div>
   </section>
@@ -442,6 +443,7 @@ exports[`reporter snapshots > produces a stable JSON Report for profiles/simple.
             "code": "RESOLVER_STRATEGIES_APPLIED",
             "details": {
               "cacheDir": "~/.foundrydata/cache",
+              "registryFingerprint": "0",
               "requested": [
                 "local",
               ],
@@ -780,7 +782,7 @@ exports[`reporter snapshots > produces a stable Markdown report for profiles/sim
   - CONTAINS_BAG_COMBINED @ /properties/tags ({"bagSize":1,"sumMin":1,"maxItems":5})
 - unsatHints: none
 - run: 1
-  - RESOLVER_STRATEGIES_APPLIED @ # ({"strategies":["local"],"requested":["local"],"cacheDir":"~/.foundrydata/cache"})
+  - RESOLVER_STRATEGIES_APPLIED @ # ({"strategies":["local"],"requested":["local"],"cacheDir":"~/.foundrydata/cache","registryFingerprint":"0"})
 
 ## Coverage Index (snapshot)
 

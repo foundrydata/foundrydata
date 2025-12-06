@@ -306,6 +306,15 @@ describe('assertRunDiagnostics', () => {
             requested: ['local', 'remote'],
             cacheDir: '~/.cache',
             snapshotPath: '/tmp/resolver.snap',
+            registryFingerprint: 'abc123',
+          },
+        },
+        {
+          code: DIAGNOSTIC_CODES.EXTERNAL_REF_STUBBED,
+          canonPath: '#',
+          details: {
+            ref: 'https://example.com/offline.json',
+            stubKind: 'emptySchema',
           },
         },
         {
@@ -372,6 +381,15 @@ describe('assertRunDiagnostics', () => {
             id: 'https://example.com/external.json',
             existingRef: 'https://example.com/external.json#',
             reason: 'uri-already-registered',
+          },
+        },
+        {
+          code: DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED,
+          canonPath: '#',
+          details: {
+            ref: 'https://example.com/missing.json',
+            mode: 'strict',
+            failingRefs: ['https://example.com/missing.json'],
           },
         },
       ])

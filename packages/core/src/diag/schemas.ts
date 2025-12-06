@@ -513,6 +513,7 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
     },
     optional: {
       snapshotPath: { kind: 'string' },
+      registryFingerprint: { kind: 'string' },
     },
   },
   [DIAGNOSTIC_CODES.RESOLVER_CACHE_HIT]: {

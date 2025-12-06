@@ -215,6 +215,7 @@ export async function resolveAllExternalRefs(
   }
 
   const registryFingerprint = registry.fingerprint();
+  strategiesDetails.registryFingerprint = registryFingerprint;
   if (
     declaredSnapshotFingerprint &&
     registryFingerprint !== declaredSnapshotFingerprint

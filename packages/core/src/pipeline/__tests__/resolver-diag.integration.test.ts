@@ -29,6 +29,16 @@ describe('Resolver extension run-level diagnostics', () => {
     const run = compose.diag?.run ?? [];
     const codes = run.map((r) => r.code);
     expect(codes).toContain(DIAGNOSTIC_CODES.RESOLVER_STRATEGIES_APPLIED);
+    const strategiesNote = run.find(
+      (r) => r.code === DIAGNOSTIC_CODES.RESOLVER_STRATEGIES_APPLIED
+    );
+    const strategiesDetails = (strategiesNote as any)?.details as
+      | Record<string, unknown>
+      | undefined;
+    expect(typeof strategiesDetails?.registryFingerprint).toBe('string');
+    expect(
+      (strategiesDetails?.registryFingerprint as string | undefined)?.length
+    ).toBeGreaterThan(0);
     // When strategies=['local'], prefetch is not attempted; only strategies note is guaranteed
     // All run-level entries must pin canonPath to '#'
     for (const entry of run) {

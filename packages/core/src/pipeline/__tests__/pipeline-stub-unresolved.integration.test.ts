@@ -81,6 +81,10 @@ describe('resolver stubUnresolved handling', () => {
         (w) => w.code === 'EXTERNAL_REF_STUBBED'
       )
     ).toBe(true);
+    const runDiags = result.artifacts.effective?.diag?.run ?? [];
+    expect(
+      runDiags.some((entry) => entry.code === 'EXTERNAL_REF_STUBBED')
+    ).toBe(true);
   });
 
   it('does not stub refs already present in resolver registry', async () => {

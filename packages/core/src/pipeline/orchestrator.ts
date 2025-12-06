@@ -299,6 +299,21 @@ export async function executePipeline(
     }
   }
   let ajvParityChecked = false;
+  const recordResolverRunDiag = (
+    note:
+      | ResolverDiagnosticNote
+      | {
+          code: ResolverDiagnosticNote['code'];
+          canonPath: '#';
+          details?: ResolverDiagnosticNote['details'] | unknown;
+          phase?: 'compose';
+        }
+  ): void => {
+    if (!resolverRunDiags) {
+      resolverRunDiags = [];
+    }
+    resolverRunDiags.push(note as ResolverDiagnosticNote);
+  };
 
   const runAjvStartupParityGate = (args: {
     validateFormats: boolean;
@@ -681,6 +696,11 @@ export async function executePipeline(
           skipValidation: mode === 'lax',
           policy: mode === 'strict' ? externalRefStrictPolicy : undefined,
         });
+        recordResolverRunDiag({
+          code: diag.code as ResolverDiagnosticNote['code'],
+          canonPath: '#',
+          details: diag.details as ResolverDiagnosticNote['details'],
+        });
         if (mode === 'strict') {
           artifacts.validationDiagnostics = [diag];
           throw new ExternalRefValidationError(diag);
@@ -719,6 +739,11 @@ export async function executePipeline(
           const diag = createExternalRefDiagnostic(mode, classification, {
             skipValidation: mode === 'lax',
             policy: mode === 'strict' ? externalRefStrictPolicy : undefined,
+          });
+          recordResolverRunDiag({
+            code: diag.code as ResolverDiagnosticNote['code'],
+            canonPath: '#',
+            details: diag.details as ResolverDiagnosticNote['details'],
           });
           if (mode === 'strict') {
             artifacts.validationDiagnostics = [diag];
@@ -809,10 +834,16 @@ export async function executePipeline(
       composeResult.diag = composeResult.diag ?? {};
       const warn = composeResult.diag.warn ?? [];
       for (const ref of stubbedRefs) {
+        const details = { ref, stubKind: 'emptySchema' } as const;
         warn.push({
           code: DIAGNOSTIC_CODES.EXTERNAL_REF_STUBBED,
           canonPath: '#',
-          details: { ref, stubKind: 'emptySchema' },
+          details,
+        });
+        recordResolverRunDiag({
+          code: DIAGNOSTIC_CODES.EXTERNAL_REF_STUBBED,
+          canonPath: '#',
+          details,
         });
       }
       composeResult.diag.warn = warn;

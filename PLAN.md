@@ -22,6 +22,41 @@ Checks:
 - bench: npm run bench
 - diag-schema: true
 
+Task: 9603   Title: Emit resolver diagnostics in Compose pipeline (subtask 9603.9603002)
+Anchors: [spec://§2#observability-surfaces, spec://§6#phases, spec://§15#rng, spec://§19#envelope]
+Touched files:
+- PLAN.md
+- .taskmaster/docs/9603-traceability.md
+- packages/shared/src/types/diag.resolver.ts
+- packages/core/src/pipeline/orchestrator.ts
+- packages/core/src/resolver/options.ts
+- packages/core/src/diag/schemas.ts
+- packages/core/src/diag/__tests__/envelope.test.ts
+- packages/core/src/pipeline/__tests__/resolver-diag.integration.test.ts
+- packages/core/src/pipeline/__tests__/pipeline-stub-unresolved.integration.test.ts
+- packages/reporter/test/__snapshots__/reporter.snapshot.test.ts.snap
+- .taskmaster/tasks/tasks.json
+
+Approach:
+Je dois câbler l’extension resolver pour que ses diagnostics (strategies, cache hit/miss, offline, unresolved/stubbed) arrivent systématiquement dans `compose.diag.run` sans changer le flux pipeline (`spec://§6#phases`) ni la sortie fonctionnelle (`spec://§15#rng`). Plan: (1) cartographier le flux actuel `resolveAllExternalRefs` → `resolverRunDiags` → `composeResult.diag.run` pour identifier les cas non couverts (ex: stubbed/unresolved pré-compose, fingerprint absent) et décider où injecter des entrées run-level supplémentaires ou enrichies (`spec://§2#observability-surfaces`). (2) Étendre les détails `ResolverStrategiesApplied` pour transporter `registryFingerprint` et, si nécessaire, ajouter/recadrer les notes pour offline/cache/unresolved afin qu’elles soient émises en phase Compose avec canonPath `#` et payloads conformes aux schémas (`spec://§19#envelope`), tout en gardant l’observabilité passive (aucune décision de fetch/validation ne change). (3) Mettre à jour l’orchestrateur pour attacher ces notes de façon déterministe (ordre stable) et ajuster le test d’intégration resolver pour vérifier au moins la présence de la note strategies+fingerprint et l’injection run-level sans rompre les scénarios offline/cache (les tests de couverture online/offline/cache complets arriveront dans 9603.9603003). Vérifier que rien n’introduit de dépendance à l’horloge ni de divergence metrics on/off.
+
+Risks/Unknowns:
+- Ordonnancement des run diags: s’assurer que l’ajout de nouvelles entrées ne rend pas les snapshots instables ou non déterministes.
+- Exposition `registryFingerprint`: décider si on l’inclut dans la note strategies vs note dédiée; éviter de fuiter des chemins sensibles (cacheDir déjà anonymisé).
+- Double émission stubbed/unresolved (run vs warn) ou changement de statut pipeline si la validation diag échoue; prévoir un garde-fou dans les tests.
+
+Parent bullets couverts: [KR1, KR2, KR3, DEL2, DOD1, DOD2, TS2]
+
+DoD checklist:
+- [x] Diagnostics resolver (strategies/cache/offline/unresolved) émis dans `diag.run` avec canonPath '#' et phase Compose.
+- [x] `registryFingerprint` exposé dans les diags run-level ou metadata sans altérer le flux ni la déterminisme.
+- [x] Test(s) exercant l’émission run-level (stratégies + offline/cache) et passage diag-schema.
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
 Task: 9603   Title: Register resolver diagnostics codes and schema (subtask 9603.9603001)
 Anchors: [spec://§2#observability-surfaces, spec://§6#phases, spec://§15#rng, spec://§19#envelope]
 Touched files:

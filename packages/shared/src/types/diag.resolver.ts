@@ -18,6 +18,7 @@ export interface ResolverStrategiesAppliedDetails {
   requested: ResolverStrategy[];
   cacheDir: string | null;
   snapshotPath?: string;
+  registryFingerprint?: string;
 }
 
 export interface ResolverCacheHitDetails {
