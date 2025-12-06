@@ -2182,7 +2182,7 @@
   "observability-platform-metrics-v1": {
     "tasks": [
       {
-        "id": "9600",
+        "id": 9600,
         "title": "Align diag.metrics baseline with observability spec",
         "description": "Implement and validate the diag.metrics baseline defined in docs/spec-observability-platform-metrics-v1.0.md (§3.1, §4.2), ensuring observability signals remain side-effect free and deterministically shaped.",
         "priority": "high",
@@ -2237,14 +2237,13 @@
         "updatedAt": "2025-12-06T18:57:06.116Z"
       },
       {
-        "id": "9601",
+        "id": 9601,
         "title": "Enforce coverage-report observability invariants and planner caps audit",
         "description": "Align coverage-report/v1 emission with observability spec (§2.2, §5.1–5.4), including planned/unplanned auditing, plannerCapsHit summaries, guided≥measure invariants, and comparability metadata.",
         "priority": "high",
         "estimatedHours": 14,
         "dependencies": [
-          "9301",
-          "9302"
+          "9600"
         ],
         "status": "pending",
         "complexityScore": 4,
@@ -2290,15 +2289,13 @@
         ]
       },
       {
-        "id": "9602",
+        "id": 9602,
         "title": "Surface repair-tier and G_valid observability metrics",
         "description": "Extend repair observability per spec (§4.3, §4.4): tier counters, policy blocks, and G_valid motif metrics, keeping coverage-independence.",
         "priority": "high",
         "estimatedHours": 12,
         "dependencies": [
-          "9503",
-          "9504",
-          "9505"
+          "9600"
         ],
         "status": "pending",
         "complexityScore": 4,
@@ -2335,7 +2332,7 @@
         ]
       },
       {
-        "id": "9603",
+        "id": 9603,
         "title": "Implement Resolver R1 run-level diagnostics",
         "description": "Expose resolver observability via Compose.diag.run per spec (§6.1–§6.2), including cache hits/misses/offline paths and strategy summaries, while keeping determinism for fixed registry fingerprints.",
         "priority": "medium",
@@ -2380,7 +2377,7 @@
         "updatedAt": "2025-12-06T20:21:40.671Z"
       },
       {
-        "id": "9604",
+        "id": 9604,
         "title": "Deliver reporter/platform view and CI gates",
         "description": "Implement the derived Reporter/Platform View and platform KPIs/gates per observability spec (§2.4, §7, Appendix A), with traceability tests for each gate.",
         "priority": "high",
@@ -2435,7 +2432,7 @@
         ]
       },
       {
-        "id": "9605",
+        "id": 9605,
         "title": "Update observability specs and platform view docs",
         "description": "Refresh documentation to reflect the implemented observability surfaces: spec-observability-platform-metrics-v1.0 Appendix A, planned/unplanned semantics, repairUsageByMotif ordering, and comparability metadata (registryFingerprint, operationsScope, selectedOperations).",
         "priority": "medium",
@@ -2478,7 +2475,7 @@
         ]
       },
       {
-        "id": "9606",
+        "id": 9606,
         "title": "Update front-door docs and CI gate guide for observability",
         "description": "Add public-facing documentation for the observability surfaces and gates: README entry, docs index, CI gates how-to, and changelog/reporter README notes about comparability metadata and bench-only SLIs.",
         "priority": "medium",
@@ -2538,7 +2535,10 @@
       "completedCount": 2,
       "tags": [
         "observability-platform-metrics-v1"
-      ]
+      ],
+      "created": "2025-12-06T20:31:28.164Z",
+      "description": "Tasks for observability-platform-metrics-v1 context",
+      "updated": "2025-12-06T20:31:28.164Z"
     }
   }
 }
