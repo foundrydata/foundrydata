@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://foundrydata.dev/schemas/reporter-platform-view-v1.schema.json",
+  "title": "Reporter/Platform View v1",
+  "type": "object",
+  "required": ["version", "engine", "run", "metrics"],
+  "properties": {
+    "version": { "const": "reporter-platform-view/v1" },
+    "engine": {
+      "type": "object",
+      "required": ["name", "version", "ajvMajor"],
+      "properties": {
+        "name": { "const": "foundrydata" },
+        "version": { "type": "string", "minLength": 1 },
+        "ajvMajor": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "run": {
+      "type": "object",
+      "properties": {
+        "seed": { "type": "number" },
+        "registryFingerprint": { "type": "string" },
+        "coverage": {
+          "type": "object",
+          "required": ["mode"],
+          "properties": {
+            "mode": { "enum": ["off", "measure", "guided"] },
+            "dimensionsEnabled": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "excludeUnreachable": { "type": "boolean" },
+            "operationsScope": { "enum": ["all", "selected"] },
+            "selectedOperations": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "repairUsageByMotif": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["motif", "items", "itemsWithRepair", "actions"],
+            "properties": {
+              "motif": { "type": "string", "minLength": 1 },
+              "canonPath": { "type": "string" },
+              "items": { "type": "integer", "minimum": 0 },
+              "itemsWithRepair": { "type": "integer", "minimum": 0 },
+              "actions": { "type": "integer", "minimum": 0 },
+              "tiers": {
+                "type": "object",
+                "properties": {
+                  "tier1": { "type": "integer", "minimum": 0 },
+                  "tier2": { "type": "integer", "minimum": 0 },
+                  "tier3": { "type": "integer", "minimum": 0 },
+                  "disabled": { "type": "integer", "minimum": 0 }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "coverage": {
+          "type": "object",
+          "properties": {
+            "coverageStatus": { "enum": ["ok", "minCoverageNotMet", "error"] },
+            "overall": { "type": "number", "minimum": 0 },
+            "byDimension": {
+              "type": "object",
+              "additionalProperties": { "type": "number", "minimum": 0 }
+            },
+            "byOperation": {
+              "type": "object",
+              "additionalProperties": { "type": "number", "minimum": 0 }
+            },
+            "thresholds": {
+              "type": "object",
+              "properties": {
+                "overall": { "type": "number", "minimum": 0 }
+              },
+              "additionalProperties": false
+            },
+            "targetsByStatus": {
+              "type": "object",
+              "additionalProperties": { "type": "number", "minimum": 0 }
+            },
+            "planning": {
+              "type": "object",
+              "properties": {
+                "plannedTargetsTotal": { "type": "integer", "minimum": 0 },
+                "unplannedTargetsTotal": { "type": "integer", "minimum": 0 },
+                "plannerCapsHit": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "dimension",
+                      "totalTargets",
+                      "plannedTargets",
+                      "unplannedTargets"
+                    ],
+                    "properties": {
+                      "dimension": { "type": "string" },
+                      "scopeType": { "enum": ["schema", "operation"] },
+                      "scopeKey": { "type": "string" },
+                      "totalTargets": { "type": "integer", "minimum": 0 },
+                      "plannedTargets": { "type": "integer", "minimum": 0 },
+                      "unplannedTargets": { "type": "integer", "minimum": 0 }
+                    },
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

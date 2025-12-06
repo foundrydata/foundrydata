@@ -1,0 +1,59 @@
+{
+  "version": "reporter-platform-view/v1",
+  "engine": {
+    "name": "foundrydata",
+    "version": "0.1.1",
+    "ajvMajor": 8
+  },
+  "run": {
+    "seed": 37,
+    "registryFingerprint": "0",
+    "coverage": {
+      "mode": "measure",
+      "dimensionsEnabled": ["structure", "branches"],
+      "excludeUnreachable": false,
+      "operationsScope": "all"
+    }
+  },
+  "metrics": {
+    "repairUsageByMotif": [
+      {
+        "motif": "alpha",
+        "items": 2,
+        "itemsWithRepair": 1,
+        "actions": 1
+      }
+    ],
+    "coverage": {
+      "coverageStatus": "ok",
+      "overall": 0.5,
+      "byDimension": {
+        "structure": 1,
+        "branches": 0
+      },
+      "byOperation": {},
+      "thresholds": {
+        "overall": 0.4
+      },
+      "targetsByStatus": {
+        "active": 2,
+        "unreachable": 0,
+        "deprecated": 0
+      },
+      "planning": {
+        "plannedTargetsTotal": 0,
+        "unplannedTargetsTotal": 1,
+        "plannerCapsHit": [
+          {
+            "dimension": "branches",
+            "scopeType": "schema",
+            "scopeKey": "dimension:branches",
+            "totalTargets": 1,
+            "plannedTargets": 0,
+            "unplannedTargets": 1
+          }
+        ]
+      }
+    }
+  }
+}

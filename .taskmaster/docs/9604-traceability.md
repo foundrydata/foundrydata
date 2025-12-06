@@ -41,7 +41,7 @@ This document maps parent task 9604 bullets from Implementation Details, Deliver
   Covers: [KR4, DEL3, DOD2, TS2, TS3] (status: done).
 
 - **9604.9604004 – Add schema + validation for Reporter/Platform View**  
-  Covers: [KR1, DEL1, DOD1, TS1] (status: pending).
+  Covers: [KR1, DEL1, DOD1, TS1] (status: done).
 
 - **9604.9604005 – Wire operationsScope/selectedOperations into coverage report**  
   Covers: [KR3, DEL1, DOD3, TS3] (status: pending).

@@ -2436,10 +2436,11 @@
             "id": 9604004,
             "title": "Add schema + validation for Reporter/Platform View",
             "description": "Define versioned JSON schema/types for the derived view and validate it in reporter outputs; enforce stable ordering to keep snapshots/test fixtures deterministic.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/shared/src/types/platform-view.ts",
-            "parentId": "9604"
+            "parentId": "9604",
+            "updatedAt": "2025-12-06T23:29:37.096Z"
           },
           {
             "id": 9604005,
@@ -2453,7 +2454,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-12-06T23:23:32.232Z"
+        "updatedAt": "2025-12-06T23:29:37.096Z"
       },
       {
         "id": "9605",
@@ -2554,7 +2555,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-06T23:23:32.233Z",
+      "lastModified": "2025-12-06T23:29:37.098Z",
       "taskCount": 7,
       "completedCount": 4,
       "tags": [

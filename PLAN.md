@@ -21,6 +21,31 @@ Checks:
 - bench: npm run bench
 - diag-schema: true
 
+Task: 9604   Title: Add schema + validation for Reporter/Platform View (subtask 9604.9604004)
+Anchors: [spec://§2#observability-surfaces, spec://§7#platform-kpis-gates, cov://§5#coverage-report, spec://§19#payloads, spec://§15#metrics]
+Touched files:
+- .taskmaster/docs/9604-traceability.md
+- packages/reporter/src/platform-view/index.ts
+- packages/reporter/src/schemas/reporter-platform-view-v1.schema.json
+- packages/reporter/test/reporter-platform-view-schema.test.ts
+- packages/reporter/test/fixtures/reporter-platform-view.sample.json
+
+Approach:
+Objectif: formaliser la vue dérivée `reporter-platform-view/v1` via un JSON Schema versionné + validation test, en s’alignant sur l’appendix A (spec://§2#observability-surfaces, spec://§7#platform-kpis-gates). (1) Définir `packages/reporter/src/schemas/reporter-platform-view-v1.schema.json` couvrant `version`, `engine{name,version,ajvMajor}`, `run` (seed?, registryFingerprint?, coverage block avec mode/dimensions/opsScope/selectedOperations triées), `metrics.repairUsageByMotif` (items/itemsWithRepair/actions ≥0, itemsWithRepair ≤ items, actions==0 ⇒ itemsWithRepair==0 non exprimable en JSON Schema mais min constraints + doc) et `metrics.coverage` (coverageStatus, overall, byDimension/byOperation, thresholds.overall, targetsByStatus, planning with plannerCapsHit entries). (2) Ajouter helper dans `platform-view/index.ts` pour valider/normalize via AJV (re-use existing validation infra if any), ou au minimum exposer le schema path pour tests. (3) Créer fixture `reporter-platform-view.sample.json` générée à partir du builder avec diag.metrics+coverage-report sample pour servir de snapshot déterministe (selectedOperations déjà trié). (4) Ajout test `reporter-platform-view-schema.test.ts` qui charge le schema et le fixture, valide via AJV 2020 + formats, et injecte un cas négatif (valeur négative dans actions/itemsWithRepair) pour prouver le rejet. (5) Mettre à jour traceability (DOD1/DEL1) et rejouer build → typecheck → lint → test → bench.
+
+Risks/Unknowns:
+- JSON Schema ne peut pas exprimer `actions==0 ⇒ itemsWithRepair==0`; documenter ce garde dans le test (vérifier via builder). 
+- Alignement des enums coverage (mode/guided/measure/off) avec coverage-report/v1; s’assurer des types identiques.
+- Fixture doit rester stable (tri) pour éviter des snapshots fragiles.
+
+Parent bullets couverts: [KR1, KR3, DEL1, DOD1, TS1]
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
+
 Task: 9604   Title: Traceability and test suite for gates (subtask 9604.9604003)
 Anchors: [spec://§7#platform-kpis-gates, spec://§2#observability-surfaces, cov://§7#thresholds, spec://§15#metrics, spec://§19#payloads]
 Touched files:
