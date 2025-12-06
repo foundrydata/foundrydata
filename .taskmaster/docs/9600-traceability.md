@@ -34,10 +34,10 @@ This document maps the parent task 9600 bullets from Implementation Details, Del
   Covers: [KR1, DEL1, DOD1, TS1] (status: done).
 
 - **9600.9600002 – Implement deterministic metrics collection and SLI separation**  
-  Covers: [KR1, KR2, DEL1, DEL2, DOD2, TS1, TS2] (status: in-progress).
+  Covers: [KR1, KR2, DEL1, DEL2, DOD2, TS1, TS2] (status: done).
 
 - **9600.9600003 – Add side-effect-free regression tests for metrics toggle**  
-  Covers: [KR2, DEL2, DOD2, TS2] (status: pending).
+  Covers: [KR2, DEL2, DOD2, TS2] (status: in-progress).
 
 - **9600.9600004 – Determinism comparator: ignore non-deterministic metrics**  
   Covers: [KR3, DEL3, DOD2, DOD3, TS3] (status: pending).
