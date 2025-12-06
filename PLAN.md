@@ -22,6 +22,29 @@ Checks:
 - bench: npm run bench
 - diag-schema: true
 
+Task: 9603   Title: Add resolver observability tests (online/offline/cache) (subtask 9603.9603003)
+Anchors: [spec://§2#observability-surfaces, spec://§6#phases, spec://§15#rng, spec://§19#envelope]
+Touched files:
+- PLAN.md
+- .taskmaster/docs/9603-traceability.md
+- packages/core/src/pipeline/__tests__/resolver-diag.integration.test.ts
+- packages/core/src/pipeline/__tests__/resolver-observability.integration.test.ts
+
+Approach:
+Je dois prouver que les diags run-level du resolver sont déterministes et présents sur les profils online/offline/cache sans modifier le flux pipeline (`spec://§6#phases`) ni la sortie fonctionnelle (`spec://§15#rng`). Plan: (1) ajouter un test d’intégration dédié `resolver-observability.integration.test.ts` avec trois scénarios: (a) offline/local-only avec `$ref` externe et `stubUnresolved:'emptySchema'` pour vérifier `RESOLVER_STRATEGIES_APPLIED`, `RESOLVER_OFFLINE_UNAVAILABLE` et `EXTERNAL_REF_STUBBED` tous en `diag.run`/warn canonPath `#`; (b) exécuter un “cache miss fetched” en mockant `fetch` (allowHosts ciblé) pour servir un petit schéma JSON dans un cacheDir temporaire, attendre `RESOLVER_CACHE_MISS_FETCHED` + fingerprint, puis rerun avec le même cache pour observer `RESOLVER_CACHE_HIT` et s’assurer que `fetch` n’est plus appelé; (c) vérifier que `registryFingerprint` reste identique entre miss/hit et que l’ensemble des diag.run conserve canonPath `#` et ordre stable (trié pour l’assertion) en respectant le schéma (`spec://§19#envelope`). (2) Factoriser au besoin des helpers communs dans `resolver-diag.integration.test.ts` pour éviter la duplication de schémas/expectations. (3) Rejouer build → typecheck → lint → test → bench et mettre à jour traceability + DoD.
+
+Risks/Unknowns:
+- Mock fetch: éviter tout appel réseau réel et restaurer `globalThis.fetch` entre tests.
+- CacheDir temporaire: bien isoler/clean pour que les assertions miss→hit restent déterministes.
+- Ordre des diags: stabiliser les assertions (tri par code) pour éviter des snapshots fragiles.
+
+Parent bullets couverts: [KR2, KR3, DEL3, DOD2, DOD3, TS2, TS3]
+
+DoD checklist:
+- [x] Tests couvrent offline/no-strategy avec diag.run (strategies + offline + stubbed) canonPath '#'.
+- [x] Tests couvrent cache miss→hit deterministe avec registryFingerprint identique et fetch non rappelé en hit.
+- [x] Chaîne build→typecheck→lint→test→bench rejouée, diag-schema respecté.
+
 Task: 9603   Title: Emit resolver diagnostics in Compose pipeline (subtask 9603.9603002)
 Anchors: [spec://§2#observability-surfaces, spec://§6#phases, spec://§15#rng, spec://§19#envelope]
 Touched files:
