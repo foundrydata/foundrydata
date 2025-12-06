@@ -4,6 +4,7 @@ import { DIAGNOSTIC_CODES, DIAGNOSTIC_PHASES } from '../codes';
 import {
   assertDiagnosticEnvelope,
   assertDiagnosticsForPhase,
+  assertRunDiagnostics,
   type DiagnosticEnvelope,
 } from '../validate';
 
@@ -290,5 +291,119 @@ describe('assertDiagnosticsForPhase', () => {
         },
       ])
     ).not.toThrow();
+  });
+});
+
+describe('assertRunDiagnostics', () => {
+  it('accepts resolver run diagnostics with canonical shapes', () => {
+    expect(() =>
+      assertRunDiagnostics([
+        {
+          code: DIAGNOSTIC_CODES.RESOLVER_STRATEGIES_APPLIED,
+          canonPath: '#',
+          details: {
+            strategies: ['local'],
+            requested: ['local', 'remote'],
+            cacheDir: '~/.cache',
+            snapshotPath: '/tmp/resolver.snap',
+          },
+        },
+        {
+          code: DIAGNOSTIC_CODES.RESOLVER_CACHE_HIT,
+          canonPath: '#',
+          details: {
+            ref: 'https://example.com/external.json',
+            contentHash: 'abc123',
+            alias: 'asyncapi-3.0',
+          },
+        },
+        {
+          code: DIAGNOSTIC_CODES.RESOLVER_CACHE_MISS_FETCHED,
+          canonPath: '#',
+          details: {
+            ref: 'https://example.com/remote.json',
+            bytes: 42,
+            contentHash: 'deadbeef',
+          },
+        },
+        {
+          code: DIAGNOSTIC_CODES.RESOLVER_OFFLINE_UNAVAILABLE,
+          canonPath: '#',
+          details: {
+            ref: 'https://example.com/offline.json',
+            reason: 'no-strategy',
+            limit: 2,
+            error: 'network-disabled',
+          },
+        },
+        {
+          code: DIAGNOSTIC_CODES.RESOLVER_SNAPSHOT_APPLIED,
+          canonPath: '#',
+          details: {
+            path: '/tmp/resolver-snapshot.log',
+            count: 2,
+            fingerprint: 'f00',
+          },
+        },
+        {
+          code: DIAGNOSTIC_CODES.RESOLVER_SNAPSHOT_LOAD_FAILED,
+          canonPath: '#',
+          details: {
+            path: '/tmp/resolver-snapshot.log',
+            message: 'ENOENT',
+            reason: 'parse-error',
+            line: '{ invalid',
+          },
+        },
+        {
+          code: DIAGNOSTIC_CODES.RESOLVER_SNAPSHOT_FINGERPRINT_MISMATCH,
+          canonPath: '#',
+          details: {
+            path: '/tmp/resolver-snapshot.log',
+            declared: 'abc',
+            actual: 'def',
+          },
+        },
+        {
+          code: DIAGNOSTIC_CODES.RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID,
+          canonPath: '#',
+          details: {
+            ref: 'https://example.com/external.json',
+            id: 'https://example.com/external.json',
+            existingRef: 'https://example.com/external.json#',
+            reason: 'uri-already-registered',
+          },
+        },
+      ])
+    ).not.toThrow();
+  });
+
+  it('rejects resolver run diagnostics with non-root canonPath or malformed payloads', () => {
+    expect(() =>
+      assertRunDiagnostics([
+        {
+          code: DIAGNOSTIC_CODES.RESOLVER_STRATEGIES_APPLIED,
+          canonPath: '/not-root',
+          details: {
+            strategies: ['local'],
+            requested: ['local'],
+            cacheDir: '~/.cache',
+          },
+        },
+      ])
+    ).toThrow(/canonPath/);
+
+    expect(() =>
+      assertRunDiagnostics([
+        {
+          code: DIAGNOSTIC_CODES.RESOLVER_CACHE_MISS_FETCHED,
+          canonPath: '#',
+          details: {
+            ref: 'https://example.com/remote.json',
+            contentHash: 'deadbeef',
+          },
+        },
+      ] as DiagnosticEnvelope[])
+    ).toThrow(/expected shape/i);
   });
 });

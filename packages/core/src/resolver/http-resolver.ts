@@ -18,6 +18,7 @@ import {
 import { summarizeExternalRefs } from '../util/modes.js';
 import { detectDialect } from '../dialect/detectDialect.js';
 import { stableHash } from '../util/stable-hash.js';
+import type { ResolverRunDiagnostic } from '@foundrydata/shared';
 
 export interface ResolverOptions {
   strategies?: Array<'local' | 'remote' | 'schemastore'>;
@@ -51,7 +52,7 @@ export interface ResolverOptions {
 
 export interface PrefetchResult {
   registry: ResolutionRegistry;
-  diagnostics: Array<{ code: string; canonPath: string; details?: unknown }>;
+  diagnostics: ResolverRunDiagnostic[];
   cacheDir?: string;
 }
 

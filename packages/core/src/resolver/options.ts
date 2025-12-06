@@ -10,14 +10,15 @@ import {
   type ResolverOptions as HttpResolverOptions,
 } from './http-resolver.js';
 import { loadSnapshotFromFile } from './snapshot-loader.js';
-import { DIAGNOSTIC_CODES, type DiagnosticCode } from '../diag/codes.js';
+import { DIAGNOSTIC_CODES } from '../diag/codes.js';
 import { schemaHasExternalRefs, summarizeExternalRefs } from '../util/modes.js';
+import type {
+  ResolverRunDiagnostic,
+  ResolverSnapshotLoadFailedDetails,
+  ResolverStrategiesAppliedDetails,
+} from '@foundrydata/shared';
 
-export interface ResolverDiagnosticNote {
-  code: DiagnosticCode;
-  canonPath: string;
-  details?: unknown;
-}
+export type ResolverDiagnosticNote = ResolverRunDiagnostic;
 
 /**
  * High-level resolver options used by the pre-pipeline Extension R1 entrypoint.
@@ -121,15 +122,18 @@ export async function resolveAllExternalRefs(
 
   // Always emit a run-level strategies note, even when no external refs are
   // present or no network fetch is attempted.
+  const strategiesDetails: ResolverStrategiesAppliedDetails = {
+    strategies: strategiesForPrefetch,
+    requested: strategies,
+    cacheDir: cacheDirForDiag,
+  };
+  if (snapshotPathResolved) {
+    strategiesDetails.snapshotPath = snapshotPathResolved;
+  }
   notes.push({
     code: DIAGNOSTIC_CODES.RESOLVER_STRATEGIES_APPLIED,
     canonPath: '#',
-    details: {
-      strategies: strategiesForPrefetch,
-      requested: strategies,
-      cacheDir: cacheDirForDiag,
-      snapshotPath: snapshotPathResolved,
-    },
+    details: strategiesDetails,
   });
 
   let declaredSnapshotFingerprint: string | undefined;
@@ -153,11 +157,19 @@ export async function resolveAllExternalRefs(
       }
       if (snapshot.diagnostics.length > 0) {
         for (const diag of snapshot.diagnostics) {
-          notes.push({
-            code: diag.code as DiagnosticCode,
-            canonPath: diag.canonPath,
-            details: diag.details,
-          });
+          if (diag.code === DIAGNOSTIC_CODES.RESOLVER_SNAPSHOT_LOAD_FAILED) {
+            notes.push({
+              code: DIAGNOSTIC_CODES.RESOLVER_SNAPSHOT_LOAD_FAILED,
+              canonPath: '#',
+              details: diag.details as ResolverSnapshotLoadFailedDetails,
+            });
+          } else {
+            notes.push({
+              code: diag.code as ResolverDiagnosticNote['code'],
+              canonPath: '#',
+              details: diag.details,
+            } as ResolverRunDiagnostic);
+          }
         }
       }
     } catch (error) {
@@ -211,7 +223,7 @@ export async function resolveAllExternalRefs(
       code: DIAGNOSTIC_CODES.RESOLVER_SNAPSHOT_FINGERPRINT_MISMATCH,
       canonPath: '#',
       details: {
-        path: snapshotPathResolved,
+        path: snapshotPathResolved ?? '',
         declared: declaredSnapshotFingerprint,
         actual: registryFingerprint,
       },

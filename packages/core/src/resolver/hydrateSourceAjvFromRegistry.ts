@@ -6,6 +6,7 @@ import { ensureMeta } from '../ajv/factory.js';
 import { detectDialect, type Dialect } from '../dialect/detectDialect.js';
 import type { JsonSchemaDialect } from '../util/ajv-source.js';
 import type { ResolverDiagnosticNote } from './options.js';
+import type { ResolverAddSchemaSkippedIncompatibleDialectDetails } from '@foundrydata/shared';
 
 export interface RegistryDoc {
   uri: string;
@@ -89,14 +90,17 @@ export function hydrateSourceAjvFromRegistry(
       const docDialect = entryDialect ?? detectDialect(entry.schema);
       if (!isDialectCompatible(docDialect, targetDialect)) {
         if (options.ignoreIncompatible && notes) {
+          const details: ResolverAddSchemaSkippedIncompatibleDialectDetails = {
+            uri: entry.uri,
+            docDialect,
+          };
+          if (targetDialect !== undefined) {
+            details.targetDialect = targetDialect;
+          }
           notes.push({
             code: 'RESOLVER_ADD_SCHEMA_SKIPPED_INCOMPATIBLE_DIALECT',
             canonPath: '#',
-            details: {
-              uri: entry.uri,
-              docDialect,
-              targetDialect,
-            },
+            details,
           });
         }
         continue;

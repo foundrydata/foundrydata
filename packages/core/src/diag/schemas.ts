@@ -502,10 +502,17 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
         kind: 'array',
         items: enumSchema(['local', 'remote', 'schemastore']),
       },
+      requested: {
+        kind: 'array',
+        items: enumSchema(['local', 'remote', 'schemastore']),
+      },
       cacheDir: {
         kind: 'union',
         variants: [{ kind: 'string' }, { kind: 'null' }],
       },
+    },
+    optional: {
+      snapshotPath: { kind: 'string' },
     },
   },
   [DIAGNOSTIC_CODES.RESOLVER_CACHE_HIT]: {
@@ -531,6 +538,7 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
     optional: {
       reason: { kind: 'string' },
       error: { kind: 'string' },
+      limit: { kind: 'number' },
     },
   },
   [DIAGNOSTIC_CODES.RESOLVER_ADD_SCHEMA_SKIPPED_INCOMPATIBLE_DIALECT]: {
@@ -538,6 +546,8 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
     required: {
       uri: { kind: 'string' },
       docDialect: { kind: 'string' },
+    },
+    optional: {
       targetDialect: { kind: 'string' },
     },
   },
@@ -551,6 +561,32 @@ export const DIAGNOSTIC_DETAIL_SCHEMAS: Partial<
       existingRef: { kind: 'string' },
       reason: { kind: 'string' },
       error: { kind: 'string' },
+    },
+  },
+  [DIAGNOSTIC_CODES.RESOLVER_SNAPSHOT_APPLIED]: {
+    kind: 'object',
+    required: {
+      path: { kind: 'string' },
+      count: { kind: 'number' },
+      fingerprint: { kind: 'string' },
+    },
+  },
+  [DIAGNOSTIC_CODES.RESOLVER_SNAPSHOT_LOAD_FAILED]: {
+    kind: 'object',
+    optional: {
+      path: { kind: 'string' },
+      message: { kind: 'string' },
+      reason: enumSchema(['invalid-entry', 'hash-failed', 'parse-error']),
+      line: { kind: 'string' },
+      uri: { kind: 'string' },
+    },
+  },
+  [DIAGNOSTIC_CODES.RESOLVER_SNAPSHOT_FINGERPRINT_MISMATCH]: {
+    kind: 'object',
+    required: {
+      path: { kind: 'string' },
+      declared: { kind: 'string' },
+      actual: { kind: 'string' },
     },
   },
   [DIAGNOSTIC_CODES.SCHEMA_INTERNAL_REF_MISSING]: {

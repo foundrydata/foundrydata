@@ -51,6 +51,7 @@ import { repairItemsAjvDriven } from '../repair/repair-engine.js';
 import {
   assertDiagnosticEnvelope,
   assertDiagnosticsForPhase,
+  assertRunDiagnostics,
   type DiagnosticEnvelope,
 } from '../diag/validate.js';
 import { DIAGNOSTIC_CODES, DIAGNOSTIC_PHASES } from '../diag/codes.js';
@@ -919,6 +920,7 @@ export async function executePipeline(
         assertDiagnosticEnvelope(env);
       }
     }
+    assertRunDiagnostics(composeResult.diag?.run ?? []);
   } catch (error) {
     if (error instanceof AjvFlagsMismatchError) {
       const snapshotForDiag = metrics.snapshotMetrics({

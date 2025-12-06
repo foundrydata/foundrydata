@@ -298,6 +298,42 @@ export function assertDiagnosticsForPhase(
   }
 }
 
+export function assertRunDiagnostics(
+  diagnostics: ReadonlyArray<
+    Pick<
+      DiagnosticEnvelope,
+      'code' | 'canonPath' | 'details' | 'metrics' | 'budget' | 'scoreDetails'
+    > & { phase?: DiagnosticPhase }
+  >
+): void {
+  if (!diagnostics || diagnostics.length === 0) return;
+
+  const normalized = diagnostics.map((diag) =>
+    'phase' in diag && diag.phase
+      ? (diag as DiagnosticEnvelope)
+      : ({
+          code: diag.code,
+          canonPath: diag.canonPath,
+          phase: DIAGNOSTIC_PHASES.COMPOSE,
+          details: diag.details,
+          metrics: diag.metrics,
+          budget: diag.budget,
+          scoreDetails: diag.scoreDetails,
+        } satisfies DiagnosticEnvelope)
+  );
+
+  for (const env of normalized) {
+    if (env.canonPath !== '#') {
+      throw new Error('Run-level diagnostics must set canonPath to "#"');
+    }
+  }
+
+  assertDiagnosticsForPhase(DIAGNOSTIC_PHASES.COMPOSE, normalized);
+  for (const env of normalized) {
+    assertDiagnosticEnvelope(env);
+  }
+}
+
 function assertDiagnosticMetrics(metrics: unknown): void {
   if (!isPlainObject(metrics)) {
     throw new Error('Diagnostic metrics must be an object of numeric values');

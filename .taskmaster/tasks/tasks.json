@@ -2341,7 +2341,7 @@
         "priority": "medium",
         "estimatedHours": 10,
         "dependencies": [],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 3,
         "details": "[Context]\nResolver behavior must be surfaced at run level (canonPath '#') with deterministic diagnostics when registry fingerprints are fixed and offline mode is enabled.\n\n[Key requirements]\n- Add run-level diagnostics codes: RESOLVER_CACHE_HIT, RESOLVER_CACHE_MISS_FETCHED, RESOLVER_OFFLINE_UNAVAILABLE, RESOLVER_STRATEGIES_APPLIED, EXTERNAL_REF_UNRESOLVED/STUBBED.\n- Ensure diagnostics comply with canonical envelope (code/phase/canonPath/details) and remain deterministic when network is disabled or fingerprinted.\n- Do not force network fetch when offline; observability must not change resolution semantics.\n- Carry registryFingerprint in run metadata to gate comparability/diffs.\n\n[Deliverables]\n- Resolver observability hooks emitting run-level diagnostics.\n- Tests covering online/offline/cache paths and determinism guarantees.",
         "testStrategy": "Unit tests for resolver diagnostic payloads; integration tests with fake registry/cache to assert deterministic diag.run[] across repeated runs and offline mode without altering resolved output; schema validation for diag envelopes; comparability tests involving registryFingerprint.",
@@ -2350,10 +2350,11 @@
             "id": 9603001,
             "title": "Register resolver diagnostics codes and schema",
             "description": "Add resolver run-level diag codes/types and schema validation for diag.run entries.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/shared/src/types/diag.resolver.ts",
-            "parentId": "9603"
+            "parentId": "9603",
+            "updatedAt": "2025-12-06T19:44:04.542Z"
           },
           {
             "id": 9603002,
@@ -2373,7 +2374,8 @@
             "file": "packages/core/test/e2e/resolver.observability.spec.ts",
             "parentId": "9603"
           }
-        ]
+        ],
+        "updatedAt": "2025-12-06T19:44:04.542Z"
       },
       {
         "id": "9604",
@@ -2529,7 +2531,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-06T18:57:06.117Z",
+      "lastModified": "2025-12-06T19:44:04.543Z",
       "taskCount": 7,
       "completedCount": 1,
       "tags": [
