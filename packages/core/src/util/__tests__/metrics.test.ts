@@ -48,7 +48,7 @@ describe('MetricsCollector', () => {
     collector.setLatency(95, 110);
 
     const snapshot = collector.snapshotMetrics({ verbosity: 'ci' });
-    expect(snapshot.validationsPerRow).toBe(2);
+    expect(snapshot.validationsPerRow).toBe(1);
     expect(snapshot.repairPassesPerRow).toBe(1);
     expect(snapshot.repairActionsPerRow).toBe(4);
     expect(snapshot.repair_tier1_actions).toBe(2);

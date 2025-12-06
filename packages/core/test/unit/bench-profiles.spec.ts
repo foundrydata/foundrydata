@@ -33,15 +33,14 @@ describe('bench profile fixtures', () => {
       const metrics = result.metrics;
       const budget = fixture.metricsBudget;
       if (budget?.validationsPerRowP50 !== undefined) {
-        const perRowValidations =
-          metrics.validationsPerRow / fixture.sampleSize;
-        expect(perRowValidations).toBeLessThanOrEqual(
+        expect(metrics.validationsPerRow).toBeLessThanOrEqual(
           budget.validationsPerRowP50
         );
       }
       if (budget?.repairPassesPerRowP50 !== undefined) {
-        const perRowRepairs = metrics.repairPassesPerRow / fixture.sampleSize;
-        expect(perRowRepairs).toBeLessThanOrEqual(budget.repairPassesPerRowP50);
+        expect(metrics.repairPassesPerRow).toBeLessThanOrEqual(
+          budget.repairPassesPerRowP50
+        );
       }
     }
   });

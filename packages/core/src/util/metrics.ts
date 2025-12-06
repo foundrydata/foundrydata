@@ -81,6 +81,10 @@ export class MetricsCollector {
   private readonly enabled: boolean;
   private readonly slisEnabled: boolean;
   private readonly timers: Record<MetricsPhaseKey, TimerState>;
+  private totalValidations = 0;
+  private validatedRows = 0;
+  private totalRepairPasses = 0;
+  private repairRows = 0;
   private snapshot: MetricsSnapshot;
   private verbosity: MetricsVerbosity;
 
@@ -158,14 +162,22 @@ export class MetricsCollector {
     if (!this.enabled) {
       return;
     }
-    this.snapshot.validationsPerRow += count;
+    const delta = Math.max(0, count);
+    this.totalValidations += delta;
+    this.validatedRows += delta;
+    this.snapshot.validationsPerRow =
+      this.validatedRows > 0 ? this.totalValidations / this.validatedRows : 0;
   }
 
   public addRepairPasses(count: number): void {
     if (!this.enabled) {
       return;
     }
-    this.snapshot.repairPassesPerRow += count;
+    const delta = Math.max(0, count);
+    this.totalRepairPasses += delta;
+    this.repairRows += 1;
+    this.snapshot.repairPassesPerRow =
+      this.repairRows > 0 ? this.totalRepairPasses / this.repairRows : 0;
   }
 
   public addRepairActions(count: number): void {

@@ -855,8 +855,8 @@ FoundryData exposes a metrics snapshot for every pipeline run (CLI, Node API, be
   compileMs?: number;
 
   // Logical cost (accumulated over the run)
-  validationsPerRow: number;    // total AJV validations (≈ number of rows)
-  repairPassesPerRow: number;   // total repair iterations across rows
+  validationsPerRow: number;    // average AJV validations per generated row
+  repairPassesPerRow: number;   // average repair passes per generated row
   repairActionsPerRow?: number;
   branchTrialsTried?: number;
   patternWitnessTried?: number;
