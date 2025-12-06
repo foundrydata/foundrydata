@@ -21,6 +21,30 @@ Checks:
 - bench: npm run bench
 - diag-schema: true
 
+Task: 9604   Title: Implement Reporter/Platform View derivation (subtask 9604.9604001)
+Anchors: [spec://§2#observability-surfaces, spec://§7#platform-kpis-gates, cov://§5#coverage-report, spec://§19#payloads, spec://§15#metrics]
+Touched files:
+- .taskmaster/docs/9604-traceability.md
+- packages/reporter/src/platform-view/index.ts
+- packages/reporter/src/platform-view/__tests__/platform-view.test.ts
+- packages/reporter/test/fixtures/coverage-report.v1.sample.json
+
+Approach:
+Objectif: matérialiser la vue dérivée “reporter-platform-view/v1” (Appendix A) à partir de `diag.metrics` + `coverage-report/v1` sans introduire de nouvelles sémantiques ni d’I/O, en conservant la comparabilité (seed, registryFingerprint, coverage scope). Plan: (1) Créer un builder `packages/reporter/src/platform-view/index.ts` qui prend `diag.metrics` (DiagMetrics) + couverture optionnelle (CoverageReport) et produit `ReporterPlatformViewV1` avec `version`, `engine`, `run` (seed + registryFingerprint + coverage metadata stable-sort selectedOperations) et `metrics` dérivées. (2) Pour `metrics.repairUsageByMotif`, projeter `diag.metrics.repairUsageByMotif` en tri stable (canonPath??'' puis motifId) et appliquer invariants (non-négatif, itemsWithRepair<=items, actions==0⇒itemsWithRepair==0). (3) Pour `metrics.coverage`, réduire le coverage-report en résumé: status/overall/byDimension/byOperation/thresholds/targetsByStatus + bloc `planning` issu de `diagnostics.plannerCapsHit` (totaux planned/unplanned + entries préservées). (4) Ajouter tests Vitest ciblés (`platform-view.test.ts`) couvrant: tri stable des motifs, respect des invariants (values clamp?), injection comparability (operationsScope/selectedOperations stable-sort), dérivation planning/plannerCapsHit depuis le fixture coverage-report. Mettre à jour le fixture si besoin pour inclure selectedOperations triées (pas de nouvelle sémantique). (5) Garder la vue pure et déterministe (pas d’horloge); aucune dépendance réseau/env; respecter “refonly surface” en ne modifiant pas diag/coverage d’origine. Boucler build → typecheck → lint → test → bench.
+
+Risks/Unknowns:
+- diag.metrics ne contient pas canonPath pour `repairUsageByMotif`; la vue devra accepter `canonPath` undefined tout en assurant un tri stable.
+- Couverture “off” sans report: définir un comportement par défaut (mode=off, aucune couverture) sans inventer de ratios.
+- Totaux planned/unplanned: vérifier que la réduction ne double-compte pas des tuples (dimension/scope).
+
+Parent bullets couverts: [KR1, KR2, DEL1, DOD1, TS1]
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
+
 Task: 9602   Title: Add observability regression tests for repair/G_valid metrics (subtask 9602.9602003)
 Anchors: [spec://§2#observability-surfaces, spec://§10#repair-philosophy-observability, spec://§15#metrics, spec://§19#envelope, spec://§15#rng]
 Touched files:

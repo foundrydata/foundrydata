@@ -2397,7 +2397,7 @@
           "9602",
           "9603"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 5,
         "details": "[Context]\nPlatform consumers need a standardized derived view (from diag + coverage-report) and CI gates with traceable tests. Gates must treat diag.fatal as fail, diag.warn as degraded, respect guided≥measure expectations, and avoid using performance SLIs as determinism regressions.\n\n[Key requirements]\n- Define and emit Reporter/Platform View JSON derived solely from diag and coverage-report; no new semantics beyond sources of truth.\n- Include repairUsageByMotif with stable sort (canonPath then motif) and invariants (items/itemsWithRepair/actions); include planned/unplanned evidence counts; carry comparability fields (registryFingerprint, operationsScope, selectedOperations).\n- Implement CI gate logic: fail on fatal; configurable warn escalation; coverage thresholds using coverage-report; ignore env-dependent SLIs for determinism alerts while still reporting them for perf.\n- Add automated tests for each gate and ensure traceability mapping to spec sections.\n\n[Deliverables]\n- Reporter/Platform View generator and schema.\n- CI gate module with configurable policies and test coverage.\n- Documentation/traceability entries linking gates to spec clauses.",
         "testStrategy": "Unit tests for reporter view derivation from fixtures; CI gate tests covering fatal/warn handling, coverage thresholds, guided≥measure invariant, and exclusion of SLIs from determinism checks; snapshot tests for reporter payload shape (stable ordering); traceability doc updates for gate-to-spec mapping.",
@@ -2406,10 +2406,11 @@
             "id": 9604001,
             "title": "Implement Reporter/Platform View derivation",
             "description": "Generate derived JSON from diag + coverage-report per Appendix A. Include repairUsageByMotif (stable sort + invariants), planned/unplanned summary, and comparability fields (registryFingerprint/operationsScope/selectedOperations).",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 5,
             "file": "packages/reporter/src/platform-view.ts",
-            "parentId": "9604"
+            "parentId": "9604",
+            "updatedAt": "2025-12-06T23:15:47.878Z"
           },
           {
             "id": 9604002,
@@ -2450,7 +2451,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-12-06T22:41:57.531Z"
+        "updatedAt": "2025-12-06T23:15:47.878Z"
       },
       {
         "id": "9605",
@@ -2551,7 +2552,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-06T23:00:05.142Z",
+      "lastModified": "2025-12-06T23:15:47.880Z",
       "taskCount": 7,
       "completedCount": 4,
       "tags": [
