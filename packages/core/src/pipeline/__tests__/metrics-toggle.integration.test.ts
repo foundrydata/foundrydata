@@ -1,50 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { executePipeline } from '../orchestrator';
-import type { DiagnosticEnvelope } from '../../diag/validate.js';
-import type { PipelineResult, PipelineStatus } from '../types';
-
-type StrippedResult = {
-  status: PipelineStatus;
-  timeline: PipelineResult['timeline'];
-  errors: Array<{ stage: string; message: string }>;
-  artifacts: {
-    generated: PipelineResult['artifacts']['generated'];
-    repaired: PipelineResult['artifacts']['repaired'];
-    repairActions: PipelineResult['artifacts']['repairActions'];
-    validationDiagnostics: Array<Omit<DiagnosticEnvelope, 'metrics'>>;
-    repairDiagnostics: Array<Omit<DiagnosticEnvelope, 'metrics'>>;
-  };
-};
-
-function stripDiagnostics(
-  diagnostics: DiagnosticEnvelope[] | undefined
-): Array<Omit<DiagnosticEnvelope, 'metrics'>> {
-  if (!diagnostics) {
-    return [];
-  }
-  return diagnostics.map(({ metrics: _metrics, ...rest }) => rest);
-}
-
-function stripResult(result: PipelineResult): StrippedResult {
-  return {
-    status: result.status,
-    timeline: result.timeline,
-    errors: result.errors.map((error) => ({
-      stage: error.stage,
-      message: error.message,
-    })),
-    artifacts: {
-      generated: result.artifacts.generated?.items,
-      repaired: result.artifacts.repaired,
-      repairActions: result.artifacts.repairActions,
-      validationDiagnostics: stripDiagnostics(
-        result.artifacts.validationDiagnostics
-      ),
-      repairDiagnostics: stripDiagnostics(result.artifacts.repairDiagnostics),
-    },
-  };
-}
+import type { PipelineResult } from '../types';
+import { normalizePipelineResultForDeterminism } from '../../../test/util/determinism-compare.js';
 
 describe('metrics toggle', () => {
   const schema = {
@@ -76,8 +34,12 @@ describe('metrics toggle', () => {
     const withMetrics = await runPipeline(true);
     const withoutMetrics = await runPipeline(false);
 
-    const strippedOn = stripResult(withMetrics);
-    const strippedOff = stripResult(withoutMetrics);
+    const strippedOn = normalizePipelineResultForDeterminism(withMetrics, {
+      includeMetrics: false,
+    });
+    const strippedOff = normalizePipelineResultForDeterminism(withoutMetrics, {
+      includeMetrics: false,
+    });
 
     expect(strippedOn).toStrictEqual(strippedOff);
 

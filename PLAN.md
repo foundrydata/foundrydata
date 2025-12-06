@@ -1,19 +1,20 @@
-Task: 9600   Title: Align diag.metrics baseline with observability spec — subtask 9600.9600003
+Task: 9600   Title: Align diag.metrics baseline with observability spec — subtask 9600.9600004
 Anchors: [spec://§2#observability-surfaces, spec://§15#metrics, spec://§15#rng, spec://§19#envelope]
 Touched files:
 - PLAN.md
 - .taskmaster/docs/9600-traceability.md
+- packages/core/test/util/determinism-compare.ts
 - packages/core/src/pipeline/__tests__/metrics-toggle.integration.test.ts
 
 Approach:
-Pour la sous-tâche 9600.9600003, je vais ajouter un test d’intégration pipeline qui exécute `executePipeline` sur un schéma fixe (seed/options identiques) avec `metrics.enabled` true vs false et démontre que tous les artefacts déterministes (items générés/réparés, actions de repair, diagnostics codes/paths) restent identiques en ignorant seulement les champs de métriques/SLI. En m’appuyant sur `spec://§2#observability-surfaces`, `spec://§15#metrics`, `spec://§15#rng` et `spec://§19#envelope`, j’écrirai un helper de comparaison qui supprime `metrics` des enveloppes diag et du résultat global avant comparaison profonde, puis j’asserterai que les diagnostics éventuels restent inchangés (codes/paths/détails) et que les branches générées ne varient pas. Je vérifierai aussi que le snapshot metrics en mode off reste nul (zéros stables) tandis que le mode on contient des compteurs/timings non négatifs, sans SLIs (enableSlis=false par défaut). Le test utilisera un schéma simple et `validateFormats:false` pour éviter des dépendances externes. Une fois le test ajouté, je rejouerai build → typecheck → lint → test → bench pour garantir l’absence de régressions et je mettrai à jour la trace 9600.
+Pour la sous-tâche 9600.9600004, je dois fournir un comparateur de déterminisme qui ignore explicitement les métriques non déterministes (timings + SLIs p50/p95/memory) afin que les tests metrics-on/off et futurs diffs ne déclenchent pas de faux positifs tout en restant stricts sur les artefacts fonctionnels. En m’appuyant sur `spec://§2#observability-surfaces`, `spec://§15#metrics`, `spec://§15#rng` et `spec://§19#envelope`, je vais (1) créer un utilitaire `packages/core/test/util/determinism-compare.ts` qui normalise un `PipelineResult` en supprimant les diagnostics metrics et en filtrant les clés métriques non déterministes, tout en conservant les artefacts générés/réparés et les diagnostics structurés ; les compteurs déterministes resteront disponibles quand on active explicitement la comparaison des métriques, (2) refactorer le test metrics-toggle pour s’appuyer sur ce helper, en forçant la comparaison des sorties/diagnostics sans tenir compte des métriques (puisque l’instrumentation on/off produit des valeurs différentes) et en gardant des assertions ciblées sur le snapshot metrics (zéros quand disabled, ≥0 quand enabled, SLIs toujours à 0 en runtime), et (3) rejouer build → typecheck → lint → test → bench pour vérifier que le helper ne casse pas la suite et reste aligné avec le contrat observabilité passive. Je mettrai à jour la trace 9600 pour indiquer la couverture de KR3/DEL3/TS3 côté comparator, et je noterai tout besoin futur de filtrage additionnel si de nouveaux champs non déterministes apparaissent.
 
 Risks/Unknowns:
-- Comparaison des diagnostics : veiller à ne pas considérer l’absence/presence de `metrics` comme un diff fonctionnel ; le helper doit nettoyer profondément.
-- S’assurer que le schéma choisi n’introduit pas de diagnostics non déterministes (ex : coverage-guided) pour éviter des faux positifs.
-- Les métriques runtime pourraient être toutes nulles en mode off : vérifier que les assertions restent stables sur CI.
+- Scope du helper : décider s’il doit ignorer uniquement SLIs/timings ou toute clé inconnue en metrics pour éviter d’absorber des régressions ; viser une liste blanche minimaliste.
+- Risque de masquage : le nettoyage doit cibler metrics/SLIs mais conserver les détails diagnostics pour ne pas cacher des divergences fonctionnelles.
+- Tri/ordre des diagnostics : s’assurer que le helper n’introduit pas de tri non spécifié qui masquerait un ordre déterministe attendu.
 
-Parent bullets couverts: [KR2, DEL2, DOD2, TS2]
+Parent bullets couverts: [KR3, DEL3, DOD2, DOD3, TS3]
 
 Checks:
 - build: npm run build
