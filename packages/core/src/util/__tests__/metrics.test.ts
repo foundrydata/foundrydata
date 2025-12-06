@@ -29,7 +29,7 @@ describe('MetricsCollector', () => {
   });
 
   it('increments counters and tracks repair metrics', () => {
-    const collector = new MetricsCollector({ now: () => 0 });
+    const collector = new MetricsCollector({ now: () => 0, enableSlis: true });
 
     collector.addValidationCount(2);
     collector.addRepairPasses(1);
@@ -61,6 +61,17 @@ describe('MetricsCollector', () => {
     expect(snapshot.memoryPeakMB).toBe(256);
     expect(snapshot.p50LatencyMs).toBe(42);
     expect(snapshot.p95LatencyMs).toBe(110);
+  });
+
+  it('ignores SLIs when enableSlis is false even if metrics are enabled', () => {
+    const collector = new MetricsCollector({ now: () => 0, enableSlis: false });
+    collector.observeMemoryPeak(512);
+    collector.setLatency(50, 10);
+    collector.setLatency(95, 20);
+    const snapshot = collector.snapshotMetrics();
+    expect(snapshot.memoryPeakMB).toBe(0);
+    expect(snapshot.p50LatencyMs).toBe(0);
+    expect(snapshot.p95LatencyMs).toBe(0);
   });
 
   it('applies verbosity toggle to optional observability payloads', () => {

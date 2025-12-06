@@ -313,12 +313,12 @@ async function runSingleIteration(
   generateCount: number,
   pipelineOverrides?: RunProfileOverrides['pipelineOverrides']
 ): Promise<SingleRunResult> {
-  const collector = new MetricsCollector({ verbosity: 'ci' });
+  const collector = new MetricsCollector({ verbosity: 'ci', enableSlis: true });
   collector.setVerbosity('ci');
 
   const baseOptions: PipelineOptions = {
     collector,
-    metrics: { verbosity: 'ci', enabled: true },
+    metrics: { verbosity: 'ci', enabled: true, enableSlis: true },
     snapshotVerbosity: 'ci',
     generate: {
       seed,

@@ -31,10 +31,10 @@ This document maps the parent task 9600 bullets from Implementation Details, Del
 ## Mapping 9600 subtasks → parent bullets
 
 - **9600.9600001 – Update diag.metrics schema/types for required keys**  
-  Covers: [KR1, DEL1, DOD1, TS1] (status: in-progress).
+  Covers: [KR1, DEL1, DOD1, TS1] (status: done).
 
 - **9600.9600002 – Implement deterministic metrics collection and SLI separation**  
-  Covers: [KR1, KR2, DEL1, DEL2, DOD2, TS1, TS2] (status: pending).
+  Covers: [KR1, KR2, DEL1, DEL2, DOD2, TS1, TS2] (status: in-progress).
 
 - **9600.9600003 – Add side-effect-free regression tests for metrics toggle**  
   Covers: [KR2, DEL2, DOD2, TS2] (status: pending).

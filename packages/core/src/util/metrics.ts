@@ -69,11 +69,17 @@ export interface MetricsCollectorOptions {
   now?: () => number;
   verbosity?: MetricsVerbosity;
   enabled?: boolean;
+  /**
+   * Enable environment-dependent SLIs (p50/p95, memory).
+   * Defaults to false to keep runtime metrics deterministic.
+   */
+  enableSlis?: boolean;
 }
 
 export class MetricsCollector {
   private readonly now: () => number;
   private readonly enabled: boolean;
+  private readonly slisEnabled: boolean;
   private readonly timers: Record<MetricsPhaseKey, TimerState>;
   private snapshot: MetricsSnapshot;
   private verbosity: MetricsVerbosity;
@@ -81,6 +87,7 @@ export class MetricsCollector {
   constructor(options: MetricsCollectorOptions = {}) {
     this.now = options.now ?? (() => performance.now());
     this.enabled = options.enabled ?? true;
+    this.slisEnabled = options.enableSlis === true;
     this.verbosity = options.verbosity ?? 'runtime';
     this.snapshot = { ...DEFAULT_COUNTERS };
     this.timers = {
@@ -280,7 +287,7 @@ export class MetricsCollector {
   }
 
   public observeMemoryPeak(megabytes: number): void {
-    if (!this.enabled) {
+    if (!this.enabled || !this.slisEnabled) {
       return;
     }
     this.snapshot.memoryPeakMB = Math.max(
@@ -290,7 +297,7 @@ export class MetricsCollector {
   }
 
   public setLatency(percentile: 50 | 95, latencyMs: number): void {
-    if (!this.enabled) {
+    if (!this.enabled || !this.slisEnabled) {
       return;
     }
     if (percentile === 50) {
