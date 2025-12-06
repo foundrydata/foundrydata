@@ -1834,7 +1834,7 @@
   "repair-philosophy": {
     "tasks": [
       {
-        "id": "9500",
+        "id": 9500,
         "title": "Integrate Repair philosophy into canonical spec and align design docs",
         "description": "Add the normative “Repair philosophy (What we allow Repair to fix)” section under spec §10 and align adjacent docs so there is a single normative source of truth (tiers, Score/commit rule, coverage-independence, G_valid interaction).",
         "priority": "high",
@@ -1879,7 +1879,7 @@
         "updatedAt": "2025-12-04T20:08:59.879Z"
       },
       {
-        "id": "9501",
+        "id": 9501,
         "title": "Implement stable AJV error signature and Score(x) utilities",
         "description": "Create a shared utility that computes sig(e) + Score(x) deterministically: canonPath resolution, stable params canonicalization, and distinct-signature counting.",
         "priority": "high",
@@ -1926,7 +1926,7 @@
         "updatedAt": "2025-12-04T20:24:47.616Z"
       },
       {
-        "id": "9502",
+        "id": 9502,
         "title": "Add repair-philosophy diagnostics codes and metrics counters",
         "description": "Introduce diagnostics and counters required by the Repair philosophy (policy-disabled, reverted-no-progress, per-tier counters) and wire them into the shared diagnostics envelope + metrics collection.",
         "priority": "high",
@@ -1973,7 +1973,7 @@
         "updatedAt": "2025-12-04T20:53:42.501Z"
       },
       {
-        "id": "9503",
+        "id": 9503,
         "title": "Enforce Score-based commit rule in Repair engine (revert on no progress)",
         "description": "Modify Repair execution so candidate mutations are committed only when Score(x') < Score(x); otherwise revert and emit diagnostics/counters.",
         "priority": "high",
@@ -2021,7 +2021,7 @@
         "updatedAt": "2025-12-04T21:44:29.406Z"
       },
       {
-        "id": "9504",
+        "id": 9504,
         "title": "Implement Repair tier classification and default tier policy (G_valid + structuralKeywords-aware)",
         "description": "Classify each repair action into Tier 0..3 and enforce a default policy that respects G_valid and structuralKeywords restrictions while remaining coverage-independent.",
         "priority": "high",
@@ -2069,7 +2069,7 @@
         "updatedAt": "2025-12-04T22:17:35.971Z"
       },
       {
-        "id": "9505",
+        "id": 9505,
         "title": "Add coverage-independence and determinism regression tests for Repair",
         "description": "Prove that Repair decisions and mutations are independent of coverage mode/targets/dimensionsEnabled for a fixed input instance and determinism tuple.",
         "priority": "medium",
@@ -2117,7 +2117,7 @@
         "updatedAt": "2025-12-04T22:55:28.001Z"
       },
       {
-        "id": "9506",
+        "id": 9506,
         "title": "Add micro-schemas + E2E assertions for tier behavior, G_valid regressions, and UNSAT stability",
         "description": "Create dedicated fixtures and E2E tests that pin the intended default behavior: limited Tier-2 in non-G_valid, structural repairs blocked/flagged in G_valid, and UNSAT_BUDGET_EXHAUSTED behavior driven by Score stagnation.",
         "priority": "medium",
@@ -2173,7 +2173,367 @@
       "completedCount": 7,
       "tags": [
         "repair-philosophy"
-      ]
+      ],
+      "created": "2025-12-06T14:31:05.707Z",
+      "description": "Tasks for repair-philosophy context",
+      "updated": "2025-12-06T14:31:05.707Z"
+    }
+  },
+  "observability-platform-metrics-v1": {
+    "tasks": [
+      {
+        "id": 9600,
+        "title": "Align diag.metrics baseline with observability spec",
+        "description": "Implement and validate the diag.metrics baseline defined in docs/spec-observability-platform-metrics-v1.0.md (§3.1, §4.2), ensuring observability signals remain side-effect free and deterministically shaped.",
+        "priority": "high",
+        "estimatedHours": 12,
+        "dependencies": [],
+        "status": "pending",
+        "complexityScore": 4,
+        "details": "[Context]\nThe observability spec fixes required diag.metrics keys (timings, counters, SLIs) and requires that enabling metrics/observability never changes generator/repair/validate outcomes for a fixed determinism tuple.\n\n[Key requirements]\n- Update diag metrics schema/types to include required phase timings, core counters, and performance SLIs; classify deterministic counters vs environment-dependent SLIs.\n- Ensure metrics collection is optional and side-effect free: toggling metrics must not alter branch choices, generated instances, or validation outcomes.\n- Use monotonic timing; define consistent absent/zero behavior when metrics are disabled.\n- Keep diagnostics envelope compliant and tagged to the correct phase.\n\n[Deliverables]\n- Updated metrics schema/types and collector implementation.\n- Side-effect-free regression tests that compare outputs with metrics on/off.\n\n[Definition of Done]\n- Required keys appear when enabled. Only counters/IDs are deterministic; timings and performance SLIs are environment-dependent and MUST be excluded from determinism comparisons. p95/memory are populated by bench harness; regular runs may emit 0.\n- Observability toggles do not change outputs/actions/diagnostics for fixed seeds.\n- Tests updated to cover schema validation and determinism.",
+        "testStrategy": "Unit tests for metrics collector and schema validation; regression tests comparing pipeline output with metrics enabled vs disabled (same seed/schema/options) while ignoring timings/SLIs; deterministic timing tests using fake/monotonic clock where applicable.",
+        "subtasks": [
+          {
+            "id": 9600001,
+            "title": "Update diag.metrics schema/types for required keys",
+            "description": "Add/verify phase timing, core counter, and SLI fields per spec; propagate types across core/shared/reporter.",
+            "status": "pending",
+            "estimatedHours": 3,
+            "file": "packages/shared/src/types/diag.metrics.ts",
+            "parentId": "9600"
+          },
+          {
+            "id": 9600002,
+            "title": "Implement deterministic metrics collection and SLI separation",
+            "description": "Ensure counters/timings are deterministic for fixed tuples; gate environment-dependent SLIs to benchmark harness; handle disabled-metrics mode coherently.",
+            "status": "pending",
+            "estimatedHours": 4,
+            "file": "packages/core/src/util/metrics.ts",
+            "parentId": "9600"
+          },
+          {
+            "id": 9600003,
+            "title": "Add side-effect-free regression tests for metrics toggle",
+            "description": "Compare outputs/actions/diagnostics with metrics enabled vs disabled to prove observability is passive.",
+            "status": "pending",
+            "estimatedHours": 3,
+            "file": "packages/core/test/e2e/observability.metrics-determinism.spec.ts",
+            "parentId": "9600"
+          },
+          {
+            "id": 9600004,
+            "title": "Determinism comparator: ignore non-deterministic metrics",
+            "description": "In metrics on/off regression tests, compare instance stream + diagnostic codes/paths; explicitly ignore timings and benchmark SLIs (p50/p95/memory) to avoid false failures.",
+            "status": "pending",
+            "estimatedHours": 2,
+            "file": "packages/core/test/util/determinism-compare.ts",
+            "parentId": "9600"
+          }
+        ]
+      },
+      {
+        "id": 9601,
+        "title": "Enforce coverage-report observability invariants and planner caps audit",
+        "description": "Align coverage-report/v1 emission with observability spec (§2.2, §5.1–5.4), including planned/unplanned auditing, plannerCapsHit summaries, guided≥measure invariants, and comparability metadata.",
+        "priority": "high",
+        "estimatedHours": 14,
+        "dependencies": [
+          "9301",
+          "9302"
+        ],
+        "status": "pending",
+        "complexityScore": 4,
+        "details": "[Context]\nCoverage observability must come from coverage-report/v1. The spec requires stable target IDs, planned/unplanned tagging when caps hit, explicit plannerCap diagnostics, comparability metadata, and invariants between measure and guided modes.\n\n[Key requirements]\n- Ensure targets blocked by planner caps remain materialized with meta.planned:false and are summarized under diagnostics.plannerCapsHit with totals (total/planned/unplanned) per scope tuple.\n- Guarantee guided mode does not underperform measure on branch/enum dimensions (for fixed determinism tuples), with regression tests.\n- Propagate run comparability metadata (registryFingerprint, operationsScope, selectedOperations) and reject diffs/gates when it mismatches.\n- Keep coverage-report structure aligned with spec-coverage-aware-v1.0.md while adding observability fields.\n\n[Deliverables]\n- Updated coverage report writer and diagnostics for planner caps and planned/unplanned tagging.\n- Comparability metadata in reports and diff tooling.\n- Regression tests for guided≥measure and planner caps summaries.",
+        "testStrategy": "Fixture-based coverage-report snapshots for capped planning and planned/unplanned tagging; regression tests running coverage=measure vs coverage=guided asserting guided≥measure on branches/enums and stable IDs; schema validation for diagnostics.plannerCapsHit entries and comparability metadata; diff/compat tests rejecting mismatched fingerprints/operation scopes.",
+        "subtasks": [
+          {
+            "id": 9601001,
+            "title": "Tag planned/unplanned targets under planner caps",
+            "description": "Materialize capped targets with meta.planned:false and add plannerCapsHit diagnostics including total/planned/unplanned counts per dimension/scope.",
+            "status": "pending",
+            "estimatedHours": 5,
+            "file": "packages/core/src/coverage/report-writer.ts",
+            "parentId": "9601"
+          },
+          {
+            "id": 9601002,
+            "title": "Add guided vs measure invariance regression tests",
+            "description": "Run identical schemas/seeds under coverage=measure and coverage=guided to assert guided≥measure for branches/enums and stable IDs.",
+            "status": "pending",
+            "estimatedHours": 4,
+            "file": "packages/core/test/e2e/coverage.guided-vs-measure.spec.ts",
+            "parentId": "9601"
+          },
+          {
+            "id": 9601003,
+            "title": "Validate coverage-report/v1 schema with observability fields",
+            "description": "Extend/verify coverage report schema/tests to cover plannerCapsHit and planned flags without breaking existing consumers.",
+            "status": "pending",
+            "estimatedHours": 3,
+            "file": "packages/shared/src/types/coverage-report.ts",
+            "parentId": "9601"
+          },
+          {
+            "id": 9601004,
+            "title": "Emit and enforce comparability metadata for diffs",
+            "description": "Propagate run.registryFingerprint, run.operationsScope and run.selectedOperations into coverage-report run metadata; update diff/compare tooling to reject mismatches as incompatible instead of producing misleading deltas.",
+            "status": "pending",
+            "estimatedHours": 3,
+            "file": "packages/core/src/coverage/diff/compat.ts",
+            "parentId": "9601"
+          }
+        ]
+      },
+      {
+        "id": 9602,
+        "title": "Surface repair-tier and G_valid observability metrics",
+        "description": "Extend repair observability per spec (§4.3, §4.4): tier counters, policy blocks, and G_valid motif metrics, keeping coverage-independence.",
+        "priority": "high",
+        "estimatedHours": 12,
+        "dependencies": [
+          "9503",
+          "9504",
+          "9505"
+        ],
+        "status": "pending",
+        "complexityScore": 4,
+        "details": "[Context]\nThe observability spec requires deterministic repair-tier counters, policy-disabled diagnostics, and G_valid motif metrics (items, itemsWithRepair, actions), with structural keyword repairs flagged in G_valid zones.\n\n[Key requirements]\n- Emit/validate repair tier counters (tier1/2/3/actions + tierDisabled) and ensure policy blocks surface REPAIR_TIER_DISABLED diagnostics.\n- Add G_valid motif metrics (gValid_* items/itemsWithRepair/actions) and flag structural keyword repairs in G_valid via REPAIR_GVALID_STRUCTURAL_ACTION.\n- Keep repair observability independent from coverage settings.\n\n[Deliverables]\n- Metrics collector updates and diagnostics schema alignment for new repair/G_valid fields.\n- Tests covering counters, diagnostics (including details mini-schema), and coverage-independence.",
+        "testStrategy": "Unit tests for metrics counters and diagnostic payloads; E2E fixtures hitting G_valid motifs and structural keywords to assert counters/diagnostics (including details schema validation); regression tests proving coverage toggles do not affect repair observability outputs.",
+        "subtasks": [
+          {
+            "id": 9602001,
+            "title": "Add G_valid motif metrics to metrics collector",
+            "description": "Track gValid_<motif> items/itemsWithRepair/actions per spec and expose in diag.metrics.",
+            "status": "pending",
+            "estimatedHours": 4,
+            "file": "packages/core/src/util/metrics.ts",
+            "parentId": "9602"
+          },
+          {
+            "id": 9602002,
+            "title": "Harden repair tier counters and diagnostics",
+            "description": "Ensure tier counters and REPAIR_TIER_DISABLED/REPAIR_GVALID_STRUCTURAL_ACTION diagnostics are emitted with correct phase/payloads and details schema.",
+            "status": "pending",
+            "estimatedHours": 4,
+            "file": "packages/core/src/repair/repair-engine.ts",
+            "parentId": "9602"
+          },
+          {
+            "id": 9602003,
+            "title": "Add observability regression tests for repair/G_valid metrics",
+            "description": "E2E tests asserting counters/diagnostics for tier policy and G_valid motifs; validate diag.details mini-schema; verify coverage toggles do not alter repair outputs.",
+            "status": "pending",
+            "estimatedHours": 3,
+            "file": "packages/core/test/e2e/repair.observability.spec.ts",
+            "parentId": "9602"
+          }
+        ]
+      },
+      {
+        "id": 9603,
+        "title": "Implement Resolver R1 run-level diagnostics",
+        "description": "Expose resolver observability via Compose.diag.run per spec (§6.1–§6.2), including cache hits/misses/offline paths and strategy summaries, while keeping determinism for fixed registry fingerprints.",
+        "priority": "medium",
+        "estimatedHours": 10,
+        "dependencies": [],
+        "status": "pending",
+        "complexityScore": 3,
+        "details": "[Context]\nResolver behavior must be surfaced at run level (canonPath '#') with deterministic diagnostics when registry fingerprints are fixed and offline mode is enabled.\n\n[Key requirements]\n- Add run-level diagnostics codes: RESOLVER_CACHE_HIT, RESOLVER_CACHE_MISS_FETCHED, RESOLVER_OFFLINE_UNAVAILABLE, RESOLVER_STRATEGIES_APPLIED, EXTERNAL_REF_UNRESOLVED/STUBBED.\n- Ensure diagnostics comply with canonical envelope (code/phase/canonPath/details) and remain deterministic when network is disabled or fingerprinted.\n- Do not force network fetch when offline; observability must not change resolution semantics.\n- Carry registryFingerprint in run metadata to gate comparability/diffs.\n\n[Deliverables]\n- Resolver observability hooks emitting run-level diagnostics.\n- Tests covering online/offline/cache paths and determinism guarantees.",
+        "testStrategy": "Unit tests for resolver diagnostic payloads; integration tests with fake registry/cache to assert deterministic diag.run[] across repeated runs and offline mode without altering resolved output; schema validation for diag envelopes; comparability tests involving registryFingerprint.",
+        "subtasks": [
+          {
+            "id": 9603001,
+            "title": "Register resolver diagnostics codes and schema",
+            "description": "Add resolver run-level diag codes/types and schema validation for diag.run entries.",
+            "status": "pending",
+            "estimatedHours": 3,
+            "file": "packages/shared/src/types/diag.resolver.ts",
+            "parentId": "9603"
+          },
+          {
+            "id": 9603002,
+            "title": "Emit resolver diagnostics in Compose pipeline",
+            "description": "Wire resolver stages to emit run-level diagnostics for cache hit/miss/offline/strategies/unresolved cases.",
+            "status": "pending",
+            "estimatedHours": 4,
+            "file": "packages/core/src/compose/resolver.ts",
+            "parentId": "9603"
+          },
+          {
+            "id": 9603003,
+            "title": "Add resolver observability tests (online/offline/cache)",
+            "description": "Integration tests asserting deterministic diag.run across cache states and offline mode without altering resolved output; include registryFingerprint comparability checks.",
+            "status": "pending",
+            "estimatedHours": 3,
+            "file": "packages/core/test/e2e/resolver.observability.spec.ts",
+            "parentId": "9603"
+          }
+        ]
+      },
+      {
+        "id": 9604,
+        "title": "Deliver reporter/platform view and CI gates",
+        "description": "Implement the derived Reporter/Platform View and platform KPIs/gates per observability spec (§2.4, §7, Appendix A), with traceability tests for each gate.",
+        "priority": "high",
+        "estimatedHours": 16,
+        "dependencies": [
+          "9600",
+          "9601",
+          "9602",
+          "9603"
+        ],
+        "status": "pending",
+        "complexityScore": 5,
+        "details": "[Context]\nPlatform consumers need a standardized derived view (from diag + coverage-report) and CI gates with traceable tests. Gates must treat diag.fatal as fail, diag.warn as degraded, respect guided≥measure expectations, and avoid using performance SLIs as determinism regressions.\n\n[Key requirements]\n- Define and emit Reporter/Platform View JSON derived solely from diag and coverage-report; no new semantics beyond sources of truth.\n- Include repairUsageByMotif with stable sort (canonPath then motif) and invariants (items/itemsWithRepair/actions); include planned/unplanned evidence counts; carry comparability fields (registryFingerprint, operationsScope, selectedOperations).\n- Implement CI gate logic: fail on fatal; configurable warn escalation; coverage thresholds using coverage-report; ignore env-dependent SLIs for determinism alerts while still reporting them for perf.\n- Add automated tests for each gate and ensure traceability mapping to spec sections.\n\n[Deliverables]\n- Reporter/Platform View generator and schema.\n- CI gate module with configurable policies and test coverage.\n- Documentation/traceability entries linking gates to spec clauses.",
+        "testStrategy": "Unit tests for reporter view derivation from fixtures; CI gate tests covering fatal/warn handling, coverage thresholds, guided≥measure invariant, and exclusion of SLIs from determinism checks; snapshot tests for reporter payload shape (stable ordering); traceability doc updates for gate-to-spec mapping.",
+        "subtasks": [
+          {
+            "id": 9604001,
+            "title": "Implement Reporter/Platform View derivation",
+            "description": "Generate derived JSON from diag + coverage-report per Appendix A. Include repairUsageByMotif (stable sort + invariants), planned/unplanned summary, and comparability fields (registryFingerprint/operationsScope/selectedOperations).",
+            "status": "pending",
+            "estimatedHours": 5,
+            "file": "packages/reporter/src/platform-view.ts",
+            "parentId": "9604"
+          },
+          {
+            "id": 9604002,
+            "title": "Add CI gate engine for observability KPIs",
+            "description": "Implement gate evaluation (fatal/warn, coverage thresholds, guided≥measure invariant, ignore SLIs for determinism) with configurable policies.",
+            "status": "pending",
+            "estimatedHours": 6,
+            "file": "packages/cli/src/ci/gates.ts",
+            "parentId": "9604"
+          },
+          {
+            "id": 9604003,
+            "title": "Traceability and test suite for gates",
+            "description": "Add tests and docs mapping each gate to spec clauses; ensure fixtures exercise pass/fail/degraded paths.",
+            "status": "pending",
+            "estimatedHours": 4,
+            "file": "packages/cli/test/ci/gates.spec.ts",
+            "parentId": "9604"
+          },
+          {
+            "id": 9604004,
+            "title": "Add schema + validation for Reporter/Platform View",
+            "description": "Define versioned JSON schema/types for the derived view and validate it in reporter outputs; enforce stable ordering to keep snapshots/test fixtures deterministic.",
+            "status": "pending",
+            "estimatedHours": 3,
+            "file": "packages/shared/src/types/platform-view.ts",
+            "parentId": "9604"
+          }
+        ]
+      },
+      {
+        "id": 9605,
+        "title": "Update observability specs and platform view docs",
+        "description": "Refresh documentation to reflect the implemented observability surfaces: spec-observability-platform-metrics-v1.0 Appendix A, planned/unplanned semantics, repairUsageByMotif ordering, and comparability metadata (registryFingerprint, operationsScope, selectedOperations).",
+        "priority": "medium",
+        "estimatedHours": 8,
+        "dependencies": [
+          "9604"
+        ],
+        "status": "pending",
+        "complexityScore": 3,
+        "details": "[Context]\nDocs must match the Reporter/Platform View and observability invariants implemented in 9600–9604. The spec and design notes should explicitly capture planned/unplanned evidence, repairUsageByMotif stable ordering, and comparability metadata (registryFingerprint, operationsScope, selectedOperations), plus the non-deterministic nature of SLIs.\n\n[Key requirements]\n- Update spec-observability-platform-metrics-v1.0.md Appendix A to match the delivered view and comparability tuple.\n- Align design-observability-metrics.md and testing/traceability docs with planned/unplanned evidence and repairUsageByMotif rules.\n- Call out that SLIs (p50/p95/memory) are bench-only and excluded from determinism comparisons.\n\n[Deliverables]\n- Spec and design docs updated with the final field list and invariants.\n- Cross-references in testing/traceability docs reflect the Reporter/Platform View fields.",
+        "testStrategy": "Doc review: ensure examples and field lists line up with implemented schemas; check links/anchors render; run markdown lint if available.",
+        "subtasks": [
+          {
+            "id": 9605001,
+            "title": "Refresh observability spec appendix for Reporter/Platform View",
+            "description": "Update docs/spec-observability-platform-metrics-v1.0.md to codify planned/unplanned, repairUsageByMotif stable sort/invariants, and comparability metadata.",
+            "status": "pending",
+            "estimatedHours": 4,
+            "file": "docs/spec-observability-platform-metrics-v1.0.md",
+            "parentId": "9605"
+          },
+          {
+            "id": 9605002,
+            "title": "Sync design/traceability docs with observability invariants",
+            "description": "Align design-observability-metrics.md, testing-strategy.md, and tests-traceability.md with planned/unplanned evidence, repairUsageByMotif, and exclusion of SLIs from determinism comparisons.",
+            "status": "pending",
+            "estimatedHours": 3,
+            "file": "docs/design-observability-metrics.md",
+            "parentId": "9605"
+          },
+          {
+            "id": 9605003,
+            "title": "Update limits/feature summaries with comparability rules",
+            "description": "Refresh docs/Known-Limits.md and docs/Features.md to note coverage/platform comparability requirements (registryFingerprint, operationsScope/selectedOperations) and that SLIs are excluded from determinism comparisons.",
+            "status": "pending",
+            "estimatedHours": 2,
+            "file": "docs/Known-Limits.md",
+            "parentId": "9605"
+          }
+        ]
+      },
+      {
+        "id": 9606,
+        "title": "Update front-door docs and CI gate guide for observability",
+        "description": "Add public-facing documentation for the observability surfaces and gates: README entry, docs index, CI gates how-to, and changelog/reporter README notes about comparability metadata and bench-only SLIs.",
+        "priority": "medium",
+        "estimatedHours": 6,
+        "dependencies": [
+          "9604",
+          "9605"
+        ],
+        "status": "pending",
+        "complexityScore": 3,
+        "details": "[Context]\nUsers need clear entry points for the Reporter/Platform View, CI gate usage, and the comparability tuple (registryFingerprint, operationsScope, selectedOperations). Public docs must also state that SLIs are bench-only and excluded from determinism comparisons.\n\n[Key requirements]\n- Update README and docs/README to list the three observability artifacts (diag, coverage-report/v1, Reporter/Platform View) and comparability metadata requirements.\n- Add a CI gates/how-to page documenting gate usage, required metadata, and how SLIs are treated.\n- Note the new view/gates and comparability tuple in CHANGELOG and reporter README.\n\n[Deliverables]\n- README and docs index updated with observability/front-door pointers.\n- New CI gates guide added under docs/.\n- Changelog and reporter README mention the new view/gates and comparability metadata.",
+        "testStrategy": "Doc review and markdown lint if available; ensure links resolve and examples reference the correct CLI/options.",
+        "subtasks": [
+          {
+            "id": 9606001,
+            "title": "Update top-level docs index and README",
+            "description": "Add observability artifact summary and comparability tuple notes to README.md and docs/README.md with links to spec and CI guide.",
+            "status": "pending",
+            "estimatedHours": 2,
+            "file": "README.md",
+            "parentId": "9606"
+          },
+          {
+            "id": 9606002,
+            "title": "Author observability CI gates guide",
+            "description": "Create docs/observability-ci-gates.md describing gate usage, required metadata (registryFingerprint, operationsScope/selectedOperations), and SLIs handling.",
+            "status": "pending",
+            "estimatedHours": 2,
+            "file": "docs/observability-ci-gates.md",
+            "parentId": "9606"
+          },
+          {
+            "id": 9606003,
+            "title": "Update changelog and reporter README for new view/gates",
+            "description": "Add entries to docs/CHANGELOG.md and packages/reporter/README.md covering the Reporter/Platform View, comparability metadata, and bench-only SLIs note.",
+            "status": "pending",
+            "estimatedHours": 2,
+            "file": "docs/CHANGELOG.md",
+            "parentId": "9606"
+          },
+          {
+            "id": 9606004,
+            "title": "Refresh CLI README/help for observability tuple",
+            "description": "Update packages/cli/README.md (and help text if applicable) to point to the Reporter/Platform View and CI gates guide, highlight comparability metadata (registryFingerprint, operationsScope/selectedOperations), and note SLIs are bench-only/non-deterministic.",
+            "status": "pending",
+            "estimatedHours": 2,
+            "file": "packages/cli/README.md",
+            "parentId": "9606"
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0-draft",
+      "lastModified": "2025-12-06T14:31:05.707Z",
+      "taskCount": 7,
+      "completedCount": 0,
+      "tags": [
+        "observability",
+        "platform-metrics"
+      ],
+      "created": "2025-12-06T14:31:05.707Z",
+      "description": "Tasks for observability-platform-metrics-v1 context",
+      "updated": "2025-12-06T14:31:05.707Z"
     }
   }
 }
