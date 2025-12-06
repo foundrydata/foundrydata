@@ -44,4 +44,4 @@ This document maps parent task 9604 bullets from Implementation Details, Deliver
   Covers: [KR1, DEL1, DOD1, TS1] (status: done).
 
 - **9604.9604005 – Wire operationsScope/selectedOperations into coverage report**  
-  Covers: [KR3, DEL1, DOD3, TS3] (status: pending).
+  Covers: [KR3, DEL1, DOD3, TS3] (status: done).

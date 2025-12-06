@@ -12,7 +12,8 @@
       "mode": "measure",
       "dimensionsEnabled": ["structure", "branches"],
       "excludeUnreachable": false,
-      "operationsScope": "all"
+      "operationsScope": "selected",
+      "selectedOperations": ["GET /users", "POST /users"]
     }
   },
   "metrics": {

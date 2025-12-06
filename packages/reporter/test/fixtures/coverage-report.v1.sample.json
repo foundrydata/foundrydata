@@ -14,7 +14,8 @@
     "dimensionsEnabled": ["structure", "branches"],
     "excludeUnreachable": false,
     "registryFingerprint": "0",
-    "operationsScope": "all",
+    "operationsScope": "selected",
+    "selectedOperations": ["GET /users", "POST /users"],
     "startedAt": "2025-01-01T12:00:00Z",
     "durationMs": 0
   },
@@ -25,7 +26,10 @@
       "structure": 1,
       "branches": 0
     },
-    "byOperation": {},
+    "byOperation": {
+      "GET /users": 1,
+      "POST /users": 0
+    },
     "targetsByStatus": {
       "active": 2,
       "unreachable": 0,
