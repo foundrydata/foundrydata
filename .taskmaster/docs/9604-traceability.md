@@ -35,7 +35,7 @@ This document maps parent task 9604 bullets from Implementation Details, Deliver
   Covers: [KR1, KR2, KR3, DEL1, DOD1, TS1] (status: done).
 
 - **9604.9604002 – Add CI gate engine for observability KPIs**  
-  Covers: [KR4, DEL2, DOD2, TS2] (status: pending).
+  Covers: [KR4, DEL2, DOD2, TS2] (status: done).
 
 - **9604.9604003 – Traceability and test suite for gates**  
   Covers: [KR4, DEL3, DOD2, TS2, TS3] (status: pending).

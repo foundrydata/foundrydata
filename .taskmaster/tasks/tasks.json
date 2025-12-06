@@ -2416,10 +2416,11 @@
             "id": 9604002,
             "title": "Add CI gate engine for observability KPIs",
             "description": "Implement gate evaluation (fatal/warn, coverage thresholds, guided≥measure invariant, ignore SLIs for determinism) with configurable policies.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 6,
             "file": "packages/cli/src/ci/gates.ts",
-            "parentId": "9604"
+            "parentId": "9604",
+            "updatedAt": "2025-12-06T23:19:46.363Z"
           },
           {
             "id": 9604003,
@@ -2451,7 +2452,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-12-06T23:15:47.878Z"
+        "updatedAt": "2025-12-06T23:19:46.363Z"
       },
       {
         "id": "9605",
@@ -2552,7 +2553,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-06T23:15:47.880Z",
+      "lastModified": "2025-12-06T23:19:46.365Z",
       "taskCount": 7,
       "completedCount": 4,
       "tags": [

@@ -21,6 +21,29 @@ Checks:
 - bench: npm run bench
 - diag-schema: true
 
+Task: 9604   Title: Add CI gate engine for observability KPIs (subtask 9604.9604002)
+Anchors: [spec://§7#platform-kpis-gates, spec://§2#observability-surfaces, cov://§7#thresholds, spec://§15#metrics, spec://§15#rng]
+Touched files:
+- .taskmaster/docs/9604-traceability.md
+- packages/reporter/src/gates/index.ts
+- packages/reporter/src/gates/__tests__/gates.test.ts
+
+Approach:
+Objectif: introduire un moteur de “gates” CI aligné sur la spec (§7) en se basant uniquement sur les surfaces observabilité existantes (diag, diag.metrics, coverage-report/v1 ou la vue dérivée) sans ajouter de sémantique nouvelle. Plan: (1) Définir une API gates dans `packages/reporter/src/gates/index.ts` qui prend en entrée un résumé diag (`fatal[]`, `warn[]`, éventuellement `diag.run`), un extrait `metrics` (DiagMetrics) et la partie coverage de la vue dérivée (ou le coverage-report) ; produire un résultat structuré (`status: pass|fail|warn`, `issues[]` avec codes/raison). (2) Implémenter les gates suivants: hard-fail si `diag.fatal` non vide ; warn/fail configurable pour `diag.warn` ; coverage-threshold gate basé sur `coverage.metrics.coverageStatus` et `thresholds.overall` (cov://§7#thresholds) ; invariant guided≥measure déjà couvert ailleurs mais vérifier absence de mismatch de comparabilité (fingerprint/ops scope) et signaler “incomparable” plutôt que faux diff ; ignorer SLIs (`p50/p95/memory`) pour les checks déterministes (spec://§15#metrics, spec://§15#rng). (3) Tests Vitest ciblés (`gates.test.ts`) simulant scénarios: fatal présent ⇒ fail ; warn escalade selon config ; coverage minCoverageNotMet ⇒ fail ; coverage summary absent ⇒ passe ; metrics SLIs non utilisés pour diff ; comparabilité mismatch ⇒ issue type incompatible. (4) Garder la logique pure/déterministe (aucun I/O, pas de wall-clock). Boucler build → typecheck → lint → test → bench.
+
+Risks/Unknowns:
+- Les entrées diag peuvent être absentes (exécution metrics-only) : décider d’un défaut pass/warn sans inventer de diagnostics.
+- Couverture off: le gate coverage ne doit pas échouer faute de report ; seulement évaluer lorsqu’un report est fourni ou lorsqu’un statut coverageStatus est renseigné.
+- DoD exige traceability: mettre à jour `.taskmaster/docs/9604-traceability.md` pour refléter la couverture KR4/DEL2.
+
+Parent bullets couverts: [KR4, DEL2, DOD2, TS2]
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
+
 Task: 9604   Title: Implement Reporter/Platform View derivation (subtask 9604.9604001)
 Anchors: [spec://§2#observability-surfaces, spec://§7#platform-kpis-gates, cov://§5#coverage-report, spec://§19#payloads, spec://§15#metrics]
 Touched files:
