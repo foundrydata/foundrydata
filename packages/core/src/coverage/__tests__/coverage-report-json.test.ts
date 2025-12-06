@@ -1,11 +1,165 @@
 import { describe, it, expect } from 'vitest';
 // Schema validation for coverage-report/v1 is wired via reporter tests.
 
-import type { CoverageDimension, CoverageReport } from '@foundrydata/shared';
+import type {
+  CoverageDimension,
+  CoverageReport,
+  CoverageTargetReport,
+  PlannerCapHit,
+} from '@foundrydata/shared';
 import { executePipeline } from '../../pipeline/orchestrator.js';
 import { DEFAULT_PLANNER_DIMENSIONS_ENABLED } from '../coverage-planner.js';
 
 const STRUCTURE_ONLY_DIMENSIONS: CoverageDimension[] = ['structure'];
+
+type PlannerScopeStats = {
+  total: number;
+  planned: number;
+  unplanned: number;
+};
+
+type TargetReport = CoverageTargetReport;
+
+const isTargetUnplanned = (target: TargetReport): boolean =>
+  (target.meta as { planned?: unknown } | undefined)?.planned === false;
+
+const sortPlannerCapsHit = (hits: PlannerCapHit[]): PlannerCapHit[] =>
+  [...hits].sort((a, b) => {
+    if (a.dimension !== b.dimension) {
+      return a.dimension < b.dimension ? -1 : 1;
+    }
+    if (a.scopeType !== b.scopeType) {
+      return a.scopeType === 'schema' ? -1 : 1;
+    }
+    if (a.scopeKey === b.scopeKey) return 0;
+    return a.scopeKey < b.scopeKey ? -1 : 1;
+  });
+
+const computeScopeStats = (
+  targets: TargetReport[],
+  hit: PlannerCapHit
+): PlannerScopeStats => {
+  const scopedTargets = targets.filter((target) => {
+    if (target.dimension !== hit.dimension) return false;
+    const status = target.status ?? 'active';
+    if (status !== 'active') return false;
+    if (hit.scopeType === 'operation') {
+      if (target.operationKey === hit.scopeKey) return true;
+      const metaOps = (target.meta as { operationKeys?: unknown } | undefined)
+        ?.operationKeys;
+      return Array.isArray(metaOps) && metaOps.includes(hit.scopeKey);
+    }
+    if (hit.scopeKey.startsWith('dimension:')) {
+      return true;
+    }
+    return target.canonPath === hit.scopeKey;
+  });
+
+  const planned = scopedTargets.filter(
+    (target) => !isTargetUnplanned(target)
+  ).length;
+  const unplanned = scopedTargets.filter(isTargetUnplanned).length;
+
+  return { total: scopedTargets.length, planned, unplanned };
+};
+
+type PlannerCapsReports = {
+  baseReport: CoverageReport;
+  cappedReport: CoverageReport;
+};
+
+const runPlannerCapsScenario = async (): Promise<PlannerCapsReports> => {
+  const schema = {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    oneOf: [
+      {
+        type: 'object',
+        properties: { kind: { const: 'a' } },
+        required: ['kind'],
+      },
+      {
+        type: 'object',
+        properties: { kind: { const: 'b' } },
+        required: ['kind'],
+      },
+      {
+        type: 'object',
+        properties: { kind: { const: 'c' } },
+        required: ['kind'],
+      },
+    ],
+  } as const;
+
+  const base = await executePipeline(schema, {
+    generate: { count: 4, seed: 17 },
+    validate: { validateFormats: false },
+    coverage: {
+      mode: 'guided',
+      dimensionsEnabled: ['branches', 'structure'],
+      excludeUnreachable: false,
+    },
+  });
+
+  const capped = await executePipeline(schema, {
+    generate: { count: 4, seed: 17 },
+    validate: { validateFormats: false },
+    coverage: {
+      mode: 'guided',
+      dimensionsEnabled: ['branches', 'structure'],
+      excludeUnreachable: false,
+      planner: {
+        caps: {
+          maxTargetsPerDimension: { branches: 1 },
+          maxTargetsPerSchema: 1,
+        },
+      },
+    },
+  });
+
+  const baseReport = base.artifacts.coverageReport as
+    | CoverageReport
+    | undefined;
+  const cappedReport = capped.artifacts.coverageReport as
+    | CoverageReport
+    | undefined;
+
+  if (!baseReport || !cappedReport) {
+    throw new Error('Coverage reports were not produced');
+  }
+
+  return { baseReport, cappedReport };
+};
+
+const assertPlannerCapsIntegrity = ({
+  baseReport,
+  cappedReport,
+}: PlannerCapsReports): void => {
+  const baseIds = new Set((baseReport.targets ?? []).map((t) => t.id));
+  const cappedIds = new Set((cappedReport.targets ?? []).map((t) => t.id));
+  expect(cappedIds).toEqual(baseIds);
+
+  const plannerCapsHit = cappedReport.diagnostics.plannerCapsHit ?? [];
+  expect(plannerCapsHit.length).toBeGreaterThan(0);
+  expect(plannerCapsHit).toEqual(sortPlannerCapsHit(plannerCapsHit));
+
+  const cappedTargets = cappedReport.targets ?? [];
+  const unplannedTargets = cappedTargets.filter(isTargetUnplanned);
+  expect(unplannedTargets.length).toBeGreaterThan(0);
+
+  const uncoveredIds = new Set(
+    (cappedReport.uncoveredTargets ?? []).map((t) => t.id)
+  );
+  for (const target of unplannedTargets) {
+    expect(uncoveredIds.has(target.id)).toBe(true);
+  }
+
+  for (const hit of plannerCapsHit) {
+    const stats = computeScopeStats(cappedTargets, hit);
+    expect(stats.total).toBe(hit.totalTargets);
+    expect(stats.planned).toBe(hit.plannedTargets);
+    expect(stats.unplanned).toBe(hit.unplannedTargets);
+  }
+};
 
 let validateCoverageReport: ((report: CoverageReport) => boolean) | undefined;
 
@@ -281,5 +435,10 @@ describe('coverage-report/v1 JSON snapshots', () => {
     expect(report?.metrics.coverageStatus).toBe('minCoverageNotMet');
     expect(report?.metrics.thresholds?.overall).toBe(0.8);
     expect(report?.metrics.overall ?? 1).toBeLessThan(0.8);
+  });
+
+  it('materializes planner-capped targets with planned:false and aligned plannerCapsHit aggregates', async () => {
+    const reports = await runPlannerCapsScenario();
+    assertPlannerCapsIntegrity(reports);
   });
 });

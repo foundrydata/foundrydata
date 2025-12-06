@@ -90,6 +90,28 @@ export interface CoverageRuntimeEvaluationResult {
   uncoveredTargets: CoverageTargetReport[];
 }
 
+function sortPlannerCapsHit(plannerCapsHit: PlannerCapHit[]): PlannerCapHit[] {
+  const compareStrings = (a: string, b: string): number => {
+    if (a < b) return -1;
+    if (a > b) return 1;
+    return 0;
+  };
+
+  return [...plannerCapsHit].sort((a, b) => {
+    const dimensionCompare = compareStrings(
+      String(a.dimension),
+      String(b.dimension)
+    );
+    if (dimensionCompare !== 0) return dimensionCompare;
+
+    if (a.scopeType !== b.scopeType) {
+      return a.scopeType === 'schema' ? -1 : 1;
+    }
+
+    return compareStrings(a.scopeKey, b.scopeKey);
+  });
+}
+
 export function shouldRunCoverageAnalyzer(
   coverageOptions?: PipelineOptions['coverage']
 ): boolean {
@@ -203,6 +225,8 @@ export function evaluateCoverageAndBuildReport(
   const coverageReportMode: CoverageReportMode =
     input.coverageOptions?.reportMode ?? 'full';
 
+  const plannerCapsHit = sortPlannerCapsHit(input.plannerCapsHit ?? []);
+
   const thresholds: CoverageThresholds | undefined =
     typeof input.coverageOptions?.minCoverage === 'number'
       ? { overall: input.coverageOptions.minCoverage }
@@ -246,7 +270,7 @@ export function evaluateCoverageAndBuildReport(
     uncoveredTargets: reportArrays.uncoveredTargets,
     unsatisfiedHints: input.unsatisfiedHints ?? [],
     diagnostics: {
-      plannerCapsHit: input.plannerCapsHit ?? [],
+      plannerCapsHit,
       notes: [],
     },
   };

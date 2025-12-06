@@ -14,7 +14,47 @@ import type {
   CoverageDimension,
   CoverageReport,
   CoverageTargetReport,
+  PlannerCapHit,
 } from '@foundrydata/shared';
+
+type PlannerScopeStats = {
+  total: number;
+  planned: number;
+  unplanned: number;
+};
+
+type TargetReport = CoverageTargetReport;
+
+const isTargetUnplanned = (target: TargetReport): boolean =>
+  (target.meta as { planned?: unknown } | undefined)?.planned === false;
+
+const computeScopeStats = (
+  targets: TargetReport[],
+  hit: PlannerCapHit
+): PlannerScopeStats => {
+  const scopedTargets = targets.filter((target) => {
+    if (target.dimension !== hit.dimension) return false;
+    const status = target.status ?? 'active';
+    if (status !== 'active') return false;
+    if (hit.scopeType === 'operation') {
+      if (target.operationKey === hit.scopeKey) return true;
+      const metaOps = (target.meta as { operationKeys?: unknown } | undefined)
+        ?.operationKeys;
+      return Array.isArray(metaOps) && metaOps.includes(hit.scopeKey);
+    }
+    if (hit.scopeKey.startsWith('dimension:')) {
+      return true;
+    }
+    return target.canonPath === hit.scopeKey;
+  });
+
+  const planned = scopedTargets.filter(
+    (target) => !isTargetUnplanned(target)
+  ).length;
+  const unplanned = scopedTargets.filter(isTargetUnplanned).length;
+
+  return { total: scopedTargets.length, planned, unplanned };
+};
 
 describe('coverage runtime helper', () => {
   it('gates Analyzer/Planner based on coverage.mode', () => {
@@ -175,5 +215,69 @@ describe('coverage runtime helper', () => {
     expect(fullReport.reportMode).toBe('summary');
     expect(fullReport.metrics.overall).toBe(metrics.overall);
     expect(Array.isArray(fullReport.uncoveredTargets)).toBe(true);
+  });
+
+  it('keeps planner caps aggregates aligned with planned:false targets', () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      oneOf: [
+        {
+          type: 'object',
+          properties: { kind: { const: 'a' } },
+          required: ['kind'],
+        },
+        {
+          type: 'object',
+          properties: { kind: { const: 'b' } },
+          required: ['kind'],
+        },
+        {
+          type: 'object',
+          properties: { kind: { const: 'c' } },
+          required: ['kind'],
+        },
+      ],
+    } as const;
+
+    const normalizeResult = normalize(schema);
+    const composeResult = compose(normalizeResult, {});
+
+    const plan = planCoverageForPipeline({
+      canonicalSchema: normalizeResult.schema,
+      normalizeResult,
+      composeResult,
+      coverageOptions: {
+        mode: 'guided',
+        dimensionsEnabled: ['branches', 'structure'],
+        planner: {
+          caps: {
+            maxTargetsPerDimension: { branches: 1 },
+            maxTargetsPerSchema: 1,
+          },
+        },
+      },
+      generateOptions: {
+        count: 4,
+        seed: 19,
+      },
+      testOverrides: undefined,
+    });
+
+    expect(plan).toBeDefined();
+    const plannedTargets = plan!.plannedTargets;
+    const plannerCapsHit = plan!.plannerCapsHit;
+
+    const unplannedTargets = plannedTargets.filter(
+      (target) =>
+        (target.meta as { planned?: unknown } | undefined)?.planned === false
+    );
+    expect(unplannedTargets.length).toBeGreaterThan(0);
+
+    for (const hit of plannerCapsHit) {
+      const stats = computeScopeStats(plannedTargets, hit);
+      expect(stats.total).toBe(hit.totalTargets);
+      expect(stats.planned).toBe(hit.plannedTargets);
+      expect(stats.unplanned).toBe(hit.unplannedTargets);
+    }
   });
 });

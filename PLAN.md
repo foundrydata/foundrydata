@@ -1,3 +1,28 @@
+Task: 9601   Title: Tag planned/unplanned targets under planner caps (subtask 9601.9601001)
+Anchors: [spec://§2#observability-surfaces, cov://§4#coverage-planner, cov://§5#coverage-report]
+Touched files:
+- PLAN.md
+- .taskmaster/docs/9601-traceability.md
+- packages/core/src/coverage/runtime.ts
+- packages/core/src/coverage/__tests__/coverage-report-json.test.ts
+- packages/core/src/coverage/__tests__/coverage-runtime.test.ts
+
+Approach:
+Pour cette sous-tâche, je dois garantir que les caps du planner restent visibles côté `coverage-report/v1` : toutes les cibles dépriorisées doivent être matérialisées dans `targets[]`/`uncoveredTargets[]` avec `meta.planned:false`, et `diagnostics.plannerCapsHit` doit agréger (dimension, scopeType, scopeKey) avec `totalTargets/plannedTargets/unplannedTargets` de façon stable et déterministe (`spec://§2#observability-surfaces`, `cov://§4#coverage-planner`, `cov://§5#coverage-report`). Plan: (1) relire le flux `planCoverageForPipeline` → `evaluateCoverageAndBuildReport` pour vérifier où `plannerCapsHit` et `meta.planned:false` peuvent être perdus (reportMode summary, tri uncovered, clonage des targets) et ajouter si besoin un tri/deduplication déterministe des entrées `plannerCapsHit` aligné sur la spec. (2) Ajouter un test d’intégration dans `coverage-report-json.test.ts` qui lance `executePipeline` en `coverage=guided` avec caps serrés (per-dimension + per-schema) et contrôle que le rapport final contient les cibles non planifiées (mêmes IDs qu’avant caps) marquées `planned:false`, que `plannerCapsHit` contient les agrégats attendus et que `uncoveredTargets` reste aligné avec ces flags. (3) Compléter `coverage-runtime.test.ts` avec un cas unitaire sur `planCoverageForPipeline` qui compare nombre de cibles marquées `planned:false` au total `unplannedTargets` des diagnostics, pour verrouiller l’invariant sans passer par le pipeline complet. (4) Créer/mettre à jour `9601-traceability` pour tracer KR/TS/DoD spécifiques à la visibilité caps.
+
+Risks/Unknowns:
+- Fragilité des snapshots si l’ordre des targets/diagnostics n’est pas stabilisé; nécessitera peut-être un tri explicite.
+- Les caps dimension/schema/operation peuvent produire plusieurs entrées par dimension; il faut éviter les doublons ou l’ordre non déterministe.
+- Les tests end-to-end peuvent être coûteux si le schéma d’essai génère trop de cibles; choisir un fixture minimal mais couvrant branches/ops.
+
+Parent bullets couverts: [KR1, DEL1, TS1, DOD1]
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
+
 Task: 9600   Title: Align diag.metrics baseline with observability spec — subtask 9600.9600004
 Anchors: [spec://§2#observability-surfaces, spec://§15#metrics, spec://§15#rng, spec://§19#envelope]
 Touched files:
