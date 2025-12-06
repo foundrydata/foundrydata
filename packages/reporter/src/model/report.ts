@@ -9,8 +9,8 @@ import type {
   ComposeResult as CoreComposeResult,
   AjvErr as CoreAjvErr,
   DiagnosticEnvelope as CoreDiagnosticEnvelope,
-  MetricsSnapshot as CoreMetricsSnapshot,
 } from '@foundrydata/core';
+import type { DiagMetrics } from '@foundrydata/shared';
 
 export type PlanOptions = CorePlanOptions;
 export type NormalizeResult = CoreNormalizeResult;
@@ -21,7 +21,7 @@ export type AjvErr = CoreAjvErr;
 export type DiagnosticEnvelope = CoreDiagnosticEnvelope;
 
 /** Snapshot de diag.metrics (§15). */
-export type MetricsSnapshot = CoreMetricsSnapshot;
+export type MetricsSnapshot = DiagMetrics;
 
 export type CoverageProvenance =
   | 'properties'

@@ -1,10 +1,4 @@
-export interface RepairUsageByMotif {
-  motifId: string;
-  gValid: boolean;
-  items: number;
-  itemsWithRepair: number;
-  actions: number;
-}
+import type { RepairUsageByMotif } from '@foundrydata/shared';
 
 export interface RepairUsageSnapshot {
   repairUsageByMotif?: RepairUsageByMotif[];

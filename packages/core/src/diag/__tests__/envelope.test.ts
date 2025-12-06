@@ -4,6 +4,7 @@ import { DIAGNOSTIC_CODES, DIAGNOSTIC_PHASES } from '../codes';
 import {
   assertDiagnosticEnvelope,
   assertDiagnosticsForPhase,
+  type DiagnosticEnvelope,
 } from '../validate';
 
 describe('assertDiagnosticEnvelope', () => {
@@ -62,6 +63,65 @@ describe('assertDiagnosticEnvelope', () => {
         },
       })
     ).not.toThrow();
+  });
+
+  it('accepts metrics with structured coverage and repair usage payloads', () => {
+    expect(() =>
+      assertDiagnosticEnvelope({
+        code: DIAGNOSTIC_CODES.VALIDATION_KEYWORD_FAILED,
+        canonPath: '',
+        phase: DIAGNOSTIC_PHASES.VALIDATE,
+        metrics: {
+          validationsPerRow: 1,
+          repairPassesPerRow: 0,
+          repairActionsPerRow: 0,
+          branchTrialsTried: 0,
+          patternWitnessTried: 0,
+          memoryPeakMB: 0,
+          p50LatencyMs: 0,
+          p95LatencyMs: 0,
+          repair_tier1_actions: 0,
+          repair_tier2_actions: 0,
+          repair_tier3_actions: 0,
+          repair_tierDisabled: 0,
+          branchCoverageOneOf: { '#': { visited: [0], total: 1 } },
+          enumUsage: { '#/status': { active: 2 } },
+          repairUsageByMotif: [
+            {
+              motifId: 'gvalid:arrayContainsSimple',
+              gValid: true,
+              items: 1,
+              itemsWithRepair: 0,
+              actions: 0,
+            },
+          ],
+        },
+      })
+    ).not.toThrow();
+  });
+
+  it('rejects metrics with malformed structured payloads', () => {
+    expect(() =>
+      assertDiagnosticEnvelope({
+        code: DIAGNOSTIC_CODES.VALIDATION_KEYWORD_FAILED,
+        canonPath: '',
+        phase: DIAGNOSTIC_PHASES.VALIDATE,
+        metrics: {
+          branchCoverageOneOf: { '#': { visited: ['x'], total: 1 } },
+        } as unknown as DiagnosticEnvelope['metrics'],
+      })
+    ).toThrow(/branchCoverageOneOf/);
+
+    expect(() =>
+      assertDiagnosticEnvelope({
+        code: DIAGNOSTIC_CODES.VALIDATION_KEYWORD_FAILED,
+        canonPath: '',
+        phase: DIAGNOSTIC_PHASES.VALIDATE,
+        metrics: {
+          enumUsage: { '#': { yes: 'nope' } },
+        } as unknown as DiagnosticEnvelope['metrics'],
+      })
+    ).toThrow(/enumUsage/);
   });
 
   it('rejects when details duplicate canonPath key anywhere in the payload', () => {

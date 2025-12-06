@@ -39,7 +39,7 @@ ul{padding-left:1.25rem}
     <h2>Timings</h2>
     <table>
       <thead><tr><th>Step</th><th>Duration (ms)</th></tr></thead>
-      <tbody><tr><td>normalize</td><td>0</td></tr><tr><td>compose</td><td>0</td></tr><tr><td>generate</td><td>0</td></tr><tr><td>repair</td><td>0</td></tr><tr><td>validate</td><td>0</td></tr></tbody>
+      <tbody><tr><td>normalize</td><td>0</td></tr><tr><td>compose</td><td>0</td></tr><tr><td>generate</td><td>0</td></tr><tr><td>repair</td><td>0</td></tr><tr><td>validate</td><td>0</td></tr><tr><td>compile</td><td>0</td></tr></tbody>
     </table>
   </section>
 
@@ -512,6 +512,8 @@ exports[`reporter snapshots > produces a stable JSON Report for profiles/simple.
     "toolVersion": "0.1.0",
   },
   "metrics": {
+    "branchTrialsTried": 0,
+    "compileMs": 0,
     "composeMs": 0,
     "evalTraceChecks": 0,
     "evalTraceProved": 0,
@@ -526,6 +528,7 @@ exports[`reporter snapshots > produces a stable JSON Report for profiles/simple.
     "p50LatencyMs": 0,
     "p95LatencyMs": 0,
     "patternPropsHit": 0,
+    "patternWitnessTried": 0,
     "presencePressureResolved": 0,
     "repairActionsPerRow": 0,
     "repairMs": 0,
@@ -720,6 +723,7 @@ exports[`reporter snapshots > produces a stable JSON Report for profiles/simple.
     },
     "invalid": 0,
     "timings": {
+      "compileMs": 0,
       "composeMs": 0,
       "generateMs": 0,
       "normalizeMs": 0,
@@ -757,6 +761,7 @@ exports[`reporter snapshots > produces a stable Markdown report for profiles/sim
 | generate | 0 |
 | repair | 0 |
 | validate | 0 |
+| compile | 0 |
 
 ## Diagnostics
 

@@ -1,6 +1,9 @@
 import { performance } from 'node:perf_hooks';
 
-import type { RepairUsageByMotif } from './repair-usage-metrics';
+import type {
+  BranchCoverageOneOfEntry as SharedBranchCoverageOneOfEntry,
+  DiagMetrics,
+} from '@foundrydata/shared';
 import { recordRepairUsageEventOnSnapshot } from './repair-usage-metrics';
 
 export const METRIC_PHASES = {
@@ -15,51 +18,8 @@ export const METRIC_PHASES = {
 export type MetricPhase = keyof typeof METRIC_PHASES;
 export type MetricsVerbosity = 'runtime' | 'ci';
 
-export interface BranchCoverageOneOfEntry {
-  visited: number[];
-  total: number;
-}
-
-export interface MetricsSnapshot {
-  normalizeMs: number;
-  composeMs: number;
-  generateMs: number;
-  repairMs: number;
-  validateMs: number;
-  compileMs?: number;
-  validationsPerRow: number;
-  repairPassesPerRow: number;
-  branchTrialsTried?: number;
-  patternWitnessTried?: number;
-  memoryPeakMB: number;
-  p50LatencyMs: number;
-  p95LatencyMs: number;
-  branchCoverageOneOf?: Record<string, BranchCoverageOneOfEntry>;
-  enumUsage?: Record<string, Record<string, number>>;
-  /**
-   * Aggregated Repair metrics by tier and policy, aligned with the
-   * Repair philosophy observability requirements (SPEC §10.P7).
-   *
-   * These counters are deterministic and accumulate the number of
-   * committed Repair actions per tier, plus the number of actions
-   * blocked by policy when metrics collection is enabled.
-   */
-  repair_tier1_actions?: number;
-  repair_tier2_actions?: number;
-  repair_tier3_actions?: number;
-  repair_tierDisabled?: number;
-  repairActionsPerRow?: number;
-  evalTraceChecks?: number;
-  evalTraceProved?: number;
-  nameBfsNodesExpanded?: number;
-  nameBfsQueuePeak?: number;
-  nameBeamWidthPeak?: number;
-  nameEnumResults?: number;
-  nameEnumElapsedMs?: number;
-  patternPropsHit?: number;
-  presencePressureResolved?: number;
-  repairUsageByMotif?: RepairUsageByMotif[];
-}
+export type BranchCoverageOneOfEntry = SharedBranchCoverageOneOfEntry;
+export type MetricsSnapshot = DiagMetrics;
 
 type MetricsPhaseKey = (typeof METRIC_PHASES)[MetricPhase];
 
@@ -81,8 +41,12 @@ const DEFAULT_COUNTERS: MetricsSnapshot = {
   generateMs: 0,
   repairMs: 0,
   validateMs: 0,
+  compileMs: 0,
   validationsPerRow: 0,
   repairPassesPerRow: 0,
+  repairActionsPerRow: 0,
+  branchTrialsTried: 0,
+  patternWitnessTried: 0,
   memoryPeakMB: 0,
   p50LatencyMs: 0,
   p95LatencyMs: 0,

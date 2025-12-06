@@ -1,22 +1,23 @@
-Task: 9506   Title: Add micro-schemas + E2E assertions for tier behavior, G_valid regressions, and UNSAT stability — subtask 9506.9506003
-Anchors: [spec://§10#repair-philosophy, spec://§10#mapping, spec://§6#generator-repair-contract, spec://§15#metrics, spec://§15#rng]
+Task: 9600   Title: Align diag.metrics baseline with observability spec — subtask 9600.9600001
+Anchors: [spec://§2#observability-surfaces, spec://§15#metrics, spec://§19#envelope]
 Touched files:
 - PLAN.md
-- .taskmaster/docs/9506-traceability.md
-- .taskmaster/tasks/tasks.json
-- packages/core/src/pipeline/__tests__/repair-unsat-stagnation.integration.test.ts
-- agent-log.jsonl
+- .taskmaster/docs/9600-traceability.md
+- packages/shared/src/types/diag.metrics.ts
+- packages/shared/src/index.ts
+- packages/core/src/util/metrics.ts
+- packages/core/src/diag/validate.ts
+- packages/reporter/src/model/report.ts
 
 Approach:
-Pour la sous-tâche 9506.9506003, je vais ajouter un test E2E pipeline qui exploite le micro-schema UNSAT/stagnation de `repair-philosophy-microschemas` afin d’observer la stagnation de Score(x) et le comportement d’UNSAT/budget sans changer la sémantique de Repair. En m’appuyant sur `spec://§10#repair-philosophy`, `spec://§10#mapping`, `spec://§6#generator-repair-contract`, `spec://§15#metrics` et `spec://§15#rng`, je vais (1) créer un fichier `repair-unsat-stagnation.integration.test.ts` qui exécute `executePipeline` sur le motif UNSAT (par exemple `integerConstVsMultipleOf`) avec un nombre d’instances limité et des options de plan `repair` (bailOnUnsatAfter) resserrées pour forcer un budget rapide, (2) vérifier que le pipeline reste stable pour un tuple (schema, options, seed) donné, que les artefacts Repair (items/actions/diagnostics) sont reproductibles entre runs et que les métriques de Repair (`repairPassesPerRow`, `repairActionsPerRow`, compteurs de tiers) sont cohérentes, (3) observer, via diagnostics existants ou métriques, que le scénario correspond bien à un cas de stagnation/UNSAT (Score ne diminue pas strictement et le budget est atteint) sans introduire de nouveaux codes, et (4) rejouer build/typecheck/lint/test/bench pour s’assurer que ce test d’UNSAT/stagnation ne rend pas la suite fragile et qu’il reste compatible avec les invariants de la spec sur le déterminisme.
+Pour la sous-tâche 9600.9600001, je vais aligner le modèle `diag.metrics` sur la baseline SPEC en introduisant un type partagé qui rassemble les timings par phase, les compteurs déterministes (validationsPerRow, repairPassesPerRow, branchTrialsTried, patternWitnessTried, evalTraceChecks/proved, actions par tiers) et les SLIs de bench (p50/p95LatencyMs, memoryPeakMB). En m’appuyant sur `spec://§2#observability-surfaces`, `spec://§15#metrics` et `spec://§19#envelope`, je commencerai par créer `.taskmaster/docs/9600-traceability.md` pour tracer les bullets parent, puis j’ajouterai `packages/shared/src/types/diag.metrics.ts` et l’exporterai afin que core et reporter partagent la même source de vérité. Dans core, j’alignerai `MetricsSnapshot` sur ce type (ajout/validation des champs manquants éventuels) et mettrai à jour les valeurs par défaut pour garantir une présence cohérente (0 ou undefined selon le mode metrics). Je renforcerai `DiagnosticMetrics` et son validateur pour accepter cette forme structurée (y compris les compteurs tiers) tout en gardant les SLIs numériques et en rejetant toute valeur non numérique. Enfin, j’adapterai le reporter à ces nouveaux types afin que les snapshots de metrics restent compatibles et déterministes, en veillant à ne pas introduire de charges supplémentaires en mode runtime. Je conclurai par un passage build → typecheck → lint → test → bench et une validation rapide du schéma diag.
 
-DoD:
-- [x] Un test pipeline UNSAT/stagnation consomme le micro-schema UNSAT/stagnation des fixtures et démontre qu’aucune séquence de Repair ne permet d’atteindre un état pleinement valide pour un tuple (schema, options, seed) fixé, tout en restant déterministe.
-- [x] Les diagnostics et métriques observés pour ce scénario restent compatibles avec les enveloppes existantes (pas de nouveaux codes introduits), et rendent visibles les informations de type Score/budget ou stagnation prévues par la spec.
-- [x] Les métriques Repair pertinentes (`repairPassesPerRow`, `repairActionsPerRow` et compteurs de tiers) restent cohérentes entre plusieurs runs identiques, montrant que le traitement UNSAT/stagnation n’introduit pas de non-déterminisme caché.
-- [x] La suite build/typecheck/lint/test/bench reste verte avec ce test d’UNSAT/stagnation, et la trace 9506 est mise à jour pour refléter la couverture de DEL3/DOD3/TS3.
+Risks/Unknowns:
+- Potentiel écart entre la nouvelle forme partagée et des usages implicites (ex. metrics options partiellement remplies) pouvant casser des tests existants.
+- Arbitrage “0 vs undefined” pour les SLIs et timings en mode metrics désactivé : il faudra respecter la convention actuelle pour éviter des diffs d’instantanés.
+- S’assurer que le validateur diag n’interdit pas des champs additionnels légers (ex. repairUsageByMotif) tout en restant strict sur les nombres.
 
-Parent bullets couverts: [DEL3, DOD3, TS3]
+Parent bullets couverts: [KR1, DEL1, DOD1, TS1]
 
 Checks:
 - build: npm run build

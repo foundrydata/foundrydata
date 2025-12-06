@@ -1,4 +1,5 @@
 /* eslint-disable complexity */
+/* eslint-disable max-lines */
 /* eslint-disable max-lines-per-function */
 import {
   DIAGNOSTIC_CODES,
@@ -10,6 +11,11 @@ import {
   isKnownDiagnosticCode,
 } from './codes.js';
 import { DIAGNOSTIC_DETAIL_SCHEMAS, type MiniSchema } from './schemas.js';
+import type {
+  BranchCoverageOneOfEntry,
+  DiagMetrics,
+  RepairUsageByMotif,
+} from '@foundrydata/shared';
 
 export interface DiagnosticEnvelope<Details = unknown> {
   code: DiagnosticCode;
@@ -21,15 +27,7 @@ export interface DiagnosticEnvelope<Details = unknown> {
   scoreDetails?: DiagnosticScoreDetails;
 }
 
-export interface DiagnosticMetrics {
-  [key: string]: number | undefined;
-  validationsPerRow?: number;
-  repairPassesPerRow?: number;
-  repairActionsPerRow?: number;
-  p50LatencyMs?: number;
-  p95LatencyMs?: number;
-  memoryPeakMB?: number;
-}
+export type DiagnosticMetrics = Partial<DiagMetrics>;
 
 export interface DiagnosticBudget {
   skipped?: boolean;
@@ -309,9 +307,98 @@ function assertDiagnosticMetrics(metrics: unknown): void {
     if (!isString(key)) {
       throw new Error('Diagnostic metrics keys must be strings');
     }
+    if (key === 'branchCoverageOneOf') {
+      assertBranchCoverageOneOfEntries(value);
+      continue;
+    }
+    if (key === 'enumUsage') {
+      assertEnumUsageEntries(value);
+      continue;
+    }
+    if (key === 'repairUsageByMotif') {
+      assertRepairUsageByMotifEntries(value);
+      continue;
+    }
     if (!isNumber(value)) {
       throw new Error(
         `Diagnostic metrics value for ${key} must be a finite number`
+      );
+    }
+  }
+}
+
+function assertBranchCoverageOneOfEntries(
+  value: unknown
+): asserts value is Record<string, BranchCoverageOneOfEntry> {
+  if (!isPlainObject(value)) {
+    throw new Error('Diagnostic metrics branchCoverageOneOf must be an object');
+  }
+  for (const [canonPath, entry] of Object.entries(value)) {
+    if (!isString(canonPath)) {
+      throw new Error('branchCoverageOneOf keys must be strings');
+    }
+    if (!isPlainObject(entry)) {
+      throw new Error('branchCoverageOneOf entries must be objects');
+    }
+    const branchEntry = entry as Record<string, unknown>;
+    const visited = branchEntry.visited;
+    if (!Array.isArray(visited) || visited.some((v) => !isNumber(v))) {
+      throw new Error(
+        'branchCoverageOneOf.visited must be an array of finite numbers'
+      );
+    }
+    const total = branchEntry.total;
+    if (!isNumber(total)) {
+      throw new Error('branchCoverageOneOf.total must be a finite number');
+    }
+  }
+}
+
+function assertEnumUsageEntries(
+  value: unknown
+): asserts value is Record<string, Record<string, number>> {
+  if (!isPlainObject(value)) {
+    throw new Error('Diagnostic metrics enumUsage must be an object');
+  }
+  for (const [canonPath, counts] of Object.entries(value)) {
+    if (!isString(canonPath)) {
+      throw new Error('enumUsage keys must be strings');
+    }
+    if (!isPlainObject(counts)) {
+      throw new Error('enumUsage entries must be objects of finite numbers');
+    }
+    for (const [enumValue, count] of Object.entries(counts)) {
+      if (!isString(enumValue)) {
+        throw new Error('enumUsage enum keys must be strings');
+      }
+      if (!isNumber(count)) {
+        throw new Error('enumUsage values must be finite numbers');
+      }
+    }
+  }
+}
+
+function assertRepairUsageByMotifEntries(
+  value: unknown
+): asserts value is RepairUsageByMotif[] {
+  if (!Array.isArray(value)) {
+    throw new Error('Diagnostic metrics repairUsageByMotif must be an array');
+  }
+  for (const entry of value) {
+    if (!isPlainObject(entry)) {
+      throw new Error('repairUsageByMotif entries must be objects');
+    }
+    const { motifId, gValid, items, itemsWithRepair, actions } =
+      entry as Record<string, unknown>;
+    if (
+      !isString(motifId) ||
+      !isBoolean(gValid) ||
+      !isNumber(items) ||
+      !isNumber(itemsWithRepair) ||
+      !isNumber(actions)
+    ) {
+      throw new Error(
+        'repairUsageByMotif entries must include motifId (string), gValid (boolean) and numeric items/itemsWithRepair/actions'
       );
     }
   }
