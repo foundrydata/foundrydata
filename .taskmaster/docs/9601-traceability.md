@@ -32,10 +32,10 @@ This document maps parent task 9601 bullets from Implementation Details, Deliver
 ## Mapping 9601 subtasks → parent bullets
 
 - **9601.9601001 – Tag planned/unplanned targets under planner caps**  
-  Covers: [KR1, DEL1, DOD1, DOD2, TS1] (status: in-progress).
+  Covers: [KR1, DEL1, DOD1, DOD2, TS1] (status: done).
 
 - **9601.9601002 – Add guided vs measure invariance regression tests**  
-  Covers: [KR2, DEL2, DOD2, TS2] (status: pending).
+  Covers: [KR2, DEL2, DOD2, TS2] (status: done).
 
 - **9601.9601003 – Validate coverage-report/v1 schema with observability fields**  
   Covers: [KR3, DEL3, DOD1, DOD2, TS3] (status: pending).

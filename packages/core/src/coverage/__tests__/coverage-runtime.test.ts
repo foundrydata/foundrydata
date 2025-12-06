@@ -14,6 +14,7 @@ import type {
   CoverageDimension,
   CoverageReport,
   CoverageTargetReport,
+  CoverageTarget,
   PlannerCapHit,
 } from '@foundrydata/shared';
 
@@ -23,7 +24,7 @@ type PlannerScopeStats = {
   unplanned: number;
 };
 
-type TargetReport = CoverageTargetReport;
+type TargetReport = CoverageTarget | CoverageTargetReport;
 
 const isTargetUnplanned = (target: TargetReport): boolean =>
   (target.meta as { planned?: unknown } | undefined)?.planned === false;

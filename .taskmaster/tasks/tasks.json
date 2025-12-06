@@ -2264,10 +2264,11 @@
             "id": 9601002,
             "title": "Add guided vs measure invariance regression tests",
             "description": "Run identical schemas/seeds under coverage=measure and coverage=guided to assert guided≥measure for branches/enums and stable IDs.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/test/e2e/coverage.guided-vs-measure.spec.ts",
-            "parentId": "9601"
+            "parentId": "9601",
+            "updatedAt": "2025-12-06T21:42:42.001Z"
           },
           {
             "id": 9601003,
@@ -2288,7 +2289,7 @@
             "parentId": "9601"
           }
         ],
-        "updatedAt": "2025-12-06T21:30:55.960Z"
+        "updatedAt": "2025-12-06T21:42:42.001Z"
       },
       {
         "id": "9602",
@@ -2532,7 +2533,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-06T21:30:55.961Z",
+      "lastModified": "2025-12-06T21:42:42.002Z",
       "taskCount": 7,
       "completedCount": 2,
       "tags": [

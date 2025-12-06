@@ -1,3 +1,26 @@
+Task: 9601   Title: Add guided vs measure invariance regression tests (subtask 9601.9601002)
+Anchors: [spec://§2#observability-surfaces, cov://§4#coverage-planner, cov://§5#coverage-report]
+Touched files:
+- PLAN.md
+- .taskmaster/docs/9601-traceability.md
+- packages/core/test/e2e/coverage-guided-vs-measure.spec.ts
+
+Approach:
+Je dois prouver que pour un tuple déterministe (schema/options/seed), `coverage=guided` ne sous-performe pas `coverage=measure` sur branches/enum et conserve des IDs stables (`spec://§2#observability-surfaces`, `cov://§4#coverage-planner`, `cov://§5#coverage-report`). Plan: (1) ajouter un test e2e dédié `coverage-guided-vs-measure.spec.ts` qui exécute deux fois `executePipeline` sur un schéma mêlant `oneOf` (branches) et `enum` avec le même seed/options (`generate.count`, `dimensionsEnabled=['branches','enum','structure']`, `excludeUnreachable:false`). (2) Asserts: statut pipeline identique, `coverageReport.targets` même ensemble d’IDs entre measure/guided, et pour chaque cible active branches/enum, si measure l’a frappée (`hit:true`), guided doit aussi la frapper (superset). (3) Vérifier les métriques: `byDimension['branches']` et `byDimension['enum']` guidées ≥ measure, et `uncoveredTargets` de guided est un sous-ensemble/same des IDs de targets non frappées en measure (pas de régression). (4) Garder l’ordre stable (tri par ID pour comparaisons) pour éviter des snapshots fragiles; pas de changement de pipeline ou de planner, uniquement des assertions. Mettre à jour la trace 9601 pour marquer KR2/DEL2/TS2 en cours et DoD checklist, puis rejouer la chaîne build → typecheck → lint → test → bench.
+
+Risks/Unknowns:
+- Le schéma choisi doit générer suffisamment de branches/enum pour rendre l’invariant visible sans allonger le runtime; ajuster `generate.count` si nécessaire.
+- Les cibles unreachable ou deprecated pourraient brouiller les comparaisons; filtrer sur status actif/déprécié de façon explicite.
+- Couverture guided peut être égale mais pas strictement supérieure pour certaines dimensions; les assertions doivent tolérer l’égalité.
+
+Parent bullets couverts: [KR2, DEL2, DOD2, TS2]
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
+
 Task: 9601   Title: Tag planned/unplanned targets under planner caps (subtask 9601.9601001)
 Anchors: [spec://§2#observability-surfaces, cov://§4#coverage-planner, cov://§5#coverage-report]
 Touched files:
