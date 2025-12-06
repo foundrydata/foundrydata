@@ -2182,13 +2182,13 @@
   "observability-platform-metrics-v1": {
     "tasks": [
       {
-        "id": 9600,
+        "id": "9600",
         "title": "Align diag.metrics baseline with observability spec",
         "description": "Implement and validate the diag.metrics baseline defined in docs/spec-observability-platform-metrics-v1.0.md (§3.1, §4.2), ensuring observability signals remain side-effect free and deterministically shaped.",
         "priority": "high",
         "estimatedHours": 12,
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "complexityScore": 4,
         "details": "[Context]\nThe observability spec fixes required diag.metrics keys (timings, counters, SLIs) and requires that enabling metrics/observability never changes generator/repair/validate outcomes for a fixed determinism tuple.\n\n[Key requirements]\n- Update diag metrics schema/types to include required phase timings, core counters, and performance SLIs; classify deterministic counters vs environment-dependent SLIs.\n- Ensure metrics collection is optional and side-effect free: toggling metrics must not alter branch choices, generated instances, or validation outcomes.\n- Use monotonic timing; define consistent absent/zero behavior when metrics are disabled.\n- Keep diagnostics envelope compliant and tagged to the correct phase.\n\n[Deliverables]\n- Updated metrics schema/types and collector implementation.\n- Side-effect-free regression tests that compare outputs with metrics on/off.\n\n[Definition of Done]\n- Required keys appear when enabled. Only counters/IDs are deterministic; timings and performance SLIs are environment-dependent and MUST be excluded from determinism comparisons. p95/memory are populated by bench harness; regular runs may emit 0.\n- Observability toggles do not change outputs/actions/diagnostics for fixed seeds.\n- Tests updated to cover schema validation and determinism.",
         "testStrategy": "Unit tests for metrics collector and schema validation; regression tests comparing pipeline output with metrics enabled vs disabled (same seed/schema/options) while ignoring timings/SLIs; deterministic timing tests using fake/monotonic clock where applicable.",
@@ -2197,42 +2197,47 @@
             "id": 9600001,
             "title": "Update diag.metrics schema/types for required keys",
             "description": "Add/verify phase timing, core counter, and SLI fields per spec; propagate types across core/shared/reporter.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/shared/src/types/diag.metrics.ts",
-            "parentId": "9600"
+            "parentId": "9600",
+            "updatedAt": "2025-12-06T15:32:38.474Z"
           },
           {
             "id": 9600002,
             "title": "Implement deterministic metrics collection and SLI separation",
             "description": "Ensure counters/timings are deterministic for fixed tuples; gate environment-dependent SLIs to benchmark harness; handle disabled-metrics mode coherently.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/util/metrics.ts",
-            "parentId": "9600"
+            "parentId": "9600",
+            "updatedAt": "2025-12-06T15:39:34.771Z"
           },
           {
             "id": 9600003,
             "title": "Add side-effect-free regression tests for metrics toggle",
             "description": "Compare outputs/actions/diagnostics with metrics enabled vs disabled to prove observability is passive.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/test/e2e/observability.metrics-determinism.spec.ts",
-            "parentId": "9600"
+            "parentId": "9600",
+            "updatedAt": "2025-12-06T18:46:25.502Z"
           },
           {
             "id": 9600004,
             "title": "Determinism comparator: ignore non-deterministic metrics",
             "description": "In metrics on/off regression tests, compare instance stream + diagnostic codes/paths; explicitly ignore timings and benchmark SLIs (p50/p95/memory) to avoid false failures.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 2,
             "file": "packages/core/test/util/determinism-compare.ts",
-            "parentId": "9600"
+            "parentId": "9600",
+            "updatedAt": "2025-12-06T18:57:06.116Z"
           }
-        ]
+        ],
+        "updatedAt": "2025-12-06T18:57:06.116Z"
       },
       {
-        "id": 9601,
+        "id": "9601",
         "title": "Enforce coverage-report observability invariants and planner caps audit",
         "description": "Align coverage-report/v1 emission with observability spec (§2.2, §5.1–5.4), including planned/unplanned auditing, plannerCapsHit summaries, guided≥measure invariants, and comparability metadata.",
         "priority": "high",
@@ -2285,7 +2290,7 @@
         ]
       },
       {
-        "id": 9602,
+        "id": "9602",
         "title": "Surface repair-tier and G_valid observability metrics",
         "description": "Extend repair observability per spec (§4.3, §4.4): tier counters, policy blocks, and G_valid motif metrics, keeping coverage-independence.",
         "priority": "high",
@@ -2330,7 +2335,7 @@
         ]
       },
       {
-        "id": 9603,
+        "id": "9603",
         "title": "Implement Resolver R1 run-level diagnostics",
         "description": "Expose resolver observability via Compose.diag.run per spec (§6.1–§6.2), including cache hits/misses/offline paths and strategy summaries, while keeping determinism for fixed registry fingerprints.",
         "priority": "medium",
@@ -2371,7 +2376,7 @@
         ]
       },
       {
-        "id": 9604,
+        "id": "9604",
         "title": "Deliver reporter/platform view and CI gates",
         "description": "Implement the derived Reporter/Platform View and platform KPIs/gates per observability spec (§2.4, §7, Appendix A), with traceability tests for each gate.",
         "priority": "high",
@@ -2426,7 +2431,7 @@
         ]
       },
       {
-        "id": 9605,
+        "id": "9605",
         "title": "Update observability specs and platform view docs",
         "description": "Refresh documentation to reflect the implemented observability surfaces: spec-observability-platform-metrics-v1.0 Appendix A, planned/unplanned semantics, repairUsageByMotif ordering, and comparability metadata (registryFingerprint, operationsScope, selectedOperations).",
         "priority": "medium",
@@ -2469,7 +2474,7 @@
         ]
       },
       {
-        "id": 9606,
+        "id": "9606",
         "title": "Update front-door docs and CI gate guide for observability",
         "description": "Add public-facing documentation for the observability surfaces and gates: README entry, docs index, CI gates how-to, and changelog/reporter README notes about comparability metadata and bench-only SLIs.",
         "priority": "medium",
@@ -2523,17 +2528,13 @@
       }
     ],
     "metadata": {
-      "version": "1.0.0-draft",
-      "lastModified": "2025-12-06T14:31:05.707Z",
+      "version": "1.0.0",
+      "lastModified": "2025-12-06T18:57:06.117Z",
       "taskCount": 7,
-      "completedCount": 0,
+      "completedCount": 1,
       "tags": [
-        "observability",
-        "platform-metrics"
-      ],
-      "created": "2025-12-06T14:31:05.707Z",
-      "description": "Tasks for observability-platform-metrics-v1 context",
-      "updated": "2025-12-06T14:31:05.707Z"
+        "observability-platform-metrics-v1"
+      ]
     }
   }
 }
