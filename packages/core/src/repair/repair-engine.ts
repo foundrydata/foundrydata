@@ -804,6 +804,24 @@ export function repairItemsAjvDriven(
     return `#/${canonPath}`;
   };
 
+  const recordBaselineGValidMetrics = (
+    collector: MetricsCollector,
+    seenKeys: Set<string> = new Set()
+  ): void => {
+    if (!gValidIndex) return;
+    for (const info of gValidIndex.values()) {
+      if (!info || info.isGValid !== true) continue;
+      const key = `${info.motif}::1`;
+      if (seenKeys.has(key)) continue;
+      collector.recordRepairUsageEvent({
+        motifId: info.motif,
+        gValid: true,
+        actions: 0,
+      });
+      seenKeys.add(key);
+    }
+  };
+
   const applyTierPolicyForAction = (
     keyword: string,
     canonPath: string
@@ -914,6 +932,9 @@ export function repairItemsAjvDriven(
             }
           }
         }
+      }
+      if (metrics) {
+        recordBaselineGValidMetrics(metrics);
       }
       repaired.push(original);
       continue;
@@ -2272,6 +2293,8 @@ export function repairItemsAjvDriven(
         }
       }
       actionsCursor = actions.length;
+      const seenKeys = new Set(motifCounts.keys());
+      recordBaselineGValidMetrics(metrics, seenKeys);
       for (const bucket of motifCounts.values()) {
         metrics.recordRepairUsageEvent({
           motifId: bucket.motifId,

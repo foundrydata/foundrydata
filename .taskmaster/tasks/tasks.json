@@ -2302,7 +2302,7 @@
         "dependencies": [
           "9600"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 4,
         "details": "[Context]\nThe observability spec requires deterministic repair-tier counters, policy-disabled diagnostics, and G_valid motif metrics (items, itemsWithRepair, actions), with structural keyword repairs flagged in G_valid zones.\n\n[Key requirements]\n- Emit/validate repair tier counters (tier1/2/3/actions + tierDisabled) and ensure policy blocks surface REPAIR_TIER_DISABLED diagnostics.\n- Add G_valid motif metrics (gValid_* items/itemsWithRepair/actions) and flag structural keyword repairs in G_valid via REPAIR_GVALID_STRUCTURAL_ACTION.\n- Keep repair observability independent from coverage settings.\n\n[Deliverables]\n- Metrics collector updates and diagnostics schema alignment for new repair/G_valid fields.\n- Tests covering counters, diagnostics (including details mini-schema), and coverage-independence.",
         "testStrategy": "Unit tests for metrics counters and diagnostic payloads; E2E fixtures hitting G_valid motifs and structural keywords to assert counters/diagnostics (including details schema validation); regression tests proving coverage toggles do not affect repair observability outputs.",
@@ -2311,10 +2311,11 @@
             "id": 9602001,
             "title": "Add G_valid motif metrics to metrics collector",
             "description": "Track gValid_<motif> items/itemsWithRepair/actions per spec and expose in diag.metrics.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/core/src/util/metrics.ts",
-            "parentId": "9602"
+            "parentId": "9602",
+            "updatedAt": "2025-12-06T22:37:58.715Z"
           },
           {
             "id": 9602002,
@@ -2334,7 +2335,8 @@
             "file": "packages/core/test/e2e/repair.observability.spec.ts",
             "parentId": "9602"
           }
-        ]
+        ],
+        "updatedAt": "2025-12-06T22:37:58.715Z"
       },
       {
         "id": "9603",
@@ -2393,7 +2395,7 @@
           "9602",
           "9603"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 5,
         "details": "[Context]\nPlatform consumers need a standardized derived view (from diag + coverage-report) and CI gates with traceable tests. Gates must treat diag.fatal as fail, diag.warn as degraded, respect guided≥measure expectations, and avoid using performance SLIs as determinism regressions.\n\n[Key requirements]\n- Define and emit Reporter/Platform View JSON derived solely from diag and coverage-report; no new semantics beyond sources of truth.\n- Include repairUsageByMotif with stable sort (canonPath then motif) and invariants (items/itemsWithRepair/actions); include planned/unplanned evidence counts; carry comparability fields (registryFingerprint, operationsScope, selectedOperations).\n- Implement CI gate logic: fail on fatal; configurable warn escalation; coverage thresholds using coverage-report; ignore env-dependent SLIs for determinism alerts while still reporting them for perf.\n- Add automated tests for each gate and ensure traceability mapping to spec sections.\n\n[Deliverables]\n- Reporter/Platform View generator and schema.\n- CI gate module with configurable policies and test coverage.\n- Documentation/traceability entries linking gates to spec clauses.",
         "testStrategy": "Unit tests for reporter view derivation from fixtures; CI gate tests covering fatal/warn handling, coverage thresholds, guided≥measure invariant, and exclusion of SLIs from determinism checks; snapshot tests for reporter payload shape (stable ordering); traceability doc updates for gate-to-spec mapping.",
@@ -2433,8 +2435,20 @@
             "estimatedHours": 3,
             "file": "packages/shared/src/types/platform-view.ts",
             "parentId": "9604"
+          },
+          {
+            "id": 9604005,
+            "title": "Wire operationsScope/selectedOperations into coverage report",
+            "description": "Propagate OpenAPI selection scope (all vs selected + selectedOperations list) through pipeline into coverage-report/v1 run metadata so diffs and reporter view use the real operations scope. Keep observability passive and update compatibility tests.",
+            "details": "Capture operationId/path+method selection from OpenAPI driver/CLI, thread it through orchestrator coverage runInfo to set run.operationsScope and run.selectedOperations (sorted/deduped). Update reporter schema/fixture if needed and add tests ensuring diff compatibility rejects mismatched scopes while compatible scopes pass.",
+            "status": "in-progress",
+            "dependencies": [],
+            "parentTaskId": 9604,
+            "updatedAt": "2025-12-06T22:23:18.226Z",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2025-12-06T22:23:18.226Z"
       },
       {
         "id": "9605",
@@ -2535,7 +2549,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-06T22:12:36.771Z",
+      "lastModified": "2025-12-06T22:37:58.717Z",
       "taskCount": 7,
       "completedCount": 3,
       "tags": [

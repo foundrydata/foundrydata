@@ -252,6 +252,61 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
 
     expect(hasGValidBucket).toBe(true);
     expect(hasNonGValidBucket).toBe(true);
+
+    const motifKey = 'gValid_simpleObjectRequired';
+    expect(snapshot[`${motifKey}_items`]).toBeGreaterThanOrEqual(1);
+    expect(snapshot.repairUsageByMotif?.some((entry) => entry.gValid)).toBe(
+      true
+    );
+  });
+
+  it('tracks gValid motif metrics even when no repair actions are applied', () => {
+    const schema = repairPhilosophyMicroSchemas.gValidStructural.simpleObject;
+    const canonical = {
+      schema,
+      ptrMap: new Map<string, string>(),
+      revPtrMap: new Map<string, string[]>(),
+      notes: [],
+    };
+    const coverageIndex = new Map();
+    const gValidIndex = classifyGValid(schema, coverageIndex, undefined);
+    const effective = {
+      canonical,
+      containsBag: new Map(),
+      coverageIndex,
+    } as unknown as ComposeResult;
+
+    const metrics = new MetricsCollector({ now: () => 0 });
+    const out = repairItemsAjvDriven(
+      [
+        // Already valid item, should not trigger any repair actions.
+        { id: 1, title: 'ok' },
+      ],
+      {
+        schema,
+        effective,
+        planOptions: { gValid: true },
+        gValidIndex,
+      },
+      { attempts: 1, metrics }
+    );
+
+    expect(out.diagnostics ?? []).toEqual([]);
+
+    const snapshot = metrics.snapshotMetrics({ verbosity: 'ci' });
+    const motifKey = 'gValid_simpleObjectRequired';
+    expect(snapshot[`${motifKey}_items`]).toBe(1);
+    expect(snapshot[`${motifKey}_itemsWithRepair`]).toBe(0);
+    expect(snapshot[`${motifKey}_actions`]).toBe(0);
+    expect(snapshot.repairUsageByMotif?.length).toBeGreaterThan(0);
+    const bucket = snapshot.repairUsageByMotif?.find(
+      (entry) =>
+        entry.motifId === 'simpleObjectRequired' && entry.gValid === true
+    );
+    expect(bucket).toBeDefined();
+    expect(bucket?.items).toBe(1);
+    expect(bucket?.itemsWithRepair).toBe(0);
+    expect(bucket?.actions).toBe(0);
   });
 
   it('wires Score(x) computation into AJV-driven repair attempts', () => {

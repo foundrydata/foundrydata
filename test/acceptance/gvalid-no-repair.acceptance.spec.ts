@@ -31,7 +31,19 @@ describe('Acceptance — G_valid no-repair metrics', () => {
     expect(actions.length).toBe(0);
 
     const usage = result.metrics.repairUsageByMotif ?? [];
-    expect(usage.length).toBe(0);
+    expect(usage.length).toBeGreaterThan(0);
+    expect(
+      usage.every(
+        (entry) =>
+          entry.gValid === true &&
+          entry.actions === 0 &&
+          entry.itemsWithRepair === 0
+      )
+    ).toBe(true);
+
+    expect(result.metrics.gValid_simpleObjectRequired_items).toBe(3);
+    expect(result.metrics.gValid_simpleObjectRequired_itemsWithRepair).toBe(0);
+    expect(result.metrics.gValid_simpleObjectRequired_actions).toBe(0);
   });
 
   it('honours no-repair zone invariants for G_valid UUID+contains arrays', async () => {
@@ -64,6 +76,20 @@ describe('Acceptance — G_valid no-repair metrics', () => {
     expect(actions.length).toBe(0);
 
     const usage = result.metrics.repairUsageByMotif ?? [];
-    expect(usage.length).toBe(0);
+    expect(usage.length).toBeGreaterThan(0);
+    expect(
+      usage.every(
+        (entry) =>
+          entry.gValid === true &&
+          entry.actions === 0 &&
+          entry.itemsWithRepair === 0
+      )
+    ).toBe(true);
+
+    expect(result.metrics.gValid_arrayItemsContainsSimple_items).toBe(3);
+    expect(result.metrics.gValid_arrayItemsContainsSimple_itemsWithRepair).toBe(
+      0
+    );
+    expect(result.metrics.gValid_arrayItemsContainsSimple_actions).toBe(0);
   });
 });

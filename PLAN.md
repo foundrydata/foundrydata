@@ -21,6 +21,32 @@ Checks:
 - bench: npm run bench
 - diag-schema: true
 
+Task: 9602   Title: Add G_valid motif metrics to metrics collector (subtask 9602.9602001)
+Anchors: [spec://§2#observability-surfaces, spec://§10#repair-philosophy-observability, spec://§15#metrics, spec://§19#envelope]
+Touched files:
+- packages/shared/src/types/diag.metrics.ts
+- packages/core/src/util/metrics.ts
+- packages/core/src/util/repair-usage-metrics.ts
+- packages/core/src/repair/repair-engine.ts
+- packages/core/src/diag/validate.ts
+- packages/core/src/repair/__tests__/mapping-repair.test.ts (or new util test)
+
+Approach:
+Objectif: exposer les compteurs G_valid contractuels dans diag.metrics (`gValid_<motif>_{items,itemsWithRepair,actions}`) sans changer le flux Repair/Generator ni la couverture (`spec://§2#observability-surfaces`, `spec://§15#metrics`). Plan: (1) étendre le type DiagMetrics pour accepter des compteurs `gValid_*` optionnels et garder la validation diag permissive mais stricte sur les types (`spec://§19#envelope`). (2) Faire évoluer le collecteur de métriques/repair-usage pour incrémenter ces compteurs lorsqu’un item est classé G_valid (via `recordRepairUsageEvent`), en réutilisant les motifs existants (`GValidMotif` simpleObjectRequired / arrayItemsContainsSimple / apFalseMustCover / complexContains) et en conservant l’agrégat `repairUsageByMotif` pour la traçabilité. Items comptent toujours +1, `itemsWithRepair`/`actions` seulement si des actions sont appliquées; aucun effet en mode metrics off pour préserver la passivité (`spec://§10#repair-philosophy-observability`). (3) Ajouter un test ciblé (unit ou mapping-repair) qui déclenche un motif G_valid avec/ sans Repair et vérifie les compteurs `gValid_*` et la présence de repairUsageByMotif, plus la validation diag pour s’assurer que les nouveaux champs passent les contrôles. (4) Vérifier qu’aucune dépendance à coverage ou au mur du temps n’est introduite; re-exécuter la chaîne build → typecheck → lint → test → bench.
+
+Risks/Unknowns:
+- S’assurer que les noms de motifs utilisés pour les clés `gValid_*` correspondent bien aux valeurs `GValidMotif` (pas de casse ou renommage implicite).
+- Les tests existants peuvent attendre `repairUsageByMotif` uniquement; veiller à ne pas casser leur structure en ajoutant les compteurs.
+- Volume des actions: si une action carry un compteur >1, bien additionner `actions` même quand `itemsWithRepair` reste 0 pour un item sans actions.
+
+Parent bullets couverts: [KR1, KR2, DOD2, DOD3, TS1]
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
+
 Task: 9601   Title: Validate coverage-report/v1 schema with observability fields (subtask 9601.9601003)
 Anchors: [spec://§2#observability-surfaces, cov://§5#coverage-report, cov://§7#thresholds]
 Touched files:

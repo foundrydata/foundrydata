@@ -47,4 +47,6 @@ export interface DiagMetrics {
   branchCoverageOneOf?: Record<string, BranchCoverageOneOfEntry>;
   enumUsage?: Record<string, Record<string, number>>;
   repairUsageByMotif?: RepairUsageByMotif[];
+  /** Optional per-motif counters for G_valid zones (e.g., gValid_simpleObjectRequired_items). */
+  [metricName: `gValid_${string}`]: number | undefined;
 }
