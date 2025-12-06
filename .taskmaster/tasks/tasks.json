@@ -2302,7 +2302,7 @@
         "dependencies": [
           "9600"
         ],
-        "status": "in-progress",
+        "status": "done",
         "complexityScore": 4,
         "details": "[Context]\nThe observability spec requires deterministic repair-tier counters, policy-disabled diagnostics, and G_valid motif metrics (items, itemsWithRepair, actions), with structural keyword repairs flagged in G_valid zones.\n\n[Key requirements]\n- Emit/validate repair tier counters (tier1/2/3/actions + tierDisabled) and ensure policy blocks surface REPAIR_TIER_DISABLED diagnostics.\n- Add G_valid motif metrics (gValid_* items/itemsWithRepair/actions) and flag structural keyword repairs in G_valid via REPAIR_GVALID_STRUCTURAL_ACTION.\n- Keep repair observability independent from coverage settings.\n\n[Deliverables]\n- Metrics collector updates and diagnostics schema alignment for new repair/G_valid fields.\n- Tests covering counters, diagnostics (including details mini-schema), and coverage-independence.",
         "testStrategy": "Unit tests for metrics counters and diagnostic payloads; E2E fixtures hitting G_valid motifs and structural keywords to assert counters/diagnostics (including details schema validation); regression tests proving coverage toggles do not affect repair observability outputs.",
@@ -2331,13 +2331,14 @@
             "id": 9602003,
             "title": "Add observability regression tests for repair/G_valid metrics",
             "description": "E2E tests asserting counters/diagnostics for tier policy and G_valid motifs; validate diag.details mini-schema; verify coverage toggles do not alter repair outputs.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/test/e2e/repair.observability.spec.ts",
-            "parentId": "9602"
+            "parentId": "9602",
+            "updatedAt": "2025-12-06T23:00:05.140Z"
           }
         ],
-        "updatedAt": "2025-12-06T22:48:56.503Z"
+        "updatedAt": "2025-12-06T23:00:05.140Z"
       },
       {
         "id": "9603",
@@ -2550,9 +2551,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-06T22:48:56.504Z",
+      "lastModified": "2025-12-06T23:00:05.142Z",
       "taskCount": 7,
-      "completedCount": 3,
+      "completedCount": 4,
       "tags": [
         "observability-platform-metrics-v1"
       ]

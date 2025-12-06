@@ -21,6 +21,27 @@ Checks:
 - bench: npm run bench
 - diag-schema: true
 
+Task: 9602   Title: Add observability regression tests for repair/G_valid metrics (subtask 9602.9602003)
+Anchors: [spec://§2#observability-surfaces, spec://§10#repair-philosophy-observability, spec://§15#metrics, spec://§19#envelope, spec://§15#rng]
+Touched files:
+- packages/core/src/pipeline/__tests__/repair-observability.regression.test.ts
+
+Approach:
+Objectif: verrouiller par tests les invariants d’observabilité Repair/G_valid (metrics passives, diagnostics conformes, coverage-indépendance) sans modifier la logique Repair. (1) Introduire un test d’intégration pipeline `repair-observability.regression.test.ts` qui exécute `executePipeline` sur les micro-schemas G_valid/tiers existants avec seed fixe et `metrics: on`, `coverage: off/measure`, `dimensionsEnabled` variants. Utiliser `normalizePipelineResultForDeterminism` pour comparer outputs/diagnostics hors métriques et vérifier que `diag.metrics` gValid_* et `repair_tier*` restent stables et non négatifs. (2) Asserter que les diagnostics `REPAIR_TIER_DISABLED`/`REPAIR_GVALID_STRUCTURAL_ACTION` émis sont validés via `assertDiagnosticEnvelope`, et que les snapshots métriques reflètent les counters (gValid actions/items/itemsWithRepair, tierDisabled) pour les mêmes données. (3) Ajouter un scénario metrics toggle qui confirme que désactiver les métriques ne change ni outputs ni diagnostics, et que les compteurs sont nuls quand metrics off, tout en restant identiques entre deux runs metrics on. (4) Boucler build → typecheck → lint → test → bench, vérifier le respect du schéma diag et l’absence de dépendance au wall-clock/SLI (spec://§15#rng / metrics).
+
+Risks/Unknowns:
+- Potentiel bruit des timings/SLI dans `diag.metrics`; nécessité de filtrer via le helper de comparaison existant pour éviter le non-déterminisme.
+- Risque de double comptage gValid/tierDisabled si les fixtures déclenchent plusieurs actions; calibrer les assertions pour des valeurs déterministes.
+- Couverture measure vs off: s’assurer que le guidage coverage ne modifie pas les réparations sur ces fixtures; sinon ajuster le fixture pour neutraliser les hints.
+
+Parent bullets couverts: [KR1, KR2, KR3, DEL3, DOD2, DOD3, TS3]
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
+
 Task: 9602   Title: Add G_valid motif metrics to metrics collector (subtask 9602.9602001)
 Anchors: [spec://§2#observability-surfaces, spec://§10#repair-philosophy-observability, spec://§15#metrics, spec://§19#envelope]
 Touched files:
