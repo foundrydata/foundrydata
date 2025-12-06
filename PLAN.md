@@ -21,6 +21,30 @@ Checks:
 - bench: npm run bench
 - diag-schema: true
 
+Task: 9604   Title: Traceability and test suite for gates (subtask 9604.9604003)
+Anchors: [spec://§7#platform-kpis-gates, spec://§2#observability-surfaces, cov://§7#thresholds, spec://§15#metrics, spec://§19#payloads]
+Touched files:
+- .taskmaster/docs/9604-traceability.md
+- packages/reporter/src/gates/index.ts
+- packages/reporter/src/gates/__tests__/gates.test.ts
+- packages/reporter/test/fixtures/gates.trace.json
+
+Approach:
+Objectif: compléter la couverture tests/trace des gates en les rattachant explicitement aux clauses de la spec et en fournissant un artefact de trace (fixtures) pour pass/fail/warn. (1) Enrichir l’API gate avec des codes d’issue stables + messages compatibles traceability (spec://§7#platform-kpis-gates) et, si besoin, exposer un “trace” structuré (issues list) exportable en JSON. (2) Ajouter un fixture `gates.trace.json` simulant trois scénarios: pass (aucun diag, coverage ok), warn (warn diag non escaladée ou coverage manquante sous minCoverage configuré), fail (fatal ou coverageStatus=minCoverageNotMet / overall<threshold). (3) Étendre `gates.test.ts` pour valider: mapping code↔spec (fatals → fail, warn escalade paramétrable, coverage threshold + minCoverageNotMet), présence des issues attendues dans la trace, stabilité des codes/messages, et absence d’utilisation des SLIs (`p50/p95/memory`) dans les décisions. (4) Mettre à jour `.taskmaster/docs/9604-traceability.md` pour lier les issues aux bullets KR4/DEL3/DOD2/TS2/TS3. (5) Respecter boucle build → typecheck → lint → test → bench, en gardant les tests déterministes (pas de wall-clock). Pas d’I/O réseau; fixtures statiques JSON.
+
+Risks/Unknowns:
+- Éviter de dupliquer la logique gates (déjà testée) : tests supplémentaires doivent rester légers et déterministes.
+- Messages d’issues: choisir un format stable compatible traceability tout en restant concis.
+- Fixture pass/fail/warn doit rester aligné avec l’API gate; toute évolution doit être réfléchie pour ne pas briser les tests existants.
+
+Parent bullets couverts: [KR4, DEL3, DOD2, TS2, TS3]
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
+
 Task: 9604   Title: Add CI gate engine for observability KPIs (subtask 9604.9604002)
 Anchors: [spec://§7#platform-kpis-gates, spec://§2#observability-surfaces, cov://§7#thresholds, spec://§15#metrics, spec://§15#rng]
 Touched files:

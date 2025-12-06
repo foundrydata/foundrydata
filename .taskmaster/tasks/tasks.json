@@ -2426,10 +2426,11 @@
             "id": 9604003,
             "title": "Traceability and test suite for gates",
             "description": "Add tests and docs mapping each gate to spec clauses; ensure fixtures exercise pass/fail/degraded paths.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 4,
             "file": "packages/cli/test/ci/gates.spec.ts",
-            "parentId": "9604"
+            "parentId": "9604",
+            "updatedAt": "2025-12-06T23:23:32.232Z"
           },
           {
             "id": 9604004,
@@ -2452,7 +2453,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-12-06T23:19:46.363Z"
+        "updatedAt": "2025-12-06T23:23:32.232Z"
       },
       {
         "id": "9605",
@@ -2553,7 +2554,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-06T23:19:46.365Z",
+      "lastModified": "2025-12-06T23:23:32.233Z",
       "taskCount": 7,
       "completedCount": 4,
       "tags": [

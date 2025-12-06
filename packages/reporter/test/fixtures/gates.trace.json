@@ -1,0 +1,31 @@
+{
+  "pass": {
+    "status": "pass",
+    "issues": []
+  },
+  "warn": {
+    "status": "warn",
+    "issues": [
+      {
+        "code": "WARN_DIAGNOSTICS",
+        "severity": "warn",
+        "message": "1 warn diagnostic(s) present"
+      }
+    ]
+  },
+  "fail": {
+    "status": "fail",
+    "issues": [
+      {
+        "code": "FATAL_DIAGNOSTICS",
+        "severity": "fail",
+        "message": "1 fatal diagnostic(s) present"
+      },
+      {
+        "code": "COVERAGE_THRESHOLD",
+        "severity": "fail",
+        "message": "Overall coverage 0.5 below threshold 0.8"
+      }
+    ]
+  }
+}
