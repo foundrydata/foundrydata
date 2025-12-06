@@ -47,6 +47,36 @@ Checks:
 - bench: npm run bench
 - diag-schema: true
 
+Task: 9601   Title: Emit and enforce comparability metadata for diffs (subtask 9601.9601004)
+Anchors: [spec://§2#observability-surfaces, spec://§7#platform-kpis-gates, cov://§5#coverage-report, cov://§7#thresholds]
+Touched files:
+- PLAN.md
+- .taskmaster/docs/9601-traceability.md
+- packages/shared/src/coverage/index.ts
+- packages/shared/src/types/coverage-report.ts
+- packages/core/src/pipeline/orchestrator.ts
+- packages/core/src/coverage/runtime.ts
+- packages/core/src/coverage/diff.ts
+- packages/core/src/coverage/__tests__/coverage-diff.spec.ts
+- packages/reporter/src/schemas/coverage-report-v1.schema.json
+- packages/reporter/test/fixtures/coverage-report.v1.sample.json
+
+Approach:
+Objectif: propager et faire respecter les métadonnées de comparabilité (registryFingerprint, operationsScope, selectedOperations) dans coverage-report/v1 et le diff tooling, en rejetant les diffs incompatibles (`spec://§2#observability-surfaces`, `spec://§7#platform-kpis-gates`, `cov://§5#coverage-report`, `cov://§7#thresholds`). Plan: (1) étendre les types/ schémas (shared + reporter) pour inclure `run.registryFingerprint` et rendre explicite `operationsScope/selectedOperations`, en gardant la compatibilité avec les rapports existants (valeurs par défaut `all`/undefined, fingerprint `'0'`). (2) Injecter ces champs dans la construction du coverage report (orchestrator/runtime) en réutilisant le fingerprint résolveur calculé en Compose et en stabilisant les valeurs par défaut (scope all, selectedOperations normalisées). (3) Renforcer `checkCoverageDiffCompatibility` pour comparer le fingerprint (normalisé) et conserver le rejet scope sélectionné mismatch, avec un test dédié (case mismatch fingerprint) dans `coverage-diff.spec.ts`. (4) Mettre à jour le fixture schema reporter pour refléter fingerprint/opsScope, puis rejouer build → typecheck → lint → test → bench et trace/DoD. Pas d’I/O réseau ni de changement pipeline, uniquement métadonnées et compatibilité diff.
+
+Risks/Unknowns:
+- La source de `operationsScope/selectedOperations` n’est pas encore instrumentée côté pipeline; je vais utiliser des valeurs par défaut stables (all/undefined) pour éviter des faux rejets jusqu’à ce que l’origine soit disponible.
+- En ajoutant registryFingerprint au rapport, il faut éviter de rendre la comparaison floconneuse si l’un des rapports est ancien; normaliser à `'0'` en absence pour maintenir la compatibilité.
+- Les schémas reporter peuvent nécessiter des mises à jour de snapshots si des champs supplémentaires apparaissent; limiter l’impact aux fixtures dédiées.
+
+Parent bullets couverts: [KR4, DEL3, DOD3, TS3]
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
+
 Task: 9601   Title: Tag planned/unplanned targets under planner caps (subtask 9601.9601001)
 Anchors: [spec://§2#observability-surfaces, cov://§4#coverage-planner, cov://§5#coverage-report]
 Touched files:

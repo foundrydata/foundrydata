@@ -1332,6 +1332,8 @@ export async function executePipeline(
         seed,
         maxInstances,
         actualInstances,
+        registryFingerprint,
+        operationsScope: 'all',
         startedAtIso: runStartedAtIso,
         durationMs: Date.now() - runStartTimeMs,
       },

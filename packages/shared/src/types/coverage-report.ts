@@ -77,6 +77,7 @@ export interface CoverageReportRun {
   excludeUnreachable: boolean;
   startedAt: string;
   durationMs: number;
+  registryFingerprint?: string;
   /**
    * Scope of operations for this run when an OpenAPI context is present.
    * 'all' means all operations in the spec were in scope; 'selected' means

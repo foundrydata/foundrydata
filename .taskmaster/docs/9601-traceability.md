@@ -41,4 +41,4 @@ This document maps parent task 9601 bullets from Implementation Details, Deliver
   Covers: [KR3, DEL3, DOD1, DOD2, TS3] (status: done).
 
 - **9601.9601004 – Emit and enforce comparability metadata for diffs**  
-  Covers: [KR4, DEL3, DOD3, TS3] (status: pending).
+  Covers: [KR4, DEL3, DOD3, TS3] (status: done).

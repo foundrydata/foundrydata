@@ -61,6 +61,7 @@ function makeReport(overrides: Partial<CoverageReport> = {}): CoverageReport {
       actualInstances: 10,
       dimensionsEnabled: ['structure', 'branches', 'enum'],
       excludeUnreachable: false,
+      registryFingerprint: '0',
       startedAt: '2025-01-01T00:00:00Z',
       durationMs: 1,
       ...(overrides.run ?? {}),
@@ -554,6 +555,40 @@ describe('coverage diff compatibility checks', () => {
     } as Partial<CoverageReport>);
 
     const issues = checkCoverageDiffCompatibility(reportA, reportB);
+    expect(issues).toHaveLength(0);
+  });
+
+  it('detects registry fingerprint mismatch', () => {
+    const base = makeReport();
+
+    const reportA = makeReport({
+      run: { ...base.run, registryFingerprint: 'abc' } as Partial<
+        CoverageReport['run']
+      >,
+    } as Partial<CoverageReport>);
+
+    const reportB = makeReport({
+      run: { ...base.run, registryFingerprint: 'def' } as Partial<
+        CoverageReport['run']
+      >,
+    } as Partial<CoverageReport>);
+
+    const issues = checkCoverageDiffCompatibility(reportA, reportB);
+    expect(issues.some((i) => i.kind === 'registryFingerprintMismatch')).toBe(
+      true
+    );
+  });
+
+  it('treats missing registryFingerprint as the baseline default', () => {
+    const base = makeReport({
+      run: { registryFingerprint: undefined } as Partial<CoverageReport['run']>,
+    } as Partial<CoverageReport>);
+
+    const withDefault = makeReport({
+      run: { registryFingerprint: '0' } as Partial<CoverageReport['run']>,
+    } as Partial<CoverageReport>);
+
+    const issues = checkCoverageDiffCompatibility(base, withDefault);
     expect(issues).toHaveLength(0);
   });
 });

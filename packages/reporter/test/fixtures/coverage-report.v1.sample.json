@@ -13,6 +13,8 @@
     "actualInstances": 3,
     "dimensionsEnabled": ["structure", "branches"],
     "excludeUnreachable": false,
+    "registryFingerprint": "0",
+    "operationsScope": "all",
     "startedAt": "2025-01-01T12:00:00Z",
     "durationMs": 0
   },

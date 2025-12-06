@@ -87,7 +87,8 @@ export interface CoverageReportsDiff {
 export type CoverageDiffCompatibilityIssueKind =
   | 'versionMismatch'
   | 'engineMajorMismatch'
-  | 'operationsScopeMismatch';
+  | 'operationsScopeMismatch'
+  | 'registryFingerprintMismatch';
 
 export interface CoverageDiffCompatibilityIssue {
   kind: CoverageDiffCompatibilityIssueKind;
@@ -378,6 +379,14 @@ function normalizeSelectedOperations(
   return unique;
 }
 
+function normalizeRegistryFingerprint(report: CoverageReport): string {
+  const fp = report.run.registryFingerprint;
+  if (typeof fp === 'string' && fp.length > 0) {
+    return fp;
+  }
+  return '0';
+}
+
 // eslint-disable-next-line max-lines-per-function, complexity
 export function checkCoverageDiffCompatibility(
   reportA: CoverageReport,
@@ -431,6 +440,15 @@ export function checkCoverageDiffCompatibility(
         message: `selected operations differ between reports (A=${selectedA.join(',')}, B=${selectedB.join(',')})`,
       });
     }
+  }
+
+  const fingerprintA = normalizeRegistryFingerprint(reportA);
+  const fingerprintB = normalizeRegistryFingerprint(reportB);
+  if (fingerprintA !== fingerprintB) {
+    issues.push({
+      kind: 'registryFingerprintMismatch',
+      message: `registryFingerprint mismatch (A=${fingerprintA}, B=${fingerprintB})`,
+    });
   }
 
   return issues;

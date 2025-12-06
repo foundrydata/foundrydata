@@ -2245,7 +2245,7 @@
         "dependencies": [
           "9600"
         ],
-        "status": "in-progress",
+        "status": "done",
         "complexityScore": 4,
         "details": "[Context]\nCoverage observability must come from coverage-report/v1. The spec requires stable target IDs, planned/unplanned tagging when caps hit, explicit plannerCap diagnostics, comparability metadata, and invariants between measure and guided modes.\n\n[Key requirements]\n- Ensure targets blocked by planner caps remain materialized with meta.planned:false and are summarized under diagnostics.plannerCapsHit with totals (total/planned/unplanned) per scope tuple.\n- Guarantee guided mode does not underperform measure on branch/enum dimensions (for fixed determinism tuples), with regression tests.\n- Propagate run comparability metadata (registryFingerprint, operationsScope, selectedOperations) and reject diffs/gates when it mismatches.\n- Keep coverage-report structure aligned with spec-coverage-aware-v1.0.md while adding observability fields.\n\n[Deliverables]\n- Updated coverage report writer and diagnostics for planner caps and planned/unplanned tagging.\n- Comparability metadata in reports and diff tooling.\n- Regression tests for guided≥measure and planner caps summaries.",
         "testStrategy": "Fixture-based coverage-report snapshots for capped planning and planned/unplanned tagging; regression tests running coverage=measure vs coverage=guided asserting guided≥measure on branches/enums and stable IDs; schema validation for diagnostics.plannerCapsHit entries and comparability metadata; diff/compat tests rejecting mismatched fingerprints/operation scopes.",
@@ -2284,13 +2284,14 @@
             "id": 9601004,
             "title": "Emit and enforce comparability metadata for diffs",
             "description": "Propagate run.registryFingerprint, run.operationsScope and run.selectedOperations into coverage-report run metadata; update diff/compare tooling to reject mismatches as incompatible instead of producing misleading deltas.",
-            "status": "pending",
+            "status": "done",
             "estimatedHours": 3,
             "file": "packages/core/src/coverage/diff/compat.ts",
-            "parentId": "9601"
+            "parentId": "9601",
+            "updatedAt": "2025-12-06T22:12:36.769Z"
           }
         ],
-        "updatedAt": "2025-12-06T21:53:08.375Z"
+        "updatedAt": "2025-12-06T22:12:36.769Z"
       },
       {
         "id": "9602",
@@ -2534,9 +2535,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-06T21:53:08.377Z",
+      "lastModified": "2025-12-06T22:12:36.771Z",
       "taskCount": 7,
-      "completedCount": 2,
+      "completedCount": 3,
       "tags": [
         "observability-platform-metrics-v1"
       ]

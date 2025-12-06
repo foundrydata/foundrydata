@@ -62,6 +62,7 @@
           "minItems": 1
         },
         "excludeUnreachable": { "type": "boolean" },
+        "registryFingerprint": { "type": "string", "minLength": 1 },
         "startedAt": { "type": "string" },
         "durationMs": { "type": "number", "minimum": 0 },
         "operationsScope": {
