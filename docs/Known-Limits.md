@@ -1,6 +1,6 @@
 # FoundryData Known Limits
 
-This document lists deliberate constraints that keep the pipeline deterministic, auditable, and performant. All limits below are already enforced in code and surfaced through diagnostics so callers can decide whether to relax guardrails or reshape schemas.
+This document lists deliberate constraints that keep the pipeline deterministic, auditable, and performant. Unless explicitly noted as “not yet wired”, limits below are enforced in code and surfaced through diagnostics so callers can decide whether to relax guardrails or reshape schemas; known gaps are called out in the relevant bullets.
 
 ## Schema ingestion & referencing
 
@@ -14,16 +14,16 @@ This document lists deliberate constraints that keep the pipeline deterministic,
 - **Presence pressure**: When `minProperties`, `required`, or `dependentRequired` demand coverage but no safe sources exist, Compose halts with `UNSAT_AP_FALSE_EMPTY_COVERAGE`. Under presence pressure, approximations are recorded so downstream tooling knows coverage became conservative.
 - **`contains` needs**: The bag is trimmed to `complexity.maxContainsNeeds` (default `16`). When more independent needs exist, low-priority entries are dropped and `CONTAINS_BAG_COMBINED` is emitted to document the approximation.
 - **Pattern overlap analysis**: The `complexity.maxPatternProps` option defaults to `64`, but the current overlap analysis does not apply this cap; all patterns are considered.
-- **Coverage target caps**: Coverage-aware planning applies caps to the number of targets per dimension/schema/operation to avoid combinatorial explosion. When caps are hit, some low-priority targets may not be materialised, and planner diagnostics capture the limitation (for example via `plannerCapsHit` and unsatisfied hints). Metrics and `coverage-report/v1` remain deterministic but may reflect a truncated target universe for capped dimensions.
+- **Coverage target caps**: Coverage-aware planning applies caps to the number of targets per dimension/schema/operation that can be *planned* in a given run. When caps are hit, lower-priority targets are left unplanned but still materialised as `CoverageTarget` entries: they remain present in `targets[]` / `uncoveredTargets[]` with stable IDs and carry `meta.planned:false`. Planner diagnostics (for example `plannerCapsHit` and unsatisfied hints) summarise how many targets were in scope, planned or left unplanned, so metrics and `coverage-report/v1` remain deterministic and fully auditable under caps.
 
 ## Generation
 
 - **Deterministic RNG**: The generator uses `XorShift32` seeded via `normalizeSeed`. Callers who omit a seed receive the default `123456789`, so identical schemas plus defaults always yield identical data.
-- **Pattern witness search**: Witness synthesis follows `patternWitness` defaults (`alphabet = a-z0-9_-`, `maxLength = 12`, `maxCandidates = 32768`). Exhausting the budget produces `COMPLEXITY_CAP_PATTERNS` with `reason = 'witnessDomainExhausted'`, `candidateBudget`, or `regexComplexity`.
+- **Pattern witness search**: Witness synthesis follows `patternWitness` defaults (`alphabet = a-z0-9_-`, `maxLength = 12`, `maxCandidates = 32768`). Exhausting the budget produces `COMPLEXITY_CAP_PATTERNS` with `details.reason = 'witnessDomainExhausted'` or `details.reason = 'candidateBudget'`; regex-complexity caps are surfaced separately via `REGEX_COMPLEXITY_CAPPED{ context:'coverage' }`.
 - **Branch trials (Compose)**: `trials.perBranch` defaults to `2`, `maxBranchesToTry` to `12`, and `skipTrialsIfBranchesGt` to `50`. Compose applies these caps, switches to score-only selection when triggered, and records `TRIALS_SKIPPED_*` with the specific reason; the generator consumes the chosen branch.
 - **Numeric precision**: The pipeline uses `rational.maxRatBits = 128` and `maxLcmBits = 128` defaults alongside `decimalPrecision = 12` for the ε-based `multipleOf` tolerance; the current implementation does not emit `RAT_*` diagnostics, even when caps would apply.
 - **G_valid v1 scope**: The generator-valid zone (`G_valid`) defined in the canonical SPEC (§6) is intentionally narrow in v1: it covers simple objects and arrays where the effective schema is free of AP:false/unevaluated* interplay and complex `contains` bags. Schemas that rely on AP:false must-cover semantics, deep conditionals or large/entangled `contains` requirements are deliberately kept outside G_valid v1 and remain under the “minimal witness + bounded Repair” regime.
-- **G_valid v1 repairs**: Inside G_valid, the engine does not rely on Repair for structural keywords (such as `required`, `minProperties` or the basic `items`+`contains` motifs). Acceptable Repair work in this zone is limited to low-impact tweaks (numeric/format nudges, `uniqueItems` deduplication); any structural fixes that still occur are treated as regressions and surfaced via the `gValid_*` metrics, not as a supported optimisation path.
+- **G_valid v1 repairs**: Inside G_valid, the engine does not rely on Repair for structural keywords (such as `required`, `minProperties` or the basic `items`+`contains` motifs). Acceptable Repair work in this zone is limited to low-impact tweaks (numeric/format nudges, `uniqueItems` deduplication); any structural fixes that still occur are treated as regressions and surfaced via the `gValid_*` metrics, not as a supported optimisation path. Structural Repair attempts on `structuralKeywords` in G_valid zones are guarded by policy and surface `REPAIR_GVALID_STRUCTURAL_ACTION` unless `repair.allowStructuralInGValid:true` has been explicitly configured.
 
 ## Repair & validation
 
@@ -42,7 +42,7 @@ This document lists deliberate constraints that keep the pipeline deterministic,
 ## Performance gates
 
 - **Schema size**: Canonicalization refuses documents above `complexity.maxSchemaBytes` (default `2,000,000`). `COMPLEXITY_CAP_SCHEMA_SIZE` documents the observed byte count and the cap.
-- **Branch fan-out**: `maxOneOfBranches = 200`, `maxAnyOfBranches = 500`, and `maxPatternProps = 64`. Exceeding any cap emits `COMPLEXITY_CAP_*` diagnostics and prevents further exploration.
+- **Branch fan-out**: `maxOneOfBranches = 200` and `maxAnyOfBranches = 500`. Exceeding these caps emits `COMPLEXITY_CAP_ONEOF` / `COMPLEXITY_CAP_ANYOF` diagnostics and prevents further exploration. `maxPatternProps = 64` is defined as a configuration default but is not currently enforced by the overlap analysis (see “Pattern overlap analysis” above).
 - **Bench expectations**: Regression gates (scripts/bench.ts) enforce `p95 ≤ 120ms` and `memory ≤ 512MB` for the curated benchmark suite. Pipelines exceeding either stop the release process until the regression is understood.
 
 ## Resolver (R1) — Scope & Limits

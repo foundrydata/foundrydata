@@ -1,6 +1,6 @@
 # FoundryData Invariants
 
-This note captures the cross-phase guarantees implemented inside `packages/core` so that documentation, tooling, and downstream consumers can rely on the same contracts that drove tasks 4–18.
+This note captures the cross-phase guarantees implemented inside `packages/core` so that documentation, tooling, and downstream consumers can rely on the same contracts.
 
 ## Pipeline contract
 
@@ -33,7 +33,12 @@ This note captures the cross-phase guarantees implemented inside `packages/core`
 ## Repair + Validate invariants
 
 - The repair engine is AJV-driven: each attempted fix replays validation against a Source AJV compiled with `allErrors:true`, and diagnostics like `REPAIR_PNAMES_PATTERN_ENUM` capture renames or deletions required to preserve must-cover guarantees.
-- `UNSAT_BUDGET_EXHAUSTED` surfaces when repair/validate cycles stagnate; per-action budgets are recorded on diagnostics that SPEC marks budgeted, but the stagnation guard itself reports its cycle/error counts in `details`.
+- Progress is measured via the SPEC `Score(x)` metric: the engine computes `Score(x)` as the number of distinct error signatures `sig(e) = (keyword, canonPath(e), instancePath, stableParamsKey(e.params))` and only commits a candidate when `Score(x') < Score(x)`. When a mutation does not strictly improve the score, the instance is reverted and a `REPAIR_REVERTED_NO_PROGRESS` diagnostic is emitted with `details.{keyword,scoreBefore,scoreAfter}`.
+- The same error signature components (`keyword`, canonical schema path, instancePath, `stableParamsKey(params)`) are used consistently inside the Score module so that changes to parameter ordering or pointer normalisation cannot change `Score(x)`; cycle-level budgets in the engine remain based on attempt counts and error counts rather than a separate signature-based seen-set.
+- Tier and policy effects are observable: each action is classified into Tier‑0/Tier‑1/Tier‑2/Tier‑3 per the SPEC table, policy blocks are surfaced via `REPAIR_TIER_DISABLED` (with `details.{keyword,requestedTier,allowedMaxTier,reason}`), and when metrics are enabled the engine aggregates deterministic counters (`diag.metrics.repair_tier1_actions`, `repair_tier2_actions`, `repair_tier3_actions`, `repair_tierDisabled`, plus `repairActionsPerRow` and `repairPassesPerRow`) for use by reporters and acceptance tests.
+- Under `gValid:true`, structural actions on `structuralKeywords` (for example `required` synthesis, `contains` witness synthesis, AP:false / `unevaluated*` cleanup) inside G_valid locations are treated as exceptional: the default policy blocks them and emits `REPAIR_GVALID_STRUCTURAL_ACTION` with `details.kind` (such as `'required'`), and only an explicit opt-in (`allowStructuralInGValid:true`) allows structural Repair to proceed without that diagnostic.
+- Repair does not depend on coverage state: it never branches on `coverage.mode`, `dimensionsEnabled` or `targets`. The only coverage artefact it consults is the Compose-time `CoverageIndex` when enforcing must-cover under AP:false/`unevaluated*`; coverage hooks (PROPERTY_PRESENT events, hint traces, unsatisfied-hint reporting) remain observational and cannot change which Repair actions are allowed.
+- `UNSAT_BUDGET_EXHAUSTED` surfaces when the configured gen→repair→validate attempt budget is exhausted while errors remain: if `cycles` reaches `maxCycles = min(complexity.bailOnUnsatAfter, repair.attempts)` and validation is still failing (`lastErrorCount > 0`), the pipeline emits this diagnostic with `{cycles,lastErrorCount}` in `details`, while individual per-action budgets continue to be reported on the diagnostics that the SPEC marks as budgeted.
 - Validation reuses the source AJV instance with the same flags checked at startup. External references remain blocked—`EXTERNAL_REF_UNRESOLVED` is emitted with policy, mode, optional `failingRefs`, and `skippedValidation` evidence when configured to warn or ignore.
 
 ## Observability & determinism
@@ -79,3 +84,6 @@ The coverage-aware layer is an opt-in projection on top of the existing `Normali
 
 - **AP:false & CoverageIndex**
   Under `additionalProperties:false`, the coverage layer treats `CoverageIndex` as the single source of truth for property-name coverage. Any `PROPERTY_PRESENT` target for undeclared names under AP:false MUST be backed by `CoverageIndex.has` / `CoverageIndex.enumerate`; coverage MUST NOT build a parallel name automaton with different semantics or extend coverage beyond what CoverageIndex proves. When CoverageIndex is empty or undecidable, the corresponding coverage targets remain `unreachable` or uncovered rather than being guessed as covered.
+
+- **Operations scope & diff compatibility**
+  For OpenAPI-aware runs, coverage diffs are only defined when `run.operationsScope` (for example `'all'` vs `'selected'`) and, when applicable, the sorted `run.selectedOperations` sets match between reports; otherwise, diff tooling treats the reports as incompatible (`operationsScopeMismatch`) instead of emitting misleading `coverage.byOperation` deltas.
