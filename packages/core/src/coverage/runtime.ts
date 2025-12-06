@@ -115,6 +115,40 @@ function sortPlannerCapsHit(plannerCapsHit: PlannerCapHit[]): PlannerCapHit[] {
   });
 }
 
+function normalizeSelectedOperations(
+  selectedOperations?: string[]
+): string[] | undefined {
+  if (!Array.isArray(selectedOperations) || selectedOperations.length === 0) {
+    return undefined;
+  }
+  const unique = Array.from(
+    new Set(
+      selectedOperations.filter(
+        (op): op is string => typeof op === 'string' && op.length > 0
+      )
+    )
+  );
+  unique.sort((a, b) => a.localeCompare(b));
+  return unique.length > 0 ? unique : undefined;
+}
+
+function normalizeOperationsSelection(
+  scope?: 'all' | 'selected',
+  selectedOperations?: string[]
+): {
+  operationsScope: 'all' | 'selected';
+  selectedOperations?: string[];
+} {
+  const normalizedSelected = normalizeSelectedOperations(selectedOperations);
+  if (scope === 'selected' || normalizedSelected) {
+    return {
+      operationsScope: 'selected',
+      selectedOperations: normalizedSelected,
+    };
+  }
+  return { operationsScope: 'all', selectedOperations: undefined };
+}
+
 export function shouldRunCoverageAnalyzer(
   coverageOptions?: PipelineOptions['coverage']
 ): boolean {
@@ -229,6 +263,10 @@ export function evaluateCoverageAndBuildReport(
     input.coverageOptions?.reportMode ?? 'full';
 
   const plannerCapsHit = sortPlannerCapsHit(input.plannerCapsHit ?? []);
+  const operationsSelection = normalizeOperationsSelection(
+    input.runInfo.operationsScope,
+    input.runInfo.selectedOperations
+  );
 
   const thresholds: CoverageThresholds | undefined =
     typeof input.coverageOptions?.minCoverage === 'number'
@@ -266,8 +304,8 @@ export function evaluateCoverageAndBuildReport(
       dimensionsEnabled: coverageDimensions,
       excludeUnreachable: evaluatorInput.excludeUnreachable,
       registryFingerprint: input.runInfo.registryFingerprint,
-      operationsScope: input.runInfo.operationsScope,
-      selectedOperations: input.runInfo.selectedOperations,
+      operationsScope: operationsSelection.operationsScope,
+      selectedOperations: operationsSelection.selectedOperations,
       startedAt: input.runInfo.startedAtIso,
       durationMs: input.runInfo.durationMs,
     },

@@ -2288,10 +2288,10 @@
             "estimatedHours": 3,
             "file": "packages/core/src/coverage/diff/compat.ts",
             "parentId": "9601",
-            "updatedAt": "2025-12-06T22:12:36.769Z"
+            "updatedAt": "2025-12-06T23:38:27.255Z"
           }
         ],
-        "updatedAt": "2025-12-06T22:12:36.769Z"
+        "updatedAt": "2025-12-06T23:38:27.255Z"
       },
       {
         "id": "9602",
@@ -2447,14 +2447,14 @@
             "title": "Wire operationsScope/selectedOperations into coverage report",
             "description": "Propagate OpenAPI selection scope (all vs selected + selectedOperations list) through pipeline into coverage-report/v1 run metadata so diffs and reporter view use the real operations scope. Keep observability passive and update compatibility tests.",
             "details": "Capture operationId/path+method selection from OpenAPI driver/CLI, thread it through orchestrator coverage runInfo to set run.operationsScope and run.selectedOperations (sorted/deduped). Update reporter schema/fixture if needed and add tests ensuring diff compatibility rejects mismatched scopes while compatible scopes pass.",
-            "status": "pending",
+            "status": "in-progress",
             "dependencies": [],
             "parentTaskId": 9604,
-            "updatedAt": "2025-12-06T22:41:57.531Z",
+            "updatedAt": "2025-12-06T23:34:15.665Z",
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-12-06T23:29:37.096Z"
+        "updatedAt": "2025-12-06T23:34:15.665Z"
       },
       {
         "id": "9605",
@@ -2555,7 +2555,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-06T23:29:37.098Z",
+      "lastModified": "2025-12-06T23:38:27.257Z",
       "taskCount": 7,
       "completedCount": 4,
       "tags": [

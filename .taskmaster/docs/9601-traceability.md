@@ -41,4 +41,4 @@ This document maps parent task 9601 bullets from Implementation Details, Deliver
   Covers: [KR3, DEL3, DOD1, DOD2, TS3] (status: done).
 
 - **9601.9601004 – Emit and enforce comparability metadata for diffs**  
-  Covers: [KR4, DEL3, DOD3, TS3] (status: done).
+  Covers: [KR4, DEL3, DOD3, TS3] (status: done). Scope: propagate `registryFingerprint` + operations comparability into coverage-report/v1, normalize/deduplicate `selectedOperations`, carry `operationsScope` from pipeline options into run metadata, reject incompatible diffs, and validate schema when operations selections are present.

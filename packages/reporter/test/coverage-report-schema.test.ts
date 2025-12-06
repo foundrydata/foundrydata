@@ -34,4 +34,32 @@ describe('coverage-report/v1 JSON Schema', () => {
     }
     expect(ok).toBe(true);
   });
+
+  it('accepts selected operations metadata and rejects empty selections', () => {
+    const rawSchema = JSON.parse(readFileSync(SCHEMA_PATH, 'utf8'));
+    const baseReport = JSON.parse(readFileSync(COVERAGE_FIXTURE_PATH, 'utf8'));
+
+    const ajv = new Ajv2020({ strict: false, allErrors: true });
+    addFormats(ajv);
+    const validate = ajv.compile(rawSchema);
+
+    const withSelection = {
+      ...baseReport,
+      run: {
+        ...baseReport.run,
+        operationsScope: 'selected',
+        selectedOperations: ['POST /users', 'GET /users'],
+      },
+    };
+    expect(validate(withSelection)).toBe(true);
+
+    const withEmptySelection = {
+      ...withSelection,
+      run: {
+        ...withSelection.run,
+        selectedOperations: [],
+      },
+    };
+    expect(validate(withEmptySelection)).toBe(false);
+  });
 });

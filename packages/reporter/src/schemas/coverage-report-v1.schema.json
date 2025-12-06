@@ -71,7 +71,8 @@
         },
         "selectedOperations": {
           "type": "array",
-          "items": { "type": "string", "minLength": 1 }
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
         }
       },
       "additionalProperties": true

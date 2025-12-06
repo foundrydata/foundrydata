@@ -211,7 +211,15 @@ function normalizeSelectedOperations(
   if (!Array.isArray(operations) || operations.length === 0) {
     return undefined;
   }
-  return [...operations].sort((a, b) => a.localeCompare(b));
+  const unique = Array.from(
+    new Set(
+      operations.filter(
+        (op): op is string => typeof op === 'string' && op.length > 0
+      )
+    )
+  );
+  unique.sort((a, b) => a.localeCompare(b));
+  return unique.length > 0 ? unique : undefined;
 }
 
 function clampNonNegative(value: number | undefined): number {

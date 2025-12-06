@@ -438,8 +438,12 @@ export async function executePipeline(
   let plannerCapsHit: PlannerCapHit[] = [];
   let hintTrace: HintTrace | undefined;
   const unsatisfiedHints: UnsatisfiedHint[] = [];
+  let coverageOperationsScope: 'all' | 'selected' | undefined;
+  let coverageSelectedOperations: string[] | undefined;
   if (shouldRunCoverageAnalyzer(options.coverage)) {
     const coverageMode = options.coverage?.mode ?? 'off';
+    coverageOperationsScope = options.coverage?.operationsScope;
+    coverageSelectedOperations = options.coverage?.selectedOperations;
     if (coverageMode === 'measure' || coverageMode === 'guided') {
       const ensureInstanceCoverageState = (
         itemIndex: number
@@ -1333,7 +1337,8 @@ export async function executePipeline(
         maxInstances,
         actualInstances,
         registryFingerprint,
-        operationsScope: 'all',
+        operationsScope: coverageOperationsScope,
+        selectedOperations: coverageSelectedOperations,
         startedAtIso: runStartedAtIso,
         durationMs: Date.now() - runStartTimeMs,
       },

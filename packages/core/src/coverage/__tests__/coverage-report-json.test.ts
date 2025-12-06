@@ -441,4 +441,36 @@ describe('coverage-report/v1 JSON snapshots', () => {
     const reports = await runPlannerCapsScenario();
     assertPlannerCapsIntegrity(reports);
   });
+
+  it('emits operations scope metadata with normalized selectedOperations', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        flag: { enum: ['a', 'b'] },
+      },
+      required: ['flag'],
+    } as const;
+
+    const result = await executePipeline(schema, {
+      generate: { count: 2, seed: 11 },
+      validate: { validateFormats: false },
+      coverage: {
+        mode: 'measure',
+        dimensionsEnabled: ['structure'],
+        operationsScope: 'selected',
+        selectedOperations: ['POST /users', 'GET /users', 'GET /users'],
+      },
+    });
+
+    const report = result.artifacts.coverageReport as
+      | CoverageReport
+      | undefined;
+    expect(report).toBeDefined();
+    expect(report?.run.operationsScope).toBe('selected');
+    expect(report?.run.selectedOperations).toEqual([
+      'GET /users',
+      'POST /users',
+    ]);
+  });
 });

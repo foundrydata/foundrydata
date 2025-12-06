@@ -190,6 +190,17 @@ export interface PipelineOptions {
     dimensionsEnabled?: CoverageDimension[];
     excludeUnreachable?: boolean;
     /**
+     * Scope of operations when running against an OpenAPI document.
+     * Defaults to 'all'; when set to 'selected', selectedOperations
+     * should list the in-scope operation keys.
+     */
+    operationsScope?: 'all' | 'selected';
+    /**
+     * Optional list of operation keys that were explicitly selected
+     * for the run. When provided, it implies operationsScope:'selected'.
+     */
+    selectedOperations?: string[];
+    /**
      * Global coverage threshold applied to metrics.overall only.
      * When set, the CoverageEvaluator will populate
      * metrics.thresholds.overall and set coverageStatus to
