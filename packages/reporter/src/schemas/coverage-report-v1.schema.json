@@ -165,7 +165,17 @@
           "type": "string",
           "enum": ["positive", "negative"]
         },
-        "meta": { "type": "object", "additionalProperties": true },
+        "meta": {
+          "type": "object",
+          "properties": {
+            "planned": { "type": "boolean" },
+            "operationKeys": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            }
+          },
+          "additionalProperties": true
+        },
         "hit": { "type": "boolean" }
       },
       "additionalProperties": false
@@ -214,4 +224,3 @@
     }
   }
 }
-

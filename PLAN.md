@@ -21,6 +21,32 @@ Checks:
 - bench: npm run bench
 - diag-schema: true
 
+Task: 9601   Title: Validate coverage-report/v1 schema with observability fields (subtask 9601.9601003)
+Anchors: [spec://§2#observability-surfaces, cov://§5#coverage-report, cov://§7#thresholds]
+Touched files:
+- PLAN.md
+- .taskmaster/docs/9601-traceability.md
+- packages/reporter/src/schemas/coverage-report-v1.schema.json
+- packages/shared/src/types/coverage-report.ts
+- packages/reporter/test/coverage-diff.test.ts
+- json-schema-reporter/test/coverage-report-schema.test.ts
+
+Approach:
+Objectif: garantir que le schéma coverage-report/v1 couvre les champs observabilité (plannerCapsHit, meta.planned:false, comparabilité) sans casser les consommateurs (`spec://§2#observability-surfaces`, `cov://§5#coverage-report`, `cov://§7#thresholds`). Plan: (1) aligner le schéma JSON `coverage-report-v1.schema.json` sur les structures actuelles (plannerCapsHit trié, meta.planned:false présent, diagnostics.notes éventuellement vides) et ajouter/resserrer les contraintes sur `run.dimensionsEnabled`, `run.excludeUnreachable`, `run.operationsScope/selectedOperations` (nullable/optional) et `metrics.thresholds.overall` conformément aux invariants cov://§7#thresholds. (2) Synchroniser les types partagés `CoverageReport`/`CoverageDiagnostics`/`PlannerCapHit` si des champs manquent (ex: optionalité de `operationsScope`, `selectedOperations`), en conservant la compatibilité runtime. (3) Étendre les tests reporter et le validateur schema (json-schema-reporter) pour valider un rapport synthétique contenant `plannerCapsHit` non vide et des targets avec `meta.planned:false`, plus comparabilité metadata, en veillant à ne pas toucher les snapshots existants hors scope. (4) Rejouer la chaîne build → typecheck → lint → test → bench, et mettre à jour traceability/DoD. Ne pas modifier la construction du rapport (déjà couverte en 9601.9601001), uniquement valider et typer.
+
+Risks/Unknowns:
+- Compatibilité avec snapshots reporter: ajouter de nouveaux champs pourrait nécessiter des updates ciblés; limiter l’impact en ajoutant un fixture dédié aux tests de schéma plutôt qu’en changeant les snapshots existants.
+- Diff entre types shared et schéma reporter: vérifier l’alignement avant de resserrer les validations pour éviter des ruptures inattendues.
+- operationsScope/selectedOperations optionnels: clarifier si null/undefined sont acceptés; choisir une politique stricte (undefined) cohérente avec les rapports actuels.
+
+Parent bullets couverts: [KR3, DEL3, DOD1, DOD2, TS3]
+
+Checks:
+- build: npm run build
+- test: npm run test
+- bench: npm run bench
+- diag-schema: true
+
 Task: 9601   Title: Tag planned/unplanned targets under planner caps (subtask 9601.9601001)
 Anchors: [spec://§2#observability-surfaces, cov://§4#coverage-planner, cov://§5#coverage-report]
 Touched files:

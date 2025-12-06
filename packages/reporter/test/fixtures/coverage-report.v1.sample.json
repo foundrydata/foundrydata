@@ -18,19 +18,19 @@
   },
   "metrics": {
     "coverageStatus": "ok",
-    "overall": 1,
+    "overall": 0.5,
     "byDimension": {
       "structure": 1,
-      "branches": 1
+      "branches": 0
     },
     "byOperation": {},
     "targetsByStatus": {
-      "active": 1,
+      "active": 2,
       "unreachable": 0,
       "deprecated": 0
     },
     "thresholds": {
-      "overall": 0.8
+      "overall": 0.4
     }
   },
   "targets": [
@@ -41,12 +41,40 @@
       "canonPath": "#",
       "status": "active",
       "hit": true
+    },
+    {
+      "id": "T2",
+      "dimension": "branches",
+      "kind": "ONEOF_BRANCH",
+      "canonPath": "#/oneOf/0",
+      "status": "active",
+      "meta": { "planned": false },
+      "hit": false
     }
   ],
-  "uncoveredTargets": [],
+  "uncoveredTargets": [
+    {
+      "id": "T2",
+      "dimension": "branches",
+      "kind": "ONEOF_BRANCH",
+      "canonPath": "#/oneOf/0",
+      "status": "active",
+      "meta": { "planned": false },
+      "hit": false
+    }
+  ],
   "unsatisfiedHints": [],
   "diagnostics": {
-    "plannerCapsHit": [],
+    "plannerCapsHit": [
+      {
+        "dimension": "branches",
+        "scopeType": "schema",
+        "scopeKey": "dimension:branches",
+        "totalTargets": 1,
+        "plannedTargets": 0,
+        "unplannedTargets": 1
+      }
+    ],
     "notes": []
   }
 }

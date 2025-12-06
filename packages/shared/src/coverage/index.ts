@@ -94,7 +94,10 @@ export interface CoverageTargetBase {
   /**
    * Diagnostics-only annotations.
    */
-  meta?: Record<string, unknown>;
+  meta?: {
+    planned?: boolean;
+    operationKeys?: string[];
+  } & Record<string, unknown>;
 }
 
 export type DeprecatedCoverageTarget = CoverageTargetBase & {
