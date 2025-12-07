@@ -301,6 +301,7 @@ describe('assertRunDiagnostics', () => {
         {
           code: DIAGNOSTIC_CODES.RESOLVER_STRATEGIES_APPLIED,
           canonPath: '#',
+          phase: DIAGNOSTIC_PHASES.COMPOSE,
           details: {
             strategies: ['local'],
             requested: ['local', 'remote'],
@@ -312,6 +313,7 @@ describe('assertRunDiagnostics', () => {
         {
           code: DIAGNOSTIC_CODES.EXTERNAL_REF_STUBBED,
           canonPath: '#',
+          phase: DIAGNOSTIC_PHASES.COMPOSE,
           details: {
             ref: 'https://example.com/offline.json',
             stubKind: 'emptySchema',
@@ -320,6 +322,7 @@ describe('assertRunDiagnostics', () => {
         {
           code: DIAGNOSTIC_CODES.RESOLVER_CACHE_HIT,
           canonPath: '#',
+          phase: DIAGNOSTIC_PHASES.COMPOSE,
           details: {
             ref: 'https://example.com/external.json',
             contentHash: 'abc123',
@@ -329,6 +332,7 @@ describe('assertRunDiagnostics', () => {
         {
           code: DIAGNOSTIC_CODES.RESOLVER_CACHE_MISS_FETCHED,
           canonPath: '#',
+          phase: DIAGNOSTIC_PHASES.COMPOSE,
           details: {
             ref: 'https://example.com/remote.json',
             bytes: 42,
@@ -338,6 +342,7 @@ describe('assertRunDiagnostics', () => {
         {
           code: DIAGNOSTIC_CODES.RESOLVER_OFFLINE_UNAVAILABLE,
           canonPath: '#',
+          phase: DIAGNOSTIC_PHASES.COMPOSE,
           details: {
             ref: 'https://example.com/offline.json',
             reason: 'no-strategy',
@@ -348,6 +353,7 @@ describe('assertRunDiagnostics', () => {
         {
           code: DIAGNOSTIC_CODES.RESOLVER_SNAPSHOT_APPLIED,
           canonPath: '#',
+          phase: DIAGNOSTIC_PHASES.COMPOSE,
           details: {
             path: '/tmp/resolver-snapshot.log',
             count: 2,
@@ -357,6 +363,7 @@ describe('assertRunDiagnostics', () => {
         {
           code: DIAGNOSTIC_CODES.RESOLVER_SNAPSHOT_LOAD_FAILED,
           canonPath: '#',
+          phase: DIAGNOSTIC_PHASES.COMPOSE,
           details: {
             path: '/tmp/resolver-snapshot.log',
             message: 'ENOENT',
@@ -367,6 +374,7 @@ describe('assertRunDiagnostics', () => {
         {
           code: DIAGNOSTIC_CODES.RESOLVER_SNAPSHOT_FINGERPRINT_MISMATCH,
           canonPath: '#',
+          phase: DIAGNOSTIC_PHASES.COMPOSE,
           details: {
             path: '/tmp/resolver-snapshot.log',
             declared: 'abc',
@@ -376,6 +384,7 @@ describe('assertRunDiagnostics', () => {
         {
           code: DIAGNOSTIC_CODES.RESOLVER_ADD_SCHEMA_SKIPPED_DUPLICATE_ID,
           canonPath: '#',
+          phase: DIAGNOSTIC_PHASES.COMPOSE,
           details: {
             ref: 'https://example.com/external.json',
             id: 'https://example.com/external.json',
@@ -386,6 +395,7 @@ describe('assertRunDiagnostics', () => {
         {
           code: DIAGNOSTIC_CODES.EXTERNAL_REF_UNRESOLVED,
           canonPath: '#',
+          phase: DIAGNOSTIC_PHASES.COMPOSE,
           details: {
             ref: 'https://example.com/missing.json',
             mode: 'strict',

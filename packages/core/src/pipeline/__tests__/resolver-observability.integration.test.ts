@@ -57,6 +57,7 @@ describe('Resolver observability across offline/cache paths', () => {
     );
     for (const entry of run) {
       expect(entry.canonPath).toBe('#');
+      expect((entry as { phase?: string }).phase).toBe('compose');
     }
     const warns = compose.diag?.warn ?? [];
     expect(
@@ -149,6 +150,7 @@ describe('Resolver observability across offline/cache paths', () => {
 
     for (const entry of [...firstRun, ...secondRun]) {
       expect(entry.canonPath).toBe('#');
+      expect((entry as { phase?: string }).phase).toBe('compose');
     }
     expect(fetchMock).toHaveBeenCalledTimes(1);
 

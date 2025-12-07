@@ -40,9 +40,10 @@ describe('Resolver extension run-level diagnostics', () => {
       (strategiesDetails?.registryFingerprint as string | undefined)?.length
     ).toBeGreaterThan(0);
     // When strategies=['local'], prefetch is not attempted; only strategies note is guaranteed
-    // All run-level entries must pin canonPath to '#'
+    // All run-level entries must pin canonPath to '#' and phase to 'compose'
     for (const entry of run) {
       expect(entry.canonPath).toBe('#');
+      expect((entry as { phase?: string }).phase).toBe('compose');
     }
   });
 });

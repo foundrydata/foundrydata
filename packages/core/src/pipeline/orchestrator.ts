@@ -299,6 +299,21 @@ export async function executePipeline(
     }
   }
   let ajvParityChecked = false;
+  const normalizeResolverRunDiag = (
+    note:
+      | ResolverDiagnosticNote
+      | {
+          code: ResolverDiagnosticNote['code'];
+          canonPath: '#';
+          details?: ResolverDiagnosticNote['details'] | unknown;
+          phase?: 'compose';
+        }
+  ): ResolverDiagnosticNote => ({
+    ...(note as ResolverDiagnosticNote),
+    canonPath: '#',
+    phase: DIAGNOSTIC_PHASES.COMPOSE,
+  });
+
   const recordResolverRunDiag = (
     note:
       | ResolverDiagnosticNote
@@ -312,7 +327,7 @@ export async function executePipeline(
     if (!resolverRunDiags) {
       resolverRunDiags = [];
     }
-    resolverRunDiags.push(note as ResolverDiagnosticNote);
+    resolverRunDiags.push(normalizeResolverRunDiag(note));
   };
 
   const runAjvStartupParityGate = (args: {
@@ -401,7 +416,9 @@ export async function executePipeline(
       schema as object,
       resolverOptions
     );
-    resolverRunDiags = resolverResult.notes;
+    resolverRunDiags = resolverResult.notes.map((note) =>
+      normalizeResolverRunDiag(note)
+    );
     registryFingerprint = resolverResult.registryFingerprint;
     if (resolverResult.registry.size() > 0) {
       resolverRegistry = resolverResult.registry;

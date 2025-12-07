@@ -35,6 +35,7 @@ This document maps the parent task 9603 bullets from Implementation Details, Del
 
 - **9603.9603002 – Emit resolver diagnostics in Compose pipeline**  
   Covers: [KR1, KR2, KR3, DEL2, DOD1, DOD2, TS2] (status: done — resolver run-level notes (strategies/offline/stubbed/unresolved) now flow into compose.diag.run with canonPath '#', registryFingerprint plumbed into strategies details and resolver strategies memo key, resolver run diagnostics validated via envelope tests and reporter snapshots updated).
+  - Update 2025-12-07: run-level resolver diagnostics now carry `phase: compose` to satisfy envelope compliance while keeping observability passive and deterministic.
 
 - **9603.9603003 – Add resolver observability tests (online/offline/cache)**  
   Covers: [KR2, KR3, DEL3, DOD2, DOD3, TS2, TS3] (status: done — integration tests cover offline local-only + stubbed paths and cache miss→hit determinism with stable registryFingerprint and canonPath '#', ensuring diag.run stability and passive observability).

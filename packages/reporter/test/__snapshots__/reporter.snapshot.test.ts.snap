@@ -451,6 +451,7 @@ exports[`reporter snapshots > produces a stable JSON Report for profiles/simple.
                 "local",
               ],
             },
+            "phase": "compose",
           },
         ],
         "warn": [
