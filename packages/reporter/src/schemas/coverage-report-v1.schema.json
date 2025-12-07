@@ -75,6 +75,19 @@
           "minItems": 1
         }
       },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operationsScope": { "const": "selected" }
+            },
+            "required": ["operationsScope"]
+          },
+          "then": {
+            "required": ["selectedOperations"]
+          }
+        }
+      ],
       "additionalProperties": true
     },
     "metrics": {

@@ -1,20 +1,19 @@
-Task: 9603   Title: Emit resolver diagnostics in Compose pipeline (bugfix pass)
-Anchors: [spec://§2#observability-surfaces, spec://§6#phases, spec://§19#envelope, spec://§15#rng]
+Task: 9601   Title: Validate coverage-report/v1 schema with observability fields
+Anchors: [spec://§2#observability-surfaces, cov://§5#coverage-report, spec://§7#platform-kpis-gates]
 Touched files:
-- packages/core/src/pipeline/orchestrator.ts
-- packages/core/src/diag/__tests__/envelope.test.ts
-- packages/core/src/pipeline/__tests__/resolver-diag.integration.test.ts
-- packages/reporter/test/__snapshots__/reporter.snapshot.test.ts.snap
+- packages/reporter/src/schemas/coverage-report-v1.schema.json
+- packages/reporter/test/coverage-report-schema.test.ts
+- packages/core/src/coverage/runtime.ts
+- packages/core/src/coverage/__tests__/coverage-report-json.test.ts
 
 Approach:
-Objectif: rétablir la conformité des diagnostics run-level resolver en ajoutant systématiquement le champ phase (compose) tout en conservant canonPath "#" et l’ordre déterministe (spec://§2#observability-surfaces, spec://§6#phases, spec://§19#envelope). (1) Centraliser la normalisation dans recordResolverRunDiag ou juste avant l’attachement à compose.diag.run pour forcer phase:'compose' sur toutes les notes resolver (y compris EXTERNAL_REF_UNRESOLVED/STUBBED remontées du pre-phase) sans modifier les détails ni l’ordonnancement; maintenir l’observabilité passive (spec://§15#rng). (2) Étendre les tests: envelope validator doit accepter des run diags avec phase explicite; les intégrations resolver doivent vérifier la présence du champ phase sur chaque note existante; mettre à jour le snapshot Reporter minimal reflétant la nouvelle clé, garantissant que la vue dérivée reste alignée sur la source diag. (3) Auto-review: run-level diags restent canonPath "#", aucune dépendance au temps/seed hors métriques, et determinism metrics on/off préservé. Chaîne de vérification complète build → typecheck → lint → test → bench pour respecter le DoD.
+Objectif: supprimer le trou où un rapport coverage-report/v1 peut déclarer operationsScope:'selected' sans lister selectedOperations, ce qui casse la comparabilité et l’audit des sélections (spec://§2#observability-surfaces, cov://§5#coverage-report, spec://§7#platform-kpis-gates). (1) Renforcer le JSON Schema avec une règle conditionnelle if/then pour exiger selectedOperations non vide dès que run.operationsScope vaut 'selected'; garder l’ouverture aux rapports legacy avec operationsScope absent ou 'all'. Ajouter des tests AJV positifs/négatifs pour documenter le comportement. (2) Durcir la normalisation runtime: si l’option coverage demande 'selected' mais aucune liste n’est fournie, rétrograder silencieusement à 'all' (observabilité passive, pas d’échec utilisateur) ; si une liste est fournie, continuer à dédupliquer/ordonner et émettre operationsScope:'selected' avec selectedOperations trié. Couvrir cela par un test d’intégration coverage-report-json. (3) Auto-review: pas de changement de sémantique pipeline, pas d’I/O ni RNG ajoutés; check que diff compatibility continue à rejeter les vrais mismatches et que les rapports émis respectent la nouvelle contrainte schema.
 
 Risks/Unknowns:
-- Éventuels snapshots ou assertions tolérantes ailleurs qui supposent l’absence de phase; contrôler les effets domino.
-- Risque d’oublier des notes injectées hors du helper (ex: validation diagnostics combinées) si la normalisation n’est pas centralisée.
-- S’assurer que l’ajout du champ ne change pas le tri stable ni l’égalité utilisée dans les comparateurs de déterminisme.
+- La rétrogradation à 'all' pourrait masquer une mauvaise configuration CLI; vérifier que ce fallback est acceptable vis-à-vis de la spec et n’introduit pas de faux positifs de comparabilité.
+- S’assurer que les fixtures existantes (operationsScope absent) restent valides après la règle conditionnelle.
 
-Parent bullets couverts: [KR1, KR2, KR3, DOD1, DOD2, TS1, TS2]
+Parent bullets couverts: [KR1, KR3, KR4, DOD1, DOD2, TS3]
 
 Checks:
 - build: npm run build

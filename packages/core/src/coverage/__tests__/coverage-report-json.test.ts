@@ -473,4 +473,32 @@ describe('coverage-report/v1 JSON snapshots', () => {
       'POST /users',
     ]);
   });
+
+  it('downgrades operationsScope to all when no operations are provided', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        flag: { enum: ['a', 'b'] },
+      },
+      required: ['flag'],
+    } as const;
+
+    const result = await executePipeline(schema, {
+      generate: { count: 2, seed: 12 },
+      validate: { validateFormats: false },
+      coverage: {
+        mode: 'measure',
+        dimensionsEnabled: ['structure'],
+        operationsScope: 'selected',
+      },
+    });
+
+    const report = result.artifacts.coverageReport as
+      | CoverageReport
+      | undefined;
+    expect(report).toBeDefined();
+    expect(report?.run.operationsScope).toBe('all');
+    expect(report?.run.selectedOperations).toBeUndefined();
+  });
 });

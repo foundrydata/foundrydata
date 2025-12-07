@@ -140,11 +140,14 @@ function normalizeOperationsSelection(
   selectedOperations?: string[];
 } {
   const normalizedSelected = normalizeSelectedOperations(selectedOperations);
-  if (scope === 'selected' || normalizedSelected) {
+  if (normalizedSelected) {
     return {
       operationsScope: 'selected',
       selectedOperations: normalizedSelected,
     };
+  }
+  if (scope === 'selected') {
+    return { operationsScope: 'all', selectedOperations: undefined };
   }
   return { operationsScope: 'all', selectedOperations: undefined };
 }

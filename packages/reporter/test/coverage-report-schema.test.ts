@@ -61,5 +61,14 @@ describe('coverage-report/v1 JSON Schema', () => {
       },
     };
     expect(validate(withEmptySelection)).toBe(false);
+
+    const missingSelection = {
+      ...withSelection,
+      run: {
+        ...withSelection.run,
+        selectedOperations: undefined,
+      },
+    };
+    expect(validate(missingSelection)).toBe(false);
   });
 });
