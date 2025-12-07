@@ -87,6 +87,8 @@ export interface CoverageReportsDiff {
 export type CoverageDiffCompatibilityIssueKind =
   | 'versionMismatch'
   | 'engineMajorMismatch'
+  | 'dimensionsMismatch'
+  | 'excludeUnreachableMismatch'
   | 'operationsScopeMismatch'
   | 'registryFingerprintMismatch';
 
@@ -364,6 +366,15 @@ function parseMajorVersion(version: string | undefined): string | undefined {
   return match?.[1];
 }
 
+function normalizeDimensionsEnabled(
+  report: CoverageReport
+): CoverageDimension[] {
+  const dims = report.run.dimensionsEnabled ?? [];
+  const unique = Array.from(new Set(dims));
+  unique.sort();
+  return unique;
+}
+
 function normalizeOperationsScope(report: CoverageReport): 'all' | 'selected' {
   return report.run.operationsScope ?? 'all';
 }
@@ -412,6 +423,27 @@ export function checkCoverageDiffCompatibility(
 
   const scopeA = normalizeOperationsScope(reportA);
   const scopeB = normalizeOperationsScope(reportB);
+
+  const dimensionsA = normalizeDimensionsEnabled(reportA);
+  const dimensionsB = normalizeDimensionsEnabled(reportB);
+  if (
+    dimensionsA.length !== dimensionsB.length ||
+    dimensionsA.some((dim, idx) => dim !== dimensionsB[idx])
+  ) {
+    issues.push({
+      kind: 'dimensionsMismatch',
+      message: `dimensionsEnabled mismatch (A=${dimensionsA.join(',')}, B=${dimensionsB.join(',')})`,
+    });
+  }
+
+  const excludeUnreachableA = Boolean(reportA.run.excludeUnreachable);
+  const excludeUnreachableB = Boolean(reportB.run.excludeUnreachable);
+  if (excludeUnreachableA !== excludeUnreachableB) {
+    issues.push({
+      kind: 'excludeUnreachableMismatch',
+      message: `excludeUnreachable mismatch (A=${excludeUnreachableA}, B=${excludeUnreachableB})`,
+    });
+  }
 
   if (scopeA !== scopeB) {
     issues.push({

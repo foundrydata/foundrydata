@@ -451,6 +451,44 @@ describe('coverage diff compatibility checks', () => {
     expect(issues.some((i) => i.kind === 'engineMajorMismatch')).toBe(true);
   });
 
+  it('detects dimensionsEnabled mismatch', () => {
+    const base = makeReport();
+
+    const reportA = makeReport({
+      run: {
+        ...base.run,
+        dimensionsEnabled: ['structure', 'branches'],
+      },
+    } as Partial<CoverageReport>);
+
+    const reportB = makeReport({
+      run: {
+        ...base.run,
+        dimensionsEnabled: ['structure', 'enum'],
+      },
+    } as Partial<CoverageReport>);
+
+    const issues = checkCoverageDiffCompatibility(reportA, reportB);
+    expect(issues.some((i) => i.kind === 'dimensionsMismatch')).toBe(true);
+  });
+
+  it('detects excludeUnreachable mismatch', () => {
+    const base = makeReport();
+
+    const reportA = makeReport({
+      run: { ...base.run, excludeUnreachable: false },
+    } as Partial<CoverageReport>);
+
+    const reportB = makeReport({
+      run: { ...base.run, excludeUnreachable: true },
+    } as Partial<CoverageReport>);
+
+    const issues = checkCoverageDiffCompatibility(reportA, reportB);
+    expect(issues.some((i) => i.kind === 'excludeUnreachableMismatch')).toBe(
+      true
+    );
+  });
+
   it('detects incompatible operationsScope/selectedOperations', () => {
     const base = makeReport();
 

@@ -2300,9 +2300,20 @@
             "file": "packages/core/src/coverage/diff/compat.ts",
             "parentId": "9601",
             "updatedAt": "2025-12-06T23:38:27.255Z"
+          },
+          {
+            "id": 9601005,
+            "title": "Enforce coverage diff compatibility for coverage settings",
+            "description": "Reject coverage diffs when dimensionsEnabled or excludeUnreachable differ; align tests.",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9601,
+            "updatedAt": "2025-12-07T01:08:30.778Z",
+            "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-12-07T00:39:51.935Z"
+        "updatedAt": "2025-12-07T01:08:30.778Z"
       },
       {
         "id": "9602",
@@ -2568,7 +2579,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-07T01:01:31.379Z",
+      "lastModified": "2025-12-07T01:08:30.779Z",
       "taskCount": 7,
       "completedCount": 5,
       "tags": [

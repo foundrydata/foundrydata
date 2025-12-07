@@ -42,3 +42,6 @@ This document maps parent task 9601 bullets from Implementation Details, Deliver
 
 - **9601.9601004 – Emit and enforce comparability metadata for diffs**  
   Covers: [KR4, DEL3, DOD3, TS3] (status: done). Scope: propagate `registryFingerprint` + operations comparability into coverage-report/v1, normalize/deduplicate `selectedOperations`, carry `operationsScope` from pipeline options into run metadata, reject incompatible diffs, and validate schema when operations selections are present.
+
+- **9601.9601005 – Enforce coverage diff compatibility for coverage settings**  
+  Covers: [KR4, DEL3, DOD3, TS3] (status: done). Scope: block coverage diffs when `dimensionsEnabled` or `excludeUnreachable` differ, extend compatibility checks/tests accordingly without altering coverage-report payloads.
