@@ -992,7 +992,6 @@ export function repairItemsAjvDriven(
     return { allowed: true, tier };
   };
   for (const original of items) {
-    const itemActionsStart = actions.length;
     // Fast-path: validate original without cloning to minimize overhead
     let pass = validateFn(original);
     if (pass) {
@@ -1066,11 +1065,7 @@ export function repairItemsAjvDriven(
       | null
       | undefined;
     const initialScore = computeScore(initialErrorsForScore, ptrMapping);
-    let lastErrorsForScore = initialErrorsForScore as
-      | AjvErrorObject[]
-      | null
-      | undefined;
-
+    let currentScore = initialScore;
     let lastErrorCount =
       Array.isArray((validateFn as any).errors) &&
       (validateFn as any).errors.length > 0
@@ -1291,12 +1286,8 @@ export function repairItemsAjvDriven(
     for (let iter = 0; iter < maxCycles; iter += 1) {
       const errors = (validateFn as any).errors as AjvErr[] | undefined;
       if (!errors || errors.length === 0) break;
-      lastErrorsForScore =
-        (errors as unknown as AjvErrorObject[] | null | undefined) ?? null;
-      computeScore(
-        errors as unknown as AjvErrorObject[] | null | undefined,
-        ptrMapping
-      );
+      const passActionsStart = actions.length;
+      const beforePass = deepClone(current);
       let changed = false;
       cycles += 1;
       const dependentBaselineKeys = new Set(
@@ -2358,35 +2349,38 @@ export function repairItemsAjvDriven(
       pass = validateFn(current);
       const nextErrors = (validateFn as any).errors as AjvErr[] | undefined;
       const nextErrorCount = Array.isArray(nextErrors) ? nextErrors.length : 0;
-      lastErrorsForScore =
+      const nextErrorsForScore =
         (nextErrors as unknown as AjvErrorObject[] | null | undefined) ?? null;
-      if (nextErrorCount <= 0) {
-        lastErrorCount = 0;
-        break;
-      }
-      if (nextErrorCount >= lastErrorCount) {
+      const scoreAfter = computeScore(nextErrorsForScore, ptrMapping);
+
+      if (scoreAfter < currentScore) {
+        // Commit this pass: keep mutated instance and actions, update score state.
+        currentScore = scoreAfter;
+        const prevErrorCount = lastErrorCount;
         lastErrorCount = nextErrorCount;
-        if (coverage?.mode !== 'guided') {
+        if (nextErrorCount <= 0 || pass) {
           break;
         }
-        // In guided mode, allow another iteration to handle newly exposed errors (e.g., nested required)
+        if (nextErrorCount >= prevErrorCount) {
+          if (coverage?.mode !== 'guided') {
+            break;
+          }
+          // In guided mode, allow another iteration to handle newly exposed errors (e.g., nested required)
+        }
         continue;
       }
-      lastErrorCount = nextErrorCount;
-      if (pass) break;
-    }
 
-    const finalScore = computeScore(lastErrorsForScore, ptrMapping);
-    if (finalScore >= initialScore && actions.length > itemActionsStart) {
+      // No Score improvement for this pass: revert local changes and emit revert diagnostic.
+      const passActions = actions.slice(passActionsStart);
+      const firstAction = passActions[0];
       const representativeError =
-        (lastErrorsForScore && lastErrorsForScore[0]) ||
+        (nextErrorsForScore && nextErrorsForScore[0]) ||
         (initialErrorsForScore && initialErrorsForScore[0]) ||
         null;
       const keywordForDiag =
         representativeError && typeof representativeError.keyword === 'string'
           ? representativeError.keyword
           : '';
-      const firstAction = actions[itemActionsStart];
       let canonPathForDiag =
         firstAction && typeof firstAction.canonPath === 'string'
           ? normalizeCanonPath(firstAction.canonPath)
@@ -2416,15 +2410,17 @@ export function repairItemsAjvDriven(
         phase: DIAGNOSTIC_PHASES.REPAIR,
         details: {
           keyword: keywordForDiag,
-          scoreBefore: initialScore,
-          scoreAfter: finalScore,
+          scoreBefore: currentScore,
+          scoreAfter,
         },
       });
       if (metrics) {
         metrics.addRepairRevertedNoProgress(1);
       }
-      current = original;
-      actions.length = itemActionsStart;
+      current = beforePass;
+      actions.length = passActionsStart;
+      lastErrorCount = Array.isArray(errors) ? errors.length : 0;
+      break;
     }
 
     // Best-effort unsatisfied hint reporting for Repair side when

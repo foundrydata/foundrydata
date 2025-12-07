@@ -1,6 +1,6 @@
 # Traceability — Task 9503 (Enforce Score-based commit rule in Repair engine)
 
-This document maps the parent task 9503 bullets from Implementation Details, Deliverables and Test Strategy to its subtasks 9503.9503001–9503.9503003.
+This document maps the parent task 9503 bullets from Implementation Details, Deliverables and Test Strategy to its subtasks 9503.9503001–9503.9503004.
 
 ## Parent bullets
 
@@ -38,3 +38,6 @@ This document maps the parent task 9503 bullets from Implementation Details, Del
 
 - **9503.9503003 – Emit revert diagnostics and increment counters**  
   Covers: [KR3, DEL3, DOD3, TS3] (status: done).
+
+- **9503.9503004 – Enforce per-pass Score commit rule**  
+  Covers: [KR2, DEL2, DOD2, TS2] (status: in-progress).
