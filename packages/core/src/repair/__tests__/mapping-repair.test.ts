@@ -248,6 +248,48 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
     expect(out.actions ?? []).toHaveLength(0);
   });
 
+  it('allows non-structural string repairs in G_valid motifs', () => {
+    const schema = repairPhilosophyMicroSchemas.gValidStructural.simpleObject;
+    const canonical = {
+      schema,
+      ptrMap: new Map<string, string>(),
+      revPtrMap: new Map<string, string[]>(),
+      notes: [],
+    };
+    const coverageIndex = new Map();
+    const gValidIndex = classifyGValid(schema, { coverageIndex });
+    const effective = {
+      canonical,
+      containsBag: new Map(),
+      coverageIndex,
+    } as unknown as ComposeResult;
+
+    const out = repairItemsAjvDriven(
+      [
+        // Violates minLength but should be fixed as a non-structural action.
+        { id: 0, title: '' },
+      ],
+      {
+        schema,
+        effective,
+        planOptions: { gValid: true },
+        gValidIndex,
+      },
+      { attempts: 2 }
+    );
+
+    const repaired = out.items[0] as { id: number; title: string };
+    expect(repaired.title.length).toBeGreaterThanOrEqual(1);
+    expect(valid(schema, repaired)).toBe(true);
+
+    const diagCodes = (out.diagnostics ?? []).map((d) => d.code);
+    expect(diagCodes).not.toContain('REPAIR_GVALID_STRUCTURAL_ACTION');
+    expect(diagCodes).not.toContain('REPAIR_TIER_DISABLED');
+
+    const actions = out.actions ?? [];
+    expect(actions.some((a) => a.action === 'stringPadTruncate')).toBe(true);
+  });
+
   it('emits tier-disabled counters for required without defaults in G_valid motifs', () => {
     const schema = repairPhilosophyMicroSchemas.gValidStructural.simpleObject;
     const canonical = {
@@ -659,5 +701,44 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
       scoreAfter: 1,
     });
     spy.mockRestore();
+  });
+
+  it('emits UNSAT_BUDGET_EXHAUSTED when G_valid structural blocks prevent progress', () => {
+    const schema = repairPhilosophyMicroSchemas.gValidStructural.simpleObject;
+    const canonical = {
+      schema,
+      ptrMap: new Map<string, string>(),
+      revPtrMap: new Map<string, string[]>(),
+      notes: [],
+    };
+    const coverageIndex = new Map();
+    const gValidIndex = classifyGValid(schema, { coverageIndex });
+    const effective = {
+      canonical,
+      containsBag: new Map(),
+      coverageIndex,
+    } as unknown as ComposeResult;
+
+    const out = repairItemsAjvDriven(
+      [
+        // Missing required fields so structural repair is needed but blocked in G_valid.
+        {},
+      ],
+      {
+        schema,
+        effective,
+        planOptions: { gValid: true },
+        gValidIndex,
+      },
+      { attempts: 1 }
+    );
+
+    const diagCodes = (out.diagnostics ?? []).map((d) => d.code);
+    expect(diagCodes).toContain('REPAIR_GVALID_STRUCTURAL_ACTION');
+    expect(diagCodes).toContain('REPAIR_TIER_DISABLED');
+    expect(diagCodes).toContain('UNSAT_BUDGET_EXHAUSTED');
+
+    expect(out.items[0]).toEqual({});
+    expect(out.actions ?? []).toHaveLength(0);
   });
 });
