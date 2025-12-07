@@ -257,6 +257,50 @@ describe('executePipeline', () => {
     expect(root?.isGValid).toBe(true);
   });
 
+  it('satisfies items and contains together for G_valid arrays without repair', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'array',
+      items: { type: 'integer', minimum: 0 },
+      contains: { const: 7 },
+      minItems: 1,
+    } as const;
+
+    const result = await executePipeline(schema, {
+      generate: {
+        count: 2,
+        seed: 11,
+        planOptions: { gValid: true },
+      },
+      validate: { validateFormats: false },
+    });
+
+    expect(result.status).toBe('completed');
+
+    const finalItems =
+      result.artifacts.repaired ?? result.artifacts.generated?.items ?? [];
+    expect(Array.isArray(finalItems)).toBe(true);
+    expect(finalItems.length).toBeGreaterThan(0);
+
+    for (const arr of finalItems as unknown[]) {
+      expect(Array.isArray(arr)).toBe(true);
+      const asNumbers = arr as number[];
+      expect(asNumbers.some((value) => value === 7)).toBe(true);
+      for (const value of asNumbers) {
+        expect(typeof value).toBe('number');
+        expect(value).toBeGreaterThanOrEqual(0);
+      }
+    }
+
+    const actions = result.artifacts.repairActions ?? [];
+    expect(actions.length).toBe(0);
+
+    const index = result.artifacts.gValidIndex;
+    expect(index).toBeDefined();
+    const root = index?.get('#');
+    expect(root?.isGValid).toBe(true);
+  });
+
   it('keeps non-G_valid objects stable when toggling G_valid flag', async () => {
     const schema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',

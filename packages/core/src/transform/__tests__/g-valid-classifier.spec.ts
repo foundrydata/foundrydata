@@ -13,7 +13,7 @@ describe('classifyGValid', () => {
       required: ['id'],
     };
 
-    const index = classifyGValid(schema, undefined);
+    const index = classifyGValid(schema);
     const root = index.get('#');
 
     expect(root).toBeDefined();
@@ -35,11 +35,12 @@ describe('classifyGValid', () => {
         '#',
         {
           has: () => false,
+          provenance: [{} as any],
         },
       ],
     ]);
 
-    const index = classifyGValid(schema, coverageIndex);
+    const index = classifyGValid(schema, { coverageIndex });
     const root = index.get('#');
 
     expect(root).toBeDefined();
@@ -61,11 +62,12 @@ describe('classifyGValid', () => {
         '#',
         {
           has: () => true,
+          provenance: [{} as any],
         },
       ],
     ]);
 
-    const index = classifyGValid(schema, coverageIndex);
+    const index = classifyGValid(schema, { coverageIndex });
     const root = index.get('#');
 
     expect(root).toBeDefined();
@@ -95,7 +97,8 @@ describe('classifyGValid', () => {
       },
     };
 
-    const index = classifyGValid(schema, undefined);
+    const containsBag = new Map([['#', [{ schema: schema.contains, min: 1 }]]]);
+    const index = classifyGValid(schema, { containsBag });
     const root = index.get('#');
 
     expect(root).toBeDefined();
@@ -111,7 +114,8 @@ describe('classifyGValid', () => {
       contains: { const: 'x' },
     };
 
-    const index = classifyGValid(schema, undefined);
+    const containsBag = new Map([['#', [{ schema: schema.contains, min: 1 }]]]);
+    const index = classifyGValid(schema, { containsBag });
     const root = index.get('#');
 
     expect(root).toBeDefined();
@@ -126,12 +130,22 @@ describe('classifyGValid', () => {
       allOf: [{ contains: { const: 1 } }, { contains: { const: 2 } }],
     };
 
-    const index = classifyGValid(schema, undefined);
+    const containsBag = new Map([
+      [
+        '#',
+        [
+          { schema: { const: 1 }, min: 1 },
+          { schema: { const: 2 }, min: 1 },
+        ],
+      ],
+    ]);
+
+    const index = classifyGValid(schema, { containsBag });
     const root = index.get('#');
 
     expect(root).toBeDefined();
     expect(root?.isGValid).toBe(false);
-    expect(root?.motif).toBe(GValidMotif.None);
+    expect(root?.motif).toBe(GValidMotif.ComplexContains);
   });
 
   it('propagates unevaluated* guards and keeps nested locations non-G_valid', () => {
@@ -155,7 +169,7 @@ describe('classifyGValid', () => {
       ],
     };
 
-    const index = classifyGValid(schema, undefined);
+    const index = classifyGValid(schema);
     const root = index.get('#');
     const child = index.get('#/allOf/1/properties/child');
 
@@ -176,7 +190,8 @@ describe('classifyGValid', () => {
       unevaluatedItems: false,
     };
 
-    const index = classifyGValid(schema, undefined);
+    const containsBag = new Map([['#', [{ schema: schema.contains, min: 1 }]]]);
+    const index = classifyGValid(schema, { containsBag });
     const root = index.get('#');
 
     expect(root).toBeDefined();
@@ -201,8 +216,8 @@ describe('classifyGValid', () => {
       allOf: [baseObject, {}],
     };
 
-    const indexA = classifyGValid(schemaA, undefined);
-    const indexB = classifyGValid(schemaB, undefined);
+    const indexA = classifyGValid(schemaA);
+    const indexB = classifyGValid(schemaB);
 
     const rootA = indexA.get('#');
     const rootB = indexB.get('#');
@@ -211,5 +226,53 @@ describe('classifyGValid', () => {
     expect(rootB).toBeDefined();
     expect(rootA?.motif).toBe(rootB?.motif);
     expect(rootA?.isGValid).toBe(rootB?.isGValid);
+  });
+
+  it('excludes arrays with multi-need contains bags from G_valid', () => {
+    const schema = {
+      type: 'array',
+      items: { type: 'integer' },
+      contains: { const: 1 },
+      allOf: [{ contains: { const: 2 } }],
+    };
+
+    const index = classifyGValid(schema, {
+      containsBag: new Map([
+        [
+          '#',
+          [
+            { schema: { const: 1 }, min: 1 },
+            { schema: { const: 2 }, min: 1 },
+          ],
+        ],
+      ]),
+    });
+
+    const root = index.get('#');
+    expect(root).toBeDefined();
+    expect(root?.isGValid).toBe(false);
+    expect(root?.motif).toBe(GValidMotif.ComplexContains);
+  });
+
+  it('classifies simple objects assembled via allOf when no guards are present', () => {
+    const schema = {
+      allOf: [
+        {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            title: { type: 'string' },
+          },
+          required: ['id'],
+        },
+      ],
+    };
+
+    const index = classifyGValid(schema);
+    const root = index.get('#');
+
+    expect(root).toBeDefined();
+    expect(root?.isGValid).toBe(true);
+    expect(root?.motif).toBe(GValidMotif.SimpleObjectRequired);
   });
 });

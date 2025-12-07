@@ -2058,7 +2058,11 @@ export function repairItemsAjvDriven(
           if (t === 'string')
             return typeof sch.pattern === 'string'
               ? (synthesizePatternExample(sch.pattern) ?? '')
-              : '';
+              : typeof sch.minLength === 'number' && sch.minLength > 0
+                ? 'a'.repeat(
+                    Math.max(1, Math.min(8, Math.trunc(sch.minLength)))
+                  )
+                : '';
           if (t === 'number' || t === 'integer') return 0;
           if (t === 'boolean') return false;
           if (t === 'null') return null;

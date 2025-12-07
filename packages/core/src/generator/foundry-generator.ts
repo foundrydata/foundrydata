@@ -288,14 +288,65 @@ class GeneratorEngine {
     canonPath: JsonPointer
   ): ReturnType<GValidClassificationIndex['get']> | undefined {
     if (!this.gValidIndex) return undefined;
-    return this.gValidIndex.get(canonPath);
+    const variants = [
+      canonPath,
+      canonPath === '' ? '#' : undefined,
+      canonPath === '#' ? '' : undefined,
+      canonPath.startsWith('#') ? canonPath.slice(1) : undefined,
+      canonPath && !canonPath.startsWith('#')
+        ? `#${canonPath.startsWith('/') ? '' : '/'}${canonPath}`
+        : undefined,
+    ];
+    for (const key of variants) {
+      if (key === undefined) continue;
+      const info = this.gValidIndex.get(key);
+      if (info) return info;
+    }
+    return undefined;
+  }
+
+  private getContainsNeedsForPath(
+    canonPath: JsonPointer
+  ): ContainsNeed[] | undefined {
+    const variants = [
+      canonPath,
+      canonPath === '#' ? '' : undefined,
+      canonPath.startsWith('#') ? canonPath.slice(1) : undefined,
+    ];
+    for (const key of variants) {
+      if (key === undefined) continue;
+      const bag = this.containsBag.get(key);
+      if (bag) return bag;
+    }
+    if (
+      (canonPath === '' || canonPath === '#') &&
+      this.containsBag.size === 1
+    ) {
+      const first = this.containsBag.values().next().value;
+      if (first) return first;
+    }
+    return undefined;
   }
 
   private getGValidInfoForObject(
     canonPath: JsonPointer
   ): ReturnType<GValidClassificationIndex['get']> | undefined {
     if (!this.gValidIndex) return undefined;
-    return this.gValidIndex.get(canonPath);
+    const variants = [
+      canonPath,
+      canonPath === '' ? '#' : undefined,
+      canonPath === '#' ? '' : undefined,
+      canonPath.startsWith('#') ? canonPath.slice(1) : undefined,
+      canonPath && !canonPath.startsWith('#')
+        ? `#${canonPath.startsWith('/') ? '' : '/'}${canonPath}`
+        : undefined,
+    ];
+    for (const key of variants) {
+      if (key === undefined) continue;
+      const info = this.gValidIndex.get(key);
+      if (info) return info;
+    }
+    return undefined;
   }
 
   private recordEnsurePropertyPresenceHintApplication(
@@ -1956,8 +2007,10 @@ class GeneratorEngine {
     canonPath: JsonPointer,
     itemIndex: number
   ): unknown[] {
-    const _gValidInfo = this.getGValidInfoForArray(canonPath);
-    void _gValidInfo;
+    const gValidInfo = this.getGValidInfoForArray(canonPath);
+    const isSimpleArrayGValid =
+      gValidInfo?.isGValid === true &&
+      gValidInfo.motif === GValidMotif.ArrayContainsSimple;
 
     const result: unknown[] = [];
     const prefixItems = Array.isArray(schema.prefixItems)
@@ -1978,7 +2031,32 @@ class GeneratorEngine {
       typeof schema.minItems === 'number'
         ? Math.max(0, Math.floor(schema.minItems))
         : 0;
-    const containsNeeds = this.containsBag.get(canonPath) ?? [];
+    let containsNeeds =
+      this.getContainsNeedsForPath(canonPath) ??
+      (this.containsBag.size === 1
+        ? (this.containsBag.values().next().value ?? [])
+        : []);
+    if (
+      isSimpleArrayGValid &&
+      (!containsNeeds || containsNeeds.length === 0) &&
+      schema.contains &&
+      typeof schema.contains === 'object'
+    ) {
+      const min =
+        typeof schema.minContains === 'number'
+          ? Math.max(1, Math.floor(schema.minContains))
+          : 1;
+      const max =
+        typeof schema.maxContains === 'number' &&
+        Number.isFinite(schema.maxContains)
+          ? Math.max(0, Math.floor(schema.maxContains))
+          : undefined;
+      containsNeeds = [
+        max !== undefined
+          ? { schema: schema.contains, min, max }
+          : { schema: schema.contains, min },
+      ];
+    }
     const aggregateMin = containsNeeds.reduce(
       (total, need) => total + Math.max(1, Math.floor(need?.min ?? 1)),
       0
@@ -2004,14 +2082,15 @@ class GeneratorEngine {
     const shouldPreSatisfyContains = true;
     const containsContributions = shouldPreSatisfyContains
       ? this.satisfyContainsNeeds(
-          containsNeeds,
+          containsNeeds ?? [],
           result,
           canonPath,
           itemIndex,
+          isSimpleArrayGValid,
           hardCap,
           itemsSchema
         )
-      : computeContainsBaseline(containsNeeds, result.length, hardCap);
+      : computeContainsBaseline(containsNeeds ?? [], result.length, hardCap);
 
     const uncappedBaseline = Math.max(
       minItems,
@@ -2050,6 +2129,7 @@ class GeneratorEngine {
         result,
         canonPath,
         itemIndex,
+        isSimpleArrayGValid,
         hardCap
       );
       void afterDedup;
@@ -2085,9 +2165,17 @@ class GeneratorEngine {
     result: unknown[],
     canonPath: JsonPointer,
     itemIndex: number,
+    enforceItemsIntersection: boolean,
     maxLength?: number,
     itemsSchema?: unknown
   ): number {
+    const resolvedItems =
+      itemsSchema && typeof itemsSchema === 'object'
+        ? this.resolveSchemaRef(
+            itemsSchema as Record<string, unknown>,
+            appendPointer(canonPath, 'items')
+          )
+        : undefined;
     let maxContribution = result.length;
     if (!needs || needs.length === 0) {
       return maxContribution;
@@ -2120,6 +2208,29 @@ class GeneratorEngine {
           String(childIndex)
         );
         const value = this.withInstancePath(childPath, () => {
+          const resolvedNeed =
+            need.schema && typeof need.schema === 'object'
+              ? this.resolveSchemaRef(
+                  need.schema as Record<string, unknown>,
+                  childCanon
+                )
+              : undefined;
+          const intersectionItemsSchema = resolvedItems?.schema ?? itemsSchema;
+          const intersectionNeedSchema = resolvedNeed?.schema ?? need.schema;
+          const resolvedCanonPath = resolvedNeed?.pointer ?? childCanon;
+          if (enforceItemsIntersection) {
+            const combined =
+              intersectionItemsSchema === undefined ||
+              intersectionItemsSchema === true
+                ? intersectionNeedSchema
+                : intersectionNeedSchema === undefined ||
+                    intersectionNeedSchema === true
+                  ? intersectionItemsSchema
+                  : {
+                      allOf: [intersectionItemsSchema, intersectionNeedSchema],
+                    };
+            return this.generateValue(combined, resolvedCanonPath, itemIndex);
+          }
           // Prefer generating from the items schema when available,
           // then overlay the contains schema so that witnesses satisfy
           // both item constraints and the contains filter. This keeps
@@ -4226,11 +4337,19 @@ function isUniqueAppend(items: unknown[], candidate: unknown): boolean {
 
 function mergeAllOfBranches(branches: unknown[]): Record<string, unknown> {
   const merged: Record<string, unknown> = {};
+  const requiredNames = new Set<string>();
   for (const branch of branches) {
     if (!isRecord(branch)) continue;
     mergeNumericConstraints(merged, branch);
     if (branch.type !== undefined && merged.type === undefined) {
       merged.type = branch.type;
+    }
+    if (Array.isArray(branch.required)) {
+      for (const name of branch.required) {
+        if (typeof name === 'string' && !requiredNames.has(name)) {
+          requiredNames.add(name);
+        }
+      }
     }
     if (isRecord(branch.properties)) {
       merged.properties = {
@@ -4244,6 +4363,9 @@ function mergeAllOfBranches(branches: unknown[]): Record<string, unknown> {
         merged[key] = value;
       }
     }
+  }
+  if (requiredNames.size > 0) {
+    merged.required = Array.from(requiredNames);
   }
   return merged;
 }

@@ -1,27 +1,27 @@
-Task: 9400.9400004   Title: Document UUID + contains pattern as reference example
-Anchors: [spec://§6#generator-repair-contract, spec://§9#generator, spec://§9#arrays-contains]
+Task: 9401.9401002   Title: Implement classifier over Compose artifacts
+Anchors: [spec://§6#generator-repair-contract, spec://§8#responsibilities, spec://§9#generator, spec://§9#arrays-contains, spec://§10#repair-engine]
 Touched files:
-- docs/spec-canonical-json-schema-generator.md
-- docs/examples/g-valid-uuid-contains.md
-- ARCHITECTURE.md
-- docs/COMPREHENSIVE_FEATURE_SUPPORT.md
-- packages/core/src/types/options.ts
-- packages/core/src/types/__tests__/options.test.ts
-- packages/cli/src/profiles.ts
-- packages/cli/src/__tests__/profiles.test.ts
+- packages/core/src/transform/g-valid-classifier.ts
+- packages/core/src/generator/foundry-generator.ts
+- packages/core/src/repair/repair-engine.ts
+- packages/core/src/pipeline/orchestrator.ts
+- packages/core/src/transform/__tests__/g-valid-classifier.spec.ts
+- packages/core/src/repair/__tests__/mapping-repair.test.ts
+- packages/core/src/pipeline/__tests__/pipeline-orchestrator.test.ts
+- packages/core/src/repair/__fixtures__/repair-philosophy-microschemas.ts
 
 Approach:
-Make G_valid the default posture (strict) now that we do not need backward compatibility, and align docs/examples accordingly. In the canonical SPEC, adjust §6 to say the feature is on by default (strict Repair guard) and that disabling it is an explicit compat/legacy opt-out. Flip `PlanOptions.gValid` default to `true` in core defaults and update the options test expectations. In the CLI, change the default gvalid profile from “compat” to “strict” so runs inherit `gValid: true` unless users opt out; keep relaxed profile behaviour unchanged. Update `COMPREHENSIVE_FEATURE_SUPPORT.md` to note the new default and how to opt out (compat), and add cross-links from ARCHITECTURE.md and the UUID + `contains` example so the canonical motif is easy to find. Keep structural obligations and motifs unchanged; only the default posture and doc linkage move.
+Fix G_valid classification to honor the Compose effective view and spec baselines. Extend the classifier to ingest Compose artifacts (coverageIndex, containsBag, diagnostics) so arrays are gated by the computed contains bag: single-need bags remain eligible, multi-need or capped/unsat bags become ComplexContains and stay non-G_valid. Tighten AP:false detection using must-cover provenance instead of map presence, and permit simple objects assembled via non-branching allOf when they meet v1 exclusions and have no unevaluated guards. Thread signature changes through orchestrator and dependents. In Generate, enforce the G_valid items+contains contract by producing witnesses that satisfy items ∩ contains for each need when the motif is G_valid, leaving legacy behavior untouched when the flag is off or motif is non-G_valid. Keep Repair tier policy and metrics consistent with the new motifs. Strengthen unit/integration tests: classifier cases for multi-contains exclusion and allOf-derived simple objects; pipeline tests proving G_valid arrays satisfy both items and contains without structural repair and that flag-off runs remain stable. Maintain determinism and target ≥80% coverage on touched files.
 
 Risks/Unknowns:
-- Avoid duplicating SPEC prose; cross-links must remain REFONLY-compliant and future-proof if paths move.
-- Ensure the example references stay in sync with CLI defaults (compat/strict/relaxed) without suggesting new behaviours.
-
-Parent bullets couverts: [KR1, KR2, KR3, KR4, DEL1, DEL2, DOD1, DOD3, TS1, TS2, TS3]
+- AP:false provenance detection must not break existing coverage guards or rename preflight consumers.
+- Combining items and contains for G_valid arrays must preserve RNG ordering and avoid tuple/prefixItems regressions.
+- Need to ensure updated classifier signature does not miss any call site in pipeline/generator/repair.
+Parent bullets couverts: [KR1, KR2, KR3, KR4, DEL1, DEL2, DOD1, DOD2, TS1, TS2, TS3, TS4]
 
 DoD:
-- [x] G_valid defaults to strict in core and CLI
-- [x] Docs/example cross-referenced and aligned with new default/opt-out path
+- [x] Contrat Generator vs Repair implémenté et aligné G_valid
+- [x] Tests G_valid / Repair ajoutés ou mis à jour (cov ≥80 % fichiers touchés)
 - [x] build/typecheck/lint/test/bench OK
 
 Checks:

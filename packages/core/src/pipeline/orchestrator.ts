@@ -907,11 +907,11 @@ export async function executePipeline(
       };
 
       if (resolvedPlanOptions.gValid === true) {
-        const index = classifyGValid(
-          canonicalSchema,
-          composeResult.coverageIndex,
-          composeResult.diag
-        );
+        const index = classifyGValid(canonicalSchema, {
+          coverageIndex: composeResult.coverageIndex,
+          containsBag: composeResult.containsBag,
+          diag: composeResult.diag,
+        });
         gValidIndex = index;
         artifacts.gValidIndex = index;
       }

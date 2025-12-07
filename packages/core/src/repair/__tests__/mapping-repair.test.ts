@@ -140,10 +140,11 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
       notes: [],
     };
     const coverageIndex = new Map();
-    const gValidIndex = classifyGValid(schema, coverageIndex, undefined);
+    const containsBag = new Map();
+    const gValidIndex = classifyGValid(schema, { coverageIndex, containsBag });
     const effective = {
       canonical,
-      containsBag: new Map(),
+      containsBag,
       coverageIndex,
     } as unknown as ComposeResult;
 
@@ -177,7 +178,7 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
       notes: [],
     };
     const coverageIndex = new Map();
-    const gValidIndex = classifyGValid(schema, coverageIndex, undefined);
+    const gValidIndex = classifyGValid(schema, { coverageIndex });
     const effective = {
       canonical,
       containsBag: new Map(),
@@ -214,7 +215,7 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
       notes: [],
     };
     const coverageIndex = new Map();
-    const gValidIndex = classifyGValid(schema, coverageIndex, undefined);
+    const gValidIndex = classifyGValid(schema, { coverageIndex });
     const effective = {
       canonical,
       containsBag: new Map(),
@@ -256,7 +257,7 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
       notes: [],
     };
     const coverageIndex = new Map();
-    const gValidIndex = classifyGValid(schema, coverageIndex, undefined);
+    const gValidIndex = classifyGValid(schema, { coverageIndex });
     const effective = {
       canonical,
       containsBag: new Map(),
@@ -307,7 +308,7 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
       notes: [],
     };
     const coverageIndex = new Map();
-    const gValidIndex = classifyGValid(schema, coverageIndex, undefined);
+    const gValidIndex = classifyGValid(schema, { coverageIndex });
     const effective = {
       canonical,
       containsBag: new Map(),
@@ -360,7 +361,7 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
       notes: [],
     };
     const coverageIndex = new Map();
-    const gValidIndex = classifyGValid(schema, coverageIndex, undefined);
+    const gValidIndex = classifyGValid(schema, { coverageIndex });
     const effective = {
       canonical,
       containsBag: new Map(),
@@ -418,7 +419,7 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
       notes: [],
     };
     const coverageIndex = new Map();
-    const gValidIndex = classifyGValid(schema, coverageIndex, undefined);
+    const gValidIndex = classifyGValid(schema, { coverageIndex });
     const effective = {
       canonical,
       containsBag: new Map(),
@@ -473,7 +474,7 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
       notes: [],
     };
     const coverageIndex = new Map();
-    const gValidIndex = classifyGValid(schema, coverageIndex, undefined);
+    const gValidIndex = classifyGValid(schema, { coverageIndex });
     const effective = {
       canonical,
       containsBag: new Map(),
