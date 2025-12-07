@@ -28,7 +28,11 @@ import {
 import type { Dialect } from '../dialect/detectDialect.js';
 import { checkAjvStartupParity } from '../util/ajv-gate.js';
 import { MetricsCollector, type MetricPhase } from '../util/metrics.js';
-import { resolveOptions, type ResolvedOptions } from '../types/options.js';
+import {
+  resolveOptions,
+  type PlanOptions,
+  type ResolvedOptions,
+} from '../types/options.js';
 import type Ajv from 'ajv';
 import type { ErrorObject, ValidateFunction } from 'ajv';
 import {
@@ -139,6 +143,7 @@ interface StageRunners {
     args: {
       schema: unknown;
       effective: ReturnType<typeof compose>;
+      planOptions?: Partial<PlanOptions> | ResolvedOptions;
       gValidIndex?: GValidClassificationIndex;
     },
     options?: PipelineOptions['repair']
@@ -1135,7 +1140,12 @@ export async function executePipeline(
     const out = await Promise.resolve(
       runners.repair(
         items,
-        { schema, effective: eff, gValidIndex },
+        {
+          schema,
+          effective: eff,
+          planOptions: resolvedPlanOptions,
+          gValidIndex,
+        },
         options.repair
       )
     );
@@ -1439,6 +1449,7 @@ function createDefaultRepair(
   _args: {
     schema: unknown;
     effective: ReturnType<typeof compose>;
+    planOptions?: Partial<PlanOptions> | ResolvedOptions;
     gValidIndex?: GValidClassificationIndex;
   },
   _options?: PipelineOptions['repair']
@@ -1446,8 +1457,14 @@ function createDefaultRepair(
   unknown[] | { items: unknown[]; diagnostics: DiagnosticEnvelope[] }
 > {
   return async (items, _args, _options) => {
-    const { schema, effective, gValidIndex } = _args;
-    const planOptions = pipelineOptions.generate?.planOptions;
+    const {
+      schema,
+      effective,
+      gValidIndex,
+      planOptions: planOptionsOverride,
+    } = _args;
+    const planOptions =
+      planOptionsOverride ?? pipelineOptions.generate?.planOptions;
     try {
       return repairItemsAjvDriven(
         items,

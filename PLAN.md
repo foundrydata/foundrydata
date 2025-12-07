@@ -1,23 +1,17 @@
-Task: 9401.9401002   Title: Implement classifier over Compose artifacts
-Anchors: [spec://§6#generator-repair-contract, spec://§8#responsibilities, spec://§9#generator, spec://§9#arrays-contains, spec://§10#repair-engine]
+Task: 9401.9401003   Title: Wire classifier into generator and repair planning
+Anchors: [spec://§6#generator-repair-contract, spec://§9#generator, spec://§10#repair-engine]
 Touched files:
-- packages/core/src/transform/g-valid-classifier.ts
-- packages/core/src/generator/foundry-generator.ts
-- packages/core/src/repair/repair-engine.ts
 - packages/core/src/pipeline/orchestrator.ts
-- packages/core/src/transform/__tests__/g-valid-classifier.spec.ts
-- packages/core/src/repair/__tests__/mapping-repair.test.ts
+- packages/core/src/pipeline/types.ts
 - packages/core/src/pipeline/__tests__/pipeline-orchestrator.test.ts
-- packages/core/src/repair/__fixtures__/repair-philosophy-microschemas.ts
 
 Approach:
-Fix G_valid classification to honor the Compose effective view and spec baselines. Extend the classifier to ingest Compose artifacts (coverageIndex, containsBag, diagnostics) so arrays are gated by the computed contains bag: single-need bags remain eligible, multi-need or capped/unsat bags become ComplexContains and stay non-G_valid. Tighten AP:false detection using must-cover provenance instead of map presence, and permit simple objects assembled via non-branching allOf when they meet v1 exclusions and have no unevaluated guards. Thread signature changes through orchestrator and dependents. In Generate, enforce the G_valid items+contains contract by producing witnesses that satisfy items ∩ contains for each need when the motif is G_valid, leaving legacy behavior untouched when the flag is off or motif is non-G_valid. Keep Repair tier policy and metrics consistent with the new motifs. Strengthen unit/integration tests: classifier cases for multi-contains exclusion and allOf-derived simple objects; pipeline tests proving G_valid arrays satisfy both items and contains without structural repair and that flag-off runs remain stable. Maintain determinism and target ≥80% coverage on touched files.
+Propagate the caller’s PlanOptions through the pipeline so Repair sees the same gValid/repair posture as Compose/Generate. Thread `planOptions` (resolved at pipeline entry) into the repair runner invocation and override signature, ensuring `allowStructuralInGValid` and other repair flags are honored instead of defaulting to strict mode. Keep the default code path unchanged when gValid is disabled. Add integration coverage in the orchestrator tests by overriding Generate to emit a deliberately underfilled G_valid object (missing a required field) while running with `planOptions.repair.allowStructuralInGValid:true`; assert that Repair performs the structural completion instead of being blocked, and that overrides can observe the forwarded planOptions. This guards against regressions where Repair silently ignores caller settings. Maintain deterministic seeds/outputs and preserve existing artifacts/metrics wiring. Target ≥80% per-file coverage with the new tests focusing on G_valid propagation.
 
 Risks/Unknowns:
-- AP:false provenance detection must not break existing coverage guards or rename preflight consumers.
-- Combining items and contains for G_valid arrays must preserve RNG ordering and avoid tuple/prefixItems regressions.
-- Need to ensure updated classifier signature does not miss any call site in pipeline/generator/repair.
-Parent bullets couverts: [KR1, KR2, KR3, KR4, DEL1, DEL2, DOD1, DOD2, TS1, TS2, TS3, TS4]
+- Overriding Generate in tests must still respect gValid classification; ensure gValidIndex is passed to Repair when overrides bypass the default generator.
+- Structural repair expectations depend on fixtures; validate that the chosen schema exercises required-add without conflicting guards.
+Parent bullets couverts: [KR1, KR2, KR4, DEL2, DOD1, TS4]
 
 DoD:
 - [x] Contrat Generator vs Repair implémenté et aligné G_valid

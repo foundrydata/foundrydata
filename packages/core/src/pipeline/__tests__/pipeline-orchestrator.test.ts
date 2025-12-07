@@ -9,6 +9,7 @@ import { MetricsCollector } from '../../util/metrics';
 import { executePipeline } from '../orchestrator';
 import { COVERAGE_REPORT_VERSION_V1 } from '@foundrydata/shared';
 import { generateFromCompose } from '../../generator/foundry-generator.js';
+import { repairPhilosophyMicroSchemas } from '../../repair/__fixtures__/repair-philosophy-microschemas.js';
 import type { PipelineOptions } from '../types';
 
 describe('executePipeline', () => {
@@ -347,6 +348,82 @@ describe('executePipeline', () => {
     const root = index?.get('#');
     expect(root).toBeDefined();
     expect(root?.isGValid).toBe(false);
+  });
+
+  it('forwards planOptions to repair overrides', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'string',
+    } as const;
+
+    const seenPlanOptions: unknown[] = [];
+    const planOptions = {
+      gValid: false,
+      repair: { allowStructuralInGValid: true },
+    } as const;
+
+    const result = await executePipeline(
+      schema,
+      {
+        generate: { count: 1, seed: 7, planOptions },
+        validate: { validateFormats: false },
+      },
+      {
+        repair(items, args) {
+          seenPlanOptions.push(args.planOptions);
+          return { items: Array.isArray(items) ? items : [] };
+        },
+      }
+    );
+
+    expect(result.status).toBe('completed');
+    expect(seenPlanOptions).toHaveLength(1);
+    expect(seenPlanOptions[0]).toMatchObject(planOptions);
+  });
+
+  it('allows structural repair in G_valid when allowStructuralInGValid is true', async () => {
+    const schema = repairPhilosophyMicroSchemas.gValidStructural.simpleObject;
+    const planOptions = {
+      gValid: true,
+      repair: { allowStructuralInGValid: true },
+    } as const;
+
+    const result = await executePipeline(
+      schema,
+      {
+        generate: { count: 1, seed: 3, planOptions },
+        validate: { validateFormats: false },
+      },
+      {
+        generate(_effective, _options, _coverage, gValidIndex) {
+          return {
+            items: [{ id: -1 }],
+            diagnostics: [],
+            metrics: {},
+            seed: 0,
+            gValidIndex,
+          };
+        },
+        validate(items) {
+          return { valid: true, diagnostics: [], flags: {}, errors: [] };
+        },
+      }
+    );
+
+    expect(result.status).toBe('completed');
+
+    const finalItems =
+      result.artifacts.repaired ?? result.artifacts.generated?.items ?? [];
+    expect(Array.isArray(finalItems)).toBe(true);
+    const repaired = finalItems[0] as Record<string, unknown>;
+
+    expect(repaired).toHaveProperty('title');
+
+    const diagCodes = (result.artifacts.repairDiagnostics ?? []).map(
+      (d) => d.code
+    );
+    expect(diagCodes).not.toContain('REPAIR_GVALID_STRUCTURAL_ACTION');
+    expect(diagCodes).not.toContain('REPAIR_TIER_DISABLED');
   });
 
   it('exposes repairUsageByMotif metrics in pipeline result when repair emits motif-tagged events', async () => {

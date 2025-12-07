@@ -132,6 +132,7 @@ export interface PipelineStageOverrides {
     args: {
       schema: unknown;
       effective: ComposeResult;
+      planOptions?: Partial<PlanOptions>;
       gValidIndex?: GValidClassificationIndex;
     },
     options?: PipelineOptions['repair']
