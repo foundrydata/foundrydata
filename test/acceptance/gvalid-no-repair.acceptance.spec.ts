@@ -46,6 +46,46 @@ describe('Acceptance — G_valid no-repair metrics', () => {
     expect(result.metrics.gValid_simpleObjectRequired_actions).toBe(0);
   });
 
+  it('honours no-repair zone invariants for G_valid minProperties/enum objects', async () => {
+    const schema = objectFixtures.gvalid_minprops_enum_object.schema as unknown;
+
+    const result = await executePipeline(schema, {
+      mode: 'strict',
+      generate: {
+        count: 2,
+        seed: 19,
+        planOptions: { gValid: true },
+      },
+      validate: { validateFormats: false },
+    });
+
+    expect(result.status).toBe('completed');
+
+    const finalItems =
+      result.artifacts.repaired ?? result.artifacts.generated?.items ?? [];
+
+    expect(Array.isArray(finalItems)).toBe(true);
+    expect(finalItems.length).toBeGreaterThan(0);
+
+    const actions = result.artifacts.repairActions ?? [];
+    expect(actions.length).toBe(0);
+
+    const usage = result.metrics.repairUsageByMotif ?? [];
+    expect(usage.length).toBeGreaterThan(0);
+    expect(
+      usage.every(
+        (entry) =>
+          entry.gValid === true &&
+          entry.actions === 0 &&
+          entry.itemsWithRepair === 0
+      )
+    ).toBe(true);
+
+    expect(result.metrics.gValid_simpleObjectRequired_items).toBe(2);
+    expect(result.metrics.gValid_simpleObjectRequired_itemsWithRepair).toBe(0);
+    expect(result.metrics.gValid_simpleObjectRequired_actions).toBe(0);
+  });
+
   it('honours no-repair zone invariants for G_valid UUID+contains arrays', async () => {
     const schema = arrayFixtures.gvalid_uuid_contains_order_items
       .schema as unknown;

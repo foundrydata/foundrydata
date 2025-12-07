@@ -1,21 +1,22 @@
-Task: 9402.9402004   Title: Write tests for G_valid arrays and golden snapshots
-Anchors: [spec://§6#generator-repair-contract, spec://§9#generator, spec://§9#arrays-contains, spec://§6#phases]
+Task: 9403.9403003   Title: Add fixtures and tests for G_valid objects
+Anchors: [spec://§6#generator-repair-contract, spec://§6#phases, spec://§9#generator, spec://§19#envelope]
 Touched files:
-- packages/core/src/pipeline/__tests__/pipeline-orchestrator.test.ts
-- test/acceptance/arrays/contains-vs-maxitems.spec.ts
+- test/fixtures/g-valid-objects.json
+- test/acceptance/objects/g-valid-objects.spec.ts
+- test/acceptance/gvalid-no-repair.acceptance.spec.ts
 - PLAN.md
 
 Approach:
-Add missing coverage to prove G_valid arrays are AJV-valid by construction when formats are enforced and to lock behavior with golden expectations. Extend the pipeline orchestrator tests with a G_valid UUID+contains array case that runs `validateFormats: true` to ensure the generator emits format-respecting UUIDs and that no Repair actions occur; keep seeds fixed for determinism and assert gValidIndex marks the array as G_valid. Add a non-G_valid parity test that compares both items and contains-related diagnostics when toggling `planOptions.gValid` to confirm caps/diags stability. In acceptance, reuse the shared fixture to add a compact snapshot (inline) of generated arrays for the UUID+contains motif under G_valid, capturing shape and a sample UUID so structural regressions surface early; also snapshot diagnostics for the non-G_valid uniqueItems+contains motif while toggling gValid to ensure no drift. Keep fixtures stable (description-only tweaks if needed) and avoid large snapshots by limiting count/seed. Maintain ≥80% coverage on touched test files and avoid code changes outside test surface.
+Strengthen the object-side G_valid contract by adding coverage for the two gaps: (1) negative unsatisfiable schemas and (2) basic bounds beyond `required`. Extend `test/fixtures/g-valid-objects.json` with one G_valid-but-unsatisfiable schema (e.g., conflicting enum/const or impossible minProperties) and one positive G_valid schema that exercises `minProperties` or const/enum so bounds are visible. In `test/acceptance/objects/g-valid-objects.spec.ts`, add a negative test that runs the pipeline on the unsatisfiable G_valid schema with `planOptions.gValid: true`, asserting the pipeline fails (`status: 'failed'`) and that validate-stage diagnostics exist and conform to the envelope shape/phase rules. Add/extend a positive test to assert that minProperties/enum/const bounds are satisfied pre-Repair with no structural actions, covering the “basic bounds” clause. Update `test/acceptance/gvalid-no-repair.acceptance.spec.ts` to include metrics/repair invariants for the new positive object case (no repair actions, gValid metrics zeros) so the no-repair guard remains holistic. Keep seeds fixed and reuse existing fixtures to avoid snapshot churn. Ensure coverage ≥80% on touched test files by asserting all new branches (success/failure) and leverage existing helpers; avoid altering generator code to stay within subtask scope.
 
 Risks/Unknowns:
-- UUID generation under `validateFormats:true` must stay deterministic; verify seeds and avoid multiple distinct UUIDs that would bloat snapshots.
-- Diagnostics parity for non-G_valid motifs may differ if prior caps change; be prepared to adapt assertions to actual baseline outputs without overfitting.
-Parent bullets couverts: [KR2, KR3, KR4, DEL3, DOD1, DOD2, DOD3, TS1, TS2, TS4]
+- Need a clean unsatisfiable schema that deterministically fails without relying on Repair behavior; pick a simple enum/const or minProperties conflict that is stable across AJV.
+- Validate-stage diagnostics content may need minor normalization; must assert shape/phase without overfitting message text.
+Parent bullets couverts: [KR2, KR3, DEL3, DOD2, DOD3, TS2, TS3]
 
 DoD:
-- [x] Contrat Generator vs Repair implémenté pour arrays G_valid (items+contains) avec formats
-- [x] Tests G_valid vs non-G_valid (items, diagnostics, snapshots) cov ≥80 % fichiers touchés
+- [x] Contrat Generator vs Repair implémenté pour objets G_valid (required + basic bounds)
+- [x] Tests G_valid vs non-G_valid (incl. négatifs) cov ≥80 % fichiers touchés
 - [x] build/typecheck/lint/test/bench OK
 
 Checks:

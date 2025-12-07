@@ -46,6 +46,43 @@
       },
       "required": ["id"]
     }
+  },
+  "gvalid_minprops_enum_object": {
+    "description": "G_valid simple object that exercises minProperties and enum/const bounds; no AP:false/unevaluated* so Generator must satisfy bounds without Repair.",
+    "schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "code": {
+          "enum": ["OK", "ALT"]
+        },
+        "label": {
+          "const": "LBL"
+        },
+        "extra": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": ["code", "label"],
+      "minProperties": 3
+    }
+  },
+  "gvalid_unsat_enum_const_object": {
+    "description": "G_valid simple object made intentionally unsatisfiable (const vs enum conflict) to assert clear diagnostics and pipeline failure without relying on Repair.",
+    "schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "code": {
+          "const": "A",
+          "enum": ["B"]
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "required": ["code"]
+    }
   }
 }
-
