@@ -213,4 +213,32 @@ describe('evaluateGates', () => {
       )
     ).toBeDefined();
   });
+
+  it('fails benchmark performance gate when SLIs exceed thresholds', () => {
+    const metrics = baseMetrics({
+      p95LatencyMs: 130,
+      memoryPeakMB: 600,
+    });
+
+    const failResult = evaluateGates(
+      { coverage: coverageOk, metrics },
+      { benchPerf: true }
+    );
+    expect(failResult.status).toBe('fail');
+    expect(
+      failResult.issues.find((i) => i.code === 'BENCH_PERF')?.message
+    ).toContain('p95LatencyMs');
+    expect(
+      failResult.issues.find((i) => i.code === 'BENCH_PERF')?.message
+    ).toContain('memoryPeakMB');
+
+    const passResult = evaluateGates(
+      {
+        coverage: coverageOk,
+        metrics: baseMetrics({ p95LatencyMs: 80, memoryPeakMB: 256 }),
+      },
+      { benchPerf: true }
+    );
+    expect(passResult.status).toBe('pass');
+  });
 });

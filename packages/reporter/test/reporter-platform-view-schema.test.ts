@@ -48,4 +48,23 @@ describe('reporter-platform-view/v1 JSON Schema', () => {
 
     expect(ok).toBe(false);
   });
+
+  it('requires selectedOperations when operationsScope is selected', () => {
+    const rawSchema = JSON.parse(readFileSync(SCHEMA_PATH, 'utf8'));
+    const rawView = JSON.parse(readFileSync(FIXTURE_PATH, 'utf8'));
+    rawView.run.coverage.operationsScope = 'selected';
+    rawView.run.coverage.selectedOperations = ['GET /users'];
+
+    const ajv = new Ajv2020({ strict: false, allErrors: true });
+    addFormats(ajv);
+    const validate = ajv.compile(rawSchema);
+
+    expect(validate(rawView)).toBe(true);
+
+    rawView.run.coverage.selectedOperations = [];
+    expect(validate(rawView)).toBe(false);
+
+    delete rawView.run.coverage.selectedOperations;
+    expect(validate(rawView)).toBe(false);
+  });
 });

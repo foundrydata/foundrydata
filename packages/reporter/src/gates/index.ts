@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import type { DiagMetrics } from '@foundrydata/shared';
 
 import type { CoverageSummary } from '../platform-view/index.js';
@@ -10,7 +11,8 @@ export type GateIssueCode =
   | 'COVERAGE_UNAVAILABLE'
   | 'GVALID_REPAIR'
   | 'COVERAGE_PLANNING'
-  | 'REPAIR_REGRESSION';
+  | 'REPAIR_REGRESSION'
+  | 'BENCH_PERF';
 
 export type GateIssue = {
   code: GateIssueCode;
@@ -35,6 +37,17 @@ export interface GateConfig {
    * summary is provided. Falls back to coverage.thresholds.overall.
    */
   minCoverage?: number;
+  /**
+   * Enable benchmark performance gates (bench harness only).
+   */
+  benchPerf?: boolean;
+  /**
+   * Thresholds for benchmark performance gates. Defaults follow benchGate.schema.
+   */
+  perfThresholds?: {
+    p95LatencyMs?: number;
+    memoryPeakMB?: number;
+  };
 }
 
 export interface GateSignals {
@@ -53,6 +66,7 @@ export function evaluateGates(
   evaluateCoverage(signals.coverage, config, issues);
   evaluateGValid(signals, issues);
   evaluateRepairRegressions(signals, issues);
+  evaluateBenchPerf(signals, config, issues);
 
   // Explicitly ignore SLIs (p50/p95/memory) for determinism: no gate logic here.
   void signals.metrics;
@@ -255,4 +269,49 @@ function collectGValidMetricMotifs(metrics?: DiagMetrics): Set<string> {
     motifs.add(match[1] ?? 'unknown');
   }
   return motifs;
+}
+
+// eslint-disable-next-line complexity
+function evaluateBenchPerf(
+  signals: GateSignals,
+  config: GateConfig,
+  issues: GateIssue[]
+): void {
+  if (!config.benchPerf) return;
+  const metrics = signals.metrics;
+  const thresholds = {
+    p95LatencyMs: config.perfThresholds?.p95LatencyMs ?? 120,
+    memoryPeakMB: config.perfThresholds?.memoryPeakMB ?? 512,
+  };
+  if (!metrics) {
+    issues.push({
+      code: 'BENCH_PERF',
+      severity: 'warn',
+      message: 'Performance metrics unavailable for bench gate evaluation',
+    });
+    return;
+  }
+  const perfIssues: string[] = [];
+  if (
+    typeof metrics.p95LatencyMs === 'number' &&
+    metrics.p95LatencyMs > thresholds.p95LatencyMs
+  ) {
+    perfIssues.push(
+      `p95LatencyMs ${metrics.p95LatencyMs} > ${thresholds.p95LatencyMs}`
+    );
+  }
+  if (
+    typeof metrics.memoryPeakMB === 'number' &&
+    metrics.memoryPeakMB > thresholds.memoryPeakMB
+  ) {
+    perfIssues.push(
+      `memoryPeakMB ${metrics.memoryPeakMB} > ${thresholds.memoryPeakMB}`
+    );
+  }
+  if (!perfIssues.length) return;
+  issues.push({
+    code: 'BENCH_PERF',
+    severity: 'fail',
+    message: perfIssues.join('; '),
+  });
 }

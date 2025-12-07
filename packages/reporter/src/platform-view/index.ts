@@ -140,21 +140,7 @@ function deriveRepairUsageByMotif(
   if (!Array.isArray(usage) || usage.length === 0) {
     return undefined;
   }
-  const normalized = usage.map((entry) => {
-    const items = clampNonNegative(entry.items);
-    const actions = clampNonNegative(entry.actions);
-    const itemsWithRepair =
-      actions === 0
-        ? 0
-        : clampNonNegative(Math.min(entry.itemsWithRepair, items));
-    return {
-      motif: entry.motifId,
-      canonPath: undefined,
-      items,
-      itemsWithRepair,
-      actions,
-    };
-  });
+  const normalized = usage.map(normalizeRepairEntry);
 
   normalized.sort((a, b) => {
     const canonA: string = a.canonPath ?? '';
@@ -231,4 +217,52 @@ function normalizeSelectedOperations(
 function clampNonNegative(value: number | undefined): number {
   if (typeof value !== 'number' || Number.isNaN(value)) return 0;
   return value < 0 ? 0 : value;
+}
+
+// eslint-disable-next-line complexity
+function normalizeRepairEntry(
+  entry: NonNullable<DiagMetrics['repairUsageByMotif']>[number]
+): RepairUsageByMotifEntry {
+  const items = clampNonNegative(entry.items);
+  const actions = clampNonNegative(entry.actions);
+  const itemsWithRepair =
+    actions === 0
+      ? 0
+      : clampNonNegative(Math.min(entry.itemsWithRepair, items));
+  const canonPath =
+    typeof (entry as { canonPath?: unknown }).canonPath === 'string'
+      ? (entry as { canonPath?: string }).canonPath
+      : undefined;
+  const tiersSrc =
+    typeof (entry as { tiers?: unknown }).tiers === 'object' &&
+    entry.tiers !== null
+      ? (entry as { tiers: Record<string, unknown> }).tiers
+      : undefined;
+  const tiers =
+    tiersSrc && Object.keys(tiersSrc).length > 0
+      ? {
+          tier1: clampNonNegative(
+            typeof tiersSrc.tier1 === 'number' ? tiersSrc.tier1 : undefined
+          ),
+          tier2: clampNonNegative(
+            typeof tiersSrc.tier2 === 'number' ? tiersSrc.tier2 : undefined
+          ),
+          tier3: clampNonNegative(
+            typeof tiersSrc.tier3 === 'number' ? tiersSrc.tier3 : undefined
+          ),
+          disabled: clampNonNegative(
+            typeof tiersSrc.disabled === 'number'
+              ? tiersSrc.disabled
+              : undefined
+          ),
+        }
+      : undefined;
+  return {
+    motif: entry.motifId,
+    canonPath,
+    items,
+    itemsWithRepair,
+    actions,
+    tiers,
+  };
 }

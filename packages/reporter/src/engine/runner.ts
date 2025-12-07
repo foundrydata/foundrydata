@@ -37,6 +37,7 @@ export async function runEngineOnSchema(
   return report;
 }
 
+// eslint-disable-next-line complexity
 export async function runEngineWithArtifacts(
   options: EngineRunOptions
 ): Promise<EngineRunOutput> {
@@ -55,13 +56,21 @@ export async function runEngineWithArtifacts(
       pipelineResult.artifacts.coverageReport?.engine.foundryVersion,
     ajvMajor: pipelineResult.artifacts.coverageReport?.engine.ajvMajor,
   });
-  const gates = evaluateGates({
-    fatalDiagnostics: pipelineResult.artifacts.effective?.diag?.fatal,
-    warnDiagnostics: pipelineResult.artifacts.effective?.diag?.warn,
-    repairDiagnostics: pipelineResult.artifacts.repairDiagnostics,
-    metrics: pipelineResult.metrics,
-    coverage: platformView.metrics.coverage,
-  });
+  const gateConfig = {
+    ...options.gateConfig,
+    minCoverage:
+      options.gateConfig?.minCoverage ?? options.coverage?.minCoverage,
+  };
+  const gates = evaluateGates(
+    {
+      fatalDiagnostics: pipelineResult.artifacts.effective?.diag?.fatal,
+      warnDiagnostics: pipelineResult.artifacts.effective?.diag?.warn,
+      repairDiagnostics: pipelineResult.artifacts.repairDiagnostics,
+      metrics: pipelineResult.metrics,
+      coverage: platformView.metrics.coverage,
+    },
+    gateConfig
+  );
   return {
     report,
     platformView,
@@ -85,6 +94,12 @@ function ensurePipelineCompleted(result: PipelineResult): void {
 
 function buildPipelineOptions(options: EngineRunOptions): PipelineOptions {
   const count = options.maxInstances ?? DEFAULT_INSTANCE_COUNT;
+  const coverageOptions =
+    options.coverage ??
+    ({
+      mode: 'measure',
+      excludeUnreachable: false,
+    } satisfies PipelineOptions['coverage']);
   return {
     mode: 'strict',
     compose: options.planOptions
@@ -102,6 +117,7 @@ function buildPipelineOptions(options: EngineRunOptions): PipelineOptions {
       validateFormats: true,
     },
     metrics: { enabled: true },
+    coverage: coverageOptions,
   } satisfies PipelineOptions;
 }
 

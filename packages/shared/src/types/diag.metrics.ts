@@ -9,6 +9,13 @@ export interface RepairUsageByMotif {
   items: number;
   itemsWithRepair: number;
   actions: number;
+  canonPath?: string;
+  tiers?: {
+    tier1?: number;
+    tier2?: number;
+    tier3?: number;
+    disabled?: number;
+  };
 }
 
 /**

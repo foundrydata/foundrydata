@@ -7,6 +7,9 @@ export interface BenchConfigEntry {
   maxInstances?: number;
   seed?: number;
   planOptions?: unknown;
+  coverageMode?: 'off' | 'measure' | 'guided';
+  minCoverage?: number;
+  coverageExcludeUnreachable?: boolean;
 }
 
 export type BenchConfig = BenchConfigEntry[];
@@ -18,6 +21,7 @@ export interface BenchSchemaSummary {
   schemaId: string;
   schemaPath: string;
   reportPath: string;
+  coverageReportPath?: string;
   summary: ReportSummary;
   level: BenchLevel;
   error?: string;

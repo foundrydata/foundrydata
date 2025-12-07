@@ -33,7 +33,7 @@ describe('runReporterCommand', () => {
       seed: 7,
     });
 
-    expect(outputs).toHaveLength(3);
+    expect(outputs).toHaveLength(4);
     const jsonPath = outputs.find((filePath) =>
       filePath.endsWith('.report.json')
     )!;
@@ -43,13 +43,18 @@ describe('runReporterCommand', () => {
     const platformViewPath = outputs.find((filePath) =>
       filePath.endsWith('.platform-view.json')
     )!;
+    const coveragePath = outputs.find((filePath) =>
+      filePath.endsWith('.coverage-report.json')
+    )!;
     const json = await readFile(jsonPath, 'utf8');
     const markdown = await readFile(markdownPath, 'utf8');
     const platformView = await readFile(platformViewPath, 'utf8');
+    const coverage = await readFile(coveragePath, 'utf8');
 
     expect(json).toContain('"schemaId"');
     expect(markdown).toContain('# JSON Schema Report');
     expect(platformView).toContain('"reporter-platform-view/v1"');
+    expect(coverage).toContain('"coverage-report/v1"');
   });
 
   it('returns serialized output when stdout is requested', async () => {

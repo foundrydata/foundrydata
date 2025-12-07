@@ -34,9 +34,19 @@
             "operationsScope": { "enum": ["all", "selected"] },
             "selectedOperations": {
               "type": "array",
-              "items": { "type": "string" }
+              "items": { "type": "string" },
+              "minItems": 1
             }
           },
+          "allOf": [
+            {
+              "if": {
+                "properties": { "operationsScope": { "const": "selected" } },
+                "required": ["operationsScope"]
+              },
+              "then": { "required": ["selectedOperations"] }
+            }
+          ],
           "additionalProperties": false
         }
       },

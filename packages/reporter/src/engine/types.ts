@@ -1,3 +1,6 @@
+import type { PipelineOptions } from '@foundrydata/core';
+
+import type { GateConfig } from '../gates/index.js';
 import type { PlanOptions } from '../model/report.js';
 
 export interface EngineRunOptions {
@@ -7,4 +10,6 @@ export interface EngineRunOptions {
   planOptions?: PlanOptions;
   maxInstances?: number;
   seed?: number;
+  coverage?: PipelineOptions['coverage'];
+  gateConfig?: GateConfig;
 }

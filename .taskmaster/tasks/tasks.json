@@ -2464,7 +2464,7 @@
             "estimatedHours": 6,
             "file": "packages/cli/src/ci/gates.ts",
             "parentId": "9604",
-            "updatedAt": "2025-12-07T01:27:08.522Z"
+            "updatedAt": "2025-12-07T09:59:14.315Z"
           },
           {
             "id": 9604003,
@@ -2498,7 +2498,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-12-07T01:27:08.522Z"
+        "updatedAt": "2025-12-07T09:59:14.315Z"
       },
       {
         "id": "9605",
@@ -2601,7 +2601,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-07T01:51:30.633Z",
+      "lastModified": "2025-12-07T09:59:14.317Z",
       "taskCount": 7,
       "completedCount": 5,
       "tags": [

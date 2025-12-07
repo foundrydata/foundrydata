@@ -78,6 +78,8 @@ describe('buildReporterPlatformView', () => {
           items: 1,
           itemsWithRepair: 1,
           actions: 0,
+          canonPath: '#/zeta',
+          tiers: { tier1: 1, tier2: 0, tier3: 0, disabled: 0 },
         },
         {
           motifId: 'alpha',
@@ -114,6 +116,8 @@ describe('buildReporterPlatformView', () => {
     expect(usage[0]?.itemsWithRepair).toBe(1);
     // actions=0 forces itemsWithRepair to 0
     expect(usage[1]?.itemsWithRepair).toBe(0);
+    expect(usage[1]?.canonPath).toBe('#/zeta');
+    expect(usage[1]?.tiers?.tier1).toBe(1);
 
     const planning = view.metrics.coverage?.planning;
     expect(planning?.plannerCapsHit?.length).toBe(2);

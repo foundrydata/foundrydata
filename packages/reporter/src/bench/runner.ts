@@ -94,6 +94,7 @@ interface ProcessBenchEntryResult {
   meta: { toolName?: string; toolVersion?: string; engineVersion?: string };
 }
 
+// eslint-disable-next-line complexity
 async function processBenchEntry({
   entry,
   outDir,
@@ -106,20 +107,35 @@ async function processBenchEntry({
     const schema = JSON.parse(schemaRaw);
     const schemaRelative =
       relative(process.cwd(), schemaAbsolute) || basename(schemaAbsolute);
-    const { report, gates } = await runEngineWithArtifacts({
+    const coverageMode = entry.coverageMode ?? 'measure';
+    const coverage =
+      coverageMode === 'off'
+        ? { mode: 'off' as const }
+        : {
+            mode: coverageMode,
+            excludeUnreachable: entry.coverageExcludeUnreachable,
+            minCoverage: entry.minCoverage,
+          };
+    const { report, gates, coverageReport } = await runEngineWithArtifacts({
       schema,
       schemaId: entry.schemaId ?? entry.id ?? basename(entry.schema),
       schemaPath: schemaRelative.split(sep).join('/'),
       maxInstances: entry.maxInstances,
       seed: entry.seed ?? defaultSeed,
       planOptions: entry.planOptions as PlanOptions | undefined,
+      coverage,
+      gateConfig: {
+        minCoverage: entry.minCoverage,
+        benchPerf: true,
+      },
     });
 
-    const reportJsonPath = await writeReportArtifacts(
+    const { reportPath, coverageReportPath } = await writeReportArtifacts(
       report,
       entry.id,
       outDir,
-      formats
+      formats,
+      coverageReport
     );
 
     if (gates.status === 'fail') {
@@ -129,7 +145,8 @@ async function processBenchEntry({
     const summary = buildBenchSchemaSummaryFromReport(
       entry,
       report,
-      reportJsonPath,
+      reportPath,
+      coverageReportPath ?? '',
       schemaRelative
     );
     const level =
@@ -152,12 +169,14 @@ async function processBenchEntry({
   }
 }
 
+// eslint-disable-next-line max-params
 async function writeReportArtifacts(
   report: Report,
   entryId: string,
   outDir: string,
-  formats: string[]
-): Promise<string> {
+  formats: string[],
+  coverageReport?: unknown
+): Promise<{ reportPath: string; coverageReportPath?: string }> {
   const baseName = `${entryId}.report`;
   const jsonPath = join(outDir, `${baseName}.json`);
   await writeFile(jsonPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
@@ -177,7 +196,17 @@ async function writeReportArtifacts(
     );
   }
 
-  return jsonPath;
+  let coverageReportPath: string | undefined;
+  if (coverageReport) {
+    coverageReportPath = join(outDir, `${entryId}.coverage-report.json`);
+    await writeFile(
+      coverageReportPath,
+      `${JSON.stringify(coverageReport, null, 2)}\n`,
+      'utf8'
+    );
+  }
+
+  return { reportPath: jsonPath, coverageReportPath };
 }
 
 export async function loadBenchConfig(
@@ -195,6 +224,7 @@ export async function loadBenchConfig(
   );
 }
 
+// eslint-disable-next-line complexity
 function normalizeBenchEntry(
   entry: unknown,
   index: number,
@@ -218,6 +248,24 @@ function normalizeBenchEntry(
     maxInstances: typeof maxInstances === 'number' ? maxInstances : undefined,
     seed: typeof seed === 'number' ? seed : undefined,
     planOptions,
+    coverageMode:
+      entry &&
+      typeof (entry as { coverageMode?: unknown }).coverageMode === 'string'
+        ? ((entry as { coverageMode?: string }).coverageMode as
+            | 'off'
+            | 'measure'
+            | 'guided')
+        : undefined,
+    minCoverage:
+      typeof (entry as { minCoverage?: unknown }).minCoverage === 'number'
+        ? ((entry as { minCoverage: number }).minCoverage as number)
+        : undefined,
+    coverageExcludeUnreachable:
+      typeof (entry as { coverageExcludeUnreachable?: unknown })
+        .coverageExcludeUnreachable === 'boolean'
+        ? (entry as { coverageExcludeUnreachable?: boolean })
+            .coverageExcludeUnreachable
+        : undefined,
   };
 }
 
@@ -251,10 +299,12 @@ function hasNonInformationalRunDiagnostics(report: Report): boolean {
   return runDiags.some((diag) => !RUN_INFO_CODES.has(diag.code));
 }
 
+// eslint-disable-next-line max-params
 function buildBenchSchemaSummaryFromReport(
   entry: BenchConfigEntry,
   report: Report,
   reportPath: string,
+  coverageReportPath: string,
   schemaPath: string
 ): BenchSchemaSummary {
   return {
@@ -262,6 +312,7 @@ function buildBenchSchemaSummaryFromReport(
     schemaId: report.schemaId,
     schemaPath,
     reportPath,
+    coverageReportPath: coverageReportPath || undefined,
     summary: report.summary,
     level: computeBenchLevelFromReport(report),
   };

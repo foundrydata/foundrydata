@@ -26,6 +26,9 @@ export interface RunCommandOptions {
   seed?: number;
   maxInstances?: number;
   stdout?: boolean;
+  coverageMode?: 'off' | 'measure' | 'guided';
+  minCoverage?: number;
+  coverageExcludeUnreachable?: boolean;
 }
 
 function parseFormats(flagValue: string | undefined): OutputFormat[] {
@@ -50,6 +53,19 @@ function parseFormats(flagValue: string | undefined): OutputFormat[] {
   return Array.from(new Set(formats)) as OutputFormat[];
 }
 
+function parseCoverageMode(
+  flagValue: string | undefined
+): 'off' | 'measure' | 'guided' {
+  if (!flagValue) return 'guided';
+  const value = flagValue.trim().toLowerCase();
+  if (value === 'off' || value === 'measure' || value === 'guided') {
+    return value;
+  }
+  throw new Error(
+    `Unsupported coverage mode: ${flagValue}. Expected one of off, measure, guided.`
+  );
+}
+
 function formatContent(report: Report, format: OutputFormat): string {
   if (format === 'json') {
     return `${JSON.stringify(report, null, 2)}\n`;
@@ -66,6 +82,7 @@ function buildFileName(baseName: string, format: OutputFormat): string {
   return `${baseName}.report.${suffix}`;
 }
 
+// eslint-disable-next-line complexity
 export async function runReporterCommand(
   options: RunCommandOptions
 ): Promise<string[]> {
@@ -82,14 +99,27 @@ export async function runReporterCommand(
     path.relative(process.cwd(), schemaAbsolute) ||
     path.basename(schemaAbsolute);
 
-  const { report, platformView, gates } = await runEngineWithArtifacts({
-    schema,
-    schemaId: options.schemaPath,
-    schemaPath: schemaRelative.split(path.sep).join('/'),
-    planOptions: undefined,
-    maxInstances: options.maxInstances,
-    seed: options.seed,
-  });
+  const coverageMode = options.coverageMode ?? 'guided';
+  const coverage =
+    coverageMode === 'off'
+      ? { mode: 'off' as const }
+      : {
+          mode: coverageMode,
+          excludeUnreachable: options.coverageExcludeUnreachable,
+          minCoverage: options.minCoverage,
+        };
+
+  const { report, platformView, gates, coverageReport } =
+    await runEngineWithArtifacts({
+      schema,
+      schemaId: options.schemaPath,
+      schemaPath: schemaRelative.split(path.sep).join('/'),
+      planOptions: undefined,
+      maxInstances: options.maxInstances,
+      seed: options.seed,
+      coverage,
+      gateConfig: { minCoverage: options.minCoverage },
+    });
 
   const baseDir = options.outDir
     ? path.resolve(options.outDir)
@@ -129,6 +159,20 @@ export async function runReporterCommand(
     ).then(() => platformViewPath)
   );
 
+  if (coverageReport) {
+    const coverageReportPath = path.join(
+      baseDir,
+      `${baseName}.coverage-report.json`
+    );
+    writePromises.push(
+      writeFile(
+        coverageReportPath,
+        `${JSON.stringify(coverageReport, null, 2)}\n`,
+        'utf8'
+      ).then(() => coverageReportPath)
+    );
+  }
+
   const results = await Promise.all(writePromises);
 
   if (gates.status === 'fail') {
@@ -165,6 +209,20 @@ function registerRunCommand(program: Command): void {
       '--format <list>',
       'Comma separated list of formats (json,markdown,html). Default: json'
     )
+    .option(
+      '--coverage-mode <mode>',
+      'Coverage mode to use (off, measure, guided). Default: guided'
+    )
+    .option(
+      '--min-coverage <number>',
+      'Overall coverage threshold (0-1) enforced by gates when coverage is on',
+      (value) => Number.parseFloat(value)
+    )
+    .option(
+      '--coverage-exclude-unreachable',
+      'Exclude unreachable targets from coverage metrics',
+      false
+    )
     .option('--seed <number>', 'Seed forwarded to the engine', (value) =>
       Number.parseInt(value, 10)
     )
@@ -180,6 +238,10 @@ function registerRunCommand(program: Command): void {
     )
     .action(async (cmdOptions) => {
       const formats = parseFormats(cmdOptions.format);
+      const coverageMode = parseCoverageMode(cmdOptions.coverageMode);
+      const minCoverage = Number.isFinite(cmdOptions.minCoverage)
+        ? Number(cmdOptions.minCoverage)
+        : undefined;
       const results = await runReporterCommand({
         schemaPath: cmdOptions.schema,
         outDir: cmdOptions.outDir,
@@ -189,6 +251,11 @@ function registerRunCommand(program: Command): void {
           ? cmdOptions.maxInstances
           : undefined,
         stdout: cmdOptions.stdout,
+        coverageMode,
+        minCoverage,
+        coverageExcludeUnreachable: Boolean(
+          cmdOptions.coverageExcludeUnreachable
+        ),
       });
 
       if (cmdOptions.stdout) {
