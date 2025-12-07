@@ -49,10 +49,14 @@ describe('Acceptance — Mixed G_valid and non-G_valid repair usage', () => {
               },
             ],
             diagnostics: [],
+            metrics: {},
+            seed: 7,
           };
         },
         repair(items, _args, _options) {
-          const fixed = items.map((it) => ({ ...it, legacy: 'A' }));
+          const fixed = (
+            items as Array<{ profile: unknown; legacy: string }>
+          ).map((it) => ({ ...it, legacy: 'A' }));
           collector.recordRepairUsageEvent({
             motifId: 'simpleObjectRequired',
             gValid: true,

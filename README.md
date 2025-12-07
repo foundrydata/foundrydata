@@ -609,6 +609,10 @@ You can control how much of this behavior is enabled via `PlanOptions` (Node API
 - `PlanOptions.repair.allowStructuralInGValid` controls whether structural Repair is allowed inside G_valid zones.
 - The CLI exposes the same knobs through `--gvalid`, `--gvalid-relax-repair` and `--gvalid-profile` (`compat`/`strict`/`relaxed`); see `docs/COMPREHENSIVE_FEATURE_SUPPORT.md` for a full description.
 
+Reading G_valid repair metrics:
+- When metrics are enabled, repair usage surfaces `gValid_*` counters (items, itemsWithRepair, actions) per motif/canonPath. In strict posture, these should stay at zero; any non-zero values signal a Generator/Repair contract regression in a G_valid zone.
+- `--gvalid-profile compat` (or `PlanOptions.gValid: false`) turns off G_valid classification and these counters; `--gvalid-profile relaxed` (or `repair.allowStructuralInGValid: true`) allows structural repair in G_valid zones and may raise the counters when structural fixes occur.
+
 Existing commands keep their historical behavior when these options are not provided, so you can adopt G_valid and the stricter Generator/Repair contract incrementally.
 
 ---

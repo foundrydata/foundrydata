@@ -166,6 +166,10 @@ G_valid-related behavior is exposed at the CLI level via a small set of flags th
 
 These flags do not affect coverage or resolver behavior and are designed so that callers can opt out of or relax the contract explicitly while keeping strict as the default posture. See `docs/examples/g-valid-uuid-contains.md` for the canonical `items` + `contains` array motif that exercises the G_valid contract.
 
+Reading G_valid repair usage metrics:
+- When metrics are enabled, G_valid zones surface `gValid_<motif>_items`, `gValid_<motif>_itemsWithRepair`, and `gValid_<motif>_actions` per canonPath/motif. In strict posture, these should stay at zero; non-zero values indicate structural repair or retries inside a G_valid zone.
+- The compat profile (or `PlanOptions.gValid: false`) disables classification and therefore these counters; the relaxed profile (or `repair.allowStructuralInGValid: true`) allows structural repair in G_valid zones and may increment them.
+
 ## Migration from Previous Versions
 
 ### v0.1 → Current

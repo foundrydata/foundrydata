@@ -261,7 +261,7 @@ export interface PlanOptions {
    *
    * When true, the pipeline computes motif classification over the
    * canonical/Compose view and exposes a lookup index to downstream
-   * stages (generator, repair, metrics). Default: false.
+   * stages (generator, repair, metrics). Default: true (strict posture).
    */
   gValid?: boolean;
 

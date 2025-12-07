@@ -192,6 +192,7 @@ Ces entrées décrivent les invariants “no‑repair zone” pour `G_valid`:
 - les micro‑schémas ciblent explicitement des localisations classées `G_valid` par la SPEC canonique (§6);
 - les tests vérifient à la fois le statut de la pipeline (`status: 'completed'`), l’absence d’actions Repair sous les `canonPath` G_valid et l’absence d’entrées pertinentes dans `metrics.repairUsageByMotif`;
 - toute dérive (Repair structurel ou apparition d’itemsWithRepair/actions > 0 pour ces motifs) doit être traitée comme une régression et rendue visible par ces tests.
+- Pour interpréter les compteurs `gValid_*` surfacés par ces tests (attendus à zéro en posture strict), voir la section “G_valid & Repair Strictness” dans `docs/COMPREHENSIVE_FEATURE_SUPPORT.md`.
 
 ---
 

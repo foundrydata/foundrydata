@@ -222,6 +222,53 @@ describe('CLI generate command', () => {
     expect(config.gValid).toBe(true);
   });
 
+  it('defaults to strict posture when no G_valid flags are provided', async () => {
+    const { dir, schemaPath } = await createSchemaFixture();
+
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      await program.parseAsync(
+        [
+          'generate',
+          '--schema',
+          schemaPath,
+          '--n',
+          '1',
+          '--out',
+          'ndjson',
+          '--debug-passes',
+        ],
+        { from: 'user' }
+      );
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+
+    const stderr = stderrChunks.join('');
+    const config = extractEffectiveConfigFromStderr(stderr) as {
+      gValid?: boolean;
+      repair?: { allowStructuralInGValid?: boolean };
+    };
+    expect(config.gValid).toBe(true);
+    expect(config.repair?.allowStructuralInGValid).toBe(false);
+  });
+
   it('wires --gvalid-profile relaxed into PlanOptions.gValid and repair.allowStructuralInGValid', async () => {
     const { dir, schemaPath } = await createSchemaFixture();
 
@@ -269,6 +316,55 @@ describe('CLI generate command', () => {
     };
     expect(config.gValid).toBe(true);
     expect(config.repair?.allowStructuralInGValid).toBe(true);
+  });
+
+  it('wires --gvalid-profile compat into PlanOptions with G_valid disabled', async () => {
+    const { dir, schemaPath } = await createSchemaFixture();
+
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: any) => {
+        stdoutChunks.push(String(chunk));
+        return true;
+      });
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: any) => {
+        stderrChunks.push(String(chunk));
+        return true;
+      });
+
+    try {
+      await program.parseAsync(
+        [
+          'generate',
+          '--schema',
+          schemaPath,
+          '--n',
+          '1',
+          '--out',
+          'ndjson',
+          '--gvalid-profile',
+          'compat',
+          '--debug-passes',
+        ],
+        { from: 'user' }
+      );
+    } finally {
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+
+    const stderr = stderrChunks.join('');
+    const config = extractEffectiveConfigFromStderr(stderr) as {
+      gValid?: boolean;
+      repair?: { allowStructuralInGValid?: boolean };
+    };
+    expect(config.gValid).toBe(false);
+    expect(config.repair?.allowStructuralInGValid).toBe(false);
   });
 
   it('accepts coverage-related flags without changing basic behavior (and warns when coverage=off)', async () => {

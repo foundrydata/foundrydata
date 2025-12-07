@@ -37,6 +37,16 @@ describe('G_valid CLI profiles', () => {
     expect(result.gvalidRelaxRepair).toBe(true);
   });
 
+  it('preserves explicit gvalidRelaxRepair flag regardless of profile', () => {
+    const base: CliOptions = {
+      gvalidRelaxRepair: true,
+    };
+
+    const result = applyGValidProfileToCliOptions(base, 'compat');
+    expect(result.gvalid).toBe(false);
+    expect(result.gvalidRelaxRepair).toBe(true);
+  });
+
   it('does not override explicit gvalid/gvalidRelaxRepair flags', () => {
     const base: CliOptions = {
       gvalid: false,

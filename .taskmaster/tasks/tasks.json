@@ -1779,7 +1779,7 @@
           "9404",
           "9405"
         ],
-        "status": "done",
+        "status": "in-progress",
         "complexityScore": 3,
         "details": "[Context]\nOnce implemented, G_valid and the tightened Generator vs Repair contract must be discoverable and controllable through configuration and docs.\nAligns with spec §6.7 (Interaction with other sections / public behavior) and the general configuration sections that describe PlanOptions and CLI flags.\n\n[Key requirements]\n- Add PlanOptions knobs (and Node API mapping) for enabling/disabling G_valid classification/enforcement and controlling strictness of Repair inside G_valid zones.\n- Wire these options through CLI flags and profiles, with defaults that preserve current behavior when G_valid is off.\n- Update COMPREHENSIVE_FEATURE_SUPPORT/Features/docs to explain the contract, G_valid scope, and how to interpret repair usage metrics.",
         "testStrategy": "- Unit tests for PlanOptions parsing and CLI flags, asserting correct mapping and backward-compatible defaults.\n- Integration tests running CLI/Node API with different G_valid configurations and checking that Generator/Repair/metrics behavior matches expectations.\n- Documentation checks confirming that new options and the contract are mentioned consistently in feature docs and examples.",
@@ -1798,31 +1798,31 @@
             "id": 9406002,
             "title": "Wire G_valid options through CLI flags and profiles",
             "description": "Map new G_valid options into CLI flags and profiles, defining which profiles enable G_valid by default and how to turn it off for compatibility.",
-            "status": "done",
+            "status": "in-progress",
             "estimatedHours": 4,
             "file": "packages/cli/src/commands/generate.ts",
             "parentId": "9406",
-            "updatedAt": "2025-12-03T23:45:05.919Z"
+            "updatedAt": "2025-12-07T13:44:35.880Z"
           },
           {
             "id": 9406003,
             "title": "Update feature and usage docs with G_valid guidance",
             "description": "Document G_valid behavior, options and typical usage scenarios in COMPREHENSIVE_FEATURE_SUPPORT, Features and examples docs, referencing spec §6 and the Generator vs Repair contract subsection.",
-            "status": "done",
+            "status": "in-progress",
             "estimatedHours": 4,
             "file": "docs/COMPREHENSIVE_FEATURE_SUPPORT.md",
             "parentId": "9406",
-            "updatedAt": "2025-12-03T23:50:28.125Z"
+            "updatedAt": "2025-12-07T13:44:06.978Z"
           }
         ],
-        "updatedAt": "2025-12-03T23:50:28.125Z"
+        "updatedAt": "2025-12-07T13:44:35.880Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-07T13:33:36.515Z",
+      "lastModified": "2025-12-07T13:44:35.882Z",
       "taskCount": 7,
-      "completedCount": 7,
+      "completedCount": 6,
       "tags": [
         "generator-vs-repair-contract"
       ]
