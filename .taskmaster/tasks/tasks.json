@@ -1441,13 +1441,13 @@
   "generator-vs-repair-contract": {
     "tasks": [
       {
-        "id": 9400,
+        "id": "9400",
         "title": "Formalize Generator vs Repair contract and G_valid v1 in canonical spec",
         "description": "Introduce the Generator vs Repair contract and the G_valid (Generator-valid) zone into the canonical SPEC.",
         "priority": "high",
         "estimatedHours": 10,
         "dependencies": [],
-        "status": "done",
+        "status": "in-progress",
         "complexityScore": 3,
         "details": "[Context]\nThe canonical spec and architecture describe the 5-stage pipeline but leave the Generator vs Repair boundary implicit.\nAligns with spec §6 (High-Level Architecture), §9 (Generator) and §10 (Repair Engine), and introduces a new subsection under §6 for the Generator / Repair contract and generator-valid zone (G_valid).\n\n[Key requirements]\n- Add a normative \"Generator vs Repair contract\" subsection to the generator/repair sections.\n- Define G_valid v1 scope (simple objects, simple arrays with items+contains, no AP:false/unevaluated* interplay) and the meaning of \"AJV-valid by construction\" (structural validity with only numeric/format nudges left to Repair).\n- State explicitly that outside G_valid the existing \"minimal witness + bounded Repair\" regime remains in force.\n- Document the UUID + contains example as a reference motif.\n\n[Deliverables]\n- Updated docs/spec-canonical-json-schema-generator.md (spec §6/§9/§10), ARCHITECTURE.md and Invariants/Known-Limits with the new contract.",
         "testStrategy": "- Spec review checklist covering: presence of the new section, correct G_valid v1 scope, explicit description of allowed/forbidden Repair actions.\n- Consistency pass between canonical spec, ARCHITECTURE.md, COMPREHENSIVE_FEATURE_SUPPORT.md and Invariants.md.\n- Internal review with generator/repair owners to confirm the wording matches what can be implemented without breaking existing invariants.",
@@ -1456,11 +1456,11 @@
             "id": 9400001,
             "title": "Add Generator vs Repair contract and G_valid section to canonical spec",
             "description": "Draft the new section in docs/spec-canonical-json-schema-generator.md and link it from the Generator (spec §9) and Repair (spec §10) chapters.",
-            "status": "done",
+            "status": "in-progress",
             "estimatedHours": 4,
             "file": "docs/spec-canonical-json-schema-generator.md",
             "parentId": "9400",
-            "updatedAt": "2025-12-03T19:27:40.375Z"
+            "updatedAt": "2025-12-07T10:56:27.355Z"
           },
           {
             "id": 9400002,
@@ -1486,17 +1486,17 @@
             "id": 9400004,
             "title": "Document UUID + contains pattern as reference example",
             "description": "Write a self-contained example for the UUID + contains pattern that illustrates the change from minimal-witness generation with Repair filling required fields to G_valid generation where the Generator produces a fully valid item, aligned with spec §6.3.2.",
-            "status": "done",
+            "status": "in-progress",
             "estimatedHours": 2,
             "file": "docs/examples/g-valid-uuid-contains.md",
             "parentId": "9400",
-            "updatedAt": "2025-12-03T19:27:59.172Z"
+            "updatedAt": "2025-12-07T10:58:09.742Z"
           }
         ],
-        "updatedAt": "2025-12-03T19:27:59.172Z"
+        "updatedAt": "2025-12-07T10:58:09.742Z"
       },
       {
-        "id": 9401,
+        "id": "9401",
         "title": "Implement motif classification and G_valid zoning in core pipeline",
         "description": "Introduce a motif classification layer that marks schema locations as G_valid or non-G_valid based on the effective schema shape.",
         "priority": "high",
@@ -1553,7 +1553,7 @@
         "updatedAt": "2025-12-03T20:04:21.464Z"
       },
       {
-        "id": 9402,
+        "id": "9402",
         "title": "Make array generation G_valid-aware for items + contains motifs",
         "description": "Update array generation so that, in G_valid zones, items satisfying contains also respect the effective items schema and are AJV-valid by construction.",
         "priority": "high",
@@ -1610,7 +1610,7 @@
         "updatedAt": "2025-12-03T20:31:15.625Z"
       },
       {
-        "id": 9403,
+        "id": "9403",
         "title": "Make object generation G_valid-aware for simple required/properties motifs",
         "description": "Adjust object generation so that, in G_valid zones, the Generator satisfies required properties and basic bounds without relying on Repair to synthesize placeholder values.",
         "priority": "high",
@@ -1657,7 +1657,7 @@
         "updatedAt": "2025-12-03T21:23:30.718Z"
       },
       {
-        "id": 9404,
+        "id": "9404",
         "title": "Constrain Repair behavior inside G_valid zones and surface violations",
         "description": "Update the Repair engine so that structural fixes in G_valid zones are treated as contract violations and surfaced via diagnostics/metrics instead of normal behavior.",
         "priority": "high",
@@ -1706,7 +1706,7 @@
         "updatedAt": "2025-12-03T22:10:49.363Z"
       },
       {
-        "id": 9405,
+        "id": "9405",
         "title": "Add repair usage metrics and G_valid motif observability",
         "description": "Instrument the pipeline with motif-level metrics so that repair usage inside and outside G_valid zones is observable and testable.",
         "priority": "high",
@@ -1766,7 +1766,7 @@
         "updatedAt": "2025-12-03T23:06:56.483Z"
       },
       {
-        "id": 9406,
+        "id": "9406",
         "title": "Expose G_valid behavior and Generator vs Repair contract in CLI, profiles and docs",
         "description": "Surface the Generator vs Repair contract and G_valid behavior through PlanOptions, CLI profiles and developer documentation.",
         "priority": "medium",
@@ -1820,15 +1820,12 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-03T23:50:28.126Z",
+      "lastModified": "2025-12-07T10:58:09.743Z",
       "taskCount": 7,
-      "completedCount": 7,
+      "completedCount": 6,
       "tags": [
         "generator-vs-repair-contract"
-      ],
-      "created": "2025-12-04T18:14:30.464Z",
-      "description": "Tasks for generator-vs-repair-contract context",
-      "updated": "2025-12-04T18:14:30.464Z"
+      ]
     }
   },
   "repair-philosophy": {
@@ -2182,7 +2179,7 @@
   "observability-platform-metrics-v1": {
     "tasks": [
       {
-        "id": "9600",
+        "id": 9600,
         "title": "Align diag.metrics baseline with observability spec",
         "description": "Implement and validate the diag.metrics baseline defined in docs/spec-observability-platform-metrics-v1.0.md (§3.1, §4.2), ensuring observability signals remain side-effect free and deterministically shaped.",
         "priority": "high",
@@ -2259,7 +2256,7 @@
         "updatedAt": "2025-12-07T01:51:30.631Z"
       },
       {
-        "id": "9601",
+        "id": 9601,
         "title": "Enforce coverage-report observability invariants and planner caps audit",
         "description": "Align coverage-report/v1 emission with observability spec (§2.2, §5.1–5.4), including planned/unplanned auditing, plannerCapsHit summaries, guided≥measure invariants, and comparability metadata.",
         "priority": "high",
@@ -2327,7 +2324,7 @@
         "updatedAt": "2025-12-07T01:08:30.778Z"
       },
       {
-        "id": "9602",
+        "id": 9602,
         "title": "Surface repair-tier and G_valid observability metrics",
         "description": "Extend repair observability per spec (§4.3, §4.4): tier counters, policy blocks, and G_valid motif metrics, keeping coverage-independence.",
         "priority": "high",
@@ -2385,7 +2382,7 @@
         "updatedAt": "2025-12-07T01:14:48.907Z"
       },
       {
-        "id": "9603",
+        "id": 9603,
         "title": "Implement Resolver R1 run-level diagnostics",
         "description": "Expose resolver observability via Compose.diag.run per spec (§6.1–§6.2), including cache hits/misses/offline paths and strategy summaries, while keeping determinism for fixed registry fingerprints.",
         "priority": "medium",
@@ -2430,7 +2427,7 @@
         "updatedAt": "2025-12-07T00:22:45.615Z"
       },
       {
-        "id": "9604",
+        "id": 9604,
         "title": "Deliver reporter/platform view and CI gates",
         "description": "Implement the derived Reporter/Platform View and platform KPIs/gates per observability spec (§2.4, §7, Appendix A), with traceability tests for each gate.",
         "priority": "high",
@@ -2512,7 +2509,7 @@
         "updatedAt": "2025-12-07T10:42:40.855Z"
       },
       {
-        "id": "9605",
+        "id": 9605,
         "title": "Update observability specs and platform view docs",
         "description": "Refresh documentation to reflect the implemented observability surfaces: spec-observability-platform-metrics-v1.0 Appendix A, planned/unplanned semantics, repairUsageByMotif ordering, and comparability metadata (registryFingerprint, operationsScope, selectedOperations).",
         "priority": "medium",
@@ -2557,7 +2554,7 @@
         "updatedAt": "2025-12-07T01:21:43.957Z"
       },
       {
-        "id": "9606",
+        "id": 9606,
         "title": "Update front-door docs and CI gate guide for observability",
         "description": "Add public-facing documentation for the observability surfaces and gates: README entry, docs index, CI gates how-to, and changelog/reporter README notes about comparability metadata and bench-only SLIs.",
         "priority": "medium",
@@ -2610,7 +2607,7 @@
         ]
       },
       {
-        "id": "9607",
+        "id": 9607,
         "title": "Fix guided>=measure regression on profiles/simple.json",
         "description": "Add regression test for profiles/simple.json with coverage=guided mode, diagnose why metadata.tier is missing when kind=service, fix generation/repair/planning to respect if/then/else conditionals, and restore reporter bench default to guided once regression is resolved.",
         "details": "[Context]\nThe profiles/simple.json schema contains an if/then/else conditional requiring metadata.tier when kind=service (lines 78-94). In guided mode, instances are being generated with kind=service but without metadata.tier, violating AJV validation. This regression must be fixed before restoring the bench default to coverage=guided.\n\n[Key requirements]\n1. **Add Repro Test**: Create test in packages/core/test/e2e/ that runs profiles/simple.json with coverage=guided mode (structure+branches+enum dimensions), validates all instances pass AJV, and specifically checks that when kind=service, metadata.tier is present (per spec lines 78-94).\n\n2. **Diagnose Root Cause**: \n   - Check CoveragePlanner hint generation (packages/core/src/coverage/coverage-planner.ts) to see if preferBranch hints for kind=service are triggering ensurePropertyPresence hints for metadata.tier\n   - Check if-aware-lite generation logic in foundry-generator.ts respects conditional requirements\n   - Check repair-engine.ts to see if structural repairs handle dependentRequired from conditionals\n   - Review ConflictDetector feasibility checks for hints targeting conditional branches\n\n3. **Fix Pipeline Components**:\n   - If planner issue: Ensure CoveragePlanner generates ensurePropertyPresence hints for properties made required by if/then/else when targeting the triggering branch\n   - If generator issue: Ensure if-aware-lite properly evaluates if conditions and applies then-schema required properties during generation\n   - If repair issue: Ensure repair engine detects missing conditional requirements and adds them with appropriate values\n\n4. **Validate Fix**:\n   - Ensure repro test passes\n   - Run coverage-guided-vs-measure.spec.ts to verify guided>=measure invariant still holds\n   - Run bench on profiles/simple.json with coverage=guided and verify all instances valid\n   - Check coverage-report/v1 shows improved branch coverage for kind enum\n\n5. **Restore Bench Default**: Once regression fixed and all tests pass, update packages/reporter/src/bench/runner.ts line 110 to set default coverageMode from 'measure' to 'guided'\n\n[Implementation Notes]\n- The schema uses allOf with if/then/else (lines 78-94): if kind=service, then metadata must be present and have required tier\n- This is a conditional dependentRequired pattern that may not be captured by current hint generation\n- ConflictDetector may need to understand that preferBranch(kind=service) implies ensurePropertyPresence(metadata) + coverEnumValue(tier)\n- Repair may need to handle conditional requirements via G_valid motif detection (task 9602 added G_valid observability)\n\n[Files to modify]\n- packages/core/test/e2e/coverage-simple-profile.regression.test.ts (new file)\n- packages/core/src/coverage/coverage-planner.ts (likely)\n- packages/core/src/generator/foundry-generator.ts (possibly)\n- packages/core/src/repair/repair-engine.ts (possibly)\n- packages/reporter/src/bench/runner.ts (after fix validated)",
@@ -2673,7 +2670,10 @@
       "completedCount": 6,
       "tags": [
         "observability-platform-metrics-v1"
-      ]
+      ],
+      "created": "2025-12-07T10:48:08.550Z",
+      "description": "Tasks for observability-platform-metrics-v1 context",
+      "updated": "2025-12-07T10:48:08.550Z"
     }
   }
 }

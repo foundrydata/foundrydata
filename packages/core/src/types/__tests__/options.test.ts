@@ -61,7 +61,7 @@ describe('PlanOptions', () => {
       // Repair defaults
       expect(resolved.repair.mustCoverGuard).toBe(true);
       expect(resolved.repair.allowStructuralInGValid).toBe(false);
-      expect(resolved.gValid).toBe(false);
+      expect(resolved.gValid).toBe(true);
     });
 
     it('should merge user options with defaults', () => {

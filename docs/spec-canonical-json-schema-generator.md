@@ -292,6 +292,8 @@ This section tightens the division of responsibilities between **Generate** and 
 * inside `G_valid`, structural validity is guaranteed **by construction** (modulo small numeric nudges), and
 * outside `G_valid`, the existing “minimal witness + bounded Repair” regime stays in effect.
 
+**Activation and defaults.** Implementations **MUST** expose a feature flag to enable or relax `G_valid` classification and enforcement (for example `PlanOptions.gValid`, surfaced via CLI `--gvalid` / profiles). The **default posture is strict**: the flag is **true**, `G_valid` is classified, and the obligations and limits below apply. Callers MAY explicitly opt out (compatibility/legacy mode) to restore the historical minimal‑witness + bounded‑Repair regime; in that case classification becomes optional and the contract below does not apply.
+
 #### 6.2 Definitions
 
 **Definition (normative) — structural keywords.**  
@@ -329,7 +331,7 @@ Implementations **MUST** expose `G_valid` as an internal predicate or classifica
 
 #### 6.3 Baseline `G_valid` v1 classification
 
-This subsection defines a **baseline** class of locations that **MUST** belong to `G_valid` (the *baseline generator‑valid zone v1*). Implementations **MAY** extend `G_valid` to additional locations provided the invariants of §6.4–§6.5 hold for those locations as well.
+This subsection defines a **baseline** class of locations that **MUST** belong to `G_valid` (the *baseline generator‑valid zone v1*) under the default strict posture (§6.1). Implementations **MAY** extend `G_valid` to additional locations provided the invariants of §6.4–§6.5 hold for those locations as well. When callers explicitly disable `G_valid`, classification becomes optional and the pipeline reverts to the minimal‑witness + bounded‑Repair regime, but any time `G_valid` is enabled the locations below **MUST** be included at minimum.
 
 Let `S_p` be the effective schema at canonical path `p` produced by Compose (§8), after `allOf` merges and bagged `contains` computation.
 
@@ -384,7 +386,7 @@ As with objects, arrays that fail any of these conditions **MUST NOT** be auto�
 
 #### 6.4 Generator obligations inside `G_valid`
 
-For every canonical path `p ∈ G_valid` and every successful run of the pipeline on a given schema and options:
+For every canonical path `p ∈ G_valid` (default strict posture), and for every successful run of the pipeline on a given schema and options:
 
 1. **Structural AJV validity by construction (MUST).**
    The pre‑Repair candidate `x_pre` **MUST** be generator‑valid at `p`, i.e.:
@@ -423,7 +425,7 @@ For every canonical path `p ∈ G_valid` and every successful run of the pipelin
 
 #### 6.5 Repair obligations and limits inside `G_valid`
 
-The Repair Engine mapping (§10) remains available at all locations, but within `G_valid` its role is deliberately constrained.
+Under the default strict posture (or when explicitly enabled), the Repair Engine mapping (§10) remains available at all locations, but within `G_valid` its role is deliberately constrained.
 
 1. **Structural repairs in `G_valid` SHOULD NOT occur.**
    For `p ∈ G_valid`, Repair **SHOULD NOT**, in the nominal case, emit any action whose:

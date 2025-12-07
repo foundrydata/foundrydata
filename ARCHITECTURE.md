@@ -98,7 +98,7 @@ Coverage-aware configuration is passed through `PipelineOptions.coverage` and su
 * Strings measured in Unicode code points; regex in Unicode mode.
 * **Arrays:** satisfy bagged `contains`; then apply `uniqueItems` if present.
 * **Numbers:** exact rational `multipleOf` with caps and fallbacks (decimal/float) controlled by plan options.
-* **Generator‑valid zone (`G_valid`):** for schema locations that the canonical spec classifies as belonging to `G_valid v1` (for example certain simple objects and simple `items`+`contains` arrays without AP:false / `unevaluated*` interplay), Generate treats structural keywords as its own obligations and aims to emit AJV‑valid instances by construction. Outside `G_valid`, Generate may still produce minimal witnesses that require structural repair, and the existing “minimal witness + bounded Repair” behaviour remains the baseline.
+* **Generator‑valid zone (`G_valid`):** for schema locations that the canonical spec classifies as belonging to `G_valid v1` (for example certain simple objects and simple `items`+`contains` arrays without AP:false / `unevaluated*` interplay), Generate treats structural keywords as its own obligations and aims to emit AJV‑valid instances by construction. Outside `G_valid`, Generate may still produce minimal witnesses that require structural repair, and the existing “minimal witness + bounded Repair” behaviour remains the baseline. The default posture is strict (G_valid enabled); callers can opt out via the CLI compat profile. The canonical array motif is captured in `docs/examples/g-valid-uuid-contains.md`.
 
 **Module:** `packages/core/src/generator/foundry-generator.ts`.
 

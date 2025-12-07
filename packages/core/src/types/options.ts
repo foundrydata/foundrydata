@@ -372,7 +372,7 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
   },
 
   metrics: true,
-  gValid: false,
+  gValid: true,
   enableLocalSMT: false,
   solverTimeoutMs: 25,
   disablePatternOverlapAnalysis: false,

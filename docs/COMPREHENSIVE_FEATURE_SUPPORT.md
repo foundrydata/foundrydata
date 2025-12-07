@@ -157,14 +157,14 @@ Default mapping between `rewriteConditionals` and `conditionals.strategy`:
 
 G_valid-related behavior is exposed at the CLI level via a small set of flags that map directly to `PlanOptions.gValid` and `PlanOptions.repair.allowStructuralInGValid`:
 
-- `--gvalid` on `generate` / `openapi` enables classification/enforcement for locations that the planner deems G_valid, wiring `PlanOptions.gValid = true` while keeping defaults unchanged when the flag is omitted.
-- `--gvalid-profile <profile>` provides coarse presets for common workflows:
-  - `compat` (default) keeps G_valid disabled and preserves the historical behavior.
-  - `strict` enables G_valid but keeps structural Repair disabled in G_valid zones.
+- `--gvalid` on `generate` / `openapi` explicitly enables classification/enforcement (default posture is already strict).
+- `--gvalid-profile <profile>` provides coarse presets for common workflows (default: `strict`):
+  - `compat` opts out of G_valid entirely and preserves the historical minimal-witness + bounded-Repair behavior.
+  - `strict` enables G_valid and keeps structural Repair disabled in G_valid zones.
   - `relaxed` enables G_valid and allows structural Repair in G_valid zones by setting `repair.allowStructuralInGValid = true`.
 - `--gvalid-relax-repair` can be used explicitly to request the relaxed behavior regardless of the selected profile; explicit flags take precedence over profile defaults.
 
-These flags do not affect coverage or resolver behavior and are designed so that existing invocations without G_valid options remain stable while making the Generator vs Repair contract and G_valid zones configurable for advanced users.
+These flags do not affect coverage or resolver behavior and are designed so that callers can opt out of or relax the contract explicitly while keeping strict as the default posture. See `docs/examples/g-valid-uuid-contains.md` for the canonical `items` + `contains` array motif that exercises the G_valid contract.
 
 ## Migration from Previous Versions
 

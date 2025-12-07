@@ -121,8 +121,8 @@ program
   )
   .option(
     '--gvalid-profile <profile>',
-    'G_valid profile: compat|strict|relaxed',
-    'compat'
+    'G_valid profile: compat|strict|relaxed (default: strict)',
+    'strict'
   )
   .option('--no-metrics', 'Disable metrics collection')
   .option(
@@ -443,8 +443,8 @@ program
   )
   .option(
     '--gvalid-profile <profile>',
-    'G_valid profile: compat|strict|relaxed',
-    'compat'
+    'G_valid profile: compat|strict|relaxed (default: strict)',
+    'strict'
   )
   .option('--no-metrics', 'Disable metrics collection')
   .option(

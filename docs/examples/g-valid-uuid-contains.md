@@ -4,6 +4,16 @@ This example illustrates a `G_valid v1` array motif where the Generator, not the
 
 It is derived from the canonical Generator / Repair contract and `G_valid` definitions (see anchors `spec://§6#generator-repair-contract`, `spec://§9#generator`, `spec://§9#arrays-contains`) and is meant as a reference example for tests and documentation. The prose below is an explanatory rephrasing, not a copy of the SPEC text.
 
+## Where this is referenced
+
+- Canonical contract: §6 “Generator / Repair contract and generator-valid zone (G_valid)” in `docs/spec-canonical-json-schema-generator.md`.
+- Architecture overview: Stage 3/4 `G_valid` blurbs in `ARCHITECTURE.md` link here when describing the array obligations.
+- Feature support: `COMPREHENSIVE_FEATURE_SUPPORT.md` (G_valid & Repair Strictness) points to this motif as the canonical `items` + `contains` example.
+
+## How to run it
+
+The default posture is strict: `PlanOptions.gValid` is `true` unless callers explicitly opt out. You can run this schema via CLI with `--gvalid` (implicit `strict`) or `--gvalid-profile strict|relaxed`; use `--gvalid-profile compat` to opt out and restore the historical minimal-witness + bounded-Repair regime. Under the strict/relaxed postures, Generate **must** satisfy `items` and `contains` by construction and Repair is limited to low-impact tweaks, surfacing any structural repair via `gValid_*` metrics.
+
 ## Schema
 
 We model a simple list of order items. Each item has a UUID identifier and a boolean flag indicating whether the item is a gift. The array requires at least one gift item by using `contains`:
@@ -73,4 +83,3 @@ The Repair engine still runs after generation, but its role at this `G_valid` lo
 - Repair is not relied upon to add missing required properties to the order items or to “manufacture” a gift element to satisfy `contains`.
 
 If a future change causes structural Repair actions under the array location (for example adding `isGift` or an entire item to satisfy `contains`), this should be treated as a regression against the Generator / Repair contract for `G_valid` and surfaced through the dedicated `gValid_*` metrics rather than being considered an acceptable behaviour.
-
