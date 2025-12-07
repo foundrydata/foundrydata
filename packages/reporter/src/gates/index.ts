@@ -9,7 +9,8 @@ export type GateIssueCode =
   | 'COVERAGE_STATUS'
   | 'COVERAGE_UNAVAILABLE'
   | 'GVALID_REPAIR'
-  | 'COVERAGE_PLANNING';
+  | 'COVERAGE_PLANNING'
+  | 'REPAIR_REGRESSION';
 
 export type GateIssue = {
   code: GateIssueCode;
@@ -39,6 +40,7 @@ export interface GateConfig {
 export interface GateSignals {
   fatalDiagnostics?: unknown[];
   warnDiagnostics?: unknown[];
+  repairDiagnostics?: unknown[];
   metrics?: DiagMetrics;
   coverage?: CoverageSummary;
 }
@@ -50,6 +52,7 @@ export function evaluateGates(
   const issues: GateIssue[] = collectDiagnosticIssues(signals, config);
   evaluateCoverage(signals.coverage, config, issues);
   evaluateGValid(signals, issues);
+  evaluateRepairRegressions(signals, issues);
 
   // Explicitly ignore SLIs (p50/p95/memory) for determinism: no gate logic here.
   void signals.metrics;
@@ -180,6 +183,38 @@ function evaluateGValid(signals: GateSignals, issues: GateIssue[]): void {
   });
 }
 
+function evaluateRepairRegressions(
+  signals: GateSignals,
+  issues: GateIssue[]
+): void {
+  const regressionCodes = new Set<string>();
+  for (const source of [
+    signals.fatalDiagnostics,
+    signals.warnDiagnostics,
+    signals.repairDiagnostics,
+  ]) {
+    const codes = collectDiagCodes(source);
+    if (codes.has('UNSAT_BUDGET_EXHAUSTED')) {
+      regressionCodes.add('UNSAT_BUDGET_EXHAUSTED');
+    }
+    if (codes.has('REPAIR_REVERTED_NO_PROGRESS')) {
+      regressionCodes.add('REPAIR_REVERTED_NO_PROGRESS');
+    }
+  }
+
+  if (regressionCodes.size === 0) {
+    return;
+  }
+
+  const message = Array.from(regressionCodes).sort().join(', ');
+
+  issues.push({
+    code: 'REPAIR_REGRESSION',
+    severity: 'fail',
+    message: `Repair regressions detected: ${message}`,
+  });
+}
+
 function collectDiagCodes(diagnostics?: unknown[]): Set<string> {
   if (!Array.isArray(diagnostics)) return new Set();
   const codes = new Set<string>();
@@ -194,6 +229,19 @@ function collectDiagCodes(diagnostics?: unknown[]): Set<string> {
     }
   }
   return codes;
+}
+
+export function formatGateSummary(result: GateResult): string {
+  if (!result.issues.length) {
+    return 'no issues';
+  }
+  return result.issues
+    .map((issue) => {
+      const message =
+        issue.message && issue.message.length > 0 ? ` (${issue.message})` : '';
+      return `${issue.severity}:${issue.code}${message}`;
+    })
+    .join('; ');
 }
 
 function collectGValidMetricMotifs(metrics?: DiagMetrics): Set<string> {

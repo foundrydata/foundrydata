@@ -12,6 +12,11 @@ import {
   buildReporterPlatformView,
   type ReporterPlatformViewV1,
 } from '../platform-view/index.js';
+import {
+  evaluateGates,
+  formatGateSummary,
+  type GateResult,
+} from '../gates/index.js';
 
 const DEFAULT_INSTANCE_COUNT = 3;
 
@@ -20,13 +25,15 @@ export interface EngineRunOutput {
   platformView: ReporterPlatformViewV1;
   coverageReport?: CoverageReport;
   metrics?: DiagMetrics;
+  gates: GateResult;
   pipelineResult: PipelineResult;
 }
 
 export async function runEngineOnSchema(
   options: EngineRunOptions
 ): Promise<Report> {
-  const { report } = await runEngineWithArtifacts(options);
+  const { report, gates } = await runEngineWithArtifacts(options);
+  assertGatesPass(gates);
   return report;
 }
 
@@ -47,11 +54,19 @@ export async function runEngineWithArtifacts(
       pipelineResult.artifacts.coverageReport?.engine.foundryVersion,
     ajvMajor: pipelineResult.artifacts.coverageReport?.engine.ajvMajor,
   });
+  const gates = evaluateGates({
+    fatalDiagnostics: pipelineResult.artifacts.effective?.diag?.fatal,
+    warnDiagnostics: pipelineResult.artifacts.effective?.diag?.warn,
+    repairDiagnostics: pipelineResult.artifacts.repairDiagnostics,
+    metrics: pipelineResult.metrics,
+    coverage: platformView.metrics.coverage,
+  });
   return {
     report,
     platformView,
     coverageReport: pipelineResult.artifacts.coverageReport,
     metrics: pipelineResult.metrics,
+    gates,
     pipelineResult,
   };
 }
@@ -87,4 +102,12 @@ function buildPipelineOptions(options: EngineRunOptions): PipelineOptions {
     },
     metrics: { enabled: true },
   } satisfies PipelineOptions;
+}
+
+function assertGatesPass(gates: GateResult): void {
+  if (gates.status !== 'fail') {
+    return;
+  }
+  const summary = formatGateSummary(gates);
+  throw new Error(`Gate failure: ${summary}`);
 }

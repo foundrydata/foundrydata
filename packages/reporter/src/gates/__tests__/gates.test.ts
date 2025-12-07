@@ -166,6 +166,17 @@ describe('evaluateGates', () => {
     ).toContain('simpleObjectRequired');
   });
 
+  it('fails when repair regression diagnostics are present', () => {
+    const result = evaluateGates({
+      repairDiagnostics: [{ code: 'UNSAT_BUDGET_EXHAUSTED' }],
+    });
+
+    expect(result.status).toBe('fail');
+    expect(
+      result.issues.some((issue) => issue.code === 'REPAIR_REGRESSION')
+    ).toBe(true);
+  });
+
   it('surfaces planner caps/unplanned coverage as warn or fail depending on thresholds', () => {
     const coverageWithCaps: CoverageSummary = {
       ...coverageOk,

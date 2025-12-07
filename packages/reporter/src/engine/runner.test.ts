@@ -183,4 +183,91 @@ describe('runEngineOnSchema', () => {
       );
     }
   });
+
+  it('throws when gate evaluation fails', async () => {
+    const normalizeResult = {
+      schema: schemaFixture,
+      ptrMap: new Map<string, string>(),
+      revPtrMap: new Map<string, string[]>(),
+      notes: [],
+    };
+    const composeResult = {
+      canonical: normalizeResult,
+      containsBag: new Map(),
+      coverageIndex: new Map(),
+      diag: {
+        fatal: [{ code: 'X', canonPath: '#', details: {} }],
+        warn: [],
+        unsatHints: [],
+        run: [],
+      },
+    } as unknown as ComposeResult;
+
+    const mockResult: PipelineResult = {
+      status: 'completed',
+      schema: schemaFixture,
+      stages: {
+        normalize: { status: 'completed', output: normalizeResult },
+        compose: { status: 'completed', output: composeResult },
+        generate: {
+          status: 'completed',
+          output: {
+            items: [],
+            diagnostics: [],
+            metrics: { patternWitnessTried: 0 },
+            seed: 0,
+          },
+        },
+        repair: { status: 'completed', output: [] },
+        validate: { status: 'completed', output: { valid: true } },
+      },
+      metrics: {
+        normalizeMs: 0,
+        composeMs: 0,
+        generateMs: 0,
+        repairMs: 0,
+        validateMs: 0,
+        compileMs: 0,
+        validationsPerRow: 0,
+        repairPassesPerRow: 0,
+        repairActionsPerRow: 0,
+        branchTrialsTried: 0,
+        patternWitnessTried: 0,
+        evalTraceChecks: 0,
+        evalTraceProved: 0,
+        memoryPeakMB: 0,
+        p50LatencyMs: 0,
+        p95LatencyMs: 0,
+        repair_tier1_actions: 0,
+        repair_tier2_actions: 0,
+        repair_tier3_actions: 0,
+        repair_tierDisabled: 0,
+      },
+      timeline: [],
+      errors: [],
+      artifacts: {
+        canonical: normalizeResult,
+        effective: composeResult,
+        generated: {
+          items: [],
+          diagnostics: [],
+          metrics: { patternWitnessTried: 0 },
+          seed: 0,
+        },
+        repaired: [],
+        repairActions: [],
+        validation: { valid: true },
+      },
+    };
+
+    const spy = vi.spyOn(Core, 'executePipeline').mockResolvedValue(mockResult);
+    await expect(
+      runEngineOnSchema({
+        schema: schemaFixture,
+        schemaId: 'gate-fail',
+        schemaPath: '/tmp/gate-fail.json',
+      })
+    ).rejects.toThrow(/Gate failure/);
+    spy.mockRestore();
+  });
 });

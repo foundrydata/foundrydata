@@ -14,6 +14,7 @@ import { renderMarkdownReport } from './render/markdown.js';
 import { renderHtmlReport } from './render/html.js';
 import { runBench } from './bench/runner.js';
 import { runCorpus } from './corpus/runner.js';
+import { formatGateSummary } from './gates/index.js';
 
 const SUPPORTED_FORMATS = ['json', 'markdown', 'html'] as const;
 type OutputFormat = (typeof SUPPORTED_FORMATS)[number];
@@ -81,7 +82,7 @@ export async function runReporterCommand(
     path.relative(process.cwd(), schemaAbsolute) ||
     path.basename(schemaAbsolute);
 
-  const { report, platformView } = await runEngineWithArtifacts({
+  const { report, platformView, gates } = await runEngineWithArtifacts({
     schema,
     schemaId: options.schemaPath,
     schemaPath: schemaRelative.split(path.sep).join('/'),
@@ -102,6 +103,12 @@ export async function runReporterCommand(
     }
     const singleFormat = options.formats[0]!;
     outputs.push(formatContent(report, singleFormat));
+    if (gates.status === 'fail') {
+      throw new Error(`Gate failure: ${formatGateSummary(gates)}`);
+    }
+    if (gates.status === 'warn') {
+      console.warn(`Gate warnings: ${formatGateSummary(gates)}`);
+    }
     return outputs;
   }
 
@@ -122,7 +129,16 @@ export async function runReporterCommand(
     ).then(() => platformViewPath)
   );
 
-  return Promise.all(writePromises);
+  const results = await Promise.all(writePromises);
+
+  if (gates.status === 'fail') {
+    throw new Error(`Gate failure: ${formatGateSummary(gates)}`);
+  }
+  if (gates.status === 'warn') {
+    console.warn(`Gate warnings: ${formatGateSummary(gates)}`);
+  }
+
+  return results;
 }
 
 function isCommanderHelpDisplayed(error: unknown): error is { code: string } {

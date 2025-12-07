@@ -12,9 +12,10 @@ import type {
   BenchLevel,
 } from './types.js';
 import type { Report, PlanOptions, ReportSummary } from '../model/report.js';
-import { runEngineOnSchema } from '../engine/runner.js';
+import { runEngineWithArtifacts } from '../engine/runner.js';
 import { renderMarkdownReport } from '../render/markdown.js';
 import { renderHtmlReport } from '../render/html.js';
+import { formatGateSummary } from '../gates/index.js';
 
 const requireJson = createRequire(import.meta.url);
 const reporterPkg = requireJson('../../package.json') as {
@@ -105,7 +106,7 @@ async function processBenchEntry({
     const schema = JSON.parse(schemaRaw);
     const schemaRelative =
       relative(process.cwd(), schemaAbsolute) || basename(schemaAbsolute);
-    const report = await runEngineOnSchema({
+    const { report, gates } = await runEngineWithArtifacts({
       schema,
       schemaId: entry.schemaId ?? entry.id ?? basename(entry.schema),
       schemaPath: schemaRelative.split(sep).join('/'),
@@ -120,13 +121,23 @@ async function processBenchEntry({
       outDir,
       formats
     );
+
+    if (gates.status === 'fail') {
+      throw new Error(`Gate failure: ${formatGateSummary(gates)}`);
+    }
+
+    const summary = buildBenchSchemaSummaryFromReport(
+      entry,
+      report,
+      reportJsonPath,
+      schemaRelative
+    );
+    const level =
+      gates.status === 'warn' && summary.level === 'ok'
+        ? 'limited'
+        : summary.level;
     return {
-      summary: buildBenchSchemaSummaryFromReport(
-        entry,
-        report,
-        reportJsonPath,
-        schemaRelative
-      ),
+      summary: { ...summary, level },
       meta: {
         toolName: report.meta.toolName,
         toolVersion: report.meta.toolVersion,
