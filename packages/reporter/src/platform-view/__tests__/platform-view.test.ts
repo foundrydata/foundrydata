@@ -130,6 +130,68 @@ describe('buildReporterPlatformView', () => {
     );
   });
 
+  it('sorts and preserves canonPath/gValid in repair usage entries', () => {
+    const metrics = baseMetrics({
+      repairUsageByMotif: [
+        {
+          motifId: 'beta',
+          gValid: false,
+          items: 1,
+          itemsWithRepair: 1,
+          actions: 2,
+          canonPath: '#/z',
+        },
+        {
+          motifId: 'alpha',
+          gValid: true,
+          items: 2,
+          itemsWithRepair: 0,
+          actions: 0,
+          canonPath: '#/a',
+        },
+        {
+          motifId: 'alpha',
+          gValid: false,
+          items: 1,
+          itemsWithRepair: 1,
+          actions: 1,
+          canonPath: '#/a',
+        },
+      ],
+    });
+
+    const view = buildReporterPlatformView({ metrics });
+    expect(view.metrics.repairUsageByMotif).toEqual([
+      {
+        motif: 'alpha',
+        gValid: true,
+        canonPath: '#/a',
+        items: 2,
+        itemsWithRepair: 0,
+        actions: 0,
+        tiers: undefined,
+      },
+      {
+        motif: 'alpha',
+        gValid: false,
+        canonPath: '#/a',
+        items: 1,
+        itemsWithRepair: 1,
+        actions: 1,
+        tiers: undefined,
+      },
+      {
+        motif: 'beta',
+        gValid: false,
+        canonPath: '#/z',
+        items: 1,
+        itemsWithRepair: 1,
+        actions: 2,
+        tiers: undefined,
+      },
+    ]);
+  });
+
   it('handles runs without coverage reports', () => {
     const metrics = baseMetrics({
       repairUsageByMotif: [

@@ -8,6 +8,7 @@ Touched files:
 - packages/reporter/src/schemas/reporter-platform-view-v1.schema.json
 - packages/reporter/src/platform-view/__tests__/platform-view.test.ts
 - test/acceptance/gvalid-no-repair.acceptance.spec.ts
+- test/acceptance/gvalid-mixed-repair-usage.acceptance.spec.ts
 - docs/tests-traceability.md
 
 Approach:
