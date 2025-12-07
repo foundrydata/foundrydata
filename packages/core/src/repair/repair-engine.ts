@@ -837,6 +837,7 @@ export function repairItemsAjvDriven(
   type MotifActionBucket = {
     motifId: string;
     gValid: boolean;
+    canonPath: string;
     actions: number;
     info?: GValidInfo;
     actionsList: RepairAction[];
@@ -916,22 +917,25 @@ export function repairItemsAjvDriven(
         motifId: bucket.motifId,
         gValid: bucket.gValid,
         actions: bucket.actions,
+        canonPath: bucket.canonPath,
         items: itemsDelta,
         itemsWithRepair: itemsWithRepairDelta,
       });
-      const key = `${bucket.motifId}::${bucket.gValid ? '1' : '0'}`;
+      const key = `${bucket.canonPath}::${bucket.motifId}::${bucket.gValid ? '1' : '0'}`;
       recordedKeys.add(key);
     }
 
     if (!gValidIndex) return;
     for (const info of gValidIndex.values()) {
       if (!info || info.isGValid !== true) continue;
-      const key = `${info.motif}::1`;
+      const canon = normalizeCanonPath(info.canonPath || '#');
+      const key = `${canon}::${info.motif}::1`;
       if (recordedKeys.has(key)) continue;
       const itemsDelta = computeItemsDelta(info);
       collector.recordRepairUsageEvent({
         motifId: info.motif,
         gValid: true,
+        canonPath: canon,
         actions: 0,
         items: itemsDelta,
         itemsWithRepair: 0,
@@ -2533,7 +2537,7 @@ export function repairItemsAjvDriven(
       const info = getGValidInfo(normalizedCanon);
       const motifId = info && info.motif ? String(info.motif) : 'none';
       const gValid = info?.isGValid === true;
-      const key = `${motifId}::${gValid ? '1' : '0'}`;
+      const key = `${normalizedCanon}::${motifId}::${gValid ? '1' : '0'}`;
       const increment =
         typeof act.details?.actions === 'number' ? act.details.actions : 1;
       const existing = motifBuckets.get(key);
@@ -2541,6 +2545,7 @@ export function repairItemsAjvDriven(
         motifBuckets.set(key, {
           motifId,
           gValid,
+          canonPath: normalizedCanon,
           actions: increment,
           info,
           actionsList: [act],

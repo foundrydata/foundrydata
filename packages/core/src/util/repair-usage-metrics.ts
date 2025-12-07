@@ -4,12 +4,14 @@ export interface RepairUsageSnapshot {
   repairUsageByMotif?: RepairUsageByMotif[];
 }
 
+// eslint-disable-next-line max-lines-per-function
 export function recordRepairUsageEventOnSnapshot(
   snapshot: RepairUsageSnapshot,
   event: {
     motifId: string;
     gValid: boolean;
     actions: number;
+    canonPath?: string;
     items?: number;
     itemsWithRepair?: number;
   }
@@ -17,11 +19,15 @@ export function recordRepairUsageEventOnSnapshot(
   if (!snapshot.repairUsageByMotif) {
     snapshot.repairUsageByMotif = [];
   }
+  const canonPath = event.canonPath ?? undefined;
   const itemsDelta = event.items ?? 1;
   const itemsWithRepairDelta =
     event.itemsWithRepair ?? (event.actions > 0 ? 1 : 0);
   const bucket = snapshot.repairUsageByMotif.find(
-    (entry) => entry.motifId === event.motifId && entry.gValid === event.gValid
+    (entry) =>
+      entry.motifId === event.motifId &&
+      entry.gValid === event.gValid &&
+      entry.canonPath === canonPath
   );
   if (!bucket) {
     const newEntry = {
@@ -30,6 +36,7 @@ export function recordRepairUsageEventOnSnapshot(
       items: itemsDelta,
       itemsWithRepair: itemsWithRepairDelta,
       actions: event.actions,
+      canonPath,
     };
     snapshot.repairUsageByMotif.push(newEntry);
     addGValidCounters(snapshot, newEntry, {

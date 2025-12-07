@@ -27,6 +27,7 @@ export type ReporterPlatformViewV1 = {
 
 export type RepairUsageByMotifEntry = {
   motif: string;
+  gValid: boolean;
   canonPath?: string;
   items: number;
   itemsWithRepair: number;
@@ -259,6 +260,7 @@ function normalizeRepairEntry(
       : undefined;
   return {
     motif: entry.motifId,
+    gValid: entry.gValid === true,
     canonPath,
     items,
     itemsWithRepair,

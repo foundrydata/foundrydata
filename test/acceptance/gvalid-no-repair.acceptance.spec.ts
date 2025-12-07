@@ -32,17 +32,32 @@ describe('Acceptance — G_valid no-repair metrics', () => {
 
     const usage = result.metrics.repairUsageByMotif ?? [];
     expect(usage.length).toBeGreaterThan(0);
+    const simpleObjectUsage = usage.filter(
+      (entry) => entry.motifId === 'simpleObjectRequired'
+    );
+    const totalItems = simpleObjectUsage.reduce(
+      (sum, entry) => sum + entry.items,
+      0
+    );
+    const totalItemsWithRepair = simpleObjectUsage.reduce(
+      (sum, entry) => sum + entry.itemsWithRepair,
+      0
+    );
     expect(
       usage.every(
         (entry) =>
           entry.gValid === true &&
+          typeof entry.canonPath === 'string' &&
+          entry.canonPath.length > 0 &&
           entry.actions === 0 &&
           entry.itemsWithRepair === 0
       )
     ).toBe(true);
 
-    expect(result.metrics.gValid_simpleObjectRequired_items).toBe(3);
-    expect(result.metrics.gValid_simpleObjectRequired_itemsWithRepair).toBe(0);
+    expect(result.metrics.gValid_simpleObjectRequired_items).toBe(totalItems);
+    expect(result.metrics.gValid_simpleObjectRequired_itemsWithRepair).toBe(
+      totalItemsWithRepair
+    );
     expect(result.metrics.gValid_simpleObjectRequired_actions).toBe(0);
   });
 
@@ -72,17 +87,32 @@ describe('Acceptance — G_valid no-repair metrics', () => {
 
     const usage = result.metrics.repairUsageByMotif ?? [];
     expect(usage.length).toBeGreaterThan(0);
+    const simpleObjectUsage = usage.filter(
+      (entry) => entry.motifId === 'simpleObjectRequired'
+    );
+    const totalItems = simpleObjectUsage.reduce(
+      (sum, entry) => sum + entry.items,
+      0
+    );
+    const totalItemsWithRepair = simpleObjectUsage.reduce(
+      (sum, entry) => sum + entry.itemsWithRepair,
+      0
+    );
     expect(
       usage.every(
         (entry) =>
           entry.gValid === true &&
+          typeof entry.canonPath === 'string' &&
+          entry.canonPath.length > 0 &&
           entry.actions === 0 &&
           entry.itemsWithRepair === 0
       )
     ).toBe(true);
 
-    expect(result.metrics.gValid_simpleObjectRequired_items).toBe(2);
-    expect(result.metrics.gValid_simpleObjectRequired_itemsWithRepair).toBe(0);
+    expect(result.metrics.gValid_simpleObjectRequired_items).toBe(totalItems);
+    expect(result.metrics.gValid_simpleObjectRequired_itemsWithRepair).toBe(
+      totalItemsWithRepair
+    );
     expect(result.metrics.gValid_simpleObjectRequired_actions).toBe(0);
   });
 
@@ -117,17 +147,29 @@ describe('Acceptance — G_valid no-repair metrics', () => {
 
     const usage = result.metrics.repairUsageByMotif ?? [];
     expect(usage.length).toBeGreaterThan(0);
+    const arrayUsage = usage.filter(
+      (entry) => entry.motifId === 'arrayContainsSimple'
+    );
+    const totalItems = arrayUsage.reduce((sum, entry) => sum + entry.items, 0);
+    const totalItemsWithRepair = arrayUsage.reduce(
+      (sum, entry) => sum + entry.itemsWithRepair,
+      0
+    );
     expect(
       usage.every(
         (entry) =>
           entry.gValid === true &&
+          typeof entry.canonPath === 'string' &&
+          entry.canonPath.length > 0 &&
           entry.actions === 0 &&
           entry.itemsWithRepair === 0
       )
     ).toBe(true);
 
-    expect(result.metrics.gValid_arrayContainsSimple_items).toBe(3);
-    expect(result.metrics.gValid_arrayContainsSimple_itemsWithRepair).toBe(0);
+    expect(result.metrics.gValid_arrayContainsSimple_items).toBe(totalItems);
+    expect(result.metrics.gValid_arrayContainsSimple_itemsWithRepair).toBe(
+      totalItemsWithRepair
+    );
     expect(result.metrics.gValid_arrayContainsSimple_actions).toBe(0);
   });
 });

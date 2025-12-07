@@ -59,9 +59,10 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["motif", "items", "itemsWithRepair", "actions"],
+            "required": ["motif", "gValid", "items", "itemsWithRepair", "actions"],
             "properties": {
               "motif": { "type": "string", "minLength": 1 },
+              "gValid": { "type": "boolean" },
               "canonPath": { "type": "string" },
               "items": { "type": "integer", "minimum": 0 },
               "itemsWithRepair": { "type": "integer", "minimum": 0 },

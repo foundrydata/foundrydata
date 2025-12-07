@@ -20,6 +20,8 @@
     "repairUsageByMotif": [
       {
         "motif": "alpha",
+        "gValid": false,
+        "canonPath": "#/alpha",
         "items": 2,
         "itemsWithRepair": 1,
         "actions": 1

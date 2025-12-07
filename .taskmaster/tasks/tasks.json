@@ -1740,7 +1740,7 @@
             "estimatedHours": 7,
             "file": "packages/core/src/repair/repair-engine.ts",
             "parentId": "9405",
-            "updatedAt": "2025-12-03T22:48:33.767Z"
+            "updatedAt": "2025-12-07T13:33:36.513Z"
           },
           {
             "id": 9405003,
@@ -1763,7 +1763,7 @@
             "updatedAt": "2025-12-03T23:06:56.483Z"
           }
         ],
-        "updatedAt": "2025-12-03T23:06:56.483Z"
+        "updatedAt": "2025-12-07T13:33:36.513Z"
       },
       {
         "id": "9406",
@@ -1820,7 +1820,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-07T13:25:09.539Z",
+      "lastModified": "2025-12-07T13:33:36.515Z",
       "taskCount": 7,
       "completedCount": 7,
       "tags": [

@@ -1,20 +1,26 @@
-Task: 9404.9404003   Title: Add tests and diagnostics for G_valid Repair violations
-Anchors: [spec://§6#generator-repair-contract, spec://§10#repair-engine, spec://§15#metrics]
+Task: 9405.9405002   Title: Instrument Repair to emit motif-tagged usage events
+Anchors: [spec://§6#generator-repair-contract, spec://§6#phases, spec://§10#repair-engine, spec://§15#metrics]
 Touched files:
+- packages/core/src/repair/repair-engine.ts
+- packages/core/src/util/repair-usage-metrics.ts
 - packages/core/src/repair/__tests__/mapping-repair.test.ts
-- PLAN.md
+- packages/reporter/src/platform-view/index.ts
+- packages/reporter/src/schemas/reporter-platform-view-v1.schema.json
+- packages/reporter/src/platform-view/__tests__/platform-view.test.ts
+- test/acceptance/gvalid-no-repair.acceptance.spec.ts
+- docs/tests-traceability.md
 
 Approach:
-Add missing coverage to prove the Repair engine honors the G_valid contract for non-structural actions and budget handling. First, add a unit test using the existing G_valid simple object motif where a string field violates `minLength` while `planOptions.gValid` is true and structural guards remain active; assert that Repair performs the non-structural pad, the instance becomes valid, and no `REPAIR_GVALID_STRUCTURAL_ACTION` diagnostic fires. Second, add a G_valid regression that forces structural fixes to stay blocked (e.g., missing required + attempts=1) so the loop cannot make progress; assert the output stays unchanged, `REPAIR_GVALID_STRUCTURAL_ACTION` surfaces, and `UNSAT_BUDGET_EXHAUSTED` records budget exhaustion in the repair phase. Keep seeds/defaults unchanged to avoid snapshot churn, and reuse existing micro-schemas/metrics helpers for determinism. Maintain ≥80% coverage on the touched test file by asserting diagnostics, metrics counters where relevant, and item equality. Stay within subtask scope—no pipeline or generator changes.
+Align motif-level repair usage metrics with the SPEC contract by tagging usage events with canonPath + motif + G_valid and preserving those fields end-to-end. In the repair engine, change the motif buckets to key on (canonPath, motifId, gValid) and pass canonPath through to recordRepairUsageEvent, including zero-action G_valid buckets so observability remains deterministic. Extend recordRepairUsageEventOnSnapshot to merge by canonPath as well as motif/gValid and to store canonPath in the bucket. Update the reporter platform-view builder and schema to keep the gValid flag and canonPath in the derived repairUsageByMotif entries, while maintaining deterministic sorting and non-negative clamps. Strengthen unit/integration tests: repair mapping tests should assert canonPath and gValid preservation; reporter platform-view tests should cover the new fields and ordering; acceptance no-repair tests should assert that G_valid buckets include canonPath and gValid while remaining zero-action. Align tests-traceability invariants with the enforced behavior. Keep changes scoped to instrumentation/observability, avoiding pipeline logic beyond metrics tagging. Ensure coverage ≥80% on touched test files.
 
 Risks/Unknowns:
-- Need deterministic paths to hit UNSAT_BUDGET_EXHAUSTED under G_valid without altering engine logic; using attempts=1 with blocked structural fixes should suffice but may need adjustment if AJV error ordering changes.
-- Non-structural minLength repair must not trigger tier-disabled diagnostics; guard against unintended policy side effects.
-Parent bullets couverts: [KR2, KR3, DEL3, DOD2, DOD3, TS2, TS3]
+- Need to ensure canonical path normalization is stable for both repair actions and G_valid-only buckets to avoid duplicate buckets.
+- Reporter schema change must stay backward compatible; verify fixtures reflect new fields without breaking consumers.
+Parent bullets couverts: [KR1, KR2, DEL2, DOD1, DOD2, TS1, TS2]
 
 DoD:
-- [x] Contrat G_valid vs Repair vérifié pour actions non structurelles et budgets (diag/schema OK)
-- [x] Tests G_valid (non-structural + budget UNSAT) cov ≥80 % fichiers touchés
+- [x] Contrat Generator vs Repair implémenté (tag canonPath + gValid sur usage events)
+- [x] Tests G_valid / Repair mis à jour (unit + acceptance) cov ≥80 %
 - [x] build/typecheck/lint/test/bench OK
 
 Checks:

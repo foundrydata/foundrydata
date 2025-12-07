@@ -114,9 +114,11 @@ describe('buildReporterPlatformView', () => {
     expect(usage.map((u) => u.motif)).toEqual(['alpha', 'zeta']);
     expect(usage[0]?.actions).toBe(3);
     expect(usage[0]?.itemsWithRepair).toBe(1);
+    expect(usage[0]?.gValid).toBe(true);
     // actions=0 forces itemsWithRepair to 0
     expect(usage[1]?.itemsWithRepair).toBe(0);
     expect(usage[1]?.canonPath).toBe('#/zeta');
+    expect(usage[1]?.gValid).toBe(false);
     expect(usage[1]?.tiers?.tier1).toBe(1);
 
     const planning = view.metrics.coverage?.planning;
@@ -137,6 +139,7 @@ describe('buildReporterPlatformView', () => {
           items: 0,
           itemsWithRepair: 0,
           actions: 0,
+          canonPath: '#',
         },
       ],
     });

@@ -386,6 +386,8 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
     const hasGValidBucket = usage.some((entry) => entry.gValid === true);
 
     expect(hasGValidBucket).toBe(true);
+    const gValidBucket = usage.find((entry) => entry.gValid === true);
+    expect(gValidBucket?.canonPath).toMatch(/^#/);
 
     const motifKey = 'gValid_simpleObjectRequired';
     expect(snapshot[`${motifKey}_items`]).toBeGreaterThanOrEqual(1);
@@ -438,6 +440,7 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
         entry.motifId === 'simpleObjectRequired' && entry.gValid === true
     );
     expect(bucket).toBeDefined();
+    expect(bucket?.canonPath).toMatch(/^#/);
     expect(bucket?.items).toBe(1);
     expect(bucket?.itemsWithRepair).toBe(0);
     expect(bucket?.actions).toBe(0);

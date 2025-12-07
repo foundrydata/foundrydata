@@ -306,6 +306,7 @@ export class MetricsCollector {
     motifId: string;
     gValid: boolean;
     actions: number;
+    canonPath?: string;
     items?: number;
     itemsWithRepair?: number;
   }): void {
