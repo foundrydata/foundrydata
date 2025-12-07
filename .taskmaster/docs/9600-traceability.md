@@ -35,6 +35,7 @@ This document maps the parent task 9600 bullets from Implementation Details, Del
 
 - **9600.9600002 – Implement deterministic metrics collection and SLI separation**  
   Covers: [KR1, KR2, DEL1, DEL2, DOD2, TS1, TS2] (status: done).
+  - Update: instrumented branchTrialsTried + evalTrace counters and averaged repairActionsPerRow; added regression coverage for metrics observability and collector eval-trace aggregation.
 
 - **9600.9600003 – Add side-effect-free regression tests for metrics toggle**  
   Covers: [KR2, DEL2, DOD2, TS2] (status: done).

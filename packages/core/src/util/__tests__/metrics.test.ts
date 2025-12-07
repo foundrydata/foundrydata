@@ -63,6 +63,16 @@ describe('MetricsCollector', () => {
     expect(snapshot.p95LatencyMs).toBe(110);
   });
 
+  it('computes repairActionsPerRow as an average across rows', () => {
+    const collector = new MetricsCollector({ now: () => 0 });
+
+    collector.addRepairActions(3, 2);
+    collector.addRepairActions(1, 1);
+
+    const snapshot = collector.snapshotMetrics({ verbosity: 'ci' });
+    expect(snapshot.repairActionsPerRow).toBeCloseTo(4 / 3);
+  });
+
   it('ignores SLIs when enableSlis is false even if metrics are enabled', () => {
     const collector = new MetricsCollector({ now: () => 0, enableSlis: false });
     collector.observeMemoryPeak(512);
@@ -132,6 +142,17 @@ describe('MetricsCollector', () => {
     expect(snapshot.repair_tierDisabled).toBe(0);
     expect(snapshot.branchCoverageOneOf).toBeUndefined();
     expect(snapshot.enumUsage).toBeUndefined();
+  });
+
+  it('tracks evaluation trace checks and proofs', () => {
+    const collector = new MetricsCollector({ now: () => 0 });
+
+    collector.addEvalTraceCheck(false);
+    collector.addEvalTraceCheck(true);
+
+    const snapshot = collector.snapshotMetrics({ verbosity: 'ci' });
+    expect(snapshot.evalTraceChecks).toBe(2);
+    expect(snapshot.evalTraceProved).toBe(1);
   });
 
   it('exposes helper to inspect verbosity mode', () => {

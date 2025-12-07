@@ -773,6 +773,7 @@ class GeneratorEngine {
         if (chosen !== undefined) {
           const branch = source.oneOf[chosen];
           if (isRecord(branch)) {
+            this.metrics?.addBranchTrial();
             const childPointer = appendPointer(oneOfPointer, String(chosen));
             mergeSchema(branch as Record<string, unknown>, childPointer);
           }
@@ -784,6 +785,7 @@ class GeneratorEngine {
         if (chosen !== undefined) {
           const branch = source.anyOf[chosen];
           if (isRecord(branch)) {
+            this.metrics?.addBranchTrial();
             const childPointer = appendPointer(anyOfPointer, String(chosen));
             mergeSchema(branch as Record<string, unknown>, childPointer);
           }
@@ -1068,6 +1070,7 @@ class GeneratorEngine {
       })();
     if (cacheForObject.has(name)) {
       const cached = cacheForObject.get(name) ?? undefined;
+      this.metrics?.addEvalTraceCheck(cached !== undefined);
       return cached;
     }
 
@@ -1091,6 +1094,7 @@ class GeneratorEngine {
         if (evaluation === 'additionalProperties') {
           if (!fallbackProof) fallbackProof = proof;
         } else {
+          this.metrics?.addEvalTraceCheck(true);
           return proof;
         }
       }
@@ -1106,6 +1110,7 @@ class GeneratorEngine {
     }
     const result = fallbackProof;
     cacheForObject.set(name, result ?? null);
+    this.metrics?.addEvalTraceCheck(result !== undefined);
     return result;
   }
 
@@ -3621,6 +3626,7 @@ class GeneratorEngine {
     branchPointer: JsonPointer,
     index: number
   ): void {
+    this.metrics?.addBranchTrial();
     const pointerFromIndex =
       branchSchema && typeof branchSchema === 'object'
         ? getPointerFromIndex(this.pointerIndex, branchSchema)

@@ -2211,7 +2211,7 @@
             "estimatedHours": 4,
             "file": "packages/core/src/util/metrics.ts",
             "parentId": "9600",
-            "updatedAt": "2025-12-06T15:39:34.771Z"
+            "updatedAt": "2025-12-07T00:14:01.392Z"
           },
           {
             "id": 9600003,
@@ -2234,7 +2234,7 @@
             "updatedAt": "2025-12-06T18:57:06.116Z"
           }
         ],
-        "updatedAt": "2025-12-06T18:57:06.116Z"
+        "updatedAt": "2025-12-07T00:14:01.392Z"
       },
       {
         "id": "9601",
@@ -2555,7 +2555,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-06T23:59:46.208Z",
+      "lastModified": "2025-12-07T00:14:01.394Z",
       "taskCount": 7,
       "completedCount": 5,
       "tags": [

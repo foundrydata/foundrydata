@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { performance } from 'node:perf_hooks';
 
 import type {
@@ -85,6 +86,8 @@ export class MetricsCollector {
   private validatedRows = 0;
   private totalRepairPasses = 0;
   private repairRows = 0;
+  private totalRepairActions = 0;
+  private repairActionRows = 0;
   private snapshot: MetricsSnapshot;
   private verbosity: MetricsVerbosity;
 
@@ -180,12 +183,21 @@ export class MetricsCollector {
       this.repairRows > 0 ? this.totalRepairPasses / this.repairRows : 0;
   }
 
-  public addRepairActions(count: number): void {
+  public addRepairActions(count: number, rowCount = 1): void {
     if (!this.enabled) {
       return;
     }
+    const actions = Math.max(0, count);
+    const rows = Math.max(0, rowCount);
+    if (rows === 0) {
+      return;
+    }
+    this.totalRepairActions += actions;
+    this.repairActionRows += rows;
     this.snapshot.repairActionsPerRow =
-      (this.snapshot.repairActionsPerRow ?? 0) + count;
+      this.repairActionRows > 0
+        ? this.totalRepairActions / this.repairActionRows
+        : 0;
   }
 
   public addBranchTrial(): void {
@@ -226,6 +238,16 @@ export class MetricsCollector {
     }
     this.snapshot.patternWitnessTried =
       (this.snapshot.patternWitnessTried ?? 0) + 1;
+  }
+
+  public addEvalTraceCheck(proved: boolean): void {
+    if (!this.enabled) {
+      return;
+    }
+    this.snapshot.evalTraceChecks = (this.snapshot.evalTraceChecks ?? 0) + 1;
+    if (proved) {
+      this.snapshot.evalTraceProved = (this.snapshot.evalTraceProved ?? 0) + 1;
+    }
   }
 
   public recordNameAutomatonBfs(metrics: {

@@ -1,22 +1,21 @@
-Task: 9602   Title: Add observability regression tests for repair/G_valid metrics (subtask 9602.9602003)
-Anchors: [spec://§2#observability-surfaces, spec://§10#repair-philosophy-observability, spec://§15#metrics, spec://§15#rng]
+Task: 9600.9600002   Title: Implement deterministic metrics collection and SLI separation
+Anchors: [spec://§15#metrics, spec://§15#rng, spec://§2#observability-surfaces]
 Touched files:
-- packages/core/src/transform/g-valid-classifier.ts
-- packages/core/src/util/repair-usage-metrics.ts
-- packages/core/src/repair/repair-engine.ts
-- packages/core/src/repair/__tests__/mapping-repair.test.ts
-- packages/core/src/pipeline/__tests__/repair-observability.regression.test.ts
-- test/acceptance/gvalid-no-repair.acceptance.spec.ts
+- packages/core/src/util/metrics.ts
+- packages/core/src/util/__tests__/metrics.test.ts
+- packages/core/src/generator/foundry-generator.ts
+- packages/core/src/pipeline/orchestrator.ts
+- packages/core/src/pipeline/__tests__/metrics-observability.integration.test.ts
 
 Approach:
-Objectif: corriger la conformité des métriques G_valid/Tier (spec://§15#metrics, spec://§10#repair-philosophy-observability) en alignant le motif array sur le nom canonique `gValid_arrayContainsSimple_*` et en comptant les éléments (pas seulement les items) tout en gardant l’observabilité passive (spec://§2#observability-surfaces). (1) Renommer le motif `ArrayItemsContainsSimple` dans le classifieur G_valid et propager la clé dans la collecte de métriques afin que les compteurs suivent la nomenclature SPEC. (2) Revoir `recordRepairUsageEvent` pour accepter un delta d’items et calculer les compteurs G_valid à partir de la taille réelle des tableaux (items, itemsWithRepair/actions si touchés), en restant déterministe et sans changer la sémantique Repair. (3) Ajuster le chemin métrique dans l’engine Repair pour enregistrer les compteurs par élément (incluant le cas zéro action) et conserver les tiers/policy blocks inchangés. (4) Mettre à jour les tests unitaires/intégration/acceptance (mapping-repair, pipeline regression, gvalid-no-repair) pour refléter les nouveaux noms et les totaux par élément, puis vérifier que le comparateur de déterminisme continue d’ignorer uniquement les métriques non déterministes (spec://§15#rng). (5) Garder la couverture indépendante de coverage/metrics toggle via les tests existants, et réexécuter la chaîne build → typecheck → lint → test → bench.
+Objectif: combler les écarts diag.metrics identifiés (branchTrialsTried absent, evalTraceChecks/Proved non collectés, repairActionsPerRow mal agrégé) tout en gardant l’observabilité passive (spec://§2#observability-surfaces) et déterministe (spec://§15#rng). (1) Étendre MetricsCollector avec des compteurs explicites pour evalTrace (checks/proved) et un accumulateur « actions par ligne » basé sur totaux + lignes, conserver enableSlis pour séparer SLIs non déterministes. (2) Instrumenter le générateur: enregistrer un branch trial à chaque sélection oneOf/anyOf, compter les consultations d’E-Trace (findEvaluationProof) et les preuves trouvées, sans influer sur le flux (metrics gating). (3) Mettre à jour le pipeline Repair pour passer le nombre d’items à l’agrégateur et produire une moyenne repairActionsPerRow stable. (4) Ajouter/mettre à jour les tests: unitaires sur MetricsCollector (evalTrace, moyenne actions/row), intégration pipeline couvrant branchTrialsTried + evalTraceCounters sur un schéma minimal avec metrics enable et determinism comparator qui ignore SLIs. Vérifier que les snapshots/reporters restent cohérents (payloads numériques uniquement). (5) Exécuter la chaîne build → typecheck → lint → test → bench; vérifier que les diags métriques restent conformes au schéma (spec://§15#metrics).
 
 Risks/Unknowns:
-- Comptage par élément: s’assurer que le delta d’items ne double pas les actions et reste stable avec allowStructuralInGValid.
-- Renommage motif: vérifier qu’aucun consommateur (reporter/traceabilité) n’attend l’ancienne clé.
-- ItemsWithRepair: calcul conservateur basé sur actions peut sous-estimer certains cas; documenter dans les tests si besoin.
+- Scope branch trials: s’assurer que l’instrumentation couvre bien les sélection oneOf/anyOf sans double comptage (pas de branches retry loops cachées).
+- E-Trace: comptage par appel findEvaluationProof peut sur-comptabiliser si la routine est appelée plusieurs fois pour le même nom; vérifier le comportement via tests d’intégration.
+- repairActionsPerRow: moyenne globale basée sur actions totales/items peut diverger si d’autres appelants invoquent addRepairActions sans rowCount; couvrir via tests unitaires.
 
-Parent bullets couverts: [KR1, KR2, DOD1, DOD3, TS1, TS3]
+Parent bullets couverts: [KR1, KR2, DOD1, DOD2, TS1, TS2, TS3]
 
 Checks:
 - build: npm run build
