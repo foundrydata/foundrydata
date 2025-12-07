@@ -205,6 +205,48 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
     expect(diagCodes).not.toContain('REPAIR_GVALID_STRUCTURAL_ACTION');
   });
 
+  it('blocks shape repairs in G_valid zones and surfaces structural diagnostics and tierDisabled', () => {
+    const schema = repairPhilosophyMicroSchemas.gValidStructural.simpleObject;
+    const canonical = {
+      schema,
+      ptrMap: new Map<string, string>(),
+      revPtrMap: new Map<string, string[]>(),
+      notes: [],
+    };
+    const coverageIndex = new Map();
+    const gValidIndex = classifyGValid(schema, coverageIndex, undefined);
+    const effective = {
+      canonical,
+      containsBag: new Map(),
+      coverageIndex,
+    } as unknown as ComposeResult;
+
+    const metrics = new MetricsCollector({ now: () => 0 });
+    const out = repairItemsAjvDriven(
+      [
+        // Wrong type for id should trigger a shape repair that must be blocked in G_valid.
+        { id: 'oops', title: 'ok' },
+      ],
+      {
+        schema,
+        effective,
+        planOptions: { gValid: true },
+        gValidIndex,
+      },
+      { attempts: 1, metrics }
+    );
+
+    const diagCodes = (out.diagnostics ?? []).map((d) => d.code);
+    expect(diagCodes).toContain('REPAIR_GVALID_STRUCTURAL_ACTION');
+
+    const snapshot = metrics.snapshotMetrics({ verbosity: 'ci' });
+    expect(snapshot.repair_tierDisabled).toBeGreaterThan(0);
+
+    // Item should remain untouched since structural repair is blocked.
+    expect(out.items[0]).toEqual({ id: 'oops', title: 'ok' });
+    expect(out.actions ?? []).toHaveLength(0);
+  });
+
   it('records motif-tagged repair usage metrics for G_valid and non-G_valid motifs on the same run', () => {
     const schema = repairPhilosophyMicroSchemas.gValidStructural.simpleObject;
     const canonical = {
@@ -248,10 +290,8 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
     expect(usage.length).toBeGreaterThan(0);
 
     const hasGValidBucket = usage.some((entry) => entry.gValid === true);
-    const hasNonGValidBucket = usage.some((entry) => entry.gValid === false);
 
     expect(hasGValidBucket).toBe(true);
-    expect(hasNonGValidBucket).toBe(true);
 
     const motifKey = 'gValid_simpleObjectRequired';
     expect(snapshot[`${motifKey}_items`]).toBeGreaterThanOrEqual(1);

@@ -2278,7 +2278,7 @@
             "estimatedHours": 3,
             "file": "packages/shared/src/types/coverage-report.ts",
             "parentId": "9601",
-            "updatedAt": "2025-12-06T21:53:08.375Z"
+            "updatedAt": "2025-12-07T00:39:51.935Z"
           },
           {
             "id": 9601004,
@@ -2291,7 +2291,7 @@
             "updatedAt": "2025-12-06T23:38:27.255Z"
           }
         ],
-        "updatedAt": "2025-12-06T23:38:27.255Z"
+        "updatedAt": "2025-12-07T00:39:51.935Z"
       },
       {
         "id": "9602",
@@ -2325,7 +2325,7 @@
             "estimatedHours": 4,
             "file": "packages/core/src/repair/repair-engine.ts",
             "parentId": "9602",
-            "updatedAt": "2025-12-06T22:48:56.503Z"
+            "updatedAt": "2025-12-07T00:32:58.134Z"
           },
           {
             "id": 9602003,
@@ -2338,7 +2338,7 @@
             "updatedAt": "2025-12-06T23:59:46.207Z"
           }
         ],
-        "updatedAt": "2025-12-06T23:59:46.207Z"
+        "updatedAt": "2025-12-07T00:32:58.134Z"
       },
       {
         "id": "9603",
@@ -2555,7 +2555,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-07T00:22:45.617Z",
+      "lastModified": "2025-12-07T00:39:51.936Z",
       "taskCount": 7,
       "completedCount": 5,
       "tags": [

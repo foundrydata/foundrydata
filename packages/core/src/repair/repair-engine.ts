@@ -723,8 +723,30 @@ export function repairItemsAjvDriven(
   const gValidIndex = args.gValidIndex;
   const getGValidInfo = (
     canonPath: string
-  ): ReturnType<NonNullable<GValidClassificationIndex>['get']> | undefined =>
-    gValidIndex ? gValidIndex.get(canonPath) : undefined;
+  ): ReturnType<NonNullable<GValidClassificationIndex>['get']> | undefined => {
+    if (!gValidIndex) return undefined;
+    const normalizeCanon = (p: string): string => {
+      if (!p || p === '#') return '#';
+      if (p.startsWith('#')) return p;
+      if (p.startsWith('/')) return `#${p}`;
+      return `#/${p}`;
+    };
+    let fallback: ReturnType<NonNullable<GValidClassificationIndex>['get']> =
+      undefined;
+    let current = normalizeCanon(canonPath);
+    while (current) {
+      const found = gValidIndex.get(current);
+      if (found) {
+        if (found.isGValid) return found;
+        if (!fallback) fallback = found;
+      }
+      if (current === '#') break;
+      const next = current.replace(/\/[^/]+$/, '');
+      if (next === current) break;
+      current = next === '' ? '#' : next;
+    }
+    return fallback;
+  };
   const resolvedOptions = resolveOptions(args.planOptions);
   const bailLimit = Math.max(
     1,
@@ -1282,6 +1304,36 @@ export function repairItemsAjvDriven(
           // derive desired type
           const parentPtr = sp.replace(/\/(?:type)(?:\/.*)?$/, '');
           const resolvedParent = resolveSchemaPointer(parentPtr);
+          const canonPath = normalizeCanonPath(
+            resolvedParent.canon ?? resolvedParent.origin ?? parentPtr
+          );
+          const policy = applyTierPolicyForAction(kw, canonPath);
+          if (!policy.allowed) {
+            if (isGValidStructuralGuardEnabled(canonPath)) {
+              diagnostics.push({
+                code: DIAGNOSTIC_CODES.REPAIR_GVALID_STRUCTURAL_ACTION,
+                canonPath,
+                phase: DIAGNOSTIC_PHASES.REPAIR,
+                details: {
+                  kind: 'type',
+                  strategy: 'coerce',
+                },
+              });
+            }
+            continue;
+          }
+          if (isGValidStructuralGuardEnabled(canonPath)) {
+            diagnostics.push({
+              code: DIAGNOSTIC_CODES.REPAIR_GVALID_STRUCTURAL_ACTION,
+              canonPath,
+              phase: DIAGNOSTIC_PHASES.REPAIR,
+              details: {
+                kind: 'type',
+                strategy: 'coerce',
+              },
+            });
+            continue;
+          }
           const nodeSchema = getByPointer(schema, resolvedParent.origin) as any;
           let desired: string | undefined;
           if (typeof nodeSchema?.type === 'string') desired = nodeSchema.type;
@@ -1325,6 +1377,36 @@ export function repairItemsAjvDriven(
           if (isUnderPropertyNames(sp)) continue;
           const parentPtr = sp.replace(/\/(?:enum)(?:\/.*)?$/, '');
           const resolvedParent = resolveSchemaPointer(parentPtr);
+          const canonPath = normalizeCanonPath(
+            resolvedParent.canon ?? resolvedParent.origin ?? parentPtr
+          );
+          const policy = applyTierPolicyForAction(kw, canonPath);
+          if (!policy.allowed) {
+            if (isGValidStructuralGuardEnabled(canonPath)) {
+              diagnostics.push({
+                code: DIAGNOSTIC_CODES.REPAIR_GVALID_STRUCTURAL_ACTION,
+                canonPath,
+                phase: DIAGNOSTIC_PHASES.REPAIR,
+                details: {
+                  kind: 'enum',
+                  strategy: 'enumFirst',
+                },
+              });
+            }
+            continue;
+          }
+          if (isGValidStructuralGuardEnabled(canonPath)) {
+            diagnostics.push({
+              code: DIAGNOSTIC_CODES.REPAIR_GVALID_STRUCTURAL_ACTION,
+              canonPath,
+              phase: DIAGNOSTIC_PHASES.REPAIR,
+              details: {
+                kind: 'enum',
+                strategy: 'enumFirst',
+              },
+            });
+            continue;
+          }
           const nodeSchema = getByPointer(schema, resolvedParent.origin) as any;
           const e = Array.isArray(nodeSchema?.enum)
             ? nodeSchema.enum
@@ -1338,6 +1420,36 @@ export function repairItemsAjvDriven(
           if (isUnderPropertyNames(sp)) continue;
           const parentPtr = sp.replace(/\/(?:const)(?:\/.*)?$/, '');
           const resolvedParent = resolveSchemaPointer(parentPtr);
+          const canonPath = normalizeCanonPath(
+            resolvedParent.canon ?? resolvedParent.origin ?? parentPtr
+          );
+          const policy = applyTierPolicyForAction(kw, canonPath);
+          if (!policy.allowed) {
+            if (isGValidStructuralGuardEnabled(canonPath)) {
+              diagnostics.push({
+                code: DIAGNOSTIC_CODES.REPAIR_GVALID_STRUCTURAL_ACTION,
+                canonPath,
+                phase: DIAGNOSTIC_PHASES.REPAIR,
+                details: {
+                  kind: 'const',
+                  strategy: 'const',
+                },
+              });
+            }
+            continue;
+          }
+          if (isGValidStructuralGuardEnabled(canonPath)) {
+            diagnostics.push({
+              code: DIAGNOSTIC_CODES.REPAIR_GVALID_STRUCTURAL_ACTION,
+              canonPath,
+              phase: DIAGNOSTIC_PHASES.REPAIR,
+              details: {
+                kind: 'const',
+                strategy: 'const',
+              },
+            });
+            continue;
+          }
           const nodeSchema = getByPointer(schema, resolvedParent.origin) as any;
           if (!('const' in (nodeSchema ?? {}))) continue;
           const c = (nodeSchema as any).const;
