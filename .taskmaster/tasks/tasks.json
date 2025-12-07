@@ -1447,7 +1447,7 @@
         "priority": "high",
         "estimatedHours": 10,
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "complexityScore": 3,
         "details": "[Context]\nThe canonical spec and architecture describe the 5-stage pipeline but leave the Generator vs Repair boundary implicit.\nAligns with spec §6 (High-Level Architecture), §9 (Generator) and §10 (Repair Engine), and introduces a new subsection under §6 for the Generator / Repair contract and generator-valid zone (G_valid).\n\n[Key requirements]\n- Add a normative \"Generator vs Repair contract\" subsection to the generator/repair sections.\n- Define G_valid v1 scope (simple objects, simple arrays with items+contains, no AP:false/unevaluated* interplay) and the meaning of \"AJV-valid by construction\" (structural validity with only numeric/format nudges left to Repair).\n- State explicitly that outside G_valid the existing \"minimal witness + bounded Repair\" regime remains in force.\n- Document the UUID + contains example as a reference motif.\n\n[Deliverables]\n- Updated docs/spec-canonical-json-schema-generator.md (spec §6/§9/§10), ARCHITECTURE.md and Invariants/Known-Limits with the new contract.",
         "testStrategy": "- Spec review checklist covering: presence of the new section, correct G_valid v1 scope, explicit description of allowed/forbidden Repair actions.\n- Consistency pass between canonical spec, ARCHITECTURE.md, COMPREHENSIVE_FEATURE_SUPPORT.md and Invariants.md.\n- Internal review with generator/repair owners to confirm the wording matches what can be implemented without breaking existing invariants.",
@@ -1456,11 +1456,11 @@
             "id": 9400001,
             "title": "Add Generator vs Repair contract and G_valid section to canonical spec",
             "description": "Draft the new section in docs/spec-canonical-json-schema-generator.md and link it from the Generator (spec §9) and Repair (spec §10) chapters.",
-            "status": "in-progress",
+            "status": "done",
             "estimatedHours": 4,
             "file": "docs/spec-canonical-json-schema-generator.md",
             "parentId": "9400",
-            "updatedAt": "2025-12-07T10:56:27.355Z"
+            "updatedAt": "2025-12-07T11:08:36.382Z"
           },
           {
             "id": 9400002,
@@ -1486,14 +1486,14 @@
             "id": 9400004,
             "title": "Document UUID + contains pattern as reference example",
             "description": "Write a self-contained example for the UUID + contains pattern that illustrates the change from minimal-witness generation with Repair filling required fields to G_valid generation where the Generator produces a fully valid item, aligned with spec §6.3.2.",
-            "status": "in-progress",
+            "status": "done",
             "estimatedHours": 2,
             "file": "docs/examples/g-valid-uuid-contains.md",
             "parentId": "9400",
-            "updatedAt": "2025-12-07T10:58:09.742Z"
+            "updatedAt": "2025-12-07T11:08:41.792Z"
           }
         ],
-        "updatedAt": "2025-12-07T10:58:09.742Z"
+        "updatedAt": "2025-12-07T11:08:41.792Z"
       },
       {
         "id": "9401",
@@ -1504,7 +1504,7 @@
         "dependencies": [
           "9400"
         ],
-        "status": "done",
+        "status": "in-progress",
         "complexityScore": 4,
         "details": "[Context]\nTo enforce the contract only where safe, the engine must classify schema locations into G_valid vs non-G_valid motifs using the Compose effective view.\nAligns with spec §6.3–§6.5 (Generator / Repair contract and G_valid v1) and §8 (Compose / effective view) as sources of truth for classification inputs.\n\n[Key requirements]\n- Define an internal motif enum/tag (e.g. \"simple-object-required\", \"array-items-contains-simple\", \"ap-false-must-cover\", \"complex-contains\", etc.) plus a boolean G_valid flag.\n- Implement a classifier over canonical/Compose artifacts that marks each canonPath with motif + G_valid, without re-parsing the original schema.\n- Respect v1 exclusions (AP:false + CoverageIndex, unevaluated*, complex contains bags, deep conditionals) per spec §6.3.\n- Expose motif info to generator, repair and metrics via a cheap lookup in the execution context.\n- Add a planOptions/feature flag to disable G_valid classification/enforcement for compatibility.",
         "testStrategy": "- Unit tests that feed canonical schemas + Compose outputs and assert motif + G_valid classification per canonPath.\n- Edge-case tests for AP:false + propertyNames/patternProperties, unevaluatedProperties/unevaluatedItems and multi-contains bags.\n- Stability tests showing classification is deterministic for fixed inputs and insensitive to allOf branch ordering.\n- Smoke tests proving that when the feature flag is off, pipeline behavior matches the current baseline.",
@@ -1523,11 +1523,11 @@
             "id": 9401002,
             "title": "Implement classifier over Compose artifacts",
             "description": "Implement the classifier using canonical schema, CoverageIndex and Compose diagnostics to mark canonPaths as G_valid or non-G_valid without re-parsing the original schema, aligned with spec §8 and §6.3.",
-            "status": "done",
+            "status": "in-progress",
             "estimatedHours": 6,
             "file": "packages/core/src/transform/g-valid-classifier.ts",
             "parentId": "9401",
-            "updatedAt": "2025-12-03T19:41:24.073Z"
+            "updatedAt": "2025-12-07T11:09:33.100Z"
           },
           {
             "id": 9401003,
@@ -1550,7 +1550,7 @@
             "updatedAt": "2025-12-03T20:04:21.464Z"
           }
         ],
-        "updatedAt": "2025-12-03T20:04:21.464Z"
+        "updatedAt": "2025-12-07T11:09:33.100Z"
       },
       {
         "id": "9402",
@@ -1820,7 +1820,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-07T10:58:09.743Z",
+      "lastModified": "2025-12-07T11:09:33.101Z",
       "taskCount": 7,
       "completedCount": 6,
       "tags": [
