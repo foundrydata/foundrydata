@@ -42,3 +42,6 @@ This document maps the parent task 9600 bullets from Implementation Details, Del
 
 - **9600.9600004 – Determinism comparator: ignore non-deterministic metrics**  
   Covers: [KR3, DEL3, DOD2, DOD3, TS3] (status: done). Comparator helper strips diagnostic metrics and filters timings/SLIs from snapshots; metrics-toggle test now compares outputs/diagnostics with metrics excluded and keeps explicit assertions on metrics behavior.
+
+- **9600.9600005 – Add coverage-mode metrics toggle regression**  
+  Covers: [KR2, DEL2, DOD2, TS2] (status: in-progress → done). Adds a coverage=measure metrics toggle regression ensuring outputs/diagnostics match with metrics on/off and normalizes non-deterministic coverage report timing fields for strict equality.

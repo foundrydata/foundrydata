@@ -2232,9 +2232,20 @@
             "file": "packages/core/test/util/determinism-compare.ts",
             "parentId": "9600",
             "updatedAt": "2025-12-06T18:57:06.116Z"
+          },
+          {
+            "id": 9600005,
+            "title": "Add coverage-mode metrics toggle regression",
+            "description": "Ensure metrics on/off under coverage=measure keep outputs and coverage report identical while keeping metrics passive",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9600,
+            "updatedAt": "2025-12-07T01:01:31.378Z",
+            "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-12-07T00:14:01.392Z"
+        "updatedAt": "2025-12-07T01:01:31.378Z"
       },
       {
         "id": "9601",
@@ -2465,7 +2476,7 @@
         "dependencies": [
           "9604"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "complexityScore": 3,
         "details": "[Context]\nDocs must match the Reporter/Platform View and observability invariants implemented in 9600–9604. The spec and design notes should explicitly capture planned/unplanned evidence, repairUsageByMotif stable ordering, and comparability metadata (registryFingerprint, operationsScope, selectedOperations), plus the non-deterministic nature of SLIs.\n\n[Key requirements]\n- Update spec-observability-platform-metrics-v1.0.md Appendix A to match the delivered view and comparability tuple.\n- Align design-observability-metrics.md and testing/traceability docs with planned/unplanned evidence and repairUsageByMotif rules.\n- Call out that SLIs (p50/p95/memory) are bench-only and excluded from determinism comparisons.\n\n[Deliverables]\n- Spec and design docs updated with the final field list and invariants.\n- Cross-references in testing/traceability docs reflect the Reporter/Platform View fields.",
         "testStrategy": "Doc review: ensure examples and field lists line up with implemented schemas; check links/anchors render; run markdown lint if available.",
@@ -2483,10 +2494,11 @@
             "id": 9605002,
             "title": "Sync design/traceability docs with observability invariants",
             "description": "Align design-observability-metrics.md, testing-strategy.md, and tests-traceability.md with planned/unplanned evidence, repairUsageByMotif, and exclusion of SLIs from determinism comparisons.",
-            "status": "pending",
+            "status": "in-progress",
             "estimatedHours": 3,
             "file": "docs/design-observability-metrics.md",
-            "parentId": "9605"
+            "parentId": "9605",
+            "updatedAt": "2025-12-07T00:57:36.462Z"
           },
           {
             "id": 9605003,
@@ -2497,7 +2509,8 @@
             "file": "docs/Known-Limits.md",
             "parentId": "9605"
           }
-        ]
+        ],
+        "updatedAt": "2025-12-07T00:57:36.462Z"
       },
       {
         "id": "9606",
@@ -2555,7 +2568,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-07T00:50:39.981Z",
+      "lastModified": "2025-12-07T01:01:31.379Z",
       "taskCount": 7,
       "completedCount": 5,
       "tags": [

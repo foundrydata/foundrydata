@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { executePipeline } from '../orchestrator';
 import type { PipelineResult } from '../types';
+import type { CoverageDimension, CoverageReport } from '@foundrydata/shared';
 import { normalizePipelineResultForDeterminism } from '../../../test/util/determinism-compare.js';
 
 describe('metrics toggle', () => {
@@ -28,6 +29,20 @@ describe('metrics toggle', () => {
       generate: { count: 3, seed: 37 },
       validate: { validateFormats: false },
     });
+  }
+
+  function normalizeCoverageReport(
+    report: CoverageReport | undefined
+  ): CoverageReport | undefined {
+    if (!report) return report;
+    return {
+      ...report,
+      run: {
+        ...report.run,
+        startedAt: 'normalized',
+        durationMs: 0,
+      },
+    };
   }
 
   it('keeps outputs and diagnostics identical when toggling metrics on/off', async () => {
@@ -57,5 +72,45 @@ describe('metrics toggle', () => {
     expect(withoutMetrics.metrics.p50LatencyMs).toBe(0);
     expect(withoutMetrics.metrics.p95LatencyMs).toBe(0);
     expect(withoutMetrics.metrics.memoryPeakMB).toBe(0);
+  });
+
+  it('keeps coverage report stable when toggling metrics under coverage=measure', async () => {
+    const baseOptions = {
+      coverage: {
+        mode: 'measure' as const,
+        dimensionsEnabled: ['structure', 'branches'] as CoverageDimension[],
+        excludeUnreachable: false,
+      },
+      generate: { count: 2, seed: 17 },
+      validate: { validateFormats: false },
+    };
+
+    const withMetrics = await executePipeline(schema, {
+      ...baseOptions,
+      metrics: { enabled: true, verbosity: 'ci' },
+    });
+    const withoutMetrics = await executePipeline(schema, {
+      ...baseOptions,
+      metrics: { enabled: false, verbosity: 'ci' },
+    });
+
+    const viewOn = normalizePipelineResultForDeterminism(withMetrics, {
+      includeMetrics: false,
+    });
+    const viewOff = normalizePipelineResultForDeterminism(withoutMetrics, {
+      includeMetrics: false,
+    });
+    expect(viewOn).toStrictEqual(viewOff);
+
+    const reportOn = normalizeCoverageReport(
+      withMetrics.artifacts.coverageReport
+    );
+    const reportOff = normalizeCoverageReport(
+      withoutMetrics.artifacts.coverageReport
+    );
+
+    expect(reportOn).toBeDefined();
+    expect(reportOff).toBeDefined();
+    expect(reportOn).toStrictEqual(reportOff);
   });
 });
