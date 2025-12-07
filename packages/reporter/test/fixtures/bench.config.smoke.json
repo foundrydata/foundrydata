@@ -17,6 +17,12 @@
     "seed": 7
   },
   {
+    "id": "failing",
+    "schema": "../../../../profiles/simple.json",
+    "maxInstances": 1,
+    "seed": 99
+  },
+  {
     "id": "missing",
     "schema": "../../../../profiles/does-not-exist.json",
     "maxInstances": 1

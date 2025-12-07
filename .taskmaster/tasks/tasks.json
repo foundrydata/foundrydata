@@ -2441,7 +2441,7 @@
           "9602",
           "9603"
         ],
-        "status": "done",
+        "status": "in-progress",
         "complexityScore": 5,
         "details": "[Context]\nPlatform consumers need a standardized derived view (from diag + coverage-report) and CI gates with traceable tests. Gates must treat diag.fatal as fail, diag.warn as degraded, respect guided≥measure expectations, and avoid using performance SLIs as determinism regressions.\n\n[Key requirements]\n- Define and emit Reporter/Platform View JSON derived solely from diag and coverage-report; no new semantics beyond sources of truth.\n- Include repairUsageByMotif with stable sort (canonPath then motif) and invariants (items/itemsWithRepair/actions); include planned/unplanned evidence counts; carry comparability fields (registryFingerprint, operationsScope, selectedOperations).\n- Implement CI gate logic: fail on fatal; configurable warn escalation; coverage thresholds using coverage-report; ignore env-dependent SLIs for determinism alerts while still reporting them for perf.\n- Add automated tests for each gate and ensure traceability mapping to spec sections.\n\n[Deliverables]\n- Reporter/Platform View generator and schema.\n- CI gate module with configurable policies and test coverage.\n- Documentation/traceability entries linking gates to spec clauses.",
         "testStrategy": "Unit tests for reporter view derivation from fixtures; CI gate tests covering fatal/warn handling, coverage thresholds, guided≥measure invariant, and exclusion of SLIs from determinism checks; snapshot tests for reporter payload shape (stable ordering); traceability doc updates for gate-to-spec mapping.",
@@ -2496,9 +2496,20 @@
             "parentTaskId": 9604,
             "updatedAt": "2025-12-06T23:48:14.044Z",
             "parentId": "undefined"
+          },
+          {
+            "id": 9604006,
+            "title": "Surface bench diagnostics when entry fails",
+            "description": "Bench runner should surface pipeline validation/repair diagnostics into summary/artifacts when a schema run fails, without altering pipeline semantics.",
+            "details": "",
+            "status": "in-progress",
+            "dependencies": [],
+            "parentTaskId": 9604,
+            "updatedAt": "2025-12-07T10:36:20.687Z",
+            "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-12-07T09:59:14.315Z"
+        "updatedAt": "2025-12-07T10:36:20.687Z"
       },
       {
         "id": "9605",
@@ -2657,9 +2668,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-07T10:27:07.906Z",
+      "lastModified": "2025-12-07T10:36:20.689Z",
       "taskCount": 8,
-      "completedCount": 6,
+      "completedCount": 5,
       "tags": [
         "observability-platform-metrics-v1"
       ]

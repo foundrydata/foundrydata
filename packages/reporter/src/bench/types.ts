@@ -25,6 +25,7 @@ export interface BenchSchemaSummary {
   summary: ReportSummary;
   level: BenchLevel;
   error?: string;
+  diagnosticsPath?: string;
 }
 
 export interface BenchTotals {

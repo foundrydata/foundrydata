@@ -12,7 +12,11 @@ import type {
   BenchLevel,
 } from './types.js';
 import type { Report, PlanOptions, ReportSummary } from '../model/report.js';
-import { runEngineWithArtifacts } from '../engine/runner.js';
+import {
+  PipelineRunFailedError,
+  runEngineWithArtifacts,
+} from '../engine/runner.js';
+import type { PipelineStageError } from '@foundrydata/core';
 import { renderMarkdownReport } from '../render/markdown.js';
 import { renderHtmlReport } from '../render/html.js';
 import { formatGateSummary } from '../gates/index.js';
@@ -162,6 +166,17 @@ async function processBenchEntry({
       },
     };
   } catch (error) {
+    if (error instanceof PipelineRunFailedError) {
+      const diagPath = await writeDiagnosticsArtifact(
+        outDir,
+        entry.id,
+        error.pipelineResult
+      );
+      return {
+        summary: buildBenchSchemaSummaryFromError(entry, error, diagPath),
+        meta: {},
+      };
+    }
     return {
       summary: buildBenchSchemaSummaryFromError(entry, error),
       meta: {},
@@ -320,7 +335,8 @@ function buildBenchSchemaSummaryFromReport(
 
 function buildBenchSchemaSummaryFromError(
   entry: BenchConfigEntry,
-  error: unknown
+  error: unknown,
+  diagnosticsPath?: string
 ): BenchSchemaSummary {
   const schemaAbsolute = entry.schema;
   const schemaRelative =
@@ -333,7 +349,110 @@ function buildBenchSchemaSummaryFromError(
     summary: createEmptyReportSummary(),
     level: 'blocked',
     error: error instanceof Error ? error.message : String(error),
+    diagnosticsPath,
   };
+}
+
+function normalizeDiagnostics(
+  diagnostics: Array<{
+    code?: string;
+    canonPath?: string;
+    phase?: string;
+    details?: unknown;
+  }>
+): Array<{
+  code?: string;
+  canonPath?: string;
+  phase?: string;
+  details?: unknown;
+}> {
+  const list =
+    diagnostics?.map((d) => ({
+      code: d.code,
+      canonPath: d.canonPath,
+      phase: d.phase,
+      details: d.details,
+    })) ?? [];
+  return list.sort((a, b) => {
+    const phaseA = a.phase ?? '';
+    const phaseB = b.phase ?? '';
+    if (phaseA !== phaseB) return phaseA.localeCompare(phaseB);
+    const codeA = a.code ?? '';
+    const codeB = b.code ?? '';
+    if (codeA !== codeB) return codeA.localeCompare(codeB);
+    const pathA = a.canonPath ?? '';
+    const pathB = b.canonPath ?? '';
+    return pathA.localeCompare(pathB);
+  });
+}
+
+async function writeDiagnosticsArtifact(
+  outDir: string,
+  entryId: string,
+  pipelineResult: {
+    errors?: unknown[];
+    artifacts?: {
+      validationDiagnostics?: Array<{
+        code?: string;
+        canonPath?: string;
+        phase?: string;
+        details?: unknown;
+      }>;
+      repairDiagnostics?: Array<{
+        code?: string;
+        canonPath?: string;
+        phase?: string;
+        details?: unknown;
+      }>;
+    };
+    status?: string;
+  }
+): Promise<string> {
+  const validation =
+    pipelineResult.artifacts?.validationDiagnostics ?? ([] as unknown[]);
+  const repair =
+    pipelineResult.artifacts?.repairDiagnostics ?? ([] as unknown[]);
+  const stageErrors =
+    pipelineResult.errors?.map((err) => {
+      const stageErr =
+        err && typeof err === 'object' && 'stage' in (err as PipelineStageError)
+          ? (err as PipelineStageError)
+          : undefined;
+      if (stageErr) {
+        return { stage: stageErr.stage, message: stageErr.message };
+      }
+      return {
+        stage: undefined,
+        message: err instanceof Error ? err.message : String(err),
+      };
+    }) ?? [];
+  const payload = {
+    status: pipelineResult.status ?? 'failed',
+    stageErrors,
+    validationDiagnostics: normalizeDiagnostics(
+      validation as Array<{
+        code?: string;
+        canonPath?: string;
+        phase?: string;
+        details?: unknown;
+      }>
+    ),
+    repairDiagnostics: normalizeDiagnostics(
+      repair as Array<{
+        code?: string;
+        canonPath?: string;
+        phase?: string;
+        details?: unknown;
+      }>
+    ),
+  };
+  const diagnosticsPath = join(outDir, `${entryId}.diagnostics.json`);
+  await writeFile(
+    diagnosticsPath,
+    `${JSON.stringify(payload, null, 2)}\n`,
+    'utf8'
+  );
+  return diagnosticsPath;
 }
 
 function aggregateTotals(summaries: BenchSchemaSummary[]): BenchTotals {

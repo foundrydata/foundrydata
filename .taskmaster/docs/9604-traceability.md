@@ -45,3 +45,6 @@ This document maps parent task 9604 bullets from Implementation Details, Deliver
 
 - **9604.9604005 – Wire operationsScope/selectedOperations into coverage report**  
   Covers: [KR3, DEL1, DOD3, TS3] (status: done).
+
+- **9604.9604006 – Surface bench diagnostics when entry fails**  
+  Covers: [KR4, DEL2, DOD2, TS2] (status: done).

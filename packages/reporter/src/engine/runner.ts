@@ -29,6 +29,21 @@ export interface EngineRunOutput {
   pipelineResult: PipelineResult;
 }
 
+export class PipelineRunFailedError extends Error {
+  public readonly pipelineResult: PipelineResult;
+
+  constructor(result: PipelineResult, cause?: unknown) {
+    const stageError = result.errors?.[0];
+    const message =
+      stageError instanceof Error
+        ? stageError.message
+        : 'pipeline execution failed';
+    super(message, cause ? { cause } : undefined);
+    this.name = 'PipelineRunFailedError';
+    this.pipelineResult = result;
+  }
+}
+
 export async function runEngineOnSchema(
   options: EngineRunOptions
 ): Promise<Report> {
@@ -85,11 +100,8 @@ function ensurePipelineCompleted(result: PipelineResult): void {
   if (result.status === 'completed') {
     return;
   }
-  const stageError = result.errors[0];
-  if (stageError) {
-    throw stageError;
-  }
-  throw new Error('pipeline execution failed');
+  const stageError = result.errors?.[0];
+  throw new PipelineRunFailedError(result, stageError);
 }
 
 function buildPipelineOptions(options: EngineRunOptions): PipelineOptions {
