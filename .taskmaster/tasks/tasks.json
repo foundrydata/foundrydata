@@ -2597,13 +2597,69 @@
             "parentId": "9606"
           }
         ]
+      },
+      {
+        "id": "9607",
+        "title": "Fix guided>=measure regression on profiles/simple.json",
+        "description": "Add regression test for profiles/simple.json with coverage=guided mode, diagnose why metadata.tier is missing when kind=service, fix generation/repair/planning to respect if/then/else conditionals, and restore reporter bench default to guided once regression is resolved.",
+        "details": "[Context]\nThe profiles/simple.json schema contains an if/then/else conditional requiring metadata.tier when kind=service (lines 78-94). In guided mode, instances are being generated with kind=service but without metadata.tier, violating AJV validation. This regression must be fixed before restoring the bench default to coverage=guided.\n\n[Key requirements]\n1. **Add Repro Test**: Create test in packages/core/test/e2e/ that runs profiles/simple.json with coverage=guided mode (structure+branches+enum dimensions), validates all instances pass AJV, and specifically checks that when kind=service, metadata.tier is present (per spec lines 78-94).\n\n2. **Diagnose Root Cause**: \n   - Check CoveragePlanner hint generation (packages/core/src/coverage/coverage-planner.ts) to see if preferBranch hints for kind=service are triggering ensurePropertyPresence hints for metadata.tier\n   - Check if-aware-lite generation logic in foundry-generator.ts respects conditional requirements\n   - Check repair-engine.ts to see if structural repairs handle dependentRequired from conditionals\n   - Review ConflictDetector feasibility checks for hints targeting conditional branches\n\n3. **Fix Pipeline Components**:\n   - If planner issue: Ensure CoveragePlanner generates ensurePropertyPresence hints for properties made required by if/then/else when targeting the triggering branch\n   - If generator issue: Ensure if-aware-lite properly evaluates if conditions and applies then-schema required properties during generation\n   - If repair issue: Ensure repair engine detects missing conditional requirements and adds them with appropriate values\n\n4. **Validate Fix**:\n   - Ensure repro test passes\n   - Run coverage-guided-vs-measure.spec.ts to verify guided>=measure invariant still holds\n   - Run bench on profiles/simple.json with coverage=guided and verify all instances valid\n   - Check coverage-report/v1 shows improved branch coverage for kind enum\n\n5. **Restore Bench Default**: Once regression fixed and all tests pass, update packages/reporter/src/bench/runner.ts line 110 to set default coverageMode from 'measure' to 'guided'\n\n[Implementation Notes]\n- The schema uses allOf with if/then/else (lines 78-94): if kind=service, then metadata must be present and have required tier\n- This is a conditional dependentRequired pattern that may not be captured by current hint generation\n- ConflictDetector may need to understand that preferBranch(kind=service) implies ensurePropertyPresence(metadata) + coverEnumValue(tier)\n- Repair may need to handle conditional requirements via G_valid motif detection (task 9602 added G_valid observability)\n\n[Files to modify]\n- packages/core/test/e2e/coverage-simple-profile.regression.test.ts (new file)\n- packages/core/src/coverage/coverage-planner.ts (likely)\n- packages/core/src/generator/foundry-generator.ts (possibly)\n- packages/core/src/repair/repair-engine.ts (possibly)\n- packages/reporter/src/bench/runner.ts (after fix validated)",
+        "testStrategy": "1. **Regression Test**: Write test that generates 100 instances of profiles/simple.json with coverage=guided, seed=42, dimensions=['structure','branches','enum']. Assert all instances pass AJV validation. Assert for each instance where kind='service', metadata.tier exists and is in ['free','pro','enterprise']. Assert coverage.byDimension.branches >= 66% (2 of 3 kind branches covered).\n\n2. **Unit Tests**: Add coverage-planner.test.ts case for if/then/else conditional hint generation. Given schema with if/then/else requiring property P when enum E=value, when generating hints for branch targeting E=value, assert ensurePropertyPresence(P, present=true) hint is generated.\n\n3. **Integration Test**: Extend coverage-guided-vs-measure.spec.ts with profiles/simple.json to ensure guided>=measure on branches dimension and no validation failures.\n\n4. **Manual Verification**: Run `npm run bench -- --config packages/reporter/test/fixtures/bench.config.json` and inspect simple.report.json to verify summary.invalid === 0 and diagnosticsCount.validateErrors === 0.\n\n5. **Invariant Check**: After restoring bench default to guided, run full bench suite and verify no validation errors across all profiles, and guided mode achieves higher branch/enum coverage than measure mode on simple/medium profiles.",
+        "status": "done",
+        "dependencies": [
+          "9600",
+          "9601",
+          "9602",
+          "9604"
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add regression test for profiles/simple.json with coverage=guided",
+            "description": "Create e2e test that reproduces the regression where kind=service instances are generated without metadata.tier in guided mode, violating the if/then/else conditional at lines 78-94 of profiles/simple.json",
+            "dependencies": [],
+            "details": "Create packages/core/test/e2e/coverage-simple-profile.regression.test.ts that: (1) Generates 100 instances with coverage=guided, seed=42, dimensions=['structure','branches','enum'], (2) Validates all instances pass AJV validation against profiles/simple.json, (3) Specifically asserts that for each instance where kind='service', metadata.tier exists and is in ['free','pro','enterprise'], (4) Uses runEngine from pipeline orchestrator with coverage config matching guided profile defaults, (5) Includes descriptive failure messages identifying which instance violated the conditional requirement. The test should FAIL initially, demonstrating the regression before the fix.",
+            "status": "done",
+            "testStrategy": "Test validates itself by failing before fix and passing after fix. Run with: npm run test -- coverage-simple-profile.regression",
+            "updatedAt": "2025-12-07T10:26:56.062Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Fix CoveragePlanner to generate conditional dependency hints",
+            "description": "Enhance CoveragePlanner.buildHintsForTarget to detect when a preferBranch hint targets an if/then/else triggering value and generate corresponding ensurePropertyPresence hints for conditionally required properties",
+            "dependencies": [
+              1
+            ],
+            "details": "Modify packages/core/src/coverage/coverage-planner.ts: (1) In buildHintsForTarget (line ~521), when generating preferBranch hints for enum branch targets, check if the parent schema contains if/then/else conditionals via coverageIndex or planDiag, (2) For branches dimension targets on enum values (e.g., kind='service'), detect if selecting that value triggers an if condition that makes properties required via then-schema, (3) Generate additional ensurePropertyPresence hints for properties made required by the conditional (e.g., metadata when kind=service), (4) Generate coverEnumValue hints for nested required enums within those properties (e.g., metadata.tier), (5) Ensure hints are validated through ConflictDetector feasibility checks before being added to test units, (6) Add unit tests in coverage-planner.test.ts for conditional hint generation with simple if/then/else fixtures.",
+            "status": "done",
+            "testStrategy": "Unit test with fixture schema containing if(enum=A)then(required=[prop]) pattern. Assert hints include both preferBranch(A) and ensurePropertyPresence(prop). Verify e2e regression test passes.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-07T10:27:02.099Z"
+          },
+          {
+            "id": 3,
+            "title": "Validate fix and restore bench default to coverage=guided",
+            "description": "Verify the regression fix works across all coverage tests and restore the reporter bench default from 'measure' to 'guided'",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Execute validation steps: (1) Run packages/core/test/e2e/coverage-simple-profile.regression.test.ts and verify it passes with all kind=service instances having metadata.tier, (2) Run existing coverage test suite to ensure no regressions: coverage-guided-vs-measure.spec.ts must still pass with guided>=measure invariants holding, (3) Run bench on profiles/simple.json with coverage=guided and seed=42, verify all generated instances pass AJV validation and coverage report shows improved branch coverage for kind enum and conditional branches, (4) Once all tests pass, update packages/reporter/src/bench/runner.ts line 110 to change default coverageMode from 'measure' to 'guided', (5) Run full bench suite with new default and verify no validation failures, (6) Check coverage-report/v1 output includes proper metadata.tier coverage metrics.",
+            "status": "done",
+            "testStrategy": "Run npm run task-ready to ensure all tests pass. Run FOUNDRY_BENCH_QUICK=1 npm run bench:real-world to verify guided mode works on all profiles. Check git diff to confirm only intended line changed in runner.ts.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-07T10:27:07.905Z"
+          }
+        ],
+        "updatedAt": "2025-12-07T10:27:07.905Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-07T09:59:14.317Z",
-      "taskCount": 7,
-      "completedCount": 5,
+      "lastModified": "2025-12-07T10:27:07.906Z",
+      "taskCount": 8,
+      "completedCount": 6,
       "tags": [
         "observability-platform-metrics-v1"
       ]

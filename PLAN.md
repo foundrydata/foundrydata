@@ -1,33 +1,23 @@
-Task: 9604   Title: Subtask 9604.9604002 — Add CI gate engine for observability KPIs (remediation)
-Anchors: [spec://§2#observability-surfaces, spec://§7#platform-kpis-gates, spec://§15#metrics, spec://§19#payloads, cov://§5#coverage-report]
+Task: 9607.1   Title: Add regression test for profiles/simple.json with coverage=guided
+Anchors: [spec://§6#phases, spec://§15#rng, cov://§5#coverage-report]
 Touched files:
-- packages/reporter/src/engine/runner.ts
-- packages/reporter/src/cli.ts
+- packages/core/test/e2e/coverage-simple-profile.regression.test.ts
+- packages/core/src/repair/repair-engine.ts
 - packages/reporter/src/bench/runner.ts
-- packages/reporter/src/gates/index.ts
-- packages/reporter/src/gates/__tests__/gates.test.ts
-- packages/reporter/src/platform-view/index.ts
-- packages/reporter/src/platform-view/__tests__/platform-view.test.ts
-- packages/reporter/src/schemas/reporter-platform-view-v1.schema.json
-- packages/reporter/test/reporter-platform-view-schema.test.ts
-- packages/reporter/test/fixtures/gates.trace.json
-- packages/reporter/test/fixtures/reporter-platform-view.sample.json
-- packages/reporter/test/fixtures/coverage-report.v1.sample.json
-- packages/shared/src/types/diag.metrics.ts
-- packages/reporter/src/bench/types.ts
+- packages/reporter/src/engine/runner.ts
 
 Approach:
-To restore spec alignment, I will first enable coverage generation for reporter runs so gates use real coverage-report/v1: plumb coverage options (measure/guided) into reporter pipeline options, have CLI/bench propagate minCoverage/coverage toggles when provided, and persist the coverage-report artifact alongside report/platform-view. Gate evaluation will consume that summary, honoring thresholds either from coverage.thresholds or explicit minCoverage. Next, I will implement bench-only performance gates (p95LatencyMs ≤120, memoryPeakMB ≤512) per §7.4 while keeping determinism gates free of SLIs. I will enhance platform-view derivation to preserve canonPath/tiers from repairUsageByMotif when available and normalize selectedOperations/operationsScope comparability; update the platform-view schema to require non-empty selectedOperations when operationsScope is selected. Tests/fixtures will be refreshed: gate fixtures to cover coverage-planning severity and perf-gate cases; platform-view schema tests to reject missing/empty selectedOperations; CLI/runner/bench tests to expect coverage artifacts and gate behavior. Throughout, observability remains passive—no new control-flow changes—by reusing existing artifacts and deterministic normalization only.
+I will first add a failing regression test that runs profiles/simple.json in coverage=guided with a fixed seed and asserts two things: all generated/repaired instances validate against the schema, and when kind=service the conditional tier is present. This will reproduce the observed FINAL_VALIDATION_FAILED. Then I will adjust the guided path in the pipeline to ensure conditional requirements are satisfied: (a) when coverage mode is guided and the planner enumerates branches, ensure the instance coverage state includes conditional-required properties; (b) if generation still emits missing conditionals, allow repair to fill them by honoring conditional required (not AP:false) without exhausting the budget. If necessary, extend the coverage runtime to carry guided hinting into generation to avoid unreachable validations. Finally, once the test passes and guided produces valid instances, I will restore the reporter bench default coverageMode from measure back to guided. Observability remains passive (no change in outputs with metrics toggle); deterministic seeds preserved.
 
 Risks/Unknowns:
-- Enabling coverage in reporter runs may alter snapshots; I will scope output expectations to deterministic fields and update fixtures accordingly.
-- Bench perf thresholds are environment-sensitive; I must anchor tests on static fixtures to avoid flakes.
-- repairUsageByMotif currently lacks canonPath/tiers in metrics; preserving optional fields must stay backward compatible when absent.
+- The fix might need changes in generator vs repair; must avoid broad behavior changes outside guided mode.
+- Bench guided could still hit caps on other profiles; need to ensure defaults remain stable.
+- Avoid introducing non-determinism in coverage/planner ordering.
 
-Parent bullets couverts: [KR4, DEL2, DOD2, TS2]
+Parent bullets couverts: [KR4, DOD2, TS2]
 
 Checks:
 - build: npm run build
-- test: npm run test
+- test: npm run test -- packages/core/test/e2e/coverage-simple-profile.regression.test.ts
 - bench: npm run bench
 - diag-schema: true

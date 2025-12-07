@@ -100,6 +100,7 @@ function buildPipelineOptions(options: EngineRunOptions): PipelineOptions {
       mode: 'measure',
       excludeUnreachable: false,
     } satisfies PipelineOptions['coverage']);
+  const repairAttempts = coverageOptions.mode === 'guided' ? 3 : 1;
   return {
     mode: 'strict',
     compose: options.planOptions
@@ -111,7 +112,7 @@ function buildPipelineOptions(options: EngineRunOptions): PipelineOptions {
       planOptions: options.planOptions,
     },
     repair: {
-      attempts: 1,
+      attempts: repairAttempts,
     },
     validate: {
       validateFormats: true,

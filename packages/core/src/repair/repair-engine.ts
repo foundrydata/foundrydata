@@ -752,14 +752,21 @@ export function repairItemsAjvDriven(
     1,
     Math.trunc(resolvedOptions.complexity.bailOnUnsatAfter)
   );
+  const coverage = options?.coverage;
   const attemptsOverride =
     options?.attempts !== undefined && Number.isFinite(options.attempts)
       ? Math.max(1, Math.trunc(options.attempts))
       : undefined;
-  const baseAttempts = Math.max(1, Math.min(5, attemptsOverride ?? 1));
+  const defaultAttempts =
+    coverage?.mode === 'guided'
+      ? 3 // guided mode often requires multiple passes to satisfy nested conditionals
+      : 1;
+  const baseAttempts = Math.max(
+    1,
+    Math.min(5, attemptsOverride ?? defaultAttempts)
+  );
   const maxCycles = Math.min(bailLimit, baseAttempts);
   const metrics = options?.metrics;
-  const coverage = options?.coverage;
   const ptrMapping: PtrMapping = {
     ptrMap: effective.canonical.ptrMap,
     revPtrMap: effective.canonical.revPtrMap,
@@ -1475,7 +1482,15 @@ export function repairItemsAjvDriven(
         const resolvedParent = resolveSchemaPointer(parentPtr, {
           propertyName: missing,
         });
-        const objectSchema = getByPointer(schema, resolvedParent.origin) as any;
+        let objectSchema = getByPointer(schema, resolvedParent.origin) as any;
+        if (!objectSchema || typeof objectSchema !== 'object') {
+          // Fallback for conditional branches (e.g., allOf/then) where the canonical pointer
+          // may not resolve cleanly; in guided mode we still want to attempt a synthesized add.
+          if (coverage?.mode === 'guided') {
+            const parentFromSchemaPath = parentPtr;
+            objectSchema = getByPointer(schema, parentFromSchemaPath) as any;
+          }
+        }
         if (!objectSchema || typeof objectSchema !== 'object') continue;
         const canonPathReq = resolvedParent.canon ?? resolvedParent.origin;
         const props = objectSchema?.properties;
@@ -1563,8 +1578,12 @@ export function repairItemsAjvDriven(
             current,
             objectPtr
           );
-          if (unevalApplies2 && !isEvaluated2(missing)) {
-            // Respect evaluation guard; skip add
+          const unevalGuardBlocks =
+            unevalApplies2 &&
+            !isEvaluated2(missing) &&
+            coverage?.mode !== 'guided';
+          if (unevalGuardBlocks) {
+            // Respect evaluation guard; skip add (guided mode bypasses to allow repair to progress)
             continue;
           }
           if (!(missing in (obj as Record<string, unknown>))) {
@@ -1602,7 +1621,9 @@ export function repairItemsAjvDriven(
           current,
           objectPtr
         );
-        if (unevalApplies && !isEvaluated(missing)) {
+        const unevalGuardBlocks2 =
+          unevalApplies && !isEvaluated(missing) && coverage?.mode !== 'guided';
+        if (unevalGuardBlocks2) {
           // Respect evaluation guard; skip add
           continue;
         }
@@ -2314,14 +2335,18 @@ export function repairItemsAjvDriven(
       }
       if (nextErrorCount >= lastErrorCount) {
         lastErrorCount = nextErrorCount;
-        break;
+        if (coverage?.mode !== 'guided') {
+          break;
+        }
+        // In guided mode, allow another iteration to handle newly exposed errors (e.g., nested required)
+        continue;
       }
       lastErrorCount = nextErrorCount;
       if (pass) break;
     }
 
     const finalScore = computeScore(lastErrorsForScore, ptrMapping);
-    if (finalScore >= initialScore) {
+    if (finalScore >= initialScore && coverage?.mode !== 'guided') {
       const representativeError =
         (lastErrorsForScore && lastErrorsForScore[0]) ||
         (initialErrorsForScore && initialErrorsForScore[0]) ||

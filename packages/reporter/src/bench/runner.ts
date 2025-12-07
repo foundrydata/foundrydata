@@ -107,7 +107,7 @@ async function processBenchEntry({
     const schema = JSON.parse(schemaRaw);
     const schemaRelative =
       relative(process.cwd(), schemaAbsolute) || basename(schemaAbsolute);
-    const coverageMode = entry.coverageMode ?? 'measure';
+    const coverageMode = entry.coverageMode ?? 'guided';
     const coverage =
       coverageMode === 'off'
         ? { mode: 'off' as const }
