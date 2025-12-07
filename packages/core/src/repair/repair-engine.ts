@@ -992,6 +992,7 @@ export function repairItemsAjvDriven(
     return { allowed: true, tier };
   };
   for (const original of items) {
+    const itemActionsStart = actions.length;
     // Fast-path: validate original without cloning to minimize overhead
     let pass = validateFn(original);
     if (pass) {
@@ -2376,7 +2377,7 @@ export function repairItemsAjvDriven(
     }
 
     const finalScore = computeScore(lastErrorsForScore, ptrMapping);
-    if (finalScore >= initialScore && coverage?.mode !== 'guided') {
+    if (finalScore >= initialScore && actions.length > itemActionsStart) {
       const representativeError =
         (lastErrorsForScore && lastErrorsForScore[0]) ||
         (initialErrorsForScore && initialErrorsForScore[0]) ||
@@ -2385,20 +2386,28 @@ export function repairItemsAjvDriven(
         representativeError && typeof representativeError.keyword === 'string'
           ? representativeError.keyword
           : '';
-      let canonPathForDiag = '#';
-      if (representativeError) {
-        try {
-          const asAjvError = representativeError as AjvErrorObject;
-          const resolvedCanon = canonPathFromError(asAjvError, ptrMapping);
-          canonPathForDiag =
-            (resolvedCanon && resolvedCanon.length > 0
-              ? resolvedCanon
-              : asAjvError.schemaPath || '#') || '#';
-        } catch {
-          canonPathForDiag =
-            representativeError.schemaPath && representativeError.schemaPath
-              ? representativeError.schemaPath
-              : '#';
+      const firstAction = actions[itemActionsStart];
+      let canonPathForDiag =
+        firstAction && typeof firstAction.canonPath === 'string'
+          ? normalizeCanonPath(firstAction.canonPath)
+          : '#';
+      if (canonPathForDiag === '#') {
+        if (representativeError) {
+          try {
+            const asAjvError = representativeError as AjvErrorObject;
+            const resolvedCanon = canonPathFromError(asAjvError, ptrMapping);
+            canonPathForDiag =
+              (resolvedCanon && resolvedCanon.length > 0
+                ? resolvedCanon
+                : asAjvError.schemaPath || '#') || '#';
+          } catch {
+            canonPathForDiag =
+              representativeError.schemaPath && representativeError.schemaPath
+                ? representativeError.schemaPath
+                : '#';
+          }
+        } else {
+          canonPathForDiag = '#';
         }
       }
       diagnostics.push({
@@ -2415,6 +2424,7 @@ export function repairItemsAjvDriven(
         metrics.addRepairRevertedNoProgress(1);
       }
       current = original;
+      actions.length = itemActionsStart;
     }
 
     // Best-effort unsatisfied hint reporting for Repair side when

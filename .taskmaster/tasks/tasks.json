@@ -1441,7 +1441,7 @@
   "generator-vs-repair-contract": {
     "tasks": [
       {
-        "id": "9400",
+        "id": 9400,
         "title": "Formalize Generator vs Repair contract and G_valid v1 in canonical spec",
         "description": "Introduce the Generator vs Repair contract and the G_valid (Generator-valid) zone into the canonical SPEC.",
         "priority": "high",
@@ -1496,7 +1496,7 @@
         "updatedAt": "2025-12-07T11:08:41.792Z"
       },
       {
-        "id": "9401",
+        "id": 9401,
         "title": "Implement motif classification and G_valid zoning in core pipeline",
         "description": "Introduce a motif classification layer that marks schema locations as G_valid or non-G_valid based on the effective schema shape.",
         "priority": "high",
@@ -1553,7 +1553,7 @@
         "updatedAt": "2025-12-07T12:24:33.783Z"
       },
       {
-        "id": "9402",
+        "id": 9402,
         "title": "Make array generation G_valid-aware for items + contains motifs",
         "description": "Update array generation so that, in G_valid zones, items satisfying contains also respect the effective items schema and are AJV-valid by construction.",
         "priority": "high",
@@ -1610,7 +1610,7 @@
         "updatedAt": "2025-12-07T12:40:48.953Z"
       },
       {
-        "id": "9403",
+        "id": 9403,
         "title": "Make object generation G_valid-aware for simple required/properties motifs",
         "description": "Adjust object generation so that, in G_valid zones, the Generator satisfies required properties and basic bounds without relying on Repair to synthesize placeholder values.",
         "priority": "high",
@@ -1657,7 +1657,7 @@
         "updatedAt": "2025-12-07T12:55:18.384Z"
       },
       {
-        "id": "9404",
+        "id": 9404,
         "title": "Constrain Repair behavior inside G_valid zones and surface violations",
         "description": "Update the Repair engine so that structural fixes in G_valid zones are treated as contract violations and surfaced via diagnostics/metrics instead of normal behavior.",
         "priority": "high",
@@ -1706,7 +1706,7 @@
         "updatedAt": "2025-12-07T13:25:09.537Z"
       },
       {
-        "id": "9405",
+        "id": 9405,
         "title": "Add repair usage metrics and G_valid motif observability",
         "description": "Instrument the pipeline with motif-level metrics so that repair usage inside and outside G_valid zones is observable and testable.",
         "priority": "high",
@@ -1766,7 +1766,7 @@
         "updatedAt": "2025-12-07T13:33:36.513Z"
       },
       {
-        "id": "9406",
+        "id": 9406,
         "title": "Expose G_valid behavior and Generator vs Repair contract in CLI, profiles and docs",
         "description": "Surface the Generator vs Repair contract and G_valid behavior through PlanOptions, CLI profiles and developer documentation.",
         "priority": "medium",
@@ -1825,13 +1825,16 @@
       "completedCount": 7,
       "tags": [
         "generator-vs-repair-contract"
-      ]
+      ],
+      "created": "2025-12-07T21:17:07.460Z",
+      "description": "Tasks for generator-vs-repair-contract context",
+      "updated": "2025-12-07T21:17:07.460Z"
     }
   },
   "repair-philosophy": {
     "tasks": [
       {
-        "id": 9500,
+        "id": "9500",
         "title": "Integrate Repair philosophy into canonical spec and align design docs",
         "description": "Add the normative “Repair philosophy (What we allow Repair to fix)” section under spec §10 and align adjacent docs so there is a single normative source of truth (tiers, Score/commit rule, coverage-independence, G_valid interaction).",
         "priority": "high",
@@ -1876,7 +1879,7 @@
         "updatedAt": "2025-12-04T20:08:59.879Z"
       },
       {
-        "id": 9501,
+        "id": "9501",
         "title": "Implement stable AJV error signature and Score(x) utilities",
         "description": "Create a shared utility that computes sig(e) + Score(x) deterministically: canonPath resolution, stable params canonicalization, and distinct-signature counting.",
         "priority": "high",
@@ -1923,7 +1926,7 @@
         "updatedAt": "2025-12-04T20:24:47.616Z"
       },
       {
-        "id": 9502,
+        "id": "9502",
         "title": "Add repair-philosophy diagnostics codes and metrics counters",
         "description": "Introduce diagnostics and counters required by the Repair philosophy (policy-disabled, reverted-no-progress, per-tier counters) and wire them into the shared diagnostics envelope + metrics collection.",
         "priority": "high",
@@ -1970,7 +1973,7 @@
         "updatedAt": "2025-12-04T20:53:42.501Z"
       },
       {
-        "id": 9503,
+        "id": "9503",
         "title": "Enforce Score-based commit rule in Repair engine (revert on no progress)",
         "description": "Modify Repair execution so candidate mutations are committed only when Score(x') < Score(x); otherwise revert and emit diagnostics/counters.",
         "priority": "high",
@@ -2012,13 +2015,13 @@
             "estimatedHours": 3,
             "file": "packages/core/src/repair/repair-engine.ts",
             "parentId": "9503",
-            "updatedAt": "2025-12-04T21:44:29.406Z"
+            "updatedAt": "2025-12-07T22:08:09.688Z"
           }
         ],
-        "updatedAt": "2025-12-04T21:44:29.406Z"
+        "updatedAt": "2025-12-07T22:08:09.688Z"
       },
       {
-        "id": 9504,
+        "id": "9504",
         "title": "Implement Repair tier classification and default tier policy (G_valid + structuralKeywords-aware)",
         "description": "Classify each repair action into Tier 0..3 and enforce a default policy that respects G_valid and structuralKeywords restrictions while remaining coverage-independent.",
         "priority": "high",
@@ -2066,7 +2069,7 @@
         "updatedAt": "2025-12-04T22:17:35.971Z"
       },
       {
-        "id": 9505,
+        "id": "9505",
         "title": "Add coverage-independence and determinism regression tests for Repair",
         "description": "Prove that Repair decisions and mutations are independent of coverage mode/targets/dimensionsEnabled for a fixed input instance and determinism tuple.",
         "priority": "medium",
@@ -2114,7 +2117,7 @@
         "updatedAt": "2025-12-04T22:55:28.001Z"
       },
       {
-        "id": 9506,
+        "id": "9506",
         "title": "Add micro-schemas + E2E assertions for tier behavior, G_valid regressions, and UNSAT stability",
         "description": "Create dedicated fixtures and E2E tests that pin the intended default behavior: limited Tier-2 in non-G_valid, structural repairs blocked/flagged in G_valid, and UNSAT_BUDGET_EXHAUSTED behavior driven by Score stagnation.",
         "priority": "medium",
@@ -2165,15 +2168,12 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-04T23:14:06.138Z",
+      "lastModified": "2025-12-07T22:08:09.690Z",
       "taskCount": 7,
       "completedCount": 7,
       "tags": [
         "repair-philosophy"
-      ],
-      "created": "2025-12-06T14:31:05.707Z",
-      "description": "Tasks for repair-philosophy context",
-      "updated": "2025-12-06T14:31:05.707Z"
+      ]
     }
   },
   "observability-platform-metrics-v1": {

@@ -703,6 +703,7 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
       scoreBefore: 1,
       scoreAfter: 1,
     });
+    expect(out.actions ?? []).toHaveLength(0);
     spy.mockRestore();
   });
 
