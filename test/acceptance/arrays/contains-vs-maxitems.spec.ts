@@ -112,11 +112,11 @@ describe('Acceptance — arrays: G_valid vs non-G_valid motifs', () => {
     const result = await executePipeline(schema, {
       mode: 'strict',
       generate: {
-        count: 3,
+        count: 1,
         seed: 123,
         planOptions: { gValid: true },
       },
-      validate: { validateFormats: false },
+      validate: { validateFormats: true },
     });
 
     expect(result.status).toBe('completed');
@@ -137,17 +137,29 @@ describe('Acceptance — arrays: G_valid vs non-G_valid motifs', () => {
       }
     }
 
+    expect(finalItems).toMatchInlineSnapshot(`
+      [
+        [
+          {
+            "id": "0b8de3bc-eafe-4365-adc2-1843e3bff430",
+            "isGift": true,
+          },
+        ],
+      ]
+    `);
+
     const actions = result.artifacts.repairActions ?? [];
     expect(actions.length).toBe(0);
   });
 
+  // eslint-disable-next-line complexity
   it('keeps non-G_valid uniqueItems+contains arrays stable when toggling G_valid flag', async () => {
     const schema = fixtures.nongvalid_unique_items_contains_strings
       .schema as unknown;
 
     const baseOptions = {
       mode: 'strict',
-      generate: { count: 4, seed: 37 },
+      generate: { count: 2, seed: 37 },
       validate: { validateFormats: false },
     } as const;
 
@@ -175,6 +187,27 @@ describe('Acceptance — arrays: G_valid vs non-G_valid motifs', () => {
     const finalOn =
       on.artifacts.repaired ?? on.artifacts.generated?.items ?? [];
 
-    expect(finalOn).toEqual(finalOff);
+    const composeWarnOff = off.stages.compose.output?.diag?.warn ?? [];
+    const composeWarnOn = on.stages.compose.output?.diag?.warn ?? [];
+
+    expect({ finalOff, finalOn }).toEqual({
+      finalOff: [
+        ['', 'x'],
+        ['', 'x'],
+      ],
+      finalOn: [
+        ['', 'x'],
+        ['', 'x'],
+      ],
+    });
+
+    expect(composeWarnOn).toEqual(composeWarnOff);
+    expect(composeWarnOff).toEqual([
+      {
+        canonPath: '',
+        code: 'CONTAINS_BAG_COMBINED',
+        details: { bagSize: 1, maxItems: null, sumMin: 1 },
+      },
+    ]);
   });
 });

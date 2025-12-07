@@ -212,6 +212,76 @@ describe('executePipeline', () => {
     expect(actions.length).toBe(0);
   });
 
+  // eslint-disable-next-line complexity
+  it('generates format-valid UUID arrays for G_valid items+contains without repair when formats are enforced', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          isGift: { type: 'boolean' },
+        },
+        required: ['id', 'isGift'],
+        additionalProperties: true,
+      },
+      minItems: 1,
+      contains: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          isGift: { const: true },
+        },
+        required: ['id', 'isGift'],
+      },
+    } as const;
+
+    const result = await executePipeline(schema, {
+      mode: 'strict',
+      generate: {
+        count: 1,
+        seed: 123,
+        planOptions: { gValid: true },
+      },
+      validate: { validateFormats: true },
+    });
+
+    expect(result.status).toBe('completed');
+
+    const finalItems =
+      result.artifacts.repaired ?? result.artifacts.generated?.items ?? [];
+
+    expect(Array.isArray(finalItems)).toBe(true);
+    expect(finalItems.length).toBe(1);
+
+    const [arr] = finalItems as unknown[];
+    expect(Array.isArray(arr)).toBe(true);
+    const asObjects = arr as any[];
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    for (const elem of asObjects) {
+      expect(elem).toBeTruthy();
+      expect(typeof elem).toBe('object');
+      expect(typeof elem.id).toBe('string');
+      expect(uuidRegex.test(elem.id)).toBe(true);
+      expect(elem.isGift).toBe(true);
+    }
+
+    const actions = result.artifacts.repairActions ?? [];
+    expect(actions.length).toBe(0);
+
+    const index = result.artifacts.gValidIndex;
+    expect(index).toBeDefined();
+    const root = index?.get('#');
+    expect(root?.isGValid).toBe(true);
+
+    const composeWarn = result.stages.compose.output?.diag?.warn ?? [];
+    expect(
+      composeWarn.some((entry) => entry.code === 'CONTAINS_BAG_COMBINED')
+    ).toBe(true);
+  });
+
   it('generates G_valid simple objects with required fields and no repair actions', async () => {
     const schema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
@@ -302,6 +372,7 @@ describe('executePipeline', () => {
     expect(root?.isGValid).toBe(true);
   });
 
+  // eslint-disable-next-line complexity
   it('keeps non-G_valid objects stable when toggling G_valid flag', async () => {
     const schema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
@@ -348,6 +419,10 @@ describe('executePipeline', () => {
     const root = index?.get('#');
     expect(root).toBeDefined();
     expect(root?.isGValid).toBe(false);
+
+    const offWarn = off.stages.compose.output?.diag?.warn ?? [];
+    const onWarn = on.stages.compose.output?.diag?.warn ?? [];
+    expect(onWarn).toEqual(offWarn);
   });
 
   it('forwards planOptions to repair overrides', async () => {
@@ -404,8 +479,13 @@ describe('executePipeline', () => {
             gValidIndex,
           };
         },
-        validate(items) {
-          return { valid: true, diagnostics: [], flags: {}, errors: [] };
+        validate(_items, _schema, _options) {
+          return {
+            valid: true,
+            diagnostics: [],
+            flags: { source: {}, planning: {} },
+            errors: [],
+          };
         },
       }
     );

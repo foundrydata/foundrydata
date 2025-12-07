@@ -1,21 +1,21 @@
-Task: 9401.9401003   Title: Wire classifier into generator and repair planning
-Anchors: [spec://§6#generator-repair-contract, spec://§9#generator, spec://§10#repair-engine]
+Task: 9402.9402004   Title: Write tests for G_valid arrays and golden snapshots
+Anchors: [spec://§6#generator-repair-contract, spec://§9#generator, spec://§9#arrays-contains, spec://§6#phases]
 Touched files:
-- packages/core/src/pipeline/orchestrator.ts
-- packages/core/src/pipeline/types.ts
 - packages/core/src/pipeline/__tests__/pipeline-orchestrator.test.ts
+- test/acceptance/arrays/contains-vs-maxitems.spec.ts
+- PLAN.md
 
 Approach:
-Propagate the caller’s PlanOptions through the pipeline so Repair sees the same gValid/repair posture as Compose/Generate. Thread `planOptions` (resolved at pipeline entry) into the repair runner invocation and override signature, ensuring `allowStructuralInGValid` and other repair flags are honored instead of defaulting to strict mode. Keep the default code path unchanged when gValid is disabled. Add integration coverage in the orchestrator tests by overriding Generate to emit a deliberately underfilled G_valid object (missing a required field) while running with `planOptions.repair.allowStructuralInGValid:true`; assert that Repair performs the structural completion instead of being blocked, and that overrides can observe the forwarded planOptions. This guards against regressions where Repair silently ignores caller settings. Maintain deterministic seeds/outputs and preserve existing artifacts/metrics wiring. Target ≥80% per-file coverage with the new tests focusing on G_valid propagation.
+Add missing coverage to prove G_valid arrays are AJV-valid by construction when formats are enforced and to lock behavior with golden expectations. Extend the pipeline orchestrator tests with a G_valid UUID+contains array case that runs `validateFormats: true` to ensure the generator emits format-respecting UUIDs and that no Repair actions occur; keep seeds fixed for determinism and assert gValidIndex marks the array as G_valid. Add a non-G_valid parity test that compares both items and contains-related diagnostics when toggling `planOptions.gValid` to confirm caps/diags stability. In acceptance, reuse the shared fixture to add a compact snapshot (inline) of generated arrays for the UUID+contains motif under G_valid, capturing shape and a sample UUID so structural regressions surface early; also snapshot diagnostics for the non-G_valid uniqueItems+contains motif while toggling gValid to ensure no drift. Keep fixtures stable (description-only tweaks if needed) and avoid large snapshots by limiting count/seed. Maintain ≥80% coverage on touched test files and avoid code changes outside test surface.
 
 Risks/Unknowns:
-- Overriding Generate in tests must still respect gValid classification; ensure gValidIndex is passed to Repair when overrides bypass the default generator.
-- Structural repair expectations depend on fixtures; validate that the chosen schema exercises required-add without conflicting guards.
-Parent bullets couverts: [KR1, KR2, KR4, DEL2, DOD1, TS4]
+- UUID generation under `validateFormats:true` must stay deterministic; verify seeds and avoid multiple distinct UUIDs that would bloat snapshots.
+- Diagnostics parity for non-G_valid motifs may differ if prior caps change; be prepared to adapt assertions to actual baseline outputs without overfitting.
+Parent bullets couverts: [KR2, KR3, KR4, DEL3, DOD1, DOD2, DOD3, TS1, TS2, TS4]
 
 DoD:
-- [x] Contrat Generator vs Repair implémenté et aligné G_valid
-- [x] Tests G_valid / Repair ajoutés ou mis à jour (cov ≥80 % fichiers touchés)
+- [x] Contrat Generator vs Repair implémenté pour arrays G_valid (items+contains) avec formats
+- [x] Tests G_valid vs non-G_valid (items, diagnostics, snapshots) cov ≥80 % fichiers touchés
 - [x] build/typecheck/lint/test/bench OK
 
 Checks:
