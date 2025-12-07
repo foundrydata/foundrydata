@@ -1,8 +1,13 @@
-# AGENT Runbook — Operating Mode (GPT-5 Codex, repair-philosophy)
+# AGENT Runbook — Operating Mode (GPT-5 Codex, observability-platform-metrics-v1)
 
-**Purpose.** Discipline d’exécution et garde-fous pour implémenter la **Repair philosophy (tiers, policy, progress metric Score, coverage-indépendance, budgets/stagnation, observabilité)** à partir de la **SPEC canonique** du générateur JSON Schema.
+**Purpose.** Discipline d’exécution et garde-fous pour implémenter **Observability & Platform Metrics v1** :
+- baseline `diag.metrics` (timings/counters/SLIs),
+- invariants coverage (`coverage-report/v1`, caps + planned/unplanned, guided≥measure),
+- observabilité Repair (tiers + `gValid_*` + diagnostics),
+- observabilité Resolver R1 (run-level diags + fingerprint),
+- vue dérivée Reporter/Platform View + gates CI (artefacts dérivés, pas source de vérité).
 
-**Audience.** Agent GPT-5 Codex (VS Code) opérant sur les tâches Taskmaster tagguées **`repair-philosophy`**.
+**Audience.** Agent GPT-5 Codex (VS Code) opérant sur les tâches Taskmaster tagguées **`observability-platform-metrics-v1`**.
 
 **Status.** Actif — à appliquer systématiquement pour ce tag.
 
@@ -10,7 +15,7 @@
 
 ## Mode d’emploi (cheat-sheet agent)
 
-### Pré-hook obligatoire (TOUJOURS avant toute implémentation sur `repair-philosophy`)
+### Pré-hook obligatoire (TOUJOURS avant toute implémentation sur `observability-platform-metrics-v1`)
 
 1. Identifier la sous-tâche visée (ex. via `npx task-master next` → `<TASK>.<SUB>`).
 2. Lancer, depuis la racine du repo :
@@ -20,118 +25,151 @@
    * `npx task-master show <TASK>` (tâche parente)
    * `npx task-master show <TASK>.<SUB>` (sous-tâche)
    * `npx task-master set-status --id=<TASK>.<SUB> --status=in-progress`
+
 3. Ne jamais appeler `npx task-master set-status --status=in-progress` directement pour une sous-tâche sans être passé par ce script ou par la séquence manuelle `show parent` → `show subtask`.
 
 ### Boucle principale
 
-1. Vérifier que le tag actif est **`repair-philosophy`** et qu’une **tâche parente** est disponible (`/tm:next` ou `npx task-master next`).
+1. Vérifier que le tag actif est **`observability-platform-metrics-v1`** et qu’une **tâche parente** est disponible (`/tm:next` ou `npx task-master next`).
 2. Afficher la tâche parente (`/tm:show <id>` ou `npx task-master show <id>`) et lire sa description globale + la liste de ses sous-tâches (ne pas tenter de “tout faire” en une seule passe).
 3. Choisir une sous-tâche active (`<TASK>.<SUB>`) en respectant l’ordre / les dépendances, puis la marquer `in-progress` via `./scripts/tm-start-coverage-subtask.sh <TASK>.<SUB>` (ou la séquence manuelle).
-   **Anti-biais de scope :** avant d’élargir (ex. toucher `executePipeline` / couverture / planification), vérifier `npx task-master show <id>` pour voir si une sous-tâche dédiée existe. Si oui, considérer ce travail **hors périmètre**.
-4. Sélectionner 1–5 anchors SPEC pertinents (`spec://...`, éventuellement `cov://...` si le tag l’exige), REFONLY, quotas respectés.
+   **Anti-biais de scope :** avant d’élargir (ex. toucher `executePipeline`, ou modifier une structure de sortie), vérifier `npx task-master show <id>` pour voir si une sous-tâche dédiée existe. Si oui, considérer ce travail **hors périmètre**.
+4. Sélectionner 1–5 anchors SPEC pertinents (`spec://...`, `cov://...`), REFONLY, quotas respectés.
 5. Rédiger `PLAN.md` (200–400 mots) centré sur la sous-tâche en cours, avec `taskId`, `anchors`, `touchedFiles`, approche, risques et checks standard.
-6. Implémenter les changements pour cette sous-tâche dans les fichiers listés, **sans changer la sémantique AJV-oracle**,
-   et en respectant l’**ordre Repair** + l’**idempotence** définis par la SPEC (shape → bounds → semantics → names → sweep).
+6. Implémenter les changements **sans changer la sémantique pipeline** :
+   - *observability doit être passive* (no side-effects),
+   - ne pas réinterpréter les métriques/specs (source de vérité = artefacts canoniques),
+   - ne pas introduire de dépendance au wall-clock/env pour le contrôle de flux,
+   - ne pas ajouter d’I/O réseau dans les phases core (R1 est une pré-phase).
 7. Ajouter/mettre à jour les tests pour viser **cov ≥80 % sur chaque fichier touché** (ou isoler la logique dans un nouveau module bien couvert).
 8. Lancer au minimum `npm run build`, puis `npm run typecheck`, ensuite `npm run lint`, puis `npm run test`, et enfin `npm run bench` (ordre imposé).
-9. Vérifier que les diagnostics respectent `diagnosticsEnvelope.schema.json` (diag-schema) et que les bench gates passent.
+9. Vérifier que :
+   - les diagnostics respectent `diagnosticsEnvelope.schema.json` (diag-schema),
+   - les reports `coverage-report/v1` valident leur schéma,
+   - les gates bench (si concernés) passent.
 10. Commit (template) + trailer `REFONLY::{"anchors":[...],"summary":"..."}` valide, marquer la sous-tâche `done` puis consigner dans `agent-log.jsonl`.
 
 ---
 
-## Focus spécifique au tag `repair-philosophy` (ce qui change vs `generator-vs-repair-contract`)
+## Focus spécifique au tag `observability-platform-metrics-v1`
 
 ### Objectif produit (rappel)
 
-Implémenter/aligner la **philosophie** de Repair **sans** faire dériver :
+Implémenter/aligner une observabilité exploitable **sans dérive** :
 
-* l’oracle AJV (validation sur schéma original),
-* le mapping `(keyword → action)` existant,
-* la séparation par phases,
-* le contrat `G_valid` (incluant le traitement des `structuralKeywords` dans `G_valid`).
-* l’**ordre d’application des actions Repair** et la règle “répéter une action = no-op” (idempotence).
+- **Baseline `diag.metrics`**
+  - keys requises (timings, counters, SLIs),
+  - mode metrics on/off cohérent,
+  - garantie “metrics toggle = aucun changement d’output” (données, branches, diagnostics fonctionnels).
+
+- **Coverage reporting (`coverage-report/v1`)**
+  - source-of-truth pour coverage,
+  - caps et budgets audités (targets materialisés + `meta.planned:false` si non planifiés),
+  - invariants guided≥measure (branches/enum) et comparabilité.
+
+- **Repair observability**
+  - counters par tier + diagnostics de policy,
+  - `gValid_*` (items/itemsWithRepair/actions) et diagnostics `G_valid` (structural repairs = exceptionnel),
+  - invariants d’indépendance vis-à-vis de la coverage state.
+
+- **Resolver R1 observability**
+  - diagnostics run-level (`diag.run` / `Compose.diag.run`) pour cache/offline/strategies,
+  - fingerprint présent et pris en compte dans la comparabilité (éviter des diffs trompeurs).
+
+- **Reporter/Platform View (artefact dérivé) + gates**
+  - vue calculée uniquement à partir de `diag` + `coverage-report/v1` (+ bench si pertinent),
+  - stable sort + invariants (`repairUsageByMotif`, planned/unplanned, comparability fields),
+  - gate engine CI (fatal/warn, threshold coverage, guided≥measure, exclure SLIs des checks de déterminisme).
+
+### Correspondance recommandée “tâches Taskmaster ↔ zones de code” (indicatif)
+
+- **9600** — diag.metrics baseline + tests non-régression metrics on/off.
+- **9601** — coverage-report/v1: `meta.planned:false`, plannerCapsHit + tests guided≥measure.
+- **9602** — repair tiers + gValid metrics + diagnostics (policy blocks) + tests.
+- **9603** — resolver run-level diagnostics + tests online/offline/cache.
+- **9604** — Reporter/Platform View + CI gates + traceability tests/doc.
 
 ### Risques typiques (à surveiller)
 
-* **Incohérence G_valid vs Tiers** : ne pas “autoriser Tier‑1 partout” si cela contredit explicitement les limites `G_valid` existantes (notamment pour `structuralKeywords`).
-* **Régression du guard G_valid** : si une action `keyword ∈ structuralKeywords` se déclenche en `G_valid`, ne pas la normaliser “par policy” ; la traiter comme **exception/bug/unsat**, et la rendre visible (diag/metrics G_valid).
-* **Non‑déterminisme caché** : stableParamsKey / canonicalisation de `params`, ordre de tri, fallback `schemaPath`, etc.
-* **Diagnostics “policy vs guards vs budget”** : bien distinguer les codes et shapes.
-* **Couverture** : Repair ne doit pas consommer l’état de coverage (`measure/guided`, targets, hit/miss, dimensionsEnabled).
-* **Order & seen-set** : ne pas casser la logique anti-boucle (seen-set basé sur `(instancePath, keyword, normalizedParams)`), ni l’ordre Repair.
+- **Non‑déterminisme introduit par l’observabilité**
+  - ajout de RNG calls “juste pour compter”,
+  - tri non stable, itérations non déterministes (Map/Object sans ordre stabilisé),
+  - timestamps/paths brut non normalisés.
+- **Mauvaise séparation “déterministe vs env-dependent”**
+  - utiliser `p95LatencyMs`/`memoryPeakMB` comme signal de déterminisme,
+  - faire échouer CI “conformance” plutôt que le bench harness prévu.
+- **Coverage mal auditée sous caps**
+  - “targets non matérialisés” au lieu de matérialiser `planned:false`,
+  - confondre “non couvert” avec “non planifié”.
+- **Comparaisons trompeuses**
+  - ignorer `registryFingerprint`,
+  - ignorer `operationsScope` / `selectedOperations` (OpenAPI) lors d’un diff,
+  - comparer deux runs avec options coverage différentes (`dimensionsEnabled`, `excludeUnreachable`).
+- **Vue Reporter trop lourde**
+  - introduire des payloads par-item dans la vue dérivée,
+  - casser le contrat “artefact dérivé” (ne pas remplacer les sources de vérité).
 
 ---
 
 ## Traçabilité tâche parente ↔ sous-tâches
 
-* Pour chaque tâche parente du tag `repair-philosophy`, créer (ou mettre à jour) `.taskmaster/docs/<TASK>-traceability.md` avec des bullets stables (`[KR1]`, `[DOD2]`, `[TS5]`, etc.).
+* Pour chaque tâche parente du tag `observability-platform-metrics-v1`, créer (ou mettre à jour) `.taskmaster/docs/<TASK>-traceability.md` avec des bullets stables (`[KR1]`, `[DOD2]`, `[TS5]`, etc.).
 * Dans `PLAN.md`, ajouter `Parent bullets couverts: [...]`.
 * À la clôture d’une sous-tâche, mettre à jour `<TASK>-traceability.md` et marquer les bullets comme “covered”.
 
 ---
 
-## Gardes-fous “Definition of Done” (tag repair-philosophy)
+## Gardes-fous “Definition of Done” (tag observability-platform-metrics-v1)
 
-**R1 — Lien explicite Deliverables / Test Strategy**
-Une sous-tâche ne passe `done` que si les deliverables concernés sont effectivement livrés et que les tests associés existent **et** ont été exécutés.
+**R1 — Lien explicite Deliverables / Test Strategy**  
+Une sous-tâche ne passe `done` que si les deliverables concernés sont livrés et que les tests associés existent **et** ont été exécutés.
 
-**R2 — Checklist DoD dans PLAN.md**
+**R2 — Checklist DoD dans PLAN.md**  
 PLAN.md contient une mini-checklist DoD dérivée de la traceability, et elle doit être cochée avant `done`.
 
-**R3 — “pas de tests → pas de done”**
-Si un changement touche le comportement Repair/diag/metrics et qu’aucun test n’est modifié/ajouté alors que la stratégie l’exige, rester `in-progress`.
+**R3 — “pas de tests → pas de done”**  
+Si un changement touche diag/metrics/coverage reports/gates et qu’aucun test n’est modifié/ajouté alors que la stratégie l’exige, rester `in-progress`.
 
-**R4 — agent-log.jsonl**
+**R4 — agent-log.jsonl**  
 Chaque `complete-subtask` consigne `anchors`, `touchedFiles`, et la validation (build/typecheck/lint/test/bench).
 
-**R5 — Discipline Taskmaster**
+**R5 — Discipline Taskmaster**  
 Pas de `done` sans commit (si possible). Sinon expliciter clairement ce qui reste à faire côté humain.
 
 ---
 
 ## TL;DR opératoire
 
-1. **Source de vérité** : SPEC canonique > AGENTS.md > notes tasks.
-2. **REFONLY** : anchors uniquement, pas de prose SPEC copiée.
-3. **Boucle** : `get_task` → `in-progress` → anchors (≤5) → `PLAN.md` → patch+tests → build/typecheck/lint/test/bench → diag-schema → commit → `done`.
-4. **Séparation des phases** : Normalize → Compose → Generate → Repair → Validate.
-5. **Déterminisme** : tuple normatif de la SPEC, pas d’état caché, logs reproductibles.
-6. **Repair-philosophy** : tiers/policy + Score/commit rule + budgets/stagnation + observabilité + coverage-indépendance.
+1. **Sources de vérité** : `diag` + `coverage-report/v1` + (bench outputs). La vue “platform” est dérivée.
+2. **REFONLY** : anchors `spec://`/`cov://` uniquement, pas de prose copiée.
+3. **Boucle** : `get_task` → `in-progress` → anchors (≤5) → `PLAN.md` → patch+tests → build/typecheck/lint/test/bench → validations schémas → commit → `done`.
+4. **Déterminisme** : tuple normatif, pas d’état caché, métriques passives.
+5. **Coverage** : planned/unplanned explicit sous caps, guided≥measure sur branches/enum, comparabilité stricte.
+6. **Resolver** : run-level diags + fingerprint, sans I/O réseau dans les phases core.
 
 ---
 
-## Mémoire opérationnelle (pièges à éviter) — Repair philosophy
+## Mémoire opérationnelle (pièges à éviter) — Observability & Platform Metrics
 
-* **Score/commit rule** : si une mutation ne **baisse pas Score**, elle ne doit pas être commit (et doit être observable via diag).
-* **stableParamsKey** : définir/implémenter une canonicalisation JSON stricte (tri de clés), sinon Score diverge entre implémentations.
-* **Unifier “params canonicalization”** : éviter deux encodeurs (Score vs seen-set/budgets). Idéalement une seule util (tri récursif, stable stringify) + tests dédiés.
-* **G_valid** : toute action liée à un `keyword ∈ structuralKeywords` dans `G_valid` doit rester “exceptionnelle” et visible (métriques/diag), pas une voie nominale.
-* **Policy vs guards** : un blocage “tier disabled” doit être distingué d’un blocage “guard empêché” et d’un “budget épuisé”.
-* **Coverage** : ne jamais brancher sur `coverage=...`, targets, hit/miss, `dimensionsEnabled` dans Repair.
-* **Process order** : si tu ajoutes un nouveau hook/diagnostic autour de Repair, ne modifie pas l’ordre d’application des actions (shape → bounds → semantics → names → sweep).
-
----
-
-## Règles d’or
-
-1. **SPEC seules font foi.** Pas d’élargissement de périmètre au-delà de la SPEC canonique.
-   1bis. **Conformité SPEC non optionnelle.**
-2. **REFONLY par anchors.** Pas de texte copié.
-3. **AJV oracle** : valider contre le schéma original (pas un artefact interne).
-4. **Déterminisme** : RNG seedée, pas d’état global, logs stables.
-5. **Vérifiabilité** : diagnostics conformes, tests et benchs exécutés.
-6. **Pas de réseau** dans Normalize/Compose/Generate/Repair/Validate.
-7. **Parité AJV** : flags alignés entre instances.
-8. **AP:false** : respecter strictement CoverageIndex/must-cover.
+* **Metrics toggle** : activer/désactiver les métriques ne doit pas changer :
+  - instances générées,
+  - branches choisies,
+  - décisions de repair/validate,
+  - diagnostics “fonctionnels”.
+* **Stable sort partout** : tout tableau “reporting” doit être trié de façon stable (clé explicite, pas l’ordre d’insertion).
+* **Planned vs Unplanned** : sous cap, ne pas “supprimer” des targets ; matérialiser et marquer `planned:false`.
+* **Comparabilité** : intégrer fingerprint resolver + scope opérations (OpenAPI) et refuser les diffs si mismatch.
+* **SLIs** : `p50/p95/memory` servent aux gates bench, pas à la conformance/déterminisme.
+* **Vue dérivée** : éviter les payloads volumineux (pas de traces per-row dans la vue), utiliser artefacts séparés en debug si nécessaire.
 
 ---
 
-## Boucle d'exécution (Run Loop) pour le tag repair-philosophy
+## Boucle d'exécution (Run Loop) pour le tag observability-platform-metrics-v1
 
 ```text
 Step 0  Sanity:
-        - tâches tag repair-philosophy disponibles ?
-        - tag repair-philosophy actif ?
+        - tâches tag observability-platform-metrics-v1 disponibles ?
+        - tag observability-platform-metrics-v1 actif ?
 
 Step 1  Obtenir la tâche parente :
         → /tm:show <id> ou /tm:next
@@ -148,14 +186,15 @@ Step 3  Produire PLAN.md (200–400 mots) + fichiers touchés.
 
 Step 4  PATCH + TESTS (cov ≥80% sur fichiers touchés).
 
-Step 5  build → typecheck → lint → test → bench.
+Step 5  build → typecheck → lint → test → bench
+        - exception docs-only: lint/test markdown si outillage dédié, sinon garder la chaîne complète par défaut.
 
-Step 6  Valider diagnostics (diagnosticsEnvelope.schema.json).
+Step 6  Valider diag envelope + coverage-report schema (si touchés).
 
 Step 7  Commit (template) + trailer REFONLY.
 
 Step 8  Marquer la sous-tâche done.
-```
+````
 
 ---
 
@@ -164,32 +203,34 @@ Step 8  Marquer la sous-tâche done.
 Avant commit :
 
 * chaque changement de code doit être rattachable à ≥1 anchor,
-* vérifier “policy/tiers/Score” vs `G_valid` (pas de contradiction),
-* vérifier que l’**ordre Repair** n’a pas été modifié et que l’idempotence est toujours vraie,
-* vérifier que Repair ne dépend pas de coverage state,
+* vérifier “observability passive” : outputs identiques metrics on/off (si applicable),
+* vérifier que les décisions core ne dépendent pas de wall-clock/env,
+* vérifier planned/unplanned + caps audit (si touché),
+* vérifier guided≥measure invariants (si touché),
+* vérifier comparabilité (registryFingerprint + operationsScope/selectedOperations),
 * si ambiguïté : geler et produire `SPEC-QUESTION.md`.
 
 ---
 
 ## Politique REFONLY — Anchors SPEC
 
-### Anchors clés — Repair philosophy
+### Anchors clés — Observability & Platform Metrics
 
-Pour les tâches tagguées `repair-philosophy`, prioriser :
+Pour les tâches tagguées `observability-platform-metrics-v1`, prioriser :
 
-* `spec://§10#repair-philosophy` — (si l’anchor existe) tiers + policy + Score + budgets + observabilité.
-  - **Si l’anchor n’existe pas encore** sur la branche: ancrer sur `spec://§10#repair-engine`, `spec://§10#mapping`, `spec://§10#process-order` jusqu’à ce que la section soit créée.
-* `spec://§10#repair-engine` — chapitre Repair (contexte, idempotence).
-* `spec://§10#mapping` — mapping `(keyword → action)` (ne pas réinventer).
-* `spec://§10#process-order` — process Repair, budgets, stagnation/unsat.
+* `spec://§2#observability-surfaces` — surfaces de sortie (diag, coverage-report/v1, vue dérivée).
 * `spec://§6#phases` — pipeline Normalize → Compose → Generate → Repair → Validate.
-* `spec://§6#generator-repair-contract` — `G_valid`, limites Repair dans `G_valid`, structuralKeywords.
-* `spec://§19#envelope` et `spec://§19#payloads` — schéma diagnostics, phase separation.
-* `spec://§14#planoptionssubkey` — PlanOptionsSubKey / clés de déterminisme.
-* `spec://§15#rng` et `spec://§15#metrics` — RNG/déterminisme, métriques.
-* `spec://§23#repair-interfaces` — interfaces artefacts Repair/actions.
+* `spec://§7#platform-kpis-gates` — gates CI / KPIs (comparabilité, fatal/warn, coverage thresholds).
+* `spec://§15#metrics` — `diag.metrics` requis + SLI/bench protocol.
+* `spec://§15#rng` — RNG/déterminisme, interdiction wall-clock/env pour le contrôle de flux.
+* `spec://§19#envelope` et `spec://§19#payloads` — schéma diagnostics, séparation des phases.
+* `spec://§13#ajv-flags-parity` — parité AJV (gates mismatch).
+* `spec://§10#repair-philosophy-observability` — diagnostics policy + counters tiers (utile pour 9602/9604).
+* `cov://§5#coverage-report` — structure `coverage-report/v1`, stabilité IDs.
+* `cov://§7#cli-summary` — ordre résumé, invariants thresholds.
+* `cov://§7#thresholds` — `minCoverage` (V1: overall only).
 
-> Si un point dépend explicitement de la spec coverage-aware, utiliser `cov://...` (le strict minimum), mais ne pas laisser Repair lire l’état coverage.
+> Si un anchor exact n’existe pas encore sur la branche: ancrer sur la section la plus proche (même doc) et documenter l’écart dans `PLAN.md` (Risks/Unknowns).
 
 ### Quotas REFONLY
 
@@ -207,21 +248,20 @@ Pour les tâches tagguées `repair-philosophy`, prioriser :
 
 ---
 
-## Playbooks (tag repair-philosophy)
+## Playbooks (tag observability-platform-metrics-v1)
 
 ### A) No Task Available
 
-1. Renforcer les tests Repair (Score/commit rule, diagnostics policy/guard/budget, coverage-indépendance).
-2. Bench Repair (profils CLI), vérifier gates.
-3. Docs : compléter exemples/invariants liés à Repair philosophy.
+1. Renforcer les tests déterminisme metrics on/off (fixtures multiples).
+2. Renforcer les tests comparabilité coverage diffs (fingerprint + ops scope).
+3. Bench: vérifier la stabilité des SLIs et l’hygiène des reports.
+4. Docs: compléter traceability observability (gates ↔ tests).
 
 ### B) SPEC ambiguë/contradictoire
 
 Geler et produire `SPEC-QUESTION.md` avec 1–2 anchors.
 
 ### C) Décider des problèmes hors-scope
-
-Même démarche que précédemment :
 
 1. Documenter dans `agent-log.jsonl` (+ éventuel `SPEC-QUESTION.md`).
 2. Décider clairement : refuser (hors scope) ou proposer nouvelle tâche.
@@ -235,19 +275,19 @@ Même démarche que précédemment :
 ### Commit message
 
 ```text
-feat(core): task <ID> — <titre court>
+feat(<pkg>): task <ID> — <titre court>
 
 - <3–4 points factuels>
 - tests: <pkg>/<file>.spec.ts (cov >=80% touched)
 
-REFONLY::{"anchors":["spec://§10#repair-philosophy","spec://§19#envelope"],"summary":"<résumé 1 ligne>"}
+REFONLY::{"anchors":["spec://§15#metrics","cov://§5#coverage-report"],"summary":"<résumé 1 ligne>"}
 ```
 
 ### PLAN.md (200–400 mots)
 
 ```text
 Task: <id>   Title: <title>
-Anchors: [spec://§<n>#<slug>, ...]  (≤5)
+Anchors: [spec://§<n>#<slug>, cov://§<n>#<slug>, ...]  (≤5)
 Touched files:
 - packages/<pkg>/src/...
 - packages/<pkg>/test/...
@@ -271,10 +311,9 @@ Checks:
 
 ## Diagnostics — rappels
 
-* `phase` correct (`repair` vs `validate`).
+* `phase` correct (`normalize` / `compose` / `generate` / `repair` / `validate`).
 * Nouveaux codes => mettre à jour la table “code ↔ phase” et les validateurs diag si nécessaires.
 * Enrichissements `details` => mettre à jour `diag/schemas.ts` / `diag/validate.ts` si requis.
-
 
 ---
 
@@ -330,17 +369,6 @@ Les outils MCP Task Master (`mcp__task-master-ai__*`) restent indisponibles; uti
 ### Exécution de Code TypeScript — Protocole `tsx`
 
 **CRITICAL**: Ne pas utiliser `bash -lc 'node - <<EOF'` pour du code TypeScript non compilé.
-
-**❌ INCORRECT**
-
-```bash
-bash -lc 'node - <<EOF
-import { executePipeline } from "./packages/core/src/pipeline/orchestrator.js";
-const res = await executePipeline(schema, options);
-console.log(res);
-EOF
-'
-```
 
 **✅ CORRECT : Utiliser `npx tsx --eval` avec wrapper async**
 
@@ -520,4 +548,3 @@ Règles :
   },
   "additionalProperties": false
 }
-```
