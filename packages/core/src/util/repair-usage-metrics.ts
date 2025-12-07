@@ -10,11 +10,16 @@ export function recordRepairUsageEventOnSnapshot(
     motifId: string;
     gValid: boolean;
     actions: number;
+    items?: number;
+    itemsWithRepair?: number;
   }
 ): void {
   if (!snapshot.repairUsageByMotif) {
     snapshot.repairUsageByMotif = [];
   }
+  const itemsDelta = event.items ?? 1;
+  const itemsWithRepairDelta =
+    event.itemsWithRepair ?? (event.actions > 0 ? 1 : 0);
   const bucket = snapshot.repairUsageByMotif.find(
     (entry) => entry.motifId === event.motifId && entry.gValid === event.gValid
   );
@@ -22,51 +27,66 @@ export function recordRepairUsageEventOnSnapshot(
     const newEntry = {
       motifId: event.motifId,
       gValid: event.gValid,
-      items: 1,
-      itemsWithRepair: event.actions > 0 ? 1 : 0,
+      items: itemsDelta,
+      itemsWithRepair: itemsWithRepairDelta,
       actions: event.actions,
     };
     snapshot.repairUsageByMotif.push(newEntry);
-    addGValidCounters(snapshot, newEntry);
+    addGValidCounters(snapshot, newEntry, {
+      itemsDelta,
+      itemsWithRepairDelta,
+      actionsDelta: event.actions,
+    });
     return;
   }
-  bucket.items += 1;
-  if (event.actions > 0) {
-    bucket.itemsWithRepair += 1;
+  bucket.items += itemsDelta;
+  if (event.actions > 0 || itemsWithRepairDelta > 0) {
+    bucket.itemsWithRepair += itemsWithRepairDelta;
     bucket.actions += event.actions;
   }
-  addGValidCounters(snapshot, bucket, event.actions);
+  addGValidCounters(snapshot, bucket, {
+    itemsDelta,
+    itemsWithRepairDelta,
+    actionsDelta: event.actions,
+  });
 }
 
+// eslint-disable-next-line complexity
 function addGValidCounters(
   snapshot: RepairUsageSnapshot,
   bucket: { motifId: string; gValid: boolean; actions: number },
-  actionsOverride?: number
+  deltas?: {
+    itemsDelta?: number;
+    itemsWithRepairDelta?: number;
+    actionsDelta?: number;
+  }
 ): void {
-  if (!bucket.gValid) return;
-  if (!bucket.motifId || bucket.motifId === 'none') return;
+  if (!bucket.gValid || !bucket.motifId || bucket.motifId === 'none') return;
 
-  const actions = actionsOverride ?? bucket.actions;
+  const actions = deltas?.actionsDelta ?? bucket.actions;
+  const itemsDelta = deltas?.itemsDelta ?? 1;
+  const itemsWithRepairDelta = deltas?.itemsWithRepairDelta ?? 0;
   const base = `gValid_${bucket.motifId}`;
   const metrics = snapshot as Record<string, number | RepairUsageSnapshot>;
 
-  const increment = (key: string, delta: number): void => {
-    const current =
-      typeof metrics[key] === 'number' ? (metrics[key] as number) : 0;
-    metrics[key] = current + delta;
-  };
-
-  increment(`${base}_items`, 1);
+  const itemsKey = `${base}_items`;
   const itemsWithRepairKey = `${base}_itemsWithRepair`;
   const actionsKey = `${base}_actions`;
-  if (metrics[itemsWithRepairKey] === undefined) {
-    metrics[itemsWithRepairKey] = 0;
-  }
-  if (metrics[actionsKey] === undefined) {
-    metrics[actionsKey] = 0;
-  }
-  if (actions > 0) {
-    increment(itemsWithRepairKey, 1);
-    increment(actionsKey, actions);
-  }
+
+  const currentItems =
+    typeof metrics[itemsKey] === 'number' ? (metrics[itemsKey] as number) : 0;
+  metrics[itemsKey] = currentItems + Math.max(0, itemsDelta);
+
+  const currentItemsWithRepair =
+    typeof metrics[itemsWithRepairKey] === 'number'
+      ? (metrics[itemsWithRepairKey] as number)
+      : 0;
+  metrics[itemsWithRepairKey] =
+    currentItemsWithRepair + Math.max(0, itemsWithRepairDelta);
+
+  const currentActions =
+    typeof metrics[actionsKey] === 'number'
+      ? (metrics[actionsKey] as number)
+      : 0;
+  metrics[actionsKey] = currentActions + Math.max(0, actions);
 }

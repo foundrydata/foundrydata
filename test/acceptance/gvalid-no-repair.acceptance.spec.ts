@@ -86,10 +86,8 @@ describe('Acceptance — G_valid no-repair metrics', () => {
       )
     ).toBe(true);
 
-    expect(result.metrics.gValid_arrayItemsContainsSimple_items).toBe(3);
-    expect(result.metrics.gValid_arrayItemsContainsSimple_itemsWithRepair).toBe(
-      0
-    );
-    expect(result.metrics.gValid_arrayItemsContainsSimple_actions).toBe(0);
+    expect(result.metrics.gValid_arrayContainsSimple_items).toBe(3);
+    expect(result.metrics.gValid_arrayContainsSimple_itemsWithRepair).toBe(0);
+    expect(result.metrics.gValid_arrayContainsSimple_actions).toBe(0);
   });
 });

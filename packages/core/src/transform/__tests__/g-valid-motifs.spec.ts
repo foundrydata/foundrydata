@@ -21,12 +21,12 @@ describe('GValid motif types and API', () => {
     );
     const arrayInfo = makeGValidMotif(
       '#/items',
-      GValidMotif.ArrayItemsContainsSimple
+      GValidMotif.ArrayContainsSimple
     );
 
     expect(objectInfo.isGValid).toBe(true);
     expect(objectInfo.motif).toBe(GValidMotif.SimpleObjectRequired);
     expect(arrayInfo.isGValid).toBe(true);
-    expect(arrayInfo.motif).toBe(GValidMotif.ArrayItemsContainsSimple);
+    expect(arrayInfo.motif).toBe(GValidMotif.ArrayContainsSimple);
   });
 });

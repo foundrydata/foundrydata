@@ -9,7 +9,7 @@ import type {
 export enum GValidMotif {
   None = 'none',
   SimpleObjectRequired = 'simpleObjectRequired',
-  ArrayItemsContainsSimple = 'arrayItemsContainsSimple',
+  ArrayContainsSimple = 'arrayContainsSimple',
   ApFalseMustCover = 'apFalseMustCover',
   ComplexContains = 'complexContains',
 }
@@ -47,7 +47,7 @@ export function makeGValidNone(canonPath: string): GValidInfo {
  */
 export function makeGValidMotif(
   canonPath: string,
-  motif: GValidMotif.SimpleObjectRequired | GValidMotif.ArrayItemsContainsSimple
+  motif: GValidMotif.SimpleObjectRequired | GValidMotif.ArrayContainsSimple
 ): GValidInfo {
   return {
     canonPath,
@@ -161,7 +161,7 @@ function classifyNode(
   }
 
   if (isSimpleArrayItemsContainsCandidate(schema, ctx)) {
-    return makeGValidMotif(canonPath, GValidMotif.ArrayItemsContainsSimple);
+    return makeGValidMotif(canonPath, GValidMotif.ArrayContainsSimple);
   }
 
   if (coverageIndex?.has(canonPath)) {

@@ -284,6 +284,8 @@ export class MetricsCollector {
     motifId: string;
     gValid: boolean;
     actions: number;
+    items?: number;
+    itemsWithRepair?: number;
   }): void {
     if (!this.enabled) {
       return;

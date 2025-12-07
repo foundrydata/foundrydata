@@ -31,6 +31,7 @@ import {
 } from '../util/validator-cache.js';
 import {
   GValidMotif,
+  type GValidInfo,
   type GValidClassificationIndex,
 } from '../transform/g-valid-classifier.js';
 import type { PtrMapping } from '../util/ptr-map.js';
@@ -781,7 +782,7 @@ export function repairItemsAjvDriven(
     if (!info || info.isGValid !== true) return false;
     return (
       info.motif === GValidMotif.SimpleObjectRequired ||
-      info.motif === GValidMotif.ArrayItemsContainsSimple
+      info.motif === GValidMotif.ArrayContainsSimple
     );
   };
 
@@ -804,21 +805,109 @@ export function repairItemsAjvDriven(
     return `#/${canonPath}`;
   };
 
-  const recordBaselineGValidMetrics = (
-    collector: MetricsCollector,
-    seenKeys: Set<string> = new Set()
+  type MotifActionBucket = {
+    motifId: string;
+    gValid: boolean;
+    actions: number;
+    info?: GValidInfo;
+    actionsList: RepairAction[];
+  };
+
+  const collectArrayIndices = (actionsList: RepairAction[]): Set<number> => {
+    const indices = new Set<number>();
+    for (const act of actionsList) {
+      const ptr = act.instancePath ?? '';
+      const segments = decodeJsonPointer(ptr);
+      for (const seg of segments) {
+        const num = Number(seg);
+        if (Number.isInteger(num) && String(num) === seg) {
+          indices.add(num);
+          break;
+        }
+      }
+    }
+    return indices;
+  };
+
+  const getInstanceAtCanon = (root: unknown, canonPath: string): unknown => {
+    if (!canonPath || canonPath === '#') {
+      return root;
+    }
+    return getByPointer(root, canonPath);
+  };
+
+  const recordGValidUsageForItem = (
+    value: unknown,
+    collector: MetricsCollector | undefined,
+    buckets: Map<string, MotifActionBucket>
   ): void => {
+    if (!collector) return;
+
+    const recordedKeys = new Set<string>();
+
+    const computeItemsDelta = (info: GValidInfo | undefined): number => {
+      if (!info) return 1;
+      const instanceValue = getInstanceAtCanon(value, info.canonPath);
+      if (
+        info.motif === GValidMotif.ArrayContainsSimple &&
+        Array.isArray(instanceValue)
+      ) {
+        return instanceValue.length;
+      }
+      return 1;
+    };
+
+    const computeItemsWithRepairDelta = (
+      info: GValidInfo | undefined,
+      actionsList: RepairAction[],
+      itemsDelta: number,
+      actionsDelta: number
+    ): number => {
+      if (!actionsDelta || actionsDelta <= 0) return 0;
+      if (!info) return 1;
+      if (info.motif !== GValidMotif.ArrayContainsSimple) {
+        return 1;
+      }
+      const touched = collectArrayIndices(actionsList);
+      if (touched.size > 0) {
+        return Math.min(itemsDelta, touched.size);
+      }
+      return Math.min(itemsDelta, 1);
+    };
+
+    for (const bucket of buckets.values()) {
+      const itemsDelta = computeItemsDelta(bucket.info);
+      const itemsWithRepairDelta = computeItemsWithRepairDelta(
+        bucket.info,
+        bucket.actionsList,
+        itemsDelta,
+        bucket.actions
+      );
+      collector.recordRepairUsageEvent({
+        motifId: bucket.motifId,
+        gValid: bucket.gValid,
+        actions: bucket.actions,
+        items: itemsDelta,
+        itemsWithRepair: itemsWithRepairDelta,
+      });
+      const key = `${bucket.motifId}::${bucket.gValid ? '1' : '0'}`;
+      recordedKeys.add(key);
+    }
+
     if (!gValidIndex) return;
     for (const info of gValidIndex.values()) {
       if (!info || info.isGValid !== true) continue;
       const key = `${info.motif}::1`;
-      if (seenKeys.has(key)) continue;
+      if (recordedKeys.has(key)) continue;
+      const itemsDelta = computeItemsDelta(info);
       collector.recordRepairUsageEvent({
         motifId: info.motif,
         gValid: true,
         actions: 0,
+        items: itemsDelta,
+        itemsWithRepair: 0,
       });
-      seenKeys.add(key);
+      recordedKeys.add(key);
     }
   };
 
@@ -933,9 +1022,7 @@ export function repairItemsAjvDriven(
           }
         }
       }
-      if (metrics) {
-        recordBaselineGValidMetrics(metrics);
-      }
+      recordGValidUsageForItem(original, metrics, new Map());
       repaired.push(original);
       continue;
     }
@@ -2263,46 +2350,40 @@ export function repairItemsAjvDriven(
       metrics.addRepairPasses(cycles);
     }
 
-    if (metrics) {
-      const motifCounts = new Map<
-        string,
-        { motifId: string; gValid: boolean; actions: number }
-      >();
-      const itemActions = actions.slice(actionsCursor);
-      for (const act of itemActions) {
-        const canonPath = act.canonPath || '#';
-        const normalizedCanon =
-          !canonPath || canonPath === '#'
-            ? '#'
-            : canonPath.startsWith('#')
-              ? canonPath
-              : canonPath.startsWith('/')
-                ? `#${canonPath}`
-                : `#/${canonPath}`;
-        const info = getGValidInfo(normalizedCanon);
-        const motifId = info && info.motif ? String(info.motif) : 'none';
-        const gValid = info?.isGValid === true;
-        const key = `${motifId}::${gValid ? '1' : '0'}`;
-        const increment =
-          typeof act.details?.actions === 'number' ? act.details.actions : 1;
-        const existing = motifCounts.get(key);
-        if (!existing) {
-          motifCounts.set(key, { motifId, gValid, actions: increment });
-        } else {
-          existing.actions += increment;
-        }
-      }
-      actionsCursor = actions.length;
-      const seenKeys = new Set(motifCounts.keys());
-      recordBaselineGValidMetrics(metrics, seenKeys);
-      for (const bucket of motifCounts.values()) {
-        metrics.recordRepairUsageEvent({
-          motifId: bucket.motifId,
-          gValid: bucket.gValid,
-          actions: bucket.actions,
+    const motifBuckets = new Map<string, MotifActionBucket>();
+    const itemActions = actions.slice(actionsCursor);
+    for (const act of itemActions) {
+      const canonPath = act.canonPath || '#';
+      const normalizedCanon =
+        !canonPath || canonPath === '#'
+          ? '#'
+          : canonPath.startsWith('#')
+            ? canonPath
+            : canonPath.startsWith('/')
+              ? `#${canonPath}`
+              : `#/${canonPath}`;
+      const info = getGValidInfo(normalizedCanon);
+      const motifId = info && info.motif ? String(info.motif) : 'none';
+      const gValid = info?.isGValid === true;
+      const key = `${motifId}::${gValid ? '1' : '0'}`;
+      const increment =
+        typeof act.details?.actions === 'number' ? act.details.actions : 1;
+      const existing = motifBuckets.get(key);
+      if (!existing) {
+        motifBuckets.set(key, {
+          motifId,
+          gValid,
+          actions: increment,
+          info,
+          actionsList: [act],
         });
+      } else {
+        existing.actions += increment;
+        existing.actionsList.push(act);
       }
     }
+    actionsCursor = actions.length;
+    recordGValidUsageForItem(current, metrics, motifBuckets);
 
     if (!pass && lastErrorCount > 0 && cycles >= maxCycles) {
       diagnostics.push({

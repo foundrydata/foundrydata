@@ -1,21 +1,22 @@
-Task: 9604   Title: Wire operationsScope/selectedOperations into coverage report & derived view (subtask 9604.9604005)
-Anchors: [spec://§2#observability-surfaces, spec://§7#platform-kpis-gates, cov://§5#coverage-report, cov://§7#thresholds, spec://§19#payloads]
+Task: 9602   Title: Add observability regression tests for repair/G_valid metrics (subtask 9602.9602003)
+Anchors: [spec://§2#observability-surfaces, spec://§10#repair-philosophy-observability, spec://§15#metrics, spec://§15#rng]
 Touched files:
-- .taskmaster/docs/9604-traceability.md
-- packages/reporter/test/fixtures/coverage-report.v1.sample.json
-- packages/reporter/test/coverage-report-schema.test.ts
-- packages/reporter/test/fixtures/reporter-platform-view.sample.json
-- packages/reporter/src/platform-view/__tests__/platform-view.test.ts
+- packages/core/src/transform/g-valid-classifier.ts
+- packages/core/src/util/repair-usage-metrics.ts
+- packages/core/src/repair/repair-engine.ts
+- packages/core/src/repair/__tests__/mapping-repair.test.ts
+- packages/core/src/pipeline/__tests__/repair-observability.regression.test.ts
+- test/acceptance/gvalid-no-repair.acceptance.spec.ts
 
 Approach:
-Objectif: refléter le scope réel des opérations OpenAPI dans coverage-report/v1 et la vue dérivée pour fiabiliser comparabilité/gates (`spec://§2#observability-surfaces`, `cov://§5#coverage-report`). (1) Mettre à jour le fixture coverage-report pour inclure un cas canonique `operationsScope:'selected'` + `selectedOperations` trié et un byOperation non vide, afin que la validation Ajv capture bien ces métadonnées et que les consommateurs disposent d’un exemple stable. (2) Adapter le test de schéma reporter pour valider ce fixture “selected” et continuer à rejeter les listes vides (cov://§7#thresholds), en conservant la compatibilité avec les rapports legacy. (3) Mettre à jour le fixture reporter-platform-view et, si besoin, le test du builder pour vérifier que la vue dérivée transporte `run.coverage.operationsScope/selectedOperations` normalisés sans changer la sémantique pipeline (observabilité passive, pas d’influence sur targets/actions). (4) Mettre à jour la trace 9604 (KR3/DEL1/DOD3/TS3) et boucler build → typecheck → lint → test → bench pour garantir qu’aucun comportement runtime n’est affecté. Aucun ajout de logique pipeline: uniquement données/validation/fixtures pour que les diffs/gates reflètent le scope sélectionné.
+Objectif: corriger la conformité des métriques G_valid/Tier (spec://§15#metrics, spec://§10#repair-philosophy-observability) en alignant le motif array sur le nom canonique `gValid_arrayContainsSimple_*` et en comptant les éléments (pas seulement les items) tout en gardant l’observabilité passive (spec://§2#observability-surfaces). (1) Renommer le motif `ArrayItemsContainsSimple` dans le classifieur G_valid et propager la clé dans la collecte de métriques afin que les compteurs suivent la nomenclature SPEC. (2) Revoir `recordRepairUsageEvent` pour accepter un delta d’items et calculer les compteurs G_valid à partir de la taille réelle des tableaux (items, itemsWithRepair/actions si touchés), en restant déterministe et sans changer la sémantique Repair. (3) Ajuster le chemin métrique dans l’engine Repair pour enregistrer les compteurs par élément (incluant le cas zéro action) et conserver les tiers/policy blocks inchangés. (4) Mettre à jour les tests unitaires/intégration/acceptance (mapping-repair, pipeline regression, gvalid-no-repair) pour refléter les nouveaux noms et les totaux par élément, puis vérifier que le comparateur de déterminisme continue d’ignorer uniquement les métriques non déterministes (spec://§15#rng). (5) Garder la couverture indépendante de coverage/metrics toggle via les tests existants, et réexécuter la chaîne build → typecheck → lint → test → bench.
 
 Risks/Unknowns:
-- Normaliser/trier selectedOperations ne doit pas changer l’ordre attendu ailleurs; vérifier que les comparaisons se basent sur l’ensemble, pas l’ordre.
-- Les fixtures modifiés peuvent impacter d’autres tests reporter; surveiller les snapshots implicites.
-- byOperation ajouté doit rester cohérent avec coverageStatus pour éviter des assertions implicites.
+- Comptage par élément: s’assurer que le delta d’items ne double pas les actions et reste stable avec allowStructuralInGValid.
+- Renommage motif: vérifier qu’aucun consommateur (reporter/traceabilité) n’attend l’ancienne clé.
+- ItemsWithRepair: calcul conservateur basé sur actions peut sous-estimer certains cas; documenter dans les tests si besoin.
 
-Parent bullets couverts: [KR3, DEL1, DOD3, TS3]
+Parent bullets couverts: [KR1, KR2, DOD1, DOD3, TS1, TS3]
 
 Checks:
 - build: npm run build

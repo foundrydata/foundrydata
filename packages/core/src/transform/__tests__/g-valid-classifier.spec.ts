@@ -100,7 +100,7 @@ describe('classifyGValid', () => {
 
     expect(root).toBeDefined();
     expect(root?.isGValid).toBe(true);
-    expect(root?.motif).toBe(GValidMotif.ArrayItemsContainsSimple);
+    expect(root?.motif).toBe(GValidMotif.ArrayContainsSimple);
   });
 
   it('excludes arrays with uniqueItems from baseline G_valid v1', () => {

@@ -37,4 +37,5 @@ This document maps parent task 9602 bullets from Implementation Details, Deliver
   Covers: [KR1, DEL1, DEL2, DOD1, TS2] (status: done).
 
 - **9602.9602003 – Add observability regression tests for repair/G_valid metrics**  
-  Covers: [KR1, KR2, KR3, DEL3, DOD2, DOD3, TS3] (status: done).
+  Covers: [KR1, KR2, KR3, DEL3, DOD2, DOD3, TS3] (status: done).  
+  Notes: Aligned G_valid metrics to spec naming (`gValid_arrayContainsSimple_*`) and per-element counting while keeping coverage/metrics toggles deterministic.

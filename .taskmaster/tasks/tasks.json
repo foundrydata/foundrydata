@@ -2335,10 +2335,10 @@
             "estimatedHours": 3,
             "file": "packages/core/test/e2e/repair.observability.spec.ts",
             "parentId": "9602",
-            "updatedAt": "2025-12-06T23:00:05.140Z"
+            "updatedAt": "2025-12-06T23:59:46.207Z"
           }
         ],
-        "updatedAt": "2025-12-06T23:00:05.140Z"
+        "updatedAt": "2025-12-06T23:59:46.207Z"
       },
       {
         "id": "9603",
@@ -2555,7 +2555,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-06T23:48:14.045Z",
+      "lastModified": "2025-12-06T23:59:46.208Z",
       "taskCount": 7,
       "completedCount": 5,
       "tags": [
