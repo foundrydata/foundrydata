@@ -311,6 +311,7 @@ describe('corpus harness', () => {
         patternPropsHit: 0,
         presencePressureResolved: 0,
       },
+      metricsEnabled: true,
       timeline: [],
       errors: [],
       artifacts: {
@@ -410,6 +411,7 @@ describe('corpus harness', () => {
         patternPropsHit: 0,
         presencePressureResolved: 0,
       },
+      metricsEnabled: true,
       timeline: [],
       errors: [],
       artifacts: {

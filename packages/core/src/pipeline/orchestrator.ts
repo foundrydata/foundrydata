@@ -270,15 +270,21 @@ export async function executePipeline(
 ): Promise<PipelineResult> {
   const runStartTimeMs = Date.now();
   const runStartedAtIso = new Date(runStartTimeMs).toISOString();
+  const planOptions = options.generate?.planOptions;
+  const resolvedPlanOptions = resolveOptions(planOptions);
+  const metricsEnabledOption =
+    options.metrics?.enabled ?? resolvedPlanOptions.metrics;
   const metrics =
-    options.collector ?? new MetricsCollector(options.metrics ?? {});
+    options.collector ??
+    new MetricsCollector({ ...options.metrics, enabled: metricsEnabledOption });
+  const metricsEnabled = options.collector
+    ? options.collector.isEnabled()
+    : metricsEnabledOption;
   const sourceDialect = detectDialectFromSchema(schema);
   const { schemaForAjv: schemaForSourceAjv } = prepareSchemaForSourceAjv(
     schema,
     sourceDialect
   );
-  const planOptions = options.generate?.planOptions;
-  const resolvedPlanOptions = resolveOptions(planOptions);
   // Optional resolver pre-phase (Extension R1)
   let resolverRegistry: ResolutionRegistry | undefined;
   let resolverRunDiags: ResolverDiagnosticNote[] | undefined = [];
@@ -637,6 +643,7 @@ export async function executePipeline(
       metrics: metrics.snapshotMetrics({
         verbosity: options.snapshotVerbosity,
       }),
+      metricsEnabled,
       timeline,
       errors,
       artifacts,
@@ -1041,6 +1048,7 @@ export async function executePipeline(
       metrics: metrics.snapshotMetrics({
         verbosity: options.snapshotVerbosity,
       }),
+      metricsEnabled,
       timeline,
       errors,
       artifacts,
@@ -1108,6 +1116,7 @@ export async function executePipeline(
       metrics: metrics.snapshotMetrics({
         verbosity: options.snapshotVerbosity,
       }),
+      metricsEnabled,
       timeline,
       errors,
       artifacts,
@@ -1204,6 +1213,7 @@ export async function executePipeline(
       metrics: metrics.snapshotMetrics({
         verbosity: options.snapshotVerbosity,
       }),
+      metricsEnabled,
       timeline,
       errors,
       artifacts,
@@ -1354,6 +1364,7 @@ export async function executePipeline(
         maxInstances,
         actualInstances,
         registryFingerprint,
+        metricsEnabled,
         operationsScope: coverageOperationsScope,
         selectedOperations: coverageSelectedOperations,
         startedAtIso: runStartedAtIso,
@@ -1377,6 +1388,7 @@ export async function executePipeline(
     metrics: metrics.snapshotMetrics({
       verbosity: options.snapshotVerbosity,
     }),
+    metricsEnabled,
     timeline,
     errors,
     artifacts,

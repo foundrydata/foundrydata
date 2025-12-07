@@ -41,6 +41,7 @@ describe('metrics toggle', () => {
         ...report.run,
         startedAt: 'normalized',
         durationMs: 0,
+        metricsEnabled: true,
       },
     };
   }
@@ -72,6 +73,8 @@ describe('metrics toggle', () => {
     expect(withoutMetrics.metrics.p50LatencyMs).toBe(0);
     expect(withoutMetrics.metrics.p95LatencyMs).toBe(0);
     expect(withoutMetrics.metrics.memoryPeakMB).toBe(0);
+    expect(withMetrics.metricsEnabled).toBe(true);
+    expect(withoutMetrics.metricsEnabled).toBe(false);
   });
 
   it('keeps coverage report stable when toggling metrics under coverage=measure', async () => {
@@ -112,5 +115,22 @@ describe('metrics toggle', () => {
     expect(reportOn).toBeDefined();
     expect(reportOff).toBeDefined();
     expect(reportOn).toStrictEqual(reportOff);
+    expect(withMetrics.artifacts.coverageReport?.run.metricsEnabled).toBe(true);
+    expect(withoutMetrics.artifacts.coverageReport?.run.metricsEnabled).toBe(
+      false
+    );
+    expect(withMetrics.metricsEnabled).toBe(true);
+    expect(withoutMetrics.metricsEnabled).toBe(false);
+  });
+
+  it('respects planOptions.metrics when metrics options are not provided explicitly', async () => {
+    const result = await executePipeline(schema, {
+      generate: { count: 2, seed: 19, planOptions: { metrics: false } },
+      validate: { validateFormats: false },
+    });
+
+    expect(result.metricsEnabled).toBe(false);
+    expect(result.metrics.normalizeMs).toBe(0);
+    expect(result.metrics.validationsPerRow).toBe(0);
   });
 });

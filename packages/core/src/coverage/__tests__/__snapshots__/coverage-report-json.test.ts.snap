@@ -32,6 +32,7 @@ exports[`coverage-report/v1 JSON snapshots > emits a stable coverage-report/v1 J
     "excludeUnreachable": false,
     "masterSeed": 37,
     "maxInstances": 3,
+    "metricsEnabled": true,
     "seed": 37,
     "startedAt": "<normalized-timestamp>",
   },

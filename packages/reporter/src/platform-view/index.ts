@@ -10,6 +10,7 @@ export type ReporterPlatformViewV1 = {
   run: {
     seed?: number;
     registryFingerprint?: string;
+    metricsEnabled?: boolean;
     coverage?: {
       mode: 'off' | 'measure' | 'guided';
       dimensionsEnabled?: string[];
@@ -66,6 +67,7 @@ export interface BuildPlatformViewInput {
   registryFingerprint?: string;
   engineVersion?: string;
   ajvMajor?: number;
+  metricsEnabled?: boolean;
 }
 
 /**
@@ -105,7 +107,10 @@ function buildEngineMetadata(
 
 function buildRunMetadata(
   coverage: CoverageReport | undefined,
-  input: Pick<BuildPlatformViewInput, 'seed' | 'registryFingerprint'>
+  input: Pick<
+    BuildPlatformViewInput,
+    'seed' | 'registryFingerprint' | 'metricsEnabled'
+  >
 ): ReporterPlatformViewV1['run'] {
   const coverageMeta = coverage
     ? {
@@ -123,6 +128,7 @@ function buildRunMetadata(
     seed: input.seed ?? coverage?.run.seed,
     registryFingerprint:
       input.registryFingerprint ?? coverage?.run.registryFingerprint,
+    metricsEnabled: coverage?.run.metricsEnabled ?? input.metricsEnabled,
     coverage: coverageMeta,
   };
 }

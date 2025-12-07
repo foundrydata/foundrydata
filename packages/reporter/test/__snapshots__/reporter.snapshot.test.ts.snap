@@ -509,6 +509,7 @@ exports[`reporter snapshots > produces a stable JSON Report for profiles/simple.
   ],
   "meta": {
     "engineVersion": "0.1.1",
+    "metricsEnabled": true,
     "seed": 123456789,
     "timestamp": "<timestamp>",
     "toolName": "json-schema-reporter",

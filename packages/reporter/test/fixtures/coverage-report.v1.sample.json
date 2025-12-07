@@ -13,6 +13,7 @@
     "actualInstances": 3,
     "dimensionsEnabled": ["structure", "branches"],
     "excludeUnreachable": false,
+    "metricsEnabled": true,
     "registryFingerprint": "0",
     "operationsScope": "selected",
     "selectedOperations": ["GET /users", "POST /users"],

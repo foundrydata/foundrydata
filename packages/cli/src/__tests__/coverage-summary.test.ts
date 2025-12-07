@@ -20,6 +20,7 @@ function createReport(partial: Partial<CoverageReport>): CoverageReport {
       excludeUnreachable: true,
       startedAt: '2025-01-01T00:00:00Z',
       durationMs: 1,
+      metricsEnabled: true,
     },
     metrics: {
       coverageStatus: 'ok',

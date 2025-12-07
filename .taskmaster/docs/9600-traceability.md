@@ -45,3 +45,6 @@ This document maps the parent task 9600 bullets from Implementation Details, Del
 
 - **9600.9600005 – Add coverage-mode metrics toggle regression**  
   Covers: [KR2, DEL2, DOD2, TS2] (status: in-progress → done). Adds a coverage=measure metrics toggle regression ensuring outputs/diagnostics match with metrics on/off and normalizes non-deterministic coverage report timing fields for strict equality.
+
+- **9600.9600006 – Metrics flag propagation and deterministic comparator**  
+  Covers: [KR1, KR2, DEL1, DEL2, DOD1, DOD2, TS2, TS3] (status: done). Propagates PlanOptions.metrics into metrics collection, persists metricsEnabled across pipeline/coverage/reporter surfaces, and excludes nameEnumElapsedMs from determinism comparisons with supporting tests.

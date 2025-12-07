@@ -45,6 +45,7 @@
         "actualInstances",
         "dimensionsEnabled",
         "excludeUnreachable",
+        "metricsEnabled",
         "startedAt",
         "durationMs"
       ],
@@ -62,6 +63,7 @@
           "minItems": 1
         },
         "excludeUnreachable": { "type": "boolean" },
+        "metricsEnabled": { "type": "boolean" },
         "registryFingerprint": { "type": "string", "minLength": 1 },
         "startedAt": { "type": "string" },
         "durationMs": { "type": "number", "minimum": 0 },

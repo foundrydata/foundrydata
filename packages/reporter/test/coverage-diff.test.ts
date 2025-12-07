@@ -22,6 +22,7 @@ function makeReport(targets: CoverageTargetReport[]): CoverageReport {
       excludeUnreachable: false,
       startedAt: '2025-01-01T00:00:00Z',
       durationMs: 1,
+      metricsEnabled: true,
     },
     metrics: {
       coverageStatus: 'ok',

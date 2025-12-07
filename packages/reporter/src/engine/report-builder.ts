@@ -95,6 +95,7 @@ function buildMeta(
     engineVersion: ENGINE_VERSION,
     timestamp: new Date().toISOString(),
     seed: result.artifacts.generated?.seed ?? options.seed,
+    metricsEnabled: result.metricsEnabled,
   };
 }
 

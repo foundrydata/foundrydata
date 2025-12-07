@@ -66,6 +66,7 @@ export interface CoverageRuntimeEvaluationRunInfo {
   actualInstances: number;
   startedAtIso: string;
   durationMs: number;
+  metricsEnabled: boolean;
   registryFingerprint?: string;
   operationsScope?: 'all' | 'selected';
   selectedOperations?: string[];
@@ -307,6 +308,7 @@ export function evaluateCoverageAndBuildReport(
       dimensionsEnabled: coverageDimensions,
       excludeUnreachable: evaluatorInput.excludeUnreachable,
       registryFingerprint: input.runInfo.registryFingerprint,
+      metricsEnabled: input.runInfo.metricsEnabled,
       operationsScope: operationsSelection.operationsScope,
       selectedOperations: operationsSelection.selectedOperations,
       startedAt: input.runInfo.startedAtIso,

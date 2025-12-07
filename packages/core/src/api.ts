@@ -165,6 +165,30 @@ export interface ValidateResult {
   ajvErrors?: unknown[];
 }
 
+function assertCoverageOptionsValid(
+  coverageOptions: GenerateOptions['coverage']
+): void {
+  if (!coverageOptions || !Array.isArray(coverageOptions.dimensionsEnabled)) {
+    return;
+  }
+  const allowed = new Set([
+    'structure',
+    'branches',
+    'enum',
+    'boundaries',
+    'operations',
+  ]);
+  for (const dim of coverageOptions.dimensionsEnabled) {
+    if (typeof dim !== 'string' || !allowed.has(dim)) {
+      throw new Error(
+        `Invalid coverage dimension "${String(
+          dim
+        )}". Expected one of: structure, branches, enum, boundaries, operations.`
+      );
+    }
+  }
+}
+
 /**
  * Normalize — Stage 1 of the pipeline.
  *
@@ -232,30 +256,14 @@ export function Generate(
   const validateFormats = options.validateFormats ?? true;
   const discriminator = options.discriminator ?? false;
   const repairAttempts = Math.max(1, Math.min(3, options.repairAttempts ?? 1));
+  const metricsEnabled = options.metricsEnabled ?? planOptions?.metrics ?? true;
 
   const coverageOptions = options.coverage;
-  if (coverageOptions && Array.isArray(coverageOptions.dimensionsEnabled)) {
-    const allowed = new Set([
-      'structure',
-      'branches',
-      'enum',
-      'boundaries',
-      'operations',
-    ]);
-    for (const dim of coverageOptions.dimensionsEnabled) {
-      if (typeof dim !== 'string' || !allowed.has(dim)) {
-        throw new Error(
-          `Invalid coverage dimension "${String(
-            dim
-          )}". Expected one of: structure, branches, enum, boundaries, operations.`
-        );
-      }
-    }
-  }
+  assertCoverageOptionsValid(coverageOptions);
 
   const pipelinePromise = executePipeline(schema, {
     mode,
-    metrics: { enabled: options.metricsEnabled ?? true },
+    metrics: { enabled: metricsEnabled },
     compose: { planOptions },
     generate: {
       count: k,

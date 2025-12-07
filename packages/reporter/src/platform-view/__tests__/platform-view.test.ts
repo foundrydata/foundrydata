@@ -50,6 +50,7 @@ describe('buildReporterPlatformView', () => {
       engine: { ...raw.engine, coverageMode: 'guided' },
       run: {
         ...raw.run,
+        metricsEnabled: true,
         operationsScope: 'selected',
         selectedOperations: ['POST /users', 'GET /users', 'GET /users'],
       },
@@ -92,12 +93,14 @@ describe('buildReporterPlatformView', () => {
       metrics,
       coverageReport: coverage,
       seed: 123,
+      metricsEnabled: true,
     });
 
     expect(view.version).toBe('reporter-platform-view/v1');
     expect(view.engine.name).toBe('foundrydata');
     expect(view.engine.version).toBe(coverage.engine.foundryVersion);
     expect(view.run.registryFingerprint).toBe(coverage.run.registryFingerprint);
+    expect(view.run.metricsEnabled).toBe(true);
     expect(view.run.coverage?.mode).toBe('guided');
     expect(view.run.coverage?.operationsScope).toBe('selected');
     expect(view.run.coverage?.selectedOperations).toEqual([
@@ -133,9 +136,14 @@ describe('buildReporterPlatformView', () => {
         },
       ],
     });
-    const view = buildReporterPlatformView({ metrics, seed: 7 });
+    const view = buildReporterPlatformView({
+      metrics,
+      seed: 7,
+      metricsEnabled: false,
+    });
 
     expect(view.run.coverage?.mode).toBe('off');
+    expect(view.run.metricsEnabled).toBe(false);
     expect(view.metrics.coverage).toBeUndefined();
     expect(view.run.registryFingerprint).toBeUndefined();
   });

@@ -1,20 +1,25 @@
-Task: 9604.9604002   Title: Add CI gate engine for observability KPIs
-Anchors: [spec://§7#platform-kpis-gates, spec://§15#metrics, spec://§2#observability-surfaces, cov://§5#coverage-report, cov://§7#thresholds]
+Task: 9600.9600006   Title: Metrics flag propagation and deterministic comparator
+Anchors: [spec://§2#observability-surfaces, spec://§15#metrics, spec://§15#rng, spec://§19#envelope]
 Touched files:
-- packages/reporter/src/gates/index.ts
-- packages/reporter/src/gates/__tests__/gates.test.ts
+- packages/core/src/pipeline/orchestrator.ts
+- packages/core/src/pipeline/types.ts
+- packages/core/src/coverage/runtime.ts
+- packages/shared/src/types/coverage-report.ts
+- packages/core/test/util/determinism-compare.ts
+- packages/core/src/pipeline/__tests__/metrics-toggle.integration.test.ts
+- packages/core/src/coverage/__tests__/coverage-runtime.test.ts
+- packages/reporter/src/engine/report-builder.ts
 - packages/reporter/src/engine/runner.ts
-- packages/reporter/src/cli.ts
-- packages/reporter/src/bench/runner.ts
-- packages/reporter/test/fixtures/gates.trace.json
 
 Approach:
-I need to turn the gate engine into an actually enforced surface for reporter runs while aligning the signals with the spec. First, I will expand `evaluateGates` to cover the missing regression signals: repair regressions (UNSAT_BUDGET_EXHAUSTED, REPAIR_REVERTED_NO_PROGRESS) and guided≥measure/coverage planning expectations, while keeping SLIs ignored for determinism and respecting minCoverage vs coverage.status semantics. Then I will integrate gate evaluation into the reporter pipeline outputs: `runEngineWithArtifacts` should compute gates from fatal/warn diagnostics, diag.metrics and the derived coverage summary, expose the result, and ensure CLI/bench runners fail with a non-zero exit on fail and emit a warn message when status=warn without altering artifacts (observability remains passive). I will update the trace fixture and tests to assert the new issues and the integration path (CLI run produces platform-view and gate status; bench propagates gate status per schema). Finally, I will keep determinism by avoiding any wall-clock/env dependency and by reusing existing metrics/coverage payloads only. Parent bullets couverts: [KR4, DEL2, DOD2, TS2]
+I will propagate the canonical PlanOptions.metrics toggle into the MetricsCollector creation so that disabling metrics via plan options actually disables collection, and I will plumb the explicit metricsEnabled flag into run artefacts (PipelineResult, coverage-report/v1 run block, reporter/meta) so comparability can rely on the recorded toggle. I will update the determinism comparator to treat nameEnumElapsedMs as non-deterministic (wall-clock based) and exclude it from equality checks to keep observability passive. The coverage runtime and shared types will gain the metricsEnabled field, with orchestrator feeding it into coverage reports. Reporter builders will forward the flag into report meta/platform consumers without altering behavior. Tests: extend metrics-toggle integration to assert metricsEnabled reflects the toggle (including planOptions.metrics=false), adjust coverage runtime tests for the new run field, and add a comparator test to confirm nameEnumElapsedMs is stripped. No pipeline semantics should change; metrics remain optional and passive.
 
 Risks/Unknowns:
-- Need to avoid double-counting coverage thresholds when both status=minCoverageNotMet and explicit minCoverage config are present; decide precedence per spec.
-- Bench harness currently ignores gates entirely; wiring failures to exit codes could break downstream expectations—ensure behavior is clearly constrained to fail/warn while still writing artifacts.
-- Guided≥measure detection may not have a direct signal; I will gate only on available planner caps/unplanned evidence and deterministic repair regressions to stay within observed payloads.
+- Adding metricsEnabled to PipelineResult/coverage-report/reporter types may ripple into snapshots or downstream consumers; need to update all expected shapes.
+- PlanOptions.metrics precedence vs explicit metrics.enabled could surprise callers; I will default to planOptions.metrics when enabled is undefined and keep explicit overrides intact.
+- nameEnumElapsedMs might still be wanted for diagnostics; excluding it from determinism views should not hide regressions but I must ensure no test relies on it.
+
+Parent bullets couverts: [KR1, KR2, DEL1, DEL2, DOD1, DOD2, TS2, TS3]
 
 Checks:
 - build: npm run build

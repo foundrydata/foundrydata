@@ -50,6 +50,7 @@ export async function runEngineWithArtifacts(
     seed: pipelineResult.artifacts.generated?.seed ?? options.seed,
     registryFingerprint:
       pipelineResult.artifacts.coverageReport?.run.registryFingerprint,
+    metricsEnabled: pipelineResult.metricsEnabled,
     engineVersion:
       pipelineResult.artifacts.coverageReport?.engine.foundryVersion,
     ajvMajor: pipelineResult.artifacts.coverageReport?.engine.ajvMajor,

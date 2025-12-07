@@ -2243,9 +2243,20 @@
             "parentTaskId": 9600,
             "updatedAt": "2025-12-07T01:01:31.378Z",
             "parentId": "undefined"
+          },
+          {
+            "id": 9600006,
+            "title": "Metrics flag propagation and deterministic comparator",
+            "description": "Propagate PlanOptions.metrics into collector creation and persist explicit metrics flag in run artifacts; treat nameEnumElapsedMs as non-deterministic or gate it to keep metrics toggle passive.",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9600,
+            "updatedAt": "2025-12-07T01:51:30.631Z",
+            "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-12-07T01:01:31.378Z"
+        "updatedAt": "2025-12-07T01:51:30.631Z"
       },
       {
         "id": "9601",
@@ -2590,7 +2601,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-07T01:27:08.524Z",
+      "lastModified": "2025-12-07T01:51:30.633Z",
       "taskCount": 7,
       "completedCount": 5,
       "tags": [

@@ -190,6 +190,7 @@ describe('coverage runtime helper', () => {
           actualInstances: 3,
           startedAtIso: '2025-01-01T00:00:00.000Z',
           durationMs: 42,
+          metricsEnabled: true,
         },
         engineInfo: {
           foundryVersion: '0.0-test',
@@ -212,6 +213,7 @@ describe('coverage runtime helper', () => {
     expect(fullReport.run.actualInstances).toBe(3);
     expect(fullReport.run.dimensionsEnabled).toEqual(dimensionsEnabled);
     expect(fullReport.run.excludeUnreachable).toBe(true);
+    expect(fullReport.run.metricsEnabled).toBe(true);
 
     expect(fullReport.reportMode).toBe('summary');
     expect(fullReport.metrics.overall).toBe(metrics.overall);

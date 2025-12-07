@@ -15,6 +15,7 @@ const NON_DETERMINISTIC_METRIC_KEYS = new Set([
   'p50LatencyMs',
   'p95LatencyMs',
   'memoryPeakMB',
+  'nameEnumElapsedMs',
 ]);
 
 export type DeterminismView = {

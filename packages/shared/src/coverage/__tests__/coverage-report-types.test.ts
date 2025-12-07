@@ -63,6 +63,7 @@ describe('coverage report types (shared)', () => {
       excludeUnreachable: true,
       startedAt: new Date().toISOString(),
       durationMs: 350,
+      metricsEnabled: true,
       operationsScope: 'all',
     };
 

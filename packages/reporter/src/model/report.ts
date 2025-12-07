@@ -67,6 +67,7 @@ export interface ReportMeta {
   timestamp: string;
   seed?: number;
   labels?: string[];
+  metricsEnabled?: boolean;
 }
 
 export interface ReportSummary {

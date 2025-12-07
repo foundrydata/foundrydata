@@ -121,6 +121,7 @@ describe('runEngineOnSchema', () => {
         repair_tier3_actions: 0,
         repair_tierDisabled: 0,
       },
+      metricsEnabled: true,
       timeline: [],
       errors: [],
       artifacts: {
@@ -243,6 +244,7 @@ describe('runEngineOnSchema', () => {
         repair_tier3_actions: 0,
         repair_tierDisabled: 0,
       },
+      metricsEnabled: true,
       timeline: [],
       errors: [],
       artifacts: {

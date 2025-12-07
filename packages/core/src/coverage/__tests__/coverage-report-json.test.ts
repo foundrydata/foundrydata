@@ -199,6 +199,7 @@ describe('coverage-report/v1 JSON snapshots', () => {
         ...baseReport.run,
         startedAt: '<normalized-timestamp>',
         durationMs: 0,
+        metricsEnabled: baseReport.run.metricsEnabled,
       },
     };
 
@@ -214,6 +215,7 @@ describe('coverage-report/v1 JSON snapshots', () => {
         actualInstances: normalised.run.actualInstances,
         dimensionsEnabled: normalised.run.dimensionsEnabled,
         excludeUnreachable: normalised.run.excludeUnreachable,
+        metricsEnabled: normalised.run.metricsEnabled,
         startedAt: normalised.run.startedAt,
         durationMs: normalised.run.durationMs,
       },
@@ -386,6 +388,7 @@ describe('coverage-report/v1 JSON snapshots', () => {
         ...report.run,
         startedAt: '<normalized-timestamp>',
         durationMs: 0,
+        metricsEnabled: report.run.metricsEnabled,
       },
     });
 

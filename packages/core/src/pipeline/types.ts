@@ -243,6 +243,7 @@ export interface PipelineResult {
   schema: unknown;
   stages: PipelineStages;
   metrics: MetricsSnapshot;
+  metricsEnabled: boolean;
   timeline: PipelineStageName[];
   errors: PipelineStageError[];
   artifacts: PipelineArtifacts;
