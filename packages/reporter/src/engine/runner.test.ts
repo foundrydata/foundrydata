@@ -3,7 +3,7 @@ import type { ComposeResult, PipelineResult } from '@foundrydata/core';
 import { DIAGNOSTIC_PHASES } from '@foundrydata/core/dist/diag/codes.js';
 import { describe, expect, it, vi } from 'vitest';
 
-import { runEngineOnSchema } from './runner.js';
+import { runEngineOnSchema, runEngineWithArtifacts } from './runner.js';
 
 const schemaFixture = {
   $id: 'https://example.com/schema',
@@ -163,5 +163,24 @@ describe('runEngineOnSchema', () => {
     expect(report.instances[0]?.outcome).toBe('valid-repaired');
     expect(report.validate?.errors?.length).toBe(1);
     spy.mockRestore();
+  });
+
+  it('exposes platform view and coverage report via runEngineWithArtifacts', async () => {
+    const { report, platformView, coverageReport } =
+      await runEngineWithArtifacts({
+        schema: schemaFixture,
+        schemaId: 'example-schema',
+        schemaPath: '/tmp/example-schema.json',
+        seed: 11,
+      });
+
+    expect(report.schemaId).toBe('example-schema');
+    expect(platformView.version).toBe('reporter-platform-view/v1');
+    expect(platformView.run.seed).toBeDefined();
+    if (coverageReport) {
+      expect(platformView.run.coverage?.mode).toBe(
+        coverageReport.engine.coverageMode
+      );
+    }
   });
 });

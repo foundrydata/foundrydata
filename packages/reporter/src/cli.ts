@@ -9,7 +9,7 @@ import { pathToFileURL } from 'node:url';
 import { Command } from 'commander';
 
 import { Report } from './model/report.js';
-import { runEngineOnSchema } from './engine/runner.js';
+import { runEngineWithArtifacts } from './engine/runner.js';
 import { renderMarkdownReport } from './render/markdown.js';
 import { renderHtmlReport } from './render/html.js';
 import { runBench } from './bench/runner.js';
@@ -81,7 +81,7 @@ export async function runReporterCommand(
     path.relative(process.cwd(), schemaAbsolute) ||
     path.basename(schemaAbsolute);
 
-  const report = await runEngineOnSchema({
+  const { report, platformView } = await runEngineWithArtifacts({
     schema,
     schemaId: options.schemaPath,
     schemaPath: schemaRelative.split(path.sep).join('/'),
@@ -112,6 +112,16 @@ export async function runReporterCommand(
     await writeFile(targetPath, content, 'utf8');
     return targetPath;
   });
+
+  const platformViewPath = path.join(baseDir, `${baseName}.platform-view.json`);
+  writePromises.push(
+    writeFile(
+      platformViewPath,
+      `${JSON.stringify(platformView, null, 2)}\n`,
+      'utf8'
+    ).then(() => platformViewPath)
+  );
+
   return Promise.all(writePromises);
 }
 

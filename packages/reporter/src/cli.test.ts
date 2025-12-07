@@ -33,18 +33,23 @@ describe('runReporterCommand', () => {
       seed: 7,
     });
 
-    expect(outputs).toHaveLength(2);
+    expect(outputs).toHaveLength(3);
     const jsonPath = outputs.find((filePath) =>
       filePath.endsWith('.report.json')
     )!;
     const markdownPath = outputs.find((filePath) =>
       filePath.endsWith('.report.md')
     )!;
+    const platformViewPath = outputs.find((filePath) =>
+      filePath.endsWith('.platform-view.json')
+    )!;
     const json = await readFile(jsonPath, 'utf8');
     const markdown = await readFile(markdownPath, 'utf8');
+    const platformView = await readFile(platformViewPath, 'utf8');
 
     expect(json).toContain('"schemaId"');
     expect(markdown).toContain('# JSON Schema Report');
+    expect(platformView).toContain('"reporter-platform-view/v1"');
   });
 
   it('returns serialized output when stdout is requested', async () => {
@@ -114,6 +119,9 @@ describe('runReporterCommand', () => {
         'json,markdown',
       ]);
       expect(messages.some((msg) => msg.includes('.report.json'))).toBe(true);
+      expect(messages.some((msg) => msg.includes('.platform-view.json'))).toBe(
+        true
+      );
     } finally {
       spy.mockRestore();
     }

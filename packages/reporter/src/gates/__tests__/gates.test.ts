@@ -150,4 +150,56 @@ describe('evaluateGates', () => {
     );
     expect(fail).toEqual(fixture.fail);
   });
+
+  it('fails when gValid metrics or diagnostics indicate structural repair', () => {
+    const metrics = baseMetrics({
+      ['gValid_simpleObjectRequired_actions']: 2,
+    });
+    const result = evaluateGates({
+      metrics,
+      warnDiagnostics: [{ code: 'REPAIR_GVALID_STRUCTURAL_ACTION' }],
+    });
+
+    expect(result.status).toBe('fail');
+    expect(
+      result.issues.find((i) => i.code === 'GVALID_REPAIR')?.message
+    ).toContain('simpleObjectRequired');
+  });
+
+  it('surfaces planner caps/unplanned coverage as warn or fail depending on thresholds', () => {
+    const coverageWithCaps: CoverageSummary = {
+      ...coverageOk,
+      planning: {
+        plannedTargetsTotal: 1,
+        unplannedTargetsTotal: 2,
+        plannerCapsHit: [
+          {
+            dimension: 'branches',
+            scopeType: 'schema',
+            scopeKey: 'dimension:branches',
+            totalTargets: 3,
+            plannedTargets: 1,
+            unplannedTargets: 2,
+          },
+        ],
+      },
+    };
+
+    const warnResult = evaluateGates({ coverage: coverageWithCaps });
+    expect(warnResult.status).toBe('warn');
+    expect(
+      warnResult.issues.find((i) => i.code === 'COVERAGE_PLANNING')
+    ).toBeDefined();
+
+    const failResult = evaluateGates(
+      { coverage: coverageWithCaps },
+      { minCoverage: 0.9 }
+    );
+    expect(failResult.status).toBe('fail');
+    expect(
+      failResult.issues.find(
+        (i) => i.code === 'COVERAGE_PLANNING' && i.severity === 'fail'
+      )
+    ).toBeDefined();
+  });
 });

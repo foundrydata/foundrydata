@@ -35,7 +35,7 @@ This document maps parent task 9604 bullets from Implementation Details, Deliver
   Covers: [KR1, KR2, KR3, DEL1, DOD1, TS1] (status: done).
 
 - **9604.9604002 – Add CI gate engine for observability KPIs**  
-  Covers: [KR4, DEL2, DOD2, TS2] (status: done).
+  Covers: [KR4, DEL2, DOD2, TS2] (status: done). Étend les gates pour gValid (métriques + diagnostics), planner caps/unplanned, coverage thresholds, warn escalation et exclusion explicite des SLIs.
 
 - **9604.9604003 – Traceability and test suite for gates**  
   Covers: [KR4, DEL3, DOD2, TS2, TS3] (status: done).
