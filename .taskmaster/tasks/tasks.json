@@ -2358,9 +2358,20 @@
             "file": "packages/core/test/e2e/repair.observability.spec.ts",
             "parentId": "9602",
             "updatedAt": "2025-12-06T23:59:46.207Z"
+          },
+          {
+            "id": 9602004,
+            "title": "Fix G_valid tier-disabled counters and guided coverage regression",
+            "description": "Emit tierDisabled counter/diagnostic when G_valid structural guard blocks repairs; add coverage=guided regression for repair observability",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 9602,
+            "updatedAt": "2025-12-07T01:14:48.907Z",
+            "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-12-07T00:32:58.134Z"
+        "updatedAt": "2025-12-07T01:14:48.907Z"
       },
       {
         "id": "9603",
@@ -2579,7 +2590,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-07T01:08:30.779Z",
+      "lastModified": "2025-12-07T01:14:48.909Z",
       "taskCount": 7,
       "completedCount": 5,
       "tags": [

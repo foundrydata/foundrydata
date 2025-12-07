@@ -1482,7 +1482,9 @@ export function repairItemsAjvDriven(
         const sub = props?.[missing];
         const hasDefault = sub && typeof sub === 'object' && 'default' in sub;
         if (!hasDefault) {
-          if (isGValidStructuralGuardEnabled(canonPathReq)) {
+          const policy = applyTierPolicyForAction('required', canonPathReq);
+          const blockedByGValid = isGValidStructuralGuardEnabled(canonPathReq);
+          if (blockedByGValid) {
             diagnostics.push({
               code: DIAGNOSTIC_CODES.REPAIR_GVALID_STRUCTURAL_ACTION,
               canonPath: canonPathReq,
@@ -1493,6 +1495,8 @@ export function repairItemsAjvDriven(
                 strategy: 'synth',
               },
             });
+          }
+          if (!policy.allowed || blockedByGValid) {
             continue;
           }
           // SPEC §10 mapping: if no default, synthesize a minimal value for the sub-schema
@@ -1605,10 +1609,8 @@ export function repairItemsAjvDriven(
 
         if (!(missing in (obj as Record<string, unknown>))) {
           const policy = applyTierPolicyForAction('required', canonPathReq);
-          if (!policy.allowed) {
-            continue;
-          }
-          if (isGValidStructuralGuardEnabled(canonPathReq)) {
+          const blockedByGValid = isGValidStructuralGuardEnabled(canonPathReq);
+          if (blockedByGValid) {
             diagnostics.push({
               code: DIAGNOSTIC_CODES.REPAIR_GVALID_STRUCTURAL_ACTION,
               canonPath: canonPathReq,
@@ -1619,6 +1621,8 @@ export function repairItemsAjvDriven(
                 strategy: 'default',
               },
             });
+          }
+          if (!policy.allowed || blockedByGValid) {
             continue;
           }
           (obj as Record<string, unknown>)[missing] = (sub as any).default;
@@ -1779,7 +1783,10 @@ export function repairItemsAjvDriven(
             const sp = normalizeSchemaPointerFromError(minItemsErr.schemaPath);
             const parentPtr = sp.replace(/\/(?:minItems)(?:\/.*)?$/, '');
             const canonMinItems = parentPtr;
-            if (isGValidStructuralGuardEnabled(canonMinItems)) {
+            const policy = applyTierPolicyForAction('minItems', canonMinItems);
+            const blockedByGValid =
+              isGValidStructuralGuardEnabled(canonMinItems);
+            if (blockedByGValid) {
               diagnostics.push({
                 code: DIAGNOSTIC_CODES.REPAIR_GVALID_STRUCTURAL_ACTION,
                 canonPath: canonMinItems,
@@ -1790,6 +1797,8 @@ export function repairItemsAjvDriven(
                   deficit: limit - arr.length,
                 },
               });
+            }
+            if (!policy.allowed || blockedByGValid) {
               continue;
             }
             const resolvedParent = resolveSchemaPointer(parentPtr);
@@ -1842,10 +1851,6 @@ export function repairItemsAjvDriven(
               additions.push(synthFrom(schemaForIndex));
             }
             const grown = arr.concat(additions);
-            const policy = applyTierPolicyForAction('minItems', canonMinItems);
-            if (!policy.allowed) {
-              continue;
-            }
             if (arrPtr === '') (current as any) = grown as any;
             else setByPointer(current, arrPtr, grown);
             actions.push({

@@ -60,7 +60,7 @@ describe('Repair/G_valid observability regression', () => {
     }
   });
 
-  it('keeps repair artefacts and repair metrics identical between coverage off and measure', async () => {
+  it('keeps repair artefacts and repair metrics identical across coverage off/measure/guided', async () => {
     const off = await executePipeline(schema, {
       ...baseOptions(),
       coverage: { mode: 'off' },
@@ -68,6 +68,10 @@ describe('Repair/G_valid observability regression', () => {
     const measure = await executePipeline(schema, {
       ...baseOptions(),
       coverage: { mode: 'measure', dimensionsEnabled: [] },
+    });
+    const guided = await executePipeline(schema, {
+      ...baseOptions(),
+      coverage: { mode: 'guided', dimensionsEnabled: [] },
     });
 
     // Outputs and diagnostics stay identical even if coverage instrumentation runs.
@@ -77,12 +81,18 @@ describe('Repair/G_valid observability regression', () => {
     const measureView = normalizePipelineResultForDeterminism(measure, {
       includeMetrics: false,
     });
+    const guidedView = normalizePipelineResultForDeterminism(guided, {
+      includeMetrics: false,
+    });
     expect(offView).toStrictEqual(measureView);
+    expect(offView).toStrictEqual(guidedView);
 
     // Repair metrics (tier + gValid motif counters) remain equal.
-    expect(selectRepairMetrics(off)).toStrictEqual(
-      selectRepairMetrics(measure)
-    );
+    const offMetrics = selectRepairMetrics(off);
+    const measureMetrics = selectRepairMetrics(measure);
+    const guidedMetrics = selectRepairMetrics(guided);
+    expect(offMetrics).toStrictEqual(measureMetrics);
+    expect(offMetrics).toStrictEqual(guidedMetrics);
   });
 
   it('keeps outputs identical when metrics are disabled and zeros repair counters', async () => {

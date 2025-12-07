@@ -247,6 +247,57 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
     expect(out.actions ?? []).toHaveLength(0);
   });
 
+  it('emits tier-disabled counters for required without defaults in G_valid motifs', () => {
+    const schema = repairPhilosophyMicroSchemas.gValidStructural.simpleObject;
+    const canonical = {
+      schema,
+      ptrMap: new Map<string, string>(),
+      revPtrMap: new Map<string, string[]>(),
+      notes: [],
+    };
+    const coverageIndex = new Map();
+    const gValidIndex = classifyGValid(schema, coverageIndex, undefined);
+    const effective = {
+      canonical,
+      containsBag: new Map(),
+      coverageIndex,
+    } as unknown as ComposeResult;
+
+    const metrics = new MetricsCollector({ now: () => 0 });
+
+    const out = repairItemsAjvDriven(
+      [
+        // Missing required "title" and no defaults available.
+        { id: 5 },
+      ],
+      {
+        schema,
+        effective,
+        planOptions: { gValid: true },
+        gValidIndex,
+      },
+      { attempts: 1, metrics }
+    );
+
+    const snapshot = metrics.snapshotMetrics({ verbosity: 'ci' });
+    expect(snapshot.repair_tierDisabled).toBeGreaterThan(0);
+
+    const diagCodes = (out.diagnostics ?? []).map((d) => d.code);
+    expect(diagCodes).toContain('REPAIR_TIER_DISABLED');
+    expect(diagCodes).toContain('REPAIR_GVALID_STRUCTURAL_ACTION');
+
+    const tierDisabledDiag = (out.diagnostics ?? []).find(
+      (d) => d.code === 'REPAIR_TIER_DISABLED'
+    );
+    expect(tierDisabledDiag?.details).toMatchObject({
+      keyword: 'required',
+      reason: 'g_valid',
+    });
+
+    expect(out.items[0]).toEqual({ id: 5 });
+    expect(out.actions ?? []).toHaveLength(0);
+  });
+
   it('records motif-tagged repair usage metrics for G_valid and non-G_valid motifs on the same run', () => {
     const schema = repairPhilosophyMicroSchemas.gValidStructural.simpleObject;
     const canonical = {
@@ -404,6 +455,64 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
       keyword: 'required',
       reason: 'g_valid',
     });
+  });
+
+  it('emits tierDisabled counters when minItems growth is blocked in G_valid arrays', () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'array',
+      contains: { type: 'string', minLength: 1 },
+      minContains: 1,
+      minItems: 2,
+    } as const;
+
+    const canonical = {
+      schema,
+      ptrMap: new Map<string, string>(),
+      revPtrMap: new Map<string, string[]>(),
+      notes: [],
+    };
+    const coverageIndex = new Map();
+    const gValidIndex = classifyGValid(schema, coverageIndex, undefined);
+    const effective = {
+      canonical,
+      containsBag: new Map(),
+      coverageIndex,
+    } as unknown as ComposeResult;
+
+    const metrics = new MetricsCollector({ now: () => 0 });
+
+    const out = repairItemsAjvDriven(
+      [
+        // Too short to satisfy minItems; repair should be blocked in G_valid.
+        [],
+      ],
+      {
+        schema,
+        effective,
+        planOptions: { gValid: true },
+        gValidIndex,
+      },
+      { attempts: 1, metrics }
+    );
+
+    const snapshot = metrics.snapshotMetrics({ verbosity: 'ci' });
+    expect(snapshot.repair_tierDisabled).toBeGreaterThan(0);
+
+    const diagCodes = (out.diagnostics ?? []).map((d) => d.code);
+    expect(diagCodes).toContain('REPAIR_TIER_DISABLED');
+    expect(diagCodes).toContain('REPAIR_GVALID_STRUCTURAL_ACTION');
+
+    const structuralDiag = (out.diagnostics ?? []).find(
+      (d) => d.code === 'REPAIR_GVALID_STRUCTURAL_ACTION'
+    );
+    expect(structuralDiag?.details).toMatchObject({
+      kind: 'minItems',
+      strategy: 'grow',
+    });
+
+    expect(out.actions ?? []).toHaveLength(0);
+    expect(out.items[0]).toEqual([]);
   });
 
   it('wires Score(x) computation into AJV-driven repair attempts', () => {
