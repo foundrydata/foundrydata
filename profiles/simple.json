@@ -55,7 +55,11 @@
           "enum": ["free", "pro", "enterprise"]
         }
       },
-      "required": ["region"]
+      "required": ["region"],
+      "default": {
+        "region": "iad",
+        "tier": "free"
+      }
     },
     "contacts": {
       "type": "array",
@@ -87,7 +91,11 @@
         "properties": {
           "metadata": {
             "type": "object",
-            "required": ["tier"]
+            "required": ["tier"],
+            "default": {
+              "region": "iad",
+              "tier": "free"
+            }
           }
         }
       }

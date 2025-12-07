@@ -241,6 +241,25 @@ The exact scoring function is left as an implementation choice, but it should
 be stable and documented so that planner diagnostics can surface it when
 needed.
 
+### 6.1 Hard conditionals (if/then, dependentRequired) and guided behaviour
+
+_Conformance: Informative (guidance; complements the normative rules in the coverage-aware spec for `CONDITIONAL_PATH`)._
+
+Some branches are **structurally hard** to satisfy under the default generator/Repair semantics – for example:
+
+- `if/then` clauses that require introducing new nested objects or business fields without `default`/`enum` hints; or
+- `dependentRequired` paths where the “dependent” side has no obvious witness and would require multi-step restructuring.
+
+For these motifs, guided should behave as follows:
+
+- Treat the conditional path as a normal `CONDITIONAL_PATH` target in the planner’s worklist; attempt it **a small, bounded number of times** using the existing generator/Repair pipeline and budgets (no special-case engine).
+- If those attempts repeatedly fail to produce a **final, AJV-valid** instance that satisfies the `then`/dependent obligations, guided:
+  - records the attempts in per-target planning metadata (planned, tried, instances spent);
+  - relies on pipeline-level signals (e.g. unchanged error signatures / Score stagnation, REPAIR_REVERTED_NO_PROGRESS, or UNSAT diagnostics) to treat the path as effectively unsatisfiable under the current semantics; and
+  - marks the `CONDITIONAL_PATH` target as `status:'unreachable'` (or an equivalent terminal status), rather than forcing further attempts.
+- The run as a whole should still be reported as **completed** (subject to normal pipeline rules); guided does not “punish” the user by turning the entire schema red because one hard conditional cannot be satisfied without changing the schema or Repair policy.
+- Guided must **not** introduce ad-hoc synthesis rules for these cases (for example inventing arbitrary business values) beyond what the canonical spec allows (defaults, enums, safe Tier‑2 repairs); if a profile needs different behaviour, it should come from an explicit generator/Repair profile, not from hidden guided logic.
+
 ---
 
 ## 7. Profiles & Budget Interaction

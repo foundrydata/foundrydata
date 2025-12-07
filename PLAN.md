@@ -1,25 +1,22 @@
-Task: 9503   Title: Enforce per-pass Score-based commit rule in Repair
-Anchors: [spec://§10#repair-philosophy, spec://§10#repair-philosophy-progress, spec://§10#process-order, spec://§15#metrics]
+Task: 9507   Title: Document simple.json repair baseline and verify spec alignment (9507.5)
+Anchors: [spec://§10#commit-rule, spec://§15#metrics, cov://§4#coverage-independence]
 Touched files:
-- packages/core/src/repair/repair-engine.ts
-- packages/core/src/repair/__tests__/mapping-repair.test.ts
-- packages/core/test/e2e/pipeline.integration.spec.ts
+- packages/core/test/e2e/coverage-simple-profile.regression.test.ts
 - PLAN.md
 
 Approach:
-For parent task 9503, and specifically subtask 9503.9503004, enforce the SPEC Score/commit rule at the level of each Repair pass without changing the AJV oracle or the (keyword → action) mapping. Refactor the per-item loop in `repairItemsAjvDriven` so that it tracks a `currentScore` for the working instance and treats every Repair pass as a candidate: within each pass, apply repairs into a local candidate instance with a local action buffer, re-run AJV, and compute `Score(candidate)` via `computeScore`. If and only if `Score(candidate) < currentScore`, commit the pass by replacing the working instance with the candidate, appending buffered actions to the global `actions[]`, and updating `currentScore`; otherwise revert the pass in-place by discarding the candidate and its actions/metrics and emitting a `REPAIR_REVERTED_NO_PROGRESS` diagnostic, then stop Repair for that item. Ensure this per-pass commit rule coexists with existing budgets (`attempts`, `bailOnUnsatAfter`) and G_valid guards without altering process order (shape → bounds → semantics → names → sweep). Finally, extend or add unit/integration tests so they cover scenarios with multiple passes (improve then worsen), proving that only strictly improving passes are committed, that non-improving passes are reverted locally (no leaked actions/metrics), and that coverage mode remains observational. Keep anchors within quota and REFONLY; no SPEC prose copied.
+Pour parent task 9507 et la sous-tâche 9507.5, compléter la documentation autour de `profiles/simple.json` directement dans le fichier de tests `packages/core/test/e2e/coverage-simple-profile.regression.test.ts`. Ajouter un bloc de commentaire structuré en tête du `describe` qui résume: (1) les caractéristiques du schéma simple (conditional `if/then` sur kind=service/metadata.tier, `contains` sur tags, `uniqueItems`, AP:false, dependentRequired), (2) pourquoi ce profil sert de banc d’essai pour la philosophie Repair (plusieurs motifs Tier-1/Tier-2 exercés, interaction avec la commit rule Score), (3) les attentes de base après 9503/9507 (guided: run vert, metadata.tier réparé; coverage=off vs measure: artefacts Repair identiques; distributions de métriques cohérentes avec §15). Vérifier que les tests existants (guided, coverage-independence, déterminisme, baseline métriques) sont alignés avec ces attentes et qu’ils ne violent pas les invariants SPEC (Score/commit rule, coverage-independence, métriques). Mettre à jour si besoin les noms de tests ou commentaires pour pointer vers les anchors pertinents, sans ajouter de logique d’exécution nouvelle.
 
 Risks/Unknowns:
-- Interaction between per-pass revert and existing UNSAT_BUDGET_EXHAUSTED logic; must ensure stagnation is still detected via §10.P6 without double-counting failed passes.
-- Ensuring that no existing tests rely (implicitly) on actions from non-committed passes being visible in metrics or diagnostics; adjust expectations carefully rather than weakening assertions.
-Parent bullets couverts: [KR1, KR2, DEL1, DEL2, DEL3, DOD1, DOD2, DOD3, TS1, TS2, TS3]
+- Veiller à ce que les commentaires restent REFONLY (anchors, pas de prose copiée du spec) et ne se désynchronisent pas avec `docs/spec-canonical-json-schema-generator.md` ou `docs/spec-coverage-aware-v1.0.md`.
+- Ne pas transformer ce test en documentation monolithique: garder une description concise mais suffisante pour comprendre l’intention de chaque scénario et son lien avec la Repair philosophy.
+Parent bullets couverts: [KR3, DEL3, DOD3, TS3]
 
 DoD:
-- [ ] Commit rule enforced per pass with Score(next) < Score(current) and non-improving passes reverted without leaking actions[] or metrics
-- [ ] Existing stagnation/budget behaviour (UNSAT_BUDGET_EXHAUSTED) remains correct and deterministic under the new per-pass semantics
-- [ ] Coverage mode does not affect Repair decisions or artefacts; only hint observability varies
+- [ ] Bloc de documentation ajouté en tête de `coverage-simple-profile.regression.test.ts` décrivant le rôle de simple.json comme profil de référence pour la Repair philosophy et renvoyant vers les anchors SPEC pertinents.
+- [ ] Revue des tests existants confirmant qu’ils sont cohérents avec Score/commit rule, coverage-independence et les objectifs de métriques; commentaires ajustés si nécessaire.
 - [ ] build/typecheck/lint/test/bench OK
-- [ ] Traceability updated for 9503 and 9503.9503004
+- [ ] Traceability updated for 9507 et 9507.5
 
 Checks:
 - build: npm run build

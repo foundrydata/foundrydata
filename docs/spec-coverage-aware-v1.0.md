@@ -245,6 +245,15 @@ type CoverageDimension =
      * `CONDITIONAL_PATH` – e.g. `if+then`, `if+else`, activated vs non‑activated `dependentSchemas`.
    * V1 focuses on simple conditionals that are already handled safely in Compose / Generate. V1 does **not** define branch‑level coverage for `allOf`; schemas combined via `allOf` are covered indirectly through `SCHEMA_NODE`, constraints, and properties defined on the canonical nodes involved.
 
+   * **Hard conditionals and unreachable targets (normative for V1).**
+     * Coverage for `CONDITIONAL_PATH` targets is defined with respect to instances that **successfully pass Validate** and for which the corresponding conditional path is actually taken (e.g. `if` satisfied and `then` obligations met).
+     * When, for a given `CONDITIONAL_PATH` target, guided executions repeatedly fail to produce such a valid instance under the existing generator/Repair semantics (for example because required fields in the `then` branch cannot be satisfied without additional defaults or business inputs), implementations:
+       * MUST NOT count that target as `status:'covered'` purely because the `if` branch was exercised with invalid `then` payloads; and
+       * MUST either avoid materialising the target, or materialise it with `status:'unreachable'` (or an equivalent terminal status that denotes conflicting or unsatisfiable constraints) once this condition is detected.
+     * In all cases, guided coverage for `branches` MUST remain non‑regressive with respect to `measure` for the same `(canonical schema, options, seed)`:
+       * guided MUST NOT treat the run as globally failed solely because a `CONDITIONAL_PATH` target has been marked `unreachable` under these rules; and
+       * guided MUST NOT require the generator or Repair to invent additional semantics (such as opaque defaults) beyond what the canonical spec already permits in order to mark such targets as `covered`.
+
 3. **Enum / small discrete values** (`dimension: 'enum'`)
 
    * Questions:
