@@ -43,6 +43,7 @@ function baseMetrics(overrides: Partial<DiagMetrics> = {}): DiagMetrics {
     repair_tier2_actions: 0,
     repair_tier3_actions: 0,
     repair_tierDisabled: 0,
+    repair_reverted_no_progress: 0,
     ...overrides,
   };
 }

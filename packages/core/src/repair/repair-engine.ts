@@ -2411,6 +2411,9 @@ export function repairItemsAjvDriven(
           scoreAfter: finalScore,
         },
       });
+      if (metrics) {
+        metrics.addRepairRevertedNoProgress(1);
+      }
       current = original;
     }
 

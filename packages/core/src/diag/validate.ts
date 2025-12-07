@@ -195,6 +195,18 @@ if (externalRefValidator) {
   };
 }
 
+const repairTierDisabledValidator =
+  detailValidators[DIAGNOSTIC_CODES.REPAIR_TIER_DISABLED];
+if (repairTierDisabledValidator) {
+  detailValidators[DIAGNOSTIC_CODES.REPAIR_TIER_DISABLED] = (value) => {
+    if (!repairTierDisabledValidator(value) || !isPlainObject(value)) {
+      return false;
+    }
+    const allowed = value.allowedMaxTier;
+    return allowed === 0 || allowed === 1 || allowed === 2;
+  };
+}
+
 export function assertDiagnosticEnvelope(envelope: DiagnosticEnvelope): void {
   if (!envelope || typeof envelope !== 'object') {
     throw new Error('Diagnostic envelope must be an object');

@@ -94,5 +94,6 @@ describe('Repair determinism — pre-repair fixture path', () => {
     expect(m1.repair_tier2_actions).toBe(m2.repair_tier2_actions);
     expect(m1.repair_tier3_actions).toBe(m2.repair_tier3_actions);
     expect(m1.repair_tierDisabled).toBe(m2.repair_tierDisabled);
+    expect(m1.repair_reverted_no_progress).toBe(m2.repair_reverted_no_progress);
   });
 });

@@ -85,6 +85,7 @@ describe('assertDiagnosticEnvelope', () => {
           repair_tier2_actions: 0,
           repair_tier3_actions: 0,
           repair_tierDisabled: 0,
+          repair_reverted_no_progress: 0,
           branchCoverageOneOf: { '#': { visited: [0], total: 1 } },
           enumUsage: { '#/status': { active: 2 } },
           repairUsageByMotif: [

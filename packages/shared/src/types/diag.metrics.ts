@@ -44,6 +44,7 @@ export interface DiagMetrics {
   repair_tier2_actions: number;
   repair_tier3_actions: number;
   repair_tierDisabled: number;
+  repair_reverted_no_progress: number;
   nameBfsNodesExpanded?: number;
   nameBfsQueuePeak?: number;
   nameBeamWidthPeak?: number;

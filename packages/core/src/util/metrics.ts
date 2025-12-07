@@ -55,6 +55,7 @@ const DEFAULT_COUNTERS: MetricsSnapshot = {
   repair_tier2_actions: 0,
   repair_tier3_actions: 0,
   repair_tierDisabled: 0,
+  repair_reverted_no_progress: 0,
   evalTraceChecks: 0,
   evalTraceProved: 0,
   nameBfsNodesExpanded: 0,
@@ -230,6 +231,14 @@ export class MetricsCollector {
     }
     this.snapshot.repair_tierDisabled =
       (this.snapshot.repair_tierDisabled ?? 0) + count;
+  }
+
+  public addRepairRevertedNoProgress(count: number): void {
+    if (!this.enabled) {
+      return;
+    }
+    this.snapshot.repair_reverted_no_progress =
+      (this.snapshot.repair_reverted_no_progress ?? 0) + count;
   }
 
   public addPatternWitnessTrial(): void {

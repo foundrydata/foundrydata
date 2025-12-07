@@ -18,6 +18,7 @@ function baseOptions(): PipelineOptions {
   };
 }
 
+// eslint-disable-next-line complexity
 function selectRepairMetrics(result: PipelineResult): Record<string, number> {
   const m = result.metrics;
   return {
@@ -27,6 +28,7 @@ function selectRepairMetrics(result: PipelineResult): Record<string, number> {
     repair_tier2_actions: m.repair_tier2_actions ?? 0,
     repair_tier3_actions: m.repair_tier3_actions ?? 0,
     repair_tierDisabled: m.repair_tierDisabled ?? 0,
+    repair_reverted_no_progress: m.repair_reverted_no_progress ?? 0,
     [`${MOTIF_KEY}_items`]: m[`${MOTIF_KEY}_items`] ?? 0,
     [`${MOTIF_KEY}_itemsWithRepair`]: m[`${MOTIF_KEY}_itemsWithRepair`] ?? 0,
     [`${MOTIF_KEY}_actions`]: m[`${MOTIF_KEY}_actions`] ?? 0,

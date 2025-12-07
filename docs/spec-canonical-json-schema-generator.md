@@ -2002,6 +2002,7 @@ Repair MUST make tier/policy effects explainable:
    - `diag.metrics.repair_tier2_actions`
    - `diag.metrics.repair_tier3_actions`
    - `diag.metrics.repair_tierDisabled`
+   - `diag.metrics.repair_reverted_no_progress`
 
 ---
 

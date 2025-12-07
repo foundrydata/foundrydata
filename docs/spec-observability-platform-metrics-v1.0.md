@@ -141,6 +141,7 @@ When repair metrics are enabled, the engine MUST expose tier usage via determini
 - `repair_tier2_actions`
 - `repair_tier3_actions`
 - `repair_tierDisabled`
+- `repair_reverted_no_progress`
 
 The run MUST surface policy blocks with the diagnostic `REPAIR_TIER_DISABLED` (canonical).
 

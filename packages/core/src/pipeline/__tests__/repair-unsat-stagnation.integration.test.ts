@@ -30,6 +30,7 @@ describe('Repair UNSAT/stagnation — pipeline integration', () => {
       repair_tier2_actions?: number;
       repair_tier3_actions?: number;
       repair_tierDisabled?: number;
+      repair_reverted_no_progress?: number;
     };
     status: string;
     timeline: string[];
@@ -76,5 +77,8 @@ describe('Repair UNSAT/stagnation — pipeline integration', () => {
     expect(m2.repair_tier2_actions ?? 0).toBe(m1.repair_tier2_actions ?? 0);
     expect(m2.repair_tier3_actions ?? 0).toBe(m1.repair_tier3_actions ?? 0);
     expect(m2.repair_tierDisabled ?? 0).toBe(m1.repair_tierDisabled ?? 0);
+    expect(m2.repair_reverted_no_progress ?? 0).toBe(
+      m1.repair_reverted_no_progress ?? 0
+    );
   });
 });

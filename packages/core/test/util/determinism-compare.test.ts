@@ -36,6 +36,7 @@ describe('normalizePipelineResultForDeterminism', () => {
         repair_tier2_actions: 0,
         repair_tier3_actions: 0,
         repair_tierDisabled: 0,
+        repair_reverted_no_progress: 0,
         nameBfsNodesExpanded: 0,
         nameBfsQueuePeak: 0,
         nameEnumResults: 0,

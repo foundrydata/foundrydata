@@ -1,22 +1,27 @@
-Task: 9501   Title: Golden sig(e)/Score(x) tests for AJV errors
-Anchors: [spec://§10#repair-philosophy-progress, spec://§10#repair-philosophy, spec://§14#planoptionssubkey, spec://§19#payloads]
+Task: 9502   Title: Add revert-no-progress counter + tighten repair diag schema
+Anchors: [spec://§10#repair-philosophy, spec://§10#repair-philosophy-progress, spec://§15#metrics, spec://§19#envelope]
 Touched files:
-- packages/core/src/repair/score/__tests__/score-golden.test.ts
-- packages/core/src/repair/score/__tests__/score.test.ts
-- packages/core/src/repair/score/__tests__/error-signature.test.ts
+- packages/core/src/util/metrics.ts
+- packages/shared/src/types/diag.metrics.ts
+- packages/core/src/diag/schemas.ts
+- packages/core/src/diag/__tests__/diag-codes.test.ts
+- packages/core/src/util/__tests__/metrics.test.ts
+- packages/reporter/test/__snapshots__/reporter.snapshot.test.ts.snap
 - PLAN.md
 
 Approach:
-Acting under the “No Task Available” playbook for the repair-philosophy tag, reinforce task 9501’s deliverables by adding golden tests that exercise sig(e) and Score(x) on real AJV error lists. First, craft a compact object schema that triggers representative keywords (required, additionalProperties, minimum, contains) and validate a failing instance with Ajv configured for determinism (allErrors:true, strict:false). Use the existing buildErrorSignature helper to derive signatures and assert the exact canonical strings (keyword, canonPath fallback to schemaPath, instancePath, stableParamsKey) sorted for stability; verify Score(x) matches the distinct-signature count. Then add a determinism test that runs the same validation twice, compares the serialized signature sets under reversed error order, and checks Score equality to guard against latent ordering or serialization drift. Finally, tighten canonPathFromError behavior by pinning multi-mapping tie-breaks (lexicographically smallest revPtrMap entry) so revPtrMap changes cannot alter signatures silently. Keep scope limited to tests—no production logic changes—and maintain REFONLY anchors. Ensure coverage ≥80% on the touched test modules and avoid touching Repair behavior, budgets, or diagnostics beyond observability of Score components.
+For 9502, restore compliance with spec §10/§15 by adding the missing revert-no-progress counter and tightening the REPAIR_TIER_DISABLED payload schema. First, extend the shared metrics shape (`packages/shared/src/types/diag.metrics.ts`) and core collector defaults (`packages/core/src/util/metrics.ts`) with a deterministic `repair_reverted_no_progress` counter, plus helper increment and snapshot propagation. Wire the counter into the AJV-driven repair engine where REPAIR_REVERTED_NO_PROGRESS is emitted so metrics are incremented exactly once per revert and remain gated by metrics.enabled; ensure coverage independence. Second, restrict `allowedMaxTier` to the spec’s {0,1,2} domain in the diagnostics schema to prevent invalid payloads from slipping through. Update validation tests (`diag-codes.test.ts`, envelope tests) and metrics tests to assert the new counter behaves deterministically and is zeroed when disabled. Refresh reporter snapshots to include the new counter without altering other fields. Keep the change surface minimal: do not modify repair behavior, tiers, or Score logic—only observability. All anchors stay within quota (≤5) and REFONLY; no spec prose copied.
 
 Risks/Unknowns:
-- Ajv error shapes are version-sensitive; golden expectations must match current params payloads to avoid false positives on future Ajv bumps.
-- Canonical pointer mapping in real runs may differ from schemaPath; tie-break behavior asserted here must stay compatible with ptr-map invariants.
-Parent bullets couverts: [KR1, DEL1, DEL2, DEL3, DOD1, DOD3, TS1, TS2, TS3]
+- Reporter snapshot churn: adding one metric field may shift ordering; must ensure deterministic serializer and stable sort to avoid flaky diffs.
+- Counter placement: must ensure the revert counter increments exactly once per REPAIR_REVERTED_NO_PROGRESS, not per action attempt; confirm via targeted test.
+Parent bullets couverts: [KR1, KR2, DEL1, DEL2, DEL3, DOD1, DOD2, DOD3, TS1, TS2, TS3]
 
 DoD:
-- [ ] Golden signatures cover required/additionalProperties/minimum/contains with exact paramsKey strings
-- [ ] Determinism test proves signature set/Score independence from error ordering and repeated runs
+- [ ] Metrics include repair_reverted_no_progress with deterministic increment and reporter snapshot coverage
+- [ ] REPAIR_TIER_DISABLED schema enforces allowedMaxTier domain per spec
+- [ ] build/typecheck/lint/test/bench OK
+- [ ] Traceability updated for 9502
 - [ ] build/typecheck/lint/test/bench OK
 
 Checks:

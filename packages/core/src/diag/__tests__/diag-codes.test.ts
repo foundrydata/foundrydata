@@ -28,6 +28,20 @@ describe('Repair philosophy diagnostics', () => {
         },
       })
     ).not.toThrow();
+
+    expect(() =>
+      assertDiagnosticEnvelope({
+        code: DIAGNOSTIC_CODES.REPAIR_TIER_DISABLED,
+        canonPath: '/properties/foo/type',
+        phase: DIAGNOSTIC_PHASES.REPAIR,
+        details: {
+          keyword: 'type',
+          requestedTier: 2,
+          allowedMaxTier: 3,
+          reason: 'default_policy',
+        },
+      })
+    ).toThrow();
   });
 
   it('REPAIR_GVALID_STRUCTURAL_ACTION is registered with phase repair and valid payload', () => {

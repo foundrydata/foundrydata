@@ -66,6 +66,7 @@ describe('bench harness utilities', () => {
       repair_tier2_actions: 0,
       repair_tier3_actions: 0,
       repair_tierDisabled: 0,
+      repair_reverted_no_progress: 0,
       memoryPeakMB: 64,
       p50LatencyMs: 0,
       p95LatencyMs: 0,

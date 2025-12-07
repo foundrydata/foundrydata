@@ -537,6 +537,7 @@ exports[`reporter snapshots > produces a stable JSON Report for profiles/simple.
     "repairActionsPerRow": 0,
     "repairMs": 0,
     "repairPassesPerRow": 0,
+    "repair_reverted_no_progress": 0,
     "repair_tier1_actions": 0,
     "repair_tier2_actions": 0,
     "repair_tier3_actions": 0,
