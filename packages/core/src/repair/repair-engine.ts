@@ -2043,6 +2043,28 @@ export function repairItemsAjvDriven(
           typeof n.max === 'number' ? n.max : undefined
         );
 
+        const policy = applyTierPolicyForAction(kw, canonPath);
+        const blockedByGValid = isGValidStructuralGuardEnabled(canonPath);
+        if (!policy.allowed || blockedByGValid) {
+          if (blockedByGValid) {
+            const deficit = Math.max(
+              0,
+              ...minByNeed.map((min, idx) => min - (counts[idx] ?? 0))
+            );
+            diagnostics.push({
+              code: DIAGNOSTIC_CODES.REPAIR_GVALID_STRUCTURAL_ACTION,
+              canonPath,
+              phase: DIAGNOSTIC_PHASES.REPAIR,
+              details: {
+                kind: kw,
+                strategy: 'containsAdjust',
+                ...(deficit > 0 ? { deficit } : {}),
+              },
+            });
+          }
+          continue;
+        }
+
         // Synth helper
         const synth = (sch: any): unknown => {
           if (!sch || typeof sch !== 'object') return null;

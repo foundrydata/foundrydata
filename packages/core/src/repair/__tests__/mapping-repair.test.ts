@@ -516,6 +516,101 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
     expect(out.items[0]).toEqual([]);
   });
 
+  it('blocks contains/minContains repairs in G_valid arrays by default', () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'array',
+      items: { type: 'string', minLength: 1 },
+      contains: { type: 'string', minLength: 2 },
+      minContains: 1,
+    } as const;
+
+    const canonical = {
+      schema,
+      ptrMap: new Map<string, string>(),
+      revPtrMap: new Map<string, string[]>(),
+      notes: [],
+    };
+    const coverageIndex = new Map();
+    const containsBag = new Map();
+    const gValidIndex = classifyGValid(schema, { coverageIndex, containsBag });
+    const effective = {
+      canonical,
+      containsBag,
+      coverageIndex,
+    } as unknown as ComposeResult;
+
+    const metrics = new MetricsCollector({ now: () => 0 });
+    const out = repairItemsAjvDriven(
+      [[]],
+      {
+        schema,
+        effective,
+        planOptions: { gValid: true },
+        gValidIndex,
+      },
+      { attempts: 1, metrics }
+    );
+
+    expect(out.items[0]).toEqual([]);
+    expect(out.actions ?? []).toHaveLength(0);
+
+    const diagCodes = (out.diagnostics ?? []).map((d) => d.code);
+    expect(diagCodes).toContain('REPAIR_GVALID_STRUCTURAL_ACTION');
+    expect(diagCodes).toContain('REPAIR_TIER_DISABLED');
+
+    const snapshot = metrics.snapshotMetrics({ verbosity: 'ci' });
+    expect(snapshot.repair_tierDisabled).toBeGreaterThan(0);
+  });
+
+  it('allows contains/minContains repairs in G_valid arrays when explicitly relaxed', () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'array',
+      items: { type: 'string', minLength: 1 },
+      contains: { type: 'string', minLength: 2 },
+      minContains: 2,
+    } as const;
+
+    const canonical = {
+      schema,
+      ptrMap: new Map<string, string>(),
+      revPtrMap: new Map<string, string[]>(),
+      notes: [],
+    };
+    const coverageIndex = new Map();
+    const containsBag = new Map();
+    const gValidIndex = classifyGValid(schema, { coverageIndex, containsBag });
+    const effective = {
+      canonical,
+      containsBag,
+      coverageIndex,
+    } as unknown as ComposeResult;
+
+    const out = repairItemsAjvDriven(
+      [['a']],
+      {
+        schema,
+        effective,
+        planOptions: {
+          gValid: true,
+          repair: { allowStructuralInGValid: true },
+        },
+        gValidIndex,
+      },
+      { attempts: 2 }
+    );
+
+    const repaired = out.items[0] as unknown[];
+    expect(Array.isArray(repaired)).toBe(true);
+    expect(repaired.length).toBe(2);
+    expect(valid(schema, repaired)).toBe(true);
+
+    const diagCodes = (out.diagnostics ?? []).map((d) => d.code);
+    expect(diagCodes).not.toContain('REPAIR_GVALID_STRUCTURAL_ACTION');
+    expect(diagCodes).not.toContain('REPAIR_TIER_DISABLED');
+  });
+
   it('wires Score(x) computation into AJV-driven repair attempts', () => {
     const schema = repairPhilosophyMicroSchemas.tier1.stringMinLength;
     const spy = vi.spyOn(scoreModule, 'computeScore');
