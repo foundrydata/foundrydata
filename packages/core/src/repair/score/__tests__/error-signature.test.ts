@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PtrMapping } from '../../../util/ptr-map.js';
-import { createPtrMapping } from '../../../util/ptr-map.js';
+import { createPtrMapping, mapCanonToOrig } from '../../../util/ptr-map.js';
 import type { AjvErrorObject } from '../error-signature.js';
 import { buildErrorSignature, canonPathFromError } from '../error-signature.js';
 
@@ -71,5 +71,15 @@ describe('buildErrorSignature', () => {
     );
 
     expect(sig.paramsKey).toBe(sigWithReorderedParams.paramsKey);
+  });
+
+  it('picks the lexicographically smallest canonical path when multiple map to a schemaPath', () => {
+    const mapping = createPtrMapping();
+    mapCanonToOrig(mapping, '/canonical/deeper', '/properties/foo/type');
+    mapCanonToOrig(mapping, '/canonical/base', '/properties/foo/type');
+
+    const err = makeError({ schemaPath: '/properties/foo/type' });
+    const canon = canonPathFromError(err, mapping);
+    expect(canon).toBe('/canonical/base');
   });
 });
