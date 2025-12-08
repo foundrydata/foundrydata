@@ -1834,7 +1834,7 @@
   "repair-philosophy": {
     "tasks": [
       {
-        "id": "9500",
+        "id": 9500,
         "title": "Integrate Repair philosophy into canonical spec and align design docs",
         "description": "Add the normative “Repair philosophy (What we allow Repair to fix)” section under spec §10 and align adjacent docs so there is a single normative source of truth (tiers, Score/commit rule, coverage-independence, G_valid interaction).",
         "priority": "high",
@@ -1879,7 +1879,7 @@
         "updatedAt": "2025-12-04T20:08:59.879Z"
       },
       {
-        "id": "9501",
+        "id": 9501,
         "title": "Implement stable AJV error signature and Score(x) utilities",
         "description": "Create a shared utility that computes sig(e) + Score(x) deterministically: canonPath resolution, stable params canonicalization, and distinct-signature counting.",
         "priority": "high",
@@ -1926,7 +1926,7 @@
         "updatedAt": "2025-12-04T20:24:47.616Z"
       },
       {
-        "id": "9502",
+        "id": 9502,
         "title": "Add repair-philosophy diagnostics codes and metrics counters",
         "description": "Introduce diagnostics and counters required by the Repair philosophy (policy-disabled, reverted-no-progress, per-tier counters) and wire them into the shared diagnostics envelope + metrics collection.",
         "priority": "high",
@@ -1973,7 +1973,7 @@
         "updatedAt": "2025-12-04T20:53:42.501Z"
       },
       {
-        "id": "9503",
+        "id": 9503,
         "title": "Enforce Score-based commit rule in Repair engine (revert on no progress)",
         "description": "Modify Repair execution so candidate mutations are committed only when Score(x') < Score(x); otherwise revert and emit diagnostics/counters.",
         "priority": "high",
@@ -2032,7 +2032,7 @@
         "updatedAt": "2025-12-07T22:18:41.778Z"
       },
       {
-        "id": "9504",
+        "id": 9504,
         "title": "Implement Repair tier classification and default tier policy (G_valid + structuralKeywords-aware)",
         "description": "Classify each repair action into Tier 0..3 and enforce a default policy that respects G_valid and structuralKeywords restrictions while remaining coverage-independent.",
         "priority": "high",
@@ -2080,7 +2080,7 @@
         "updatedAt": "2025-12-04T22:17:35.971Z"
       },
       {
-        "id": "9505",
+        "id": 9505,
         "title": "Add coverage-independence and determinism regression tests for Repair",
         "description": "Prove that Repair decisions and mutations are independent of coverage mode/targets/dimensionsEnabled for a fixed input instance and determinism tuple.",
         "priority": "medium",
@@ -2128,7 +2128,7 @@
         "updatedAt": "2025-12-04T22:55:28.001Z"
       },
       {
-        "id": "9506",
+        "id": 9506,
         "title": "Add micro-schemas + E2E assertions for tier behavior, G_valid regressions, and UNSAT stability",
         "description": "Create dedicated fixtures and E2E tests that pin the intended default behavior: limited Tier-2 in non-G_valid, structural repairs blocked/flagged in G_valid, and UNSAT_BUDGET_EXHAUSTED behavior driven by Score stagnation.",
         "priority": "medium",
@@ -2177,7 +2177,7 @@
         "updatedAt": "2025-12-04T23:14:06.136Z"
       },
       {
-        "id": "9507",
+        "id": 9507,
         "title": "Repair-guided coverage regression for profiles/simple.json after per-pass Score commit rule",
         "description": "Validate that the Score-based commit rule (task 9503) preserves coverage-independence and repair behavior for profiles/simple.json by adding regression tests that compare repair metrics, actions, and diagnostics across coverage modes.",
         "details": "[Context]\nAfter implementing the Score-based commit rule (9503), we need to ensure that Repair's per-pass revert semantics do not regress coverage-independence or determinism guarantees, particularly for the real-world simple.json profile schema which exercises conditionals, contains, uniqueItems, and additionalProperties:false patterns that frequently trigger repair.\n\n[Spec anchors]\n- spec://§10#commit-rule — Score(x') < Score(x) commit condition\n- spec://§15#metrics — repairPassesPerRow, repairActionsPerRow, and revert counters\n- cov://§4#coverage-independence — coverage=measure must not alter repair decisions\n\n[Key requirements]\n1. Extend existing coverage-simple-profile.regression.test.ts:\n   - Add test case that compares coverage=off vs coverage=measure for profiles/simple.json with fixed seed\n   - Assert identical: repaired instances, repairActions[], repairDiagnostics[], repairPassesPerRow, repairActionsPerRow\n   - Include at least count=100 to exercise statistical diversity of conditionals (kind=service triggers metadata.tier requirement)\n\n2. Add Score revert regression test for simple.json:\n   - Use a seed known to trigger repair (e.g., conditional violations, contains unsatisfied)\n   - Assert REPAIR_REVERTED_NO_PROGRESS diagnostics are emitted when Score stagnates\n   - Verify that revert counters (packages/core/src/diag/codes.ts) are incremented deterministically\n   - Confirm final instances validate against original schema after reverts\n\n3. Add determinism test for simple.json repair:\n   - Run executePipeline twice with identical (schema, seed, options) tuple\n   - Deep-compare: artifacts.repaired, artifacts.repairActions, metrics.repairPassesPerRow\n   - Verify that Score computation and revert decisions are stable across runs\n\n4. Document baseline metrics:\n   - Capture repairPassesPerRow and repairActionsPerRow distribution for simple.json (n=1000, coverage=off)\n   - Add snapshot assertion to detect unexpected metric drift in future changes\n   - Ensure p50 repairPassesPerRow ≤ 1 per spec targets (§15)\n\n[Implementation notes]\n- Reuse test harness from packages/core/src/pipeline/__tests__/repair-coverage-independence.test.ts\n- Use existing simple.json schema at profiles/simple.json (96 lines, includes if/then/else, contains, uniqueItems, dependentRequired)\n- Reference repair-score-revert.integration.test.ts for REPAIR_REVERTED_NO_PROGRESS assertion pattern\n- Align with existing E2E test structure in coverage-simple-profile.regression.test.ts (lines 11-51)\n- Score computation: packages/core/src/repair/score/score.ts (computeScore function)\n- Repair engine: packages/core/src/repair/repair-engine.ts (per-pass commit logic with Score check)\n\n[Files to modify]\n- packages/core/test/e2e/coverage-simple-profile.regression.test.ts — add coverage-independence + Score revert cases\n- (optional) packages/core/src/pipeline/__tests__/repair-determinism-fixture.test.ts — add simple.json fixture if needed",
@@ -2261,7 +2261,7 @@
         "updatedAt": "2025-12-07T23:17:48.811Z"
       },
       {
-        "id": "9508",
+        "id": 9508,
         "title": "Implement guided unreachable conditionals behavior with CONDITIONAL_PATH marking and diagnostics",
         "description": "Define and implement guided coverage behavior for hard conditionals (if/then, dependentRequired) that cannot be satisfied under current generator/Repair semantics. When repeated attempts fail to produce AJV-valid instances satisfying conditional obligations, mark CONDITIONAL_PATH targets as status:'unreachable' with appropriate diagnostics instead of treating them as covered, while maintaining non-regression vs coverage=measure.",
         "details": "[Context]\nHard conditionals (if/then/else, dependentRequired) often cannot be satisfied without defaults or business-specific values. The guided coverage mode must handle these gracefully without regressing vs measure mode, introducing ad-hoc synthesis, or marking runs as failed.\n\n[Spec anchors]\n- cov://§3#hard-conditionals-and-unreachable-targets — normative V1 behavior for CONDITIONAL_PATH when guided cannot satisfy conditional obligations\n- design-guided-strategy.md §6.1 — Hard conditionals guidance (informative; complements normative spec rules)\n- spec://§10#commit-rule — Score(x) progress metric and revert semantics\n- spec://§14#determinism — coverage-independence and non-regression guarantees\n\n[Key requirements]\n\n1. **Planner changes**\n   - buildHintsForTarget: Add support for CONDITIONAL_PATH targets (if/then hints derived from conditional schema paths)\n   - planTestUnits: For CONDITIONAL_PATH targets, plan a small bounded number of attempts (e.g., 3-5 test units per target with identical hints but different derived seeds)\n   - Track attempt counts in per-target metadata (attemptCount, attemptBudget)\n\n2. **Runtime changes (coverage/runtime.ts)**\n   - After each test unit execution for a CONDITIONAL_PATH target, check validation status:\n     - If instance passes AJV and satisfies the conditional obligations (then/dependent fields present and valid): mark target as covered (hit: true)\n     - If instance fails validation OR passes but doesn't satisfy conditional obligations: increment attempt counter\n     - If attempts reach budget without success: mark target.status = 'unreachable' with meta.reasonCode = 'HARD_CONDITIONAL_UNSATISFIED' and meta.reasonDetail describing the failure mode\n   - Use existing Score-based commit rule (task 9503) and repair diagnostics to detect stagnation or repeated UNSAT signals\n\n3. **Detection heuristics**\n   - Leverage Score(x) signatures and repair diagnostics (REPAIR_REVERTED_NO_PROGRESS, UNSAT_BUDGET_EXHAUSTED from tasks 9502/9503) to identify when conditional paths are structurally hard\n   - Check AJV errors: if errors consistently reference missing required fields in then/dependent branches across multiple attempts, treat as unreachable signal\n   - Do NOT introduce new repair actions or defaults beyond existing Tier 0-2 policy (task 9504)\n\n4. **Diagnostics and metadata**\n   - Extend UnsatisfiedHint to support CONDITIONAL_PATH reasonCodes: 'HARD_CONDITIONAL_UNSATISFIED', 'CONDITIONAL_DEPENDENCIES_UNMET'\n   - Add diagnostic code: COVERAGE_CONDITIONAL_PATH_UNREACHABLE with details: { canonPath, attemptCount, lastScoreSignatures, lastAjvErrors }\n   - Preserve all attempt metadata in target.meta for observability\n\n5. **Non-regression guarantee**\n   - Guided mode must produce >= measure mode coverage for branches dimension (same schema/seed/options)\n   - When marking CONDITIONAL_PATH as unreachable, verify that measure mode would also not cover this path (if measure covered it, guided cannot regress)\n   - Include regression test: compare measure vs guided for a schema with hard conditionals; assert guided.branches >= measure.branches\n\n6. **Run status semantics**\n   - Unreachable CONDITIONAL_PATH targets do NOT cause pipeline failure or change run status from 'completed'\n   - They appear in coverage report with status:'unreachable', counted separately from 'active' targets\n   - When excludeUnreachable=true, they are excluded from denominator but remain visible in targets/uncoveredTargets arrays\n\n[Implementation steps]\n\nA. Extend coverage planner (coverage-planner.ts):\n   - Add CONDITIONAL_PATH hint generation in buildHintsForTarget: derive preferBranch hints for if-branch selection, ensurePropertyPresence hints for then/dependent fields\n   - Modify planTestUnits: for CONDITIONAL_PATH targets, allocate attemptBudget (default 3) test units with identical hints but distinct derived seeds\n   - Add attemptBudget and attemptCount fields to TestUnit metadata\n\nB. Extend coverage runtime (coverage/runtime.ts):\n   - In executeTestUnit loop (or post-generation validation), check if target.kind === 'CONDITIONAL_PATH'\n   - After validation, inspect AJV errors: if 'required' errors reference then/dependent fields, increment attemptCount\n   - If attemptCount >= attemptBudget and target not covered, set target.status = 'unreachable' with meta\n   - Emit diagnostic COVERAGE_CONDITIONAL_PATH_UNREACHABLE\n\nC. Add diagnostics (diag/codes.ts):\n   - Register COVERAGE_CONDITIONAL_PATH_UNREACHABLE in DIAGNOSTIC_CODES with phase: 'coverage'\n   - Extend UnsatisfiedHint schema to support new reasonCodes\n\nD. Wire into evaluator (coverage/evaluator.ts):\n   - Evaluator already handles status:'unreachable' correctly (line 157 normalizeStatus, line 87 includeStatus logic)\n   - Verify that unreachable targets are excluded from denominators when excludeUnreachable=true\n   - No changes needed unless new status code introduced\n\nE. Tests:\n   - Unit test: buildHintsForTarget generates correct hints for CONDITIONAL_PATH targets (if/then, dependentRequired)\n   - Integration test: schema with if/then requiring field not in defaults → guided marks target unreachable after N attempts\n   - Regression test: measure vs guided on hard conditional schema → assert guided.branches >= measure.branches and guided.overall >= measure.overall\n   - E2E snapshot: coverage report includes unreachable CONDITIONAL_PATH with correct meta and diagnostics\n\n[Edge cases]\n- Conditional with multiple then clauses: attempt each independently if planner budget allows\n- Nested conditionals: treat each CONDITIONAL_PATH target separately; do not recursively attempt parent/child\n- Conditional satisfied by Repair: if Repair (within Tier 0-2 policy) produces valid instance, count as covered even if Generator alone failed\n- Empty then schema (always valid): should be covered by normal generation; unreachability only applies when then has constraints",
@@ -2273,7 +2273,63 @@
           "9506"
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Extend coverage planner for CONDITIONAL_PATH target support with attempt budgets",
+            "description": "Add CONDITIONAL_PATH hint generation in buildHintsForTarget and modify planTestUnits to allocate attempt budgets for conditional path targets with multiple test units per target",
+            "dependencies": [],
+            "details": "In coverage-planner.ts:\n\n1. Extend buildHintsForTarget (line 521) to handle CONDITIONAL_PATH targets:\n   - Add new conditional block for target.dimension === 'branches' && target.kind === 'CONDITIONAL_PATH'\n   - For if/then conditionals: generate preferBranch hint for if-branch selection based on params.branchIndex\n   - For dependentRequired: generate ensurePropertyPresence hints for dependent fields from params.dependentFields\n   - Derive hints from conditional schema paths using getParentCanonPath pattern\n\n2. Modify planTestUnits (line 585) to support attempt budgets:\n   - Check if target.kind === 'CONDITIONAL_PATH' when building test units\n   - For CONDITIONAL_PATH targets, create attemptBudget (default: 3) test units with identical hints\n   - Derive distinct seeds for each attempt using existing XorShift32 pattern with attempt index\n   - Add attemptCount and attemptBudget fields to TestUnit.scope metadata\n\n3. Update TestUnit and TestUnitScope interfaces to include:\n   - attemptBudget?: number in TestUnitScope\n   - attemptCount?: number in TestUnitScope\n   - targetKind?: string in TestUnitScope for tracking CONDITIONAL_PATH\n\nFiles: packages/core/src/coverage/coverage-planner.ts",
+            "status": "pending",
+            "testStrategy": "Unit tests in coverage-planner.test.ts:\n- buildHintsForTarget generates correct preferBranch hints for CONDITIONAL_PATH if/then targets\n- buildHintsForTarget generates ensurePropertyPresence hints for CONDITIONAL_PATH dependentRequired\n- planTestUnits creates 3 test units (attemptBudget) for single CONDITIONAL_PATH target\n- Each test unit has identical hints but distinct seeds\n- TestUnit metadata includes attemptBudget and attemptCount fields"
+          },
+          {
+            "id": 2,
+            "title": "Implement runtime attempt tracking and unreachable status marking for CONDITIONAL_PATH",
+            "description": "Extend coverage runtime to track CONDITIONAL_PATH validation attempts, detect hard conditional failures using Score(x) and AJV errors, and mark targets as unreachable when attempt budget is exhausted",
+            "dependencies": [
+              1
+            ],
+            "details": "In coverage/runtime.ts:\n\n1. Add CONDITIONAL_PATH attempt tracking in planCoverageForPipeline or post-generation validation:\n   - After each test unit execution, check if target.kind === 'CONDITIONAL_PATH'\n   - Inspect AJV validation result and errors\n   - If instance passes AJV AND satisfies conditional obligations (then/dependent fields present): mark target.hit = true\n   - If validation fails OR conditional obligations not met: increment attemptCount in target.meta\n\n2. Implement hard conditional detection heuristics:\n   - Use Score(x) signatures from task 9501 utilities (repair/score/score.ts)\n   - Check for REPAIR_REVERTED_NO_PROGRESS or UNSAT_BUDGET_EXHAUSTED diagnostics from tasks 9502/9503\n   - Inspect AJV errors: if errors consistently reference missing required fields in then/dependent branches across attempts, treat as unreachable signal\n   - Pattern: errors.filter(e => e.keyword === 'required' && e.params.missingProperty in expectedConditionalFields)\n\n3. Mark unreachable when attempts exhausted:\n   - If attemptCount >= attemptBudget and target not covered:\n     - Set target.status = 'unreachable'\n     - Add meta.reasonCode = 'HARD_CONDITIONAL_UNSATISFIED'\n     - Add meta.reasonDetail with failure mode description\n     - Preserve lastScoreSignatures and lastAjvErrors in target.meta\n\n4. Maintain existing evaluator compatibility:\n   - evaluator.ts already handles status:'unreachable' correctly (line 157 normalizeStatus, line 87 includeStatus)\n   - Verify excludeUnreachable flag excludes from denominators\n\nFiles: packages/core/src/coverage/runtime.ts, packages/core/src/coverage/evaluator.ts (verify only)",
+            "status": "pending",
+            "testStrategy": "Integration tests:\n- Schema with if/then requiring field not in defaults → guided marks target unreachable after 3 attempts\n- Track attemptCount incrementing with each failed attempt\n- Verify Score(x) signatures and AJV errors stored in target.meta\n- Confirm unreachable targets excluded when excludeUnreachable=true\n- Verify target.hit remains false when marked unreachable"
+          },
+          {
+            "id": 3,
+            "title": "Add CONDITIONAL_PATH diagnostic codes and extend UnsatisfiedHint schema",
+            "description": "Register new diagnostic codes for conditional path unreachability and extend UnsatisfiedHint reasonCodes to support hard conditional failure modes",
+            "dependencies": [],
+            "details": "In diag/codes.ts:\n\n1. Add new diagnostic code to DIAGNOSTIC_CODE_VALUES (around line 89):\n   - COVERAGE_CONDITIONAL_PATH_UNREACHABLE: 'COVERAGE_CONDITIONAL_PATH_UNREACHABLE'\n\n2. Define diagnostic metadata:\n   - phase: 'coverage' (add to DIAGNOSTIC_PHASES if needed, or use existing phase categorization)\n   - severity: 'note' or 'warning'\n   - description: 'CONDITIONAL_PATH target marked unreachable after exhausting attempt budget without satisfying conditional obligations'\n\nIn packages/shared/src/types/coverage-report.ts:\n\n3. Extend UnsatisfiedHintReasonCode type (line 38):\n   - Add 'HARD_CONDITIONAL_UNSATISFIED' to union\n   - Add 'CONDITIONAL_DEPENDENCIES_UNMET' to union\n\n4. Update UnsatisfiedHint interface if needed to support:\n   - Conditional-specific metadata (attemptCount, lastScoreSignatures, lastAjvErrors)\n   - Consider adding optional diagnosticMetadata field for extensibility\n\nFiles: packages/core/src/diag/codes.ts, packages/shared/src/types/coverage-report.ts",
+            "status": "pending",
+            "testStrategy": "Unit tests:\n- COVERAGE_CONDITIONAL_PATH_UNREACHABLE code registered in DIAGNOSTIC_CODES\n- UnsatisfiedHint validates with new reasonCodes ('HARD_CONDITIONAL_UNSATISFIED', 'CONDITIONAL_DEPENDENCIES_UNMET')\n- Type checking passes for extended UnsatisfiedHint interface\n- Diagnostic metadata includes correct phase and severity"
+          },
+          {
+            "id": 4,
+            "title": "Implement non-regression guarantee for guided vs measure mode coverage",
+            "description": "Add validation logic to ensure guided mode produces >= measure mode coverage for branches dimension and implement regression tests comparing measure vs guided on hard conditional schemas",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "In coverage/runtime.ts or new coverage/validation.ts:\n\n1. Add non-regression validation function:\n   - compareCoverageModes(measureTargets, guidedTargets, dimension)\n   - Assert guidedCoverage >= measureCoverage for all dimensions\n   - When marking CONDITIONAL_PATH as unreachable, verify measure mode would also not cover this path\n   - If measure covered it, guided cannot regress → emit warning diagnostic and attempt additional repair\n\n2. Add regression detection:\n   - Before finalizing target.status = 'unreachable', check if measure mode hit this target\n   - If measureMode.target.hit === true and guidedMode.attemptCount >= budget:\n     - Emit diagnostic: COVERAGE_GUIDED_REGRESSION_DETECTED\n     - Do NOT mark as unreachable; keep as uncovered with meta.regressionDetected = true\n\n3. Integration test suite:\n   - Create test schemas with hard conditionals (if/then requiring fields, dependentRequired)\n   - Run generation with coverage=measure, capture targets\n   - Run generation with coverage=guided (same seed, options), capture targets\n   - Assert: guided.branches >= measure.branches\n   - Assert: guided.overall >= measure.overall\n   - Assert: unreachable targets in guided were also uncovered in measure\n\nFiles: packages/core/src/coverage/runtime.ts, packages/core/test/e2e/coverage-regression.spec.ts (new)",
+            "status": "pending",
+            "testStrategy": "Regression tests:\n- Schema with hard if/then → measure vs guided comparison → assert guided.branches >= measure.branches\n- Schema with dependentRequired → measure vs guided → assert guided.overall >= measure.overall\n- Verify unreachable targets in guided were also uncovered in measure mode\n- Test with same seed/options produces deterministic coverage across modes\n- Detect and report regressions when guided < measure"
+          },
+          {
+            "id": 5,
+            "title": "Add E2E tests and snapshots for unreachable CONDITIONAL_PATH coverage reports",
+            "description": "Create end-to-end tests with hard conditional schemas verifying unreachable status, diagnostics, and coverage report structure including metadata preservation",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "In packages/core/test/e2e/ or packages/core/src/coverage/__tests__/:\n\n1. Create test fixtures:\n   - Schema with if/then requiring field not in enum (hard conditional)\n   - Schema with dependentRequired + additionalProperties:false\n   - Schema with nested conditionals (if within if)\n\n2. E2E test: unreachable CONDITIONAL_PATH with diagnostics:\n   - Generate with coverage=guided, count=100\n   - Assert target.kind === 'CONDITIONAL_PATH' exists\n   - Assert target.status === 'unreachable' after attempts exhausted\n   - Assert target.meta includes:\n     - reasonCode: 'HARD_CONDITIONAL_UNSATISFIED'\n     - attemptCount: 3 (or configured budget)\n     - lastScoreSignatures: array of Score(x) signatures\n     - lastAjvErrors: AJV error objects\n   - Verify diagnostic COVERAGE_CONDITIONAL_PATH_UNREACHABLE emitted\n\n3. Coverage report snapshot:\n   - Generate full coverage report JSON\n   - Verify unreachable targets appear in report.uncoveredTargets\n   - Verify targets array includes unreachable with correct status\n   - Verify unsatisfiedHints includes HARD_CONDITIONAL_UNSATISFIED entries\n   - Snapshot test for report structure stability\n\n4. Edge cases:\n   - Empty then schema (should be covered, not unreachable)\n   - Conditional satisfied by Repair within Tier 0-2 (should be covered)\n   - Multiple then clauses (each attempted independently)\n\nFiles: packages/core/test/e2e/coverage-conditional-unreachable.spec.ts (new), packages/core/src/coverage/__tests__/coverage-runtime.test.ts",
+            "status": "pending",
+            "testStrategy": "E2E snapshot tests:\n- Hard if/then schema → unreachable target with correct meta and diagnostics\n- Coverage report JSON snapshot includes unreachable CONDITIONAL_PATH\n- Edge case: empty then → covered, not unreachable\n- Edge case: Repair satisfies conditional → covered with hit=true\n- Verify excludeUnreachable flag correctly filters denominators\n- Assert run status remains 'completed' despite unreachable targets"
+          }
+        ]
       }
     ],
     "metadata": {
@@ -2283,7 +2339,9 @@
       "completedCount": 8,
       "tags": [
         "repair-philosophy"
-      ]
+      ],
+      "created": "2025-12-07T23:23:28.641Z",
+      "description": "Tasks for repair-philosophy context"
     }
   },
   "observability-platform-metrics-v1": {
