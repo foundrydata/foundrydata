@@ -169,6 +169,7 @@ These flags do not affect coverage or resolver behavior and are designed so that
 Reading G_valid repair usage metrics:
 - When metrics are enabled, G_valid zones surface `gValid_<motif>_items`, `gValid_<motif>_itemsWithRepair`, and `gValid_<motif>_actions` per canonPath/motif. In strict posture, these should stay at zero; non-zero values indicate structural repair or retries inside a G_valid zone.
 - The compat profile (or `PlanOptions.gValid: false`) disables classification and therefore these counters; the relaxed profile (or `repair.allowStructuralInGValid: true`) allows structural repair in G_valid zones and may increment them.
+- Extended motifs such as simple conditional objects (`if` / `then` / `else` with deterministic guards) and discriminated union objects (`oneOf` with discriminator-style branches) are treated like other G_valid motifs when the classifier marks them as eligible: Generator must satisfy their structural obligations up front, strict posture keeps `gValid_<motif>_itemsWithRepair`/`_actions` at zero, and any structural Repair in these zones is surfaced via motif-tagged metrics and the `GVALID_REPAIR` reporter gate.
 
 ## Migration from Previous Versions
 

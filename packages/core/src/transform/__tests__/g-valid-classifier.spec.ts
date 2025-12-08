@@ -275,4 +275,128 @@ describe('classifyGValid', () => {
     expect(root?.isGValid).toBe(true);
     expect(root?.motif).toBe(GValidMotif.SimpleObjectRequired);
   });
+
+  it('classifies simple if/then/else objects as extended G_valid when guards are simple', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        kind: { type: 'string', enum: ['A', 'B'] },
+      },
+      if: {
+        properties: {
+          kind: { const: 'A' },
+        },
+        required: ['kind'],
+      },
+      then: {
+        type: 'object',
+        properties: {
+          valueA: { type: 'integer' },
+        },
+        required: ['valueA'],
+      },
+      else: {
+        type: 'object',
+        properties: {
+          valueB: { type: 'string' },
+        },
+        required: ['valueB'],
+      },
+    };
+
+    const index = classifyGValid(schema);
+    const root = index.get('#');
+
+    expect(root).toBeDefined();
+    expect(root?.isGValid).toBe(true);
+    expect(root?.motif).toBe(GValidMotif.SimpleConditionalObject);
+  });
+
+  it('does not classify conditional objects with complex if composition as G_valid', () => {
+    const schema = {
+      type: 'object',
+      if: {
+        anyOf: [
+          {
+            properties: { kind: { const: 'A' } },
+          },
+          {
+            properties: { kind: { const: 'B' } },
+          },
+        ],
+      },
+      then: {
+        type: 'object',
+        properties: { value: { type: 'integer' } },
+        required: ['value'],
+      },
+    };
+
+    const index = classifyGValid(schema);
+    const root = index.get('#');
+
+    expect(root).toBeDefined();
+    expect(root?.isGValid).toBe(false);
+    expect(root?.motif).toBe(GValidMotif.None);
+  });
+
+  it('classifies simple discriminated oneOf objects as extended G_valid', () => {
+    const schema = {
+      type: 'object',
+      oneOf: [
+        {
+          type: 'object',
+          properties: {
+            kind: { const: 'A' },
+            valueA: { type: 'integer' },
+          },
+          required: ['kind', 'valueA'],
+        },
+        {
+          type: 'object',
+          properties: {
+            kind: { const: 'B' },
+            valueB: { type: 'string' },
+          },
+          required: ['kind', 'valueB'],
+        },
+      ],
+    };
+
+    const index = classifyGValid(schema);
+    const root = index.get('#');
+
+    expect(root).toBeDefined();
+    expect(root?.isGValid).toBe(true);
+    expect(root?.motif).toBe(GValidMotif.DiscriminatedUnionObject);
+  });
+
+  it('does not classify oneOf objects without a shared discriminator as G_valid discriminated unions', () => {
+    const schema = {
+      type: 'object',
+      oneOf: [
+        {
+          type: 'object',
+          properties: {
+            kindA: { const: 'A' },
+          },
+          required: ['kindA'],
+        },
+        {
+          type: 'object',
+          properties: {
+            kindB: { const: 'B' },
+          },
+          required: ['kindB'],
+        },
+      ],
+    };
+
+    const index = classifyGValid(schema);
+    const root = index.get('#');
+
+    expect(root).toBeDefined();
+    expect(root?.isGValid).toBe(false);
+    expect(root?.motif).toBe(GValidMotif.None);
+  });
 });

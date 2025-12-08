@@ -169,6 +169,95 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
     expect(diagCodes).toContain('REPAIR_GVALID_STRUCTURAL_ACTION');
   });
 
+  it('blocks structural required repair in extended G_valid SimpleConditionalObject motifs', () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        kind: { type: 'string', enum: ['A', 'B'] },
+      },
+      if: {
+        properties: {
+          kind: { const: 'A' },
+        },
+        required: ['kind'],
+      },
+      then: {
+        type: 'object',
+        properties: {
+          valueA: { type: 'integer', minimum: 0 },
+        },
+        required: ['valueA'],
+      },
+      else: {
+        type: 'object',
+        properties: {
+          valueB: { type: 'string', minLength: 1 },
+        },
+        required: ['valueB'],
+      },
+    } as const;
+
+    const canonical = {
+      schema,
+      ptrMap: new Map<string, string>(),
+      revPtrMap: new Map<string, string[]>(),
+      notes: [],
+    };
+    const coverageIndex = new Map();
+    const containsBag = new Map();
+    const gValidIndex = classifyGValid(schema, { coverageIndex, containsBag });
+    const effective = {
+      canonical,
+      containsBag,
+      coverageIndex,
+    } as unknown as ComposeResult;
+
+    const metrics = new MetricsCollector({ now: () => 0 });
+    const out = repairItemsAjvDriven(
+      [
+        // Missing branch-specific required property; Repair should not synthesize it in G_valid.
+        { kind: 'A' },
+      ],
+      {
+        schema,
+        effective,
+        planOptions: { gValid: true },
+        gValidIndex,
+      },
+      { attempts: 1, metrics }
+    );
+
+    const diagCodes = (out.diagnostics ?? []).map((d) => d.code);
+    expect(diagCodes).toContain('REPAIR_GVALID_STRUCTURAL_ACTION');
+    expect(diagCodes).toContain('REPAIR_TIER_DISABLED');
+
+    const snapshot = metrics.snapshotMetrics({ verbosity: 'ci' });
+    expect(snapshot.repair_tierDisabled).toBeGreaterThan(0);
+
+    // G_valid motif metrics are still recorded but must show no structural repair.
+    const usage = snapshot.repairUsageByMotif ?? [];
+    const bucket = usage.find(
+      (entry) =>
+        entry.gValid === true &&
+        entry.motifId === 'simpleConditionalObject' &&
+        (entry.canonPath ?? '').startsWith('#')
+    );
+    expect(bucket).toBeDefined();
+    expect(bucket?.items).toBeGreaterThan(0);
+    expect(bucket?.itemsWithRepair).toBe(0);
+    expect(bucket?.actions).toBe(0);
+    expect(snapshot.gValid_simpleConditionalObject_items).toBeGreaterThan(0);
+    expect(snapshot.gValid_simpleConditionalObject_itemsWithRepair ?? 0).toBe(
+      0
+    );
+    expect(snapshot.gValid_simpleConditionalObject_actions ?? 0).toBe(0);
+
+    // Item remains structurally incomplete; Repair does not add valueA/valueB in extended G_valid.
+    expect(out.items[0]).toEqual({ kind: 'A' });
+    expect(out.actions ?? []).toHaveLength(0);
+  });
+
   it('allows structural repairs when allowStructuralInGValid is true', () => {
     const schema = repairPhilosophyMicroSchemas.gValidStructural.simpleObject;
     const canonical = {
@@ -743,6 +832,89 @@ describe('Repair Engine — §10 mapping repairs (basic)', () => {
     expect(diagCodes).toContain('UNSAT_BUDGET_EXHAUSTED');
 
     expect(out.items[0]).toEqual({});
+    expect(out.actions ?? []).toHaveLength(0);
+  });
+
+  it('blocks structural required repair in extended G_valid DiscriminatedUnionObject motifs', () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      oneOf: [
+        {
+          type: 'object',
+          properties: {
+            kind: { const: 'A' },
+            valueA: { type: 'integer', minimum: 0 },
+          },
+          required: ['kind', 'valueA'],
+        },
+        {
+          type: 'object',
+          properties: {
+            kind: { const: 'B' },
+            valueB: { type: 'string', minLength: 1 },
+          },
+          required: ['kind', 'valueB'],
+        },
+      ],
+    } as const;
+
+    const canonical = {
+      schema,
+      ptrMap: new Map<string, string>(),
+      revPtrMap: new Map<string, string[]>(),
+      notes: [],
+    };
+    const coverageIndex = new Map();
+    const containsBag = new Map();
+    const gValidIndex = classifyGValid(schema, { coverageIndex, containsBag });
+    const effective = {
+      canonical,
+      containsBag,
+      coverageIndex,
+    } as unknown as ComposeResult;
+
+    const metrics = new MetricsCollector({ now: () => 0 });
+
+    const out = repairItemsAjvDriven(
+      [
+        // Missing required valueA/valueB; Repair should not synthesize it in extended G_valid.
+        { kind: 'A' },
+      ],
+      {
+        schema,
+        effective,
+        planOptions: { gValid: true },
+        gValidIndex,
+      },
+      { attempts: 1, metrics }
+    );
+
+    const diagCodes = (out.diagnostics ?? []).map((d) => d.code);
+    expect(diagCodes).toContain('REPAIR_GVALID_STRUCTURAL_ACTION');
+    expect(diagCodes).toContain('REPAIR_TIER_DISABLED');
+
+    const snapshot = metrics.snapshotMetrics({ verbosity: 'ci' });
+    expect(snapshot.repair_tierDisabled).toBeGreaterThan(0);
+
+    const usage = snapshot.repairUsageByMotif ?? [];
+    const bucket = usage.find(
+      (entry) =>
+        entry.gValid === true &&
+        entry.motifId === 'discriminatedUnionObject' &&
+        (entry.canonPath ?? '').startsWith('#')
+    );
+    expect(bucket).toBeDefined();
+    expect(bucket?.items).toBeGreaterThan(0);
+    expect(bucket?.itemsWithRepair).toBe(0);
+    expect(bucket?.actions).toBe(0);
+    expect(snapshot.gValid_discriminatedUnionObject_items).toBeGreaterThan(0);
+    expect(snapshot.gValid_discriminatedUnionObject_itemsWithRepair ?? 0).toBe(
+      0
+    );
+    expect(snapshot.gValid_discriminatedUnionObject_actions ?? 0).toBe(0);
+
+    expect(out.items[0]).toEqual({ kind: 'A' });
     expect(out.actions ?? []).toHaveLength(0);
   });
 });

@@ -811,7 +811,9 @@ export function repairItemsAjvDriven(
     if (!info || info.isGValid !== true) return false;
     return (
       info.motif === GValidMotif.SimpleObjectRequired ||
-      info.motif === GValidMotif.ArrayContainsSimple
+      info.motif === GValidMotif.ArrayContainsSimple ||
+      info.motif === GValidMotif.SimpleConditionalObject ||
+      info.motif === GValidMotif.DiscriminatedUnionObject
     );
   };
 

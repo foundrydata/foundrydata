@@ -23,10 +23,22 @@ describe('GValid motif types and API', () => {
       '#/items',
       GValidMotif.ArrayContainsSimple
     );
+    const conditionalInfo = makeGValidMotif(
+      '#',
+      GValidMotif.SimpleConditionalObject
+    );
+    const unionInfo = makeGValidMotif(
+      '#',
+      GValidMotif.DiscriminatedUnionObject
+    );
 
     expect(objectInfo.isGValid).toBe(true);
     expect(objectInfo.motif).toBe(GValidMotif.SimpleObjectRequired);
     expect(arrayInfo.isGValid).toBe(true);
     expect(arrayInfo.motif).toBe(GValidMotif.ArrayContainsSimple);
+    expect(conditionalInfo.isGValid).toBe(true);
+    expect(conditionalInfo.motif).toBe(GValidMotif.SimpleConditionalObject);
+    expect(unionInfo.isGValid).toBe(true);
+    expect(unionInfo.motif).toBe(GValidMotif.DiscriminatedUnionObject);
   });
 });

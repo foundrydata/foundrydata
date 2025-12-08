@@ -328,6 +328,139 @@ describe('executePipeline', () => {
     expect(root?.isGValid).toBe(true);
   });
 
+  it('generates G_valid simple conditional objects without structural repair', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        kind: { type: 'string', enum: ['A', 'B'] },
+      },
+      if: {
+        properties: {
+          kind: { const: 'A' },
+        },
+        required: ['kind'],
+      },
+      then: {
+        type: 'object',
+        properties: {
+          valueA: { type: 'integer', minimum: 0 },
+        },
+        required: ['valueA'],
+      },
+      else: {
+        type: 'object',
+        properties: {
+          valueB: { type: 'string', minLength: 1 },
+        },
+        required: ['valueB'],
+      },
+    } as const;
+
+    const result = await executePipeline(schema, {
+      mode: 'strict',
+      generate: {
+        count: 3,
+        seed: 41,
+        planOptions: { gValid: true },
+      },
+      validate: { validateFormats: false },
+    });
+
+    expect(result.status).toBe('completed');
+
+    const finalItems =
+      result.artifacts.repaired ?? result.artifacts.generated?.items ?? [];
+
+    expect(Array.isArray(finalItems)).toBe(true);
+    expect(finalItems.length).toBeGreaterThan(0);
+
+    for (const row of finalItems as unknown[]) {
+      expect(row).toBeTruthy();
+      expect(typeof row).toBe('object');
+      const obj = row as { kind: string; valueA?: unknown; valueB?: unknown };
+      expect(obj.kind === 'A' || obj.kind === 'B').toBe(true);
+      if (obj.kind === 'A') {
+        expect(typeof obj.valueA).toBe('number');
+      } else {
+        expect(typeof obj.valueB).toBe('string');
+      }
+    }
+
+    const actions = result.artifacts.repairActions ?? [];
+    expect(actions.length).toBe(0);
+
+    const index = result.artifacts.gValidIndex;
+    expect(index).toBeDefined();
+    const root = index?.get('#');
+    expect(root).toBeDefined();
+    expect(root?.isGValid).toBe(true);
+  });
+
+  it('generates G_valid discriminated oneOf objects without structural repair', async () => {
+    const schema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      oneOf: [
+        {
+          type: 'object',
+          properties: {
+            kind: { const: 'A' },
+            valueA: { type: 'integer', minimum: 0 },
+          },
+          required: ['kind', 'valueA'],
+        },
+        {
+          type: 'object',
+          properties: {
+            kind: { const: 'B' },
+            valueB: { type: 'string', minLength: 1 },
+          },
+          required: ['kind', 'valueB'],
+        },
+      ],
+    } as const;
+
+    const result = await executePipeline(schema, {
+      mode: 'strict',
+      generate: {
+        count: 3,
+        seed: 53,
+        planOptions: { gValid: true },
+      },
+      validate: { validateFormats: false },
+    });
+
+    expect(result.status).toBe('completed');
+
+    const finalItems =
+      result.artifacts.repaired ?? result.artifacts.generated?.items ?? [];
+
+    expect(Array.isArray(finalItems)).toBe(true);
+    expect(finalItems.length).toBeGreaterThan(0);
+
+    for (const row of finalItems as unknown[]) {
+      expect(row).toBeTruthy();
+      expect(typeof row).toBe('object');
+      const obj = row as { kind: string; valueA?: unknown; valueB?: unknown };
+      expect(obj.kind === 'A' || obj.kind === 'B').toBe(true);
+      if (obj.kind === 'A') {
+        expect(typeof obj.valueA).toBe('number');
+      } else {
+        expect(typeof obj.valueB).toBe('string');
+      }
+    }
+
+    const actions = result.artifacts.repairActions ?? [];
+    expect(actions.length).toBe(0);
+
+    const index = result.artifacts.gValidIndex;
+    expect(index).toBeDefined();
+    const root = index?.get('#');
+    expect(root).toBeDefined();
+    expect(root?.isGValid).toBe(true);
+  });
+
   it('satisfies items and contains together for G_valid arrays without repair', async () => {
     const schema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',

@@ -1,0 +1,58 @@
+{
+  "gvalid_simple_conditional_object": {
+    "description": "G_valid simple conditional object with deterministic if/then/else guard; Generator must satisfy branch-specific required properties without relying on structural Repair when G_valid is enabled.",
+    "schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "kind": { "type": "string", "enum": ["A", "B"] }
+      },
+      "if": {
+        "properties": {
+          "kind": { "const": "A" }
+        },
+        "required": ["kind"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "valueA": { "type": "integer", "minimum": 0 }
+        },
+        "required": ["valueA"]
+      },
+      "else": {
+        "type": "object",
+        "properties": {
+          "valueB": { "type": "string", "minLength": 1 }
+        },
+        "required": ["valueB"]
+      }
+    }
+  },
+  "gvalid_discriminated_union_object": {
+    "description": "G_valid discriminated union object (oneOf) where each branch is a simple object with a discriminator property; Generator must emit a consistent discriminator/value pair without structural Repair when G_valid is enabled.",
+    "schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "A" },
+            "valueA": { "type": "integer", "minimum": 0 }
+          },
+          "required": ["kind", "valueA"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "B" },
+            "valueB": { "type": "string", "minLength": 1 }
+          },
+          "required": ["kind", "valueB"]
+        }
+      ]
+    }
+  }
+}
+

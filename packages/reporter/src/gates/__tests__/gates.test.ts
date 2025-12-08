@@ -167,6 +167,18 @@ describe('evaluateGates', () => {
     ).toContain('simpleObjectRequired');
   });
 
+  it('collects extended G_valid motif ids from metrics when structural repair occurs', () => {
+    const metrics = baseMetrics({
+      ['gValid_simpleConditionalObject_actions']: 1,
+    });
+    const result = evaluateGates({ metrics });
+
+    expect(result.status).toBe('fail');
+    const issue = result.issues.find((i) => i.code === 'GVALID_REPAIR');
+    expect(issue).toBeDefined();
+    expect(issue?.message).toContain('simpleConditionalObject');
+  });
+
   it('fails when repair regression diagnostics are present', () => {
     const result = evaluateGates({
       repairDiagnostics: [{ code: 'UNSAT_BUDGET_EXHAUSTED' }],

@@ -1,9 +1,16 @@
-import type { ContainsNeed } from './arrays/contains-bag.js';
-import { DIAGNOSTIC_CODES } from '../diag/codes.js';
-import type {
-  CoverageIndex,
-  ComposeDiagnostics,
-} from './composition-engine.js';
+import {
+  isDiscriminatedUnionCandidate,
+  isSimpleConditionalCandidate,
+} from './g-valid-extended.js';
+import {
+  type ComposeArtifacts,
+  type VisitContext,
+  hasUnevaluatedGuard,
+  isMustCover,
+  isSimpleArrayItemsContainsCandidate,
+  isSimpleObjectCandidate,
+  summarizeContainsKind,
+} from './g-valid-baseline-helpers.js';
 
 /**
  * G_valid motif types (v1 baseline and related non-G_valid motifs).
@@ -14,6 +21,8 @@ export enum GValidMotif {
   ArrayContainsSimple = 'arrayContainsSimple',
   ApFalseMustCover = 'apFalseMustCover',
   ComplexContains = 'complexContains',
+  SimpleConditionalObject = 'simpleConditionalObject',
+  DiscriminatedUnionObject = 'discriminatedUnionObject',
 }
 
 /**
@@ -49,7 +58,7 @@ export function makeGValidNone(canonPath: string): GValidInfo {
  */
 export function makeGValidMotif(
   canonPath: string,
-  motif: GValidMotif.SimpleObjectRequired | GValidMotif.ArrayContainsSimple
+  motif: GValidMotif
 ): GValidInfo {
   return {
     canonPath,
@@ -58,199 +67,7 @@ export function makeGValidMotif(
   };
 }
 
-function hasUnevaluatedGuard(schema: unknown): boolean {
-  if (schema && typeof schema === 'object') {
-    const node = schema as Record<string, unknown>;
-    if (
-      node.unevaluatedProperties === false ||
-      node.unevaluatedItems === false
-    ) {
-      return true;
-    }
-
-    if (Array.isArray(node.allOf)) {
-      return node.allOf.some((sub) => hasUnevaluatedGuard(sub));
-    }
-  }
-
-  return false;
-}
-
-interface VisitContext {
-  hasUnevaluatedGuard: boolean;
-}
-
-function isSimpleObjectType(node: Record<string, unknown>): boolean {
-  const type = node.type;
-  return !type || type === 'object';
-}
-
-function hasDisallowedComposition(node: Record<string, unknown>): boolean {
-  return Boolean(node.anyOf || node.oneOf || node.not || node.if);
-}
-
-function hasLocalUnevaluated(node: Record<string, unknown>): boolean {
-  return (
-    node.unevaluatedProperties !== undefined ||
-    node.unevaluatedItems !== undefined
-  );
-}
-
-function hasPlainProperties(node: Record<string, unknown>): boolean {
-  return Boolean(node.properties && typeof node.properties === 'object');
-}
-
-function hasPlainPropertiesInAllOf(node: Record<string, unknown>): boolean {
-  const allOf = Array.isArray(node.allOf) ? node.allOf : undefined;
-  if (!allOf) return false;
-  return allOf.some((branch) => {
-    if (!branch || typeof branch !== 'object') return false;
-    const branchNode = branch as Record<string, unknown>;
-    if (!isSimpleObjectType(branchNode)) return false;
-    if (hasDisallowedComposition(branchNode)) return false;
-    if (branchNode.additionalProperties === false) return false;
-    if (hasLocalUnevaluated(branchNode)) return false;
-    return hasPlainProperties(branchNode);
-  });
-}
-
-function isSimpleObjectCandidate(schema: unknown, ctx: VisitContext): boolean {
-  if (!schema || typeof schema !== 'object') return false;
-  if (ctx.hasUnevaluatedGuard) return false;
-
-  const node = schema as Record<string, unknown>;
-  if (!isSimpleObjectType(node)) return false;
-  if (hasDisallowedComposition(node)) return false;
-
-  if (node.additionalProperties === false) return false;
-  if (hasLocalUnevaluated(node)) return false;
-  if (!hasPlainProperties(node) && !hasPlainPropertiesInAllOf(node)) {
-    return false;
-  }
-
-  return true;
-}
-
-function isArrayType(node: Record<string, unknown>): boolean {
-  const type = node.type;
-  return !type || type === 'array';
-}
-
-function hasTupleOrPrefixItems(node: Record<string, unknown>): boolean {
-  return Boolean(node.prefixItems || Array.isArray(node.items));
-}
-
-function hasSimpleContains(node: Record<string, unknown>): boolean {
-  return Boolean(node.contains && typeof node.contains === 'object');
-}
-
-function hasArrayUnevaluated(node: Record<string, unknown>): boolean {
-  return (
-    node.uniqueItems === true ||
-    node.unevaluatedItems !== undefined ||
-    node.unevaluatedProperties !== undefined
-  );
-}
-
-function isSimpleArrayItemsContainsCandidate(
-  schema: unknown,
-  ctx: VisitContext,
-  containsKind: ContainsKind
-): boolean {
-  if (!schema || typeof schema !== 'object') return false;
-  if (ctx.hasUnevaluatedGuard) return false;
-
-  const node = schema as Record<string, unknown>;
-  if (!isArrayType(node)) return false;
-  if (hasTupleOrPrefixItems(node)) return false;
-  if (!hasSimpleContains(node)) return false;
-  if (containsKind !== 'simple') return false;
-  if (hasArrayUnevaluated(node)) return false;
-
-  return true;
-}
-
-type ContainsKind = 'none' | 'simple' | 'complex';
-
-interface ComposeArtifacts {
-  coverageIndex?: CoverageIndex;
-  containsBag?: Map<string, ContainsNeed[]>;
-  diag?: ComposeDiagnostics;
-}
-
-function getAtPath<T>(
-  map: Map<string, T> | undefined,
-  canonPath: string
-): T | undefined {
-  const variants = [
-    canonPath,
-    canonPath === '#' ? '' : undefined,
-    canonPath.startsWith('#') ? canonPath.slice(1) : undefined,
-  ];
-  for (const key of variants) {
-    if (key === undefined) continue;
-    const value = map?.get(key);
-    if (value !== undefined) return value;
-  }
-  return undefined;
-}
-
-function isMustCover(
-  canonPath: string,
-  coverageIndex: CoverageIndex | undefined,
-  schema: unknown
-): boolean {
-  const node =
-    schema && typeof schema === 'object'
-      ? (schema as Record<string, unknown>)
-      : undefined;
-  if (node?.additionalProperties === false) {
-    return true;
-  }
-  const entry = getAtPath(coverageIndex, canonPath);
-  if (!entry) return false;
-  if (Array.isArray(entry.provenance) && entry.provenance.length > 0) {
-    return true;
-  }
-  return false;
-}
-
-function hasContainsDiagIssues(
-  canonPath: string,
-  diag: ComposeDiagnostics | undefined
-): boolean {
-  const codes = new Set<string>([
-    DIAGNOSTIC_CODES.COMPLEXITY_CAP_CONTAINS,
-    DIAGNOSTIC_CODES.CONTAINS_UNSAT_BY_SUM,
-    DIAGNOSTIC_CODES.CONTAINS_NEED_MIN_GT_MAX,
-  ]);
-  const matches = (entries: ComposeDiagnostics['warn']): boolean =>
-    Boolean(
-      entries?.some(
-        (entry) => entry?.canonPath === canonPath && codes.has(entry.code)
-      )
-    );
-  return matches(diag?.fatal) || matches(diag?.warn);
-}
-
-function summarizeContainsKind(
-  canonPath: string,
-  schema: Record<string, unknown>,
-  artifacts: ComposeArtifacts | undefined
-): ContainsKind {
-  const bag = getAtPath(artifacts?.containsBag, canonPath);
-  const bagSize = bag?.length ?? 0;
-  if (bagSize > 0) {
-    if (bagSize > 1) return 'complex';
-    if (hasContainsDiagIssues(canonPath, artifacts?.diag)) return 'complex';
-    return 'simple';
-  }
-  if (!hasSimpleContains(schema)) return 'none';
-  if (bagSize > 1) return 'complex';
-  if (hasContainsDiagIssues(canonPath, artifacts?.diag)) return 'complex';
-  return 'simple';
-}
-
+// eslint-disable-next-line max-lines-per-function
 function classifyNode(
   schema: unknown,
   canonPath: string,
@@ -284,6 +101,21 @@ function classifyNode(
     }
     if (isSimpleArrayItemsContainsCandidate(schema, ctx, containsKind)) {
       return makeGValidMotif(canonPath, GValidMotif.ArrayContainsSimple);
+    }
+
+    // Extended G_valid motifs (v2): apply only after baseline motifs
+    // so that must-cover/AP:false and v1 shapes win precedence.
+    // For now, only classify conditionals at top-level / properties paths,
+    // and avoid conditionals nested under allOf merges (which often
+    // participate in AP:false / must-cover interplay like simple.json).
+    const isEligiblePathForExtended = !canonPath.includes('/allOf/');
+    if (isEligiblePathForExtended) {
+      if (isSimpleConditionalCandidate(node, ctx)) {
+        return makeGValidMotif(canonPath, GValidMotif.SimpleConditionalObject);
+      }
+      if (isDiscriminatedUnionCandidate(node, ctx)) {
+        return makeGValidMotif(canonPath, GValidMotif.DiscriminatedUnionObject);
+      }
     }
   }
 

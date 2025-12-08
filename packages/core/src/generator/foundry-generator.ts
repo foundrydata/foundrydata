@@ -689,9 +689,11 @@ class GeneratorEngine {
     itemIndex: number
   ): Record<string, unknown> {
     const gValidInfo = this.getGValidInfoForObject(canonPath);
-    const isSimpleObjectGValid =
+    const isObjectGValid =
       gValidInfo?.isGValid === true &&
-      gValidInfo.motif === GValidMotif.SimpleObjectRequired;
+      (gValidInfo.motif === GValidMotif.SimpleObjectRequired ||
+        gValidInfo.motif === GValidMotif.SimpleConditionalObject ||
+        gValidInfo.motif === GValidMotif.DiscriminatedUnionObject);
 
     const coverage = this.coverageIndex.get(canonPath);
     const result: Record<string, unknown> = {};
@@ -850,6 +852,38 @@ class GeneratorEngine {
       dependencyMap[key] = Array.from(set.values());
     }
 
+    if (
+      isObjectGValid &&
+      gValidInfo?.motif === GValidMotif.SimpleConditionalObject
+    ) {
+      const ifSchema = isRecord(schema.if)
+        ? (schema.if as Record<string, unknown>)
+        : undefined;
+      const ifProps = isRecord(ifSchema?.properties)
+        ? (ifSchema!.properties as Record<string, unknown>)
+        : {};
+      const discriminantNames = Object.keys(ifProps);
+      if (discriminantNames.length === 1) {
+        const name = discriminantNames[0]!;
+        if (!usedNames.has(name)) {
+          const resolved = this.resolveSchemaForKey(
+            name,
+            canonPath,
+            properties,
+            patternProperties,
+            additionalProperties
+          );
+          const childPath = appendPointer(this.currentInstancePath, name);
+          const value = this.withInstancePath(childPath, () =>
+            this.generateValue(resolved.schema, resolved.pointer, itemIndex)
+          );
+          result[name] = value;
+          usedNames.add(name);
+          this.recordPropertyPresent(resolved.pointer, name);
+        }
+      }
+    }
+
     const compareUtf16 = (a: string, b: string): number =>
       a < b ? -1 : a > b ? 1 : 0;
     const requiredNames = Array.from(required.values()).sort(compareUtf16);
@@ -858,7 +892,7 @@ class GeneratorEngine {
         ? this.findEvaluationProof(schema, canonPath, result, name)
         : undefined;
       if (
-        !isSimpleObjectGValid &&
+        !isObjectGValid &&
         !this.isNameWithinCoverage(name, canonPath, coverage, evaluationProof)
       ) {
         continue;
@@ -1785,9 +1819,11 @@ class GeneratorEngine {
   ): void {
     if (!dependencyMap) return;
     const gValidInfo = this.getGValidInfoForObject(canonPath);
-    const isSimpleObjectGValid =
+    const isObjectGValid =
       gValidInfo?.isGValid === true &&
-      gValidInfo.motif === GValidMotif.SimpleObjectRequired;
+      (gValidInfo.motif === GValidMotif.SimpleObjectRequired ||
+        gValidInfo.motif === GValidMotif.SimpleConditionalObject ||
+        gValidInfo.motif === GValidMotif.DiscriminatedUnionObject);
     const coverage = this.coverageIndex.get(canonPath);
     for (const [name, requirements] of Object.entries(dependencyMap)) {
       if (!Object.prototype.hasOwnProperty.call(target, name)) continue;
@@ -1798,7 +1834,7 @@ class GeneratorEngine {
           ? this.findEvaluationProof(objectSchema, canonPath, target, dep)
           : undefined;
         if (
-          !isSimpleObjectGValid &&
+          !isObjectGValid &&
           !this.isNameWithinCoverage(dep, canonPath, coverage, evaluationProof)
         ) {
           continue;
@@ -1881,8 +1917,20 @@ class GeneratorEngine {
       this.blockConditionalNames(canonPath, evaluation.discriminants);
     }
     if (schema.else && typeof schema.else === 'object') {
+      this.ensureElseSatisfaction(schema, canonPath, target, itemIndex, used);
       this.recordConditionalPathHit(canonPath, 'if+else');
+      this.diagnostics.push({
+        code: DIAGNOSTIC_CODES.IF_AWARE_HINT_APPLIED,
+        phase: DIAGNOSTIC_PHASES.GENERATE,
+        canonPath,
+        details: {
+          strategy: 'if-aware-lite',
+          minThenSatisfaction: this.resolved.conditionals.minThenSatisfaction,
+        },
+      });
+      return;
     }
+
     this.diagnostics.push({
       code: DIAGNOSTIC_CODES.IF_AWARE_HINT_APPLIED,
       phase: DIAGNOSTIC_PHASES.GENERATE,
@@ -2550,6 +2598,10 @@ class GeneratorEngine {
       ? (schema.then as Record<string, unknown>)
       : undefined;
     if (!thenSchema) return;
+    const gValidInfo = this.getGValidInfoForObject(canonPath);
+    const isConditionalGValid =
+      gValidInfo?.isGValid === true &&
+      gValidInfo.motif === GValidMotif.SimpleConditionalObject;
     const minStrategy = this.resolved.conditionals.minThenSatisfaction;
     if (minStrategy === 'discriminants-only') return;
 
@@ -2603,6 +2655,97 @@ class GeneratorEngine {
         ? this.findEvaluationProof(schema, canonPath, target, name)
         : undefined;
       if (
+        !isConditionalGValid &&
+        !this.isNameWithinCoverage(name, canonPath, coverage, evaluationProof)
+      ) {
+        continue;
+      }
+      if (eTraceGuard && !evaluationProof) continue;
+      const resolved = this.resolveSchemaForKey(
+        name,
+        canonPath,
+        mergedProps,
+        mergedPatterns,
+        schema.additionalProperties
+      );
+      const childPath = appendPointer(this.currentInstancePath, name);
+      const value = this.withInstancePath(childPath, () =>
+        this.generateValue(resolved.schema, resolved.pointer, itemIndex)
+      );
+      target[name] = value;
+      used.add(name);
+      this.recordPropertyPresent(resolved.pointer, name);
+      this.recordEvaluationTrace(canonPath, name, evaluationProof);
+      if (eTraceGuard) {
+        this.invalidateEvaluationCacheForObject(target);
+      }
+    }
+  }
+
+  private ensureElseSatisfaction(
+    schema: Record<string, unknown>,
+    canonPath: JsonPointer,
+    target: Record<string, unknown>,
+    itemIndex: number,
+    used: Set<string>
+  ): void {
+    const elseSchema = isRecord(schema.else)
+      ? (schema.else as Record<string, unknown>)
+      : undefined;
+    if (!elseSchema) return;
+    const gValidInfo = this.getGValidInfoForObject(canonPath);
+    const isConditionalGValid =
+      gValidInfo?.isGValid === true &&
+      gValidInfo.motif === GValidMotif.SimpleConditionalObject;
+    const minStrategy = this.resolved.conditionals.minThenSatisfaction;
+    if (minStrategy === 'discriminants-only') return;
+
+    const coverage = this.coverageIndex.get(canonPath);
+    const eTraceGuard = schema.unevaluatedProperties === false;
+
+    const baseProps = isRecord(schema.properties)
+      ? (schema.properties as Record<string, unknown>)
+      : {};
+    const elseProps = isRecord(elseSchema.properties)
+      ? (elseSchema.properties as Record<string, unknown>)
+      : {};
+    const mergedProps: Record<string, unknown> = { ...baseProps };
+    for (const [name, value] of Object.entries(elseProps)) {
+      if (!(name in mergedProps)) {
+        mergedProps[name] = value;
+      }
+    }
+
+    const basePatterns = isRecord(schema.patternProperties)
+      ? (schema.patternProperties as Record<string, unknown>)
+      : {};
+    const elsePatterns = isRecord(elseSchema.patternProperties)
+      ? (elseSchema.patternProperties as Record<string, unknown>)
+      : {};
+    const mergedPatterns: Record<string, unknown> = { ...basePatterns };
+    for (const [name, value] of Object.entries(elsePatterns)) {
+      if (!(name in mergedPatterns)) {
+        mergedPatterns[name] = value;
+      }
+    }
+
+    const requiredNames = new Set<string>();
+    if (Array.isArray(elseSchema.required)) {
+      for (const name of elseSchema.required) {
+        if (typeof name === 'string') {
+          requiredNames.add(name);
+        }
+      }
+    }
+
+    for (const name of requiredNames) {
+      if (used.has(name)) continue;
+      if (this.isConditionallyBlocked(canonPath, name)) continue;
+      const evaluationProof = eTraceGuard
+        ? this.findEvaluationProof(schema, canonPath, target, name)
+        : undefined;
+      if (
+        !isConditionalGValid &&
         !this.isNameWithinCoverage(name, canonPath, coverage, evaluationProof)
       ) {
         continue;
