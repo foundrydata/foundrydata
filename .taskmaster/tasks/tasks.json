@@ -1841,9 +1841,9 @@
             "description": "Add new GValidMotif enum values (SimpleConditionalObject, DiscriminatedUnionObject) and implement classification predicates for extended motifs in g-valid-classifier.ts",
             "dependencies": [],
             "details": "Extend packages/core/src/transform/g-valid-classifier.ts:\n1. Add new GValidMotif enum values: SimpleConditionalObject and DiscriminatedUnionObject\n2. Implement isSimpleConditionalCandidate(schema, ctx) predicate:\n   - Check for if/then/else structure\n   - Validate that 'if' clause is deterministic (single property with const/enum)\n   - Verify 'then' and 'else' branches meet simple object criteria from v1\n   - Ensure no unevaluated*/AP:false in any branch\n3. Implement isDiscriminatedUnionCandidate(schema, ctx, artifacts) predicate:\n   - Detect oneOf with discriminator property (explicit or inferred)\n   - Verify all branches are simple objects with distinct discriminator values\n   - Check discriminator property appears in all branches with deterministic values\n   - Exclude oneOf with overlapping schemas or complex branch logic\n4. Update classifyNode() to apply new predicates after existing v1 checks\n5. Preserve existing motif priority: must-cover exclusions first, then v1 motifs, then extended motifs\n6. Document motif eligibility criteria and exclusion rules in code comments\n\nReference spec://§6.3 for G_valid extension points and spec://§6.4 for generator obligations.",
-            "status": "review",
+            "status": "done",
             "testStrategy": "Unit tests in packages/core/src/transform/__tests__/g-valid-classifier-extended.test.ts:\n- Test isSimpleConditionalCandidate() with valid/invalid conditional patterns\n- Test isDiscriminatedUnionCandidate() with explicit/inferred discriminators\n- Test motif priority and exclusion rules\n- Verify unevaluated*/AP:false still exclude paths from G_valid\n- Test that existing v1 motif classification remains unchanged",
-            "updatedAt": "2025-12-08T22:07:46.415Z",
+            "updatedAt": "2025-12-08T22:12:27.778Z",
             "parentId": "undefined"
           },
           {
@@ -1854,10 +1854,10 @@
               1
             ],
             "details": "In packages/core/src/generator/foundry-generator.ts and related type generators:\n1. For SimpleConditionalObject:\n   - When generating object at a G_valid conditional path, evaluate 'if' clause deterministically based on seed\n   - Generate properties from selected branch ('then' or 'else') with all required fields satisfied\n   - Ensure no structural gaps that would trigger Repair\n2. For DiscriminatedUnionObject:\n   - Select oneOf branch deterministically (existing branch selection logic)\n   - Generate discriminator property with correct value for selected branch\n   - Generate remaining required properties from selected branch schema\n   - Validate that generated instance is structurally complete before returning\n3. Add helper isGValidMotif(canonPath, motifType) query to check G_valid index during generation\n4. Ensure determinism: same seed + schema + options must produce identical instances\n5. Preserve existing generation logic for non-G_valid paths (minimal witness + Repair)\n\nReference spec://§6.4 for Generator obligations in G_valid zones.",
-            "status": "review",
+            "status": "done",
             "testStrategy": "Unit tests in packages/core/src/generator/__tests__/:\n- generator-gvalid-conditionals.test.ts: Test conditionals generate complete objects without Repair, test determinism\n- generator-gvalid-discriminated.test.ts: Test discriminated union generation with all required properties, test discriminator value correctness\n- Test that non-G_valid conditionals still use minimal witness + Repair\n- Test deterministic branch selection with different seeds",
             "parentId": "undefined",
-            "updatedAt": "2025-12-08T22:07:52.003Z"
+            "updatedAt": "2025-12-08T22:12:33.394Z"
           },
           {
             "id": 3,
@@ -1867,10 +1867,10 @@
               1
             ],
             "details": "In packages/core/src/repair/repair-engine.ts:\n1. Extend repair policy to recognize new G_valid motifs from classification index\n2. For structural keywords (required, type, enum, const, etc.) at extended G_valid paths:\n   - Emit diagnostic warning if structural repair is attempted\n   - Record violation in metrics (itemsWithRepair, actions for the motif)\n   - Consider making structural repairs in extended G_valid zones optional or error-prone based on PlanOptions strictness\n3. Allow non-structural repairs (numeric bounds, string length, pattern, uniqueItems) in all G_valid zones\n4. Preserve existing tier classification and action registry; G_valid is an orthogonal constraint\n5. Ensure repair policy queries G_valid classification index during repair decision-making\n6. Add diagnostics with code REPAIR_GVALID_STRUCTURAL_ACTION for violations\n\nReference spec://§6.5 for Repair limits in G_valid zones.",
-            "status": "review",
+            "status": "done",
             "testStrategy": "Unit tests in packages/core/src/repair/__tests__/:\n- Test that structural repairs in extended G_valid zones emit diagnostics\n- Test that non-structural repairs are allowed in extended G_valid zones\n- Test that repair metrics are recorded correctly for violations\n- Test that existing repair behavior for non-G_valid paths is unchanged\n- Test PlanOptions.repair.allowStructuralInGValid flag behavior",
             "parentId": "undefined",
-            "updatedAt": "2025-12-08T22:07:57.929Z"
+            "updatedAt": "2025-12-08T22:12:38.212Z"
           },
           {
             "id": 4,
@@ -1881,10 +1881,10 @@
               3
             ],
             "details": "1. In packages/core/src/util/repair-usage-metrics.ts and packages/shared/src/types/diag.metrics.ts:\n   - Add counter patterns for new motifs:\n     * gValid_simpleConditionalObject_items\n     * gValid_simpleConditionalObject_itemsWithRepair\n     * gValid_simpleConditionalObject_actions\n     * gValid_discriminatedUnionObject_items\n     * gValid_discriminatedUnionObject_itemsWithRepair\n     * gValid_discriminatedUnionObject_actions\n   - Update recordRepairUsageEventOnSnapshot() in addGValidCounters() to handle new motif IDs (extend motifId matching for 'simpleConditionalObject' and 'discriminatedUnionObject')\n   - Ensure metrics are emitted for all extended motifs when PlanOptions.metrics is enabled\n\n2. In packages/reporter/src/gates/index.ts:\n   - Extend collectGValidMetricMotifs() to detect new motif patterns in metrics\n   - Update evaluateGValid() to validate extended motifs (already handles pattern-based detection, should work automatically)\n   - Add test coverage for new motif gate violations\n\nReference spec://§6.6 for metrics and observability requirements.",
-            "status": "review",
+            "status": "done",
             "testStrategy": "Unit tests:\n- Test repair-usage-metrics.ts handles new motif IDs correctly\n- Test gates.ts detects violations for extended motifs via collectGValidMetricMotifs()\n- Integration test in test/acceptance/gvalid-extended-metrics.spec.ts:\n  * Assert per-motif counters for extended motifs\n  * Verify itemsWithRepair === 0 for all extended G_valid motifs in strict mode\n  * Test pipeline with gValid: false to ensure no behavior change",
             "parentId": "undefined",
-            "updatedAt": "2025-12-08T22:08:03.947Z"
+            "updatedAt": "2025-12-08T22:12:42.993Z"
           },
           {
             "id": 5,
@@ -1903,12 +1903,12 @@
             "updatedAt": "2025-12-08T22:08:09.853Z"
           }
         ],
-        "updatedAt": "2025-12-08T22:08:09.853Z"
+        "updatedAt": "2025-12-08T22:12:42.993Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-08T22:08:09.855Z",
+      "lastModified": "2025-12-08T22:12:42.994Z",
       "taskCount": 8,
       "completedCount": 7,
       "tags": [

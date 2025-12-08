@@ -329,6 +329,9 @@ Equivalently: for `p ∈ G_valid`, structural validity (with respect to `structu
 
 Implementations **MUST** expose `G_valid` as an internal predicate or classification, and **MAY** include it in diagnostics for debugging or metrics, but it is not required to be part of the public API.
 
+> **Implementation note (informative).**  
+> A production implementation following this SPEC currently extends `G_valid` beyond the v1 baseline to a small set of structurally predictable motifs, such as simple conditional objects (`if/then[/else]` with deterministic guards and simple branches) and discriminated union objects (`oneOf` branches distinguished by a discriminator‑style property). These extensions are only enabled when the baseline v1 eligibility and AP:false / `unevaluated*` exclusions still hold, and they remain subject to the same Generator and Repair invariants as any other `G_valid` location (§6.4–§6.5). The concrete list of extended motifs and their current support level is tracked in the implementation’s comprehensive feature support document; extending or shrinking that list does not change the normative content of this SPEC as long as the invariants remain satisfied.
+
 #### 6.3 Baseline `G_valid` v1 classification
 
 This subsection defines a **baseline** class of locations that **MUST** belong to `G_valid` (the *baseline generator‑valid zone v1*) under the default strict posture (§6.1). Implementations **MAY** extend `G_valid` to additional locations provided the invariants of §6.4–§6.5 hold for those locations as well. When callers explicitly disable `G_valid`, classification becomes optional and the pipeline reverts to the minimal‑witness + bounded‑Repair regime, but any time `G_valid` is enabled the locations below **MUST** be included at minimum.

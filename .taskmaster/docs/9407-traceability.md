@@ -50,4 +50,4 @@ This document maps the parent task 9407 bullets from Implementation Details, Del
   Covers: [KR5, DEL4, DOD3, TS4] (status: covered — métriques gValid_* et repairUsageByMotif pour motifs étendus, snapshots reporter et gates GVALID_REPAIR verts).
 
 - **9407.5 – Add test fixtures, acceptance tests, and documentation for extended G_valid motifs**  
-  Covers: [KR1, KR3, KR5, DEL5, DOD4, TS2, TS4, TS5] (status: partially-covered — fixtures + tests d’acceptance et documentation COMPREHENSIVE_FEATURE_SUPPORT.md en place pour motifs étendus; section SPEC détaillée et suites supplémentaires possibles dans une tâche ultérieure si besoin).
+  Covers: [KR1, KR3, KR5, DEL5, DOD4, TS2, TS4, TS5] (status: covered — fixtures g-valid-extended, tests d’acceptance dédiés, COMPREHENSIVE_FEATURE_SUPPORT.md et SPEC canonique enrichies pour documenter les motifs étendus et leur contrat Generator/Repair).
