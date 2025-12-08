@@ -1441,7 +1441,7 @@
   "generator-vs-repair-contract": {
     "tasks": [
       {
-        "id": "9400",
+        "id": 9400,
         "title": "Formalize Generator vs Repair contract and G_valid v1 in canonical spec",
         "description": "Introduce the Generator vs Repair contract and the G_valid (Generator-valid) zone into the canonical SPEC.",
         "priority": "high",
@@ -1496,7 +1496,7 @@
         "updatedAt": "2025-12-07T11:08:41.792Z"
       },
       {
-        "id": "9401",
+        "id": 9401,
         "title": "Implement motif classification and G_valid zoning in core pipeline",
         "description": "Introduce a motif classification layer that marks schema locations as G_valid or non-G_valid based on the effective schema shape.",
         "priority": "high",
@@ -1553,7 +1553,7 @@
         "updatedAt": "2025-12-07T12:24:33.783Z"
       },
       {
-        "id": "9402",
+        "id": 9402,
         "title": "Make array generation G_valid-aware for items + contains motifs",
         "description": "Update array generation so that, in G_valid zones, items satisfying contains also respect the effective items schema and are AJV-valid by construction.",
         "priority": "high",
@@ -1610,7 +1610,7 @@
         "updatedAt": "2025-12-07T12:40:48.953Z"
       },
       {
-        "id": "9403",
+        "id": 9403,
         "title": "Make object generation G_valid-aware for simple required/properties motifs",
         "description": "Adjust object generation so that, in G_valid zones, the Generator satisfies required properties and basic bounds without relying on Repair to synthesize placeholder values.",
         "priority": "high",
@@ -1657,7 +1657,7 @@
         "updatedAt": "2025-12-07T12:55:18.384Z"
       },
       {
-        "id": "9404",
+        "id": 9404,
         "title": "Constrain Repair behavior inside G_valid zones and surface violations",
         "description": "Update the Repair engine so that structural fixes in G_valid zones are treated as contract violations and surfaced via diagnostics/metrics instead of normal behavior.",
         "priority": "high",
@@ -1706,7 +1706,7 @@
         "updatedAt": "2025-12-07T13:25:09.537Z"
       },
       {
-        "id": "9405",
+        "id": 9405,
         "title": "Add repair usage metrics and G_valid motif observability",
         "description": "Instrument the pipeline with motif-level metrics so that repair usage inside and outside G_valid zones is observable and testable.",
         "priority": "high",
@@ -1766,7 +1766,7 @@
         "updatedAt": "2025-12-07T13:33:36.513Z"
       },
       {
-        "id": "9406",
+        "id": 9406,
         "title": "Expose G_valid behavior and Generator vs Repair contract in CLI, profiles and docs",
         "description": "Surface the Generator vs Repair contract and G_valid behavior through PlanOptions, CLI profiles and developer documentation.",
         "priority": "medium",
@@ -1818,12 +1818,12 @@
         "updatedAt": "2025-12-07T13:50:37.324Z"
       },
       {
-        "id": "9407",
+        "id": 9407,
         "title": "Extend G_valid beyond v1: define additional eligible motifs (simple conditional objects, discriminated objects), update G_valid classifier, generator and repair policy, metrics and reporter gates, and add tests to enforce the extended Generator/Repair contract",
         "description": "Extend the baseline G_valid zone beyond v1 to include additional eligible motifs such as simple conditional objects (if/then/else with deterministic branches) and discriminated union objects (oneOf with discriminator property), update the G_valid classifier to recognize these motifs, modify generator and repair logic to honor the extended contract, instrument metrics to track per-motif repair usage, and add comprehensive tests to enforce the contract.",
         "details": "[Context]\nThe baseline G_valid v1 implementation (tasks 9400-9406) covers only `simpleObjectRequired` and `arrayContainsSimple` motifs. The canonical spec (§6.3) allows implementations to extend G_valid to additional locations provided they honor the invariants. This task expands the G_valid zone to include additional high-value motifs that are structurally predictable.\n\nAligns with spec §6.3 (\"Implementations **MAY** extend `G_valid` to additional locations provided the invariants of §6.4–§6.5 hold\"), §6.4 (Generator obligations), §6.5 (Repair limits), and §6.6 (metrics and observability).\n\n[Key requirements]\n\n**1. Define extended motif types**\nExtend `packages/core/src/transform/g-valid-classifier.ts`:\n- Add new `GValidMotif` enum values:\n  - `SimpleConditionalObject` — objects with `if/then/else` where the `if` clause is deterministic (single property equality check or simple enum guard) and both `then` and `else` branches are simple objects (no AP:false, no unevaluated*, no nested composition)\n  - `DiscriminatedUnionObject` — objects with `oneOf` branches distinguished by a discriminator property (OpenAPI discriminator or inferred property-value pattern) where each branch is a simple object\n  - Additional candidates: `SimpleTupleArray` (prefixItems with fixed-length homogeneous items), `EnumOnlyObject` (all properties are enum/const with no complex validation)\n- Document motif eligibility criteria and exclusion rules (e.g., nested conditionals, recursive refs, pattern-based constraints)\n\n**2. Update G_valid classifier logic**\nIn `packages/core/src/transform/g-valid-classifier.ts`:\n- Implement `isSimpleConditionalCandidate(schema, ctx)` predicate:\n  - Check for `if/then/else` structure\n  - Validate that `if` clause is deterministic (single property with const/enum, no nested logic)\n  - Verify `then` and `else` branches meet simple object criteria from v1\n  - Ensure no unevaluated*/AP:false in any branch\n- Implement `isDiscriminatedUnionCandidate(schema, ctx, artifacts)` predicate:\n  - Detect `oneOf` with discriminator property (explicit or inferred)\n  - Verify all branches are simple objects with distinct discriminator values\n  - Check that discriminator property appears in all branches with deterministic values\n  - Exclude oneOf with overlapping schemas or complex branch logic\n- Update `classifyNode()` to apply new predicates after existing v1 checks\n- Preserve existing motif priority: must-cover exclusions first, then v1 motifs, then extended motifs\n\n**3. Extend generator to honor extended G_valid motifs**\nIn `packages/core/src/generator/foundry-generator.ts` and related type generators:\n- For `SimpleConditionalObject`:\n  - When generating object at a G_valid conditional path, evaluate `if` clause deterministically based on seed\n  - Generate properties from selected branch (`then` or `else`) with all required fields satisfied\n  - Ensure no structural gaps that would trigger Repair\n- For `DiscriminatedUnionObject`:\n  - Select oneOf branch deterministically (existing branch selection logic)\n  - Generate discriminator property with correct value for selected branch\n  - Generate remaining required properties from selected branch schema\n  - Validate that generated instance is structurally complete before returning\n- Add helper `isGValidMotif(canonPath, motifType)` query to check G_valid index during generation\n- Ensure determinism: same seed + schema + options must produce identical instances\n\n**4. Update repair engine to respect extended G_valid zones**\nIn `packages/core/src/repair/repair-engine.ts`:\n- Extend repair policy to recognize new G_valid motifs from classification index\n- For structural keywords (`required`, `type`, `enum`, `const`, etc.) at extended G_valid paths:\n  - Emit diagnostic warning if structural repair is attempted\n  - Record violation in metrics (`itemsWithRepair`, `actions` for the motif)\n  - Consider making structural repairs in extended G_valid zones optional or error-prone based on PlanOptions strictness\n- Allow non-structural repairs (numeric bounds, string length, pattern, uniqueItems) in all G_valid zones\n- Preserve existing tier classification and action registry; G_valid is an orthogonal constraint\n\n**5. Instrument extended motif metrics**\nIn `packages/core/src/util/repair-usage-metrics.ts` and `packages/shared/src/types/diag.metrics.ts`:\n- Add counter patterns for new motifs:\n  - `gValid_simpleConditionalObject_items`\n  - `gValid_simpleConditionalObject_itemsWithRepair`\n  - `gValid_simpleConditionalObject_actions`\n  - `gValid_discriminatedUnionObject_items`\n  - `gValid_discriminatedUnionObject_itemsWithRepair`\n  - `gValid_discriminatedUnionObject_actions`\n- Update `recordRepairUsageEventOnSnapshot()` to handle new motif IDs\n- Ensure metrics are emitted for all extended motifs when `PlanOptions.metrics` is enabled\n\n**6. Update reporter gates for extended motifs**\nIn `packages/reporter/src/gates/gates.ts`:\n- Add gate predicates for new motifs, asserting zero structural repair in G_valid zones\n- Extend `checkGValidMotifInvariants()` to validate extended motifs:\n  - For each extended motif, check `itemsWithRepair === 0` and `actions === 0`\n  - Emit diagnostic warnings if violations detected\n  - Allow configurable tolerance for numeric-only repairs\n- Update platform view to display extended motif coverage and repair usage\n\n**7. CLI and configuration integration**\nIn `packages/core/src/types/options.ts` and `packages/cli/src/index.ts`:\n- Extend `PlanOptions.gValid` to support:\n  - Boolean flag (default: `true`, enables v1 + extended motifs)\n  - Object configuration: `{ enabled: boolean, motifs: string[] }` to opt-in/out of specific extended motifs\n  - Example: `gValid: { enabled: true, motifs: ['simpleConditionalObject', 'discriminatedUnionObject'] }`\n- Add CLI flag `--gvalid-motifs <list>` to control extended motif selection\n- Document configuration in `docs/spec-canonical-json-schema-generator.md` (new subsection under §6.3)\n\n**8. Test fixtures and acceptance tests**\nCreate new test fixtures in `test/fixtures/`:\n- `g-valid-conditionals.json` — schemas with simple if/then/else patterns\n- `g-valid-discriminated-unions.json` — schemas with discriminated oneOf (explicit and inferred)\n- `g-valid-mixed-v2.json` — schemas combining v1 and extended motifs\n\nAdd acceptance tests in `test/acceptance/`:\n- `test/acceptance/objects/g-valid-conditionals.spec.ts`:\n  - Assert zero structural repair for simple conditional objects\n  - Verify deterministic branch selection and complete property generation\n  - Test mixed G_valid/non-G_valid schemas with conditionals\n- `test/acceptance/objects/g-valid-discriminated-unions.spec.ts`:\n  - Assert zero structural repair for discriminated unions\n  - Verify discriminator property is set correctly\n  - Test edge cases: missing discriminator in one branch, overlapping schemas\n- `test/acceptance/gvalid-extended-metrics.spec.ts`:\n  - Assert per-motif counters for extended motifs\n  - Verify `itemsWithRepair === 0` for all extended G_valid motifs\n  - Test pipeline with `gValid: false` to ensure no behavior change\n\n**9. Unit tests for classifier and generator**\nIn `packages/core/src/transform/__tests__/`:\n- `g-valid-classifier-extended.test.ts`:\n  - Test `isSimpleConditionalCandidate()` with valid/invalid conditional patterns\n  - Test `isDiscriminatedUnionCandidate()` with explicit/inferred discriminators\n  - Test motif priority and exclusion rules\n  - Verify unevaluated*/AP:false still exclude paths from G_valid\n\nIn `packages/core/src/generator/__tests__/`:\n- `generator-gvalid-conditionals.test.ts`:\n  - Test that conditionals generate complete objects without Repair\n  - Test determinism: same seed produces same branch selection\n  - Test that non-G_valid conditionals still use minimal witness + Repair\n- `generator-gvalid-discriminated.test.ts`:\n  - Test discriminated union generation with all required properties\n  - Test discriminator value correctness\n  - Test fallback to Repair for complex oneOf (non-discriminated)\n\n**10. Documentation updates**\nUpdate `docs/spec-canonical-json-schema-generator.md`:\n- Add new subsection §6.3.3 \"Extended G_valid motifs (v2+)\" documenting:\n  - `SimpleConditionalObject` eligibility criteria\n  - `DiscriminatedUnionObject` eligibility criteria\n  - Configuration options for enabling/disabling extended motifs\n  - Examples of schemas that qualify vs disqualify\n- Update §6.6 metrics section to include extended motif counters\n- Add informative note about implementation-defined extension points\n\nUpdate `CLAUDE.md` and `AGENTS.md`:\n- Document extended G_valid zone and new motifs\n- Update troubleshooting guide for G_valid violations in conditionals/oneOf\n\n**11. Regression and compatibility checks**\n- Verify that existing v1 G_valid tests still pass with extended motifs enabled\n- Add test to ensure `gValid: false` restores legacy behavior for all motifs\n- Add test to ensure determinism is preserved: same seed produces same instances with extended motifs\n- Run bench suite to verify performance targets (p50 ≈ 200-400ms for 1K rows) are not regressed\n- Check that extended motifs don't increase `validationsPerRow` or `repairPassesPerRow` beyond SLO\n\n**Implementation notes**\n- Classifier changes are isolated to `g-valid-classifier.ts` with new predicates; existing logic is untouched\n- Generator changes are additive: new G_valid checks before existing generation paths\n- Repair changes are policy-only: no new actions, only additional guards for extended motifs\n- Metrics are backward-compatible: new counters are optional and don't break existing reports\n- All changes respect SPEC REFONLY protocol: reference §6.3, §6.4, §6.5, §6.6 by anchor only",
         "testStrategy": "**Unit tests**\n- Test `g-valid-classifier.ts` extended predicates with valid/invalid conditional and discriminated union schemas\n- Test classifier motif priority: must-cover > v1 > extended > none\n- Test generator for simple conditional objects: assert all required properties emitted before Repair\n- Test generator for discriminated unions: assert discriminator property is correct and all branch properties present\n- Test repair engine: assert structural actions in extended G_valid paths emit diagnostics and increment metrics\n- Test metrics: assert new per-motif counters (`gValid_simpleConditionalObject_*`, `gValid_discriminatedUnionObject_*`) are populated correctly\n\n**Integration tests**\n- Run full pipeline on extended G_valid fixtures and assert `itemsWithRepair === 0` and `actions === 0` for extended motifs\n- Test mixed G_valid/non-G_valid schemas: verify only extended G_valid paths have zero structural repair\n- Test with `gValid: false`: verify behavior reverts to minimal witness + Repair for all motifs\n- Test determinism: same seed + schema + options produces identical instances across runs\n\n**Acceptance tests**\n- `test/acceptance/objects/g-valid-conditionals.spec.ts`: Zero structural repair for simple conditionals\n- `test/acceptance/objects/g-valid-discriminated-unions.spec.ts`: Zero structural repair for discriminated unions\n- `test/acceptance/gvalid-extended-metrics.spec.ts`: Per-motif counters validation\n- `test/acceptance/gvalid-extended-mixed.spec.ts`: Mixed v1 + v2 motifs in same schema\n\n**Regression tests**\n- All existing v1 G_valid tests must pass unchanged\n- Performance bench: p50 latency ≤ 400ms for 1K rows on extended motif schemas\n- Metrics: `validationsPerRow ≤ 3`, `repairPassesPerRow ≤ 1` for extended motifs\n- Determinism: property-based test asserting seed equivalence for extended G_valid schemas\n\n**Reporter gates**\n- Update `packages/reporter/src/gates/__tests__/gates.test.ts` to include extended motif checks\n- Add CI gate: fail if structural repairs occur in extended G_valid zones on reference fixtures\n- Add golden test snapshots for extended motif metrics in `test/__snapshots__/`\n\n**Quality gates**\n- Run `npm run task-ready` to verify lint, typecheck, build, and test pass\n- Run bench suite with extended motif fixtures to verify SLO adherence\n- Review SPEC alignment: §6.3 extension criteria, §6.4 generator obligations, §6.5 repair limits, §6.6 metrics",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           "9400",
           "9401",
@@ -1897,23 +1897,26 @@
               4
             ],
             "details": "1. Create test fixtures in test/fixtures/:\n   - g-valid-conditionals.json: schemas with simple if/then/else patterns\n   - g-valid-discriminated-unions.json: schemas with discriminated oneOf (explicit and inferred)\n   - g-valid-mixed-v2.json: schemas combining v1 and extended motifs\n\n2. Add acceptance tests in test/acceptance/:\n   - test/acceptance/objects/g-valid-conditionals.spec.ts:\n     * Assert zero structural repair for simple conditional objects\n     * Verify deterministic branch selection and complete property generation\n     * Test mixed G_valid/non-G_valid schemas with conditionals\n   - test/acceptance/objects/g-valid-discriminated-unions.spec.ts:\n     * Assert zero structural repair for discriminated unions\n     * Verify discriminator property is set correctly\n     * Test edge cases: missing discriminator in one branch, overlapping schemas\n\n3. Update docs/spec-canonical-json-schema-generator.md:\n   - Add new subsection §6.3.3 'Extended G_valid motifs (v2+)' documenting eligibility criteria, configuration options, and examples\n   - Update §6.6 metrics section to include extended motif counters\n\n4. Update CLAUDE.md and AGENTS.md:\n   - Document extended G_valid zone and new motifs\n   - Update troubleshooting guide for G_valid violations in conditionals/oneOf\n\n5. Regression checks:\n   - Verify existing v1 G_valid tests still pass\n   - Test determinism preservation with extended motifs\n   - Run bench suite to verify performance targets are not regressed",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Acceptance tests validate end-to-end behavior:\n- Zero structural repair in extended G_valid zones (strict mode)\n- Deterministic generation with same seed produces identical instances\n- Performance regression: p50 ≈ 200-400ms for 1K rows maintained\n- Backward compatibility: gValid: false restores legacy behavior for all motifs\n- Coverage: All new code paths covered by unit and acceptance tests",
             "parentId": "undefined",
-            "updatedAt": "2025-12-08T22:08:09.853Z"
+            "updatedAt": "2025-12-08T22:18:21.379Z"
           }
         ],
-        "updatedAt": "2025-12-08T22:12:42.993Z"
+        "updatedAt": "2025-12-08T22:18:21.379Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-08T22:12:42.994Z",
+      "lastModified": "2025-12-08T22:18:21.381Z",
       "taskCount": 8,
-      "completedCount": 7,
+      "completedCount": 8,
       "tags": [
         "generator-vs-repair-contract"
-      ]
+      ],
+      "created": "2025-12-08T22:19:33.573Z",
+      "description": "Tasks for generator-vs-repair-contract context",
+      "updated": "2025-12-08T22:19:33.573Z"
     }
   },
   "repair-philosophy": {
@@ -2426,7 +2429,8 @@
         "repair-philosophy"
       ],
       "created": "2025-12-07T23:23:28.641Z",
-      "description": "Tasks for repair-philosophy context"
+      "description": "Tasks for repair-philosophy context",
+      "updated": "2025-12-07T23:23:28.641Z"
     }
   },
   "observability-platform-metrics-v1": {
